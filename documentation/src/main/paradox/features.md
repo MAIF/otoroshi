@@ -1,6 +1,6 @@
 # Features 
 
-All the features supported by Otoroshi are listed below
+All the features supported by **Otoroshi** are listed below
 
 * Dynamic changes at runtime without full reload 
 * Can proxy any HTTP server (HTTP2 is not supported yet, but will be soon enough)

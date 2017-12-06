@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Using config file · Otoroshi</title>
+<title>Config. with files · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-docs'/>
@@ -35,8 +35,9 @@
 </div>
 <div class="nav-toc">
 <ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
-  <li><a href="../quickstart.html" class="page">Quickstart</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
     <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
@@ -46,9 +47,9 @@
   <li><a href="../firstrun/index.html" class="page">First run</a>
   <ul>
     <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
-    <li><a href="../firstrun/configfile.html" class="active page">Using config file</a></li>
-    <li><a href="../firstrun/env.html" class="page">Use ENV</a></li>
-    <li><a href="../firstrun/initialstate.html" class="page">Otoroshi initial state</a></li>
+    <li><a href="../firstrun/configfile.html" class="active page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
   <ul>
@@ -77,6 +78,7 @@
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">CleverCloud</a></li>
   </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../cli.html" class="page">Rust CLI</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
@@ -104,8 +106,10 @@
 H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
 C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
 </a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
 <div class="title"><a href="../index.html">Otoroshi</a></div>
-
+</div>
 <!--
 <a href="https://www.example.com" class="logo show-for-medium">logo</a>
 -->
@@ -126,8 +130,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </div>
 <div class="nav-toc">
 <ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
-  <li><a href="../quickstart.html" class="page">Quickstart</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
     <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
@@ -137,9 +142,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../firstrun/index.html" class="page">First run</a>
   <ul>
     <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
-    <li><a href="../firstrun/configfile.html" class="active page">Using config file</a></li>
-    <li><a href="../firstrun/env.html" class="page">Use ENV</a></li>
-    <li><a href="../firstrun/initialstate.html" class="page">Otoroshi initial state</a></li>
+    <li><a href="../firstrun/configfile.html" class="active page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
   <ul>
@@ -168,6 +173,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">CleverCloud</a></li>
   </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../cli.html" class="page">Rust CLI</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
@@ -196,7 +202,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../firstrun/index.html">First run</a></li>
-  <li>Using config file</li>
+  <li>Config. with files</li>
 </ul>
 </div>
 </div>
@@ -204,9 +210,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#using-config-file" name="using-config-file" class="anchor"><span class="anchor-link"></span></a>Using config file</h1>
+<h1><a href="#config-with-files" name="config-with-files" class="anchor"><span class="anchor-link"></span></a>Config. with files</h1>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../firstrun/env.html">Use ENV</a></p>
+<p><strong>Next:</strong> <a href="../firstrun/env.html">Config. with ENVs</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>

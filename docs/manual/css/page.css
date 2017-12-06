@@ -938,3 +938,17 @@ small {
 .source-github a {
   font-weight: bold;
 }
+
+.title-wrapper {
+  display: flex;
+}
+
+.title-logo {
+  content: url("../img/small-otoroshi-logo.png");
+  margin-right: 10px;
+  margin-top: 10px;
+}
+
+p {
+  text-align: justify;
+}
