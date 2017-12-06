@@ -1,6 +1,6 @@
 # About Otoroshi
 
-At the beginning of the 2016, we had the need to create a new environment to be able to create new "digital" products very quickly in an agile fashion at <a href="https://www.maif.fr/" target="_blank">MAIF</a>. Naturally we turned to PaaS solutions and chose the excellent <a href="https://www.clever-cloud.com/">Clever-Cloud</a> product run our apps. 
+At the beginning of 2016, we had the need to create a new environment to be able to create new "digital" products very quickly in an agile fashion at <a href="https://www.maif.fr/" target="_blank">MAIF</a>. Naturally we turned to PaaS solutions and chose the excellent <a href="https://www.clever-cloud.com/">Clever-Cloud</a> product run our apps. 
 
 We also chose that every feature team will the freedom to choose its own technological stack to build its product. It was a nice move but it has also introduced some challenges in terms of homogeneity for traceability, security, logging, ... because we did not want to force library usage in the products. We could have used something like <a href="http://philcalcado.com/2017/08/03/pattern_service_mesh.html" target="_blank">Service Mesh Pattern</a> but the deployement model of <a href="https://www.clever-cloud.com/">Clever-Cloud</a> prevented us to do it.
 
