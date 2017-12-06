@@ -4,7 +4,6 @@ what you will need :
 
 * JDK8
 * wget
-* git
 * 5 minutes of free time
 
 ## The elevator pitch

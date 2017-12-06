@@ -939,6 +939,16 @@ small {
   font-weight: bold;
 }
 
-.title {
-  background-image: url("https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png") !important;
+.title-wrapper {
+  display: flex;
+}
+
+.title-logo {
+  content: url("../img/small-otoroshi-logo.png");
+  margin-right: 10px;
+  margin-top: 10px;
+}
+
+p {
+  text-align: justify;
 }
