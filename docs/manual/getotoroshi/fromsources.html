@@ -211,11 +211,57 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#from-sources" name="from-sources" class="anchor"><span class="anchor-link"></span></a>From sources</h1>
+<p>to build Otoroshi from sources, you need the following tools </p>
+<ul>
+  <li>git</li>
+  <li>JDK 8</li>
+  <li>SBT</li>
+  <li>node</li>
+  <li>yarn</li>
+</ul>
+<p>Once you&rsquo;ve installed all those tools, go to the <a href="https://github.com/MAIF/otoroshi">Otoroshi github page</a> and clone the sources</p>
+<pre class="prettyprint"><code class="language-sh">git clone https://github.com/MAIF/otoroshi.git --depth=1
+</code></pre>
+<p>then you can run the <code>build.sh</code> script to build the documentation, the React UI and the server</p>
+<pre class="prettyprint"><code class="language-sh">sh ./scripts/build.sh
+</code></pre>
+<p>and thats all, you can grab your Otoroshi package at <code>otoroshi/target/scala-2.11/otoroshi</code> or <code>otoroshi/target/universal/</code>. </p>
+<p>For those who want to build only parts of Otoroshi, read the following</p>
+<h2><a href="#build-the-documentation-only" name="build-the-documentation-only" class="anchor"><span class="anchor-link"></span></a>Build the documentation only</h2>
+<p>go to the <code>documentation</code> folder and run</p>
+<pre class="prettyprint"><code class="language-sh">sbt &#39;;clean;paradox&#39;
+</code></pre>
+<p>the documentation will be located at <code>documentation/target/paradox/site/main/</code></p>
+<h2><a href="#build-the-react-ui" name="build-the-react-ui" class="anchor"><span class="anchor-link"></span></a>Build the React UI</h2>
+<p>go to the <code>otoroshi/javascript</code> folder and run</p>
+<pre class="prettyprint"><code class="language-sh">yarn install
+yarn build
+</code></pre>
+<h2><a href="#build-the-otoroshi-server" name="build-the-otoroshi-server" class="anchor"><span class="anchor-link"></span></a>Build the Otoroshi server</h2>
+<p>go to the <code>otoroshi</code> folder and run</p>
+<pre class="prettyprint"><code class="language-sh">sbt &#39;;clean;compile;dist;assembly&#39;
+</code></pre>
+<p>you will find your Otoroshi package at <code>otoroshi/target/scala-2.11/otoroshi</code> or <code>otoroshi/target/universal/</code></p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../getotoroshi/frombinaries.html">From binaries</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../getotoroshi/fromsources.html#from-sources" class="header">From sources</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html#build-the-documentation-only" class="header">Build the documentation only</a></li>
+    <li><a href="../getotoroshi/fromsources.html#build-the-react-ui" class="header">Build the React UI</a></li>
+    <li><a href="../getotoroshi/fromsources.html#build-the-otoroshi-server" class="header">Build the Otoroshi server</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

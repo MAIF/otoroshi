@@ -212,12 +212,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#try-otoroshi-in-5-minutes" name="try-otoroshi-in-5-minutes" class="anchor"><span class="anchor-link"></span></a>Try Otoroshi in 5 minutes</h1>
 <p>what you will need :</p>
 <ul>
-  <li>JDK8</li>
+  <li>JDK 8</li>
   <li>wget</li>
   <li>5 minutes of free time</li>
 </ul>
 <h2><a href="#the-elevator-pitch" name="the-elevator-pitch" class="anchor"><span class="anchor-link"></span></a>The elevator pitch</h2>
-<p>Otoroshi is an awesome reverse proxy built in scala that handle all calls from and to your microservices without service locator and let you change configuration dynamicaly at runtime.</p>
+<p>Otoroshi is an awesome reverse proxy built in scala that handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.</p>
 <h2><a href="#now-some-sh-" name="now-some-sh-" class="anchor"><span class="anchor-link"></span></a>Now some sh :)</h2>
 <pre class="prettyprint"><code class="language-sh">wget --quiet https://github.com/MAIF/otoroshi/releases/download/v1.0.0/otoroshi.jar
 wget --quiet https://github.com/MAIF/otoroshi/releases/download/v1.0.0/macos-otoroshicli -O otoroshicli
@@ -226,16 +226,18 @@ wget --quiet https://github.com/MAIF/otoroshi/releases/download/v1.0.0/linux-oto
 # or if you use windows
 wget --quiet https://github.com/MAIF/otoroshi/releases/download/v1.0.0/win-otoroshicli.exe -O otoroshicli.exe
 
+# Run the Otoroshi server
 java -jar otoroshi.jar &amp;
 
-# Check if admin api work
+# Check if admin api works
 ./otoroshicli services all
 ./otoroshicli apikeys all
 ./otoroshicli groups all
 
 # Create a service
-
-./otoroshicli services create --group default --name geo-ip-api --env prod --domain geo.com --subdomain ip --root /json/ --target https://freegeoip.net --public-pattern &#39;/.*&#39; --no-force-https
+./otoroshicli services create --group default --name geo-ip-api --env prod \
+  --domain geo.com --subdomain ip --root /json/ --target https://freegeoip.net \
+  --public-pattern &#39;/.*&#39; --no-force-https
 
 # Then test it
 ./otoroshicli tryout call &quot;http://127.0.0.1:8080/&quot; -X GET -H &#39;Host: ip.geo.com&#39;
@@ -246,7 +248,11 @@ java -jar otoroshi.jar &amp;
 ./otoroshicli tryout serve 9903
 
 # Create a service that will loadbalance between these 3 microservices
-./otoroshicli services create --group default --id hello-api --name hello-api --env prod --domain hello.com --subdomain api --root / --target &quot;http://127.0.0.1:9901&quot; --target &quot;http://127.0.0.1:9902&quot; --public-pattern &#39;/.*&#39; --no-force-https --client-retries 3
+./otoroshicli services create --group default --id hello-api --name hello-api \
+  --env prod --domain hello.com --subdomain api --root / \
+  --target &quot;http://127.0.0.1:9901&quot; \
+  --target &quot;http://127.0.0.1:9902&quot; \
+  --public-pattern &#39;/.*&#39; --no-force-https --client-retries 3
 
 # Then test it multiple time to observe loadbalancing
 # You can also define &#39;127.0.0.1  api.hello.com&#39; in your /etc/hosts file and test it in your browser
@@ -279,7 +285,7 @@ open &quot;http://api.hello.com:8080/&quot;
 <p>you can user the following command </p>
 <pre class="prettyprint"><code class="language-sh">sudo echo &quot;127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar&quot; &gt;&gt; /etc/hosts
 </code></pre>
-<p>Then go to <a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a> and log with <code>admin@otoroshi.io:password</code> ;-)</p>
+<p>Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a> and login with <code>admin@otoroshi.io:password</code> ;-)</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="getotoroshi/index.html">Get Otoroshi</a></p>
 </div>
