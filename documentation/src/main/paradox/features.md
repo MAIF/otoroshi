@@ -1,7 +1,5 @@
 # Features 
 
-Otoroshi is a modern HTTP reverse proxy with a thin layer of Api management. 
-
 All the features supported by Otoroshi are listed below
 
 * Dynamic changes at runtime without full reload 
@@ -64,12 +62,12 @@ All the features supported by Otoroshi are listed below
 * Support full JSON import of the reverse proxy state
 * Support initial internal state import from JSON local file
 * Support initial internal state import from JSON file over HTTP
-* Enforce request URL size
-* Enforce request headers size
-* Enforce request cookies size
-* Global live metrics (Rest)
-* Send metrics to StatsD/Datadog agent
-* Advanced CleverCloud integration (create service from CleverCloud app)
+* Enforce request URL max size
+* Enforce request headers max size
+* Enforce request cookies max size
+* Global live metrics
+* Send metrics to a StatsD/Datadog agent
+* Advanced CleverCloud integration (create services from CleverCloud apps)
 * Embedded documentation
 * Global services map and top 10
 * Support admin login with Auth0

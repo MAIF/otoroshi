@@ -1,1 +1,1 @@
-# Otoroshi initial state
+# Initial state

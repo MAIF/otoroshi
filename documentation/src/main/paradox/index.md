@@ -8,6 +8,7 @@ Otoroshi is a modern HTTP reverse proxy with a thin layer of Api management.
 
 @@@ index
 
+* [About Otoroshi](about.md)
 * [Features](features.md)
 * [Quickstart](quickstart.md)
 * [Get otoroshi](getotoroshi/index.md)
@@ -38,6 +39,7 @@ Otoroshi is a modern HTTP reverse proxy with a thin layer of Api management.
     * [Mailgun](integrations/mailgun.md)
     * [StatsD / Datadog](integrations/statsd.md)
     * [clevercloud](integrations/clevercloud.md)
+* [Admin REST API](api.md)
 * [Rust CLI](cli.md)
 * [Deploy in production](deploy/index.md)
     * [clevercloud](deploy/clevercloud.md)
