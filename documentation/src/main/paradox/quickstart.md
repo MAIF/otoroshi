@@ -2,13 +2,13 @@
 
 what you will need :
 
-* JDK8
+* JDK 8
 * wget
 * 5 minutes of free time
 
 ## The elevator pitch
 
-Otoroshi is an awesome reverse proxy built in scala that handle all calls from and to your microservices without service locator and let you change configuration dynamicaly at runtime.
+Otoroshi is an awesome reverse proxy built in scala that handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
 
 ## Now some sh :)
 
@@ -20,16 +20,18 @@ wget --quiet https://github.com/MAIF/otoroshi/releases/download/v1.0.0/linux-oto
 # or if you use windows
 wget --quiet https://github.com/MAIF/otoroshi/releases/download/v1.0.0/win-otoroshicli.exe -O otoroshicli.exe
 
+# Run the Otoroshi server
 java -jar otoroshi.jar &
 
-# Check if admin api work
+# Check if admin api works
 ./otoroshicli services all
 ./otoroshicli apikeys all
 ./otoroshicli groups all
 
 # Create a service
-
-./otoroshicli services create --group default --name geo-ip-api --env prod --domain geo.com --subdomain ip --root /json/ --target https://freegeoip.net --public-pattern '/.*' --no-force-https
+./otoroshicli services create --group default --name geo-ip-api --env prod \
+  --domain geo.com --subdomain ip --root /json/ --target https://freegeoip.net \
+  --public-pattern '/.*' --no-force-https
 
 # Then test it
 ./otoroshicli tryout call "http://127.0.0.1:8080/" -X GET -H 'Host: ip.geo.com'
@@ -40,7 +42,11 @@ java -jar otoroshi.jar &
 ./otoroshicli tryout serve 9903
 
 # Create a service that will loadbalance between these 3 microservices
-./otoroshicli services create --group default --id hello-api --name hello-api --env prod --domain hello.com --subdomain api --root / --target "http://127.0.0.1:9901" --target "http://127.0.0.1:9902" --public-pattern '/.*' --no-force-https --client-retries 3
+./otoroshicli services create --group default --id hello-api --name hello-api \
+  --env prod --domain hello.com --subdomain api --root / \
+  --target "http://127.0.0.1:9901" \
+  --target "http://127.0.0.1:9902" \
+  --public-pattern '/.*' --no-force-https --client-retries 3
 
 # Then test it multiple time to observe loadbalancing
 # You can also define '127.0.0.1  api.hello.com' in your /etc/hosts file and test it in your browser
@@ -81,4 +87,4 @@ you can user the following command
 sudo echo "127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar" >> /etc/hosts
 ```
 
-Then go to http://otoroshi.foo.bar:8080/ and log with `admin@otoroshi.io:password` ;-)
+Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and login with `admin@otoroshi.io:password` ;-)
