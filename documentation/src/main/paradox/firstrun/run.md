@@ -26,7 +26,13 @@ docker run -p "8080:8080" otoroshi
 ## Example
 
 ```sh
-$ java -Xms2G -Xmx8G -Dhttp.port=8080 -Dapp.importFrom=/home/user/otoroshi-2017-12-05-11-04-39.json -Dconfig.file=/home/user/oto.conf -jar ./otoroshi.jar
+$ java \
+  -Xms2G \
+  -Xmx8G \
+  -Dhttp.port=8080 \
+  -Dapp.importFrom=/home/user/otoroshi.json \
+  -Dconfig.file=/home/user/otoroshi.conf -jar \
+  ./otoroshi.jar
 
 [warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
 [warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
