@@ -211,11 +211,471 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#config-with-files" name="config-with-files" class="anchor"><span class="anchor-link"></span></a>Config. with files</h1>
+<p>There is a lot of things you can configure in Otoroshi. By default, Otoroshi provides a configuration that should be enough for testing. But you should take a look here when you will be ready for production.</p>
+<h2><a href="#common-configuration" name="common-configuration" class="anchor"><span class="anchor-link"></span></a>Common configuration</h2>
+<table>
+  <thead>
+    <tr>
+      <th>name </th>
+      <th align="center">type </th>
+      <th>default value </th>
+      <th>description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>app.domain</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;foo.bar&rdquo; </td>
+      <td>the domain on which Otorshi UI/API will be exposes</td>
+    </tr>
+    <tr>
+      <td><code>app.rootScheme</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;http&rdquo; </td>
+      <td>the scheme on which Otoroshi will be exposed, either &ldquo;http&rdquo; or &ldquo;https&rdquo; </td>
+    </tr>
+    <tr>
+      <td><code>app.snowflake.seed</code> </td>
+      <td align="center">number </td>
+      <td>0 </td>
+      <td>this number will be used to generate unique ids across the cluster. Each Otorshi instance must have a unique seed. </td>
+    </tr>
+    <tr>
+      <td><code>app.events.maxSize</code> </td>
+      <td align="center">number </td>
+      <td>1000 </td>
+      <td>max number of analytic and allert events stored localy </td>
+    </tr>
+    <tr>
+      <td><code>app.backoffice.subdomain</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;otoroshi&rdquo; </td>
+      <td>the subdomain on wich Otoroshi backoffice will be served </td>
+    </tr>
+    <tr>
+      <td><code>app.backoffice.session.exp</code> </td>
+      <td align="center">number </td>
+      <td>86400000 </td>
+      <td>the number of seconds before the Otoroshi backoffice session expires </td>
+    </tr>
+    <tr>
+      <td><code>app.privateapps.subdomain</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;privateapps&rdquo; </td>
+      <td>the subdomain on wich private apps UI will be served </td>
+    </tr>
+    <tr>
+      <td><code>app.privateapps.session.exp</code> </td>
+      <td align="center">number </td>
+      <td>86400000 </td>
+      <td>the number of seconds before the private apps session expires </td>
+    </tr>
+    <tr>
+      <td><code>app.claim.sharedKey</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;secret&rdquo; </td>
+      <td>the shared secret used for signing the JWT token passed between Otoroshi and backend services </td>
+    </tr>
+    <tr>
+      <td><code>app.webhooks.size</code> </td>
+      <td align="center">number </td>
+      <td>100 </td>
+      <td>number of events sent at most when calling one of the analytics webhooks </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#admin-api-configuration" name="admin-api-configuration" class="anchor"><span class="anchor-link"></span></a>Admin API configuration</h2>
+<p>when Otoroshi starts for the first time, the DB is empty. As Otoroshi uses Otoroshi to expose its admin REST API, you have to provide the details for the admin API exposition. <strong>This part is super important</strong> because if you go to production with the default values, your Otoroshi server won&rsquo;t be secured anymore. <strong>YOU HAVE TO CUSTOMIZE THE FOLLOWING VALUES BEFORE GOING TO PRODUCTION !!</strong></p>
+<p>Here, some terms in the description will be osbcure to you, but you will learm their meaning in the following chapters :)</p>
+<table>
+  <thead>
+    <tr>
+      <th>name </th>
+      <th align="center">type </th>
+      <th>default value </th>
+      <th>description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>app.adminapi.targetSubdomain</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;otoroshi-admin-internal-api&rdquo; </td>
+      <td>the subdomain on wich admin API call will be redirected from <code>app.adminapi.exposedDubdomain</code> </td>
+    </tr>
+    <tr>
+      <td><code>app.adminapi.exposedDubdomain</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;otoroshi-api&rdquo; </td>
+      <td>the subdomain on wich the Otoroshi admin API will be exposed </td>
+    </tr>
+    <tr>
+      <td><code>app.adminapi.defaultValues.backOfficeGroupId</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;admin-api-group&rdquo; </td>
+      <td>the name of the service groups that will contains the service descriptors for the Otoroshi admin API </td>
+    </tr>
+    <tr>
+      <td><code>app.adminapi.defaultValues.backOfficeApiKeyClientId</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;admin-api-apikey-id&rdquo; </td>
+      <td>the client id of the Otoroshi admin API apikey </td>
+    </tr>
+    <tr>
+      <td><code>app.adminapi.defaultValues.backOfficeApiKeyClientSecret</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;admin-api-apikey-secret&rdquo; </td>
+      <td>the client secret of the Otoroshi admin API apikey </td>
+    </tr>
+    <tr>
+      <td><code>app.adminapi.defaultValues.backOfficeServiceId</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;admin-api-service&rdquo; </td>
+      <td>the id of the service descriptors for the Otoroshi admin API </td>
+    </tr>
+    <tr>
+      <td><code>app.adminapi.proxy.https</code> </td>
+      <td align="center">boolean </td>
+      <td>false </td>
+      <td>whether or not the current Otoroshi instance serves its content over https. This setting is useful for the backoffice UI to access Otoroshi admin API </td>
+    </tr>
+    <tr>
+      <td><code>app.adminapi.proxy.local</code> </td>
+      <td align="center">boolean </td>
+      <td>true </td>
+      <td>whether or not the admin API is accessible on <code>127.0.0.1</code>. This setting is useful for the backoffice UI to access Otoroshi admin API </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#db-configuration" name="db-configuration" class="anchor"><span class="anchor-link"></span></a>DB configuration</h2>
+<p>as Otoroshi supports multiple DB, you have to provide some details about how to connect/configure it.</p>
+<table>
+  <thead>
+    <tr>
+      <th>name </th>
+      <th align="center">type </th>
+      <th>default value </th>
+      <th>description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>app.storage</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;inmemory&rdquo; </td>
+      <td>what kind of storage engine you want to use. Possible values are <code>inmemory</code>, <code>leveldb</code>, <code>redis</code>, <code>cassandra</code> </td>
+    </tr>
+    <tr>
+      <td><code>app.importFrom</code> </td>
+      <td align="center">string </td>
+      <td> </td>
+      <td>a file path or a URL to an Otoroshi export file. If the DB is empty at startup, this file will be used to import data to the empty DB </td>
+    </tr>
+    <tr>
+      <td><code>app.importFromHeaders</code> </td>
+      <td align="center">array </td>
+      <td> [] </td>
+      <td>a list of <code>:</code> separated header to use if the <code>app.importFrom</code> setting is a URL </td>
+    </tr>
+    <tr>
+      <td><code>app.redis.host</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;localhost&rdquo; </td>
+      <td>the host of the redis server </td>
+    </tr>
+    <tr>
+      <td><code>app.redis.port</code> </td>
+      <td align="center">number </td>
+      <td>6379 </td>
+      <td>the port of the redis server </td>
+    </tr>
+    <tr>
+      <td><code>app.redis.slaves</code> </td>
+      <td align="center">array </td>
+      <td>[] </td>
+      <td>the redis slaves lists </td>
+    </tr>
+    <tr>
+      <td><code>app.leveldb.path</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;./leveldb&rdquo; </td>
+      <td>the path where levelDB files will be written </td>
+    </tr>
+    <tr>
+      <td><code>app.cassandra.hosts</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;127.0.0.1&rdquo; </td>
+      <td>the host of the cassandra server </td>
+    </tr>
+    <tr>
+      <td><code>app.cassandra.host</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;127.0.0.1&rdquo; </td>
+      <td>the list of cassandra hosts </td>
+    </tr>
+    <tr>
+      <td><code>app.cassandra.port</code> </td>
+      <td align="center">number </td>
+      <td>9042 </td>
+      <td>the port of the cassandra servers </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#headers-configuration" name="headers-configuration" class="anchor"><span class="anchor-link"></span></a>Headers configuration</h2>
+<p>Otoroshi uses a fair amount of http headers in order to work properly. The name of those headers are customizable to fit your needs.</p>
+<table>
+  <thead>
+    <tr>
+      <th>name </th>
+      <th align="center">type </th>
+      <th>default value </th>
+      <th>description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>otoroshi.headers.trace.label</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Viz-From-Label&rdquo; </td>
+      <td>header to pass request tracing informations </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.trace.from</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Viz-From&rdquo; </td>
+      <td>header to pass request tracing informations (ip address) </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.trace.parent</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Parent-Request&rdquo; </td>
+      <td>header to pass request tracing informations (parent request id) </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.request.adminprofile</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Admin-Profile&rdquo; </td>
+      <td>header to pass admin name when the admin API is called from the Otoroshi backoffice </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.request.clientid</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Client-Id&rdquo; </td>
+      <td>header to pass apikey client id </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.request.clientsecret</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Client-Secret&rdquo; </td>
+      <td>header to pass apikey client secret </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.request.id</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Request-Id&rdquo; </td>
+      <td>header containing the id of the current request </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.response.proxyhost</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Proxied-Host&rdquo; </td>
+      <td>header containing the proxied host </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.response.error</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Error&rdquo; </td>
+      <td>header containing whether or not the request generated an error </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.response.errormsg</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Error-Msg&rdquo; </td>
+      <td>header containing error message if some </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.response.proxylatency</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Proxy-Latency&rdquo; </td>
+      <td>header containing the current latency induced by Otoroshi </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.response.upstreamlatency</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Upstream-Latency&rdquo; </td>
+      <td>header containing the current latency from Otoroshi to service backend </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.response.dailyquota</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Daily-Calls-Remaining&rdquo; </td>
+      <td>header containing the number of remaining daily call (apikey) </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.response.monthlyquota</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Monthly-Calls-Remaining&rdquo; </td>
+      <td>header containing the number of remaining monthly call (apikey) </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.comm.state</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-State&rdquo; </td>
+      <td>header containing a random value for secured mode </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.comm.stateresp</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-State-Resp&rdquo; </td>
+      <td>header containing a random value for secured mode </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.comm.claim</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Claim&rdquo; </td>
+      <td>header containing a JWT token for secured mode </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.healthcheck.test</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Health-Check-Logic-Test&rdquo; </td>
+      <td>header containing a logic test for healthcheck </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.healthcheck.testresult</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Health-Check-Logic-Test-Result&rdquo; </td>
+      <td>header containing the result of a logic test for healthcheck </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.jwt.issuer</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi&rdquo; </td>
+      <td>the name of the issuer for the JWT token </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.headers.canary.tracker</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi-Canary-Id&rdquo; </td>
+      <td>header containing the ID of the canary session if enabled </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#play-specific-configuration" name="play-specific-configuration" class="anchor"><span class="anchor-link"></span></a>Play specific configuration</h2>
+<p>As Otoroshi is a <a href="https://www.playframework.com/">Play app</a>, you should take a look at <a href="https://www.playframework.com/documentation/2.5.x/Configuration">Play configuration documentation</a> to tune its internal configuration</p>
+<table>
+  <thead>
+    <tr>
+      <th>name </th>
+      <th align="center">type </th>
+      <th>default value </th>
+      <th>description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>http.port</code> </td>
+      <td align="center">number </td>
+      <td>8080 </td>
+      <td>the http port used by Otoroshi. You can use &lsquo;disabled&rsquo; as value if you don&rsquo;t want to use http </td>
+    </tr>
+    <tr>
+      <td><code>https.port</code> </td>
+      <td align="center">number </td>
+      <td>disabled </td>
+      <td>the https port used by Otoroshi. You can use &lsquo;disabled&rsquo; as value if you don&rsquo;t want to use https </td>
+    </tr>
+    <tr>
+      <td><code>play.crypto.secret</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;secret&rdquo; </td>
+      <td>the secret used to sign Otoroshi session cookie </td>
+    </tr>
+    <tr>
+      <td><code>play.http.session.secure</code> </td>
+      <td align="center">boolean </td>
+      <td>false </td>
+      <td>whether or not the Otoroshi backoffice session will be served over https only </td>
+    </tr>
+    <tr>
+      <td><code>play.http.session.httpOnly</code> </td>
+      <td align="center">boolean </td>
+      <td>true </td>
+      <td>whether or not the Otoroshi backoffice session will be accessible from Javascript </td>
+    </tr>
+    <tr>
+      <td><code>play.http.session.maxAge</code> </td>
+      <td align="center">number </td>
+      <td>259200000 </td>
+      <td>the number of seconds before Otoroshi backoffice session expired </td>
+    </tr>
+    <tr>
+      <td><code>play.http.session.domain</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;.foo.bar&rdquo; </td>
+      <td>the domain on which the Otoroshi backoffice session is authorized </td>
+    </tr>
+    <tr>
+      <td><code>play.http.session.cookieName</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;otoroshi-session&rdquo; </td>
+      <td>the name of the Otoroshi backoffice session </td>
+    </tr>
+    <tr>
+      <td><code>play.ws.play.ws.useragent</code> </td>
+      <td align="center">string </td>
+      <td>&ldquo;Otoroshi&rdquo; </td>
+      <td>the user agent sent by Otoroshi if not present on the original http request </td>
+    </tr>
+    <tr>
+      <td><code>play.server.https.keyStore.path</code> </td>
+      <td align="center">string </td>
+      <td> </td>
+      <td>the path to the keystore containing the private key and certificate, if not provided generates a keystore for you </td>
+    </tr>
+    <tr>
+      <td><code>play.server.https.keyStore.type</code> </td>
+      <td align="center">string </td>
+      <td> </td>
+      <td>the key store type, defaults to JKS </td>
+    </tr>
+    <tr>
+      <td><code>play.server.https.keyStore.password</code> </td>
+      <td align="center">string </td>
+      <td> </td>
+      <td>the password, defaults to a blank password </td>
+    </tr>
+    <tr>
+      <td><code>play.server.https.keyStore.algorithm</code> </td>
+      <td align="center">string </td>
+      <td> </td>
+      <td>the key store algorithm, defaults to the platforms default algorithm </td>
+    </tr>
+  </tbody>
+</table>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../firstrun/env.html">Config. with ENVs</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../firstrun/configfile.html#config-with-files" class="header">Config. with files</a>
+  <ul>
+    <li><a href="../firstrun/configfile.html#common-configuration" class="header">Common configuration</a></li>
+    <li><a href="../firstrun/configfile.html#admin-api-configuration" class="header">Admin API configuration</a></li>
+    <li><a href="../firstrun/configfile.html#db-configuration" class="header">DB configuration</a></li>
+    <li><a href="../firstrun/configfile.html#headers-configuration" class="header">Headers configuration</a></li>
+    <li><a href="../firstrun/configfile.html#play-specific-configuration" class="header">Play specific configuration</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
