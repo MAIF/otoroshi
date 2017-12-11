@@ -36,6 +36,7 @@
 <div class="nav-toc">
 <ul>
   <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
   <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
@@ -50,6 +51,8 @@
     <li><a href="../firstrun/configfile.html" class="active page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
     <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
   <ul>
@@ -131,6 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-toc">
 <ul>
   <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
   <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
@@ -145,6 +149,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../firstrun/configfile.html" class="active page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
     <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
   <ul>
@@ -654,6 +660,63 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     </tr>
   </tbody>
 </table>
+<h2><a href="#example-of-configuration-file" name="example-of-configuration-file" class="anchor"><span class="anchor-link"></span></a>Example of configuration file</h2>
+<pre class="prettyprint"><code class="language-conf">include &quot;base.conf&quot;
+
+http.port = 8080
+
+app {
+  storage = &quot;leveldb&quot;
+  importFrom = &quot;./my-state.json&quot;
+  env = &quot;prod&quot;
+  domain = &quot;foo.bar&quot;
+  rootScheme = &quot;http&quot;
+  snowflake {
+    seed = 0
+  }
+  events {
+    maxSize = 1000
+  }
+  backoffice {
+    subdomain = &quot;otoroshi&quot;
+    session {
+      exp = 86400000
+    }
+  }
+  privateapps {
+    subdomain = &quot;privateapps&quot;
+    session {
+      exp = 86400000
+    }
+  }
+  adminapi {
+    targetSubdomain = &quot;otoroshi-admin-internal-api&quot;
+    exposedDubdomain = &quot;otoroshi-api&quot;
+    defaultValues {
+      backOfficeGroupId = &quot;admin-api-group&quot;
+      backOfficeApiKeyClientId = &quot;admin-api-apikey-id&quot;
+      backOfficeApiKeyClientSecret = &quot;admin-api-apikey-secret&quot;
+      backOfficeServiceId = &quot;admin-api-service&quot;
+    }
+  }
+  claim {
+    sharedKey = &quot;mysecret&quot;
+  }
+  leveldb {
+    path = &quot;./leveldb&quot;
+  }
+}
+
+play.http {
+  session {
+    secure = false
+    httpOnly = true
+    maxAge = 2592000000
+    domain = &quot;.foo.bar&quot;
+    cookieName = &quot;oto-sess&quot;
+  }
+}
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../firstrun/env.html">Config. with ENVs</a></p>
 </div>
@@ -671,6 +734,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../firstrun/configfile.html#db-configuration" class="header">DB configuration</a></li>
     <li><a href="../firstrun/configfile.html#headers-configuration" class="header">Headers configuration</a></li>
     <li><a href="../firstrun/configfile.html#play-specific-configuration" class="header">Play specific configuration</a></li>
+    <li><a href="../firstrun/configfile.html#example-of-configuration-file" class="header">Example of configuration file</a></li>
   </ul></li>
 </ul>
 </div>

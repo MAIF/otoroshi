@@ -4,11 +4,14 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 
 **Otoroshi** is also a modern http reverse proxy with a thin layer of api management written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
 
+@@@ div { .centered-img }
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
+@@@
 
 @@@ index
 
 * [About Otoroshi](about.md)
+* [Architecture](archi.md)
 * [Features](features.md)
 * [Quickstart](quickstart.md)
 * [Get otoroshi](getotoroshi/index.md)
@@ -20,6 +23,8 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
     * [use custom config file](firstrun/configfile.md)
     * [use ENV](firstrun/env.md)
     * [initial state](firstrun/initialstate.md)
+    * [Hosts](firstrun/host.md)
+    * [Run](firstrun/run.md)
 * [Setup](setup/index.md)
     * [create admins](setup/admin.md)
     * [configure danger zone](setup/dangerzone.md)

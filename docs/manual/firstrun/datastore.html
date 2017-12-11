@@ -36,6 +36,7 @@
 <div class="nav-toc">
 <ul>
   <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
   <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
@@ -50,6 +51,8 @@
     <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
     <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
   <ul>
@@ -131,6 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-toc">
 <ul>
   <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
   <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
@@ -145,6 +149,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
     <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
   <ul>
@@ -211,7 +217,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#choose-your-datastore" name="choose-your-datastore" class="anchor"><span class="anchor-link"></span></a>Choose your datastore</h1>
-<p>Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case. </p>
+<p>Right now, Otoroshi supports multiple datastore. </p>
+<p>You can choose one datastore over another depending on your use case. </p>
 <p>Available datastores are the following </p>
 <ul>
   <li>in memory</li>
@@ -219,7 +226,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>redis</li>
   <li>cassandra</li>
 </ul>
-<img src="../schemas/datastores.png" />
+<p>The levelDB datastore is pretty handy for testing purposes, but is not supposed to be used in production mode.</p>
+<p>The in-memory datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness. But in that case, you need to provide a way to feed the deployed in-memory instances after the initial boot. In a future release, we will provide a master/workers slave based on Otoroshi in memory instances and kafka (see <a href="https://github.com/MAIFX/opun-otoroshi/issues/140">https://github.com/MAIFX/opun-otoroshi/issues/140</a>)</p>
+<p>The redis datastore is quite nice when you want to easily deploy several Otoroshi instances. If you need a datastore more scalable than redis, then you can use the cassandra datastore.</p>
+<p>We plan to add more datastores support in the future :)</p><div class="centered-img">
+<img src="../schemas/datastores.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../firstrun/configfile.html">Config. with files</a></p>
 </div>

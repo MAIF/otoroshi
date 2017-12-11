@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Features · Otoroshi</title>
+<title>Architecture · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-docs'/>
@@ -36,8 +36,8 @@
 <div class="nav-toc">
 <ul>
   <li><a href="about.html" class="page">About Otoroshi</a></li>
-  <li><a href="archi.html" class="page">Architecture</a></li>
-  <li><a href="features.html" class="active page">Features</a></li>
+  <li><a href="archi.html" class="active page">Architecture</a></li>
+  <li><a href="features.html" class="page">Features</a></li>
   <li><a href="quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
@@ -134,8 +134,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-toc">
 <ul>
   <li><a href="about.html" class="page">About Otoroshi</a></li>
-  <li><a href="archi.html" class="page">Architecture</a></li>
-  <li><a href="features.html" class="active page">Features</a></li>
+  <li><a href="archi.html" class="active page">Architecture</a></li>
+  <li><a href="features.html" class="page">Features</a></li>
   <li><a href="quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
@@ -207,7 +207,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="index.html">Otoroshi</a></li>
-  <li>Features</li>
+  <li>Architecture</li>
 </ul>
 </div>
 </div>
@@ -215,95 +215,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1>
-<p>All the features supported by <strong>Otoroshi</strong> are listed below</p>
-<ul>
-  <li>Dynamic changes at runtime without full reload</li>
-  <li>Can proxy any HTTP server (HTTP2 is not supported yet, but will be soon enough)</li>
-  <li>Can proxy websockets</li>
-  <li>Full featured admin Rest Api to control Otoroshi the way you want. Included, Swagger descriptor</li>
-  <li>Gorgeous React Web UI</li>
-  <li>Full end-to-end streaming of HTTP requests and responses</li>
-  <li>Completely non blocking and async. internals</li>
-  <li>Offical Docker image</li>
-  <li>Multi backend datastore support
-    <ul>
-      <li>Redis</li>
-      <li>LevelDB</li>
-      <li>In memory</li>
-      <li>Cassandra</li>
-    </ul>
-  </li>
-  <li>Service is private (Api key access) by default with exclusions</li>
-  <li>Support any domain name per service</li>
-  <li>Support wildcard domain names per service</li>
-  <li>Support routing headers for a service (ie. for service versioning)</li>
-  <li>Support adding headers for a service request (ie. add Authorization header)</li>
-  <li>Support custom html errors templates per service</li>
-  <li>Configurable circuit breaker and retries (with backoff) on network errors per service</li>
-  <li>Round Robin load balancing per service</li>
-  <li>Services can be declared private (private apps) using an Auth0 domain</li>
-  <li>Support for canary mode per service</li>
-  <li>Configurable health check per service</li>
-  <li>Support IP addresses blacklist per service (with wildcard support)</li>
-  <li>Support IP addresses whitelist per service (with wildcard support)</li>
-  <li>Support mutiple Api keys per service</li>
-  <li>Support configurable throttling quota per Api key</li>
-  <li>Support configurable daily quota per Api key</li>
-  <li>Support configurable monthly quota per Api key</li>
-  <li>Api keys are authorized a group of services</li>
-  <li>Api keys can be passed with custom headers, <code>Authorization: Basic</code> headers or <code>Authorization: Bearer</code> JWT token signed with Api key secret</li>
-  <li>Add current Api key quotas usage in response headers</li>
-  <li>Add current latencies in response headers</li>
-  <li>Support service duplication through web UI</li>
-  <li>Maintenance page per service</li>
-  <li>Build page per service</li>
-  <li>Force HTTPS usage per service</li>
-  <li>Force secured exchanges with exclusions per service</li>
-  <li>OpenAPI documentation displayed through web UI per service</li>
-  <li>Live metrics per service (Rest)</li>
-  <li>Metrics and analytics per service (if used with the Elastic connector)</li>
-  <li>Global metrics and analytics (if used with the Elastic connector)</li>
-  <li>Global audit log on admins actions</li>
-  <li>Global alert log on admins actions</li>
-  <li>Internal events can be sent outside using webhooks or Kafka topic</li>
-  <li>Audit events can be sent outside using webhooks or Kafka topic</li>
-  <li>Alerts events can be sent outside using webhooks or Kafka topic</li>
-  <li>Alerts can be send to actual people by email using Mailgun</li>
-  <li>Support global IP addresses blacklist (with wildcard support)</li>
-  <li>Support global IP addresses whitelist (with wildcard support)</li>
-  <li>Support global endless responses for IP addresses (128 Gb of 0 for each response)</li>
-  <li>Support global throttling quota</li>
-  <li>Support global throttling quota per IP address (with wildcard support)</li>
-  <li>Support global max number of concurrent connections</li>
-  <li>Support global request tracing</li>
-  <li>Support full JSON export of the reverse proxy state</li>
-  <li>Support full JSON import of the reverse proxy state</li>
-  <li>Support initial internal state import from JSON local file</li>
-  <li>Support initial internal state import from JSON file over HTTP</li>
-  <li>Enforce request URL max size</li>
-  <li>Enforce request headers max size</li>
-  <li>Enforce request cookies max size</li>
-  <li>Global live metrics</li>
-  <li>Send metrics to a StatsD/Datadog agent</li>
-  <li>Advanced CleverCloud integration (create services from CleverCloud apps)</li>
-  <li>Embedded documentation</li>
-  <li>Global services map and top 10</li>
-  <li>Support admin login with Auth0</li>
-  <li>Support admin login with FIDO U2F device</li>
-  <li>Support runtime changes of internal log levels</li>
-  <li>Rust CLI running on MacOS, Linux and Windows</li>
-  <li>Connectors to various HTTP services providers
-    <ul>
-      <li>generic connector API</li>
-      <li>Clever Cloud</li>
-      <li>Rancher</li>
-      <li>Kubernetes</li>
-    </ul>
-  </li>
-</ul>
+<h1><a href="#architecture" name="architecture" class="anchor"><span class="anchor-link"></span></a>Architecture</h1>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="quickstart.html">Try Otoroshi in 5 minutes</a></p>
+<p><strong>Next:</strong> <a href="features.html">Features</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>

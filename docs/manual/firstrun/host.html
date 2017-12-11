@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Connectors · Otoroshi</title>
+<title>Setup your hosts · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-docs'/>
@@ -51,7 +51,7 @@
     <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
     <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
-    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/host.html" class="active page">Setup your hosts</a></li>
     <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
@@ -88,7 +88,7 @@
     <li><a href="../deploy/clevercloud.html" class="page">CleverCloud</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
   </ul></li>
-  <li><a href="../connectors/index.html" class="active page">Connectors</a>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
     <li><a href="../connectors/clevercloud.html" class="page">CleverCloud</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes</a></li>
@@ -149,7 +149,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
     <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
-    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/host.html" class="active page">Setup your hosts</a></li>
     <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
@@ -186,7 +186,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/clevercloud.html" class="page">CleverCloud</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
   </ul></li>
-  <li><a href="../connectors/index.html" class="active page">Connectors</a>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
     <li><a href="../connectors/clevercloud.html" class="page">CleverCloud</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes</a></li>
@@ -207,7 +207,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li>Connectors</li>
+  <li><a href="../firstrun/index.html">First run</a></li>
+  <li>Setup your hosts</li>
 </ul>
 </div>
 </div>
@@ -215,9 +216,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#connectors" name="connectors" class="anchor"><span class="anchor-link"></span></a>Connectors</h1>
+<h1><a href="#setup-your-hosts" name="setup-your-hosts" class="anchor"><span class="anchor-link"></span></a>Setup your hosts</h1>
+<p>The last thing you need to do is to add the following line to your <code>/etc/hosts</code> file. It is not actually needed to run Otoroshi, but it will be useful if you want to try the backoffice in your browser.</p>
+<pre><code>127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar
+</code></pre>
+<p>of course, you have to change the values according to the setting you put in Otoroshi configuration</p>
+<ul>
+  <li><code>app.domain</code> =&gt; <code>foo.bar</code></li>
+  <li><code>app.backoffice.subdomain</code> =&gt; <code>otoroshi</code></li>
+  <li><code>app.privateapps.subdomain</code> =&gt; <code>privateapps</code></li>
+  <li><code>app.adminapi.exposedDubdomain</code> =&gt; <code>otoroshi-api</code></li>
+  <li><code>app.adminapi.targetSubdomain</code> =&gt; <code>otoroshi-admin-internal-api</code></li>
+</ul>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../connectors/clevercloud.html">CleverCloud</a></p>
+<p><strong>Next:</strong> <a href="../firstrun/run.html">Run Otoroshi</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>

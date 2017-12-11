@@ -99,3 +99,62 @@ As Otoroshi is a [Play app](https://www.playframework.com/), you should take a l
 | `play.server.https.keyStore.password` | string | | the password, defaults to a blank password | 
 | `play.server.https.keyStore.algorithm` | string | | the key store algorithm, defaults to the platforms default algorithm |
 
+## Example of configuration file
+
+```conf
+include "base.conf"
+
+http.port = 8080
+
+app {
+  storage = "leveldb"
+  importFrom = "./my-state.json"
+  env = "prod"
+  domain = "foo.bar"
+  rootScheme = "http"
+  snowflake {
+    seed = 0
+  }
+  events {
+    maxSize = 1000
+  }
+  backoffice {
+    subdomain = "otoroshi"
+    session {
+      exp = 86400000
+    }
+  }
+  privateapps {
+    subdomain = "privateapps"
+    session {
+      exp = 86400000
+    }
+  }
+  adminapi {
+    targetSubdomain = "otoroshi-admin-internal-api"
+    exposedDubdomain = "otoroshi-api"
+    defaultValues {
+      backOfficeGroupId = "admin-api-group"
+      backOfficeApiKeyClientId = "admin-api-apikey-id"
+      backOfficeApiKeyClientSecret = "admin-api-apikey-secret"
+      backOfficeServiceId = "admin-api-service"
+    }
+  }
+  claim {
+    sharedKey = "mysecret"
+  }
+  leveldb {
+    path = "./leveldb"
+  }
+}
+
+play.http {
+  session {
+    secure = false
+    httpOnly = true
+    maxAge = 2592000000
+    domain = ".foo.bar"
+    cookieName = "oto-sess"
+  }
+}
+```
