@@ -6,8 +6,6 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
 
-@@toc
-
 @@@ index
 
 * [About Otoroshi](about.md)
