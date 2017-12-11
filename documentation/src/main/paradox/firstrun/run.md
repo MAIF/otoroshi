@@ -22,3 +22,15 @@ java -jar otoroshi-vx.x.x.jar
 docker run -p "8080:8080" otoroshi
 ```
 
+
+## Example
+
+```sh
+$ java -Xms2G -Xmx8G -Dhttp.port=8080 -Dapp.importFrom=/home/user/otoroshi-2017-12-05-11-04-39.json -Dconfig.file=/home/user/oto.conf -jar ./otoroshi.jar
+
+[warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[warn] otoroshi-env - Importing from: /Users/mathieuancelin/Downloads/dev-otoroshi-2017-12-05-11-04-39.json
+[info] play.api.Play - Application started (Prod)
+[info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+```

@@ -229,6 +229,15 @@ cd otoroshi-vx.x.x
 <h2><a href="#from-docker" name="from-docker" class="anchor"><span class="anchor-link"></span></a>From docker</h2>
 <pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; otoroshi
 </code></pre>
+<h2><a href="#example" name="example" class="anchor"><span class="anchor-link"></span></a>Example</h2>
+<pre class="prettyprint"><code class="language-sh">$ java -Xms2G -Xmx8G -Dhttp.port=8080 -Dapp.importFrom=/home/user/otoroshi-2017-12-05-11-04-39.json -Dconfig.file=/home/user/oto.conf -jar ./otoroshi.jar
+
+[warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[warn] otoroshi-env - Importing from: /Users/mathieuancelin/Downloads/dev-otoroshi-2017-12-05-11-04-39.json
+[info] play.api.Play - Application started (Prod)
+[info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../setup/index.html">Setup Otoroshi</a></p>
 </div>
@@ -244,6 +253,7 @@ cd otoroshi-vx.x.x
     <li><a href="../firstrun/run.html#from-zip-file" class="header">From .zip file</a></li>
     <li><a href="../firstrun/run.html#from-jar-file" class="header">From .jar file</a></li>
     <li><a href="../firstrun/run.html#from-docker" class="header">From docker</a></li>
+    <li><a href="../firstrun/run.html#example" class="header">Example</a></li>
   </ul></li>
 </ul>
 </div>
