@@ -14,7 +14,7 @@ then just run it
 docker run -p "8080:8080" otoroshi
 ```
 
-you can also pass usefull args like 
+you can also pass useful args like 
 
 ```
 docker run -p "8080:8080" otoroshi -Dconfig.file=/home/user/otoroshi.conf -Dlogger.file=./home/user/otoroshi.xml
