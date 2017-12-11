@@ -14,7 +14,15 @@ then just run it
 docker run -p "8080:8080" otoroshi
 ```
 
-you can also provide some ENV variable using the `--env` flag to customize your Otoroshi instance
+you can also pass usefull args like 
+
+```
+docker run -p "8080:8080" otoroshi -Dconfig.file=/home/user/otoroshi.conf -Dlogger.file=./home/user/otoroshi.xml
+```
+
+If you want to provide your own config file, you can read @ref:[the documentation about config files](../firstrun/configfile.md)
+
+You can also provide some ENV variable using the `--env` flag to customize your Otoroshi instance
 
 The list of possible env variables is available @ref:[here](../firstrun/env.md)
 
