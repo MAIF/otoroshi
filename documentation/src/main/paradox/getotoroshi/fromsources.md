@@ -43,6 +43,8 @@ yarn install
 yarn build
 ```
 
+you will find the JS bundle at `otoroshi/public/javascripts/bundle/bundle.js`
+
 ## Build the Otoroshi server
 
 go to the `otoroshi` folder and run
