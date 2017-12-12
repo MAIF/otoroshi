@@ -40,7 +40,7 @@ $ java \
 [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ```
 
-if you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log
+if you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log. When you will log into the admin dashboard, Otoroshi will ask you to create another account to avoid security issues.
 
 ```sh
 $ java \
