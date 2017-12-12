@@ -50,7 +50,7 @@
     <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
     <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
-    <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
     <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
     <li><a href="../firstrun/run.html" class="active page">Run Otoroshi</a></li>
   </ul></li>
@@ -148,7 +148,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
     <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
     <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
-    <li><a href="../firstrun/initialstate.html" class="page">Initial state</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
     <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
     <li><a href="../firstrun/run.html" class="active page">Run Otoroshi</a></li>
   </ul></li>
@@ -229,19 +229,31 @@ cd otoroshi-vx.x.x
 <h2><a href="#from-docker" name="from-docker" class="anchor"><span class="anchor-link"></span></a>From docker</h2>
 <pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; otoroshi
 </code></pre>
-<h2><a href="#example" name="example" class="anchor"><span class="anchor-link"></span></a>Example</h2>
+<h2><a href="#run-examples" name="run-examples" class="anchor"><span class="anchor-link"></span></a>Run examples</h2>
 <pre class="prettyprint"><code class="language-sh">$ java \
   -Xms2G \
   -Xmx8G \
   -Dhttp.port=8080 \
   -Dapp.importFrom=/home/user/otoroshi.json \
-  -Dconfig.file=/home/user/otoroshi.conf -jar \
-  ./otoroshi.jar
+  -Dconfig.file=/home/user/otoroshi.conf \
+  -jar ./otoroshi.jar
 
 [warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
 [warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
-[warn] otoroshi-env - Importing from: /Users/mathieuancelin/Downloads/dev-otoroshi-2017-12-05-11-04-39.json
+[warn] otoroshi-env - Importing from: /home/user/otoroshi.json
 [info] play.api.Play - Application started (Prod)
+[info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+</code></pre>
+<p>if you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log</p>
+<pre class="prettyprint"><code class="language-sh">$ java \
+  -Xms2G \
+  -Xmx8G \
+  -Dhttp.port=8080 \
+  -jar otoroshi.jar
+
+[warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[warn] otoroshi-env - You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / HHUsiF2UC3OPdmg0lGngEv3RrbIwWV5W[info] play.api.Play - Application started (Prod)
 [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 </code></pre>
 <div class="nav-next">
@@ -259,7 +271,7 @@ cd otoroshi-vx.x.x
     <li><a href="../firstrun/run.html#from-zip-file" class="header">From .zip file</a></li>
     <li><a href="../firstrun/run.html#from-jar-file" class="header">From .jar file</a></li>
     <li><a href="../firstrun/run.html#from-docker" class="header">From docker</a></li>
-    <li><a href="../firstrun/run.html#example" class="header">Example</a></li>
+    <li><a href="../firstrun/run.html#run-examples" class="header">Run examples</a></li>
   </ul></li>
 </ul>
 </div>

@@ -22,8 +22,7 @@ java -jar otoroshi-vx.x.x.jar
 docker run -p "8080:8080" otoroshi
 ```
 
-
-## Example
+## Run examples
 
 ```sh
 $ java \
@@ -31,12 +30,27 @@ $ java \
   -Xmx8G \
   -Dhttp.port=8080 \
   -Dapp.importFrom=/home/user/otoroshi.json \
-  -Dconfig.file=/home/user/otoroshi.conf -jar \
-  ./otoroshi.jar
+  -Dconfig.file=/home/user/otoroshi.conf \
+  -jar ./otoroshi.jar
 
 [warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
 [warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
-[warn] otoroshi-env - Importing from: /Users/mathieuancelin/Downloads/dev-otoroshi-2017-12-05-11-04-39.json
+[warn] otoroshi-env - Importing from: /home/user/otoroshi.json
 [info] play.api.Play - Application started (Prod)
+[info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+```
+
+if you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log
+
+```sh
+$ java \
+  -Xms2G \
+  -Xmx8G \
+  -Dhttp.port=8080 \
+  -jar otoroshi.jar
+
+[warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[warn] otoroshi-env - You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / HHUsiF2UC3OPdmg0lGngEv3RrbIwWV5W[info] play.api.Play - Application started (Prod)
 [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ```

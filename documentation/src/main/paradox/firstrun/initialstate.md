@@ -1,4 +1,4 @@
-# Initial state
+# Import initial state
 
 Now you are almost ready to run Otoroshi for the first time, but maybe you want to import some previous Otoroshi data in your current datastore.
 
