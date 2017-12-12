@@ -21,5 +21,5 @@ The redis datastore is quite nice when you want to easily deploy several Otorosh
 We plan to add more datastores support in the future :)
 
 @@@ div { .centered-img }
-<img src="../schemas/datastores.png" />
+<img src="../img/datastores.png" />
 @@@

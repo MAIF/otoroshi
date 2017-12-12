@@ -8,7 +8,7 @@ cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
 proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 @@@ div { .centered-img }
-<img src="./schemas/architecture-1.png" />
+<img src="./img/architecture-1.png" />
 @@@
 
 Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
@@ -19,5 +19,5 @@ cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
 proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 @@@ div { .centered-img }
-<img src="./schemas/architecture-2.png" />
+<img src="./img/architecture-2.png" />
 @@@
