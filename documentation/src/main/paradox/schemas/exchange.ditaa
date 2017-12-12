@@ -1,6 +1,6 @@
 
                                                    +------------------------+                             +----------+
- /---------\ Otoroshi–Client–Id; xxx               |                        | Otoroshi–State; abcdefghyjk |          |
+ /---------\ Otoroshi–Client–Id; xxx               |                        | Otoroshi–State; yyy         |          |
  |         +-------------------------------------->|                        +---------------------------->|          |
  |         | Otoroshi–Client–Secret; xxxxxxxxxxxxx |                        | Otoroshi–Request–Id; 123456 |          |
  |         |                                       |                        | Otoroshi–Proxied–Host; host |          |
@@ -9,7 +9,7 @@
  | browser | Otoroshi–Proxy–Latency; 42            |        Otoroshi        |                             | Backend  |
  |  cDDD   | Otoroshi–Upstream–Latency; 42         |                        |                             |          |
  |         | Otoroshi–Daily–Calls–Remaining; 42    |         cEA0           |                             |  cGRE    |
- |         | Otoroshi–Monthly–Calls–Remaining; 42  |                        |  Otoroshi–State–Resp; yyyyy |          |
+ |         | Otoroshi–Monthly–Calls–Remaining; 42  |                        |  Otoroshi–State–Resp; yyy   |          |
  |         |<--------------------------------------+                        |<----------------------------+          |
  |         |                                       |                        |                             |          |
  \---------/                                       +------------------------+                             +----------+ 
