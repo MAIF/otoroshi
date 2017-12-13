@@ -34,7 +34,7 @@ It can be a file path or a URL
   "simpleAdmins": [
     {
       "username": "admin@otoroshi.io",
-      "password": "$2a$10$eWVP6A6Jsz0DNMF7Q6Kf5.R2KvCLaT7W6e0rOCOxawORiI0KLUQdS",
+      "password": "xxxxxxxxxxxxxxxxx",
       "label": "Otoroshi Admin",
       "createdAt": 1493971715708
     }

@@ -19,7 +19,11 @@ There is a lot of things you can configure in Otoroshi. By default, Otoroshi pro
 
 ## Admin API configuration
 
-when Otoroshi starts for the first time, the DB is empty. As Otoroshi uses Otoroshi to expose its admin REST API, you have to provide the details for the admin API exposition. **This part is super important** because if you go to production with the default values, your Otoroshi server won't be secured anymore. **YOU HAVE TO CUSTOMIZE THE FOLLOWING VALUES BEFORE GOING TO PRODUCTION !!**
+when Otoroshi starts for the first time, the DB is empty. As Otoroshi uses Otoroshi to expose its admin REST API, you have to provide the details for the admin API exposition. **This part is super important** because if you go to production with the default values, your Otoroshi server won't be secured anymore. 
+
+@@@ warning
+YOU HAVE TO CUSTOMIZE THE FOLLOWING VALUES BEFORE GOING TO PRODUCTION !!
+@@@
 
 Here, some terms in the description will be osbcure to you, but you will learm their meaning in the following chapters :)
 

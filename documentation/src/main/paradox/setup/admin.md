@@ -5,6 +5,12 @@
 click on the `Create an admin user` warning popup, or go to `settings (cog icon) / Admins`
 
 @@@ div { .centered-img }
+<img src="../img/go-to-admins.png" />
+@@@
+
+and you will see the list of registered admin users
+
+@@@ div { .centered-img }
 <img src="../img/first-admins-screen.png" />
 @@@
 
@@ -42,6 +48,10 @@ Otoroshi will then ask you to plug your FIDO U2F device and touch it to finish r
 
 @@@ div { .centered-img }
 <img src="https://images-na.ssl-images-amazon.com/images/I/61hwQNWpSEL._SY542_.jpg" width="200" />
+@@@
+
+@@@ warning
+To be able to use FIDO U2F devices, Otoroshi must be served over https
 @@@
 
 ## Discard admin user
