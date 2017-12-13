@@ -90,3 +90,5 @@ sudo echo "127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-in
 ```
 
 Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and login with `admin@otoroshi.io:password` ;-)
+
+If you want to know more about Otoroshi, you should continue reading the documentation starting with @ref:[how to get Otoroshi](./getotoroshi/index.md)
