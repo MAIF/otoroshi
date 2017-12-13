@@ -8,6 +8,60 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
 @@@
 
+## Installation
+
+*TODO : change jar url when release is done*
+
+```sh
+# wget --quiet 'https://github.com/MAIF/otoroshi/releases/download/v1.0.0/otoroshi.jar'
+wget --quiet 'https://github.com/MAIFX/otoroshi-tryout/raw/master/otoroshi.jar'
+sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar" >> /etc/hosts
+java -jar otoroshi.jar
+```
+
+now open your browser to http://otoroshi.foo.bar:8080/ or if you want better instructions, go to the @ref:[Quick Start](./quickstart.md)
+
+## Documentation
+
+* @ref:[About Otoroshi](./about.md)
+* @ref:[Architecture](./archi.md)
+* @ref:[Features](./features.md)
+* @ref:[Try Otoroshi in 5 minutes](./quickstart.md)
+* @ref:[Get Otoroshi](./getotoroshi/index.md)
+* @ref:[First run](./firstrun/index.md)
+* @ref:[Setup Otoroshi](./setup/index.md)
+* @ref:[Basic tasks](./basictasks/index.md)
+* @ref:[Other tasks](./othertasks/index.md)
+* @ref:[Thrid party Integrations](./integrations/index.md)
+* @ref:[Admin REST API](./api.md)
+* @ref:[Rust CLI](./cli.md)
+* @ref:[Deploy to production](./deploy/index.md)
+* @ref:[Connectors](./connectors/index.md)
+
+## Discussion
+
+Join the [Otoroshi](https://gitter.im/MAIF/otoroshi) channel on the [MAIF Gitter](https://gitter.im/MAIF)
+
+## Sources
+
+The sources of Otoroshi are available on [Github](https://github.com/MAIF/otoroshi).
+
+## Logo
+
+You can find the official Otoroshi logo [on GitHub](https://github.com/MAIF/otoroshi/blob/master/resources/otoroshi-logo.png).
+
+## Changelog
+
+Every release, along with the migration instructions, is documented on the [Github Releases](https://github.com/MAIF/otoroshi/releases) page.
+
+## Patrons
+
+The work on Otoroshi was funded by <a href="https://www.maif.fr/" target="_blank">MAIF</a> with the help of the community.
+
+## Licence 
+
+Otoroshi is Open Source and available under the [Apache 2 License](https://opensource.org/licenses/Apache-2.0)
+
 @@@ index
 
 * [About Otoroshi](about.md)
@@ -56,3 +110,7 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
     * [Elastic](connectors/elastic.md)
 
 @@@
+
+*TODO*
+
+* add badges
