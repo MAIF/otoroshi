@@ -221,11 +221,33 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The right solution was to use a reverse proxy or some kind of API Gateway able to provide tracability, logging, security with apikeys, quotas, DNS as a service locator, etc. We needed something easy to use, with a human friendly UI, a nice API to extends its features, true hot reconfiguration, able to generate internal events for third party usage. A couple of solutions where available at that time, but not one seems to fit our needs, there was always something missing, too complicated for our needs or not playing well with <a href="https://www.clever-cloud.com/">Clever-Cloud</a> deployment model.</p>
 <p>At some point, we tried to write a small prototype to explore what could be our dream reverse proxy. The design was very simple, there were some rough edges but every major feature needed was there waiting to be enhanced.</p>
 <p><strong>Otoroshi</strong> was born and we decided to move ahead with our hairy monster :)</p>
+<h2><a href="#philosophy" name="philosophy" class="anchor"><span class="anchor-link"></span></a>Philosophy</h2>
+<p>Every OSS product build at <a href="https://www.maif.fr/" target="_blank">MAIF</a> like <a href="https://maif.github.io/izanami/" target="_blank">Izanami</a> follow a common philosophy. </p>
+<ul>
+  <li>The services or API provided should be technology agnostic.</li>
+  <li>HTTP first: HTTP is the right answer to the previous quote</li>
+  <li>API First: The UI is just another client of the API.</li>
+  <li>Secured: The services exposed need authentication for both humans or machines</li>
+  <li>Event based: The services should expose a way to get notified of what happened inside.</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="archi.html">Architecture</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="about.html#about-otoroshi" class="header">About Otoroshi</a>
+  <ul>
+    <li><a href="about.html#philosophy" class="header">Philosophy</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

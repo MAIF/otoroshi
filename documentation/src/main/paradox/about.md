@@ -9,3 +9,13 @@ The right solution was to use a reverse proxy or some kind of API Gateway able t
 At some point, we tried to write a small prototype to explore what could be our dream reverse proxy. The design was very simple, there were some rough edges but every major feature needed was there waiting to be enhanced.
 
 **Otoroshi** was born and we decided to move ahead with our hairy monster :)
+
+## Philosophy 
+
+Every OSS product build at <a href="https://www.maif.fr/" target="_blank">MAIF</a> like <a href="https://maif.github.io/izanami/" target="_blank">Izanami</a> follow a common philosophy. 
+
+* The services or API provided should be technology agnostic.
+* HTTP first: HTTP is the right answer to the previous quote   
+* API First: The UI is just another client of the API. 
+* Secured: The services exposed need authentication for both humans or machines  
+* Event based: The services should expose a way to get notified of what happened inside. 
