@@ -28,6 +28,10 @@ and click on `Register Admin`.
 
 now you can discard the generated admin, confirm, then logout, login with the new admin user and the danger popup will go away
 
+@@@ div { .centered-img }
+<img src="../img/home-page.png" />
+@@@
+
 ## Create admin user with U2F device login
 
 go to `settings (cog icon) / Admins`
