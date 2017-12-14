@@ -1,4 +1,4 @@
-# Monitor your services
+# Monitoring services
 
 ## Service healthcheck
 
