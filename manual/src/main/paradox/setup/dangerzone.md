@@ -129,7 +129,7 @@ for more informations about Clever-Cloud integration and what it does, just go t
 
 ## Import / exports and panic mode
 
-for more details about imports / exports, please go to the @ref:[dedicated chapter](../othertasks/importsexports.md)
+for more details about imports / exports, please go to the @ref:[dedicated chapter](../usage/8-importsexports.md)
 
 About panic mode, it's a unusual feature that allow you to discard all current admin. sessions, allow only admin. with U2F devices to log back, and pass the API in read only mode. Only a person with access to the Otoroshi datastore will be able to turn it back.
 
