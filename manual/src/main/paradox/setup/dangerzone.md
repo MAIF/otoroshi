@@ -38,17 +38,29 @@ now that you have an actual admin account, got to `setting (cog icon) / Danger Z
 
 ## Alerts settings
 
+Each time a dangerous actions or something unusual is happening on Otoroshi, it will create an alert and store it. You can ne notified for each of those alerts using `WebHooks` or emails. To do so, just add the `WebHook` URL and optional headers in the `Danger Zone` or any email address you want (you can add more than one email address). 
+
 @@@ div { .centered-img }
 <img src="../img/danger-zone-6-alerts.png" />
 @@@
 
 ## StatsD settings
 
+Otoroshi is capable of sending internal metrics to a StatsD agent. Just put the host and port of you StatsD agent in the `Danger Zone` to collect those metrics. If you using [Datadog](https://www.datadoghq.com), don't forget to check the dedicated button :)
+
 @@@ div { .centered-img }
 <img src="../img/danger-zone-7-statsd.png" />
 @@@
 
 ## Auth0 settings 
+
+It is possible to configure Otoroshi to allow admins to log in through auth0. Also, Otoroshi provides a feature called `Private apps.` that allow you to force login to an auth0 domain before accessing an app. You can create an Auth0 client (https://manage.auth0.com/#/clients) for each of those features (admins login and private apps. login) and customize it with any rule you want (don't forget allowed callbacks, like `http://otoroshi.foo.bar:8080/backoffice/auth0/callback` and `http://privateapps.foo.bar:8080/backoffice/auth0/callback`). 
+
+Once it's done, go to the settings of each client (https://manage.auth0.com/#/clients/xxxxxxxxxxxxxxxx/settings) to get the informations needed for the `Danger Zone`.
+
+@@@ div { .centered-img }
+<img src="../img/auth0-settings.png" />
+@@@
 
 @@@ div { .centered-img }
 <img src="../img/danger-zone-8-auth0.png" />
