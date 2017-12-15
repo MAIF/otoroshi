@@ -1,32 +1,112 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Otoroshi</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-		<link rel="icon" type="image/png" href="https://github.com/MAIF/otoroshi/raw/master/resources/favicon.png">		
-		<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-		<style>
-			body {
-				display: flex; 
-				justify-content: center; 
-				align-items: center;
-				flex-direction: column;
-				font-family: 'Roboto', sans-serif;
-				background-color: black;
-				color: white;
-				width: 100vw;
-				height: 100vh;
-				margin: 0px;
-				padding: 0px;
-			}
-		</style>
-	</head>
-	<body>
-		<h1>Otoroshi</h1>
-		<a href="./manual/" target="_blank">
-			<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
-		</a>
-		<p>Otoroshi is a modern http reverse proxy with a thin layer of api management</p>
-		<p>coming soon ...</p>
-	</body>
+  <head>
+	<title>Otoroshi</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!--[if lte IE 8]><script src="/assets/js/ie/html5shiv.js"></script><![endif]-->
+	<link rel="stylesheet" href="/assets/css/main.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.1.20/jquery.fancybox.min.css">
+  <link rel="icon" type="image/png" href="/assets/images/logos/favicon.png">
+
+	<!--[if lte IE 8]><link rel="stylesheet" href="/assets/css/ie8.css" /><![endif]-->
+	<!--[if lte IE 9]><link rel="stylesheet" href="/assets/css/ie9.css" /><![endif]-->
+</head>
+
+
+<body class="landing">
+
+<section id="otoroshi" class="wrapper otoroshi-background special" tabindex="-1">
+	<div class="inner">
+		<header class="major">
+			<h2>Otoroshi</h2>
+      <p>
+        The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> 
+        is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. 
+        It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of 
+        the gate to devour those who approach the shrine for only self-serving purposes.
+      </p>
+      
+      <p>
+        <b>Otoroshi</b> is also a modern http reverse proxy with a thin layer of api management 
+        written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> 
+        and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> 
+        team that can handle all the calls to and between your microservices without service 
+        locator and let you change configuration dynamicaly at runtime.
+      </p>
+		</header>
+		<ul class="features">
+			<li class="icon fa-cog">
+				<h3>Easy to configure</h3>
+				<p>No config files, gorgeous admin UI, slick admin API. Live configuration at runtime</p>
+			</li>
+			<li class="icon fa-envira">
+				<h3>Low latency</h3>
+				<p>Built with Scala and reactive programming. Designed, built and benchmarked for high-performances</p>
+			</li>
+		</ul>
+		<section class="spotlight">
+      <div class="content">
+        <ul style="list-style-type: none;text-align: left;">
+					<li>Simple UI and/or API driven</li>
+					<li>Event-Driven</li>
+					<li>Public or Private apps</li>
+					<li>Can proxy WebSockets</li>
+					<li>Can Proxy (almost ;-) anything</li>
+					<li>Optional additional headers for integration</li>
+					<li>Optional <b>U2F</b> Authentication</li>
+					<li>Configurable per-service circuit breaker</li>
+					<li>Global or per-service throttling and IP filtering</li>
+					<li>Optional round-robin load balancing</li>
+					<li>Advanced <a href="https://www.clever-cloud.com">Clever-Cloud</a> integration</li>
+					<li>Services heatlhcheck</li>
+					<li>Multi-datastores support
+						<ul>
+							<li>Redis</li>
+							<li>In-memory</li>
+							<li>Cassandra</li>
+							<li>MongoDB <b>(TODO)</b></li>
+							<li>PostgreSQL <b>(TODO)</b></li>
+						</ul>
+					</li>
+				</ul>
+				<p style="text-align: left">
+						Made with love and much more...
+				</p>
+      </div>
+      <div class="image">
+				<img src="/assets/images/logos/otoroshi.png" alt="Otoroshi">
+				<p>
+        	<i>"Otoroshi is a door keeper, it checks the ones who are looking to go in or go out the temple."</i>
+				</p>
+      </div>
+    </section>
+		<br>
+		<ul class="actions fit">
+			<li><a class="button fit" target="_blank" href="https://github.com/MAIF/otoroshi">On Github</a></li>
+			<li><a class="button special fit" target="_blank" href="/manual/">Documentation</a></li>
+		</ul>
+	</div>
+</section>
+
+<!-- Footer -->
+<footer id="footer">
+	<ul class="copyright">
+		<li>Otoroshi by MAIF</li>
+	</ul>
+</footer>
+
+
+
+<!-- Scripts -->
+<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/js/jquery.scrollex.min.js"></script>
+<script src="/assets/js/jquery.scrolly.min.js"></script>
+<script src="/assets/js/skel.min.js"></script>
+<script src="/assets/js/util.js" |=""></script>
+<!--[if lte IE 8]><script src="/assets/js/ie/respond.min.js"></script><![endif]-->
+<script src="/assets/js/main.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.1.20/jquery.fancybox.min.js"></script>
+</body>
 </html>
