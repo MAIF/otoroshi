@@ -21,5 +21,5 @@ cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
 proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 @@@ div { .centered-img }
-<img src="./img/architecture-2.png" />
+<img src="./img/architecture-2-bis.png" />
 @@@
