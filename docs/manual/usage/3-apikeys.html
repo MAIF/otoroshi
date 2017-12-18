@@ -213,6 +213,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#managing-api-keys" name="managing-api-keys" class="anchor"><span class="anchor-link"></span></a>Managing api keys</h1>
+<p>now that you know how to create service groups and service descriptors, we will see how to create api keys</p>
 <h2><a href="#otoroshi-entities" name="otoroshi-entities" class="anchor"><span class="anchor-link"></span></a>Otoroshi entities</h2>
 <p>There are 3 major entities at the core of Otoroshi</p>
 <ul>
@@ -233,12 +234,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>and you should see the list of api keys for that <code>service descriptor</code></p><div class="centered-img">
 <img src="../img/apikeys-list.png" /></div>
 <h2><a href="#create-an-api-key-for-a-service-descriptor" name="create-an-api-key-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>Create an api key for a service descriptor</h2><div class="centered-img">
-<img src="../img/add-apikey.png" /></div><div class="centered-img">
+<img src="../img/add-apikey.png" /></div>
+<p>now you can add a name for your new apikey, you can also change the client id and the client secret. You can also configure the throttling rate of the apikey (calls per second), and the authorized number of call by day and by month. You can alos activate or de-activate the api key from that screen.</p><div class="centered-img">
 <img src="../img/create-apikey.png" /></div>
 <h2><a href="#update-an-api-key" name="update-an-api-key" class="anchor"><span class="anchor-link"></span></a>Update an api key</h2>
 <p>to update a <code>api key</code>, just click on the edit button <img src="../img/edit.png" /> of your <code>api key</code></p><div class="centered-img">
 <img src="../img/apikey-edit.png" /></div>
-<p>update the name and quotas (if needed) of the <code>api key</code> and click on the <code>Update ApiKey</code> button</p><div class="centered-img">
+<p>update the name, secret, state and quotas (if needed) of the <code>api key</code> and click on the <code>Update ApiKey</code> button</p><div class="centered-img">
 <img src="../img/apikey-update.png" /></div>
 <h2><a href="#delete-an-api-key" name="delete-an-api-key" class="anchor"><span class="anchor-link"></span></a>Delete an api key</h2>
 <p>to delete an <code>api key</code>, just click on the delete button <img src="../img/delete.png" /> of your <code>api key</code></p><div class="centered-img">

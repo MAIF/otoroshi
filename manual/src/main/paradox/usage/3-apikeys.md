@@ -1,5 +1,7 @@
 # Managing api keys
 
+now that you know how to create service groups and service descriptors, we will see how to create api keys
+
 ## Otoroshi entities
 
 There are 3 major entities at the core of Otoroshi
@@ -49,6 +51,8 @@ and you should see the list of api keys for that `service descriptor`
 <img src="../img/add-apikey.png" />
 @@@
 
+now you can add a name for your new apikey, you can also change the client id and the client secret. You can also configure the throttling rate of the apikey (calls per second), and the authorized number of call by day and by month. You can alos activate or de-activate the api key from that screen.
+
 @@@ div { .centered-img }
 <img src="../img/create-apikey.png" />
 @@@
@@ -61,12 +65,11 @@ to update a `api key`, just click on the edit button <img src="../img/edit.png" 
 <img src="../img/apikey-edit.png" />
 @@@
 
-update the name and quotas (if needed) of the `api key` and click on the `Update ApiKey` button
+update the name, secret, state and quotas (if needed) of the `api key` and click on the `Update ApiKey` button
 
 @@@ div { .centered-img }
 <img src="../img/apikey-update.png" />
 @@@
-
 
 ## Delete an api key
 
