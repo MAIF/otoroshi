@@ -25,3 +25,10 @@ Once logged in, the first screen you should see will look like
 as you can see, Otoroshi is not really happy about you being logged with a generated admin account. 
 
 But we will fix that in the next chapter
+
+@@@ index
+
+* [create admins](./admin.md)
+* [configure danger zone](./dangerzone.md)
+
+@@@

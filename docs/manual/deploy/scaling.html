@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Kubernetes · Otoroshi</title>
+<title>Scaling Otoroshi · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -84,12 +84,12 @@
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
     <li><a href="../connectors/clevercloud.html" class="page">Clever-Cloud</a></li>
-    <li><a href="../connectors/kubernetes.html" class="active page">Kubernetes</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher</a></li>
     <li><a href="../connectors/elastic.html" class="page">Elastic</a></li>
   </ul></li>
@@ -180,12 +180,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
     <li><a href="../connectors/clevercloud.html" class="page">Clever-Cloud</a></li>
-    <li><a href="../connectors/kubernetes.html" class="active page">Kubernetes</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher</a></li>
     <li><a href="../connectors/elastic.html" class="page">Elastic</a></li>
   </ul></li>
@@ -203,8 +203,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../connectors/index.html">Connectors</a></li>
-  <li>Kubernetes</li>
+  <li><a href="../deploy/index.html">Deploy to production</a></li>
+  <li>Scaling Otoroshi</li>
 </ul>
 </div>
 </div>
@@ -212,13 +212,32 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#kubernetes" name="kubernetes" class="anchor"><span class="anchor-link"></span></a>Kubernetes</h1>
-<p><em>TODO</em></p>
+<h1><a href="#scaling-otoroshi" name="scaling-otoroshi" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi</h1>
+<h2><a href="#using-haproxy" name="using-haproxy" class="anchor"><span class="anchor-link"></span></a>Using HAProxy</h2>
+<h2><a href="#using-nginx" name="using-nginx" class="anchor"><span class="anchor-link"></span></a>Using NGINX</h2>
+<h2><a href="#using-ipvs" name="using-ipvs" class="anchor"><span class="anchor-link"></span></a>Using IPVS</h2>
+<h2><a href="#using-dns-round-robin" name="using-dns-round-robin" class="anchor"><span class="anchor-link"></span></a>Using DNS Round Robin</h2>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../connectors/rancher.html">Rancher</a></p>
+<p><strong>Next:</strong> <a href="../connectors/index.html">Connectors</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../deploy/scaling.html#scaling-otoroshi" class="header">Scaling Otoroshi</a>
+  <ul>
+    <li><a href="../deploy/scaling.html#using-haproxy" class="header">Using HAProxy</a></li>
+    <li><a href="../deploy/scaling.html#using-nginx" class="header">Using NGINX</a></li>
+    <li><a href="../deploy/scaling.html#using-ipvs" class="header">Using IPVS</a></li>
+    <li><a href="../deploy/scaling.html#using-dns-round-robin" class="header">Using DNS Round Robin</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
