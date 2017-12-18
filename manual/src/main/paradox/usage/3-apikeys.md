@@ -18,6 +18,37 @@ In the Otoroshi admin dashboard, we chose to access `api keys` from `service des
 
 ## List api keys for a service descriptor
 
-go to a service descriptor using `All services` quick link in the sidebar or the search box, select a `service descriptor` and click on `API keys` in the sidebar
+go to a service descriptor using `All services` quick link in the sidebar or the search box,
+
+
+@@@ div { .centered-img }
+<img src="../img/sidebar-all-services.png" />
+@@@
+
+select a `service descriptor` 
+
+@@@ div { .centered-img }
+<img src="../img/all-services.png" />
+@@@
+
+and click on `API keys` in the sidebar
+
+@@@ div { .centered-img }
+<img src="../img/sidebar-apikeys.png" />
+@@@
+
+and you should see the list of api keys for that `service descriptor`
+
+@@@ div { .centered-img }
+<img src="../img/apikeys-list.png" />
+@@@
 
 ## Create an api key for a service descriptor
+
+@@@ div { .centered-img }
+<img src="../img/add-apikey.png" />
+@@@
+
+@@@ div { .centered-img }
+<img src="../img/create-apikey.png" />
+@@@
