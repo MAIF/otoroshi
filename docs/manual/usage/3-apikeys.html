@@ -212,13 +212,40 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#managing-api-keys" name="managing-api-keys" class="anchor"><span class="anchor-link"></span></a>Managing api keys</h1><div class="centered-img">
+<h1><a href="#managing-api-keys" name="managing-api-keys" class="anchor"><span class="anchor-link"></span></a>Managing api keys</h1>
+<h2><a href="#otoroshi-entities" name="otoroshi-entities" class="anchor"><span class="anchor-link"></span></a>Otoroshi entities</h2>
+<p>There are 3 major entities at the core of Otoroshi</p>
+<ul>
+  <li>service groups</li>
+  <li>service descriptors</li>
+  <li><strong>api keys</strong></li>
+</ul><div class="centered-img">
 <img src="../img/models-apikey.png" /></div>
+<p>an <code>api key</code> exist for a <code>service group</code> so an <code>api key</code> will allow you to access any <code>service descriptor</code> contained in a <code>service group</code>. You can of course create multiple <code>api key</code> for a <code>service group</code>.</p>
+<p>In the Otoroshi admin dashboard, we chose to access <code>api keys</code> from <code>service descriptors</code> only, but when you access <code>api keys</code> for a <code>service descriptor</code>, you actually access <code>api keys</code> for the <code>service group</code> containing the <code>service descriptor</code>.</p>
+<h2><a href="#list-api-keys-for-a-service-descriptor" name="list-api-keys-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>List api keys for a service descriptor</h2>
+<p>go to a service descriptor using <code>All services</code> quick link in the sidebar or the search box, select a <code>service descriptor</code> and click on <code>API keys</code> in the sidebar</p>
+<h2><a href="#create-an-api-key-for-a-service-descriptor" name="create-an-api-key-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>Create an api key for a service descriptor</h2>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../usage/4-monitor.html">Monitoring services</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../usage/3-apikeys.html#managing-api-keys" class="header">Managing api keys</a>
+  <ul>
+    <li><a href="../usage/3-apikeys.html#otoroshi-entities" class="header">Otoroshi entities</a></li>
+    <li><a href="../usage/3-apikeys.html#list-api-keys-for-a-service-descriptor" class="header">List api keys for a service descriptor</a></li>
+    <li><a href="../usage/3-apikeys.html#create-an-api-key-for-a-service-descriptor" class="header">Create an api key for a service descriptor</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
