@@ -52,3 +52,32 @@ and you should see the list of api keys for that `service descriptor`
 @@@ div { .centered-img }
 <img src="../img/create-apikey.png" />
 @@@
+
+## Update an api key
+
+to update a `api key`, just click on the edit button <img src="../img/edit.png" /> of your `api key`
+
+@@@ div { .centered-img }
+<img src="../img/apikey-edit.png" />
+@@@
+
+update the name and quotas (if needed) of the `api key` and click on the `Update ApiKey` button
+
+@@@ div { .centered-img }
+<img src="../img/apikey-update.png" />
+@@@
+
+
+## Delete an api key
+
+to delete an `api key`, just click on the delete button <img src="../img/delete.png" /> of your `api key`
+
+@@@ div { .centered-img }
+<img src="../img/apikey-delete.png" />
+@@@
+
+and confirm the command
+
+@@@ div { .centered-img }
+<img src="../img/apikey-delete-confirm.png" />
+@@@
