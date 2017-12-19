@@ -10,8 +10,6 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 
 ## Installation
 
-*TODO : change jar url when release is done*
-
 ```sh
 # wget --quiet 'https://github.com/MAIF/otoroshi/releases/download/v1.0.0/otoroshi.jar'
 wget --quiet 'https://github.com/MAIFX/otoroshi-tryout/raw/master/otoroshi.jar'
@@ -78,7 +76,3 @@ Otoroshi is Open Source and available under the [Apache 2 License](https://opens
 * [Connectors](connectors/index.md)
 
 @@@
-
-*TODO*
-
-* add badges
