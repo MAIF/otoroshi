@@ -1,0 +1,116 @@
+@font-face {   
+	font-family: 'anticon';
+ 	src: url('https://at.alicdn.com/t/font_zck90zmlh7hf47vi.eot');
+ 	/* IE9*/
+	src: url('https://at.alicdn.com/t/font_zck90zmlh7hf47vi.eot?#iefix') format('embedded-opentype'), /* chrome、firefox */ url('https://at.alicdn.com/t/font_zck90zmlh7hf47vi.woff') format('woff'), /* chrome、firefox、opera、Safari, Android, iOS 4.2+*/ url('https://at.alicdn.com/t/font_zck90zmlh7hf47vi.ttf') format('truetype'), /* iOS 4.1- */ url('https://at.alicdn.com/t/font_zck90zmlh7hf47vi.svg#iconfont') format('svg');
+}
+
+  .ant-calendar-picker {
+    background-color: #494948;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.ant-calendar {
+    background-color: #494948;
+}
+
+.ant-calendar-range .ant-calendar-input, .ant-calendar-range .ant-calendar-time-picker-input,
+.ant-calendar-range.ant-calendar-time .ant-calendar-time-picker-combobox,
+li.ant-calendar-time-picker-select-option-selected {
+    background-color: #626260;
+}
+.ant-calendar-date, .ant-calendar-range-picker-separator, .ant-calendar-picker-icon, .ant-calendar-picker-icon:after, .ant-calendar-range-middle {
+    color:#9E9E9E;
+}
+
+
+.ant-calendar-header .ant-calendar-century-select, .ant-calendar-header .ant-calendar-decade-select, .ant-calendar-header .ant-calendar-year-select, .ant-calendar-header .ant-calendar-month-select,
+.ant-calendar-header .ant-calendar-prev-century-btn, .ant-calendar-header .ant-calendar-next-century-btn, .ant-calendar-header .ant-calendar-prev-decade-btn, .ant-calendar-header .ant-calendar-next-decade-btn, .ant-calendar-header .ant-calendar-prev-month-btn, .ant-calendar-header .ant-calendar-next-month-btn, .ant-calendar-header .ant-calendar-prev-year-btn, .ant-calendar-header .ant-calendar-next-year-btn,
+.ant-calendar-time .ant-calendar-footer .ant-calendar-time-picker-btn-disabled,.ant-calendar-range .ant-calendar-input, .ant-calendar-range .ant-calendar-time-picker-input,
+.ant-calendar-range .ant-calendar-input, .ant-calendar-range .ant-calendar-time-picker-input,
+.ant-calendar-footer-btn,
+.ant-calendar-time .ant-calendar-day-select,  a.ant-calendar-time-picker-btn {
+    color:white;
+}
+
+.ant-calendar-range-picker-input::-webkit-input-placeholder {
+    color:white ;
+  }
+.ant-calendar-input::-moz-placeholder {
+    color:white ;
+  }
+  .ant-calendar-input:-ms-input-placeholder {
+    color:white ;
+  }
+  .ant-calendar-input::-webkit-input-placeholder {
+    color:white ;
+  }
+  .ant-calendar-range-picker-input::-moz-placeholder {
+    color:#9E9E9E;
+  }
+  .ant-calendar-range-picker-input:-ms-input-placeholder {
+    color:#9E9E9E;
+  }
+  .ant-calendar-range-picker-input::-webkit-input-placeholder {
+    color:#9E9E9E;
+  }
+  .ant-calendar-range .ant-calendar-input::-moz-placeholder {
+    color:white ;
+  }
+  .ant-calendar-range .ant-calendar-time-picker-input::-moz-placeholder {
+    color:white ;
+  }
+  .ant-calendar-range .ant-calendar-input:-ms-input-placeholder {
+    color:white ;
+  }
+  .ant-calendar-range .ant-calendar-time-picker-input:-ms-input-placeholder {
+    color:white ;
+  }
+  .ant-calendar-range .ant-calendar-input::-webkit-input-placeholder {
+    color:white ;
+  }
+  .ant-calendar-range .ant-calendar-time-picker-input::-webkit-input-placeholder {
+    color:white ;
+  }
+
+.ant-calendar-date{
+    color:white;
+}
+
+.ant-calendar .ant-calendar-ok-btn:hover, .ant-calendar .ant-calendar-ok-btn:focus{
+    background-color:#5CB85C; 
+    border-color:#5CB85C;
+}
+
+.ant-calendar .ant-calendar-ok-btn, .ant-calendar .ant-calendar-ok-btn:active, .ant-calendar .ant-calendar-ok-btn.active {
+    background-color:transparent;
+    border-color:#5CB85C;
+}
+
+
+.ant-calendar .ant-calendar-ok-btn-disabled {
+    color:#E6E6E6;
+    background:none;
+    border-color: #E6E6E6;
+    opacity: .65;
+}
+
+.ant-calendar-range .ant-calendar-in-range-cell:before{
+    background-color: #00B4CD;  
+    color:white;
+}
+
+.ant-calendar-selected-day .ant-calendar-date,.ant-calendar-date:hover,.ant-calendar-selected-day .ant-calendar-date:hover {
+    background-color: #00B4CD; 
+}
+
+.ant-calendar-today .ant-calendar-date {    
+    border-color:  #00B4CD; 
+    color:  #00B4CD; 
+}
+
+.ant-calendar-picker-clear {
+  background: none;
+}
+

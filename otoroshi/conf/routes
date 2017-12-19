@@ -1,0 +1,153 @@
+
+GET     /                                                     controllers.BackOfficeController.index
+GET     /error                                                controllers.BackOfficeController.error(message: Option[String])
+GET     /auth0error                                           controllers.Auth0Controller.auth0error(error: Option[String], error_description: Option[String])
+
+# U2F URLs
+POST    /bo/u2f/register/start                                controllers.U2FController.u2fRegisterStart()
+POST    /bo/u2f/register/finish                               controllers.U2FController.u2fRegisterFinish()
+
+POST    /bo/u2f/login/start                                   controllers.U2FController.u2fAuthenticationStart()
+POST    /bo/u2f/login/finish                                  controllers.U2FController.u2fAuthenticationFinish()
+GET     /bo/u2f/admins                                        controllers.U2FController.u2fAdmins()
+DELETE  /bo/u2f/admins/:username/:id                          controllers.U2FController.deleteU2FAdmin(username, id)
+
+# Simple Login URLs
+
+GET     /bo/simple/admins                                     controllers.U2FController.simpleAdmins()
+POST    /bo/simple/admins                                     controllers.U2FController.registerSimpleAdmin()
+GET     /bo/simple/login                                      controllers.U2FController.loginPage()
+POST    /bo/simple/login                                      controllers.U2FController.simpleLogin()
+DELETE  /bo/simple/admins/:username                           controllers.U2FController.deleteAdmin(username)
+
+# BackOffice URLs
+GET     /bo/dashboard                                         controllers.BackOfficeController.dashboard
+GET     /bo/dashboard/*ui                                     controllers.BackOfficeController.dashboardRoutes(ui)
+GET     /bo/api/lines/:lineId/:serviceId/docframe             controllers.BackOfficeController.documentationFrame(lineId, serviceId)
+GET     /bo/api/lines/:lineId/:serviceId/docdesc              controllers.BackOfficeController.documentationFrameDescriptor(lineId, serviceId)
+POST    /bo/api/search/services                               controllers.BackOfficeController.searchServicesApi()
+GET     /bo/api/version                                       controllers.BackOfficeController.version()
+GET     /bo/api/env                                           controllers.BackOfficeController.getEnv()
+GET     /bo/api/apps                                          controllers.BackOfficeController.cleverApps()
+GET     /bo/api/sessions                                      controllers.BackOfficeController.sessions()
+DELETE  /bo/api/sessions/:id                                  controllers.BackOfficeController.discardSession(id)
+DELETE  /bo/api/sessions                                      controllers.BackOfficeController.discardAllSessions()
+GET     /bo/api/papps/sessions                                controllers.BackOfficeController.privateAppsSessions()
+DELETE  /bo/api/papps/sessions/:id                            controllers.BackOfficeController.discardPrivateAppsSession(id)
+DELETE  /bo/api/papps/sessions                                controllers.BackOfficeController.discardAllPrivateAppsSessions()
+POST    /bo/api/panic                                         controllers.BackOfficeController.panicMode()
+GET     /bo/api/events/audit                                  controllers.BackOfficeController.auditEvents()
+GET     /bo/api/events/alert                                  controllers.BackOfficeController.alertEvents()
+GET     /bo/api/loggers/:name/level                           controllers.BackOfficeController.getLogLevel(name)
+PUT     /bo/api/loggers/:name/level                           controllers.BackOfficeController.changeLogLevel(name, newLevel: Option[String])
+GET     /bo/api/loggers                                       controllers.BackOfficeController.getAllLoggers()
+GET     /bo/api/services/top10                                controllers.BackOfficeController.mostCalledServices()
+GET     /bo/api/services/map                                  controllers.BackOfficeController.servicesMap()
+DELETE  /bo/api/services/:id/circuitbreakers                  controllers.BackOfficeController.resetCircuitBreakers(id)
+
+# Admin API proxy
+GET     /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
+POST    /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
+PUT     /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
+DELETE  /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
+PATCH   /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
+HEAD    /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
+OPTIONS /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
+
+# Private Apps URLs
+GET     /privateapps/error                                    controllers.PrivateAppsController.error(message: Option[String])
+GET     /privateapps/home                                     controllers.PrivateAppsController.home
+GET     /privateapps/redirect                                 controllers.PrivateAppsController.redirect
+
+# Auth0 URLs
+GET     /privateapps/auth0/login                              controllers.Auth0Controller.privateAppsLoginPage(redirect: Option[String])
+GET     /privateapps/auth0/logout                             controllers.Auth0Controller.privateAppsLogout(redirect: Option[String])
+GET     /privateapps/auth0/callback                           controllers.Auth0Controller.privateAppsCallback(code: Option[String], error: Option[String], error_description: Option[String])
+
+GET     /backoffice/auth0/login                               controllers.Auth0Controller.backOfficeLogin(redirect: Option[String])
+GET     /backoffice/auth0/logout                              controllers.Auth0Controller.backOfficeLogout(redirect: Option[String])
+GET     /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(code: Option[String], error: Option[String], error_description: Option[String])
+
+# Admin API
+
+## new models
+GET     /api/new/apikey                                       controllers.ApiController.initiateApiKey(groupId: Option[String])
+GET     /api/new/service                                      controllers.ApiController.initiateService()
+GET     /api/new/group                                        controllers.ApiController.initiateServiceGroup()
+
+## ApiKeys
+GET     /api/services/:serviceId/apikeys/:clientId/quotas     controllers.ApiController.apiKeyQuotas(serviceId, clientId)
+GET     /api/services/:serviceId/apikeys/:clientId/group      controllers.ApiController.apiKeyGroup(serviceId, clientId)
+PUT     /api/services/:serviceId/apikeys/:clientId/group      controllers.ApiController.updateApiKeyGroup(serviceId, clientId)
+GET     /api/services/:serviceId/apikeys/:clientId            controllers.ApiController.apiKey(serviceId, clientId)
+PUT     /api/services/:serviceId/apikeys/:clientId            controllers.ApiController.updateApiKey(serviceId, clientId)
+PATCH   /api/services/:serviceId/apikeys/:clientId            controllers.ApiController.patchApiKey(serviceId, clientId)
+DELETE  /api/services/:serviceId/apikeys/:clientId            controllers.ApiController.deleteApiKey(serviceId, clientId)
+POST    /api/services/:serviceId/apikeys                      controllers.ApiController.createApiKey(serviceId)
+GET     /api/services/:serviceId/apikeys                      controllers.ApiController.apiKeys(serviceId)
+
+GET     /api/groups/:groupId/apikeys/:clientId/quotas         controllers.ApiController.apiKeyFromGroupQuotas(groupId, clientId)
+GET     /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.apiKeyFromGroup(groupId, clientId)
+PUT     /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.updateApiKeyFromGroup(groupId, clientId)
+PATCH   /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.patchApiKeyFromGroup(groupId, clientId)
+DELETE  /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.deleteApiKeyFromGroup(groupId, clientId)
+POST    /api/groups/:groupId/apikeys                          controllers.ApiController.createApiKeyFromGroup(groupId)
+GET     /api/groups/:groupId/apikeys                          controllers.ApiController.apiKeysFromGroup(groupId)
+GET     /api/apikeys                                          controllers.ApiController.allApiKeys()
+
+## Services
+GET     /api/services/:serviceId/template                     controllers.ApiController.serviceTemplate(serviceId)
+PUT     /api/services/:serviceId/template                     controllers.ApiController.updateServiceTemplate(serviceId)
+POST    /api/services/:serviceId/template                     controllers.ApiController.createServiceTemplate(serviceId)
+DELETE  /api/services/:serviceId/template                     controllers.ApiController.deleteServiceTemplate(serviceId)
+GET     /api/services/:serviceId/targets                      controllers.ApiController.serviceTargets(serviceId)
+POST    /api/services/:serviceId/targets                      controllers.ApiController.serviceAddTarget(serviceId)
+DELETE  /api/services/:serviceId/targets                      controllers.ApiController.serviceDeleteTarget(serviceId)
+PATCH   /api/services/:serviceId/targets                      controllers.ApiController.updateServiceTargets(serviceId)
+GET     /api/services/:serviceId/live                         controllers.ApiController.serviceLiveStats(serviceId, every: Option[Int])
+GET     /api/services/:serviceId/stats                        controllers.ApiController.serviceStats(serviceId, from: Option[String], to: Option[String])
+GET     /api/services/:serviceId/events                       controllers.ApiController.serviceEvents(serviceId, from: Option[String], to: Option[String])
+GET     /api/services/:serviceId/health                       controllers.ApiController.serviceHealth(serviceId)
+GET     /api/services/:serviceId/canary                       controllers.ApiController.serviceCanaryMembers(serviceId)
+DELETE  /api/services/:serviceId/canary                       controllers.ApiController.resetServiceCanaryMembers(serviceId)
+GET     /api/services/:serviceId                              controllers.ApiController.service(serviceId)
+PUT     /api/services/:serviceId                              controllers.ApiController.updateService(serviceId)
+PATCH   /api/services/:serviceId                              controllers.ApiController.patchService(serviceId)
+DELETE  /api/services/:serviceId                              controllers.ApiController.deleteService(serviceId)
+GET     /api/services                                         controllers.ApiController.allServices()
+POST    /api/services                                         controllers.ApiController.createService()
+
+## ServiceGroup
+GET     /api/groups/:serviceGroupId/services                  controllers.ApiController.serviceGroupServices(serviceGroupId)
+GET     /api/groups/:serviceGroupId                           controllers.ApiController.serviceGroup(serviceGroupId)
+DELETE  /api/groups/:serviceGroupId                           controllers.ApiController.deleteGroup(serviceGroupId)
+PUT     /api/groups/:serviceGroupId                           controllers.ApiController.updateGroup(serviceGroupId)
+PATCH   /api/groups/:serviceGroupId                           controllers.ApiController.patchGroup(serviceGroupId)
+GET     /api/groups                                           controllers.ApiController.allServiceGroups()
+POST    /api/groups                                           controllers.ApiController.createGroup()
+
+GET     /api/lines/:line/services                             controllers.ApiController.servicesForALine(line)
+GET     /api/lines                                            controllers.ApiController.allLines()
+
+GET     /api/live/host                                        controllers.ApiController.hostMetrics()
+GET     /api/live/:id                                         controllers.ApiController.serviceLiveStats(id, every: Option[Int])
+GET     /api/live                                             controllers.ApiController.globalLiveStats()
+
+GET     /api/globalconfig                                     controllers.ApiController.globalConfig()
+PUT     /api/globalconfig                                     controllers.ApiController.updateGlobalConfig()
+PATCH   /api/globalconfig                                     controllers.ApiController.patchGlobalConfig()
+
+GET     /api/otoroshi.json                                    controllers.ApiController.fullExport()
+POST    /api/otoroshi.json                                    controllers.ApiController.fullImport()
+POST    /api/import                                           controllers.ApiController.fullImportFromFile()
+
+GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
+
+GET     /api/swagger.json                                     controllers.SwaggerController.swagger()
+GET     /api/swagger/ui                                       controllers.SwaggerController.swaggerUi()
+
+########################################################################################################################
+
+GET     /assets/*file                                         controllers.Assets.versioned(path="/public", file: Asset)
+GET     /__opun_assets/*file                                  controllers.Assets.versioned(path="/public", file: Asset)
+GET     /docs/*file                                           controllers.Assets.at(path="/public/docs", file)

@@ -1,0 +1,36 @@
+@import models.BackOfficeUser
+
+@(title: String, user: BackOfficeUser, _env: env.Env, moreScripts: Html = play.twirl.api.Html(""), moreStyles: Html = play.twirl.api.Html(""))(content: Html)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>@title</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+        <meta name="theme-color" content="#000000">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/backoffice.css")">
+		
+		<link rel="icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <!--[if IE]>
+		<link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.versioned("images/favicon.ico")">
+        -->
+		<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,500" rel="stylesheet">
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+        @moreStyles
+    </head>
+    <body>
+        @content
+        <div id="newVersionPopup"></div>
+        @if(_env.isDev) {
+            <script src="//localhost:3040/assets/javascripts/bundle/backoffice.js" type="text/javascript"></script>
+        } else {
+            <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/backoffice.js?v=${_env.hash}")"></script>
+        }
+        <script type="text/javascript">window.__env = '@_env.env';</script>
+        @moreScripts
+    </body>
+</html>

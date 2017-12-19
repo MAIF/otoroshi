@@ -1,0 +1,37 @@
+
+@(title: String, _env: env.Env, moreScripts: Html = play.twirl.api.Html(""), moreStyles: Html = play.twirl.api.Html(""))(content: Html)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>@title</title>
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/opunapps.css")">
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+        <link href="https://fonts.googleapis.com/css?family=Raleway:400,500" rel="stylesheet">
+        @moreStyles
+    </head>
+    <body>
+        <div class="container">
+            <div class="header clearfix">
+                <nav class="navbar-inverse">
+                    <ul class="nav navbar-nav navbar-right hide">
+                        <li role="presentation"><a href="@routes.BackOfficeController.index()">Home</a></li>
+                        <li role="presentation"><a href="@routes.BackOfficeController.dashboard()"><i class="fa fa-tachometer"></i> Dashboard</a></li>
+                    </ul>
+                </nav>
+               <a class="navbar-brand" href="/" style="display: flex;">
+                   <span>おとろし</span>&nbsp; Otoroshi BackOffice
+               </a>
+            </div>
+            @content
+            <footer class="footer hide">
+                <p>© 2017 Otoroshi by MAIF (version : <span class="label label-success">@_env.commitId</span> env: <span class="label label-success">@_env.env</span>)</p>
+            </footer>
+        </div>
+        <script type="text/javascript" src="@routes.Assets.versioned("javascripts/jquery.js")"></script>
+        @moreScripts
+    </body>
+</html>

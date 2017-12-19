@@ -1,0 +1,18 @@
+@(_env: env.Env)
+
+@moreStyles = {
+    <link rel="stylesheet" media="screen" href="/__opun_assets/stylesheets/error.css">
+}
+
+@main("Service under construction", _env, moreStyles = moreStyles) {
+    <div class="jumbotron">
+        <h2 style="color:white;">Service under construction</h2>
+        <p class="lead">
+            The service you're trying to reach is under construction
+        </p>
+        <p class="lead">
+            try to come back later &#128521;
+        </p>
+        <p><img class="logo" src="/__opun_assets/images/otoroshi-logo-color.png" style="width: 300px;" /></p>
+    </div>
+}

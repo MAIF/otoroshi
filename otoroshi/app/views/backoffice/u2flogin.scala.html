@@ -1,0 +1,19 @@
+@import env.Env
+
+@(_env: Env)
+
+@authScript = {
+    <script src="@routes.Assets.versioned("javascripts/u2f-api.js")"></script>
+    @if(_env.isDev) {
+        <script src="//localhost:3040/assets/javascripts/bundle/backoffice.js" type="text/javascript"></script>
+    } else {
+        <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/backoffice.js?v=${_env.hash}")"></script>
+    }
+    <script>
+        OpunGateway.login(document.getElementById("app"));
+    </script>
+}
+
+@unauthmain("Login to Otoroshi dashboard", _env, moreScripts = authScript) {
+    <div id="app"></div>
+}

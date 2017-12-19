@@ -1,0 +1,15 @@
+logs
+target
+/.idea
+/.idea_modules
+/.classpath
+/.project
+/.settings
+/RUNNING_PID
+/*.rdb
+/.ensime_cache/
+/ensime-langserver.log
+/pc.stdout.log
+/leveldb
+/.ensime
+

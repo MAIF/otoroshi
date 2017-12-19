@@ -1,0 +1,10 @@
+.panel-heading {
+    text-align: right;
+  }
+
+  .panel, .panel-heading {
+    background-color: $fondBody;
+    h4 {
+      color: #fff;
+    }
+  }

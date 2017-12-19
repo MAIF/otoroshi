@@ -1,0 +1,207 @@
+.btn {
+  background-color: transparent;
+  background: none;
+  margin-right: 5px;
+}
+
+.btnsService {
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  background-color: $fondBody;
+  padding-bottom: 16px;
+  // margin-top: -9px;
+  // padding-top: 10px;
+}
+
+.btnsService+.form-group {
+  padding-top: 50px;
+}
+
+.btnsOtoroshi {
+  margin-top: 10px;
+}
+.displayGroupBtn {
+  text-align: right;
+  button.btn {
+    margin-left: 5px;
+  }
+  .btn-danger:focus {
+    outline-color:$colorRouge;
+  }
+}
+
+.btn-info:hover {
+  color: #fff;
+  background-color: $colorBleue;
+  border-color: $colorBleue;
+}
+
+.btn-info,
+.btn_info:focus,
+.glyphicon-plus-sign {
+  color: #fff;
+  background-color: transparent;
+  background-image: none;
+  border-color: $colorBleue;
+}
+
+.btn-save {
+  color:#fff;
+  border-color: $savecolor;
+  background-color: $savecolor;
+  &[disabled] {
+    color: $colorGris;
+    border-color:$colorGris;
+    background: none;
+  }
+}
+
+
+
+.input-group-btn:last-child>.btn,
+.input-group-btn:last-child>.btn-group {
+  margin-left: 4px;
+}
+
+
+.input-group-btn:last-child>.btn {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  &:not(:last-child):not(.dropdown-toggle) {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+}
+
+.content-switch-button {
+  width: 35px;
+  height: 22px;
+  border-radius: 20px;
+  display: flex;
+  &-on {
+    @extend .content-switch-button;
+    background-color: $savecolor;
+    border: 1px solid $savecolor;
+    justify-content: flex-end;
+  }
+  &-off {
+    @extend .content-switch-button;
+    background-color: #fff;
+    border: 1px solid #dfdfdf;
+    justify-content: flex-start;
+  }
+}
+
+.switch-button {
+  background-color: #fff;
+  border-radius: 20px;
+  &-on {
+    @extend .switch-button;
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border-radius: 20px;
+  }
+  &-off {
+    @extend .switch-button;
+    width: 22px;
+    height: 22px;
+    margin-top: -1px;
+    margin-left: -1px;
+    border: 1px solid #dfdfdf;
+    box-shadow: 1px 0px 5px 0px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.btn-primary {
+  color: #fff;
+  border: 1px solid;
+  border-color: $colorBleue;
+  &:hover,&.active,&.active:hover {
+    color: #fff;
+    border: 1px solid;
+    border-color: $colorBleue;
+    background-color: $colorBleue;
+  }
+}
+
+.btn-danger {
+  color: #fff;
+  border: 1px solid;
+  border-color: $colorRouge;
+  &:hover {
+    color: #fff;
+    border: 1px solid;
+    border-color: $colorRouge;
+    background-color: $colorRouge;
+  }
+}
+
+.btn-success {
+  color: #fff;
+  border: 1px solid;
+  border-color: $savecolor;
+  &:hover {
+    color: #fff;
+    border: 1px solid;
+    border-color: $savecolor;
+    background-color: $savecolor;
+  }
+  &[disabled] {
+    color: $colorGris;
+    text-shadow: none;
+    background-color: transparent;
+    border-color: $savecolor;
+  }
+  &.disabled {
+    color: $colorGris;
+    text-shadow: none;
+    background-color: transparent;
+    border-color: $colorGris;
+  }
+}
+
+.btn-default.disabled,
+.btn-default.disabled:hover {
+  color: $colorGris;
+  text-shadow: none;
+  background-color: transparent;
+}
+
+.prod,
+.prod:hover {
+  color: #fff;
+  background-color: $savecolor;
+  width: 80px;
+  border-color: $savecolor;
+  margin-bottom: 1px;
+}
+
+.preprod,
+.preprod:hover {
+  color: #fff;
+  background-color: $colorBleue;
+  width: 80px;
+  border-color: $colorBleue;
+  margin-bottom: 1px;
+}
+
+.experiments,
+.experiments:hover {
+  color: #fff;
+  background-color: $primaryColor;
+  width: 80px;
+  border-color: $primaryColor;
+  margin-bottom: 1px;
+}
+
+.refresh {
+  background-color: $fondBody;
+  border-color: $colorGris;
+  color: $colorGris;
+  background-image: none;
+  margin-left: 10px;
+  padding: 3px 5px 0px 5px;
+  text-shadow: none;
+}

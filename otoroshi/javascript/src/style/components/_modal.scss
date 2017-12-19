@@ -1,0 +1,50 @@
+
+.modal {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1050;
+    margin: 0 auto;
+  width: 50%;
+  }
+  .modal-dialog {
+    width: 80%;
+    margin: 30px auto;
+  }
+  .modal-content {
+    position: relative;
+    background-color: $fondBody;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 6px;
+    outline: 0;
+  }
+  .modal-header {
+    padding: 15px;
+    border-bottom: 1px solid $primaryColor;
+     font-size: 18px;
+  }
+  .modal-body {
+    position: relative;
+    padding: 15px;
+    font-size: 16px;
+    label{
+      font-size: 14px;
+    }
+    .form-group{
+      margin-top: 30px;
+    }
+    strong {
+      color:$colorBleue;
+     }
+  }
+  .modal-footer {
+    padding: 15px;
+    text-align: right;
+    border-top: 1px solid $primaryColor;
+  }
+  pre {
+    height: 600px;
+  }

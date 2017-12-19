@@ -1,0 +1,53 @@
+@import env.Env
+
+@(_env: Env, config: security.Auth0Config)
+
+@customStyle = {
+    <style>
+        #a0-lock .a0-icon-badge {
+            display: none !important;
+        }
+        #a0-lock.a0-theme-default .a0-panel button.a0-primary {
+            background-color: #465059 !important;
+        }
+    </style>
+}
+
+@authScript = {
+    <!--script type="text/javascript" src="//use.typekit.net/iws6ohy.js"></script>
+    <script type="text/javascript">try{Typekit.load();}catch(e){}</script-->
+    <script src="https://cdn.auth0.com/js/lock-9.0.min.js"></script>
+    <script>
+            var AUTH0_CLIENT_ID = '@config.clientId';
+            var AUTH0_DOMAIN = '@config.domain';
+            var AUTH0_CALLBACK_URL = '@config.callbackURL';
+    </script>
+    <script>
+            $(document).ready(function() {
+                var lock = new Auth0Lock(AUTH0_CLIENT_ID, AUTH0_DOMAIN);
+                lock.show({
+                    callbackURL: AUTH0_CALLBACK_URL,
+                    width: 510,
+                    closable: false,
+                    dict: {
+                        signin: {
+                            title: "Connexion applications privées Otoroshi"
+                        },
+                        signup: {
+                            title: "S'inscrire aux applications privées Otoroshi"
+                        }
+                    },
+                    icon: "/assets/images/opun-black-small.png"
+                });
+            });
+    </script>
+}
+
+@main("Login to user admin", _env, moreScripts = authScript, moreStyles = customStyle) {
+    <div class="container">
+        <div class="login-page clearfix">
+            <div class="login-box auth0-box before">
+            </div>
+        </div>
+    </div>
+}

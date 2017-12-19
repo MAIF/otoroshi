@@ -1,0 +1,14 @@
+.newVersionPopup {
+  background-color: $primaryColor;
+  height: 70px;
+  width: 410px;
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  z-index: 100000;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 10px;
+}

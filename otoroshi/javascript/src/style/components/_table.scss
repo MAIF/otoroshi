@@ -1,0 +1,108 @@
+.table {
+  color: $fondGrisclairSurvolMenu;
+
+  tr {
+    // cursor: pointer;
+  }
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: $fondNavbar;
+  /*color: #949ba2;*/
+}
+
+.table-hover tbody tr:hover td,
+.table-hover tbody tr:hover th {
+  background-color: $fondNavbar;
+  color: #fff;
+}
+
+.table > tbody > tr > td,
+.table > tbody > tr > th,
+.table > tfoot > tr > td,
+.table > tfoot > tr > th,
+.table > thead > tr > td,
+.table > thead > tr > th,
+.table-bordered,
+.table-bordered > tbody > tr > td,
+.table-bordered > tbody > tr > th,
+.table-bordered > tfoot > tr > td,
+.table-bordered > tfoot > tr > th,
+.table-bordered > thead > tr > td,
+.table-bordered > thead > tr > th {
+  border: none;
+}
+
+thead > tr,
+thead > tr > td > span {
+  color: $colorGris;
+}
+
+.pagination > .active > a,
+.pagination > .active > a:focus,
+.pagination > .active > a:hover,
+.pagination > .active > span,
+.pagination > .active > span:focus,
+.pagination > .active > span:hover {
+  background-color: $fondNavbar;
+  border-color: $colorGris;
+}
+
+.pagination > li > a,
+.pagination > li > span {
+  background: none;
+  color: $colorGris;
+}
+
+.titleTable {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 5px 5px 10px;
+}
+
+.active > .titleTable {
+  background-color: $colorBleue;
+  color: #fff;
+  border: thin solid $fondGrisclairSurvolMenu;
+}
+
+.titleTable:hover {
+  background-color: lighten($colorBleue,5%);
+  color: #fff;
+}
+
+thead {
+  background-color: lighten($colorBleue,5%);
+}
+
+.fa-download {
+  cursor: pointer;
+  color: $colorBleue;
+}
+
+.table-liste {
+  flex: 1 1 100%;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.link-service {
+  color: $colorGris;
+  text-decoration: none;
+
+  &:hover {
+    color: #fff;
+    text-decoration: none;
+  }
+}
+
+.formAdd {
+  text-align: center;
+}
+
+table .displayGroupBtn{
+  min-width: 100px;
+}
