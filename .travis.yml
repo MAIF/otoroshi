@@ -1,0 +1,14 @@
+language: scala
+
+sudo: false
+
+scala:
+  - "2.11.8"
+
+jdk:
+  - oraclejdk8
+
+script:
+  - cd otoroshi; sbt ";clean;compile;test"
+  - cd manual; sbt ";clean;paradox"
+
