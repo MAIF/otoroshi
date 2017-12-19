@@ -4,7 +4,9 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 
 **Otoroshi** is also a modern http reverse proxy with a thin layer of api management written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
 
+@@@ div { .centered-img }
 [![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) ![downloads](https://img.shields.io/github/downloads/MAIF/otoroshi/total.svg) ![downloads](https://img.shields.io/github/downloads/MAIF/otoroshi/latest/total.svg)
+@@@
 
 @@@ div { .centered-img }
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
