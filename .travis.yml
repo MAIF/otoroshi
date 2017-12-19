@@ -21,7 +21,8 @@ before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash
   - wget --quiet https://sh.rustup.rs -O rustupinstall.sh
   - sh ./rustupinstall.sh -y
-  - export PATH=$PATH: ~/.cargo/bin
+  - ls -ahl $HOME
+  - export PATH=$PATH:$HOME/.cargo/bin
   - rustup update
   - rustup default stable 
 
