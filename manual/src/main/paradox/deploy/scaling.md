@@ -4,7 +4,7 @@
 
 ## Using master / workers mode
 
-Work in progress :)
+Work in progress :) you can follow the issue here https://github.com/MAIF/otoroshi/issues/8
 
 ## Using DNS
 
