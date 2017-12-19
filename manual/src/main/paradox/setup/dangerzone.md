@@ -35,6 +35,10 @@ Otoroshi also provide a funny feature called `Endless HTTP responses`. If you pu
 <img src="../img/danger-zone-2-whitelist-blacklist.png" />
 @@@
 
+@@@ note
+Note that you case provide ip address with wildcard like the following `42.42.*.42` or `42.42.42.*` or `42.42.*.*`
+@@@
+
 ## Global throttling settings
 
 Otoroshi is capable of managing throttling at a global level. Here you can configure number of authorized request per second on a single Otoroshi instance and the number of authorized request per second for a unique ip address.

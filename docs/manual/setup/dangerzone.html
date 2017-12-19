@@ -233,7 +233,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#whitelist-blacklist-settings" name="whitelist-blacklist-settings" class="anchor"><span class="anchor-link"></span></a>Whitelist / blacklist settings</h2>
 <p>Otoroshi is capable of filtering request per ip address, allowing or blocking requests.</p>
 <p>Otoroshi also provide a funny feature called <code>Endless HTTP responses</code>. If you put an ip address in that field, then, for any http request on Otoroshi, every response will be 128 GB of <code>0</code>.</p><div class="centered-img">
-<img src="../img/danger-zone-2-whitelist-blacklist.png" /></div>
+<img src="../img/danger-zone-2-whitelist-blacklist.png" /></div><div class="callout note "><div class="callout-title">Note</div>
+<p>Note that you case provide ip address with wildcard like the following <code>42.42.*.42</code> or <code>42.42.42.*</code> or <code>42.42.*.*</code></p></div>
 <h2><a href="#global-throttling-settings" name="global-throttling-settings" class="anchor"><span class="anchor-link"></span></a>Global throttling settings</h2>
 <p>Otoroshi is capable of managing throttling at a global level. Here you can configure number of authorized request per second on a single Otoroshi instance and the number of authorized request per second for a unique ip address.</p><div class="centered-img">
 <img src="../img/danger-zone-3-throttling.png" /></div>
