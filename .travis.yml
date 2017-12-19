@@ -1,6 +1,9 @@
 language: scala
 
-sudo: false
+sudo: true
+
+git:
+  depth: 1
 
 scala:
   - "2.11.8"
@@ -8,7 +11,12 @@ scala:
 jdk:
   - oraclejdk8
 
+before_install:
+  - sudo apt-get install wget curl
+  - wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash && export NVM_DIR="/root/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install 8.6.0 && nvm use 8.6.0 && curl -o- -L https://yarnpkg.com/install.sh | bash && 
+
 script:
-  - cd otoroshi; sbt ";clean;compile;test"
-  - cd manual; sbt ";clean;paradox"
+  - cd ./otoroshi; sbt ";clean;compile;test"
+  - cd ../otoroshi/javascript; yarn install; yarn build
+  - cd ../../manual; sbt ";clean;paradox"
 
