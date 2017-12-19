@@ -431,7 +431,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     ServiceDescriptor(
       id = IdGenerator.token(64),
       name = "my-service",
-      env = "preprod",
+      env = "prod",
       domain = env.domain,
       subdomain = "myservice",
       targets = Seq(
