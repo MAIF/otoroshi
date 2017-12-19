@@ -20,7 +20,9 @@ before_install:
   - nvm use 8.6.0 
   - curl -o- -L https://yarnpkg.com/install.sh | bash
   - wget --quiet https://sh.rustup.rs -O rustupinstall.sh
-  - sh ./rustupinstall.sh -y --default-toolchain   stable
+  - sh ./rustupinstall.sh -y --default-toolchain stable
+  - rustup update
+  - rustup default stable
 
 script:
   - cd ./otoroshi; sbt ";clean;compile;test;dist;assembly"
@@ -31,8 +33,9 @@ script:
 cache:
   directories:
     - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot
+    - $HOME/.sbt
     - $HOME/.nvm
     - $HOME/.yarn
     - $HOME/.yarn-cache
+    - $HOME/.rustup
 
