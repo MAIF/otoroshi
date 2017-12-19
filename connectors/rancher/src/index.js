@@ -348,12 +348,16 @@ function syncOtoroshiWithRancher() {
         const rootPath = rancherService.name.split('-')[1];
         if (!otoroshiService) {
           log(
-            `Creating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${targets.length} targets)`
+            `Creating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${
+              targets.length
+            } targets)`
           );
           return createOtoroshiRancherService(rancherService.id, rancherService.name, targets);
         } else if (otoroshiService && !_.isEqual(targetHosts, otoHosts)) {
           log(
-            `Updating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${targets.length} targets)`
+            `Updating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${
+              targets.length
+            } targets)`
           );
           return updateOtoroshiRancherService(rancherService.id, rancherService.name, targets);
         } else {
@@ -401,9 +405,9 @@ app.get('/', (req, res) => {
   <body style="display: flex; justify-content: center; align-items: center;flex-direction: column">
     <h1>Otoroshi - Rancher Connector - Status</h1>
     <ul>
-      <li>status: <span style="color: ${syncing ? 'green' : 'lightgreen'}">${syncing
-    ? 'SYNCING'
-    : 'SLEEPING'}</span></li>
+      <li>status: <span style="color: ${syncing ? 'green' : 'lightgreen'}">${
+    syncing ? 'SYNCING' : 'SLEEPING'
+  }</span></li>
       <li>current services: ${currentServices}</li>
       <li>last deleted services: ${lastDeletedServices}</li>
       <li>last sync: ${lastSync.format('DD/MM/YYYY HH:mm:ss')}</li>

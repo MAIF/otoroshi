@@ -3,7 +3,7 @@
 LOCATION=`pwd`
 
 function clean {
-  cd $LOCATION/cli
+  cd $LOCATION/clients/cli
   cargo clean
   cd $LOCATION
   rm -rf $LOCATION/otoroshi/target/universal
@@ -12,7 +12,7 @@ function clean {
 }
 
 function build_cli {
-  cd $LOCATION/cli
+  cd $LOCATION/clients/cli
   cargo build --release
 }
 

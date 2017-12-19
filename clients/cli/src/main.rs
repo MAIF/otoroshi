@@ -1118,9 +1118,10 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
                 String::new()
             }
         },
-        ("stats", Some(subcommand)) => OtoroshiClient::new(
-            extract_oto_args(default_config, subcommand),
-        ).stats(subcommand.is_present("tail")),
+        ("stats", Some(subcommand)) => {
+            OtoroshiClient::new(extract_oto_args(default_config, subcommand))
+                .stats(subcommand.is_present("tail"))
+        }
         ("import", Some(subcommand)) => {
             OtoroshiClient::new(extract_oto_args(default_config, subcommand)).import_datastore(
                 subcommand
@@ -1186,9 +1187,10 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
             _ => OtoroshiClient::new(extract_oto_args(default_config, subcommand)).fetch_config(),
         },
         ("apikeys", Some(subcommand)) => match subcommand.subcommand() {
-            ("all", Some(subcommand)) => OtoroshiClient::new(
-                extract_oto_args(default_config, subcommand),
-            ).list_all_api_keys(),
+            ("all", Some(subcommand)) => {
+                OtoroshiClient::new(extract_oto_args(default_config, subcommand))
+                    .list_all_api_keys()
+            }
             ("from", Some(subcommand)) => {
                 OtoroshiClient::new(extract_oto_args(default_config, subcommand)).list_api_keys(
                     subcommand
@@ -1317,20 +1319,22 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
             ("all", Some(subcommand)) => {
                 OtoroshiClient::new(extract_oto_args(default_config, subcommand)).list_services()
             }
-            ("for_group", Some(subcommand)) => OtoroshiClient::new(
-                extract_oto_args(default_config, subcommand),
-            ).list_services_for_group(
-                subcommand
-                    .value_of("group")
-                    .expect("You need to specify a group id"),
-            ),
-            ("for-line", Some(subcommand)) => OtoroshiClient::new(
-                extract_oto_args(default_config, subcommand),
-            ).list_services_for_line(
-                subcommand
-                    .value_of("line")
-                    .expect("You need to specify a line id"),
-            ),
+            ("for_group", Some(subcommand)) => {
+                OtoroshiClient::new(extract_oto_args(default_config, subcommand))
+                    .list_services_for_group(
+                        subcommand
+                            .value_of("group")
+                            .expect("You need to specify a group id"),
+                    )
+            }
+            ("for-line", Some(subcommand)) => {
+                OtoroshiClient::new(extract_oto_args(default_config, subcommand))
+                    .list_services_for_line(
+                        subcommand
+                            .value_of("line")
+                            .expect("You need to specify a line id"),
+                    )
+            }
             ("count", Some(subcommand)) => {
                 OtoroshiClient::new(extract_oto_args(default_config, subcommand)).count_services()
             }
@@ -1341,26 +1345,28 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
                         .expect("You need to specify a service id"),
                 )
             }
-            ("add-target", Some(subcommand)) => OtoroshiClient::new(
-                extract_oto_args(default_config, subcommand),
-            ).add_target_to_service(
-                subcommand
-                    .value_of("id")
-                    .expect("You need to specify a service id"),
-                subcommand
-                    .value_of("target")
-                    .expect("You need to specify a target"),
-            ),
-            ("rem-target", Some(subcommand)) => OtoroshiClient::new(
-                extract_oto_args(default_config, subcommand),
-            ).rem_target_from_service(
-                subcommand
-                    .value_of("id")
-                    .expect("You need to specify a service id"),
-                subcommand
-                    .value_of("target")
-                    .expect("You need to specify a target"),
-            ),
+            ("add-target", Some(subcommand)) => {
+                OtoroshiClient::new(extract_oto_args(default_config, subcommand))
+                    .add_target_to_service(
+                        subcommand
+                            .value_of("id")
+                            .expect("You need to specify a service id"),
+                        subcommand
+                            .value_of("target")
+                            .expect("You need to specify a target"),
+                    )
+            }
+            ("rem-target", Some(subcommand)) => {
+                OtoroshiClient::new(extract_oto_args(default_config, subcommand))
+                    .rem_target_from_service(
+                        subcommand
+                            .value_of("id")
+                            .expect("You need to specify a service id"),
+                        subcommand
+                            .value_of("target")
+                            .expect("You need to specify a target"),
+                    )
+            }
             ("create", Some(subcommand)) => {
                 OtoroshiClient::new(extract_oto_args(default_config, subcommand)).create_service(
                     subcommand.value_of("id"),

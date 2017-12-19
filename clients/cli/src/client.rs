@@ -517,9 +517,8 @@ impl OtoroshiClient {
         let mut fields: Vec<String> = Vec::new();
         fields.push(format!(r#""id":"{}""#, group_id));
         name.foreach(|name| fields.push(format!(r#""name":"{}""#, name)));
-        description.foreach(|description| {
-            fields.push(format!(r#""description":"{}""#, description))
-        });
+        description
+            .foreach(|description| fields.push(format!(r#""description":"{}""#, description)));
         let body = format!(r#"{{{}}}"#, fields.join(","));
         let data = http::put_resource(self, format!("/api/groups/{}", group_id).as_str(), body);
         self.output_json(data, json!({}))
@@ -538,21 +537,16 @@ impl OtoroshiClient {
     ) -> String {
         let mut fields: Vec<String> = Vec::new();
         id.foreach(|id| fields.push(format!(r#""clientId":"{}""#, id)));
-        secret.foreach(|secret| {
-            fields.push(format!(r#""clientSecret":"{}""#, secret))
-        });
+        secret.foreach(|secret| fields.push(format!(r#""clientSecret":"{}""#, secret)));
         fields.push(format!(r#""clientName":"{}""#, name));
         fields.push(format!(r#""authorizedGroup":"{}""#, group));
         fields.push(format!(r#""enabled":{}"#, !not_enabled));
         throttling_quota.foreach(|throttling_quota| {
             fields.push(format!(r#""throttlingQuota":{}"#, throttling_quota))
         });
-        daily_quota.foreach(|daily_quota| {
-            fields.push(format!(r#""dailyQuota":{}"#, daily_quota))
-        });
-        monthly_quota.foreach(|monthly_quota| {
-            fields.push(format!(r#""monthlyQuota":{}"#, monthly_quota))
-        });
+        daily_quota.foreach(|daily_quota| fields.push(format!(r#""dailyQuota":{}"#, daily_quota)));
+        monthly_quota
+            .foreach(|monthly_quota| fields.push(format!(r#""monthlyQuota":{}"#, monthly_quota)));
         let body = format!(r#"{{{}}}"#, fields.join(","));
         let data = http::post_resource(
             self,
@@ -664,9 +658,7 @@ impl OtoroshiClient {
         name.foreach(|name| fields.push(format!(r#""name":"{}""#, name)));
         env.foreach(|env| fields.push(format!(r#""env":"{}""#, env)));
         domain.foreach(|domain| fields.push(format!(r#""domain":"{}""#, domain)));
-        subdomain.foreach(|subdomain| {
-            fields.push(format!(r#""subdomain":"{}""#, subdomain))
-        });
+        subdomain.foreach(|subdomain| fields.push(format!(r#""subdomain":"{}""#, subdomain)));
         if !target.is_empty() {
             let values = target
                 .iter()
@@ -791,9 +783,8 @@ impl OtoroshiClient {
         canary_traffic.foreach(|canary_traffic| {
             canary_config.push(format!(r#""traffic":{}"#, canary_traffic))
         });
-        canary_root.foreach(|canary_root| {
-            canary_config.push(format!(r#""root":"{}""#, canary_root))
-        });
+        canary_root
+            .foreach(|canary_root| canary_config.push(format!(r#""root":"{}""#, canary_root)));
 
         if !canary_target.is_empty() {
             let values = canary_target
