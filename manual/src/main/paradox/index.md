@@ -11,8 +11,7 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 ## Installation
 
 ```sh
-# wget --quiet 'https://github.com/MAIF/otoroshi/releases/download/v1.0.0/otoroshi.jar'
-wget --quiet 'https://github.com/MAIFX/otoroshi-tryout/raw/master/otoroshi.jar'
+wget --quiet 'https://github.com/MAIF/otoroshi/releases/download/v1.0.0/otoroshi.jar'
 sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar" >> /etc/hosts
 java -jar otoroshi.jar
 ```

@@ -22,11 +22,8 @@ kubectl proxy --port=8000 --token=xxxxx
 ## Start Otoroshi
 
 ```sh
-git clone https://github.com/MAIFX/otoroshi-tryout.git --depth=1
-cd ./otoroshi-tryout/
-docker build -t otoroshi-tryout .
-docker run -p "8080:8080" -d otoroshi-tryout
-docker logs -f <CONTAINER_ID>
+wget --quiet 'https://github.com/MAIF/otoroshi/releases/download/v1.0.0/otoroshi.jar'
+java -jar otoroshi.jar &
 ```
 
 ## Run the daemon
