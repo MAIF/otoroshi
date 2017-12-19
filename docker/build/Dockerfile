@@ -33,8 +33,9 @@ RUN curl -o- -L https://yarnpkg.com/install.sh | bash
 
 # Copy sources
 
-RUN mkdir -p /usr/src/app/sources \
- && mkdir -p /usr/src/app/dist
+RUN mkdir -p /usr/src/app/sources & mkdir -p /usr/src/app/dist
+
+COPY ./entrypoint.sh /usr/app/sources
 
 RUN git clone https://github.com/MAIF/otoroshi.git /usr/src/app/sources --depth=1
 
