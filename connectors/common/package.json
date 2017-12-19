@@ -1,0 +1,22 @@
+{
+  "name": "otoroshi-connector",
+  "version": "1.0.0",
+  "description": "Experimental generic Otoroshi connector",
+  "main": "src/common.js",
+  "private": true,
+  "scripts": {
+    "prettier": "prettier --write --single-quote --trailing-comma es5 --print-width 100 --tab-width 2 --jsx-bracket-same-line \"src/**/*.js\"",
+    "start": "node src/index.js"    
+  },
+  "dependencies": {
+    "base-64": "0.1.0",
+    "body-parser": "1.18.2",
+    "express": "4.16.2",
+    "jsonwebtoken": "8.1.0",
+    "lodash": "4.17.4",
+    "moment": "2.19.2",
+    "node-fetch": "1.7.3",
+    "prettier": "1.8.2",
+    "uuid": "3.1.0"
+  }
+}

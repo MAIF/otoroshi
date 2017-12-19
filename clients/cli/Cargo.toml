@@ -1,0 +1,24 @@
+[package]
+authors = ["Mathieu <mathieu.ancelin@serli.com>"]
+license = "ASL-2.0"
+name = "otoroshi-cli"
+readme = "readme.md"
+version = "1.0.0"
+
+[[bin]]
+name = "otoroshicli"
+path = "src/main.rs"
+
+[dependencies]
+clap = "2.26.2"
+env_logger = "0.4.3"
+futures = "0.1.14"
+hyper = "0.11.2"
+json-color = "0.6.1"
+log = "0.3.8"
+rand = "0.3.16"
+reqwest = "0.7.3"
+serde = "1.0.15"
+serde_derive = "1.0.15"
+serde_json = "1.0.3"
+toml = "0.4.5"

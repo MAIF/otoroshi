@@ -1,0 +1,4 @@
+url = 'http://127.0.0.1:8080'
+host = 'otoroshi-api.foo.bar'
+client_id = 'admin-api-apikey-id'
+client_secret = 'admin-api-apikey-secret'

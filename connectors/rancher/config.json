@@ -1,0 +1,24 @@
+{
+  "pollInterval": 30000,
+  "otoroshi": {
+    "url": "http://127.0.0.1:8080",
+    "host": "otoroshi-api.foo.bar",
+    "clientId": "admin-api-apikey-id",
+    "clientSecret": "admin-api-apikey-secret",
+    "clientIdHeader": "Otoroshi-Client-Id",
+    "clientSecretHeader": "Otoroshi-Client-Secret",
+    "publicServices": true,
+    "servicesDomain": "foo.bar",
+    "additionalHeaders": {}  
+  },
+  "rancher": {
+    "url": "http://127.0.0.1:8888",
+    "project": "1a5",
+    "clientId": "--",
+    "clientSecret": "--",
+    "group": "rancher-group",
+    "apiKey": "rancher-api-key",
+    "apiKeyId": "xxxxxxxx",
+    "apiKeySecret": "xxxxxxxxxxx"
+  }
+}

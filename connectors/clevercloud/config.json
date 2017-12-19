@@ -1,0 +1,28 @@
+{
+  "pollInterval": 30000,
+  "otoroshi": {
+    "url": "http://127.0.0.1:8080",
+    "host": "otoroshi-api.foo.bar",
+    "clientId": "admin-api-apikey-id",
+    "clientSecret": "admin-api-apikey-secret",
+    "clientIdHeader": "Otoroshi-Client-Id",
+    "clientSecretHeader": "Otoroshi-Client-Secret",
+    "publicServices": true,
+    "servicesDomain": "foo.bar",
+    "enforceSecureCommunication": false,
+    "forceHttps": false,
+    "additionalHeaders": {}  
+  },
+  "clevercloud": {
+    "orgaId": "orga_xxxxxxx",
+    "apiHost": "https://api.clever-cloud.com/v2",
+    "consumerKey": "xxxxxx",
+    "consumerSecret": "xxxxx",
+    "oauthToken": "xxxx",
+    "oauthSecret": "xxxxxx",
+    "group": "clevercloud-group",
+    "apiKey": "clevercloud-api-key",
+    "apiKeyId": "xxxxxxxxx",
+    "apiKeySecret": "xxxxxxxx"
+  }
+}
