@@ -212,7 +212,81 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#rust-cli" name="rust-cli" class="anchor"><span class="anchor-link"></span></a>Rust CLI</h1>
-<p><em>TODO</em></p>
+<p>Otoroshi provides a command line tool to command Otoroshi instances.</p>
+<p>The documentation is not written yet, but you can explore the cli usage using the help flag <code>-h</code></p>
+<p>You can also read more about it <a href="https://github.com/MAIF/otoroshi/tree/master/clients/cli">here</a></p>
+<pre><code>$ otoroshicli -h
+
+otoroshicli 1.0.0
+   ____  __________  ____  ____  _____ __  ______     ________    ____
+  / __ \/_  __/ __ \/ __ \/ __ \/ ___// / / /  _/    / ____/ /   /  _/
+ / / / / / / / / / / /_/ / / / /\__ \/ /_/ // /_____/ /   / /    / /
+/ /_/ / / / / /_/ / _, _/ /_/ /___/ / __  // /_____/ /___/ /____/ /
+\____/ /_/  \____/_/ |_|\____//____/_/ /_/___/     \____/_____/___/
+
+A simple CLI to control the Otoroshi reverse proxy (https://maif.github.io/otoroshi).
+You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config file with
+&#39;host&#39;, &#39;client_id&#39;, &#39;client_secret&#39; values to access the Otoroshi instance you need.
+
+USAGE:
+    otoroshicli [FLAGS] [OPTIONS] [SUBCOMMAND]
+
+FLAGS:
+        --debug        Debug output
+    -h, --help         Prints help information
+    -n, --no-colors    Does not color output
+    -V, --version      Prints version information
+
+OPTIONS:
+        --oto-client-id &lt;CLIENT_ID&gt;            Sets the client ID for the Otoroshi instance
+        --oto-client-secret &lt;CLIENT_SECRET&gt;    Sets the client secret for the Otoroshi instance
+        --oto-host &lt;HOST&gt;                      Sets the host where Otoroshi is available
+        --oto-url &lt;URL&gt;                        Sets the URL where Otoroshi is available
+        --select &lt;JSON_POINTER&gt;                Select subset of the response
+
+SUBCOMMANDS:
+    apikeys     Control Otoroshi Api Keys
+    config      Control global config of Otoroshi
+    export      Export the full Otoroshi state
+    groups      Control Otoroshi service groups
+    help        Prints this message or the help of the given subcommand(s)
+    import      Import the full Otoroshi state, erase all previous state
+    lines       Control Otoroshi lines
+    services    Control Otoroshi services
+    stats       Fetch Otoroshi&#39;s global stats
+    tryout      Features for Otoroshi tryout
+</code></pre>
+<p>then </p>
+<pre><code>$ otoroshicli apikeys -h
+
+otoroshicli-apikeys
+Control Otoroshi Api Keys
+
+USAGE:
+    otoroshicli apikeys [FLAGS] [OPTIONS] [SUBCOMMAND]
+
+FLAGS:
+        --debug        Debug output
+    -h, --help         Prints help information
+    -n, --no-colors    Does not color output
+    -V, --version      Prints version information
+
+OPTIONS:
+        --oto-client-id &lt;CLIENT_ID&gt;            Sets the client ID for the Otoroshi instance
+        --oto-client-secret &lt;CLIENT_SECRET&gt;    Sets the client secret for the Otoroshi instance
+        --oto-host &lt;HOST&gt;                      Sets the host where Otoroshi is available
+        --oto-url &lt;URL&gt;                        Sets the URL where Otoroshi is available
+        --select &lt;JSON_POINTER&gt;                Select subset of the response
+
+SUBCOMMANDS:
+    all       List Otoroshi Api Keys
+    count     Count Otoroshi API Keys for a service group
+    create    Create an Otoroshi Api Key
+    delete    Delete an Otoroshi Api Key
+    from      List Otoroshi Api Keys for a service group
+    help      Prints this message or the help of the given subcommand(s)
+    update    Update an Otoroshi Api Key
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="deploy/index.html">Deploy to production</a></p>
 </div>
