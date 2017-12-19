@@ -22,7 +22,7 @@ before_install:
   - wget --quiet https://sh.rustup.rs -O rustupinstall.sh
   - sh ./rustupinstall.sh -y
   - rustup update
-  - rustup default stable
+  - rustup default stable 
 
 script:
   - cd ./otoroshi; sbt ";clean;compile;test;dist;assembly"
