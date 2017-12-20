@@ -42,7 +42,7 @@ scalacOptions ++= Seq(
 
 resolvers += "bintray" at "http://jcenter.bintray.com"
 
-PlayKeys.devSettings := Seq("play.server.http.port" -> "6000")
+PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
 sources in (Compile, doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false

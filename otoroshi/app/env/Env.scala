@@ -257,7 +257,7 @@ class Env(val configuration: Configuration,
   }
 
   lazy val port =
-    configuration.getInt("play.server.http.port").orElse(configuration.getInt("http.port")).getOrElse(6000)
+    configuration.getInt("play.server.http.port").orElse(configuration.getInt("http.port")).getOrElse(9999)
 
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,

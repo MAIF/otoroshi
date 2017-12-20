@@ -1,5 +1,84 @@
-# Otoroshi
+# Otoroshi server
 
-<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png"></img>
+this is the home of the Otoroshi server app
 
-Otoroshi is a modern Http reverse proxy with a thin layer of Api management
+## What you need
+
+* git
+* docker
+* jdk 8
+* sbt
+* node
+* yarn
+* rustup toolchain with the latest stable version of rust
+
+## Build Otoroshi for prod
+
+at the root of the repository, run the following command
+
+```sh
+sh ./scripts/build.sh all
+```
+
+it will build 
+
+* the Otoroshi server
+* the Otoroshi admin UI
+* the Otoroshi manual
+* the Otoroshi CLI
+
+## Build Otoroshi in dev mode
+
+first, modify you host file
+
+```sh
+sudo echo "127.0.0.1    otoroshi-api.dev.foo.bar otoroshi.dev.foo.bar otoroshi-admin-internal-api.dev.foo.bar" >> /etc/hosts
+```
+
+then open two bash session, in the first one run the following commands
+
+```sh
+cd ./otorosohi
+sbt
+
+[otoroshi] $ ~run -Dapp.storage=leveldb -Dapp.domain=foo.bar -Dplay.http.session.domain=.dev.foo.bar -Dapp.env=dev
+```
+
+it will run the play app in dev mode with hot reload
+
+in the second bash session, run the following commands
+
+```sh
+cd ./otorosohi/javascript
+yarn install
+yarn start
+```
+
+it will run a build server for the JS app of the admin dashboard
+
+then open your browser at <a href="" target="_blank">http://otoroshi.dev.foo.bar:9999</a>
+
+## Build the CLI
+
+the CLI is an app written in rust, so you need the `rustup` toolchain installed with the latest stable version of Rust
+
+```sh
+cd ./clients/cli
+cargo build --release
+```
+
+## Format the code
+
+at the root of the repository, run the following command
+
+```sh
+sh ./scripts/fmt.sh
+```
+
+## Generate the doc
+
+at the root of the repository, run the following command
+
+```sh
+sh ./scripts/docs.sh
+```
