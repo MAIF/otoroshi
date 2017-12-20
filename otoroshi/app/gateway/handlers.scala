@@ -461,7 +461,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
                               .getOrElse("--"),
                             aud = descriptor.name,
-                            exp = DateTime.now().plusSeconds(30).toDate.getTime,
+                            exp = DateTime.now().plusDays(30).toDate.getTime,
                             iat = DateTime.now().toDate.getTime,
                             jti = IdGenerator.uuid
                           ).withClaim("email", paUsr.map(_.email))
