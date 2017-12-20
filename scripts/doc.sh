@@ -2,16 +2,16 @@
 
 LOCATION=`pwd`
 
-function build_schemas () {
+build_schemas () {
   sh $LOCATION/scripts/schemas.sh
 }
 
-function clean () {
+clean () {
   rm -rf $LOCATION/manual/target/paradox
   rm -rf $LOCATION/docs/manual
 }
 
-function build () {
+build () {
   cd $LOCATION/manual
   sbt ';clean;paradox'
   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs

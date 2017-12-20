@@ -2,17 +2,17 @@
 
 LOCATION=`pwd`
 
-function fmt_cli () {
+fmt_cli () {
   cd $LOCATION/clients/cli
   rustup run nightly cargo fmt -- --all
 }
 
-function fmt_ui () {
+fmt_ui () {
   cd $LOCATION/otoroshi/javascript
   yarn prettier
 }
 
-function fmt_connectors () {
+fmt_connectors () {
   cd $LOCATION/connectors/clevercloud
   yarn prettier
   cd $LOCATION/connectors/common
@@ -25,7 +25,7 @@ function fmt_connectors () {
   yarn prettier
 }
 
-function fmt_server {
+fmt_server {
   cd $LOCATION/otoroshi
   sbt ';scalafmt;sbt:scalafmt;test:scalafmt'
 }
