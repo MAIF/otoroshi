@@ -144,13 +144,15 @@ class Env(val configuration: Configuration,
     val parser  = new WSConfigParser(configuration, environment)
     val config  = new AhcWSClientConfig(wsClientConfig = parser.parse())
     val builder = new AhcConfigBuilder(config)
-    val wsClient = AhcWSClient(
+    val gwWsClient = AhcWSClient(
       builder
         .configure()
-        .setHttpClientCodecMaxChunkSize(200000)
+        //.setKeepAlive(true)
+        //.setHttpClientCodecMaxChunkSize(200000)
         .build()
     )(gatewayMaterializer)
-    wsClient
+    // wsClient
+    gwWsClient
   }
 
   lazy val kafkaActorSytem = ActorSystem(
