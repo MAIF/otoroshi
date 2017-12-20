@@ -699,10 +699,14 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 // counterOut.addAndGet(responseHeader.length)
 
                                 val finalStream = resp.body
-                                  .alsoTo(Sink.onComplete(_ => {
-                                    // logger.warn("stream done")
-                                    promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
-                                  }))
+                                  .alsoTo(Sink.onComplete {
+                                    case Success(_) =>
+                                      // logger.warn(s"end of stream for ${protocol}://${req.host}${req.uri}")
+                                      promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
+                                    case Failure(e) =>
+                                      logger.error(s"error while transfering stream for ${protocol}://${req.host}${req.uri}", e)
+                                      promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
+                                  })
                                   .map { bs =>
                                     // logger.warn("chunk on " + req.uri)
                                     // meterOut.mark(bs.length)
