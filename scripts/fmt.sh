@@ -25,7 +25,7 @@ fmt_connectors () {
   yarn prettier
 }
 
-fmt_server {
+fmt_server () {
   cd $LOCATION/otoroshi
   sbt ';scalafmt;sbt:scalafmt;test:scalafmt'
 }

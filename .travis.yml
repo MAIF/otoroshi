@@ -27,12 +27,7 @@ before_install:
 
 script:
   - sh ./scripts/build.sh all
-
-deploy:
-  provider: script
-  script: scripts/upload.sh
-  on:
-    branch: master
+  - sh ./scripts/upload.sh
 
 cache:
   directories:
