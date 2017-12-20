@@ -3,7 +3,7 @@ FROM openjdk:8
 
 MAINTAINER MAIF <oss@maif.fr>
 
-ENV APP_NAME otoroshi
+ENV APP_NAME otoroshi-tryout
 ENV APP_VERSION 1.0.0
 
 RUN mkdir -p /usr/app
@@ -12,7 +12,7 @@ WORKDIR /usr/app
 
 COPY ./entrypoint.sh /usr/app
 
-RUN wget --quiet 'https://github.com/MAIF/otoroshi/releases/download/v1.0.0/otoroshi.jar'
+RUN wget --quiet 'https://dl.bintray.com/mathieuancelin/otoroshi/lastest/otoroshi.jar'
 
 RUN chmod +x /usr/app/entrypoint.sh
 
