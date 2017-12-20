@@ -151,8 +151,8 @@ class Env(val configuration: Configuration,
         //.setHttpClientCodecMaxChunkSize(200000)
         .build()
     )(gatewayMaterializer)
-    // wsClient
-    gwWsClient
+    wsClient
+    //gwWsClient
   }
 
   lazy val kafkaActorSytem = ActorSystem(
