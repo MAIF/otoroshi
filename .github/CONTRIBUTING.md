@@ -39,12 +39,11 @@ We follow the standard GitHub [fork & pull](https://help.github.com/articles/usi
 
 The TL;DR; of the above very precise workflow version is:
 
-1. Fork Akka
+1. Fork Otoroshi
 2. Hack and test on your feature (on a branch)
 3. Document it 
 4. Submit a PR
-5. Sign the CLA if necessary
-6. Keep polishing it until received enough LGTM
+6. Keep polishing it until received thumbs up from the core team
 7. Profit!
 
 ## External dependencies
