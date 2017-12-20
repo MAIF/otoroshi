@@ -24,7 +24,7 @@ sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-int
 java -jar otoroshi.jar
 ```
 
-now open your browser to http://otoroshi.foo.bar:8080/ and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md)
+now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md)
 
 ## Documentation
 
