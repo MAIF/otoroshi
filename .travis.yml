@@ -26,7 +26,6 @@ before_install:
   - rustup default stable 
 
 script:
-  - echo $PWD
   - sh ./scripts/build.sh all
 
 deploy:
