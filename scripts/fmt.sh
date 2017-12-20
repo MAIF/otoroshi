@@ -1,18 +1,18 @@
-#!/bin/bash
+#!/bin/sh
 
 LOCATION=`pwd`
 
-function fmt_cli {
+function fmt_cli () {
   cd $LOCATION/clients/cli
   rustup run nightly cargo fmt -- --all
 }
 
-function fmt_ui {
+function fmt_ui () {
   cd $LOCATION/otoroshi/javascript
   yarn prettier
 }
 
-function fmt_connectors {
+function fmt_connectors () {
   cd $LOCATION/connectors/clevercloud
   yarn prettier
   cd $LOCATION/connectors/common

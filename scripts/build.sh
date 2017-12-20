@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 LOCATION=`pwd`
 
-function clean {
+function clean () {
   cd $LOCATION/clients/cli
   cargo clean
   cd $LOCATION
@@ -11,25 +11,25 @@ function clean {
   rm -rf $LOCATION/docs/manual
 }
 
-function build_cli {
+function build_cli () {
   cd $LOCATION/clients/cli
   cargo build --release
 }
 
-function build_ui {
+function build_ui () {
   cd $LOCATION/otoroshi/javascript
   yarn install
   yarn build
 }
 
-function build_manual {
+function build_manual () {
   cd $LOCATION/manual
   sbt ';clean;paradox'
   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
   mv $LOCATION/docs/main $LOCATION/docs/manual
 }
 
-function build_server {
+function build_server () {
   cd $LOCATION/otoroshi
   sbt ';clean;compile;dist;assembly'
 }
