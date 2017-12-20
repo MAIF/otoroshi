@@ -86,7 +86,10 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     env.Headers.OpunGatewayState,
     env.Headers.OpunGatewayClaim,
     env.Headers.OpunGatewayRequestId,
-    "Host"
+    "Host",
+    "X-Forwarded-For",
+    "X-Forwarded-Proto",
+    "X-Forwarded-Protocol"
   ).map(_.toLowerCase)
 
   val headersOutFiltered = Seq(
