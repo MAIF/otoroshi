@@ -342,7 +342,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                     }
 
                     val withTrackingCookies =
-                      if (maybeTrackingId.isDefined) Seq.empty[play.api.mvc.Cookie]
+                      if (!desc.canary.enabled) Seq.empty[play.api.mvc.Cookie]
+                      else if (maybeTrackingId.isDefined) Seq.empty[play.api.mvc.Cookie]
                       else
                         Seq(
                           play.api.mvc.Cookie(
@@ -681,16 +682,18 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                   .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ Seq(
                                   env.Headers.OpunGatewayRequestId       -> snowflake,
                                   env.Headers.OpunGatewayProxyLatency    -> s"$overhead",
-                                  env.Headers.OpunGatewayUpstreamLatency -> s"$upstreamLatency",
-                                  env.Headers.OpunTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
-                                ) ++ (if (apiKey.isDefined) {
-                                        Seq(
-                                          env.Headers.OpunDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
-                                          env.Headers.OpunMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                                        )
-                                      } else {
-                                        Seq.empty[(String, String)]
-                                      })
+                                  env.Headers.OpunGatewayUpstreamLatency -> s"$upstreamLatency" //,
+                                  //env.Headers.OpunTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
+                                ) ++ Some(trackingId)
+                                  .filter(_ => desc.canary.enabled)
+                                  .map(_ => env.Headers.OpunTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (apiKey.isDefined) {
+                                                                                                                        Seq(
+                                                                                                                          env.Headers.OpunDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                                                                                                          env.Headers.OpunMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                                                                                                        )
+                                                                                                                      } else {
+                                                                                                                        Seq.empty[(String, String)]
+                                                                                                                      })
                                 val contentType = headers.getOrElse("Content-Type", MimeTypes.TEXT)
                                 // meterOut.mark(responseHeader.length)
                                 // counterOut.addAndGet(responseHeader.length)
