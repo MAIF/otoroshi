@@ -94,7 +94,7 @@ Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoros
 
 If you want to know more about Otoroshi, you should continue reading the documentation starting with @ref:[how to get Otoroshi](./getotoroshi/index.md)
 
-## I don't have JDK 8 on my machin but I have Docker
+## I don't have JDK 8 on my machine but I have Docker :)
 
 If you want to use Docker, just follow these instructions
 
@@ -113,7 +113,7 @@ wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/linux-otoros
 wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/win-otoroshicli -O otoroshicli.exe
 
 docker build -t otoroshi-tryout .
-docker run -p "$OTOROSHI_PORT:8080" otoroshi-tryout
+docker run -p "$OTOROSHI_PORT:8080" otoroshi-tryout &
 
 # Check if admin api works
 ./otoroshicli services all

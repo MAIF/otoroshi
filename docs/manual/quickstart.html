@@ -292,7 +292,7 @@ open &quot;http://api.hello.com:8080/&quot;
 </code></pre>
 <p>Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a> and login with the credentials printed in the Otoroshi logs at startup ;-)</p>
 <p>If you want to know more about Otoroshi, you should continue reading the documentation starting with <a href="getotoroshi/index.html">how to get Otoroshi</a></p>
-<h2><a href="#i-dont-have-jdk-8-on-my-machin-but-i-have-docker" name="i-dont-have-jdk-8-on-my-machin-but-i-have-docker" class="anchor"><span class="anchor-link"></span></a>I don&rsquo;t have JDK 8 on my machin but I have Docker</h2>
+<h2><a href="#i-dont-have-jdk-8-on-my-machine-but-i-have-docker-" name="i-dont-have-jdk-8-on-my-machine-but-i-have-docker-" class="anchor"><span class="anchor-link"></span></a>I don&rsquo;t have JDK 8 on my machine but I have Docker :)</h2>
 <p>If you want to use Docker, just follow these instructions</p>
 <pre class="prettyprint"><code class="language-sh"># here be careful, if you want to change the OTOROSHI_PORT, change the same value in the `otoroshicli.toml` config file
 export OTOROSHI_PORT=8080
@@ -308,7 +308,7 @@ wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/linux-otoros
 wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/win-otoroshicli -O otoroshicli.exe
 
 docker build -t otoroshi-tryout .
-docker run -p &quot;$OTOROSHI_PORT:8080&quot; otoroshi-tryout
+docker run -p &quot;$OTOROSHI_PORT:8080&quot; otoroshi-tryout &amp;
 
 # Check if admin api works
 ./otoroshicli services all
@@ -376,7 +376,7 @@ open &quot;http://api.hello.com:$OTOROSHI_PORT/&quot;
     <li><a href="quickstart.html#the-elevator-pitch" class="header">The elevator pitch</a></li>
     <li><a href="quickstart.html#now-some-sh-" class="header">Now some sh :)</a></li>
     <li><a href="quickstart.html#what-about-the-ui" class="header">What about the UI</a></li>
-    <li><a href="quickstart.html#i-dont-have-jdk-8-on-my-machin-but-i-have-docker" class="header">I don&rsquo;t have JDK 8 on my machin but I have Docker</a></li>
+    <li><a href="quickstart.html#i-dont-have-jdk-8-on-my-machine-but-i-have-docker-" class="header">I don&rsquo;t have JDK 8 on my machine but I have Docker :)</a></li>
   </ul></li>
 </ul>
 </div>
