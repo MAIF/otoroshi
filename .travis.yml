@@ -27,7 +27,7 @@ before_install:
 
 script:
   - echo $PWD
-  - sh ./script/build.sh all
+  - sh ./scripts/build.sh all
 
 deploy:
   provider: script
