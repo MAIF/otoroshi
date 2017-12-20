@@ -13,13 +13,13 @@ Otoroshi is an awesome reverse proxy built in scala that handle all the calls to
 ## Now some sh :)
 
 ```sh
-wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/otoroshi.jar
+wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/latest/otoroshi.jar
 wget --guiet https://github.com/MAIF/otoroshi/edit/master/clients/cli/otoroshicli.toml
-wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/macos-otoroshicli -O otoroshicli
+wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/latest/macos-otoroshicli -O otoroshicli
 # or if you use linux
-wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/linux-otoroshicli -O otoroshicli
+wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/latest/linux-otoroshicli -O otoroshicli
 # or if you use windows
-wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/win-otoroshicli -O otoroshicli.exe
+wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/latest/win-otoroshicli -O otoroshicli.exe
 
 # Run the Otoroshi server
 java -jar otoroshi.jar &
@@ -106,11 +106,11 @@ export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 wget --guiet https://raw.githubusercontent.com/MAIF/otoroshi/master/docker/tryout/Dockerfile
 wget --guiet https://raw.githubusercontent.com/MAIF/otoroshi/master/docker/tryout/entrypoint.sh
 wget --guiet https://github.com/MAIF/otoroshi/edit/master/clients/cli/otoroshicli.toml
-wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/macos-otoroshicli -O otoroshicli
+wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/latest/macos-otoroshicli -O otoroshicli
 # or if you use linux
-wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/linux-otoroshicli -O otoroshicli
+wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/latest/linux-otoroshicli -O otoroshicli
 # or if you use windows
-wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/lastest/win-otoroshicli -O otoroshicli.exe
+wget --quiet https://dl.bintray.com/mathieuancelin/otoroshi/latest/win-otoroshicli -O otoroshicli.exe
 
 docker build -t otoroshi-tryout .
 docker run -p "$OTOROSHI_PORT:8080" otoroshi-tryout &
