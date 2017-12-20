@@ -74,6 +74,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
   implicit lazy val scheduler = env.gatewayActorSystem.scheduler
 
   lazy val logger = Logger("otoroshi-http-handler")
+  lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
   val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -501,9 +502,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           // meterIn.mark(requestHeader.length)
                           // counterIn.addAndGet(requestHeader.length)
                           // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
-                          // logger.trace(
-                          //   s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
-                          // )
+                          debugLogger.trace(
+                            s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
+                          )
                           val overhead = System.currentTimeMillis() - start
                           val quotas: Future[RemainingQuotas] =
                             apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))

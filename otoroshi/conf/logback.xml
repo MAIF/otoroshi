@@ -67,6 +67,7 @@
   <logger name="otoroshi-clevercloud-client" level="WARN" />
   <logger name="otoroshi-swagger-controller" level="WARN" />
   <logger name="otoroshi-regex-pool" level="WARN" />
+  <logger name="otoroshi-http-handler-debug" level="WARN" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />

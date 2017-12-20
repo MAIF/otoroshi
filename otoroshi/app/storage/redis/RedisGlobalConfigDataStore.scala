@@ -18,7 +18,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves)
     extends GlobalConfigDataStore
     with RedisStore[GlobalConfig] {
 
-  lazy val logger = Logger("otoroshi-in-memory-globalconfig-datastore")
+  lazy val logger = Logger("otoroshi-redis-globalconfig-datastore")
 
   override def fmt: Format[GlobalConfig] = GlobalConfig._fmt
 
