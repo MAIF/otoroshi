@@ -26,10 +26,8 @@ before_install:
   - rustup default stable 
 
 script:
-  - cd ./otoroshi; sbt ";clean;compile;test;dist;assembly"
-  - cd ../otoroshi/javascript; yarn install; yarn build
-  - cd ../../manual; sbt ";clean;paradox"
-  - cd ../clients/cli; cargo build --release
+  - sh ./script/build.sh all
+  - sh ./script/upload.sh
 
 cache:
   directories:
