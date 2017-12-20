@@ -11,7 +11,8 @@ The reference documentation is available at https://maif.github.io/otoroshi/manu
 ## Community
 You can join these groups and chats to discuss and ask Otoroshi related questions:
 
-- Issue tracker: [![github: MAIF/otoroshi](https://img.shields.io/github/issues/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/issues)
+- Issue tracker: [![github: MAIF/otoroshi/issues](https://img.shields.io/github/issues/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/issues)
+- Pull request: [![github: MAIF/otoroshi/pulls](https://img.shields.io/github/issues-pr/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/pulls)
 - Chat room: [![gitter.im](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Contributing
