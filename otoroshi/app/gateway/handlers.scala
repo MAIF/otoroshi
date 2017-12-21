@@ -73,7 +73,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
   implicit lazy val ec        = env.gatewayExecutor
   implicit lazy val scheduler = env.gatewayActorSystem.scheduler
 
-  lazy val logger = Logger("otoroshi-http-handler")
+  lazy val logger      = Logger("otoroshi-http-handler")
   lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
   val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
@@ -508,7 +508,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           // counterIn.addAndGet(requestHeader.length)
                           // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
                           debugLogger.trace(
-                            s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
+                            s"curl -X ${req.method
+                              .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
                           )
                           val overhead = System.currentTimeMillis() - start
                           val quotas: Future[RemainingQuotas] =
@@ -710,7 +711,10 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.uri}")
                                       promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
                                     case Failure(e) =>
-                                      logger.error(s"error while transfering stream for ${protocol}://${req.host}${req.uri}", e)
+                                      logger.error(
+                                        s"error while transfering stream for ${protocol}://${req.host}${req.uri}",
+                                        e
+                                      )
                                       promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
                                   })
                                   .map { bs =>
@@ -739,13 +743,30 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                     }
                                 } else if (globalConfig.streamEntityOnly) { // only temporary
                                   // stream out
+                                  val entity =
+                                    if (resp.headers.headers
+                                          .get("Transfer-Encoding")
+                                          .flatMap(_.lastOption)
+                                          .filter(_ == "chunked")
+                                          .isDefined) {
+                                      HttpEntity.Chunked(
+                                        finalStream
+                                          .map(i => play.api.http.HttpChunk.Chunk(i))
+                                          .concat(
+                                            Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
+                                          ),
+                                        Some(contentType)
+                                      )
+                                    } else {
+                                      HttpEntity.Streamed(
+                                        finalStream,
+                                        resp.headers.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong),
+                                        Some(contentType)
+                                      )
+                                    }
                                   FastFuture.successful(
                                     Status(resp.headers.status)
-                                      //.sendEntity(HttpEntity.Streamed(finalStream, None, Some(contentType)))
-                                      .sendEntity(HttpEntity.Streamed(
-                                        finalStream, 
-                                        resp.headers.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong), 
-                                        Some(contentType)))
+                                      .sendEntity(entity)
                                       .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
                                       .as(contentType)
                                       .withCookies(withTrackingCookies: _*)
