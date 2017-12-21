@@ -707,14 +707,14 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 val finalStream = resp.body
                                   .alsoTo(Sink.onComplete {
                                     case Success(_) =>
-                                      // logger.warn(s"end of stream for ${protocol}://${req.host}${req.uri}")
+                                      debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.uri}")
                                       promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
                                     case Failure(e) =>
                                       logger.error(s"error while transfering stream for ${protocol}://${req.host}${req.uri}", e)
                                       promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
                                   })
                                   .map { bs =>
-                                    // logger.trace(s"chunk on ${req.uri} => ${bs.utf8String}")
+                                    debugLogger.trace(s"chunk on ${req.uri} => ${bs.utf8String}")
                                     // meterOut.mark(bs.length)
                                     counterOut.addAndGet(bs.length)
                                     bs
