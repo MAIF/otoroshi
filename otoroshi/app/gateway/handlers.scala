@@ -772,20 +772,33 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       .withCookies(withTrackingCookies: _*)
                                   )
                                 } else {
-                                  val response = req.headers.get("Transfer-Encoding").filter(_ == "chunked").map { _ =>
+                                  val response = resp.headers.headers
+                                    .get("Transfer-Encoding")
+                                    .flatMap(_.lastOption)
+                                    .filter(_ == "chunked")
+                                    .map { _ =>
+                                      // stream out
+                                      Status(resp.headers.status)
+                                        .chunked(finalStream)
+                                        .withHeaders(headersOut: _*)
+                                        .withCookies(withTrackingCookies: _*)
+                                      // .as(contentType)
+                                    } getOrElse {
                                     // stream out
                                     Status(resp.headers.status)
-                                      .chunked(finalStream)
-                                      .withHeaders(headersOut: _*)
+                                      .sendEntity(
+                                        HttpEntity.Streamed(
+                                          finalStream,
+                                          resp.headers.headers
+                                            .get("Content-Length")
+                                            .flatMap(_.lastOption)
+                                            .map(_.toLong),
+                                          resp.headers.headers.get("Content-Type").flatMap(_.lastOption)
+                                        )
+                                      )
+                                      .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
                                       .withCookies(withTrackingCookies: _*)
-                                    // .as(contentType)
-                                  } getOrElse {
-                                    // stream out
-                                    Status(resp.headers.status)
-                                      .sendEntity(HttpEntity.Streamed(finalStream, None, None)) // Some(contentType)))
-                                      .withHeaders(headersOut: _*)
-                                      .withCookies(withTrackingCookies: _*)
-                                    // .as(contentType)
+                                      .as(contentType)
                                   }
                                   FastFuture.successful(response)
                                 }
