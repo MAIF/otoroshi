@@ -714,7 +714,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
                                   })
                                   .map { bs =>
-                                    logger.trace(s"chunk on ${req.uri} => ${bs.utf8String}")
+                                    // logger.trace(s"chunk on ${req.uri} => ${bs.utf8String}")
                                     // meterOut.mark(bs.length)
                                     counterOut.addAndGet(bs.length)
                                     bs
