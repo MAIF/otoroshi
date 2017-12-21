@@ -26,6 +26,12 @@ java -jar otoroshi.jar
 
 now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md)
 
+or you can try it online with Google Cloud Shell if you're a user of the Google Cloud Platform
+
+@@@ div { .centered-img }
+[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&print=instructions.txt&tutorial=tutorial.md)
+@@@
+
 ## Documentation
 
 * @ref:[About Otoroshi](./about.md)
