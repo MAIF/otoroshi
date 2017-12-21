@@ -741,7 +741,11 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                   // stream out
                                   FastFuture.successful(
                                     Status(resp.headers.status)
-                                      .sendEntity(HttpEntity.Streamed(finalStream, None, Some(contentType)))
+                                      //.sendEntity(HttpEntity.Streamed(finalStream, None, Some(contentType)))
+                                      .sendEntity(HttpEntity.Streamed(
+                                        finalStream, 
+                                        resp.headers.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong), 
+                                        Some(contentType)))
                                       .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
                                       .as(contentType)
                                       .withCookies(withTrackingCookies: _*)
