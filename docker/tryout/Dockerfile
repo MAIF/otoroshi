@@ -9,7 +9,10 @@ WORKDIR /usr/app
 
 COPY . /usr/app
 
-RUN wget 'https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar'
+RUN wget 'https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar' \
+  && mkdir ./leveldb
+
+VOLUME ./leveldb
 
 ENTRYPOINT ["./entrypoint.sh"]
 
