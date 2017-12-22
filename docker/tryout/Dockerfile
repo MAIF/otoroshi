@@ -12,7 +12,7 @@ WORKDIR /usr/app
 
 COPY ./entrypoint.sh /usr/app
 
-RUN wget --quiet 'https://dl.bintray.com/mathieuancelin/otoroshi/latest/otoroshi.jar'
+RUN wget --quiet 'https://dl.bintray.com/maif/binaries/latest/otoroshi.jar'
 
 RUN chmod +x /usr/app/entrypoint.sh
 
