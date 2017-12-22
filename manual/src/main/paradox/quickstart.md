@@ -103,15 +103,13 @@ If you want to use Docker, just follow these instructions
 export OTOROSHI_PORT=8080
 export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 
-wget --guiet https://raw.githubusercontent.com/MAIF/otoroshi/master/docker/tryout/Dockerfile
-wget --guiet https://raw.githubusercontent.com/MAIF/otoroshi/master/docker/tryout/entrypoint.sh
 wget --quiet https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
 # or if you use linux
 wget --quiet https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
 # or if you use windows
 wget --quiet https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
 
-docker build -t otoroshi-tryout .
+docker pull maif-docker-docker.bintray.io/otoroshi-tryout
 docker run -p "$OTOROSHI_PORT:8080" otoroshi-tryout &
 
 # Check if admin api works

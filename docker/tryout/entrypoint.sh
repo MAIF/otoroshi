@@ -1,3 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
-java "$@" -jar otoroshi.jar
+java "$@" -jar ./otoroshi.jar

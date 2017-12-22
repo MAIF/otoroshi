@@ -1,4 +1,4 @@
-FROM openjdk:8
+FROM openjdk:8u151-jre-alpine
 
 MAINTAINER MAIF <oss@maif.fr>
 
