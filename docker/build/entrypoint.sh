@@ -1,2 +1,3 @@
 #!/bin/sh
-./otoroshi/bin/otoroshi "$@"
+cd ./otoroshi
+./bin/otoroshi -Dhttp.port=8080 "$@"

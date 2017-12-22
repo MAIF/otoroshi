@@ -14,7 +14,7 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 
 ## Installation
 
-You can download the latest build of Otoroshi as a [fat jar](https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar) or as a [zip package](https://dl.bintray.com/maif/binaries/otoroshi-dist/latest/otoroshi-dist.zip)
+You can download the latest build of Otoroshi as a [fat jar](https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar), as a [zip package](https://dl.bintray.com/maif/binaries/otoroshi-dist/latest/otoroshi-dist.zip) or as a docker image.
 
 You can install and run Otoroshi with this little bash snippet
 

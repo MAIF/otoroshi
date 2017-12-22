@@ -5,7 +5,7 @@ If your a Docker aficionado, Otoroshi is provided as a Docker image that your ca
 first, fetch the last Docker image of Otoroshi
 
 ```sh
-docker pull otoroshi
+docker pull maif-docker-docker.bintray.io/otoroshi
 ```
 
 then just run it
