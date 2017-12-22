@@ -5,7 +5,7 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 **Otoroshi** is also a modern http reverse proxy with a thin layer of api management written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
 
 @@@ div { .centered-img }
-[![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://api.bintray.com/packages/maif/binaries/otoroshi.jar/images/download.svg) ](https://dl.bintray.com/maif/binaries/latest/otoroshi.jar)
+[![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://api.bintray.com/packages/maif/binaries/otoroshi.jar/images/download.svg) ](https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar)
 @@@
 
 @@@ div { .centered-img }
@@ -14,12 +14,12 @@ The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:Se
 
 ## Installation
 
-You can download the latest build of Otoroshi [here](https://dl.bintray.com/maif/binaries/latest/otoroshi.jar) 
+You can download the latest build of Otoroshi [here](https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar) 
 
 You can install and run Otoroshi with this little bash snippet
 
 ```sh
-wget --quiet 'https://dl.bintray.com/maif/binaries/latest/otoroshi.jar'
+wget --quiet 'https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar'
 sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar" >> /etc/hosts
 java -jar otoroshi.jar
 ```

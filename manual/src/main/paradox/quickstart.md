@@ -13,7 +13,7 @@ Otoroshi is an awesome reverse proxy built in scala that handle all the calls to
 ## Now some sh :)
 
 ```sh
-wget --quiet https://dl.bintray.com/maif/binaries/latest/otoroshi.jar
+wget --quiet https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar
 wget --guiet https://github.com/MAIF/otoroshi/edit/master/clients/cli/otoroshicli.toml
 wget --quiet https://dl.bintray.com/maif/binaries/macos-otoroshicli/latest/otoroshicli
 # or if you use linux
