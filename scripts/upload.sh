@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "Uploading otoroshicli"
+echo "Uploading otoroshicli to bintray"
 unamestr=`uname`
 if [ "$unamestr" == 'Linux' ]; then
 	curl -T ./clients/cli/target/release/otoroshicli -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' https://api.bintray.com/content/maif/binaries/linux-otoroshicli/latest/otoroshicli
