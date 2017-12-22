@@ -26,3 +26,9 @@ You can also provide some ENV variable using the `--env` flag to customize your 
 
 The list of possible env variables is available @ref:[here](../firstrun/env.md)
 
+You can also use a volume if you choose to user `leveldb` datastore like 
+
+```sh
+docker run -p "8080:8080" -v "/home/user/oto/data:/usr/app/otoroshi/leveldb" otoroshi -Dapp.storage=leveldb
+```
+
