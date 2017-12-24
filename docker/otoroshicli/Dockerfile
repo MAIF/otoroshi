@@ -1,18 +1,18 @@
-FROM openjdk:8u151-jre-alpine
+FROM rust:1.20
 
-RUN mkdir -p /usr/app \
-  && cd /usr/app \ 
-  && wget https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli \
-  && wget https://github.com/MAIF/otoroshi/edit/master/clients/cli/otoroshicli.toml \
-  && chmod +x ./otoroshicli \
-  && pwd \
-  && ls -ahl
+MAINTAINER MAIF <oss@maif.fr>
 
-VOLUME /usr/app
+RUN mkdir -p /usr/app
 
 WORKDIR /usr/app
 
 COPY . /usr/app
+
+RUN wget https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli \
+  && wget https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml \
+  && chmod +x otoroshicli 
+
+VOLUME /usr/app
 
 ENTRYPOINT ["./entrypoint.sh"]
 

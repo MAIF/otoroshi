@@ -14,7 +14,7 @@ Otoroshi is an awesome reverse proxy built in scala that handle all the calls to
 
 ```sh
 wget --quiet https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar
-wget --guiet https://github.com/MAIF/otoroshi/edit/master/clients/cli/otoroshicli.toml
+wget --guiet https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
 wget --quiet https://dl.bintray.com/maif/binaries/macos-otoroshicli/latest/otoroshicli
 # or if you use linux
 wget --quiet https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
