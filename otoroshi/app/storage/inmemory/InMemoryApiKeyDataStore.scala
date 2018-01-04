@@ -16,8 +16,6 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike) extends ApiKeyDataStore with 
 
   lazy val logger = Logger("otoroshi-in-memory-apikey-datastore")
 
-  override def _findAllCached = true
-
   override def redisLike(implicit env: Env): RedisLike = redisCli
 
   override def fmt: Format[ApiKey] = ApiKey._fmt

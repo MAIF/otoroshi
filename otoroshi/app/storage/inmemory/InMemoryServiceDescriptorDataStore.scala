@@ -15,8 +15,6 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int)
 
   lazy val logger = Logger("otoroshi-in-memory-service-datatstore")
 
-  override def _findAllCached = true
-
   override def redisLike(implicit env: Env): RedisLike = redisCli
 
   override def fmt: Format[ServiceDescriptor] = ServiceDescriptor._fmt

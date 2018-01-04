@@ -78,6 +78,7 @@ class Env(val configuration: Configuration,
   //lazy val middleFingers: Boolean = configuration.getBoolean("app.middleFingers").getOrElse(false)
   //lazy val maxLocalLogsSize: Int = configuration.getInt("app.events.maxSize").getOrElse(1000)
 
+  lazy val useCache: Boolean              = configuration.getBoolean("app.useCache").getOrElse(false)
   lazy val useRedisScan: Boolean          = configuration.getBoolean("app.redis.useScan").getOrElse(false)
   lazy val commitId: String               = configuration.getString("app.commitId").getOrElse("HEAD")
   lazy val secret: String                 = configuration.getString("play.crypto.secret").get
@@ -228,6 +229,8 @@ class Env(val configuration: Configuration,
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
+
+  if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {

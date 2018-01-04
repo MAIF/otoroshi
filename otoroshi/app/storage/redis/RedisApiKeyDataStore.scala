@@ -16,8 +16,6 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves) extends ApiKeyData
 
   lazy val logger = Logger("otoroshi-redis-apikey-datastore")
 
-  override def _findAllCached = true
-
   override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
 
   override def fmt: Format[ApiKey] = ApiKey._fmt

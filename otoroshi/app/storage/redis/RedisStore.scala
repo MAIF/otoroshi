@@ -20,7 +20,7 @@ import scala.util.Success
 trait RedisStore[T] extends BasicStore[T] {
   def fmt: Format[T]
   private lazy val name       = this.getClass.getSimpleName.replace("$", "")
-  def _findAllCached: Boolean = false
+  def _findAllCached(implicit env: Env): Boolean = env.useCache
   def _redis(implicit env: Env): RedisClientMasterSlaves
   def reader: Reads[T]          = fmt
   def writer: Writes[T]         = fmt
@@ -70,15 +70,19 @@ trait RedisStore[T] extends BasicStore[T] {
   private val findAllCache     = new java.util.concurrent.atomic.AtomicReference[Seq[T]](null)
   private val lastFindAllCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  def clearFromCache(id: String): Unit = {
-    val values = findAllCache.get
-    if (values != null) {
-      findAllCache.set(values.filterNot(s => extractId(s) == id))
+  def clearFromCache(id: String)(implicit env: Env): Unit = {
+    if (_findAllCached) {
+      val values = findAllCache.get
+      if (values != null) {
+        findAllCache.set(values.filterNot(s => extractId(s) == id))
+      }
     }
   }
 
-  def clearCache(id: String): Unit = {
-    findAllCache.set(null)
+  def clearCache(id: String)(implicit env: Env): Unit = {
+    if (_findAllCached) {
+      findAllCache.set(null)
+    }
   }
 
   def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
@@ -137,7 +141,7 @@ trait RedisStore[T] extends BasicStore[T] {
   }
   def findAllById(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = ids match {
     case keys if keys.isEmpty => FastFuture.successful(Seq.empty[T])
-    case keys if findAllCache.get() != null => {
+    case keys if _findAllCached && findAllCache.get() != null => {
       // TODO : update findAllCache ??? FIXME ???
       FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
     }

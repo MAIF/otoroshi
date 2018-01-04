@@ -16,8 +16,6 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
 
   lazy val logger = Logger("otoroshi-redis-service-datastore")
 
-  override def _findAllCached = true
-
   override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
 
   override def fmt: Format[ServiceDescriptor] = ServiceDescriptor._fmt
