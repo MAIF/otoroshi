@@ -86,13 +86,13 @@ fn main() {
     env_logger::init().unwrap();
 
     let local_config_path: Option<&Path> =
-        Some(Path::new("./otoroshicli.toml")).filter(|i| i.exists());
+        Some(Path::new("./otoroshicli.toml")).m_filter(|i| i.exists());
     let global_config_path: Option<PathBuf> = std::env::home_dir()
         .map(|mut i| {
             i.push(".otoroshicli.toml");
             i
         })
-        .filter(|i| i.exists());
+        .m_filter(|i| i.exists());
     let default_config: ToMlValue = match (local_config_path, global_config_path) {
         (Some(path), _) => load_from_path(path.to_str().unwrap()),
         (_, Some(path)) => load_from_path(path.to_str().unwrap()),
@@ -1105,7 +1105,7 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
                 subcommand
                     .value_of("url")
                     .expect("You have to provide an URL to call"),
-                subcommand.value_of("method").get_or_else("GET"),
+                subcommand.value_of("method").m_get_or_else("GET"),
                 subcommand
                     .values_of("header")
                     .map(|i| i.collect())
@@ -1285,7 +1285,7 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
                         .expect("You need to specify a group name"),
                     subcommand
                         .value_of("description")
-                        .get_or_else("No description"),
+                        .m_get_or_else("No description"),
                 )
             }
             ("update", Some(subcommand)) => {

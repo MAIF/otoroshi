@@ -208,61 +208,61 @@ impl OtoroshiClient {
         statsd_datadog: Option<&str>,
     ) -> String {
         let mut updates: Vec<String> = Vec::new();
-        stream_entity_only.foreach(|stream_entity_only| {
+        stream_entity_only.m_foreach(|stream_entity_only| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/streamEntityOnly", "value": {} }}"#,
                 stream_entity_only
             ))
         });
-        auto_link_to_default_group.foreach(|auto_link_to_default_group| {
+        auto_link_to_default_group.m_foreach(|auto_link_to_default_group| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/autoLinkToDefaultGroup", "value": {} }}"#,
                 auto_link_to_default_group
             ))
         });
-        limit_concurrent_requests.foreach(|limit_concurrent_requests| {
+        limit_concurrent_requests.m_foreach(|limit_concurrent_requests| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/limitConcurrentRequests", "value": {} }}"#,
                 limit_concurrent_requests
             ))
         });
-        max_concurrent_requests.foreach(|max_concurrent_requests| {
+        max_concurrent_requests.m_foreach(|max_concurrent_requests| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/maxConcurrentRequests", "value": {} }}"#,
                 max_concurrent_requests
             ))
         });
-        max_http10_response_size.foreach(|max_http10_response_size| {
+        max_http10_response_size.m_foreach(|max_http10_response_size| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/maxHttp10ResponseSize", "value": {} }}"#,
                 max_http10_response_size
             ))
         });
-        use_circuit_breakers.foreach(|use_circuit_breakers| {
+        use_circuit_breakers.m_foreach(|use_circuit_breakers| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/useCircuitBreakers", "value": {} }}"#,
                 use_circuit_breakers
             ))
         });
-        api_read_only.foreach(|api_read_only| {
+        api_read_only.m_foreach(|api_read_only| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/apiReadOnly", "value": {} }}"#,
                 api_read_only
             ))
         });
-        u2f_login_only.foreach(|u2f_login_only| {
+        u2f_login_only.m_foreach(|u2f_login_only| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/u2fLoginOnly", "value": {} }}"#,
                 u2f_login_only
             ))
         });
-        throttling_quota.foreach(|throttling_quota| {
+        throttling_quota.m_foreach(|throttling_quota| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/throttlingQuota", "value": {} }}"#,
                 throttling_quota
             ))
         });
-        per_ip_throttling_quota.foreach(|per_ip_throttling_quota| {
+        per_ip_throttling_quota.m_foreach(|per_ip_throttling_quota| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/perIpThrottlingQuota", "value": {} }}"#,
                 per_ip_throttling_quota
@@ -317,109 +317,109 @@ impl OtoroshiClient {
             ));
         }
 
-        bo_auth0_client_secret.foreach(|bo_auth0_client_secret| {
+        bo_auth0_client_secret.m_foreach(|bo_auth0_client_secret| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/backofficeAuth0Config/secret", "value": "{}" }}"#,
                 bo_auth0_client_secret
             ))
         });
-        bo_auth0_client_id.foreach(|bo_auth0_client_id| {
+        bo_auth0_client_id.m_foreach(|bo_auth0_client_id| {
             updates.push(format!(
                 r#"{{"op":"replace","path":"/backofficeAuth0Config/clientId","value":"{}"}}"#,
                 bo_auth0_client_id
             ))
         });
-        bo_auth0_callback_url.foreach(|bo_auth0_callback_url| {
+        bo_auth0_callback_url.m_foreach(|bo_auth0_callback_url| {
             updates.push(format!(
                 r#"{{"op":"replace","path":"/backofficeAuth0Config/callbackURL","value":"{}"}}"#,
                 bo_auth0_callback_url
             ))
         });
-        bo_auth0_domain.foreach(|bo_auth0_domain| {
+        bo_auth0_domain.m_foreach(|bo_auth0_domain| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/backofficeAuth0Config/domain", "value": "{}" }}"#,
                 bo_auth0_domain
             ))
         });
-        papps_auth0_client_secret.foreach(|papps_auth0_client_secret| {
+        papps_auth0_client_secret.m_foreach(|papps_auth0_client_secret| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/privateAppsAuth0Config/secret", "value": "{}" }}"#,
                 papps_auth0_client_secret
             ))
         });
-        papps_auth0_client_id.foreach(|papps_auth0_client_id| {
+        papps_auth0_client_id.m_foreach(|papps_auth0_client_id| {
             updates.push(format!(
                 r#"{{"op":"replace","path":"/privateAppsAuth0Config/clientId","value":"{}"}}"#,
                 papps_auth0_client_id
             ))
         });
-        papps_auth0_callback_url.foreach(|papps_auth0_callback_url| {
+        papps_auth0_callback_url.m_foreach(|papps_auth0_callback_url| {
             updates.push(format!(
                 r#"{{"op":"replace","path":"/privateAppsAuth0Config/callbackURL","value":"{}"}}"#,
                 papps_auth0_callback_url
             ))
         });
-        papps_auth0_domain.foreach(|papps_auth0_domain| {
+        papps_auth0_domain.m_foreach(|papps_auth0_domain| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/privateAppsAuth0Config/domain", "value": "{}" }}"#,
                 papps_auth0_domain
             ))
         });
-        mailgun_api_key.foreach(|mailgun_api_key| {
+        mailgun_api_key.m_foreach(|mailgun_api_key| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/mailGunSettings/apiKey", "value": "{}" }}"#,
                 mailgun_api_key
             ))
         });
-        mailgun_domain.foreach(|mailgun_domain| {
+        mailgun_domain.m_foreach(|mailgun_domain| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/mailGunSettings/domain", "value": "{}" }}"#,
                 mailgun_domain
             ))
         });
-        clever_consumer_key.foreach(|clever_consumer_key| {
+        clever_consumer_key.m_foreach(|clever_consumer_key| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/cleverSettings/consumerKey", "value": "{}" }}"#,
                 clever_consumer_key
             ))
         });
-        clever_consumer_secret.foreach(|clever_consumer_secret| {
+        clever_consumer_secret.m_foreach(|clever_consumer_secret| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/cleverSettings/consumerSecret", "value": "{}" }}"#,
                 clever_consumer_secret
             ))
         });
-        clever_oauth_token.foreach(|clever_oauth_token| {
+        clever_oauth_token.m_foreach(|clever_oauth_token| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/cleverSettings/token", "value": "{}" }}"#,
                 clever_oauth_token
             ))
         });
-        clever_oauth_secret.foreach(|clever_oauth_secret| {
+        clever_oauth_secret.m_foreach(|clever_oauth_secret| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/cleverSettings/secret", "value": "{}" }}"#,
                 clever_oauth_secret
             ))
         });
-        clever_oauth_orga_id.foreach(|clever_oauth_orga_id| {
+        clever_oauth_orga_id.m_foreach(|clever_oauth_orga_id| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/cleverSettings/orgaId", "value": "{}" }}"#,
                 clever_oauth_orga_id
             ))
         });
-        statsd_host.foreach(|statsd_host| {
+        statsd_host.m_foreach(|statsd_host| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/statsdConfig/host", "value": "{}" }}"#,
                 statsd_host
             ))
         });
-        statsd_port.foreach(|statsd_port| {
+        statsd_port.m_foreach(|statsd_port| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/statsdConfig/port", "value": {} }}"#,
                 statsd_port
             ))
         });
-        statsd_datadog.foreach(|statsd_datadog| {
+        statsd_datadog.m_foreach(|statsd_datadog| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/statsdConfig/datadog", "value": {} }}"#,
                 statsd_datadog
@@ -500,7 +500,7 @@ impl OtoroshiClient {
 
     pub fn create_group(&self, group_id: Option<&str>, name: &str, description: &str) -> String {
         let mut fields: Vec<String> = Vec::new();
-        group_id.foreach(|group_id| fields.push(format!(r#""id":"{}""#, group_id)));
+        group_id.m_foreach(|group_id| fields.push(format!(r#""id":"{}""#, group_id)));
         fields.push(format!(r#""name":"{}""#, name));
         fields.push(format!(r#""description":"{}""#, description));
         let body = format!(r#"{{{}}}"#, fields.join(","));
@@ -516,9 +516,9 @@ impl OtoroshiClient {
     ) -> String {
         let mut fields: Vec<String> = Vec::new();
         fields.push(format!(r#""id":"{}""#, group_id));
-        name.foreach(|name| fields.push(format!(r#""name":"{}""#, name)));
+        name.m_foreach(|name| fields.push(format!(r#""name":"{}""#, name)));
         description
-            .foreach(|description| fields.push(format!(r#""description":"{}""#, description)));
+            .m_foreach(|description| fields.push(format!(r#""description":"{}""#, description)));
         let body = format!(r#"{{{}}}"#, fields.join(","));
         let data = http::put_resource(self, format!("/api/groups/{}", group_id).as_str(), body);
         self.output_json(data, json!({}))
@@ -536,17 +536,17 @@ impl OtoroshiClient {
         monthly_quota: Option<&str>,
     ) -> String {
         let mut fields: Vec<String> = Vec::new();
-        id.foreach(|id| fields.push(format!(r#""clientId":"{}""#, id)));
-        secret.foreach(|secret| fields.push(format!(r#""clientSecret":"{}""#, secret)));
+        id.m_foreach(|id| fields.push(format!(r#""clientId":"{}""#, id)));
+        secret.m_foreach(|secret| fields.push(format!(r#""clientSecret":"{}""#, secret)));
         fields.push(format!(r#""clientName":"{}""#, name));
         fields.push(format!(r#""authorizedGroup":"{}""#, group));
         fields.push(format!(r#""enabled":{}"#, !not_enabled));
-        throttling_quota.foreach(|throttling_quota| {
+        throttling_quota.m_foreach(|throttling_quota| {
             fields.push(format!(r#""throttlingQuota":{}"#, throttling_quota))
         });
-        daily_quota.foreach(|daily_quota| fields.push(format!(r#""dailyQuota":{}"#, daily_quota)));
+        daily_quota.m_foreach(|daily_quota| fields.push(format!(r#""dailyQuota":{}"#, daily_quota)));
         monthly_quota
-            .foreach(|monthly_quota| fields.push(format!(r#""monthlyQuota":{}"#, monthly_quota)));
+            .m_foreach(|monthly_quota| fields.push(format!(r#""monthlyQuota":{}"#, monthly_quota)));
         let body = format!(r#"{{{}}}"#, fields.join(","));
         let data = http::post_resource(
             self,
@@ -568,37 +568,37 @@ impl OtoroshiClient {
         monthly_quota: Option<&str>,
     ) -> String {
         let mut updates: Vec<String> = Vec::new();
-        secret.foreach(|secret| {
+        secret.m_foreach(|secret| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientSecret", "value": "{}" }}"#,
                 secret
             ))
         });
-        name.foreach(|name| {
+        name.m_foreach(|name| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientName", "value": "{}" }}"#,
                 name
             ))
         });
-        enabled.foreach(|enabled| {
+        enabled.m_foreach(|enabled| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/enabled", "value": {} }}"#,
                 enabled
             ))
         });
-        throttling_quota.foreach(|throttling_quota| {
+        throttling_quota.m_foreach(|throttling_quota| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/throttlingQuota", "value": {} }}"#,
                 throttling_quota
             ))
         });
-        daily_quota.foreach(|daily_quota| {
+        daily_quota.m_foreach(|daily_quota| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/dailyQuota", "value": {} }}"#,
                 daily_quota
             ))
         });
-        monthly_quota.foreach(|monthly_quota| {
+        monthly_quota.m_foreach(|monthly_quota| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/monthlyQuota", "value": {} }}"#,
                 monthly_quota
@@ -653,12 +653,12 @@ impl OtoroshiClient {
         client_sample_interval: Option<&str>,
     ) -> String {
         let mut fields: Vec<String> = Vec::new();
-        id.foreach(|id| fields.push(format!(r#""id":"{}""#, id)));
-        group.foreach(|group| fields.push(format!(r#""groupId":"{}""#, group)));
-        name.foreach(|name| fields.push(format!(r#""name":"{}""#, name)));
-        env.foreach(|env| fields.push(format!(r#""env":"{}""#, env)));
-        domain.foreach(|domain| fields.push(format!(r#""domain":"{}""#, domain)));
-        subdomain.foreach(|subdomain| fields.push(format!(r#""subdomain":"{}""#, subdomain)));
+        id.m_foreach(|id| fields.push(format!(r#""id":"{}""#, id)));
+        group.m_foreach(|group| fields.push(format!(r#""groupId":"{}""#, group)));
+        name.m_foreach(|name| fields.push(format!(r#""name":"{}""#, name)));
+        env.m_foreach(|env| fields.push(format!(r#""env":"{}""#, env)));
+        domain.m_foreach(|domain| fields.push(format!(r#""domain":"{}""#, domain)));
+        subdomain.m_foreach(|subdomain| fields.push(format!(r#""subdomain":"{}""#, subdomain)));
         if !target.is_empty() {
             let values = target
                 .iter()
@@ -673,8 +673,8 @@ impl OtoroshiClient {
             let array = format!("[{}]", values);
             fields.push(format!(r#""targets":{}"#, array))
         }
-        root.foreach(|root| fields.push(format!(r#""root":"{}""#, root)));
-        matching_root.foreach(|matching_root| {
+        root.m_foreach(|root| fields.push(format!(r#""root":"{}""#, root)));
+        matching_root.m_foreach(|matching_root| {
             fields.push(format!(r#""matching_root":"{}""#, matching_root))
         });
         fields.push(format!(r#""enabled":{}"#, !not_enabled));
@@ -744,29 +744,29 @@ impl OtoroshiClient {
 
         let mut client_config: Vec<String> = Vec::new();
 
-        client_retries.foreach(|client_retries| {
+        client_retries.m_foreach(|client_retries| {
             client_config.push(format!(r#""retries":{}"#, client_retries))
         });
         client_config.push(format!(
             r#""useCircuitBreaker":{}"#,
             !no_client_circuit_breaker
         ));
-        client_max_errors.foreach(|client_max_errors| {
+        client_max_errors.m_foreach(|client_max_errors| {
             client_config.push(format!(r#""maxErrors":{}"#, client_max_errors))
         });
-        client_retry_delay.foreach(|client_retry_delay| {
+        client_retry_delay.m_foreach(|client_retry_delay| {
             client_config.push(format!(r#""retryInitialDelay":{}"#, client_retry_delay))
         });
-        client_backoff_factor.foreach(|client_backoff_factor| {
+        client_backoff_factor.m_foreach(|client_backoff_factor| {
             client_config.push(format!(r#""backoffFactor":{}"#, client_backoff_factor))
         });
-        client_call_timeout.foreach(|client_call_timeout| {
+        client_call_timeout.m_foreach(|client_call_timeout| {
             client_config.push(format!(r#""callTimeout":{}"#, client_call_timeout))
         });
-        client_global_timeout.foreach(|client_global_timeout| {
+        client_global_timeout.m_foreach(|client_global_timeout| {
             client_config.push(format!(r#""globalTimeout":{}"#, client_global_timeout))
         });
-        client_sample_interval.foreach(|client_sample_interval| {
+        client_sample_interval.m_foreach(|client_sample_interval| {
             client_config.push(format!(r#""sampleInterval":{}"#, client_sample_interval))
         });
 
@@ -777,14 +777,14 @@ impl OtoroshiClient {
 
         let mut canary_config: Vec<String> = Vec::new();
 
-        canary_enabled.foreach(|canary_enabled| {
+        canary_enabled.m_foreach(|canary_enabled| {
             canary_config.push(format!(r#""enabled":{}"#, canary_enabled))
         });
-        canary_traffic.foreach(|canary_traffic| {
+        canary_traffic.m_foreach(|canary_traffic| {
             canary_config.push(format!(r#""traffic":{}"#, canary_traffic))
         });
         canary_root
-            .foreach(|canary_root| canary_config.push(format!(r#""root":"{}""#, canary_root)));
+            .m_foreach(|canary_root| canary_config.push(format!(r#""root":"{}""#, canary_root)));
 
         if !canary_target.is_empty() {
             let values = canary_target
@@ -830,11 +830,11 @@ impl OtoroshiClient {
             filtering_config.join(",")
         ));
 
-        if healthcheck_enabled && healthcheck_url.is_defined() {
+        if healthcheck_enabled && healthcheck_url.m_is_defined() {
             fields.push(format!(
                 r#""healthCheck": {{ "enabled":{}, "url":"{}" }}"#,
                 healthcheck_enabled,
-                healthcheck_url.get()
+                healthcheck_url.m_get()
             ));
         }
         let body = format!(r#"{{{}}}"#, fields.join(","));
@@ -883,31 +883,31 @@ impl OtoroshiClient {
         client_sample_interval: Option<&str>,
     ) -> String {
         let mut updates: Vec<String> = Vec::new();
-        group.foreach(|group| {
+        group.m_foreach(|group| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/groupId", "value": "{}" }}"#,
                 group
             ))
         });
-        name.foreach(|name| {
+        name.m_foreach(|name| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/name", "value": "{}" }}"#,
                 name
             ))
         });
-        env.foreach(|env| {
+        env.m_foreach(|env| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/env", "value": "{}" }}"#,
                 env
             ))
         });
-        domain.foreach(|domain| {
+        domain.m_foreach(|domain| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/domain", "value": "{}" }}"#,
                 domain
             ))
         });
-        subdomain.foreach(|subdomain| {
+        subdomain.m_foreach(|subdomain| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/subdomain", "value": "{}" }}"#,
                 subdomain
@@ -930,49 +930,49 @@ impl OtoroshiClient {
                 array
             ));
         }
-        root.foreach(|root| {
+        root.m_foreach(|root| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/root", "value": "{}" }}"#,
                 root
             ))
         });
-        matching_root.foreach(|matching_root| {
+        matching_root.m_foreach(|matching_root| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/matching_root", "value": "{}" }}"#,
                 matching_root
             ))
         });
-        enabled.foreach(|enabled| {
+        enabled.m_foreach(|enabled| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/enabled", "value": {} }}"#,
                 enabled
             ))
         });
-        private_app.foreach(|private_app| {
+        private_app.m_foreach(|private_app| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/privateApp", "value": {} }}"#,
                 private_app
             ))
         });
-        force_https.foreach(|force_https| {
+        force_https.m_foreach(|force_https| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/forceHttps", "value": {} }}"#,
                 force_https
             ))
         });
-        maintenance_mode.foreach(|maintenance_mode| {
+        maintenance_mode.m_foreach(|maintenance_mode| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/maintenanceMode", "value": {} }}"#,
                 maintenance_mode
             ))
         });
-        build_mode.foreach(|build_mode| {
+        build_mode.m_foreach(|build_mode| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/buildMode", "value": {} }}"#,
                 build_mode
             ))
         });
-        enforce_secure_communication.foreach(|enforce_secure_communication| {
+        enforce_secure_communication.m_foreach(|enforce_secure_communication| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/enforceSecureCommunication", "value": "{}" }}"#,
                 enforce_secure_communication
@@ -1072,32 +1072,32 @@ impl OtoroshiClient {
                 array
             ));
         }
-        healthcheck_enabled.foreach(|healthcheck_enabled| {
+        healthcheck_enabled.m_foreach(|healthcheck_enabled| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/healthCheck/enabled", "value": {} }}"#,
                 healthcheck_enabled
             ))
         });
-        healthcheck_url.foreach(|healthcheck_url| {
+        healthcheck_url.m_foreach(|healthcheck_url| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/healthCheck/url", "value": "{}" }}"#,
                 healthcheck_url
             ))
         });
 
-        canary_enabled.foreach(|canary_enabled| {
+        canary_enabled.m_foreach(|canary_enabled| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/canary/enabled", "value": {} }}"#,
                 canary_enabled
             ))
         });
-        canary_traffic.foreach(|canary_traffic| {
+        canary_traffic.m_foreach(|canary_traffic| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/canary/traffic", "value": {} }}"#,
                 canary_traffic
             ))
         });
-        canary_root.foreach(|canary_root| {
+        canary_root.m_foreach(|canary_root| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/canary/root", "value": "{}" }}"#,
                 canary_root
@@ -1121,49 +1121,49 @@ impl OtoroshiClient {
             ));
         }
 
-        client_circuit_breaker.foreach(|client_circuit_breaker| {
+        client_circuit_breaker.m_foreach(|client_circuit_breaker| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/useCircuitBreaker", "value": {} }}"#,
                 client_circuit_breaker
             ))
         });
-        client_retries.foreach(|client_retries| {
+        client_retries.m_foreach(|client_retries| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/retries", "value": {} }}"#,
                 client_retries
             ))
         });
-        client_max_errors.foreach(|client_max_errors| {
+        client_max_errors.m_foreach(|client_max_errors| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/maxErrors", "value": {} }}"#,
                 client_max_errors
             ))
         });
-        client_retry_delay.foreach(|client_retry_delay| {
+        client_retry_delay.m_foreach(|client_retry_delay| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/retryInitialDelay", "value": {} }}"#,
                 client_retry_delay
             ))
         });
-        client_backoff_factor.foreach(|client_backoff_factor| {
+        client_backoff_factor.m_foreach(|client_backoff_factor| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/backoffFactor", "value": {} }}"#,
                 client_backoff_factor
             ))
         });
-        client_call_timeout.foreach(|client_call_timeout| {
+        client_call_timeout.m_foreach(|client_call_timeout| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/callTimeout", "value": {} }}"#,
                 client_call_timeout
             ))
         });
-        client_global_timeout.foreach(|client_global_timeout| {
+        client_global_timeout.m_foreach(|client_global_timeout| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/globalTimeout", "value": {} }}"#,
                 client_global_timeout
             ))
         });
-        client_sample_interval.foreach(|client_sample_interval| {
+        client_sample_interval.m_foreach(|client_sample_interval| {
             updates.push(format!(
                 r#"{{ "op": "replace", "path": "/clientConfig/sampleInterval", "value": {} }}"#,
                 client_sample_interval
