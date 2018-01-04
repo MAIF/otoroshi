@@ -102,7 +102,7 @@ trait RedisStore[T] extends BasicStore[T] {
           }
         )
 
-    if (_findAllCached && !force) {
+    if (_findAllCached) {
       val time = System.currentTimeMillis
       val ref  = findAllCache.get()
       if (ref == null) {
@@ -111,7 +111,7 @@ trait RedisStore[T] extends BasicStore[T] {
           case Success(services) => findAllCache.set(services)
         }
       } else {
-        if ((lastFindAllCache.get() + 2000) < time) {
+        if (force || (lastFindAllCache.get() + 2000) < time) {
           lastFindAllCache.set(time)
           actualFindAll().andThen {
             case Success(services) => findAllCache.set(services)
@@ -142,7 +142,7 @@ trait RedisStore[T] extends BasicStore[T] {
   def findAllById(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = ids match {
     case keys if keys.isEmpty => FastFuture.successful(Seq.empty[T])
     case keys if _findAllCached && findAllCache.get() != null => {
-      // TODO : update findAllCache ??? FIXME ???
+      findAll(true) // TODO : update findAllCache ??? FIXME ???
       FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
     }
     case keys => {
