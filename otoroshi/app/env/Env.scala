@@ -121,7 +121,7 @@ class Env(val configuration: Configuration,
     )
   lazy val auditExecutionContext: ExecutionContext =
     ExecutionContext.fromExecutorService(
-      Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-opun-requests"))
+      Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-audit-requests"))
     )
   lazy val apiExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(
     Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-admin-api-requests"))

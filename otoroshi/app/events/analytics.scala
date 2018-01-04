@@ -37,7 +37,6 @@ class AnalyticsActor(implicit env: Env) extends Actor {
     .groupedWithin(env.maxWebhookSize, FiniteDuration(30, TimeUnit.SECONDS))
     .mapAsync(5) { evts =>
       logger.debug(s"SEND_TO_ANALYTICS_HOOK: will send ${evts.size} evts")
-      //implicit val ec = env.opunExecutionContext
       env.datastores.globalConfigDataStore.singleton().fast.map { config =>
         logger.debug("SEND_TO_ANALYTICS_HOOK: " + config.analyticsWebhooks)
         config.kafkaConfig.foreach { kafkaConfig =>
