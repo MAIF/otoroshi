@@ -9,14 +9,14 @@ import play.api.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryCanaryDataStore(redisCli: RedisLike) extends CanaryDataStore {
+class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryDataStore {
 
   lazy val logger = Logger("otoroshi-in-memory-canary-datastore")
 
-  def canaryCountKey(id: String): Key      = Key.Empty / "opun" / "canary" / id / "count" / "canary"
-  def standardCountKey(id: String): Key    = Key.Empty / "opun" / "canary" / id / "count" / "standard"
-  def canarySessionsKey(id: String): Key   = Key.Empty / "opun" / "canary" / id / "sessions" / "canary"
-  def standardSessionsKey(id: String): Key = Key.Empty / "opun" / "canary" / id / "sessions" / "standard"
+  def canaryCountKey(id: String): Key      = Key.Empty / _env.storageRoot / "canary" / id / "count" / "canary"
+  def standardCountKey(id: String): Key    = Key.Empty / _env.storageRoot / "canary" / id / "count" / "standard"
+  def canarySessionsKey(id: String): Key   = Key.Empty / _env.storageRoot / "canary" / id / "sessions" / "canary"
+  def standardSessionsKey(id: String): Key = Key.Empty / _env.storageRoot / "canary" / id / "sessions" / "standard"
 
   override def destroyCanarySession(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     for {

@@ -24,12 +24,12 @@ object Errors {
                           maybeCauseId: Option[String])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     val errorId = env.snowflakeGenerator.nextId()
     maybeDescriptor.foreach { descriptor =>
-      val fromLbl = req.headers.get(env.Headers.OpunVizFromLabel).getOrElse("internet")
+      val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
       // TODO : mark as error ???
-      val viz: OpunViz = OpunViz(
+      val viz: OtoroshiViz = OtoroshiViz(
         to = descriptor.id,
         toLbl = descriptor.name,
-        from = req.headers.get(env.Headers.OpunVizFrom).getOrElse("internet"),
+        from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
         fromLbl = fromLbl,
         fromTo = s"$fromLbl###${descriptor.name}"
       )
@@ -84,46 +84,46 @@ object Errors {
         if (maybeCauseId.contains("errors.service.in.maintenance")) {
           FastFuture.successful(
             status
-              .apply(views.html.opunapps.maintenance(env))
+              .apply(views.html.otoroshiapps.maintenance(env))
               .withHeaders(
-                env.Headers.OpunGatewayError     -> "true",
-                env.Headers.OpunGatewayErrorMsg  -> message,
-                env.Headers.OpunGatewayStateResp -> req.headers.get(env.Headers.OpunGatewayState).getOrElse("--")
+                env.Headers.OtoroshiGatewayError -> "true",
+                env.Headers.OtoroshiErrorMsg     -> message,
+                env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
               )
           )
         } else if (maybeCauseId.contains("errors.service.under.construction")) {
           FastFuture.successful(
             status
-              .apply(views.html.opunapps.build(env))
+              .apply(views.html.otoroshiapps.build(env))
               .withHeaders(
-                env.Headers.OpunGatewayError     -> "true",
-                env.Headers.OpunGatewayErrorMsg  -> message,
-                env.Headers.OpunGatewayStateResp -> req.headers.get(env.Headers.OpunGatewayState).getOrElse("--")
+                env.Headers.OtoroshiGatewayError -> "true",
+                env.Headers.OtoroshiErrorMsg     -> message,
+                env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
               )
           )
         } else {
           FastFuture.successful(
             status
               .apply(
-                views.html.opunapps.error(
+                views.html.otoroshiapps.error(
                   message = message,
                   _env = env
                 )
               )
               .withHeaders(
-                env.Headers.OpunGatewayError     -> "true",
-                env.Headers.OpunGatewayErrorMsg  -> message,
-                env.Headers.OpunGatewayStateResp -> req.headers.get(env.Headers.OpunGatewayState).getOrElse("--")
+                env.Headers.OtoroshiGatewayError -> "true",
+                env.Headers.OtoroshiErrorMsg     -> message,
+                env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
               )
           )
         }
       } else {
         FastFuture.successful(
           status
-            .apply(Json.obj(env.Headers.OpunGatewayError -> message))
+            .apply(Json.obj(env.Headers.OtoroshiGatewayError -> message))
             .withHeaders(
-              env.Headers.OpunGatewayError     -> "true",
-              env.Headers.OpunGatewayStateResp -> req.headers.get(env.Headers.OpunGatewayState).getOrElse("--")
+              env.Headers.OtoroshiGatewayError -> "true",
+              env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
             )
         )
       }
@@ -143,9 +143,9 @@ object Errors {
                 )
                 .as("text/html")
                 .withHeaders(
-                  env.Headers.OpunGatewayError     -> "true",
-                  env.Headers.OpunGatewayErrorMsg  -> message,
-                  env.Headers.OpunGatewayStateResp -> req.headers.get(env.Headers.OpunGatewayState).getOrElse("--")
+                  env.Headers.OtoroshiGatewayError -> "true",
+                  env.Headers.OtoroshiErrorMsg     -> message,
+                  env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
                 )
             )
           } else {
@@ -156,8 +156,8 @@ object Errors {
                     .renderJson(status.header.status, maybeCauseId.getOrElse("--"), message, errorId.toString)
                 )
                 .withHeaders(
-                  env.Headers.OpunGatewayError     -> "true",
-                  env.Headers.OpunGatewayStateResp -> req.headers.get(env.Headers.OpunGatewayState).getOrElse("--")
+                  env.Headers.OtoroshiGatewayError -> "true",
+                  env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
                 )
             )
           }

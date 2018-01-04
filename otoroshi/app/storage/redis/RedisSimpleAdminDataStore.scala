@@ -18,7 +18,7 @@ class RedisSimpleAdminDataStore(redisCli: RedisClientMasterSlaves) extends Simpl
 
   lazy val logger = Logger("otoroshi-redis-simple-admin-datastore")
 
-  def key(id: String): String = s"opun:admins:$id"
+  def key(id: String)(implicit env: Env): String = s"${env.storageRoot}:admins:$id"
 
   override def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] =
     redisCli.get(key(username)).fast.map(_.map(v => Json.parse(v.utf8String)))
@@ -52,8 +52,8 @@ class RedisSimpleAdminDataStore(redisCli: RedisClientMasterSlaves) extends Simpl
                  ))
 
   override def hasAlreadyLoggedIn(username: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    redisCli.sismember(s"opun:users:alreadyloggedin", username)
+    redisCli.sismember(s"${env.storageRoot}:users:alreadyloggedin", username)
 
   override def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    redisCli.sadd(s"opun:users:alreadyloggedin", email)
+    redisCli.sadd(s"${env.storageRoot}:users:alreadyloggedin", email)
 }

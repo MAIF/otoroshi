@@ -9,7 +9,7 @@ import models.{ApiKey, GlobalConfig}
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{ActionBuilder, Request, Result, Results}
-import security.OpunClaim
+import security.OtoroshiClaim
 import utils.future.Implicits._
 
 import scala.concurrent.Future
@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
   def user(implicit env: Env): Option[JsValue] =
     request.headers
-      .get(env.Headers.OpunAdminProfile)
+      .get(env.Headers.OtoroshiAdminProfile)
       .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
   def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
 }
@@ -29,7 +29,7 @@ class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
 
   lazy val logger = Logger("otoroshi-api-action")
 
-  def decodeBase64(encoded: String): String = new String(OpunClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
   def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
     ex match {
@@ -40,7 +40,7 @@ class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
       Results
         .Unauthorized(Json.obj("error" -> message))
         .withHeaders(
-          env.Headers.OpunGatewayStateResp -> request.headers.get(env.Headers.OpunGatewayState).getOrElse("--")
+          env.Headers.OtoroshiStateResp -> request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
         )
     )
   }
@@ -52,9 +52,9 @@ class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
     val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.adminApiHost => {
-        request.headers.get(env.Headers.OpunGatewayClaim).get.split("\\.").toSeq match {
+        request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
           case Seq(head, body, signature) => {
-            val claim = Json.parse(new String(OpunClaim.decoder.decode(body), Charsets.UTF_8))
+            val claim = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
             (claim \ "sub").as[String].split(":").toSeq match {
               case Seq("apikey", clientId) => {
                 env.datastores.globalConfigDataStore
@@ -67,8 +67,8 @@ class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
                           case Success(res) =>
                             res
                               .withHeaders(
-                                env.Headers.OpunGatewayStateResp -> request.headers
-                                  .get(env.Headers.OpunGatewayState)
+                                env.Headers.OtoroshiStateResp -> request.headers
+                                  .get(env.Headers.OtoroshiState)
                                   .getOrElse("--")
                               )
                               .asFuture

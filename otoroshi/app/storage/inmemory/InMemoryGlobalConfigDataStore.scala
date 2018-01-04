@@ -14,7 +14,7 @@ import akka.http.scaladsl.util.FastFuture._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-class InMemoryGlobalConfigDataStore(redisCli: RedisLike)
+class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     extends GlobalConfigDataStore
     with RedisLikeStore[GlobalConfig] {
 
@@ -23,13 +23,13 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike)
   override def fmt: Format[GlobalConfig] = GlobalConfig._fmt
 
   override def key(id: String): Key =
-    Key.Empty / "opun" / "config" / "global" // WARN : its a singleton, id is always global
+    Key.Empty / _env.storageRoot / "config" / "global" // WARN : its a singleton, id is always global
 
   override def extractId(value: GlobalConfig): String = "global" // WARN : its a singleton, id is always global
 
   override def redisLike(implicit env: Env): RedisLike = redisCli
 
-  def throttlingKey(): String = s"opun:throttling:global"
+  def throttlingKey(): String = s"${_env.storageRoot}:throttling:global"
 
   private val callsForIpAddressCache =
     new java.util.concurrent.ConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]()
@@ -40,14 +40,14 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike)
                                         ttl: Int = 10)(implicit ec: ExecutionContext): Future[Long] = {
 
     @inline
-    def actualCall() = redisCli.incrby(s"opun:throttling:perip:$ipAddress", 1L).flatMap { secCalls =>
+    def actualCall() = redisCli.incrby(s"${_env.storageRoot}:throttling:perip:$ipAddress", 1L).flatMap { secCalls =>
       if (!callsForIpAddressCache.containsKey(ipAddress)) {
         callsForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(secCalls))
       } else {
         callsForIpAddressCache.get(ipAddress).set(secCalls)
       }
-      redisCli.pttl(s"opun:throttling:perip:$ipAddress").filter(_ > -1).recoverWith {
-        case _ => redisCli.expire(s"opun:throttling:perip:$ipAddress", ttl)
+      redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith {
+        case _ => redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", ttl)
       } map (_ => secCalls)
     }
 
@@ -61,12 +61,13 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike)
 
   def quotaForIpAddress(ipAddress: String)(implicit ec: ExecutionContext): Future[Option[Long]] = {
     @inline
-    def actualCall() = redisCli.get(s"opun:throttling:peripquota:$ipAddress").map(_.map(_.utf8String.toLong)).andThen {
-      case Success(Some(quota)) if !quotasForIpAddressCache.containsKey(ipAddress) =>
-        quotasForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(quota))
-      case Success(Some(quota)) if quotasForIpAddressCache.containsKey(ipAddress) =>
-        quotasForIpAddressCache.get(ipAddress).set(quota)
-    }
+    def actualCall() =
+      redisCli.get(s"${_env.storageRoot}:throttling:peripquota:$ipAddress").map(_.map(_.utf8String.toLong)).andThen {
+        case Success(Some(quota)) if !quotasForIpAddressCache.containsKey(ipAddress) =>
+          quotasForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(quota))
+        case Success(Some(quota)) if quotasForIpAddressCache.containsKey(ipAddress) =>
+          quotasForIpAddressCache.get(ipAddress).set(quota)
+      }
     quotasForIpAddressCache.containsKey(ipAddress) match {
       case true =>
         actualCall()
@@ -76,7 +77,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike)
   }
 
   override def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean] =
-    redisCli.keys("opun:*").map(_.isEmpty)
+    redisCli.keys(s"${_env.storageRoot}:*").map(_.isEmpty)
 
   private val throttlingQuotasCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
@@ -149,10 +150,14 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike)
       _ <- redisCli.flushall()
       _ <- config.save()
       _ <- Future.sequence(
-            admins.value.map(v => redisCli.set(s"opun:u2f:users:${(v \ "randomId").as[String]}", Json.stringify(v)))
+            admins.value.map(
+              v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").as[String]}", Json.stringify(v))
+            )
           )
       _ <- Future.sequence(
-            simpleAdmins.value.map(v => redisCli.set(s"opun:admins:${(v \ "username").as[String]}", Json.stringify(v)))
+            simpleAdmins.value.map(
+              v => redisCli.set(s"${env.storageRoot}:admins:${(v \ "username").as[String]}", Json.stringify(v))
+            )
           )
       _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
       _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))

@@ -8,11 +8,11 @@ import storage.RedisLike
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryHealthCheckDataStore(redisCli: RedisLike) extends HealthCheckDataStore {
+class InMemoryHealthCheckDataStore(redisCli: RedisLike, _env: Env) extends HealthCheckDataStore {
 
   val collectionSize = 30
 
-  def key(name: String) = s"opun:deschealthcheck:$name"
+  def key(name: String) = s"${_env.storageRoot}:deschealthcheck:$name"
 
   override def push(evt: HealthCheckEvent)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     for {

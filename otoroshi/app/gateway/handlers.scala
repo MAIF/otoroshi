@@ -23,7 +23,7 @@ import play.api.libs.ws.{EmptyBody, StreamedBody}
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
-import security.{IdGenerator, OpunClaim}
+import security.{IdGenerator, OtoroshiClaim}
 import utils.RegexPool
 
 import scala.concurrent.duration._
@@ -83,11 +83,11 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
   val reqCounter = new AtomicInteger(0)
 
   val headersInFiltered = Seq(
-    env.Headers.OpunGatewayState,
-    env.Headers.OpunGatewayClaim,
-    env.Headers.OpunGatewayRequestId,
-    env.Headers.OpunClientId,
-    env.Headers.OpunClientSecret,
+    env.Headers.OtoroshiState,
+    env.Headers.OtoroshiClaim,
+    env.Headers.OtoroshiRequestId,
+    env.Headers.OtoroshiClientId,
+    env.Headers.OtoroshiClientSecret,
     "Host",
     "X-Forwarded-For",
     "X-Forwarded-Proto",
@@ -95,7 +95,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
   ).map(_.toLowerCase)
 
   val headersOutFiltered = Seq(
-    env.Headers.OpunGatewayStateResp,
+    env.Headers.OtoroshiStateResp,
     "Transfer-Encoding",
     "Content-Length"
   ).map(_.toLowerCase)
@@ -145,7 +145,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
       val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
       host match {
         case str if matchRedirection(str)                                   => Some(redirectToMainDomain())
-        case _ if request.uri.contains("__opun_assets")                     => super.routeRequest(request)
+        case _ if request.uri.contains("__otoroshi_assets")                 => super.routeRequest(request)
         case _ if request.uri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
         case _ if request.uri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
         case env.backOfficeHost if !isSecured && toHttps && env.isProd      => Some(redirectToHttps())
@@ -216,7 +216,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     logger.info(
       s"redirectToHttps from ${protocol}://$domain${req.uri} to ${env.rootScheme}$domain${req.uri}"
     )
-    Redirect(s"${env.rootScheme}$domain${req.uri}").withHeaders("opun-redirect-to" -> "https")
+    Redirect(s"${env.rootScheme}$domain${req.uri}").withHeaders("otoroshi-redirect-to" -> "https")
   }
 
   def redirectToMainDomain() = Action { req =>
@@ -328,7 +328,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                     val maybeTrackingId = req.cookies
                       .get("otoroshi-canary")
                       .map(_.value)
-                      .orElse(req.headers.get(env.Headers.OpunTrackerId))
+                      .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
                       .filter { value =>
                         if (value.contains("::")) {
                           value.split("::").toList match {
@@ -451,12 +451,12 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           val url    = s"$scheme://$host$root$uri"
                           // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                           val fromOtoroshi = req.headers
-                            .get(env.Headers.OpunGatewayRequestId)
-                            .orElse(req.headers.get(env.Headers.OpunGatewayParentRequest))
+                            .get(env.Headers.OtoroshiRequestId)
+                            .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                           val promise = Promise[ProxyDone]
 
-                          val claim = OpunClaim(
-                            iss = env.Headers.OpunGateway,
+                          val claim = OtoroshiClaim(
+                            iss = env.Headers.OtoroshiIssuer,
                             sub = paUsr
                               .filter(_ => descriptor.privateApp)
                               .map(k => s"pa:${k.email}")
@@ -475,19 +475,19 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                             .withClaim("gender", paUsr.flatMap(_.field("gender")))
                             .withClaim("locale", paUsr.flatMap(_.field("locale")))
                             .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
-                            .withClaims(paUsr.flatMap(_.opunData).orElse(apiKey.map(_.metadata)))
+                            .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
                             .serialize(env)
                           logger.trace(s"Claim is : $claim")
                           val headersIn: Seq[(String, String)] =
                             (req.headers.toSimpleMap
                               .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                              env.Headers.OpunProxiedHost      -> req.headers.get("Host").getOrElse("--"),
-                              "Host"                           -> host,
-                              env.Headers.OpunGatewayRequestId -> snowflake,
-                              env.Headers.OpunGatewayState     -> state,
-                              env.Headers.OpunGatewayClaim     -> claim
+                              env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
+                              "Host"                          -> host,
+                              env.Headers.OtoroshiRequestId   -> snowflake,
+                              env.Headers.OtoroshiState       -> state,
+                              env.Headers.OtoroshiClaim       -> claim
                             ) ++ descriptor.additionalHeaders ++ fromOtoroshi
-                              .map(v => Map(env.Headers.OpunGatewayParentRequest -> fromOtoroshi.get))
+                              .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                               .getOrElse(Map.empty[String, String])).toSeq
 
                           val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
@@ -535,11 +535,11 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
                               quotas.andThen {
                                 case Success(q) => {
-                                  val fromLbl = req.headers.get(env.Headers.OpunVizFromLabel).getOrElse("internet")
-                                  val viz: OpunViz = OpunViz(
+                                  val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
+                                  val viz: OtoroshiViz = OtoroshiViz(
                                     to = descriptor.id,
                                     toLbl = descriptor.name,
-                                    from = req.headers.get(env.Headers.OpunVizFrom).getOrElse("internet"),
+                                    from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
                                     fromLbl = fromLbl,
                                     fromTo = s"$fromLbl###${descriptor.name}"
                                   )
@@ -629,11 +629,11 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
                               val headers = resp.headers.headers.mapValues(_.head)
                               // logger.warn(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
-                              // if (env.notDev && !headers.get(env.Headers.OpunGatewayStateResp).contains(state)) {
-                              // val validState = headers.get(env.Headers.OpunGatewayStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OpunGatewayStateResp).contains(state)).getOrElse(false)
+                              // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                              // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
                               if (env.notDev && descriptor.enforceSecureCommunication
                                   && !descriptor.isUriExcludedFromSecuredCommunication(uri)
-                                  && !headers.get(env.Headers.OpunGatewayStateResp).contains(state)) {
+                                  && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                 if (resp.headers.status == 404 && headers
                                       .get("X-CleverCloudUpgrade")
                                       .contains("true")) {
@@ -652,7 +652,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       "url"   -> url,
                                       "state" -> state,
                                       "reveivedState" -> JsString(
-                                        headers.getOrElse(env.Headers.OpunGatewayStateResp, "--")
+                                        headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
                                       ),
                                       "claim"  -> claim,
                                       "method" -> req.method,
@@ -687,20 +687,20 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 val upstreamLatency = System.currentTimeMillis() - upstreamStart
                                 val headersOut = headers.toSeq
                                   .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ Seq(
-                                  env.Headers.OpunGatewayRequestId       -> snowflake,
-                                  env.Headers.OpunGatewayProxyLatency    -> s"$overhead",
-                                  env.Headers.OpunGatewayUpstreamLatency -> s"$upstreamLatency" //,
-                                  //env.Headers.OpunTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
+                                  env.Headers.OtoroshiRequestId       -> snowflake,
+                                  env.Headers.OtoroshiProxyLatency    -> s"$overhead",
+                                  env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
+                                  //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
                                 ) ++ Some(trackingId)
                                   .filter(_ => desc.canary.enabled)
-                                  .map(_ => env.Headers.OpunTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (apiKey.isDefined) {
-                                                                                                                        Seq(
-                                                                                                                          env.Headers.OpunDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
-                                                                                                                          env.Headers.OpunMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                                                                                                                        )
-                                                                                                                      } else {
-                                                                                                                        Seq.empty[(String, String)]
-                                                                                                                      })
+                                  .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (apiKey.isDefined) {
+                                                                                                                            Seq(
+                                                                                                                              env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                                                                                                              env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                                                                                                            )
+                                                                                                                          } else {
+                                                                                                                            Seq.empty[(String, String)]
+                                                                                                                          })
                                 val contentType = headers.getOrElse("Content-Type", MimeTypes.TEXT)
                                 // meterOut.mark(responseHeader.length)
                                 // counterOut.addAndGet(responseHeader.length)
@@ -824,8 +824,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 .flatMap(e => Try(decodeBase64(e)).toOption)
                             )
                           val authByCustomHeaders = req.headers
-                            .get(env.Headers.OpunClientId)
-                            .flatMap(id => req.headers.get(env.Headers.OpunClientSecret).map(s => (id, s)))
+                            .get(env.Headers.OtoroshiClientId)
+                            .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
                           if (authByCustomHeaders.isDefined) {
                             val (clientId, clientSecret) = authByCustomHeaders.get
                             env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
@@ -1166,5 +1166,5 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     }
   }
 
-  def decodeBase64(encoded: String): String = new String(OpunClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 }

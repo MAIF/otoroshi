@@ -23,14 +23,13 @@ case class BackOfficeEvent(`@id`: String,
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
     "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
-    "@product"     -> `@product`,
+    "@product"     -> env.eventsName,
     "@serviceId"   -> `@serviceId`,
     "@service"     -> `@service`,
     "@env"         -> `@env`,
@@ -58,14 +57,13 @@ case class AdminApiEvent(`@id`: String,
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -87,14 +85,13 @@ case class CircuitBreakerOpenedEvent(`@id`: String,
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = service.id
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -112,14 +109,13 @@ case class CircuitBreakerClosedEvent(`@id`: String,
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = service.id
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -137,14 +133,13 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,

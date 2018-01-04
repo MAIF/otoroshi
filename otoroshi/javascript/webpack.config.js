@@ -55,7 +55,7 @@ const config = {
     filename: '[name].js',
     path: resolve(__dirname, '../public/javascripts/bundle/'),
     publicPath: '/assets/javascripts/bundle/',
-    library: 'OpunGateway',
+    library: 'Otoroshi',
     libraryTarget: 'umd'
   },
   devServer: {

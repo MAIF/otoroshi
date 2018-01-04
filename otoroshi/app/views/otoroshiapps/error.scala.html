@@ -1,7 +1,7 @@
 @(message: String, _env: env.Env, title: String = "Otoroshi Error", error: Boolean = true)
 
 @moreStyles = {
-    <link rel="stylesheet" media="screen" href="/__opun_assets/stylesheets/error.css">
+    <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/error.css">
 }
 
 @main("Otoroshi Error", _env, moreStyles = moreStyles) {
@@ -14,6 +14,6 @@
         <p class="lead">
             @message
         </p>
-        <p><img class="logoOtoroshi" src="/__opun_assets/images/otoroshi-logo-color.png" /></p>
+        <p><img class="logoOtoroshi" src="/__otoroshi_assets/images/otoroshi-logo-color.png" /></p>
     </div>
 }

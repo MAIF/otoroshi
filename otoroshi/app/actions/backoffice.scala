@@ -38,7 +38,7 @@ class BackOfficeAction()(implicit env: Env) extends ActionBuilder[BackOfficeActi
       }
       case _ => {
         // TODO : based on Accept header
-        FastFuture.successful(Results.NotFound(views.html.opunapps.error("Not found", env)))
+        FastFuture.successful(Results.NotFound(views.html.otoroshiapps.error("Not found", env)))
       }
     }
   }
@@ -65,7 +65,7 @@ class BackOfficeActionAuth()(implicit env: Env) extends ActionBuilder[BackOffice
                 case true => {
                   Alerts.send(BlackListedBackOfficeUserAlert(env.snowflakeGenerator.nextId().toString, env.env, user))
                   FastFuture.successful(
-                    Results.NotFound(views.html.opunapps.error("Error", env)).removingFromSession("bousr")(request)
+                    Results.NotFound(views.html.otoroshiapps.error("Error", env)).removingFromSession("bousr")(request)
                   )
                 }
                 case false => block(BackOfficeActionContextAuth(request, user))
@@ -92,7 +92,7 @@ class BackOfficeActionAuth()(implicit env: Env) extends ActionBuilder[BackOffice
       }
       case _ => {
         // TODO : based on Accept header
-        FastFuture.successful(Results.NotFound(views.html.opunapps.error("Not found", env)))
+        FastFuture.successful(Results.NotFound(views.html.otoroshiapps.error("Not found", env)))
       }
     }
   }

@@ -9,28 +9,28 @@ import storage.{RedisLike, RedisLikeStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryBackOfficeUserDataStore(redisCli: RedisLike)
+class InMemoryBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
     extends BackOfficeUserDataStore
     with RedisLikeStore[BackOfficeUser] {
 
   private val _fmt                                      = Json.format[BackOfficeUser]
   override def redisLike(implicit env: Env): RedisLike  = redisCli
   override def fmt: Format[BackOfficeUser]              = _fmt
-  override def key(id: String): Key                     = Key.Empty / "opun" / "users" / "backoffice" / id
+  override def key(id: String): Key                     = Key.Empty / _env.storageRoot / "users" / "backoffice" / id
   override def extractId(value: BackOfficeUser): String = value.randomId
 
   override def blacklisted(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    redisCli.sismember(s"opun:users:blacklist:backoffice", email)
+    redisCli.sismember(s"${env.storageRoot}:users:blacklist:backoffice", email)
 
   override def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    redisCli.sismember(s"opun:users:alreadyloggedin", email)
+    redisCli.sismember(s"${env.storageRoot}:users:alreadyloggedin", email)
 
   override def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    redisCli.sadd(s"opun:users:alreadyloggedin", email)
+    redisCli.sadd(s"${env.storageRoot}:users:alreadyloggedin", email)
 
   override def sessions()(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] =
     redisCli
-      .keys("opun:users:backoffice:*")
+      .keys(s"${env.storageRoot}:users:backoffice:*")
       .flatMap(
         keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
@@ -44,10 +44,10 @@ class InMemoryBackOfficeUserDataStore(redisCli: RedisLike)
       }
 
   override def discardSession(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    redisCli.del(s"opun:users:backoffice:$id")
+    redisCli.del(s"${env.storageRoot}:users:backoffice:$id")
 
   def discardAllSessions()(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    redisCli.keys("opun:users:backoffice:*").flatMap { keys =>
+    redisCli.keys(s"${env.storageRoot}:users:backoffice:*").flatMap { keys =>
       redisCli.del(keys: _*)
     }
 }

@@ -27,7 +27,7 @@ class SwaggerController()(implicit env: Env) extends Controller {
   }
 
   def swaggerUi = Action { req =>
-    Ok(views.html.opunapps.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}/api/swagger.json"))
+    Ok(views.html.otoroshiapps.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}/api/swagger.json"))
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

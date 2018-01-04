@@ -13,11 +13,11 @@ import play.api.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemorySimpleAdminDataStore(redisCli: RedisLike) extends SimpleAdminDataStore {
+class InMemorySimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdminDataStore {
 
   lazy val logger = Logger("otoroshi-in-memory-simple-admin-datastore")
 
-  def key(id: String): String = s"opun:admins:$id"
+  def key(id: String): String = s"${_env.storageRoot}:admins:$id"
 
   override def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] =
     redisCli.get(key(username)).map(_.map(v => Json.parse(v.utf8String)))
@@ -50,8 +50,8 @@ class InMemorySimpleAdminDataStore(redisCli: RedisLike) extends SimpleAdminDataS
   }
 
   override def hasAlreadyLoggedIn(username: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    redisCli.sismember(s"opun:users:alreadyloggedin", username)
+    redisCli.sismember(s"${env.storageRoot}:users:alreadyloggedin", username)
 
   override def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    redisCli.sadd(s"opun:users:alreadyloggedin", email)
+    redisCli.sadd(s"${env.storageRoot}:users:alreadyloggedin", email)
 }

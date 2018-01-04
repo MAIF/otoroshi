@@ -34,14 +34,13 @@ case class MaxConcurrentRequestReachedAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -59,14 +58,13 @@ case class CircuitBreakerOpenedAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = service.id
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -84,14 +82,13 @@ case class CircuitBreakerClosedAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = service.id
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -109,14 +106,13 @@ case class SessionDiscardedAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -133,14 +129,13 @@ case class SessionsDiscardedAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -157,14 +152,13 @@ case class PanicModeAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -182,14 +176,13 @@ case class OtoroshiExportAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -208,14 +201,13 @@ case class U2FAdminDeletedAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -232,14 +224,13 @@ case class BlackListedBackOfficeUserAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -255,14 +246,13 @@ case class AdminLoggedInAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
     "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
-    "@product"     -> `@product`,
+    "@product"     -> _env.eventsName,
     "@serviceId"   -> `@serviceId`,
     "@service"     -> `@service`,
     "@env"         -> `@env`,
@@ -278,14 +268,13 @@ case class AdminFirstLogin(`@id`: String, `@env`: String, user: BackOfficeUser, 
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
     "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
-    "@product"     -> `@product`,
+    "@product"     -> _env.eventsName,
     "@serviceId"   -> `@serviceId`,
     "@service"     -> `@service`,
     "@env"         -> `@env`,
@@ -304,14 +293,13 @@ case class AdminLoggedOutAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
     "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
-    "@product"     -> `@product`,
+    "@product"     -> _env.eventsName,
     "@serviceId"   -> `@serviceId`,
     "@service"     -> `@service`,
     "@env"         -> `@env`,
@@ -327,14 +315,13 @@ case class DbResetAlert(`@id`: String, `@env`: String, user: JsValue, `@timestam
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -347,14 +334,13 @@ case class DangerZoneAccessAlert(`@id`: String, `@env`: String, user: JsValue, `
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -373,14 +359,13 @@ case class GlobalConfigModification(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -402,14 +387,13 @@ case class RevokedApiKeyUsageAlert(`@id`: String,
     extends AlertEvent {
 
   override def `@service`: String   = descriptor.name
-  override def `@product`: String   = descriptor.metadata.getOrElse("product", "--")
   override def `@serviceId`: String = descriptor.id
 
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
-    "@product"   -> `@product`,
+    "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
@@ -427,13 +411,12 @@ case class ServiceGroupCreatedAlert(`@id`: String,
                                     `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -450,13 +433,12 @@ case class ServiceGroupUpdatedAlert(`@id`: String,
                                     `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -473,13 +455,12 @@ case class ServiceGroupDeletedAlert(`@id`: String,
                                     `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -496,13 +477,12 @@ case class ServiceCreatedAlert(`@id`: String,
                                `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -519,13 +499,12 @@ case class ServiceUpdatedAlert(`@id`: String,
                                `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -542,13 +521,12 @@ case class ServiceDeletedAlert(`@id`: String,
                                `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -565,13 +543,12 @@ case class ApiKeyCreatedAlert(`@id`: String,
                               `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -588,13 +565,12 @@ case class ApiKeyUpdatedAlert(`@id`: String,
                               `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,
@@ -611,13 +587,12 @@ case class ApiKeyDeletedAlert(`@id`: String,
                               `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
-  override def `@product`: String   = "opun"
   override def `@serviceId`: String = "--"
-  override def toJson: JsValue = Json.obj(
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
     "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
-    "@product"      -> `@product`,
+    "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
     "@service"      -> `@service`,
     "@env"          -> `@env`,

@@ -50,12 +50,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     env.Ws
       .url(s"$url/$path")
       .withHeaders(
-        "Host"                       -> host,
-        env.Headers.OpunVizFromLabel -> "Otoroshi Admin UI",
-        env.Headers.OpunVizFrom      -> "otoroshi-admin-ui",
-        env.Headers.OpunClientId     -> env.backOfficeApiKey.clientId,
-        env.Headers.OpunClientSecret -> env.backOfficeApiKey.clientSecret,
-        env.Headers.OpunAdminProfile -> Base64.getUrlEncoder.encodeToString(
+        "Host"                           -> host,
+        env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
+        env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
+        env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,
+        env.Headers.OtoroshiClientSecret -> env.backOfficeApiKey.clientSecret,
+        env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
           Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
         ),
         "Accept"       -> "application/json",
@@ -97,8 +97,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
             "env"                -> env.env,
             "redirectToDev"      -> env.redirectToDev,
             "displayPrivateApps" -> config.privateAppsAuth0Config.isDefined,
-            "clientIdHeader"     -> env.Headers.OpunClientId,
-            "clientSecretHeader" -> env.Headers.OpunClientSecret
+            "clientIdHeader"     -> env.Headers.OtoroshiClientId,
+            "clientSecretHeader" -> env.Headers.OtoroshiClientSecret
           )
         )
       }
@@ -128,7 +128,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
   }
 
   def error(message: Option[String]) = BackOfficeAction { ctx =>
-    Ok(views.html.opunapps.error(message.getOrElse("Error message"), env))
+    Ok(views.html.otoroshiapps.error(message.getOrElse("Error message"), env))
   }
 
   def documentationFrame(lineId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
@@ -143,8 +143,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case Some(service) if service.api.openApiDescriptorUrl.isDefined => {
         val state = IdGenerator.extendedToken(128)
-        val claim = OpunClaim(
-          iss = env.Headers.OpunGateway,
+        val claim = OtoroshiClaim(
+          iss = env.Headers.OtoroshiIssuer,
           sub = "Documentation",
           aud = service.name,
           exp = DateTime.now().plusSeconds(30).toDate.getTime,
@@ -159,9 +159,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
           .url(url)
           .withRequestTimeout(10.seconds)
           .withHeaders(
-            env.Headers.OpunGatewayRequestId -> env.snowflakeGenerator.nextId().toString,
-            env.Headers.OpunGatewayState     -> state,
-            env.Headers.OpunGatewayClaim     -> claim
+            env.Headers.OtoroshiRequestId -> env.snowflakeGenerator.nextId().toString,
+            env.Headers.OtoroshiState     -> state,
+            env.Headers.OtoroshiClaim     -> claim
           )
           .get()
           .map { resp =>
@@ -170,14 +170,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
               swagger match {
                 case "2.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
                 case "3.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
-                case _     => InternalServerError(views.html.opunapps.error(s"Swagger version $swagger not supported", env))
+                case _ =>
+                  InternalServerError(views.html.otoroshiapps.error(s"Swagger version $swagger not supported", env))
               }
             } catch {
               case e: Throwable => InternalServerError(Json.obj("error" -> e.getMessage))
             }
           }
       }
-      case _ => FastFuture.successful(NotFound(views.html.opunapps.error("Service not found", env)))
+      case _ => FastFuture.successful(NotFound(views.html.otoroshiapps.error("Service not found", env)))
     }
   }
 

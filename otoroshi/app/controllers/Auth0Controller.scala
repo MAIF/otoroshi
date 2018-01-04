@@ -35,7 +35,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
   def privateAppsLoginPage(redirect: Option[String]) = PrivateAppsAction { ctx =>
     implicit val request = ctx.request
     ctx.globalConfig.privateAppsAuth0Config match {
-      case None => NotFound(views.html.opunapps.error("Private apps are not configured", env))
+      case None => NotFound(views.html.otoroshiapps.error("Private apps are not configured", env))
       case Some(config) =>
         Ok(views.html.privateapps.login(env, config)).addingToSession(
           "pa-redirect-after-login" -> redirect.getOrElse(
@@ -102,13 +102,14 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     implicit val request = ctx.request
 
     ctx.globalConfig.privateAppsAuth0Config match {
-      case None => FastFuture.successful(NotFound(views.html.opunapps.error("Private apps are not configured", env)))
+      case None =>
+        FastFuture.successful(NotFound(views.html.otoroshiapps.error("Private apps are not configured", env)))
       case Some(privateAppsAuth0Config) => {
         (codeOpt, error) match {
           case (None, Some(err)) if error_description.contains("email_not_verified") =>
             FastFuture.successful(
               BadRequest(
-                views.html.opunapps.error(
+                views.html.otoroshiapps.error(
                   message =
                     "A confirmation email was sent to your email address. You have to confirm your account to be able to continue.",
                   _env = env,
@@ -120,7 +121,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           case (None, Some(err)) =>
             FastFuture.successful(
               BadRequest(
-                views.html.opunapps
+                views.html.otoroshiapps
                   .error(message = "You're not authorized here", _env = env, title = "Authorization error")
               )
             )
@@ -158,9 +159,9 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
                   }
               }
               .recover {
-                case ex: IllegalStateException => Unauthorized(views.html.opunapps.error(ex.getMessage, env))
+                case ex: IllegalStateException => Unauthorized(views.html.otoroshiapps.error(ex.getMessage, env))
               }
-          case _ => FastFuture.successful(BadRequest(views.html.opunapps.error("No parameters supplied", env)))
+          case _ => FastFuture.successful(BadRequest(views.html.otoroshiapps.error("No parameters supplied", env)))
         }
       }
     }
@@ -177,7 +178,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
 
         config.backofficeAuth0Config match {
           case None =>
-            FastFuture.successful(NotFound(views.html.opunapps.error("Private apps are not configured", env)))
+            FastFuture.successful(NotFound(views.html.otoroshiapps.error("Private apps are not configured", env)))
           case Some(backOfficeAuth0Config) => {
             (codeOpt, error) match {
               case (None, Some(err)) => FastFuture.successful(BadRequest(views.html.backoffice.unauthorized(env)))
@@ -216,9 +217,9 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
                       }
                   }
                   .recover {
-                    case ex: IllegalStateException => Unauthorized(views.html.opunapps.error(ex.getMessage, env))
+                    case ex: IllegalStateException => Unauthorized(views.html.otoroshiapps.error(ex.getMessage, env))
                   }
-              case _ => FastFuture.successful(BadRequest(views.html.opunapps.error("No parameters supplied", env)))
+              case _ => FastFuture.successful(BadRequest(views.html.otoroshiapps.error("No parameters supplied", env)))
             }
           }
         }
