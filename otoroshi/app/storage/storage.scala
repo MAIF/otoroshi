@@ -41,7 +41,7 @@ trait BasicStore[T] {
   def keyStr(id: String): String = key(id).key
   def extractId(value: T): String
   def extractKey(value: T): Key = key(extractId(value))
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
+  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
   def findAllByKeys(ids: Seq[Key])(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
     findAllById(ids.map(_.key))
   def findAllById(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
@@ -115,7 +115,7 @@ trait RedisLike {
 
 trait RedisLikeStore[T] extends BasicStore[T] {
   def fmt: Format[T]
-  private lazy val name       = this.getClass.getSimpleName.replace("$", "")
+  private lazy val name                          = this.getClass.getSimpleName.replace("$", "")
   def _findAllCached(implicit env: Env): Boolean = env.useCache
   def redisLike(implicit env: Env): RedisLike
   def reader: Reads[T]          = fmt
@@ -150,7 +150,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
   }
 
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
+  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
 
     def actualFindAll() =
       redisLike
@@ -167,7 +167,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
           }
         )
 
-    if (_findAllCached) {
+    if (_findAllCached && !force) {
       val time = System.currentTimeMillis
       val ref  = findAllCache.get()
       if (ref == null) {

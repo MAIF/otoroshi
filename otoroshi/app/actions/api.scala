@@ -32,7 +32,10 @@ class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
   def decodeBase64(encoded: String): String = new String(OpunClaim.decoder.decode(encoded), Charsets.UTF_8)
 
   def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
-    logger.error("error mess " + message)
+    ex match {
+      case Some(e) => logger.error("error mess " + message, e)
+      case None    => logger.error("error mess " + message)
+    }
     FastFuture.successful(
       Results
         .Unauthorized(Json.obj("error" -> message))

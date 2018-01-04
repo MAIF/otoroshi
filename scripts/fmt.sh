@@ -7,6 +7,11 @@ fmt_cli () {
   rustup run nightly cargo fmt -- --all
 }
 
+fmt_demo () {
+  cd $LOCATION/clients/demo
+  yarn prettier
+}
+
 fmt_ui () {
   cd $LOCATION/otoroshi/javascript
   yarn prettier
@@ -33,12 +38,16 @@ fmt_server () {
 case "${1}" in
   all)
     fmt_cli
+    fmt_demo
     fmt_ui
     fmt_connectors
     fmt_server
     ;;
   cli)
     fmt_cli
+    ;;
+  demo)
+    fmt_demo
     ;;
   ui)
     fmt_ui
@@ -51,6 +60,7 @@ case "${1}" in
     ;;
   *)
     fmt_cli
+    fmt_demo
     fmt_ui
     fmt_connectors
     fmt_server

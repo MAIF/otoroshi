@@ -19,7 +19,7 @@ import scala.util.Success
 
 trait RedisStore[T] extends BasicStore[T] {
   def fmt: Format[T]
-  private lazy val name       = this.getClass.getSimpleName.replace("$", "")
+  private lazy val name                          = this.getClass.getSimpleName.replace("$", "")
   def _findAllCached(implicit env: Env): Boolean = env.useCache
   def _redis(implicit env: Env): RedisClientMasterSlaves
   def reader: Reads[T]          = fmt
@@ -85,7 +85,7 @@ trait RedisStore[T] extends BasicStore[T] {
     }
   }
 
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
+  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
     val cachekey = s"$name.findAll()"
 
     def actualFindAll() =
@@ -102,7 +102,7 @@ trait RedisStore[T] extends BasicStore[T] {
           }
         )
 
-    if (_findAllCached) {
+    if (_findAllCached && !force) {
       val time = System.currentTimeMillis
       val ref  = findAllCache.get()
       if (ref == null) {

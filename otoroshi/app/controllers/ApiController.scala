@@ -893,7 +893,10 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                               ctx.user.getOrElse(ctx.apiKey.toJson),
                               event)
         )
+        ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
+          ServiceDescriptorQuery(newDesc.subdomain, newDesc.env, newDesc.domain, newDesc.root)
+            .addServices(Seq(newDesc))
           Ok(JsArray(newTargets.map(t => JsString(s"${t.scheme}://${t.host}"))))
         }
       }
@@ -933,7 +936,10 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                               ctx.user.getOrElse(ctx.apiKey.toJson),
                               event)
         )
+        ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
+          ServiceDescriptorQuery(newDesc.subdomain, newDesc.env, newDesc.domain, newDesc.root)
+            .addServices(Seq(newDesc))
           Ok(JsArray(newTargets.map(t => JsString(s"${t.scheme}://${t.host}"))))
         }
       }
@@ -973,7 +979,10 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                               ctx.user.getOrElse(ctx.apiKey.toJson),
                               event)
         )
+        ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
+          ServiceDescriptorQuery(newDesc.subdomain, newDesc.env, newDesc.domain, newDesc.root)
+            .addServices(Seq(newDesc))
           Ok(JsArray(newTargets.map(t => JsString(s"${t.scheme}://${t.host}"))))
         }
       }

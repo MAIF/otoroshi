@@ -80,11 +80,31 @@ case class ServiceDescriptorQuery(subdomain: String,
     }
   }
 
-  def addServices(services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def addServices(services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    val key = this.asKey
+    existsCache.put(key, true)
+    serviceIdsCache.put(key, services.map(_.id))
+    servicesCache.put(key, services)
     env.datastores.serviceDescriptorDataStore.addFastLookups(this, services)
+  }
 
-  def remServices(services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def remServices(services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    val key        = this.asKey
+    val servicesId = services.map(_.id)
+    val resulting =
+      if (servicesCache.containsKey(key)) servicesCache.get(key).filterNot(s => servicesId.contains(s.id))
+      else Seq.empty[ServiceDescriptor]
+    if (resulting.isEmpty) {
+      existsCache.put(key, false)
+      servicesCache.remove(key)
+      serviceIdsCache.remove(key)
+    } else {
+      existsCache.put(key, true)
+      serviceIdsCache.put(key, resulting.map(_.id))
+      servicesCache.put(key, resulting)
+    }
     env.datastores.serviceDescriptorDataStore.removeFastLookups(this, services)
+  }
 }
 
 case class ServiceLocation(domain: String, env: String, subdomain: String)
