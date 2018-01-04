@@ -70,9 +70,9 @@ function setupKonami() {
       css.setAttribute('rel', 'stylesheet');
       css.setAttribute('type', 'text/css');
       css.setAttribute('media', 'all');
-      css.setAttribute('href', '/__opun_assets/clippy/build/clippy.css');
+      css.setAttribute('href', '/__otoroshi_assets/clippy/build/clippy.css');
       const js = document.createElement('script');
-      js.setAttribute('src', '/__opun_assets/clippy/build/clippy.min.js');
+      js.setAttribute('src', '/__otoroshi_assets/clippy/build/clippy.min.js');
       document.head.appendChild(css);
       document.body.appendChild(js);
       js.addEventListener(
