@@ -70,6 +70,17 @@ trait RedisStore[T] extends BasicStore[T] {
   private val findAllCache     = new java.util.concurrent.atomic.AtomicReference[Seq[T]](null)
   private val lastFindAllCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
+  def clearFromCache(id: String): Unit = {
+    val values = findAllCache.get
+    if (values != null) {
+      findAllCache.set(values.filterNot(s => extractId(s) == id))
+    }
+  }
+
+  def clearCache(id: String): Unit = {
+    findAllCache.set(null)
+  }
+
   def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
     val cachekey = s"$name.findAll()"
 
