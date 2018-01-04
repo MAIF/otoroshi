@@ -1,0 +1,7 @@
+node_modules
+otoroshi.jar
+otoroshicli
+otoroshicli.toml
+logs
+RUNNING_PID
+.DS_Store

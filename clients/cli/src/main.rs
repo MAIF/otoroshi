@@ -602,7 +602,6 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
                         )
                         .arg(
                             Arg::with_name("canary-target")
-                                .required(true)
                                 .long("canary-target")
                                 .multiple(true)
                                 .takes_value(true),

@@ -1,0 +1,56 @@
+# Otoroshi demo
+
+a small server/injector based demo of Otoroshi and it loadbalancing/retry capabilities. Before anything else, don't forget to install dependencies with `yarn install`
+
+# Scenario
+
+get and start Otoroshi
+
+```sh
+wget 'https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar'
+wget https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
+wget https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+chmod +x otoroshicli
+
+java -jar otoroshi.jar &
+```
+
+then launch some test servers
+
+```sh
+node demo.js server --port 8081 --name "server 1" &
+node demo.js server --port 8082 --name "server 2" &
+node demo.js server --port 8083 --name "server 3" &
+```
+
+now, create a new Otoroshi service
+
+```sh
+./otoroshicli services create \
+  --group default \
+  --id hello-api \
+  --name hello-api \
+  --env prod \
+  --domain foo.bar \
+  --subdomain api \
+  --root / \
+  --target "http://127.0.0.1:8081" \
+  --public-pattern '/.*' \
+  --no-force-https \
+  --client-retries 3
+```
+
+and run the injector
+
+```sh
+node demo.js injector
+```
+
+then add/remove targets and see what happens
+
+```sh
+./otoroshicli services add-target hello-api --target "http://127.0.0.1:8082"
+./otoroshicli services add-target hello-api --target "http://127.0.0.1:8083"
+./otoroshicli services rem-target hello-api --target "http://127.0.0.1:8083"
+./otoroshicli services rem-target hello-api --target "http://127.0.0.1:8082"
+```
