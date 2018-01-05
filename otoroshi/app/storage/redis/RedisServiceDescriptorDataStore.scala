@@ -10,7 +10,7 @@ import redis.RedisClientMasterSlaves
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueueSize: Int)
+class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueueSize: Int, _env: Env)
     extends ServiceDescriptorDataStore
     with RedisStore[ServiceDescriptor] {
 
@@ -20,23 +20,23 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
 
   override def fmt: Format[ServiceDescriptor] = ServiceDescriptor._fmt
 
-  override def key(id: String): Key = Key.Empty / "opun" / "desc" / id
+  override def key(id: String): Key = Key.Empty / _env.storageRoot / "desc" / id
 
   override def extractId(value: ServiceDescriptor): String = value.id
 
-  private def serviceCallKey(name: String)      = s"opun:scall:$name"
-  private def serviceCallStatsKey(name: String) = s"opun:scall:stats:$name"
+  private def serviceCallKey(name: String)      = s"${_env.storageRoot}:scall:$name"
+  private def serviceCallStatsKey(name: String) = s"${_env.storageRoot}:scall:stats:$name"
 
-  private def serviceCallDurationStatsKey(name: String) = s"opun:scalldur:stats:$name"
-  private def serviceCallOverheadStatsKey(name: String) = s"opun:scallover:stats:$name"
+  private def serviceCallDurationStatsKey(name: String) = s"${_env.storageRoot}:scalldur:stats:$name"
+  private def serviceCallOverheadStatsKey(name: String) = s"${_env.storageRoot}:scallover:stats:$name"
 
-  private def dataInGlobalKey()  = s"opun:data:global:in"
-  private def dataOutGlobalKey() = s"opun:data:global:out"
+  private def dataInGlobalKey()  = s"${_env.storageRoot}:data:global:in"
+  private def dataOutGlobalKey() = s"${_env.storageRoot}:data:global:out"
 
-  private def dataInForServiceKey(name: String)       = s"opun:data:$name:in"
-  private def dataOutForServiceKey(name: String)      = s"opun:data:$name:out"
-  private def dataInForServiceStatsKey(name: String)  = s"opun:data:$name:stats:in"
-  private def dataOutForServiceStatsKey(name: String) = s"opun:data:$name:stats:out"
+  private def dataInForServiceKey(name: String)       = s"${_env.storageRoot}:data:$name:in"
+  private def dataOutForServiceKey(name: String)      = s"${_env.storageRoot}:data:$name:out"
+  private def dataInForServiceStatsKey(name: String)  = s"${_env.storageRoot}:data:$name:stats:in"
+  private def dataOutForServiceStatsKey(name: String) = s"${_env.storageRoot}:data:$name:stats:out"
 
   override def getFastLookups(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,
                                                              env: Env): Future[Seq[String]] =

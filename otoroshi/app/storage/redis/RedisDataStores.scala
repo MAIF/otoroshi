@@ -10,10 +10,11 @@ import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import storage.DataStores
+import env.Env
 
 import scala.concurrent.Future
 
-class RedisDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle)
+class RedisDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env)
     extends DataStores {
 
   lazy val logger = Logger("otoroshi-redis-datastores")
@@ -65,20 +66,20 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
     FastFuture.successful(())
   }
 
-  private lazy val _privateAppsUserDataStore   = new RedisPrivateAppsUserDataStore(redis)
-  private lazy val _backOfficeUserDataStore    = new RedisBackOfficeUserDataStore(redis)
-  private lazy val _serviceGroupDataStore      = new RedisServiceGroupDataStore(redis)
-  private lazy val _globalConfigDataStore      = new RedisGlobalConfigDataStore(redis)
-  private lazy val _apiKeyDataStore            = new RedisApiKeyDataStore(redis)
-  private lazy val _serviceDescriptorDataStore = new RedisServiceDescriptorDataStore(redis, redisStatsItems)
+  private lazy val _privateAppsUserDataStore   = new RedisPrivateAppsUserDataStore(redis, env)
+  private lazy val _backOfficeUserDataStore    = new RedisBackOfficeUserDataStore(redis, env)
+  private lazy val _serviceGroupDataStore      = new RedisServiceGroupDataStore(redis, env)
+  private lazy val _globalConfigDataStore      = new RedisGlobalConfigDataStore(redis, env)
+  private lazy val _apiKeyDataStore            = new RedisApiKeyDataStore(redis, env)
+  private lazy val _serviceDescriptorDataStore = new RedisServiceDescriptorDataStore(redis, redisStatsItems, env)
   private lazy val _u2FAdminDataStore          = new RedisU2FAdminDataStore(redis)
   private lazy val _simpleAdminDataStore       = new RedisSimpleAdminDataStore(redis)
   private lazy val _alertDataStore             = new RedisAlertDataStore(redis)
   private lazy val _auditDataStore             = new RedisAuditDataStore(redis)
-  private lazy val _healthCheckDataStore       = new RedisHealthCheckDataStore(redis)
-  private lazy val _errorTemplateDataStore     = new RedisErrorTemplateDataStore(redis)
+  private lazy val _healthCheckDataStore       = new RedisHealthCheckDataStore(redis, env)
+  private lazy val _errorTemplateDataStore     = new RedisErrorTemplateDataStore(redis, env)
   private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
-  private lazy val _canaryDataStore            = new RedisCanaryDataStore(redis)
+  private lazy val _canaryDataStore            = new RedisCanaryDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

@@ -78,6 +78,9 @@ class Env(val configuration: Configuration,
   //lazy val middleFingers: Boolean = configuration.getBoolean("app.middleFingers").getOrElse(false)
   //lazy val maxLocalLogsSize: Int = configuration.getInt("app.events.maxSize").getOrElse(1000)
 
+  lazy val auth0UserMeta: String          = configuration.getString("app.userMeta").getOrElse("otoroshi_data")
+  lazy val eventsName: String             = configuration.getString("app.eventsName").getOrElse("otoroshi")
+  lazy val storageRoot: String            = configuration.getString("app.storageRoot").getOrElse("otoroshi")
   lazy val useCache: Boolean              = configuration.getBoolean("app.useCache").getOrElse(false)
   lazy val useRedisScan: Boolean          = configuration.getBoolean("app.redis.useScan").getOrElse(false)
   lazy val commitId: String               = configuration.getString("app.commitId").getOrElse("HEAD")
@@ -190,27 +193,27 @@ class Env(val configuration: Configuration,
   lazy val crypto = ClaimCrypto(sharedKey)
 
   object Headers {
-    lazy val OpunVizFromLabel               = configuration.getString("otoroshi.headers.trace.label").get
-    lazy val OpunVizFrom                    = configuration.getString("otoroshi.headers.trace.from").get
-    lazy val OpunGatewayParentRequest       = configuration.getString("otoroshi.headers.trace.parent").get
-    lazy val OpunAdminProfile               = configuration.getString("otoroshi.headers.request.adminprofile").get
-    lazy val OpunClientId                   = configuration.getString("otoroshi.headers.request.clientid").get
-    lazy val OpunClientSecret               = configuration.getString("otoroshi.headers.request.clientsecret").get
-    lazy val OpunGatewayRequestId           = configuration.getString("otoroshi.headers.request.id").get
-    lazy val OpunProxiedHost                = configuration.getString("otoroshi.headers.response.proxyhost").get
-    lazy val OpunGatewayError               = configuration.getString("otoroshi.headers.response.error").get
-    lazy val OpunGatewayErrorMsg            = configuration.getString("otoroshi.headers.response.errormsg").get
-    lazy val OpunGatewayProxyLatency        = configuration.getString("otoroshi.headers.response.proxylatency").get
-    lazy val OpunGatewayUpstreamLatency     = configuration.getString("otoroshi.headers.response.upstreamlatency").get
-    lazy val OpunDailyCallsRemaining        = configuration.getString("otoroshi.headers.response.dailyquota").get
-    lazy val OpunMonthlyCallsRemaining      = configuration.getString("otoroshi.headers.response.monthlyquota").get
-    lazy val OpunGatewayState               = configuration.getString("otoroshi.headers.comm.state").get
-    lazy val OpunGatewayStateResp           = configuration.getString("otoroshi.headers.comm.stateresp").get
-    lazy val OpunGatewayClaim               = configuration.getString("otoroshi.headers.comm.claim").get
-    lazy val OpunHealthCheckLogicTest       = configuration.getString("otoroshi.headers.healthcheck.test").get
-    lazy val OpunHealthCheckLogicTestResult = configuration.getString("otoroshi.headers.healthcheck.testresult").get
-    lazy val OpunGateway                    = configuration.getString("otoroshi.headers.jwt.issuer").get
-    lazy val OpunTrackerId                  = configuration.getString("otoroshi.headers.canary.tracker").get
+    lazy val OtoroshiVizFromLabel               = configuration.getString("otoroshi.headers.trace.label").get
+    lazy val OtoroshiVizFrom                    = configuration.getString("otoroshi.headers.trace.from").get
+    lazy val OtoroshiGatewayParentRequest       = configuration.getString("otoroshi.headers.trace.parent").get
+    lazy val OtoroshiAdminProfile               = configuration.getString("otoroshi.headers.request.adminprofile").get
+    lazy val OtoroshiClientId                   = configuration.getString("otoroshi.headers.request.clientid").get
+    lazy val OtoroshiClientSecret               = configuration.getString("otoroshi.headers.request.clientsecret").get
+    lazy val OtoroshiRequestId                  = configuration.getString("otoroshi.headers.request.id").get
+    lazy val OtoroshiProxiedHost                = configuration.getString("otoroshi.headers.response.proxyhost").get
+    lazy val OtoroshiGatewayError               = configuration.getString("otoroshi.headers.response.error").get
+    lazy val OtoroshiErrorMsg                   = configuration.getString("otoroshi.headers.response.errormsg").get
+    lazy val OtoroshiProxyLatency               = configuration.getString("otoroshi.headers.response.proxylatency").get
+    lazy val OtoroshiUpstreamLatency            = configuration.getString("otoroshi.headers.response.upstreamlatency").get
+    lazy val OtoroshiDailyCallsRemaining        = configuration.getString("otoroshi.headers.response.dailyquota").get
+    lazy val OtoroshiMonthlyCallsRemaining      = configuration.getString("otoroshi.headers.response.monthlyquota").get
+    lazy val OtoroshiState                      = configuration.getString("otoroshi.headers.comm.state").get
+    lazy val OtoroshiStateResp                  = configuration.getString("otoroshi.headers.comm.stateresp").get
+    lazy val OtoroshiClaim                      = configuration.getString("otoroshi.headers.comm.claim").get
+    lazy val OtoroshiHealthCheckLogicTest       = configuration.getString("otoroshi.headers.healthcheck.test").get
+    lazy val OtoroshiHealthCheckLogicTestResult = configuration.getString("otoroshi.headers.healthcheck.testresult").get
+    lazy val OtoroshiIssuer                     = configuration.getString("otoroshi.headers.jwt.issuer").get
+    lazy val OtoroshiTrackerId                  = configuration.getString("otoroshi.headers.canary.tracker").get
   }
 
   private def factory(of: String) = new ThreadFactory {
@@ -222,10 +225,10 @@ class Env(val configuration: Configuration,
 
   lazy val datastores: DataStores = {
     configuration.getString("app.storage").getOrElse("redis") match {
-      case "redis"     => new RedisDataStores(configuration, environment, lifecycle)
-      case "inmemory"  => new InMemoryDataStores(configuration, environment, lifecycle)
-      case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle)
-      case "cassandra" => new CassandraDataStores(configuration, environment, lifecycle)
+      case "redis"     => new RedisDataStores(configuration, environment, lifecycle, this)
+      case "inmemory"  => new InMemoryDataStores(configuration, environment, lifecycle, this)
+      case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle, this)
+      case "cassandra" => new CassandraDataStores(configuration, environment, lifecycle, this)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }

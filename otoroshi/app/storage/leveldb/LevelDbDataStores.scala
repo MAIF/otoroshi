@@ -10,10 +10,14 @@ import play.api.{Configuration, Environment, Logger}
 import play.api.inject.ApplicationLifecycle
 import storage.DataStores
 import storage.inmemory._
+import env.Env
 
 import scala.concurrent.Future
 
-class LevelDbDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle)
+class LevelDbDataStores(configuration: Configuration,
+                        environment: Environment,
+                        lifecycle: ApplicationLifecycle,
+                        env: Env)
     extends DataStores {
 
   lazy val logger = Logger("otoroshi-leveldb-datastores")
@@ -43,20 +47,20 @@ class LevelDbDataStores(configuration: Configuration, environment: Environment, 
     FastFuture.successful(())
   }
 
-  private lazy val _privateAppsUserDataStore   = new InMemoryPrivateAppsUserDataStore(redis)
-  private lazy val _backOfficeUserDataStore    = new InMemoryBackOfficeUserDataStore(redis)
-  private lazy val _serviceGroupDataStore      = new InMemoryServiceGroupDataStore(redis)
-  private lazy val _globalConfigDataStore      = new InMemoryGlobalConfigDataStore(redis)
-  private lazy val _apiKeyDataStore            = new InMemoryApiKeyDataStore(redis)
-  private lazy val _serviceDescriptorDataStore = new InMemoryServiceDescriptorDataStore(redis, redisStatsItems)
+  private lazy val _privateAppsUserDataStore   = new InMemoryPrivateAppsUserDataStore(redis, env)
+  private lazy val _backOfficeUserDataStore    = new InMemoryBackOfficeUserDataStore(redis, env)
+  private lazy val _serviceGroupDataStore      = new InMemoryServiceGroupDataStore(redis, env)
+  private lazy val _globalConfigDataStore      = new InMemoryGlobalConfigDataStore(redis, env)
+  private lazy val _apiKeyDataStore            = new InMemoryApiKeyDataStore(redis, env)
+  private lazy val _serviceDescriptorDataStore = new InMemoryServiceDescriptorDataStore(redis, redisStatsItems, env)
   private lazy val _u2FAdminDataStore          = new InMemoryU2FAdminDataStore(redis)
-  private lazy val _simpleAdminDataStore       = new InMemorySimpleAdminDataStore(redis)
+  private lazy val _simpleAdminDataStore       = new InMemorySimpleAdminDataStore(redis, env)
   private lazy val _alertDataStore             = new InMemoryAlertDataStore(redis)
   private lazy val _auditDataStore             = new InMemoryAuditDataStore(redis)
-  private lazy val _healthCheckDataStore       = new InMemoryHealthCheckDataStore(redis)
-  private lazy val _errorTemplateDataStore     = new InMemoryErrorTemplateDataStore(redis)
+  private lazy val _healthCheckDataStore       = new InMemoryHealthCheckDataStore(redis, env)
+  private lazy val _errorTemplateDataStore     = new InMemoryErrorTemplateDataStore(redis, env)
   private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
-  private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis)
+  private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

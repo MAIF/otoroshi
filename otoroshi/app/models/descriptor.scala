@@ -16,7 +16,7 @@ case class ServiceDescriptorQuery(subdomain: String,
                                   root: String = "/",
                                   matchingHeaders: Map[String, String] = Map.empty[String, String]) {
 
-  def asKey: String = s"opun:desclookup:$env:$domain:$subdomain:$root"
+  def asKey(implicit env: Env): String = s"${env.storageRoot}:desclookup:$env:$domain:$subdomain:$root"
 
   def toHost: String = subdomain match {
     case s if s.isEmpty                  => s"$env.$domain"

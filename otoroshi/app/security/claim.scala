@@ -11,7 +11,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 
 import scala.util.Try
 
-case class OpunClaim(
+case class OtoroshiClaim(
     iss: String, // issuer
     sub: String, // subject
     aud: String, // audience
@@ -20,34 +20,34 @@ case class OpunClaim(
     jti: String, // unique id forever
     metadata: Map[String, String] = Map.empty[String, String] // private claim
 ) {
-  def toJson: JsValue                                = OpunClaim.format.writes(this)
-  def serialize(implicit env: Env): String           = OpunClaim.serialize(this)(env)
-  def serializeWithCrypto(implicit env: Env): String = OpunClaim.serializeWithCrypto(this)(env)
-  def withClaims(claims: Option[Map[String, String]]): OpunClaim = claims match {
+  def toJson: JsValue                                = OtoroshiClaim.format.writes(this)
+  def serialize(implicit env: Env): String           = OtoroshiClaim.serialize(this)(env)
+  def serializeWithCrypto(implicit env: Env): String = OtoroshiClaim.serializeWithCrypto(this)(env)
+  def withClaims(claims: Option[Map[String, String]]): OtoroshiClaim = claims match {
     case Some(c) => withClaims(c)
     case None    => this
   }
-  def withClaims(claims: Map[String, String]): OpunClaim = copy(metadata = metadata ++ claims)
-  def withClaim(name: String, value: String): OpunClaim  = copy(metadata = metadata + (name -> value))
-  def withClaim(name: String, value: Option[String]): OpunClaim = value match {
+  def withClaims(claims: Map[String, String]): OtoroshiClaim = copy(metadata = metadata ++ claims)
+  def withClaim(name: String, value: String): OtoroshiClaim  = copy(metadata = metadata + (name -> value))
+  def withClaim(name: String, value: Option[String]): OtoroshiClaim = value match {
     case Some(v) => copy(metadata = metadata + (name -> v))
     case None    => this
   }
 }
 
-object OpunClaim {
+object OtoroshiClaim {
 
   val encoder = Base64.getUrlEncoder
   val decoder = Base64.getUrlDecoder
-  val format  = Json.format[OpunClaim]
+  val format  = Json.format[OtoroshiClaim]
 
   lazy val logger = Logger("otoroshi-claim")
 
-  def serializeWithCrypto(claim: OpunClaim)(implicit env: Env): String = {
+  def serializeWithCrypto(claim: OtoroshiClaim)(implicit env: Env): String = {
     val algorithm = Algorithm.HMAC512(env.crypto.sharedKey)
     val builder: JWTCreator.Builder = JWT
       .create()
-      .withIssuer(env.Headers.OpunGateway)
+      .withIssuer(env.Headers.OtoroshiIssuer)
       .withSubject(claim.sub)
       .withAudience(claim.aud)
       .withExpiresAt(new Date(claim.exp))
@@ -62,14 +62,14 @@ object OpunClaim {
     signed
   }
 
-  def serialize(claim: OpunClaim)(implicit env: Env): String = serializeWithCrypto(claim)(env)
+  def serialize(claim: OtoroshiClaim)(implicit env: Env): String = serializeWithCrypto(claim)(env)
 
   def validate(claim: String)(implicit env: Env): Boolean =
     Try {
       val algorithm = Algorithm.HMAC512(env.crypto.sharedKey)
       val verifier = JWT
         .require(algorithm)
-        .withIssuer(env.Headers.OpunGateway)
+        .withIssuer(env.Headers.OtoroshiIssuer)
         .build()
       verifier.verify(claim)
     } isSuccess

@@ -38,10 +38,10 @@ case class ErrorTemplate(serviceId: String,
     val message    = messages.getOrElse(messageKey, otoroshiMessage)
     val cause      = messages.getOrElse(causeId, causeId)
     Json.obj(
-      "opun-gateway-error-id"  -> errorId,
-      "opun-gateway-error"     -> message,
-      "opun-gateway-cause"     -> cause,
-      "opun-gateway-raw-error" -> otoroshiMessage
+      "otoroshi-error-id"  -> errorId,
+      "otoroshi-error"     -> message,
+      "otoroshi-cause"     -> cause,
+      "otoroshi-raw-error" -> otoroshiMessage
     )
   }
   def toJson: JsValue                                 = ErrorTemplate.format.writes(this)

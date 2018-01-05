@@ -11,7 +11,7 @@ import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
-import security.{IdGenerator, OpunClaim}
+import security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,8 +51,8 @@ class AnalyticsActor(implicit env: Env) extends Actor {
         }
         Future.sequence(config.analyticsWebhooks.map { webhook =>
           val state = IdGenerator.extendedToken(128)
-          val claim = OpunClaim(
-            iss = env.Headers.OpunGateway,
+          val claim = OtoroshiClaim(
+            iss = env.Headers.OtoroshiIssuer,
             sub = "otoroshi-analytics",
             aud = "omoikane",
             exp = DateTime.now().plusSeconds(30).toDate.getTime,
@@ -60,15 +60,15 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             jti = IdGenerator.uuid
           ).serialize(env)
           val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
-            env.Headers.OpunGatewayState -> state,
-            env.Headers.OpunGatewayClaim -> claim
+            env.Headers.OtoroshiState -> state,
+            env.Headers.OtoroshiClaim -> claim
           )
 
           val url = evts.headOption
             .map(
               evt =>
                 webhook.url
-                  .replace("@product", evt.`@product`)
+                  .replace("@product", env.eventsName)
                   .replace("@serviceId", evt.`@serviceId`)
                   .replace("@id", evt.`@id`)
                   .replace("@messageType", evt.`@type`)
@@ -150,9 +150,8 @@ trait AnalyticEvent {
   def `@timestamp`: DateTime
   def `@service`: String
   def `@serviceId`: String
-  def `@product`: String
 
-  def toJson: JsValue
+  def toJson(implicit _env: Env): JsValue
 
   def toAnalytics()(implicit env: Env): Unit = {
     if (true) env.analyticsActor ! this
@@ -185,12 +184,12 @@ object DataInOut {
   implicit val fmt = Json.format[DataInOut]
 }
 
-case class OpunViz(fromTo: String, from: String, to: String, fromLbl: String, toLbl: String) {
-  def toJson = OpunViz.format.writes(this)
+case class OtoroshiViz(fromTo: String, from: String, to: String, fromLbl: String, toLbl: String) {
+  def toJson = OtoroshiViz.format.writes(this)
 }
 
-object OpunViz {
-  implicit val format = Json.format[OpunViz]
+object OtoroshiViz {
+  implicit val format = Json.format[OtoroshiViz]
 }
 
 case class GatewayEvent(
@@ -217,40 +216,38 @@ case class GatewayEvent(
     descriptor: ServiceDescriptor,
     `@product`: String = "--",
     remainingQuotas: RemainingQuotas,
-    viz: Option[OpunViz]
+    viz: Option[OtoroshiViz]
 ) extends AnalyticEvent {
-  def toJson: JsValue = GatewayEvent.format.writes(this)
+  def toJson(implicit _env: Env): JsValue = GatewayEvent.writes(this, _env)
 }
 
 object GatewayEvent {
-  implicit val format = new Writes[GatewayEvent] {
-    override def writes(o: GatewayEvent): JsValue = Json.obj(
-      "@type"           -> o.`@type`,
-      "@id"             -> o.`@id`,
-      "@timestamp"      -> o.`@timestamp`,
-      "reqId"           -> o.reqId,
-      "parentReqId"     -> o.parentReqId.map(l => JsNumber(l)).getOrElse(JsNull).as[JsValue],
-      "protocol"        -> o.protocol,
-      "to"              -> Location.format.writes(o.to),
-      "target"          -> Location.format.writes(o.target),
-      "url"             -> o.url,
-      "from"            -> o.from,
-      "@env"            -> o.env,
-      "duration"        -> o.duration,
-      "overhead"        -> o.overhead,
-      "data"            -> DataInOut.fmt.writes(o.data),
-      "status"          -> o.status,
-      "headers"         -> o.headers.map(Header.format.writes),
-      "identity"        -> o.identity.map(Identity.format.writes).getOrElse(JsNull).as[JsValue],
-      "gwError"         -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "@serviceId"      -> o.`@serviceId`,
-      "@service"        -> o.`@service`,
-      "descriptor"      -> ServiceDescriptor.toJson(o.descriptor),
-      "@product"        -> o.`@product`,
-      "remainingQuotas" -> o.remainingQuotas,
-      "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue]
-    )
-  }
+  def writes(o: GatewayEvent, env: Env): JsValue = Json.obj(
+    "@type"           -> o.`@type`,
+    "@id"             -> o.`@id`,
+    "@timestamp"      -> o.`@timestamp`,
+    "reqId"           -> o.reqId,
+    "parentReqId"     -> o.parentReqId.map(l => JsNumber(l)).getOrElse(JsNull).as[JsValue],
+    "protocol"        -> o.protocol,
+    "to"              -> Location.format.writes(o.to),
+    "target"          -> Location.format.writes(o.target),
+    "url"             -> o.url,
+    "from"            -> o.from,
+    "@env"            -> o.env,
+    "duration"        -> o.duration,
+    "overhead"        -> o.overhead,
+    "data"            -> DataInOut.fmt.writes(o.data),
+    "status"          -> o.status,
+    "headers"         -> o.headers.map(Header.format.writes),
+    "identity"        -> o.identity.map(Identity.format.writes).getOrElse(JsNull).as[JsValue],
+    "gwError"         -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "@serviceId"      -> o.`@serviceId`,
+    "@service"        -> o.`@service`,
+    "descriptor"      -> ServiceDescriptor.toJson(o.descriptor),
+    "@product"        -> env.eventsName,
+    "remainingQuotas" -> o.remainingQuotas,
+    "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue]
+  )
 }
 
 case class HealthCheckEvent(
@@ -267,7 +264,7 @@ case class HealthCheckEvent(
     error: Option[String] = None,
     health: Option[String] = None
 ) extends AnalyticEvent {
-  def toJson: JsValue = HealthCheckEvent.format.writes(this)
+  def toJson(implicit _env: Env): JsValue = HealthCheckEvent.format.writes(this)
   def pushToRedis()(implicit ec: ExecutionContext, env: Env): Future[Long] =
     env.datastores.healthCheckDataStore.push(this)
   def isUp: Boolean =

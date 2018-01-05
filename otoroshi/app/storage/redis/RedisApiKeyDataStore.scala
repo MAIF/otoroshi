@@ -12,7 +12,9 @@ import redis.RedisClientMasterSlaves
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves) extends ApiKeyDataStore with RedisStore[ApiKey] {
+class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
+    extends ApiKeyDataStore
+    with RedisStore[ApiKey] {
 
   lazy val logger = Logger("otoroshi-redis-apikey-datastore")
 
@@ -20,22 +22,22 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves) extends ApiKeyData
 
   override def fmt: Format[ApiKey] = ApiKey._fmt
 
-  override def key(id: String): Key = Key.Empty / "opun" / "apikey" / "coll" / id
+  override def key(id: String): Key = Key.Empty / _env.storageRoot / "apikey" / "coll" / id
 
   override def extractId(value: ApiKey): String = value.clientId
 
-  def totalCallsKey(name: String): String   = s"opun:apikey:quotas:global:$name"
-  def dailyQuotaKey(name: String): String   = s"opun:apikey:quotas:daily:$name"
-  def monthlyQuotaKey(name: String): String = s"opun:apikey:quotas:monthly:$name"
-  def throttlingKey(name: String): String   = s"opun:apikey:quotas:second:$name"
+  def totalCallsKey(name: String): String   = s"${_env.storageRoot}:apikey:quotas:global:$name"
+  def dailyQuotaKey(name: String): String   = s"${_env.storageRoot}:apikey:quotas:daily:$name"
+  def monthlyQuotaKey(name: String): String = s"${_env.storageRoot}:apikey:quotas:monthly:$name"
+  def throttlingKey(name: String): String   = s"${_env.storageRoot}:apikey:quotas:second:$name"
 
   override def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                             env: Env): Future[Long] =
-    redisCli.srem(s"opun:apikey:byservice:$serviceId", apiKey.clientId)
+    redisCli.srem(s"${env.storageRoot}:apikey:byservice:$serviceId", apiKey.clientId)
 
   override def addFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                          env: Env): Future[Long] = {
-    val key = s"opun:apikey:byservice:$serviceId"
+    val key = s"${env.storageRoot}:apikey:byservice:$serviceId"
     for {
       r <- redisCli.sadd(key, apiKey.clientId)
       _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
@@ -44,11 +46,11 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves) extends ApiKeyData
 
   override def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                         env: Env): Future[Long] =
-    redisCli.srem(s"opun:apikey:bygroup:$groupId", apiKey.clientId)
+    redisCli.srem(s"${env.storageRoot}:apikey:bygroup:$groupId", apiKey.clientId)
 
   override def addFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                      env: Env): Future[Long] = {
-    val key = s"opun:apikey:bygroup:$groupId"
+    val key = s"${env.storageRoot}:apikey:bygroup:$groupId"
     for {
       r <- redisCli.sadd(key, apiKey.clientId)
       _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
@@ -132,7 +134,7 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves) extends ApiKeyData
   override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case Some(descriptor) => {
-        val key = s"opun:apikey:byservice:$serviceId"
+        val key = s"${env.storageRoot}:apikey:byservice:$serviceId"
         redisCli.exists(key).flatMap {
           case true => {
             logger.debug(s"ApiKeys for service $serviceId from redis")
@@ -160,7 +162,7 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves) extends ApiKeyData
   override def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case Some(group) => {
-        val key = s"opun:apikey:bygroup:$groupId"
+        val key = s"${env.storageRoot}:apikey:bygroup:$groupId"
         redisCli.exists(key).flatMap {
           case true => {
             logger.debug(s"ApiKeys for group $groupId from redis")

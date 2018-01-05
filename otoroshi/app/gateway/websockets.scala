@@ -27,7 +27,7 @@ import play.api.http.websocket.{
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, ServiceUnavailable, Status}
 import play.api.mvc._
-import security.{IdGenerator, OpunClaim}
+import security.{IdGenerator, OtoroshiClaim}
 import utils.Metrics
 import utils.future.Implicits._
 
@@ -50,18 +50,18 @@ class WebSocketHandler()(implicit env: Env) {
   val reqCounter = new AtomicInteger(0)
 
   val headersInFiltered = Seq(
-    env.Headers.OpunGatewayState,
-    env.Headers.OpunGatewayClaim,
-    env.Headers.OpunGatewayRequestId,
+    env.Headers.OtoroshiState,
+    env.Headers.OtoroshiClaim,
+    env.Headers.OtoroshiRequestId,
     "Host"
   ).map(_.toLowerCase)
 
   val headersOutFiltered = Seq(
-    env.Headers.OpunGatewayStateResp,
+    env.Headers.OtoroshiStateResp,
     "Transfer-Encoding"
   ).map(_.toLowerCase)
 
-  def decodeBase64(encoded: String): String = new String(OpunClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
   def isPrivateAppsSessionValid(req: RequestHeader): Future[Option[PrivateAppsUser]] =
     req.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
@@ -138,7 +138,7 @@ class WebSocketHandler()(implicit env: Env) {
                 val maybeTrackingId = req.cookies
                   .get("oto-client")
                   .map(_.value)
-                  .orElse(req.headers.get(env.Headers.OpunTrackerId))
+                  .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
                   .filter { value =>
                     if (value.contains("::")) {
                       value.split("::").toList match {
@@ -254,12 +254,12 @@ class WebSocketHandler()(implicit env: Env) {
                     val url    = s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri"
                     // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                     val fromOtoroshi = req.headers
-                      .get(env.Headers.OpunGatewayRequestId)
-                      .orElse(req.headers.get(env.Headers.OpunGatewayParentRequest))
+                      .get(env.Headers.OtoroshiRequestId)
+                      .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                     val promise = Promise[ProxyDone]
 
-                    val claim = OpunClaim(
-                      iss = env.Headers.OpunGateway,
+                    val claim = OtoroshiClaim(
+                      iss = env.Headers.OtoroshiIssuer,
                       sub = paUsr
                         .filter(_ => descriptor.privateApp)
                         .map(k => s"pa:${k.email}")
@@ -278,18 +278,18 @@ class WebSocketHandler()(implicit env: Env) {
                       .withClaim("gender", paUsr.flatMap(_.field("gender")))
                       .withClaim("locale", paUsr.flatMap(_.field("locale")))
                       .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
-                      .withClaims(paUsr.flatMap(_.opunData).orElse(apiKey.map(_.metadata)))
+                      .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
                       .serialize(env)
                     logger.trace(s"Claim is : $claim")
                     val headersIn: Seq[(String, String)] = (req.headers.toSimpleMap.toSeq
                       .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                      env.Headers.OpunProxiedHost      -> req.headers.get("Host").getOrElse("--"),
-                      "Host"                           -> host,
-                      env.Headers.OpunGatewayRequestId -> snowflake,
-                      env.Headers.OpunGatewayState     -> state,
-                      env.Headers.OpunGatewayClaim     -> claim
+                      env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
+                      "Host"                          -> host,
+                      env.Headers.OtoroshiRequestId   -> snowflake,
+                      env.Headers.OtoroshiState       -> state,
+                      env.Headers.OtoroshiClaim       -> claim
                     ) ++ descriptor.additionalHeaders ++ fromOtoroshi
-                      .map(v => Map(env.Headers.OpunGatewayParentRequest -> fromOtoroshi.get))
+                      .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                       .getOrElse(Map.empty[String, String])).toSeq
 
                     // val requestHeader = ByteString(
@@ -318,11 +318,11 @@ class WebSocketHandler()(implicit env: Env) {
                         env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
                         quotas.andThen {
                           case Success(q) => {
-                            val fromLbl = req.headers.get(env.Headers.OpunVizFromLabel).getOrElse("internet")
-                            val viz: OpunViz = OpunViz(
+                            val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
+                            val viz: OtoroshiViz = OtoroshiViz(
                               to = descriptor.id,
                               toLbl = descriptor.name,
-                              from = req.headers.get(env.Headers.OpunVizFrom).getOrElse("internet"),
+                              from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
                               fromLbl = fromLbl,
                               fromTo = s"$fromLbl###${descriptor.name}"
                             )
@@ -420,8 +420,8 @@ class WebSocketHandler()(implicit env: Env) {
                           .flatMap(e => Try(decodeBase64(e)).toOption)
                       )
                     val authByCustomHeaders = req.headers
-                      .get(env.Headers.OpunClientId)
-                      .flatMap(id => req.headers.get(env.Headers.OpunClientSecret).map(s => (id, s)))
+                      .get(env.Headers.OtoroshiClientId)
+                      .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
                     if (authByCustomHeaders.isDefined) {
                       val (clientId, clientSecret) = authByCustomHeaders.get
                       env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {

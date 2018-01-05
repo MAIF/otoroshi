@@ -149,5 +149,5 @@ GET     /api/swagger/ui                                       controllers.Swagge
 ########################################################################################################################
 
 GET     /assets/*file                                         controllers.Assets.versioned(path="/public", file: Asset)
-GET     /__opun_assets/*file                                  controllers.Assets.versioned(path="/public", file: Asset)
+GET     /__otoroshi_assets/*file                              controllers.Assets.versioned(path="/public", file: Asset)
 GET     /docs/*file                                           controllers.Assets.at(path="/public/docs", file)

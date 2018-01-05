@@ -22,6 +22,6 @@ class PrivateAppsController(env: Env, PrivateAppsAction: PrivateAppsAction) exte
   }
 
   def error(message: Option[String] = None) = PrivateAppsAction { ctx =>
-    Ok(views.html.opunapps.error(message.getOrElse(""), env))
+    Ok(views.html.otoroshi.error(message.getOrElse(""), env))
   }
 }

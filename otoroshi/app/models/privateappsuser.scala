@@ -16,10 +16,11 @@ case class PrivateAppsUser(randomId: String,
                            profile: JsValue,
                            createdAt: DateTime = DateTime.now(),
                            expiredAt: DateTime = DateTime.now()) {
-  def opunData: Option[Map[String, String]] = (profile \ "app_metadata" \ "opun_data").asOpt[Map[String, String]]
-  def picture: Option[String]               = (profile \ "picture").asOpt[String]
-  def field(name: String): Option[String]   = (profile \ "name").asOpt[String]
-  def userId: Option[String]                = (profile \ "user_id").asOpt[String]
+  def otoroshiData(implicit env: Env): Option[Map[String, String]] =
+    (profile \ "app_metadata" \ env.auth0UserMeta).asOpt[Map[String, String]]
+  def picture: Option[String]             = (profile \ "picture").asOpt[String]
+  def field(name: String): Option[String] = (profile \ "name").asOpt[String]
+  def userId: Option[String]              = (profile \ "user_id").asOpt[String]
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
     env.datastores.privateAppsUserDataStore

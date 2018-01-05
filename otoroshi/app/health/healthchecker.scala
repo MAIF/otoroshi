@@ -8,7 +8,7 @@ import events.HealthCheckEvent
 import models.ServiceDescriptor
 import org.joda.time.DateTime
 import play.api.Logger
-import security.{IdGenerator, OpunClaim}
+import security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -34,8 +34,8 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
         val start = System.currentTimeMillis()
         val state = IdGenerator.extendedToken(128)
         val value = env.snowflakeGenerator.nextId().toString
-        val claim = OpunClaim(
-          iss = env.Headers.OpunGateway,
+        val claim = OtoroshiClaim(
+          iss = env.Headers.OtoroshiIssuer,
           sub = "HealthChecker",
           aud = desc.name,
           exp = DateTime.now().plusSeconds(30).toDate.getTime,
@@ -46,15 +46,15 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
           .url(url)
           .withRequestTimeout(Duration(30, TimeUnit.SECONDS))
           .withHeaders(
-            env.Headers.OpunGatewayState         -> state,
-            env.Headers.OpunGatewayClaim         -> claim,
-            env.Headers.OpunHealthCheckLogicTest -> value
+            env.Headers.OtoroshiState                -> state,
+            env.Headers.OtoroshiClaim                -> claim,
+            env.Headers.OtoroshiHealthCheckLogicTest -> value
           )
           .get()
           .andThen {
             case Success(res) => {
               val checkDone =
-                res.header(env.Headers.OpunHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
+                res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
               val hce = HealthCheckEvent(
                 `@id` = value,
                 `@timestamp` = DateTime.now(),

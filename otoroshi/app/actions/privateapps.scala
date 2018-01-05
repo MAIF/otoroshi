@@ -37,7 +37,7 @@ class PrivateAppsAction()(implicit env: Env) extends ActionBuilder[PrivateAppsAc
       }
       case _ => {
         // TODO : based on Accept header
-        FastFuture.successful(Results.NotFound(views.html.opunapps.error("Not found", env)))
+        FastFuture.successful(Results.NotFound(views.html.otoroshi.error("Not found", env)))
       }
     }
   }
