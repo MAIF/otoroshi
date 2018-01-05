@@ -138,6 +138,14 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
 'host', 'client_id', 'client_secret' values to access the Otoroshi instance you need."#,
         )
         .arg(
+            Arg::with_name("otoroshi_file")
+                .long("oto-file")
+                .value_name("PATH")
+                .help("A config file to access Otoroshi instance")
+                .takes_value(true)
+                .global(true),
+        )
+        .arg(
             Arg::with_name("otoroshi_host")
                 .long("oto-host")
                 .value_name("HOST")
