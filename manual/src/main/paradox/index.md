@@ -20,8 +20,10 @@ You can install and run Otoroshi with this little bash snippet
 
 ```sh
 wget 'https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar'
+# run the following line if you want to use the admin UI
 sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar" >> /etc/hosts
 java -jar otoroshi.jar
+# open http://otoroshi.foo.bar:8080
 ```
 
 now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
