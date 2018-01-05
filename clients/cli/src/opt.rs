@@ -1,5 +1,6 @@
 pub trait OptionExtension {
     type OptionInner;
+    fn m_map<B, F: FnOnce(&Self::OptionInner) -> B>(self, F) -> Option<B>;
     fn m_foreach<B, F: FnOnce(&Self::OptionInner) -> B>(self, F);
     fn m_flat_map<B, F: FnOnce(&Self::OptionInner) -> Option<B>>(self, F) -> Option<B>;
     fn m_filter<F: FnOnce(&Self::OptionInner) -> bool>(self, F) -> Self;
@@ -40,6 +41,13 @@ impl<T> OptionExtension for Option<T> {
                 callback(&x);
                 ()
             }
+        }
+    }
+
+    fn m_map<B, F: FnOnce(&Self::OptionInner) -> B>(self, callback: F) -> Option<B> {
+        match self {
+            None => None,
+            Some(x) => Some(callback(&x)),
         }
     }
 

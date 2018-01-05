@@ -544,7 +544,8 @@ impl OtoroshiClient {
         throttling_quota.m_foreach(|throttling_quota| {
             fields.push(format!(r#""throttlingQuota":{}"#, throttling_quota))
         });
-        daily_quota.m_foreach(|daily_quota| fields.push(format!(r#""dailyQuota":{}"#, daily_quota)));
+        daily_quota
+            .m_foreach(|daily_quota| fields.push(format!(r#""dailyQuota":{}"#, daily_quota)));
         monthly_quota
             .m_foreach(|monthly_quota| fields.push(format!(r#""monthlyQuota":{}"#, monthly_quota)));
         let body = format!(r#"{{{}}}"#, fields.join(","));

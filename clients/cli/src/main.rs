@@ -47,34 +47,70 @@ fn extract_oto_args(
     default_config: ToMlValue,
     subcommand: &ArgMatches,
 ) -> (String, String, String, bool, bool, String, Option<String>) {
-    let host = subcommand
-        .value_of("oto-host")
-        .or(default_config.get("host").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi Host");
-    let url = subcommand
-        .value_of("oto-url")
-        .or(default_config.get("url").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi URL");
-    let client_id = subcommand
-        .value_of("oto-client-id")
-        .or(default_config.get("client_id").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi client id");
-    let client_secret = subcommand
-        .value_of("oto-client-secret")
-        .or(default_config.get("client_secret").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi client secret");
+    // TODO : if oto-file, then extract from file
+
     let selector = subcommand.value_of("selector");
     let no_colors = subcommand.is_present("no-colors");
     let debug = subcommand.is_present("debug");
-    (
-        host.to_string(),
-        client_id.to_string(),
-        client_secret.to_string(),
-        no_colors,
-        debug,
-        url.to_string(),
-        selector.map(|i| i.to_string()),
-    )
+
+    match subcommand.value_of("oto-file") {
+        Some(file) => {
+            // let path = Path::new(f);
+            let actual_config = load_from_path(file).unwrap();
+            let host = actual_config
+                .get("host")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi Host in config file");
+            let url = default_config
+                .get("url")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi URL in config file");
+            let client_id = default_config
+                .get("client_id")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi client id in config file");
+            let client_secret = default_config
+                .get("client_secret")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi client secret in config file");
+            (
+                host.to_string(),
+                client_id.to_string(),
+                client_secret.to_string(),
+                no_colors,
+                debug,
+                url.to_string(),
+                selector.map(|i| i.to_string()),
+            )
+        }
+        _ => {
+            let host = subcommand
+                .value_of("oto-host")
+                .or(default_config.get("host").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi Host");
+            let url = subcommand
+                .value_of("oto-url")
+                .or(default_config.get("url").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi URL");
+            let client_id = subcommand
+                .value_of("oto-client-id")
+                .or(default_config.get("client_id").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi client id");
+            let client_secret = subcommand
+                .value_of("oto-client-secret")
+                .or(default_config.get("client_secret").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi client secret");
+            (
+                host.to_string(),
+                client_id.to_string(),
+                client_secret.to_string(),
+                no_colors,
+                debug,
+                url.to_string(),
+                selector.map(|i| i.to_string()),
+            )
+        }
+    }
 }
 
 fn noop(message: &str) -> String {
@@ -112,6 +148,14 @@ fn main() {
 A simple CLI to control the Otoroshi reverse proxy (https://maif.github.io/otoroshi).
 You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config file with
 'host', 'client_id', 'client_secret' values to access the Otoroshi instance you need."#,
+        )
+        .arg(
+            Arg::with_name("otoroshi_file")
+                .long("oto-file")
+                .value_name("PATH")
+                .help("A config file to access Otoroshi instance")
+                .takes_value(true)
+                .global(true),
         )
         .arg(
             Arg::with_name("otoroshi_host")
