@@ -57,10 +57,22 @@ fn extract_oto_args(
         Some(file) => {
             // let path = Path::new(f);
             let actual_config = load_from_path(file).unwrap();
-            let host = actual_config.get("host").and_then(|i| i.as_str()).expect("You have to specify Otoroshi Host in config file");
-            let url = default_config.get("url").and_then(|i| i.as_str()).expect("You have to specify Otoroshi URL in config file");
-            let client_id = default_config.get("client_id").and_then(|i| i.as_str()).expect("You have to specify Otoroshi client id in config file");
-            let client_secret = default_config.get("client_secret").and_then(|i| i.as_str()).expect("You have to specify Otoroshi client secret in config file");
+            let host = actual_config
+                .get("host")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi Host in config file");
+            let url = default_config
+                .get("url")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi URL in config file");
+            let client_id = default_config
+                .get("client_id")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi client id in config file");
+            let client_secret = default_config
+                .get("client_secret")
+                .and_then(|i| i.as_str())
+                .expect("You have to specify Otoroshi client secret in config file");
             (
                 host.to_string(),
                 client_id.to_string(),
@@ -71,7 +83,7 @@ fn extract_oto_args(
                 selector.map(|i| i.to_string()),
             )
         }
-        _          => {
+        _ => {
             let host = subcommand
                 .value_of("oto-host")
                 .or(default_config.get("host").and_then(|i| i.as_str()))
