@@ -128,7 +128,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
   }
 
   def error(message: Option[String]) = BackOfficeAction { ctx =>
-    Ok(views.html.otoroshiapps.error(message.getOrElse("Error message"), env))
+    Ok(views.html.otoroshi.error(message.getOrElse("Error message"), env))
   }
 
   def documentationFrame(lineId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
@@ -171,14 +171,14 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
                 case "2.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
                 case "3.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
                 case _ =>
-                  InternalServerError(views.html.otoroshiapps.error(s"Swagger version $swagger not supported", env))
+                  InternalServerError(views.html.otoroshi.error(s"Swagger version $swagger not supported", env))
               }
             } catch {
               case e: Throwable => InternalServerError(Json.obj("error" -> e.getMessage))
             }
           }
       }
-      case _ => FastFuture.successful(NotFound(views.html.otoroshiapps.error("Service not found", env)))
+      case _ => FastFuture.successful(NotFound(views.html.otoroshi.error("Service not found", env)))
     }
   }
 
