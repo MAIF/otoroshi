@@ -47,34 +47,58 @@ fn extract_oto_args(
     default_config: ToMlValue,
     subcommand: &ArgMatches,
 ) -> (String, String, String, bool, bool, String, Option<String>) {
-    let host = subcommand
-        .value_of("oto-host")
-        .or(default_config.get("host").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi Host");
-    let url = subcommand
-        .value_of("oto-url")
-        .or(default_config.get("url").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi URL");
-    let client_id = subcommand
-        .value_of("oto-client-id")
-        .or(default_config.get("client_id").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi client id");
-    let client_secret = subcommand
-        .value_of("oto-client-secret")
-        .or(default_config.get("client_secret").and_then(|i| i.as_str()))
-        .expect("You have to specify Otoroshi client secret");
+    // TODO : if oto-file, then extract from file
+
     let selector = subcommand.value_of("selector");
     let no_colors = subcommand.is_present("no-colors");
     let debug = subcommand.is_present("debug");
-    (
-        host.to_string(),
-        client_id.to_string(),
-        client_secret.to_string(),
-        no_colors,
-        debug,
-        url.to_string(),
-        selector.map(|i| i.to_string()),
-    )
+
+    match subcommand.value_of("oto-file") {
+        Some(file) => {
+            // let path = Path::new(f);
+            let actual_config = load_from_path(file).unwrap();
+            let host = actual_config.get("host").and_then(|i| i.as_str()).expect("You have to specify Otoroshi Host in config file");
+            let url = default_config.get("url").and_then(|i| i.as_str()).expect("You have to specify Otoroshi URL in config file");
+            let client_id = default_config.get("client_id").and_then(|i| i.as_str()).expect("You have to specify Otoroshi client id in config file");
+            let client_secret = default_config.get("client_secret").and_then(|i| i.as_str()).expect("You have to specify Otoroshi client secret in config file");
+            (
+                host.to_string(),
+                client_id.to_string(),
+                client_secret.to_string(),
+                no_colors,
+                debug,
+                url.to_string(),
+                selector.map(|i| i.to_string()),
+            )
+        }
+        _          => {
+            let host = subcommand
+                .value_of("oto-host")
+                .or(default_config.get("host").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi Host");
+            let url = subcommand
+                .value_of("oto-url")
+                .or(default_config.get("url").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi URL");
+            let client_id = subcommand
+                .value_of("oto-client-id")
+                .or(default_config.get("client_id").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi client id");
+            let client_secret = subcommand
+                .value_of("oto-client-secret")
+                .or(default_config.get("client_secret").and_then(|i| i.as_str()))
+                .expect("You have to specify Otoroshi client secret");
+            (
+                host.to_string(),
+                client_id.to_string(),
+                client_secret.to_string(),
+                no_colors,
+                debug,
+                url.to_string(),
+                selector.map(|i| i.to_string()),
+            )
+        }
+    }
 }
 
 fn noop(message: &str) -> String {
@@ -86,13 +110,13 @@ fn main() {
     env_logger::init().unwrap();
 
     let local_config_path: Option<&Path> =
-        Some(Path::new("./otoroshicli.toml")).filter(|i| i.exists());
+        Some(Path::new("./otoroshicli.toml")).m_filter(|i| i.exists());
     let global_config_path: Option<PathBuf> = std::env::home_dir()
         .map(|mut i| {
             i.push(".otoroshicli.toml");
             i
         })
-        .filter(|i| i.exists());
+        .m_filter(|i| i.exists());
     let default_config: ToMlValue = match (local_config_path, global_config_path) {
         (Some(path), _) => load_from_path(path.to_str().unwrap()),
         (_, Some(path)) => load_from_path(path.to_str().unwrap()),
@@ -1105,7 +1129,7 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
                 subcommand
                     .value_of("url")
                     .expect("You have to provide an URL to call"),
-                subcommand.value_of("method").get_or_else("GET"),
+                subcommand.value_of("method").m_get_or_else("GET"),
                 subcommand
                     .values_of("header")
                     .map(|i| i.collect())
@@ -1285,7 +1309,7 @@ You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config 
                         .expect("You need to specify a group name"),
                     subcommand
                         .value_of("description")
-                        .get_or_else("No description"),
+                        .m_get_or_else("No description"),
                 )
             }
             ("update", Some(subcommand)) => {

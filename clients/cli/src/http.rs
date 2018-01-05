@@ -211,7 +211,7 @@ pub fn curl_call(url: &str, method: &str, header_values: Vec<&str>, body: Option
         headers.set(Accept("application/json".to_string()));
     }
     cli.headers(headers);
-    body.foreach(|body| cli.body(body.to_string()));
+    body.m_foreach(|body| cli.body(body.to_string()));
     let mut res = cli.send().unwrap();
     let mut content = String::new();
     res.read_to_string(&mut content);
