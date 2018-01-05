@@ -36,8 +36,7 @@ now, create a new Otoroshi service
   --root / \
   --target "http://127.0.0.1:8081" \
   --public-pattern '/.*' \
-  --no-force-https \
-  --client-retries 3
+  --no-force-https
 ```
 
 and run the injector
@@ -54,3 +53,14 @@ then add/remove targets and see what happens
 ./otoroshicli services rem-target hello-api --target "http://127.0.0.1:8083"
 ./otoroshicli services rem-target hello-api --target "http://127.0.0.1:8082"
 ```
+
+now, add all the targets and try to stop some servers. 
+You will see error count incrementing. 
+
+Now add some retry to the service client
+
+```sh
+./otoroshicli services update hello-api --client-retries 3
+```
+
+and try to stop/start servers again

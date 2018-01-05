@@ -64,6 +64,9 @@ if (action === 'server') {
   let errors = 0;
   let lastNLines = 0;
 
+  for (let i = 0; i < 100; i++) {
+    console.log(' ');
+  }
   console.log(`\nInjecting traffic on http://${host}/ @ ${location}\n`);
 
   function callApi() {
