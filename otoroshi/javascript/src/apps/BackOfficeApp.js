@@ -42,6 +42,7 @@ class BackOfficeAppContainer extends Component {
     this.state = {
       groups: [],
       lines: [],
+      catchedError: null,
     };
   }
 
@@ -67,6 +68,10 @@ class BackOfficeAppContainer extends Component {
         this.setState({ lines, groups });
       });
     });
+  }
+
+  componentDidCatch(e) {
+    this.setState({ catchedError: e });
   }
 
   decorate = (Component, props) => {
@@ -128,106 +133,123 @@ class BackOfficeAppContainer extends Component {
                 <div className={classes.join(' ')}>
                   <DynamicTitle />
                   <div className="row">
-                    <Switch>
-                      <Route exact path="/" component={props => this.decorate(HomePage, props)} />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/stats"
-                        component={props => this.decorate(ServiceLiveStatsPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/events"
-                        component={props => this.decorate(ServiceEventsPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/analytics"
-                        component={props => this.decorate(ServiceAnalyticsPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/health"
-                        component={props => this.decorate(ServiceHealthPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/doc"
-                        component={props => this.decorate(DocumentationPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
-                        component={props => this.decorate(ServiceApiKeysPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/apikeys/:taction"
-                        component={props => this.decorate(ServiceApiKeysPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId/apikeys"
-                        component={props => this.decorate(ServiceApiKeysPage, props)}
-                      />
-                      <Route
-                        path="/lines/:lineId/services/:serviceId"
-                        component={props => this.decorate(ServicePage, props)}
-                      />
-                      <Route
-                        path="/services/:taction"
-                        component={props => this.decorate(ServicesPage, props)}
-                      />
-                      <Route
-                        path="/services/:taction/:titem"
-                        component={props => this.decorate(ServicesPage, props)}
-                      />
-                      <Route
-                        path="/services"
-                        component={props => this.decorate(ServicesPage, props)}
-                      />
-                      <Route
-                        path="/groups/:taction/:titem"
-                        component={props => this.decorate(GroupsPage, props)}
-                      />
-                      <Route
-                        path="/groups/:taction"
-                        component={props => this.decorate(GroupsPage, props)}
-                      />
-                      <Route path="/groups" component={props => this.decorate(GroupsPage, props)} />
-                      <Route
-                        path="/dangerzone"
-                        component={props => this.decorate(DangerZonePage, props)}
-                      />
-                      <Route
-                        path="/sessions/admin"
-                        component={props => this.decorate(SessionsPage, props)}
-                      />
-                      <Route
-                        path="/sessions/private"
-                        component={props => this.decorate(PrivateAppsSessionsPage, props)}
-                      />
-                      <Route path="/clever" component={props => this.decorate(CleverPage, props)} />
-                      <Route path="/audit" component={props => this.decorate(AuditPage, props)} />
-                      <Route path="/alerts" component={props => this.decorate(AlertPage, props)} />
-                      <Route
-                        path="/loggers"
-                        component={props => this.decorate(LoggersPage, props)}
-                      />
-                      <Route
-                        path="/top10"
-                        component={props => this.decorate(Top10servicesPage, props)}
-                      />
-                      <Route
-                        path="/map"
-                        component={props => this.decorate(ServicesMapPage, props)}
-                      />
-                      <Route
-                        path="/stats"
-                        component={props => this.decorate(GlobalAnalyticsPage, props)}
-                      />
-                      <Route
-                        path="/admins"
-                        component={props =>
-                          this.decorate(U2FRegisterPage, {
-                            ...props,
-                          })
-                        }
-                      />
-                      <Route component={props => this.decorate(NotFoundPage, props)} />
-                    </Switch>
+                    {!this.state.catchedError && (
+                      <Switch>
+                        <Route exact path="/" component={props => this.decorate(HomePage, props)} />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/stats"
+                          component={props => this.decorate(ServiceLiveStatsPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/events"
+                          component={props => this.decorate(ServiceEventsPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/analytics"
+                          component={props => this.decorate(ServiceAnalyticsPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/health"
+                          component={props => this.decorate(ServiceHealthPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/doc"
+                          component={props => this.decorate(DocumentationPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
+                          component={props => this.decorate(ServiceApiKeysPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/apikeys/:taction"
+                          component={props => this.decorate(ServiceApiKeysPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId/apikeys"
+                          component={props => this.decorate(ServiceApiKeysPage, props)}
+                        />
+                        <Route
+                          path="/lines/:lineId/services/:serviceId"
+                          component={props => this.decorate(ServicePage, props)}
+                        />
+                        <Route
+                          path="/services/:taction"
+                          component={props => this.decorate(ServicesPage, props)}
+                        />
+                        <Route
+                          path="/services/:taction/:titem"
+                          component={props => this.decorate(ServicesPage, props)}
+                        />
+                        <Route
+                          path="/services"
+                          component={props => this.decorate(ServicesPage, props)}
+                        />
+                        <Route
+                          path="/groups/:taction/:titem"
+                          component={props => this.decorate(GroupsPage, props)}
+                        />
+                        <Route
+                          path="/groups/:taction"
+                          component={props => this.decorate(GroupsPage, props)}
+                        />
+                        <Route path="/groups" component={props => this.decorate(GroupsPage, props)} />
+                        <Route
+                          path="/dangerzone"
+                          component={props => this.decorate(DangerZonePage, props)}
+                        />
+                        <Route
+                          path="/sessions/admin"
+                          component={props => this.decorate(SessionsPage, props)}
+                        />
+                        <Route
+                          path="/sessions/private"
+                          component={props => this.decorate(PrivateAppsSessionsPage, props)}
+                        />
+                        <Route path="/clever" component={props => this.decorate(CleverPage, props)} />
+                        <Route path="/audit" component={props => this.decorate(AuditPage, props)} />
+                        <Route path="/alerts" component={props => this.decorate(AlertPage, props)} />
+                        <Route
+                          path="/loggers"
+                          component={props => this.decorate(LoggersPage, props)}
+                        />
+                        <Route
+                          path="/top10"
+                          component={props => this.decorate(Top10servicesPage, props)}
+                        />
+                        <Route
+                          path="/map"
+                          component={props => this.decorate(ServicesMapPage, props)}
+                        />
+                        <Route
+                          path="/stats"
+                          component={props => this.decorate(GlobalAnalyticsPage, props)}
+                        />
+                        <Route
+                          path="/admins"
+                          component={props =>
+                            this.decorate(U2FRegisterPage, {
+                              ...props,
+                            })
+                          }
+                        />
+                        <Route component={props => this.decorate(NotFoundPage, props)} />
+                      </Switch>
+                    )}
+                    {this.state.catchedError && (
+                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', width: '100%', height: '70vh' }}>
+                        <img src="/assets/images/otoroshi-logo-color.png" className="logoOtoroshi" />
+                        <div style={{ fontSize: 20, marginBottom: 20, marginTop: 20 }}>Ooops, an error occured</div>   
+                        <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>                                                                                                                                                             
+                        <div style={{ marginTop: 20 }}>
+                          <button type="button" className="btn btn-success" onClick={e => window.history.back()}>
+                            <i className="glyphicon glyphicon-arrow-left" /> back
+                          </button>  
+                          <button type="button" className="btn btn-danger" onClick={e => window.location.reload()}>
+                            <i className="glyphicon glyphicon-repeat" /> reload
+                          </button>  
+                        </div>                                                                                                                                                                
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
