@@ -33,7 +33,7 @@ pub fn fetch_data(oto_cli: &OtoroshiClient, path: &str) -> String {
         .unwrap();
 
     if oto_cli.debug {
-        println!("HTTP status: {}", res.status().as_u16());
+        println!("[DEBUG] HTTP status: {}", res.status().as_u16());
     }
     let mut content = String::new();
     res.read_to_string(&mut content);
@@ -83,7 +83,7 @@ pub fn delete_resource_with_body(oto_cli: &OtoroshiClient, path: &str, body: Str
         .unwrap();
 
     if oto_cli.debug {
-        println!("HTTP status: {}", res.status().as_u16());
+        println!("[DEBUG] HTTP status: {}", res.status().as_u16());
     }
     let mut content = String::new();
     res.read_to_string(&mut content);
@@ -109,7 +109,7 @@ pub fn post_resource(oto_cli: &OtoroshiClient, path: &str, body: String) -> Stri
         .unwrap();
 
     if oto_cli.debug {
-        println!("HTTP status: {}", res.status().as_u16());
+        println!("[DEBUG] HTTP status: {}", res.status().as_u16());
     }
     let mut content = String::new();
     res.read_to_string(&mut content);
@@ -135,7 +135,7 @@ pub fn put_resource(oto_cli: &OtoroshiClient, path: &str, body: String) -> Strin
         .unwrap();
 
     if oto_cli.debug {
-        println!("HTTP status: {}", res.status().as_u16());
+        println!("[DEBUG] HTTP status: {}", res.status().as_u16());
     }
     let mut content = String::new();
     res.read_to_string(&mut content);
@@ -161,7 +161,7 @@ pub fn patch_resource(oto_cli: &OtoroshiClient, path: &str, body: String) -> Str
         .unwrap();
 
     if oto_cli.debug {
-        println!("HTTP status: {}", res.status().as_u16());
+        println!("[DEBUG] HTTP status: {}", res.status().as_u16());
     }
     let mut content = String::new();
     res.read_to_string(&mut content);

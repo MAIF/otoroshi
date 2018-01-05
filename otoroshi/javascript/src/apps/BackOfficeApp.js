@@ -192,7 +192,10 @@ class BackOfficeAppContainer extends Component {
                           path="/groups/:taction"
                           component={props => this.decorate(GroupsPage, props)}
                         />
-                        <Route path="/groups" component={props => this.decorate(GroupsPage, props)} />
+                        <Route
+                          path="/groups"
+                          component={props => this.decorate(GroupsPage, props)}
+                        />
                         <Route
                           path="/dangerzone"
                           component={props => this.decorate(DangerZonePage, props)}
@@ -205,9 +208,15 @@ class BackOfficeAppContainer extends Component {
                           path="/sessions/private"
                           component={props => this.decorate(PrivateAppsSessionsPage, props)}
                         />
-                        <Route path="/clever" component={props => this.decorate(CleverPage, props)} />
+                        <Route
+                          path="/clever"
+                          component={props => this.decorate(CleverPage, props)}
+                        />
                         <Route path="/audit" component={props => this.decorate(AuditPage, props)} />
-                        <Route path="/alerts" component={props => this.decorate(AlertPage, props)} />
+                        <Route
+                          path="/alerts"
+                          component={props => this.decorate(AlertPage, props)}
+                        />
                         <Route
                           path="/loggers"
                           component={props => this.decorate(LoggersPage, props)}
@@ -236,18 +245,37 @@ class BackOfficeAppContainer extends Component {
                       </Switch>
                     )}
                     {this.state.catchedError && (
-                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', width: '100%', height: '70vh' }}>
-                        <img src="/assets/images/otoroshi-logo-color.png" className="logoOtoroshi" />
-                        <div style={{ fontSize: 20, marginBottom: 20, marginTop: 20 }}>Ooops, an error occured</div>   
-                        <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>                                                                                                                                                             
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          width: '100%',
+                          height: '70vh',
+                        }}>
+                        <img
+                          src="/assets/images/otoroshi-logo-color.png"
+                          className="logoOtoroshi"
+                        />
+                        <div style={{ fontSize: 20, marginBottom: 20, marginTop: 20 }}>
+                          Ooops, an error occured
+                        </div>
+                        <p style={{ width: '50%' }}>{this.state.catchedError.message}</p>
                         <div style={{ marginTop: 20 }}>
-                          <button type="button" className="btn btn-success" onClick={e => window.history.back()}>
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={e => window.history.back()}>
                             <i className="glyphicon glyphicon-arrow-left" /> back
-                          </button>  
-                          <button type="button" className="btn btn-danger" onClick={e => window.location.reload()}>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={e => window.location.reload()}>
                             <i className="glyphicon glyphicon-repeat" /> reload
-                          </button>  
-                        </div>                                                                                                                                                                
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -7,11 +7,11 @@ Otoroshi provides a command line tool to command Otoroshi instances.
 first, download the Otoroshi CLI depending on your operating system
 
 ```sh
-wget --quiet https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
 # or if you use linux
-wget --quiet https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
 # or if you use windows
-wget --quiet https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
 ```
 
 ## Usage

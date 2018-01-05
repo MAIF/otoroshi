@@ -13,13 +13,13 @@ Otoroshi is an awesome reverse proxy built in scala that handle all the calls to
 ## Now some sh :)
 
 ```sh
-wget --quiet https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar
-wget --guiet https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
-wget --quiet https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar
+wget -q --show-progress https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
 # or if you use linux
-wget --quiet https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
 # or if you use windows
-wget --quiet https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
 
 # Run the Otoroshi server
 java -jar otoroshi.jar &
@@ -103,11 +103,12 @@ If you want to use Docker, just follow these instructions
 export OTOROSHI_PORT=8080
 export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 
-wget --quiet https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
 # or if you use linux
-wget --quiet https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
 # or if you use windows
-wget --quiet https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
 
 docker pull maif-docker-docker.bintray.io/otoroshi-tryout
 docker run -p "$OTOROSHI_PORT:8080" otoroshi-tryout &

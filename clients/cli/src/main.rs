@@ -73,7 +73,7 @@ fn extract_oto_args(
                 .get("client_secret")
                 .and_then(|i| i.as_str())
                 .expect("You have to specify Otoroshi client secret in config file");
-            (
+            let args = (
                 host.to_string(),
                 client_id.to_string(),
                 client_secret.to_string(),
@@ -81,26 +81,37 @@ fn extract_oto_args(
                 debug,
                 url.to_string(),
                 selector.map(|i| i.to_string()),
-            )
+            );
+            if debug {
+                println!(
+                    r#"[DEBUG] Accessing Otoroshi located at {} on {} with credentials {}/{}"#,
+                    url, host, client_id, client_secret
+                );
+            }
+            args
         }
         _ => {
             let host = subcommand
                 .value_of("oto-host")
                 .or(default_config.get("host").and_then(|i| i.as_str()))
-                .expect("You have to specify Otoroshi Host");
+                .m_get_or_else("otoroshi-api.foo.bar");
+            //.expect("You have to specify Otoroshi Host");
             let url = subcommand
                 .value_of("oto-url")
                 .or(default_config.get("url").and_then(|i| i.as_str()))
-                .expect("You have to specify Otoroshi URL");
+                .m_get_or_else("http://127.0.0.1:8080");
+            //.expect("You have to specify Otoroshi URL");
             let client_id = subcommand
                 .value_of("oto-client-id")
                 .or(default_config.get("client_id").and_then(|i| i.as_str()))
-                .expect("You have to specify Otoroshi client id");
+                .m_get_or_else("admin-api-apikey-id");
+            //.expect("You have to specify Otoroshi client id");
             let client_secret = subcommand
                 .value_of("oto-client-secret")
                 .or(default_config.get("client_secret").and_then(|i| i.as_str()))
-                .expect("You have to specify Otoroshi client secret");
-            (
+                .m_get_or_else("admin-api-apikey-secret");
+            //.expect("You have to specify Otoroshi client secret");
+            let args = (
                 host.to_string(),
                 client_id.to_string(),
                 client_secret.to_string(),
@@ -108,7 +119,14 @@ fn extract_oto_args(
                 debug,
                 url.to_string(),
                 selector.map(|i| i.to_string()),
-            )
+            );
+            if debug {
+                println!(
+                    r#"[DEBUG] Accessing Otoroshi located at {} on {} with credentials {}/{}"#,
+                    url, host, client_id, client_secret
+                );
+            }
+            args
         }
     }
 }
@@ -146,8 +164,10 @@ fn main() {
 \____/ /_/  \____/_/ |_|\____//____/_/ /_/___/     \____/_____/___/   
                                                                       
 A simple CLI to control the Otoroshi reverse proxy (https://maif.github.io/otoroshi).
-You have to provide a $HOME/.otoroshicli.toml or a $PWD/otoroshicli.toml config file with
-'host', 'client_id', 'client_secret' values to access the Otoroshi instance you need."#,
+You have to provide a $HOME/.otoroshicli.toml, a $PWD/otoroshicli.toml or a --oto-file="..." config file with
+'host', 'url', 'client_id', 'client_secret' values to access the Otoroshi instance you need. You can also
+pass those values as args. If those values arn't present, default one will be provided to access a standard
+development version of Otoroshi."#,
         )
         .arg(
             Arg::with_name("otoroshi_file")
