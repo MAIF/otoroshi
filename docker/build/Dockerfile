@@ -15,6 +15,7 @@ RUN wget 'https://dl.bintray.com/maif/binaries/otoroshi-dist/latest/otoroshi-dis
   && mkdir otoroshi/leveldb
 
 VOLUME /usr/app/otoroshi/leveldb
+VOLUME /usr/app/otoroshi/conf
 
 ENTRYPOINT ["./entrypoint.sh"]
 

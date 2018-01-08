@@ -226,7 +226,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>If you want to provide your own config file, you can read <a href="../firstrun/configfile.html">the documentation about config files</a></p>
 <p>You can also provide some ENV variable using the <code>--env</code> flag to customize your Otoroshi instance</p>
 <p>The list of possible env variables is available <a href="../firstrun/env.html">here</a></p>
-<p>You can also use a volume if you choose to user <code>leveldb</code> datastore like </p>
+<p>You can use a volume to provide configuration like</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;/home/user/oto/conf:/usr/app/otoroshi/conf&quot; otoroshi
+</code></pre>
+<p>You can also use a volume if you choose to use <code>leveldb</code> datastore like </p>
 <pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;/home/user/oto/data:/usr/app/otoroshi/leveldb&quot; otoroshi -Dapp.storage=leveldb
 </code></pre>
 <div class="nav-next">

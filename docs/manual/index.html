@@ -218,6 +218,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 sudo echo &quot;127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar&quot; &gt;&gt; /etc/hosts
 java -jar otoroshi.jar
 </code></pre>
+<p>or using docker</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif-docker-docker.bintray.io/otoroshi
+</code></pre>
 <p>now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a> and explore by yourself, if you want better instructions, just go to the <a href="quickstart.html">Quick Start</a> or directly to the <a href="getotoroshi/index.html">installation instructions</a></p>
 <!---
 or you can try it online with Google Cloud Shell if you're a user of the Google Cloud Platform

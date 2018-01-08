@@ -25,6 +25,12 @@ sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-int
 java -jar otoroshi.jar
 ```
 
+or using docker
+
+```sh
+docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi
+```
+
 now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
 
 <!---

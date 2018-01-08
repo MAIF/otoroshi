@@ -110,8 +110,7 @@ wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/lat
 # or if you use windows
 wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
 
-docker pull maif-docker-docker.bintray.io/otoroshi-tryout
-docker run -p "$OTOROSHI_PORT:8080" otoroshi-tryout &
+docker run -p "$OTOROSHI_PORT:8080" maif-docker-docker.bintray.io/otoroshi &
 
 # Check if admin api works
 ./otoroshicli services all

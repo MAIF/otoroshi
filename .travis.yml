@@ -11,6 +11,9 @@ scala:
 jdk:
   - oraclejdk8
 
+services:
+  - docker
+
 before_install:
   - sudo apt-get install wget curl
   - wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash 
@@ -28,6 +31,7 @@ before_install:
 script:
   - sh ./scripts/build.sh all
   - sh ./scripts/upload.sh
+  - sh ./scripts/dockerpush.sh
 
 cache:
   directories:
