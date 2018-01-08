@@ -3,7 +3,7 @@
 LOCATION=`pwd`
 
 cd $LOCATION/docker/build
-docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+docker login -u $DOCKER_USER -p $DOCKER_PASSWORD maif-docker-docker.bintray.io
 docker build --no-cache -t otoroshi .
 docker tag otoroshi maif-docker-docker.bintray.io/otoroshi
 docker push maif-docker-docker.bintray.io/otoroshi
