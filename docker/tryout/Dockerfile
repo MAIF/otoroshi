@@ -1,7 +1,7 @@
 # Not for a production usage, just a simple playground to show what you can do with Otoroshi
 FROM openjdk:8u151-jre-alpine
 
-MAINTAINER MAIF <oss@maif.fr>
+LABEL maintainer "MAIF <oss@maif.fr>"
 
 RUN mkdir -p /usr/app
 

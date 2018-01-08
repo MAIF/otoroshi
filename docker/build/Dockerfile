@@ -1,6 +1,6 @@
 FROM openjdk:8
 
-MAINTAINER MAIF <oss@maif.fr>
+LABEL maintainer "MAIF <oss@maif.fr>"
 
 RUN mkdir -p /usr/app
 
