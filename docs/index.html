@@ -1,116 +1,103 @@
 <!DOCTYPE html>
-<html>
-  <head>
-	<title>Otoroshi</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<!--[if lte IE 8]><script src="./assets/js/ie/html5shiv.js"></script><![endif]-->
-	<link rel="stylesheet" href="./assets/css/main.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.1.20/jquery.fancybox.min.css">
-  <link rel="icon" type="image/png" href="./assets/images/logos/favicon.png">
+<html lang="en">
 
-	<!--[if lte IE 8]><link rel="stylesheet" href="./assets/css/ie8.css" /><![endif]-->
-	<!--[if lte IE 9]><link rel="stylesheet" href="./assets/css/ie9.css" /><![endif]-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css?family=Arvo|Roboto" rel="stylesheet">
+  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <title>Otoroshi by MAIF</title>
 </head>
 
+<body class="n2">
 
-<body class="landing">
+	<a href="http://www.reactivemanifesto.org/">
+		<img style="border: 0; position: fixed; right: 0; top:0; z-index: 9000" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-black-right.png" />
+	</a>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-4 entete sidebar">
+        <div class="sidebar-container">
+          <div class="sidebar-content">
+            <img src="assets/images/svg/otoroshi_logo.svg">
+            <img class="tagN2" src="assets/images/svg/etiquette_orange.svg">
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-8 col-sm-offset-4">
+        <div class="row contentN2">
+          <div class="col-md-6 col-xs-12 colDashRight">
+            <ul class="titleOnLine">
+              <li>Reverse </li>
+              <li>proxy</li>
+              <li>with</li>
+              <lI>lightweight</li>
+              <li>api</li>
+              <li>management</li>
+            </ul>
+            <p class="intro">Otoroshi is the name of the gateway the Ōpun platform. Otoroshi is a reverse proxy that handles all the traffic from and to your microservices with a thin layer of API management. As every call to a microservice is done through Otoroshi, you
+              don't need service discovery anymore and just rely on standard tools like DNS.</p>
+          </div>
+          <div class="col-md-6 col-xs-12 more-details">
+            <img src="assets/images/svg/configure.svg" class="pictoPortrait">
+            <h2>easy to configure</h2>
+            <p>No config files, gorgeous admin UI, slick admin API. Live configuration at runtime</p>
+            <!--img src="assets/images/svg/latency.svg" class="pictoPaysage">
+            <h2>low latency</h2>
+            <p>Built with Scala and reactive programming. Designed, built and benchmarked for high-performances</p-->
+						<a href="http://github.com/MAIF/otoroshi">
+							<div class="outer-circle">
+								<div class="inner-circle">
+									<p>ON GITHUB</p>
+								</div>
+							</div>
+						</a>
+						<a href="https://maif.github.io/otoroshi/manual/">
+							<div class="outer-circle">
+								<div class="inner-circle">
+									<p>USER MANUAL</p>
+								</div>
+							</div>
+						</a>
+          </div>
+                  </div>
+          <div class="col-md-6 col-xs-12 colDashRight">
+            <div class="details">
+              <ul>
+                <lI>Simple UI and/or API driven</li>
+                <li>Event-Driven</li>
+                <li>Public or Private apps</li>
+                <li>Can proxy WebSockets</li>
+                <li>Can Proxy (almost ;-) anything</li>
+                <li>Optional additional headers for integration</li>
+                <li>Optional U2F Authentication</li>
+                <li>Configurable per-service circuit breaker</li>
+                <li>Global or per-service throttling and IP filtering</li>
+                <li>Optional round-robin load balancing</li>
+                <li>Advanced Clever-Cloud integration</li>
+                <li>Services heatlhcheck</li>
+                <li>Multi-datastores support</li>
+              </ul>
 
-<section id="otoroshi" class="wrapper otoroshi-background special" tabindex="-1">
-	<div class="inner">
-		<header class="major">
-			<h2>Otoroshi</h2>
-      <p>
-        The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> 
-        is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. 
-        It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of 
-        the gate to devour those who approach the shrine for only self-serving purposes.
-      </p>
-      
-      <p>
-        <b>Otoroshi</b> is also a modern http reverse proxy with a thin layer of api management 
-        written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> 
-        and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> 
-        team that can handle all the calls to and between your microservices without service 
-        locator and let you change configuration dynamicaly at runtime.
-      </p>
-		</header>
-		<ul class="features">
-			<li class="icon fa-cog">
-				<h3>Easy to configure</h3>
-				<p>No config files, gorgeous admin UI, slick admin API. Live configuration at runtime</p>
-			</li>
-			<li class="icon fa-envira">
-				<h3>Low latency</h3>
-				<p>Built with Scala and reactive programming. Designed, built and benchmarked for high-performances</p>
-			</li>
-		</ul>
-		<section class="spotlight">
-      <div class="content">
-        <ul style="list-style-type: none;text-align: left;">
-					<li>Simple UI and/or API driven</li>
-					<li>Event-Driven</li>
-					<li>Public or Private apps</li>
-					<li>Can proxy WebSockets</li>
-					<li>Can Proxy (almost ;-) anything</li>
-					<li>Optional additional headers for integration</li>
-					<li>Optional <b>U2F</b> Authentication</li>
-					<li>Configurable per-service circuit breaker</li>
-					<li>Global or per-service throttling and IP filtering</li>
-					<li>Optional round-robin load balancing</li>
-					<li>Advanced <a href="https://www.clever-cloud.com">Clever-Cloud</a> integration</li>
-					<li>Services heatlhcheck</li>
-					<li>Multi-datastores support
-						<ul>
-							<li>Redis</li>
-							<li>In-memory</li>
-							<li>Cassandra</li>
-							<li>MongoDB <b>(TODO)</b></li>
-							<li>PostgreSQL <b>(TODO)</b></li>
-						</ul>
-					</li>
-				</ul>
-				<p style="text-align: left">
-						Made with love and much more...
-				</p>
+            <a class="linkN2 hide" href="">http://github.com/MAIF/otoroshi</a>
+            </div>
+          </div>
+
       </div>
-      <div class="image">
-				<img src="./assets/images/logos/otoroshi.png" alt="Otoroshi">
-				<p>
-        	<i>"Otoroshi is a door keeper, it checks the ones who are looking to go in or go out the temple."</i>
-				</p>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+
+      <div class="footer-content3">
+        <img src="assets/images/svg/footer.svg">
       </div>
-    </section>
-		<br>
-		<ul class="actions fit">
-			<li><a class="button fit" target="_blank" href="https://github.com/MAIF/otoroshi">On Github</a></li>
-			<li><a class="button special fit" target="_blank" href="./manual/">Documentation</a></li>
-		</ul>
+    </div>
 	</div>
-</section>
-
-<!-- Footer -->
-<footer id="footer">
-	<ul class="copyright">
-		<li>Otoroshi by MAIF</li>
-	</ul>
-</footer>
-
-
-
-<!-- Scripts -->
-<script src="./assets/js/jquery.min.js"></script>
-<script src="./assets/js/jquery.scrollex.min.js"></script>
-<script src="./assets/js/jquery.scrolly.min.js"></script>
-<script src="./assets/js/skel.min.js"></script>
-<script src="./assets/js/util.js" |=""></script>
-<!--[if lte IE 8]><script src="./assets/js/ie/respond.min.js"></script><![endif]-->
-<script src="./assets/js/main.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.1.20/jquery.fancybox.min.js"></script>
-<script>
-	// skip home page since landing page is not finished yet
-	window.location = 'https://maif.github.io/otoroshi/manual/';
-</script>
 </body>
+
 </html>
