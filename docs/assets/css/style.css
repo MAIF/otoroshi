@@ -1,12 +1,6 @@
 body {
   font-family: 'Arvo', serif;
-}
-
-.header {
-  background: url(../img/header-home.svg) #2E3031 no-repeat;
-  background-size: cover;
-  background-position: center top;
-  height: 150px;
+  background-color: #2E3031;
 }
 
 .otoColor {
@@ -17,105 +11,13 @@ body {
   background-color: #DC5F9F;
 }
 
-
-.home {
-  background-image: url(../img/bg-container.svg);
-  background-attachment: top;
-  background-repeat: no-repeat;
-}
-
-.product {
-  border: 1px solid #9D9D9C;
-  padding: 5px;
-  margin-top: 50px;
-  background-color: #fff;
-  min-height: 460px;
-}
-
-.logo {
-  position: relative;
-}
-
-.tag {
-  position: absolute;
-  right: 14px;
-  top: 70px;
-  width: 20%;
-}
-
-.title {
-  font-weight: bold;
-  font-size: 36px;
-  color: #000000;
-  text-align: center;
-}
-
-.description {
-  font-size: 14px;
-  text-align: center;
-  color: #000000;
-}
-
 a {
   color: #FFF;
   text-decoration: underline;
 }
 
-a:hover{
+a:hover {
   color: #F7A600;
-}
-.link {
-  font-size: 14px;
-  color: #8B8B8A;
-  text-align: center;
-}
-
-.link a {
-  color: #8B8B8A;
-}
-
-.linkN2 {
-  color: #F7A600;
-}
-
-.repo {
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: block;
-  margin: auto;
-  color: #fff;
-}
-
-.fa-github {
-  padding-top: 7px;
-  width: 100%;
-}
-
-footer .fa-github {
-  padding-top: 0px;
-  width: auto;
-}
-
-.repo i {
-  text-align: center;
-}
-
-.soon {
-  position: absolute;
-  text-align: center;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  font-size: 24px;
-}
-
-.disabled {
-  color: #cfcdcc;
-}
-
-.n2 {
-  background-color: #2E3031;
 }
 
 .tagN2 {
@@ -142,7 +44,6 @@ footer .fa-github {
   font-size: 36px;
   text-transform: uppercase;
   padding-left: 0px;
-  /* padding: 100px 0px 0px 0px; */
 }
 
 .titleOnLine li {
@@ -153,21 +54,24 @@ footer .fa-github {
   color: #F7A600;
 }
 
-h1{
+h1 {
   font-size: 24px;
 }
+
 h2 {
   color: #fff;
   font-size: 21px;
   text-transform: uppercase;
 }
-.manifesto{
-   border: 0;
-    position: fixed;
-    right: 0;
-    top:0;
-    z-index: 9000;
+
+.manifesto {
+  border: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 9000;
 }
+
 .intro {
   font-family: 'Roboto', serif;
   font-size: 18px;
@@ -190,7 +94,6 @@ h2 {
   text-align: center;
   color: #fff;
   padding-left: 60px;
-  /* padding-top: 100px; */
 }
 
 .more-details .pictoPortrait {
@@ -275,19 +178,6 @@ h2 {
   margin-left: -5%;
 }
 
-
-@media screen and (min-width: 600px) {
-  .header {
-    height: 300px;
-  }
-}
-
-@media screen and (min-width: 1400px) {
-  .header {
-    background-size: auto;
-  }
-}
-
 @media screen and (max-width: 1000px) {
   .titleOnLine {
     font-size: 26px;
@@ -309,11 +199,9 @@ h2 {
     list-style-type: none;
     text-align: center;
   }
-
-  .more-details{
+  .more-details {
     padding-left: 15px;
   }
-
 }
 
 @media screen and (max-width: 770px) {
@@ -360,7 +248,7 @@ h2 {
   }
   .details ul {
     padding-left: 0px;
-}
+  }
   .outer-circle {
     margin-left: 0px;
     text-align: center;
