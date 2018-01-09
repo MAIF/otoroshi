@@ -1,4 +1,4 @@
-# Thrid party Integrations
+# Third party Integrations
 
 *TODO*
 
