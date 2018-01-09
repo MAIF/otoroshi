@@ -4,7 +4,7 @@ Otoroshi provides a fully featured REST admin to performs almost every operation
 
 With the admin API you can do whatever you want and enhance your Otoroshi instances with a lot of features that will feet your needs.
 
-Otoroshi also provides some connectors that uses the Otoroshi admin API to automate Otorshi's instances when used with things like containers orchestrators. For more informations about that, just go to the @ref:[thrid party integrations chapter](./integrations/index.md)
+Otoroshi also provides some connectors that uses the Otoroshi admin API to automate Otorshi's instances when used with things like containers orchestrators. For more informations about that, just go to the @ref:[third party integrations chapter](./integrations/index.md)
 
 ## Swagger descriptor
 
