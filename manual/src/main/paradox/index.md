@@ -51,7 +51,7 @@ or you can try it online with Google Cloud Shell if you're a user of the Google 
 * @ref:[First run](./firstrun/index.md)
 * @ref:[Setup Otoroshi](./setup/index.md)
 * @ref:[Using Otoroshi](./usage/index.md)
-* @ref:[Thrid party Integrations](./integrations/index.md)
+* @ref:[Third party Integrations](./integrations/index.md)
 * @ref:[Admin REST API](./api.md)
 * @ref:[Rust CLI](./cli.md)
 * @ref:[Deploy to production](./deploy/index.md)
