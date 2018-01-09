@@ -10,13 +10,17 @@
   <link href="https://fonts.googleapis.com/css?family=Arvo|Roboto" rel="stylesheet">
   <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link href="assets/css/style.css" rel="stylesheet">
+  <link rel="icon" type="image/png" href="assets/images/logos/favicon.png">
+    <!--[if IE]>
+<link rel="shortcut icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    -->
   <title>Otoroshi by MAIF</title>
 </head>
 
-<body class="n2">
+<body>
 
   <a href="http://www.reactivemanifesto.org/">
-    <img style="border: 0; position: fixed; right: 0; top:0; z-index: 9000" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-black-right.png" />
+    <img class="manifesto" src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-black-right.png" />
   </a>
   <div class="container">
     <div class="row">
@@ -24,7 +28,7 @@
         <div class="sidebar-container">
           <div class="sidebar-content">
             <img src="assets/images/svg/otoroshi_logo.svg">
-            <img class="tagN2" style="z-index: 999999" src="assets/images/svg/etiquette_orange.svg">
+            <img class="tagN2" src="assets/images/svg/etiquette_orange.svg">
           </div>
         </div>
       </div>
@@ -38,15 +42,16 @@
               <lI>lightweight</li>
               <li>api</li>
               <li>management</li>
-            </ul>							
+            </ul>
             <p class="intro">
               Otoroshi is a modern http reverse proxy with a thin layer of api management written in Scala and developped by the <a href="https://maif.github.io">MAIF OSS</a> team. Otoroshi is designed to can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
             </p>
             <div class="details">
-	      <h3>Features</h3>
+
+              <h1>Features</h1>
               <ul>
-                <li>Gorgeous React UI</li>
-                <li>Rest Admin API</li>
+                <li>Gorgeous React admin UI</li>
+                <li>Rest admin API</li>
                 <li>Event-Driven</li>
                 <li>Live reconfiguration at runtime</li>
                 <li>Circuit breakers, retry, canary mode</li>
@@ -67,13 +72,17 @@
             <img src="assets/images/svg/latency.svg" class="pictoPaysage">
             <h2>high productivity</h2>
       	    <p>Freedom to chose your own stack, no library needed. Route and secure microservices in matter of seconds and accelerate your time to market</p>
-						<a href="http://github.com/MAIF/otoroshi">
+          <div class="row">
+          <div class="col-md-12 col-xs-4">
+            <a href="http://github.com/MAIF/otoroshi">
 							<div class="outer-circle">
 								<div class="inner-circle">
 									<p>GITHUB</p>
 								</div>
 							</div>
 						</a>
+          </div>
+          <div class="col-md-12 col-xs-4">
 						<a href="https://maif.github.io/otoroshi/manual/">
 							<div class="outer-circle">
 								<div class="inner-circle">
@@ -81,6 +90,8 @@
 								</div>
 							</div>
 						</a>
+          </div>
+          <div class="col-md-12 col-xs-4">
 						<a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar">
 							<div class="outer-circle">
 								<div class="inner-circle">
@@ -89,13 +100,15 @@
 							</div>
 						</a>
           </div>
+          </div>
+          </div>
 				</div>
       </div>
     </div>
   </div>
   <div class="container-fluid">
     <div class="row">
-      <div class="footer-content3">
+      <div class="footer-contentN2">
         <img src="assets/images/svg/footer.svg">
       </div>
     </div>

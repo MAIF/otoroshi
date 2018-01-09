@@ -1,12 +1,6 @@
 body {
   font-family: 'Arvo', serif;
-}
-
-.header {
-  background: url(../img/header-home.svg) #2E3031 no-repeat;
-  background-size: cover;
-  background-position: center top;
-  height: 150px;
+  background-color: #2E3031;
 }
 
 .otoColor {
@@ -17,108 +11,13 @@ body {
   background-color: #DC5F9F;
 }
 
-@media screen and (min-width: 600px) {
-  .header {
-    height: 300px;
-  }
+a {
+  color: #FFF;
+  text-decoration: underline;
 }
 
-@media screen and (min-width: 1400px) {
-  .header {
-    background-size: auto;
-  }
-}
-
-.home {
-  background-image: url(../img/bg-container.svg);
-  background-attachment: top;
-  background-repeat: no-repeat;
-}
-
-.product {
-  border: 1px solid #9D9D9C;
-  padding: 5px;
-  margin-top: 50px;
-  background-color: #fff;
-  min-height: 460px;
-}
-
-.logo {
-  position: relative;
-}
-
-.tag {
-  position: absolute;
-  right: 14px;
-  top: 70px;
-  width: 20%;
-}
-
-.title {
-  font-weight: bold;
-  font-size: 36px;
-  color: #000000;
-  text-align: center;
-}
-
-.description {
-  font-size: 14px;
-  text-align: center;
-  color: #000000;
-}
-
-.link {
-  font-size: 14px;
-  color: #8B8B8A;
-  text-align: center;
-}
-
-.link a {
-  color: #8B8B8A;
-}
-
-.linkN2 {
+a:hover {
   color: #F7A600;
-}
-
-.repo {
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: block;
-  margin: auto;
-  color: #fff;
-}
-
-.fa-github {
-  padding-top: 7px;
-  width: 100%;
-}
-
-footer .fa-github {
-  padding-top: 0px;
-  width: auto;
-}
-
-.repo i {
-  text-align: center;
-}
-
-.soon {
-  position: absolute;
-  text-align: center;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  font-size: 24px;
-}
-
-.disabled {
-  color: #cfcdcc;
-}
-
-.n2 {
-  background-color: #2E3031;
 }
 
 .tagN2 {
@@ -126,10 +25,6 @@ footer .fa-github {
   display: block;
   margin: 0 auto;
 }
-
-/* .entete{
-      background: linear-gradient(90deg, #F7A600 50%, #2E3031 50%);
-} */
 
 .contentN2 {
   padding-top: 30px;
@@ -149,7 +44,6 @@ footer .fa-github {
   font-size: 36px;
   text-transform: uppercase;
   padding-left: 0px;
-  /* padding: 100px 0px 0px 0px; */
 }
 
 .titleOnLine li {
@@ -160,10 +54,22 @@ footer .fa-github {
   color: #F7A600;
 }
 
+h1 {
+  font-size: 24px;
+}
+
 h2 {
   color: #fff;
   font-size: 21px;
   text-transform: uppercase;
+}
+
+.manifesto {
+  border: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 9000;
 }
 
 .intro {
@@ -188,7 +94,6 @@ h2 {
   text-align: center;
   color: #fff;
   padding-left: 60px;
-  /* padding-top: 100px; */
 }
 
 .more-details .pictoPortrait {
@@ -266,10 +171,10 @@ h2 {
   bottom: 0;
 }
 
-.footer-content3 {
+.footer-contentN2 {
   position: relative;
   width: 50%;
-  z-index: 99999;
+  z-index: 1000;
   margin-left: -5%;
 }
 
@@ -294,42 +199,61 @@ h2 {
     list-style-type: none;
     text-align: center;
   }
-
-  .more-details{
+  .more-details {
     padding-left: 15px;
   }
-
 }
 
 @media screen and (max-width: 770px) {
   .sidebar-content {
     width: 200px;
-    margin: 0 auto;
-}
-
-.sidebar-container {
+    padding-left: 30px;
+  }
+  .contentN2 {
+    padding-left: 30px;
+  }
+  .sidebar-container {
     flex-direction: column;
-}
-
-.sidebar {
+  }
+  .sidebar {
     background: linear-gradient(180deg, #F7A600 50%, #2E3031 50%);
-  position: inherit;
-}
-.footer-content3 {
+    position: inherit;
+  }
+  .footer-contentN2 {
     margin-left: 0px;
     margin-top: 20px;
     width: 100%;
     background-color: #F7A600;
-}
-
-.intro{
-  text-align: center;
-}
-
-.titleOnLine {
-    text-align: center;
-}
-.titleOnLine li {
+  }
+  .intro {
+    text-align: left;
+  }
+  .titleOnLine {
+    text-align: left;
+  }
+  .titleOnLine li {
     display: inline-block;
-}
+  }
+  .more-details {
+    text-align: left;
+  }
+  .tagN2 {
+    margin-top: -40px;
+  }
+  .titleOnLine li {
+    text-align: left;
+  }
+  .details li, .details {
+    text-align: left;
+  }
+  .details ul {
+    padding-left: 0px;
+  }
+  .outer-circle {
+    margin-left: 0px;
+    text-align: center;
+  }
+  .linkN2 {
+    padding-left: 20px;
+  }
 }
