@@ -1,4 +1,4 @@
-FROM rust:1.20
+FROM rust:1.23
 
 LABEL maintainer "MAIF <oss@maif.fr>"
 
