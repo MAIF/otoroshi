@@ -38,19 +38,19 @@ const client = new elasticsearch.Client({
   log: LOG_LEVEL,
 });
 
-//client.putTemplate(
-//  {
-//    id: 'analytics-tpl',
-//    body: TEMPLATE,
-//  },
-//  (error, response) => {
-//    if (error) {
-//      console.log('Error creating template', error);
-//    } else {
-//      console.log('Template updated', response);
-//    }
-//  }
-//);
+client.putTemplate(
+  {
+    id: 'analytics-tpl',
+    body: TEMPLATE,
+  },
+  (error, response) => {
+    if (error) {
+      console.log('Error creating template', error);
+    } else {
+      console.log('Template updated', response);
+    }
+  }
+);
 
 const app = express().use(bodyParser.json());
 
