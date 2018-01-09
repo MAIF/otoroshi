@@ -8,7 +8,7 @@ what you will need :
 
 ## The elevator pitch
 
-Otoroshi is an awesome reverse proxy built in scala that handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
+Otoroshi is an awesome reverse proxy built in scala that handle all the calls to and between your microservices without service locator and let you change configuration dynamically at runtime.
 
 ## Now some sh :)
 
