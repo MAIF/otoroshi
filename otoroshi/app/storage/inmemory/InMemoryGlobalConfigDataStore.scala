@@ -11,7 +11,7 @@ import play.api.Logger
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 
-import scala.concurrent.{ExecutionContext, Future, Await}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Success
 
@@ -83,12 +83,13 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   private val throttlingQuotasCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
   override def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    singleton().map { config =>
-      redisCli.get(throttlingKey()).map { bs =>
-        throttlingQuotasCache.set(bs.map(_.utf8String.toLong).getOrElse(0L))
-      }
+    val config = latest()
+    //singleton().map { config =>
+    redisCli.get(throttlingKey()).map { bs =>
+      throttlingQuotasCache.set(bs.map(_.utf8String.toLong).getOrElse(0L))
       throttlingQuotasCache.get() <= (config.throttlingQuota * 10L)
     }
+    //}
   }
   // singleton().flatMap { config =>
   //   redisCli.get(throttlingKey()).map { bs =>
@@ -96,6 +97,18 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   //     count <= (config.throttlingQuota * 10L)
   //   }
   // }
+
+  def quotasValidationFor(from: String)(implicit ec: ExecutionContext,
+                                        env: Env): Future[(Boolean, Long, Option[Long])] = {
+    val a = withinThrottlingQuota()
+    val b = incrementCallsForIpAddressWithTTL(from)
+    val c = quotaForIpAddress(from)
+    for {
+      within     <- a
+      secCalls   <- b
+      maybeQuota <- c
+    } yield (within, secCalls, maybeQuota)
+  }
 
   override def updateQuotas(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] =
     for {
@@ -110,7 +123,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   private val lastConfigCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
   override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
-    val ref  = configCache.get()
+    val ref = configCache.get()
     if (ref == null) {
       Await.result(singleton(), 1.second) // WARN: await here should never be executed
     } else {

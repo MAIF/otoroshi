@@ -135,6 +135,9 @@ class Env(val configuration: Configuration,
   lazy val privateAppsExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(
     Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-private-apps-requests"))
   )
+  lazy val pressureExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(
+    Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-pressure"))
+  )
 
   lazy val gatewayActorSystem = ActorSystem(
     "otoroshi-gateway-system",

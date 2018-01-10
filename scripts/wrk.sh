@@ -76,9 +76,9 @@ chmod +x otoroshicli
   --per-ip-throttling-quota 9999999 \
   --throttling-quota 9999999  >> /dev/null
 
-# Warm up
-wrk -t1 -c1 -d10s -H "Host: test.foo.bar" http://127.0.0.1:8080/ >> /dev/null
-wrk -t1 -c1 -d10s -H "Host: test.foo.bar" http://127.0.0.1:8000/ >> /dev/null
+echo "Warm up ..."
+wrk -t1 -c1 -d20s -H "Host: test.foo.bar" http://127.0.0.1:8080/ >> /dev/null
+wrk -t1 -c1 -d20s -H "Host: test.foo.bar" http://127.0.0.1:8000/ >> /dev/null
 
 echo "Running test at `date`"
 wrk -t2 -c200 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:8080/

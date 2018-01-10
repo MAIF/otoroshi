@@ -325,4 +325,5 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def fullImport(export: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]
+  def quotasValidationFor(from: String)(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
 }

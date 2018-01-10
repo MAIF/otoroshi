@@ -55,7 +55,7 @@ client.putTemplate(
 const app = express().use(bodyParser.json());
 
 app.post('/api/v1/events', (req, res) => {
-  const body = req.body;  
+  const body = req.body;
   if (!body || !Array.isArray(body)) {
     return res.sendStatus(400);
   } else {
@@ -131,15 +131,15 @@ app.get('/api/v1/events', (req, res) => {
         },
       },
     },
-    handleError(req, res)(response => {             
-        res
-          .status(200)
-          .type('application/json')
-          .send({
-            events: response.hits.hits.map(h => h._source),
-          });
-      }    
-  ));
+    handleError(req, res)(response => {
+      res
+        .status(200)
+        .type('application/json')
+        .send({
+          events: response.hits.hits.map(h => h._source),
+        });
+    })
+  );
 });
 
 app.get('/api/v1/events/:type/_count', (req, res) => {
@@ -152,33 +152,33 @@ app.get('/api/v1/events/:type/_count', (req, res) => {
         query: {
           bool: {
             must: filters,
-          }
-        }
-      }
-    }, 
-    handleError(req, res)(response => {             
+          },
+        },
+      },
+    },
+    handleError(req, res)(response => {
       res
         .status(200)
         .type('application/json')
         .send({
-          count: response.hits.total
+          count: response.hits.total,
         });
-    })  
+    })
   );
 });
 
 app.get('/api/v1/events/:type/:field/_sum', (req, res) => {
-  aggregation("sum", req, res);
+  aggregation('sum', req, res);
 });
 
 app.get('/api/v1/events/:type/:field/_avg', (req, res) => {
-  aggregation("avg", req, res);
+  aggregation('avg', req, res);
 });
 
 app.get('/api/v1/events/:type/:field/_piechart', (req, res) => {
   const filters = prepareFilters(req);
   const size = req.param('size') || 20;
-  const field = req.param("field");
+  const field = req.param('field');
   client.search(
     {
       index: INDEX_NAME + '-*',
@@ -187,35 +187,37 @@ app.get('/api/v1/events/:type/:field/_piechart', (req, res) => {
         query: {
           bool: {
             must: filters,
-          }
-        }, 
+          },
+        },
         aggs: {
           codes: {
             terms: {
-              field: field, 
+              field: field,
               order: {
-                _term: "asc"
-              }, 
-              size: size
-            }
-          }
-        }
-      }
-    }, 
+                _term: 'asc',
+              },
+              size: size,
+            },
+          },
+        },
+      },
+    },
     handleError(req, res)(response => {
       const pie = response.aggregations.codes.buckets.map(data => ({
-        name: `${data.key}`, 
-        y: data.doc_count
+        name: `${data.key}`,
+        y: data.doc_count,
       }));
       res
         .status(200)
         .type('application/json')
         .send({
-          series: [{
-            name: "Pie Chart", 
-            colorByPoint: true, 
-            data: pie
-          }]
+          series: [
+            {
+              name: 'Pie Chart',
+              colorByPoint: true,
+              data: pie,
+            },
+          ],
         });
     })
   );
@@ -223,115 +225,115 @@ app.get('/api/v1/events/:type/:field/_piechart', (req, res) => {
 
 app.get('/api/v1/events/:type/:field/_histogram/stats', (req, res) => {
   const filters = prepareFilters(req);
-  const chart = req.param('chart') || 'areaspline'; 
-  const interval = req.param('interval') || calcInterval(req); 
+  const chart = req.param('chart') || 'areaspline';
+  const interval = req.param('interval') || calcInterval(req);
   const size = req.param('size') || 20;
-  const field = req.param("field");
-  client.search({
+  const field = req.param('field');
+  client.search(
+    {
       index: INDEX_NAME + '-*',
       body: {
         size: 0,
         query: {
           bool: {
             must: filters,
-          }
-        }, 
+          },
+        },
         aggs: {
           meanOverTime: {
             date_histogram: {
               field: '@timestamp',
-              interval: interval
+              interval: interval,
             },
             aggs: {
               stats: {
                 extended_stats: {
-                  field: field
-                }              
-              }
-            }
-          }          
-        }
-      }
-    }, 
-    handleError(req, res)(response => { 
+                  field: field,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    handleError(req, res)(response => {
       const bucket = response.aggregations.meanOverTime.buckets;
       res
         .status(200)
         .type('application/json')
         .send({
           chart: {
-            type: chart
-          }, 
+            type: chart,
+          },
           series: [
-            extractSerie(bucket, "count", b => b.stats.count || 0.00),
-            extractSerie(bucket, "min", b => b.stats.min || 0.00),
-            extractSerie(bucket, "max", b => b.stats.max || 0.00),
-            extractSerie(bucket, "avg", b => b.stats.avg || 0.00),
-            extractSerie(bucket, "std deviation", b => b.stats.std_deviation || 0.00),
-          ]
+            extractSerie(bucket, 'count', b => b.stats.count || 0.0),
+            extractSerie(bucket, 'min', b => b.stats.min || 0.0),
+            extractSerie(bucket, 'max', b => b.stats.max || 0.0),
+            extractSerie(bucket, 'avg', b => b.stats.avg || 0.0),
+            extractSerie(bucket, 'std deviation', b => b.stats.std_deviation || 0.0),
+          ],
         });
-    })  
+    })
   );
 });
 
 app.get('/api/v1/events/:type/:field/_histogram/percentiles', (req, res) => {
   const filters = prepareFilters(req);
-  const chart = req.param('chart') || 'areaspline'; 
-  const interval = req.param('interval') || calcInterval(req); 
+  const chart = req.param('chart') || 'areaspline';
+  const interval = req.param('interval') || calcInterval(req);
   const size = req.param('size') || 20;
-  const field = req.param("field");
-  client.search({
+  const field = req.param('field');
+  client.search(
+    {
       index: INDEX_NAME + '-*',
       body: {
         size: 0,
         query: {
           bool: {
             must: filters,
-          }
-        }, 
+          },
+        },
         aggs: {
           meanOverTime: {
             date_histogram: {
               field: '@timestamp',
-              interval: interval
+              interval: interval,
             },
             aggs: {
               stats: {
                 percentiles: {
-                  field: field
-                }              
-              }
-            }
-          }          
-        }
-      }
-    }, 
-    handleError(req, res)(response => {      
-      const bucket = response.aggregations.meanOverTime.buckets;    
+                  field: field,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    handleError(req, res)(response => {
+      const bucket = response.aggregations.meanOverTime.buckets;
       res
         .status(200)
         .type('application/json')
         .send({
           chart: {
-            type: chart
-          }, 
+            type: chart,
+          },
           series: [
-            extractSerie(bucket, '1.0', b => b.stats.values['1.0'] || 0.00),            
-            extractSerie(bucket, '5.0', b => b.stats.values['5.0'] || 0.00),            
-            extractSerie(bucket, '25.0', b => b.stats.values['25.0'] || 0.00),            
-            extractSerie(bucket, '50.0', b => b.stats.values['50.0'] || 0.00),            
-            extractSerie(bucket, '75.0', b => b.stats.values['75.0'] || 0.00),            
-            extractSerie(bucket, '95.0', b => b.stats.values['95.0'] || 0.00),            
-            extractSerie(bucket, '99.0', b => b.stats.values['99.0'] || 0.00),            
-          ]
+            extractSerie(bucket, '1.0', b => b.stats.values['1.0'] || 0.0),
+            extractSerie(bucket, '5.0', b => b.stats.values['5.0'] || 0.0),
+            extractSerie(bucket, '25.0', b => b.stats.values['25.0'] || 0.0),
+            extractSerie(bucket, '50.0', b => b.stats.values['50.0'] || 0.0),
+            extractSerie(bucket, '75.0', b => b.stats.values['75.0'] || 0.0),
+            extractSerie(bucket, '95.0', b => b.stats.values['95.0'] || 0.0),
+            extractSerie(bucket, '99.0', b => b.stats.values['99.0'] || 0.0),
+          ],
         });
     })
   );
 });
 
-
-
-app.get('/api/v1/events/httpStatus/_histogram', (req, res) => {  
+app.get('/api/v1/events/httpStatus/_histogram', (req, res) => {
   const filters = prepareFilters(req);
   client.search(
     {
@@ -427,7 +429,7 @@ app.get('/api/v1/events/httpStatus/_histogram', (req, res) => {
 });
 
 function aggregation(operation, req, res) {
-  const field = req.param("field");
+  const field = req.param('field');
   const filters = prepareFilters(req);
   client.search(
     {
@@ -437,39 +439,39 @@ function aggregation(operation, req, res) {
         query: {
           bool: {
             must: filters,
-          }
-        }, 
+          },
+        },
         aggs: {
           [operation]: {
-            [operation]:{
-              field: field
-            }
-          }
-        }
-      }
-    }, 
+            [operation]: {
+              field: field,
+            },
+          },
+        },
+      },
+    },
     handleError(req, res)(response => {
       res
         .status(200)
         .type('application/json')
         .send({
-          [field]: response.aggregations[operation].value
+          [field]: response.aggregations[operation].value,
         });
-    })  
+    })
   );
 }
 
-const handleError = (req, res) => (func) => (err, response) => {
-    if (err) {
-      res
+const handleError = (req, res) => func => (err, response) => {
+  if (err) {
+    res
       .status(500)
       .type('application/json')
       .send({
-        error: "Error"
+        error: 'Error',
       });
-    } else {
-      func(response);
-    }
+  } else {
+    func(response);
+  }
 };
 
 function calcInterval(req) {
@@ -485,34 +487,32 @@ function calcInterval(req) {
   const years = duration.asYears();
 
   if (!from) {
-    return "month";
+    return 'month';
   }
 
   if (years > 0) {
-    return "month";
+    return 'month';
   } else if (month > 2) {
-    return "week";
+    return 'week';
   } else if (month > 2) {
-    return "week";
+    return 'week';
   } else if (month > 0) {
-    return "day";
+    return 'day';
   } else if (halfDays > 0 && days <= 31) {
-    return "hour";
+    return 'hour';
   } else {
-    return "minute";
+    return 'minute';
   }
 }
-
 
 function extractSerie(bucket, name, extract, extra = {}) {
-  const histogram = bucket.map(b => [b.key, extract(b)])
+  const histogram = bucket.map(b => [b.key, extract(b)]);
   return {
-    name: name, 
-    data: histogram, 
-    ...extra
-  }
+    name: name,
+    data: histogram,
+    ...extra,
+  };
 }
-
 
 function prepareFilters(req) {
   const from = req.param('from');
