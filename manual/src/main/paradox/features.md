@@ -32,7 +32,7 @@ All the features supported by **Otoroshi** are listed below
 * Support configurable throttling quota per Api key
 * Support configurable daily quota per Api key
 * Support configurable monthly quota per Api key
-* Api keys are authorized a group of services 
+* Api keys are authorized for a group of services 
 * Api keys can be passed with custom headers, `Authorization: Basic ` headers or `Authorization: Bearer ` JWT token signed with Api key secret
 * Add current Api key quotas usage in response headers
 * Add current latencies in response headers
