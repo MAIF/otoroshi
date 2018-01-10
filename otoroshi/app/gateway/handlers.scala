@@ -268,8 +268,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
 
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
     // val currentProcessedRequests = env.datastores.requestsDataStore.incrementProcessedRequests()
-    val finalResult =
-      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig => // Very consuming but eh !!!
+    val globalConfig = env.datastores.globalConfigDataStore.latest()
+    val finalResult = {
+      // env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig => // Very consuming but eh !!!
         env.statsd.meter(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests.toDouble)(
           globalConfig.statsdConfig
         )

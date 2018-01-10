@@ -12,7 +12,8 @@ import org.joda.time.DateTime
 import play.api.Logger
 import env.Env
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Await}
+import scala.concurrent.duration._
 import scala.util.Success
 
 class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
@@ -118,6 +119,15 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
 
   private val configCache     = new java.util.concurrent.atomic.AtomicReference[GlobalConfig](null)
   private val lastConfigCache = new java.util.concurrent.atomic.AtomicLong(0L)
+
+  override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
+    val ref  = configCache.get()
+    if (ref == null) {
+      Await.result(singleton(), 1.second) // WARN: await here should never be executed
+    } else {
+      ref
+    }
+  }
 
   override def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig] = {
     val time = System.currentTimeMillis

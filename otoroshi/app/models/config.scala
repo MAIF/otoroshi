@@ -321,6 +321,7 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def updateQuotas(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
+  def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
   def fullImport(export: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]
