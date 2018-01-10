@@ -70,7 +70,7 @@
     <li><a href="usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="usage/8-importsexports.html" class="page">Import and export</a></li>
   </ul></li>
-  <li><a href="integrations/index.html" class="page">Thrid party Integrations</a>
+  <li><a href="integrations/index.html" class="page">Third party Integrations</a>
   <ul>
     <li><a href="integrations/analytics.html" class="page">Analytics</a></li>
     <li><a href="integrations/auth0.html" class="page">Auth0</a></li>
@@ -166,7 +166,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="usage/8-importsexports.html" class="page">Import and export</a></li>
   </ul></li>
-  <li><a href="integrations/index.html" class="page">Thrid party Integrations</a>
+  <li><a href="integrations/index.html" class="page">Third party Integrations</a>
   <ul>
     <li><a href="integrations/analytics.html" class="page">Analytics</a></li>
     <li><a href="integrations/auth0.html" class="page">Auth0</a></li>
@@ -213,7 +213,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#about-otoroshi" name="about-otoroshi" class="anchor"><span class="anchor-link"></span></a>About Otoroshi</h1>
 <p>At the beginning of 2017, we had the need to create a new environment to be able to create new &ldquo;digital&rdquo; products very quickly in an agile fashion at <a href="https://www.maif.fr/" target="_blank">MAIF</a>. Naturally we turned to PaaS solutions and chose the excellent <a href="https://www.clever-cloud.com/">Clever-Cloud</a> product to run our apps. </p>
-<p>We also chose that every feature team will the freedom to choose its own technological stack to build its product. It was a nice move but it has also introduced some challenges in terms of homogeneity for traceability, security, logging, &hellip; because we did not want to force library usage in the products. We could have used something like <a href="http://philcalcado.com/2017/08/03/pattern_service_mesh.html" target="_blank">Service Mesh Pattern</a> but the deployement model of <a href="https://www.clever-cloud.com/">Clever-Cloud</a> prevented us to do it.</p>
+<p>We also chose that every feature team will have the freedom to choose its own technological stack to build its product. It was a nice move but it has also introduced some challenges in terms of homogeneity for traceability, security, logging, &hellip; because we did not want to force library usage in the products. We could have used something like <a href="http://philcalcado.com/2017/08/03/pattern_service_mesh.html" target="_blank">Service Mesh Pattern</a> but the deployement model of <a href="https://www.clever-cloud.com/">Clever-Cloud</a> prevented us to do it.</p>
 <p>The right solution was to use a reverse proxy or some kind of API Gateway able to provide tracability, logging, security with apikeys, quotas, DNS as a service locator, etc. We needed something easy to use, with a human friendly UI, a nice API to extends its features, true hot reconfiguration, able to generate internal events for third party usage. A couple of solutions where available at that time, but not one seems to fit our needs, there was always something missing, too complicated for our needs or not playing well with <a href="https://www.clever-cloud.com/">Clever-Cloud</a> deployment model.</p>
 <p>At some point, we tried to write a small prototype to explore what could be our dream reverse proxy. The design was very simple, there were some rough edges but every major feature needed was there waiting to be enhanced.</p>
 <p><strong>Otoroshi</strong> was born and we decided to move ahead with our hairy monster :)</p>
