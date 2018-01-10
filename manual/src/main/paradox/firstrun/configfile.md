@@ -6,7 +6,7 @@ There is a lot of things you can configure in Otoroshi. By default, Otoroshi pro
 
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
-| `app.domain` | string | "foo.bar" | the domain on which Otorshi UI/API will be exposes|
+| `app.domain` | string | "foo.bar" | the domain on which Otoroshi UI/API will be exposes|
 | `app.rootScheme` | string | "http" | the scheme on which Otoroshi will be exposed, either "http" or "https" |
 | `app.snowflake.seed` | number | 0 | this number will be used to generate unique ids across the cluster. Each Otorshi instance must have a unique seed. |
 | `app.events.maxSize` | number | 1000 | max number of analytic and allert events stored localy |

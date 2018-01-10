@@ -51,7 +51,7 @@ and you should see the list of api keys for that `service descriptor`
 <img src="../img/add-apikey.png" />
 @@@
 
-now you can add a name for your new apikey, you can also change the client id and the client secret. You can also configure the throttling rate of the apikey (calls per second), and the authorized number of call by day and by month. You can alos activate or de-activate the api key from that screen.
+now you can add a name for your new apikey, you can also change the client id and the client secret. You can also configure the throttling rate of the apikey (calls per second), and the authorized number of call by day and by month. You can also activate or de-activate the api key from that screen.
 
 @@@ div { .centered-img }
 <img src="../img/create-apikey.png" />
@@ -59,7 +59,7 @@ now you can add a name for your new apikey, you can also change the client id an
 
 ## Update an api key
 
-to update a `api key`, just click on the edit button <img src="../img/edit.png" /> of your `api key`
+to update an `api key`, just click on the edit button <img src="../img/edit.png" /> of your `api key`
 
 @@@ div { .centered-img }
 <img src="../img/apikey-edit.png" />
