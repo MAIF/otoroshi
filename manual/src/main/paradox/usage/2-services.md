@@ -4,8 +4,8 @@
 
 There are 3 major entities at the core of Otoroshi
 
-* **service groups**
-* service descriptors
+* service groups
+* **service descriptors**
 * api keys
 
 @@@ div { .centered-img }
