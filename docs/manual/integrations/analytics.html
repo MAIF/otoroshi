@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Analytics * · Otoroshi</title>
+<title>Analytics · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -72,11 +72,11 @@
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
-    <li><a href="../integrations/analytics.html" class="active page">Analytics *</a></li>
-    <li><a href="../integrations/auth0.html" class="page">Auth0 *</a></li>
-    <li><a href="../integrations/mailgun.html" class="page">Mailgun *</a></li>
-    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog *</a></li>
-    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../integrations/analytics.html" class="active page">Analytics</a></li>
+    <li><a href="../integrations/auth0.html" class="page">Auth0</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../cli.html" class="page">Rust CLI</a></li>
@@ -168,11 +168,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
-    <li><a href="../integrations/analytics.html" class="active page">Analytics *</a></li>
-    <li><a href="../integrations/auth0.html" class="page">Auth0 *</a></li>
-    <li><a href="../integrations/mailgun.html" class="page">Mailgun *</a></li>
-    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog *</a></li>
-    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../integrations/analytics.html" class="active page">Analytics</a></li>
+    <li><a href="../integrations/auth0.html" class="page">Auth0</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../cli.html" class="page">Rust CLI</a></li>
@@ -204,7 +204,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../integrations/index.html">Third party Integrations</a></li>
-  <li>Analytics *</li>
+  <li>Analytics</li>
 </ul>
 </div>
 </div>
@@ -212,13 +212,28 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#analytics-" name="analytics-" class="anchor"><span class="anchor-link"></span></a>Analytics *</h1>
-<p><em>TODO</em></p>
+<h1><a href="#analytics" name="analytics" class="anchor"><span class="anchor-link"></span></a>Analytics</h1>
+<p>Each actions and request on Otoroshi create events that can be sent ouside of Otoroshi for further usage. Those events can be sent using a webhook or through a Kafka topic. </p>
 <h2><a href="#webhooks" name="webhooks" class="anchor"><span class="anchor-link"></span></a>WebHooks</h2>
-<h2><a href="#elastic-connector" name="elastic-connector" class="anchor"><span class="anchor-link"></span></a>Elastic connector</h2>
+<p>Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics settings</code> section.</p><div class="centered-img">
+<img src="../img/danger-zone-4-analytics.png" /></div>
+<p>Here you can configure two URL. The first one is the URL where events will be posted (in batch). The second one is a URL used to query the produced events to display analytics pages in Otoroshi. Those URLs must point to a instance of Omoikane or an instance of the <a href="../connectors/elastic.html">Elastic connector</a>. The Elastic connector is just a thin layer of APIs on top of Elastic.</p>
+<p>for instance, valid values can be</p>
+<pre><code>https://my.elastic.connector.host/api/v1/events
+</code></pre>
+<p>you can also provide some security headers if needed</p>
 <h2><a href="#kafka" name="kafka" class="anchor"><span class="anchor-link"></span></a>Kafka</h2>
+<p>Events can also be sent through a Kafka topic. Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Kafka  settings</code> section.</p><div class="centered-img">
+<img src="../img/danger-zone-5-kafka.png" /></div>
+<p>and fill the form. Default values for topic names are </p>
+<ul>
+  <li><code>otoroshi-alerts</code></li>
+  <li><code>otoroshi-analytics</code></li>
+  <li><code>otoroshi-audits</code></li>
+</ul><div class="callout warning "><div class="callout-title">Warning</div>
+<p>If you use trustore/keystore to access your kafka instances, the paths should be absolute and refers to host paths.</p></div>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../integrations/auth0.html">Auth0 *</a></p>
+<p><strong>Next:</strong> <a href="../integrations/auth0.html">Auth0</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -227,10 +242,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../integrations/analytics.html#analytics-" class="header">Analytics *</a>
+  <li><a href="../integrations/analytics.html#analytics" class="header">Analytics</a>
   <ul>
     <li><a href="../integrations/analytics.html#webhooks" class="header">WebHooks</a></li>
-    <li><a href="../integrations/analytics.html#elastic-connector" class="header">Elastic connector</a></li>
     <li><a href="../integrations/analytics.html#kafka" class="header">Kafka</a></li>
   </ul></li>
 </ul>

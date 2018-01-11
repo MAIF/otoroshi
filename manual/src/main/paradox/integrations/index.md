@@ -1,6 +1,6 @@
 # Third party Integrations
 
-*TODO*
+Otoroshi provides some settings to interact with some third party systems.
 
 @@@ index
 

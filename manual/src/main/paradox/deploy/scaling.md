@@ -15,3 +15,5 @@ Work in progress :) you can follow the issue here https://github.com/MAIF/otoros
 ## Using IPVS
 
 ## Using DNS Round Robin
+
+## Using Netty SO_REUSEPORT on Linux
