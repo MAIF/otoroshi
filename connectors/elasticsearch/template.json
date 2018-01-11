@@ -1,0 +1,54 @@
+{
+    "template": "analytics-*",
+    "settings": {
+      "number_of_shards": 1,
+      "index": {
+      }
+    },
+    "mappings": {
+      "_default_": {
+        "_all": {
+          "enabled": false
+        },
+        "dynamic_templates": [
+          {
+            "string_template": {
+              "match": "*",
+              "mapping": {
+                "type": "text",
+                "fields": {
+                  "raw": {
+                    "type": "keyword"
+                  }
+                }
+              },
+              "match_mapping_type": "string"
+            }
+          }
+        ],
+        "properties": {
+          "@id": {
+            "type": "keyword"
+          },
+          "@timestamp": {
+            "type": "date"
+          },
+          "@created": {
+            "type": "date"
+          },
+          "@product": {
+            "type": "keyword"
+          },
+          "@type": {
+            "type": "keyword"
+          },
+          "@service": {
+            "type": "keyword"
+          },
+          "@env": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }

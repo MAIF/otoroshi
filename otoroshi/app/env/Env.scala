@@ -135,6 +135,9 @@ class Env(val configuration: Configuration,
   lazy val privateAppsExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(
     Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-private-apps-requests"))
   )
+  lazy val pressureExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(
+    Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-pressure"))
+  )
 
   lazy val gatewayActorSystem = ActorSystem(
     "otoroshi-gateway-system",
@@ -297,8 +300,8 @@ class Env(val configuration: Configuration,
     domain = domain,
     targets = Seq(
       Target(
-        host = s"127.0.0.1:$port",
-        scheme = exposedRootScheme
+        host = if (adminApiProxyUseLocal) s"127.0.0.1:$port" else s"$adminApiHost:$port",
+        scheme = if (adminApiProxyHttps) "https" else "http"
       )
     ),
     redirectToLocal = isDev,

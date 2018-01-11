@@ -12,7 +12,8 @@ import org.joda.time.DateTime
 import play.api.Logger
 import env.Env
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.Success
 
 class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
@@ -95,12 +96,13 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   private val throttlingQuotasCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
   override def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    singleton().fast.map { config =>
-      redisCli.get(throttlingKey()).fast.map { bs =>
-        throttlingQuotasCache.set(bs.map(_.utf8String.toLong).getOrElse(0L))
-      }
+    val config = latest()
+    //singleton().fast.map { config =>
+    redisCli.get(throttlingKey()).fast.map { bs =>
+      throttlingQuotasCache.set(bs.map(_.utf8String.toLong).getOrElse(0L))
       throttlingQuotasCache.get() <= (config.throttlingQuota * 10L)
     }
+    //}
   }
   // singleton().flatMap { config =>
   //   redisCli.get(throttlingKey()).map { bs =>
@@ -108,6 +110,18 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   //     count <= (config.throttlingQuota * 10L)
   //   }
   // }
+
+  def quotasValidationFor(from: String)(implicit ec: ExecutionContext,
+                                        env: Env): Future[(Boolean, Long, Option[Long])] = {
+    val a = withinThrottlingQuota()
+    val b = incrementCallsForIpAddressWithTTL(from)
+    val c = quotaForIpAddress(from)
+    for {
+      within     <- a
+      secCalls   <- b
+      maybeQuota <- c
+    } yield (within, secCalls, maybeQuota)
+  }
 
   override def updateQuotas(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] =
     for {
@@ -118,6 +132,15 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
 
   private val configCache     = new java.util.concurrent.atomic.AtomicReference[GlobalConfig](null)
   private val lastConfigCache = new java.util.concurrent.atomic.AtomicLong(0L)
+
+  override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
+    val ref = configCache.get()
+    if (ref == null) {
+      Await.result(singleton(), 1.second) // WARN: await here should never be executed
+    } else {
+      ref
+    }
+  }
 
   override def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig] = {
     val time = System.currentTimeMillis
