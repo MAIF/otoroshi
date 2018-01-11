@@ -9,7 +9,6 @@ fieldset[disabled] .form-control {
 .form-control:focus {
   border-color: $primaryColor;
   box-shadow: none;
-  // box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(249,176,0,.6);
 }
 
 form.new-service {

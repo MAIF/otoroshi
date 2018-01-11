@@ -1,48 +1,52 @@
 .nav-tabs {
-    border-bottom: 1px solid $primaryColor;
-    position: fixed;
-    top: 179px;
-    width: 100%;
-    background-color: $fondBody;
-    z-index: 10;
+  border-bottom: 1px solid $primaryColor;
+  position: fixed;
+  top: 179px;
+  width: 100%;
+  background-color: $fondBody;
+  z-index: 10;
 }
 
-.nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
-    color: $colorGris;
-    cursor: default;
-    background-color: $primaryColor;
-    border: 1px solid $primaryColor;
-     border-bottom-color: transparent;
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:focus,
+.nav-tabs > li.active > a:hover {
+  color: $colorGris;
+  cursor: default;
+  background-color: $primaryColor;
+  border: 1px solid $primaryColor;
+  border-bottom-color: transparent;
 }
 
-.nav-tabs>li>a {
-    margin-right: 5px;
-    border: 1px solid $primaryColor;
+.nav-tabs > li > a {
+  margin-right: 5px;
+  border: 1px solid $primaryColor;
 }
 
-.tab-content{
-    margin-top: 200px;
+.tab-content {
+  margin-top: 200px;
 }
+
 .nav > li > a {
-    transition-duration: 1s;
-    &:focus, &:hover {
-        // text-decoration: none;
-        background-color: $fondGrisclairSurvolMenu;
-        color: #fff;
-        border-color: $primaryColor;
-    }
+  transition-duration: 1s;
+
+  &:focus,
+  &:hover {
+    background-color: $fondGrisclairSurvolMenu;
+    color: #fff;
+    border-color: $primaryColor;
+  }
 }
-.nav > li >h3>a {
-    padding: 5px 0px 5px 30px;
-    margin-left: -30px;
-    display: block;
-    transition-duration: 1s;
-    &:focus, &:hover {
 
-        text-decoration: none;
-        background-color: $fondGrisclairSurvolMenu;
-        color: #fff;
+.nav > li > h3 > a {
+  padding: 5px 0 5px 30px;
+  margin-left: -30px;
+  display: block;
+  transition-duration: 1s;
 
-    }
-
+  &:focus,
+  &:hover {
+    text-decoration: none;
+    background-color: $fondGrisclairSurvolMenu;
+    color: #fff;
+  }
 }
