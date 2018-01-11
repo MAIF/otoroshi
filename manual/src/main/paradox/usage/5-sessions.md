@@ -1,4 +1,6 @@
-# Managing sessions
+# Managing sessions *
+
+*TODO*
 
 ## Admin. sessions
 

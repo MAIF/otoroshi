@@ -1,4 +1,4 @@
-# Scaling Otoroshi
+# Scaling Otoroshi *
 
 ## Using multiple instances
 

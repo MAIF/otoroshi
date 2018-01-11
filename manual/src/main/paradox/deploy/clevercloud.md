@@ -1,6 +1,6 @@
-# CleverCloud
+# Clever Cloud
 
-Now you want to use Otoroshi on CleverCloud. Otoroshi has been designed and create to run on CleverCloud and a lot of choices were made because of how CleverCloud works.
+Now you want to use Otoroshi on Clever Cloud. Otoroshi has been designed and create to run on Clever Cloud and a lot of choices were made because of how Clever Cloud works.
 
 ## Create an Otoroshi instance on CleverCloud
 
@@ -10,7 +10,7 @@ If you want to customize the build script, edit `./clevercloud/build.sh`
 
 If you want to customize the configuration file, edit `./clevercloud/prod.conf` or @ref:[use env. variables](../firstrun/env.md)
 
-Create a new CleverCloud app based on your fork.
+Create a new Clever Cloud app based on your fork.
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-0.png" />
