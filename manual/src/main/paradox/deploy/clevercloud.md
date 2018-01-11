@@ -65,13 +65,13 @@ If you want to customize the configuration @ref:[use env. variables](../firstrun
 Create a new CleverCloud app based on your fork.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-0.png" />
+<img src="../img/deploy-cc-jar-0.png" />
 @@@
 
 Then choose what kind of app your want to create, for Otoroshi, choose `Java + Jar`
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-1.png" />
+<img src="../img/deploy-cc-jar-1.png" />
 @@@
 
 then you will be asked to choose what kind of machine you want to use. Also, you can activate auto-scaling or multi-instances to avoid high availibility issues.
