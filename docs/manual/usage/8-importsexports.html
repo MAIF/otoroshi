@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Import and export * · Otoroshi</title>
+<title>Import and export · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -67,8 +67,8 @@
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services *</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions *</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi *</a></li>
-    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics *</a></li>
-    <li><a href="../usage/8-importsexports.html" class="active page">Import and export *</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="active page">Import and export</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -163,8 +163,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services *</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions *</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi *</a></li>
-    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics *</a></li>
-    <li><a href="../usage/8-importsexports.html" class="active page">Import and export *</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="active page">Import and export</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -204,7 +204,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../usage/index.html">Using Otoroshi</a></li>
-  <li>Import and export *</li>
+  <li>Import and export</li>
 </ul>
 </div>
 </div>
@@ -212,13 +212,19 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#import-and-export-" name="import-and-export-" class="anchor"><span class="anchor-link"></span></a>Import and export *</h1>
-<p><em>TODO</em></p>
-<h2><a href="#full-export" name="full-export" class="anchor"><span class="anchor-link"></span></a>Full export</h2><div class="centered-img">
-<img src="../img/full-export-1.png" /></div><div class="centered-img">
+<h1><a href="#import-and-export" name="import-and-export" class="anchor"><span class="anchor-link"></span></a>Import and export</h1>
+<p>With Otoroshi you can easily save the current state of the proxy and restore it later. Go to <code>settings (cog icon) / Danger Zone</code> and scroll to the bottom of the page</p>
+<h2><a href="#full-export" name="full-export" class="anchor"><span class="anchor-link"></span></a>Full export</h2>
+<p>Click on the full export button</p><div class="centered-img">
+<img src="../img/full-export-1.png" /></div>
+<p>and your browser will start to download a JSON file containing the internal state of your Otoroshi cluster.</p><div class="centered-img">
 <img src="../img/full-export-2.png" /></div>
-<h2><a href="#full-import" name="full-import" class="anchor"><span class="anchor-link"></span></a>Full import</h2><div class="centered-img">
-<img src="../img/full-import-1.png" /></div><div class="centered-img">
+<h2><a href="#full-import" name="full-import" class="anchor"><span class="anchor-link"></span></a>Full import</h2>
+<p>If you want to restore an export, go to <code>settings (cog icon) / Danger Zone</code> and scroll to the bottom of the page. Click on the <code>Recover from full export file</code> button</p><div class="centered-img">
+<img src="../img/full-import-1.png" /></div>
+<p>Choose an existing export file on your system</p><div class="centered-img">
+<img src="../img/full-import-1-bis.png" /></div>
+<p>then click on the <code>Flush datastore and import ...</code> button, confirm and you will be logged out</p><div class="centered-img">
 <img src="../img/full-import-2.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../integrations/index.html">Third party Integrations</a></p>
@@ -230,7 +236,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../usage/8-importsexports.html#import-and-export-" class="header">Import and export *</a>
+  <li><a href="../usage/8-importsexports.html#import-and-export" class="header">Import and export</a>
   <ul>
     <li><a href="../usage/8-importsexports.html#full-export" class="header">Full export</a></li>
     <li><a href="../usage/8-importsexports.html#full-import" class="header">Full import</a></li>

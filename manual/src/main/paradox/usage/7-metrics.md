@@ -1,6 +1,6 @@
-# Otoroshi global metrics *
+# Otoroshi global metrics
 
-*TODO*
+Otoroshi provide some global metrics about services usage.  Go to `settings (cog icon) / Global Ananlytics` 
 
 @@@ warning
 You have to use @ref:[the Elastic connector](../connectors/elastic.md) to have analytics features in Otoroshi
