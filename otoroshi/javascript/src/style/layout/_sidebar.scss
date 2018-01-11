@@ -1,5 +1,4 @@
 .sidebar {
-  // background: $fondBody;
   background: -moz-linear-gradient(top, $fondBody 1%, $fondNavbar 100%);
   background: -webkit-linear-gradient(top, $fondBody 1%, $fondNavbar);
   background: linear-gradient(180deg, $fondBody 1%, $fondNavbar);
@@ -48,6 +47,7 @@
 .nav-sidebar {
   margin-right: -21px;
   margin-left: -20px;
+  margin-bottom: 20px;
 
   > li > a {
     padding: 5px 10px 5px 36px;
