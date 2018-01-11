@@ -384,7 +384,7 @@ export class Table extends Component {
                 onClick={e => this.deleteItem(e, this.state.currentItem)}>
                 <i className="glyphicon glyphicon-trash" /> Delete
               </button>
-              <button type="button" className="btn btn-default" onClick={this.closeEditForm}>
+              <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
                 Cancel
               </button>
               <button type="button" className="btn btn-success" onClick={this.updateItem}>
