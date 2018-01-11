@@ -4,13 +4,19 @@ Now you want to use Otoroshi on CleverCloud. Otoroshi has been designed and crea
 
 ## Create an Otoroshi instance on CleverCloud
 
-first, fork our project template on Github at https://github.com/MAIF/otoroshi-clevercloud-template and create a new CleverCloud app based on your fork.
+First, fork our project template on Github at https://github.com/MAIF/otoroshi-clevercloud-template.
 
 If you want to customize the build script, edit `./clevercloud/build.sh`
 
 If you want to customize the configuration file, edit `./clevercloud/prod.conf` or @ref:[use env. variables](../firstrun/env.md)
 
-Then choose what kind of app your want to create, choose `Java or Scala + Play 2`
+Create a new CleverCloud app based on your fork.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-0.png" />
+@@@
+
+Then choose what kind of app your want to create, for Otoroshi, choose `Java or Scala + Play 2`
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-1.png" />
@@ -42,9 +48,13 @@ now your app is ready, don't forget to add a custom domain name on clever app ma
 *.foo.bar
 ```
 
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-5.png" />
+@@@
+
 ## Example of CleverCloud env. variables
 
-you can add more env. variables to customize your Otoroshi instance like the following 
+you can add more env. variables to customize your Otoroshi instance like the following. Use the expert mode to copy/paste all the values in one shot
 
 ```
 APP_ENV=prod
