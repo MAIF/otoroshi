@@ -1,4 +1,4 @@
-@font-face {   
+@font-face {
 	font-family: 'anticon';
  	src: url('https://at.alicdn.com/t/font_zck90zmlh7hf47vi.eot');
  	/* IE9*/
@@ -79,7 +79,7 @@ li.ant-calendar-time-picker-select-option-selected {
 }
 
 .ant-calendar .ant-calendar-ok-btn:hover, .ant-calendar .ant-calendar-ok-btn:focus{
-    background-color:#5CB85C; 
+    background-color:#5CB85C;
     border-color:#5CB85C;
 }
 
@@ -97,20 +97,19 @@ li.ant-calendar-time-picker-select-option-selected {
 }
 
 .ant-calendar-range .ant-calendar-in-range-cell:before{
-    background-color: #00B4CD;  
+    background-color: #00B4CD;
     color:white;
 }
 
 .ant-calendar-selected-day .ant-calendar-date,.ant-calendar-date:hover,.ant-calendar-selected-day .ant-calendar-date:hover {
-    background-color: #00B4CD; 
+    background-color: #00B4CD;
 }
 
-.ant-calendar-today .ant-calendar-date {    
-    border-color:  #00B4CD; 
-    color:  #00B4CD; 
+.ant-calendar-today .ant-calendar-date {
+    border-color:  #00B4CD;
+    /* color:  #00B4CD;  */
 }
 
 .ant-calendar-picker-clear {
   background: none;
 }
-
