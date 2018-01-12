@@ -4,7 +4,7 @@ With Otoroshi you can manage sessions of connected users and you can discard ses
 
 ## Admin. sessions
 
-To see last current admin session on Otoroshi from the UI, go to `settings (cog icon) / Admins sessions`. Here you can discard individual sessions or all sessions at once.
+To see last current admin session on Otoroshi from the UI, go to `settings (cog icon) / Admins sessions`. Here you can discard individual sessions or all sessions at once using `Discard session` and `Discard all sessions` buttons.
 
 @@@ div { .centered-img }
 <img src="../img/admin-sessions.png" />
@@ -12,7 +12,7 @@ To see last current admin session on Otoroshi from the UI, go to `settings (cog 
 
 ## Private apps. session
 
-To see last current admin session on Otoroshi from the UI, go to `settings (cog icon) / Priv. apps sessions`. Here you can discard individual sessions or all sessions at once.
+To see last current admin session on Otoroshi from the UI, go to `settings (cog icon) / Priv. apps sessions`. Here you can discard individual sessions or all sessions at once using `Discard session` and `Discard all sessions` buttons.
 
 @@@ div { .centered-img }
 <img src="../img/private-sessions.png" />

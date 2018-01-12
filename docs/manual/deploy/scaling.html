@@ -39,6 +39,7 @@
   <li><a href="../archi.html" class="page">Architecture</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
   <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
     <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
@@ -83,7 +84,7 @@
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
-    <li><a href="../deploy/other.html" class="page">Others *</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi *</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
@@ -135,6 +136,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../archi.html" class="page">Architecture</a></li>
   <li><a href="../features.html" class="page">Features</a></li>
   <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
   <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
     <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
@@ -179,7 +181,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
-    <li><a href="../deploy/other.html" class="page">Others *</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi *</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
@@ -212,14 +214,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#scaling-otoroshi-" name="scaling-otoroshi-" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi *</h1>
-<h2><a href="#using-multiple-instances" name="using-multiple-instances" class="anchor"><span class="anchor-link"></span></a>Using multiple instances</h2>
+<h1><a href="#scaling-otoroshi-" name="scaling-otoroshi-" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi *</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this section is still under construction. Please come back later</p></div>
+<h2><a href="#using-multiple-instances-with-a-front-load-balancer" name="using-multiple-instances-with-a-front-load-balancer" class="anchor"><span class="anchor-link"></span></a>Using multiple instances with a front load balancer</h2>
 <h2><a href="#using-master-workers-mode" name="using-master-workers-mode" class="anchor"><span class="anchor-link"></span></a>Using master / workers mode</h2>
 <p>Work in progress :) you can follow the issue here <a href="https://github.com/MAIF/otoroshi/issues/8">https://github.com/MAIF/otoroshi/issues/8</a></p>
 <h2><a href="#using-ipvs" name="using-ipvs" class="anchor"><span class="anchor-link"></span></a>Using IPVS</h2>
 <h2><a href="#using-dns-round-robin" name="using-dns-round-robin" class="anchor"><span class="anchor-link"></span></a>Using DNS Round Robin</h2>
 <h2><a href="#using-netty-so-reuseport-on-linux" name="using-netty-so-reuseport-on-linux" class="anchor"><span class="anchor-link"></span></a>Using Netty SO_REUSEPORT on Linux</h2>
-<h2><a href="#using-l4-load-balancers" name="using-l4-load-balancers" class="anchor"><span class="anchor-link"></span></a>Using L4 load balancers</h2>
+<h2><a href="#using-software-l4-load-balancers" name="using-software-l4-load-balancers" class="anchor"><span class="anchor-link"></span></a>Using software L4 load balancers</h2>
 <h3><a href="#haproxy" name="haproxy" class="anchor"><span class="anchor-link"></span></a>HAProxy</h3>
 <h3><a href="#nginx" name="nginx" class="anchor"><span class="anchor-link"></span></a>NGINX</h3>
 <div class="nav-next">
@@ -234,12 +237,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../deploy/scaling.html#scaling-otoroshi-" class="header">Scaling Otoroshi *</a>
   <ul>
-    <li><a href="../deploy/scaling.html#using-multiple-instances" class="header">Using multiple instances</a></li>
+    <li><a href="../deploy/scaling.html#using-multiple-instances-with-a-front-load-balancer" class="header">Using multiple instances with a front load balancer</a></li>
     <li><a href="../deploy/scaling.html#using-master-workers-mode" class="header">Using master / workers mode</a></li>
     <li><a href="../deploy/scaling.html#using-ipvs" class="header">Using IPVS</a></li>
     <li><a href="../deploy/scaling.html#using-dns-round-robin" class="header">Using DNS Round Robin</a></li>
     <li><a href="../deploy/scaling.html#using-netty-so-reuseport-on-linux" class="header">Using Netty SO_REUSEPORT on Linux</a></li>
-    <li><a href="../deploy/scaling.html#using-l4-load-balancers" class="header">Using L4 load balancers</a></li>
+    <li><a href="../deploy/scaling.html#using-software-l4-load-balancers" class="header">Using software L4 load balancers</a></li>
   </ul></li>
 </ul>
 </div>

@@ -1,6 +1,10 @@
 # Scaling Otoroshi *
 
-## Using multiple instances
+@@@ warning
+this section is still under construction. Please come back later
+@@@
+
+## Using multiple instances with a front load balancer
 
 ## Using master / workers mode
 
@@ -12,7 +16,7 @@ Work in progress :) you can follow the issue here https://github.com/MAIF/otoros
 
 ## Using Netty SO_REUSEPORT on Linux
 
-## Using L4 load balancers
+## Using software L4 load balancers
 
 ### HAProxy
 
