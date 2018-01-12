@@ -215,6 +215,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#managing-services" name="managing-services" class="anchor"><span class="anchor-link"></span></a>Managing services</h1>
+<p>Now let&rsquo;s create some services. Services or <code>service descriptor</code> let you declare how to proxy a call from a domain name to another domain name (or multiple). Let say I have an API exposed at <code>http://192.168.0.42</code> and I want to expose it at <code>https://my.api.foo</code>. Otoroshi will proxy all calls to <code>https://my.api.foo</code> and forward them to <code>http://192.168.0.42</code>. While doing that, it will also log everyhting, control accesses, etc .</p>
 <h2><a href="#otoroshi-entities" name="otoroshi-entities" class="anchor"><span class="anchor-link"></span></a>Otoroshi entities</h2>
 <p>There are 3 major entities at the core of Otoroshi</p>
 <ul>
@@ -223,17 +224,40 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>api keys</li>
 </ul><div class="centered-img">
 <img src="../img/models-service.png" /></div>
-<h2><a href="#create-a-service-descriptor" name="create-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>Create a service descriptor</h2><div class="centered-img">
-<img src="../img/new-service-flags.png" /></div><div class="centered-img">
+<p>A <code>service descriptor</code> is contained in a <code>service group</code> and is allowed to be accessed by all the <code>api key</code>s authorized on the <code>service group</code>.</p>
+<h2><a href="#create-a-service-descriptor" name="create-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>Create a service descriptor</h2>
+<p>To create a <code>service descriptor</code>, click on <code>Add service</code> on the Otoroshi sidebar. Then you will be asked to choose a name for the service what is the group of the service. You also have two buttons to create a new group and assign it to the service and create a new group with a name based on the service name.</p>
+<p>You will have a serie of toggle buttons to</p>
+<ul>
+  <li>activate / deactivate a service</li>
+  <li>display maintenance page for a service</li>
+  <li>display contruction page for a service</li>
+  <li>enforce secure exchange between services</li>
+  <li>force https usage on the exposed service</li>
+</ul>
+<p>and then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.</p><div class="centered-img">
+<img src="../img/new-service-flags.png" /></div>
+<p>in the <code>service targets</code> section, you will be able to choose where the call will be forwarded. You can use multiple target, in that case, Otoroshi will perform a round robin load balancing between the targets. You can also specify a target root, if you say that the target root is <code>/foo/</code>, then any call to <code>https://my.api.foo</code> will call <code>http://192.168.0.42/foo/</code> and nay call to <code>https://my.api.foo/bar</code> will call <code>http://192.168.0.42/foo/bar</code>.</p>
+<p>In the URL patterns section, you will be able to choose which URL will be private and which URL will be public. By default all service are private and each call must provide an <code>api key</code>. But sometimes, you need to access a service publicly. In that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern <code>/.*</code>). You also have a private pattern field to restrict public patterns.</p><div class="centered-img">
 <img src="../img/new-service-patterns.png" /></div>
-<h3><a href="#canary-mode" name="canary-mode" class="anchor"><span class="anchor-link"></span></a>Canary mode</h3><div class="centered-img">
+<h3><a href="#secure-exchange" name="secure-exchange" class="anchor"><span class="anchor-link"></span></a>Secure exchange</h3>
+<p>if you change to enable secure communication for a service, then you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. Otoroshi is also sending a <code>JWT token</code>in a header named <code>Otoroshi-Claim</code> that the target app can validate.</p><div class="centered-img">
+<img src="../img/exchange.png" /></div>
+<h3><a href="#canary-mode" name="canary-mode" class="anchor"><span class="anchor-link"></span></a>Canary mode</h3>
+<p>Otoroshi provides a feature called <code>Canary mode</code>. It let you define new targets for a service, and route a percentage of the traffic on those targets. It&rsquo;s a good way of testing a new version of a service before public release. As any client need to be routed to the same version of targets any time, Otoroshi will issue a special header and a cookie containing a <code>session id</code>. The header is named <code>Otoroshi-Canary-Id</code>.</p><div class="centered-img">
 <img src="../img/new-service-canary.png" /></div>
-<h3><a href="#service-health-check" name="service-health-check" class="anchor"><span class="anchor-link"></span></a>Service health check</h3><div class="centered-img">
+<h3><a href="#service-health-check" name="service-health-check" class="anchor"><span class="anchor-link"></span></a>Service health check</h3>
+<p>Otoroshi is also capable of checking the health of a service. You can define a URL that will be tested, and Otoroshi will ping that URL regularly. Will doing so, Otoroshi will pass a numeric value in a header named <code>Otoroshi-Health-Check-Logic-Test</code>. You can respond with a header named <code>Otoroshi-Health-Check-Logic-Test-Result</code> that contains the value of <code>Otoroshi-Health-Check-Logic-Test</code> + 42 to indicate that the service is working properly.</p><div class="centered-img">
 <img src="../img/new-service-healthcheck.png" /></div>
-<h3><a href="#service-circuit-breaker" name="service-circuit-breaker" class="anchor"><span class="anchor-link"></span></a>Service circuit breaker</h3><div class="centered-img">
+<h3><a href="#service-circuit-breaker" name="service-circuit-breaker" class="anchor"><span class="anchor-link"></span></a>Service circuit breaker</h3>
+<p>In Otoroshi, each service has its own client settings with a circuit breaker and some retry capabilities. In the <code>Client settings</code> section, you will be able to customize the client behavior.</p><div class="centered-img">
 <img src="../img/new-service-client.png" /></div>
-<h3><a href="#service-settings" name="service-settings" class="anchor"><span class="anchor-link"></span></a>Service settings</h3><div class="centered-img">
+<h3><a href="#service-settings" name="service-settings" class="anchor"><span class="anchor-link"></span></a>Service settings</h3>
+<p>You can also provide some additionnal informations about a service, like an <code>Open API</code> descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.</p>
+<p>Here you can also define some headers that will be added to each request to the targets. And you will be able to define headers to route the call only if the defined header is present on the request.</p><div class="centered-img">
 <img src="../img/new-service-meta.png" /></div>
+<h3><a href="#custom-error-templates" name="custom-error-templates" class="anchor"><span class="anchor-link"></span></a>Custom error templates</h3>
+<p>finally, you can define custom error templates that will be displayed when an error occurs when Otoroshi try to reach the target or when Otoroshi itself has an error. You can also define custom template for maintenance and service page</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../usage/3-apikeys.html">Managing api keys</a></p>
 </div>
