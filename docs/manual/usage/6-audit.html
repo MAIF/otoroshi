@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Auditing Otoroshi * · Otoroshi</title>
+<title>Auditing Otoroshi · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -65,8 +65,8 @@
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
     <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
-    <li><a href="../usage/5-sessions.html" class="page">Managing sessions *</a></li>
-    <li><a href="../usage/6-audit.html" class="active page">Auditing Otoroshi *</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="active page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
   </ul></li>
@@ -161,8 +161,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
     <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
-    <li><a href="../usage/5-sessions.html" class="page">Managing sessions *</a></li>
-    <li><a href="../usage/6-audit.html" class="active page">Auditing Otoroshi *</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="active page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
   </ul></li>
@@ -204,7 +204,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../usage/index.html">Using Otoroshi</a></li>
-  <li>Auditing Otoroshi *</li>
+  <li>Auditing Otoroshi</li>
 </ul>
 </div>
 </div>
@@ -212,10 +212,42 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#auditing-otoroshi-" name="auditing-otoroshi-" class="anchor"><span class="anchor-link"></span></a>Auditing Otoroshi *</h1>
-<p><em>TODO</em></p>
+<h1><a href="#auditing-otoroshi" name="auditing-otoroshi" class="anchor"><span class="anchor-link"></span></a>Auditing Otoroshi</h1>
+<p>With Otoroshi, any admin action and any sucpicious/alert action is recorded. Those records are stored in the Otoroshi datastore (only the last n records, defined by the <code>app.events.maxSize</code> <a href="../firstrun/configfile.html">config key</a>). All the records can be send through the analytics mechanism (WebHook and/or Kafka) for further usage. We recommand sending away those records for security reasons.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>You have to use <a href="../connectors/elastic.html">the Elastic connector</a> to enable analytics features in Otoroshi</p></div>
 <h2><a href="#audit-trail" name="audit-trail" class="anchor"><span class="anchor-link"></span></a>Audit trail</h2>
+<p>To see last <code>app.events.maxSize</code> admin actions on Otoroshi from the UI, go to <code>settings (cog icon) / Audit log</code>.</p><div class="centered-img">
+<img src="../img/audit-log.png" /></div>
 <h2><a href="#alerts" name="alerts" class="anchor"><span class="anchor-link"></span></a>Alerts</h2>
+<p>To see last <code>app.events.maxSize</code> alerts on Otoroshi from the UI, go to <code>settings (cog icon) / Alerts log</code>.</p><div class="centered-img">
+<img src="../img/alerts-log.png" /></div>
+<h2><a href="#list-of-possible-alerts" name="list-of-possible-alerts" class="anchor"><span class="anchor-link"></span></a>List of possible alerts</h2>
+<pre><code>MaxConcurrentRequestReachedAlert
+CircuitBreakerOpenedAlert
+CircuitBreakerClosedAlert
+SessionDiscardedAlert
+SessionsDiscardedAlert
+PanicModeAlert
+OtoroshiExportAlert
+U2FAdminDeletedAlert
+BlackListedBackOfficeUserAlert
+AdminLoggedInAlert
+AdminFirstLogin
+AdminLoggedOutAlert
+DbResetAlert
+DangerZoneAccessAlert
+GlobalConfigModification
+RevokedApiKeyUsageAlert
+ServiceGroupCreatedAlert
+ServiceGroupUpdatedAlert
+ServiceGroupDeletedAlert
+ServiceCreatedAlert
+ServiceUpdatedAlert
+ServiceDeletedAlert
+ApiKeyCreatedAlert
+ApiKeyUpdatedAlert
+ApiKeyDeletedAlert
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../usage/7-metrics.html">Otoroshi global metrics</a></p>
 </div>
@@ -226,10 +258,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../usage/6-audit.html#auditing-otoroshi-" class="header">Auditing Otoroshi *</a>
+  <li><a href="../usage/6-audit.html#auditing-otoroshi" class="header">Auditing Otoroshi</a>
   <ul>
     <li><a href="../usage/6-audit.html#audit-trail" class="header">Audit trail</a></li>
     <li><a href="../usage/6-audit.html#alerts" class="header">Alerts</a></li>
+    <li><a href="../usage/6-audit.html#list-of-possible-alerts" class="header">List of possible alerts</a></li>
   </ul></li>
 </ul>
 </div>

@@ -3,7 +3,7 @@
 Once you have declared services, you can monitor them with Otoroshi
 
 @@@ warning
-You have to use @ref:[the Elastic connector](../connectors/elastic.md) to have analytics features in Otoroshi
+You have to use @ref:[the Elastic connector](../connectors/elastic.md) to enable analytics features in Otoroshi
 @@@
 
 ## Service healthcheck
