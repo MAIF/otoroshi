@@ -30,7 +30,7 @@ You will have a serie of toggle buttons to
 
 and then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.
 
-@@@ div { .centered-img }
+@@@ div { .centered-img #service-flags }
 <img src="../img/new-service-flags.png" />
 @@@
 
@@ -38,7 +38,7 @@ in the `service targets` section, you will be able to choose where the call will
 
 In the URL patterns section, you will be able to choose which URL will be private and which URL will be public. By default all service are private and each call must provide an `api key`. But sometimes, you need to access a service publicly. In  that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern `/.*`). You also have a private pattern field to restrict public patterns.
 
-@@@ div { .centered-img }
+@@@ div { .centered-img #targets }
 <img src="../img/new-service-patterns.png" />
 @@@
 
@@ -80,7 +80,7 @@ You can also provide some additionnal informations about a service, like an `Ope
 
 Here you can also define some headers that will be added to each request to the targets. And you will be able to define headers to route the call only if the defined header is present on the request.
 
-@@@ div { .centered-img }
+@@@ div { .centered-img #service-meta }
 <img src="../img/new-service-meta.png" />
 @@@
 

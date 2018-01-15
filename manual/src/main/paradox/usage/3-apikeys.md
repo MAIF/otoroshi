@@ -18,6 +18,12 @@ an `api key` exist for a `service group` so an `api key` will allow you to acces
 
 In the Otoroshi admin dashboard, we chose to access `api keys` from `service descriptors` only, but when you access `api keys` for a `service descriptor`, you actually access `api keys` for the `service group` containing the `service descriptor`.
 
+`api keys` can be passed to Otoroshi through
+
+* `Authorization: Basic $base64(client_id:client_secret)` header
+* `Authorization: Bearer $jwt_token` where the JWT token has been signed with the `api key` client secret
+* `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` header
+
 ## List api keys for a service descriptor
 
 go to a service descriptor using `All services` quick link in the sidebar or the search box,
@@ -53,7 +59,14 @@ and you should see the list of api keys for that `service descriptor`
 
 now you can add a name for your new apikey, you can also change the client id and the client secret. You can also configure the throttling rate of the apikey (calls per second), and the authorized number of call by day and by month. You can also activate or de-activate the api key from that screen.
 
-@@@ div { .centered-img }
+Informations about current quotas usage will be returned in response headers
+
+* `Otoroshi-Daily-Calls-Remaining` : authorized calls remaining for this day
+* `Otoroshi-Monthly-Calls-Remaining` : authorized calls remaining for this month
+* `Otoroshi-Proxy-Latency` : latency induced by Otoroshi
+* `Otoroshi-Upstream-Latency` : latency between Otoroshi and target
+
+@@@ div { .centered-img #quotas }
 <img src="../img/create-apikey.png" />
 @@@
 

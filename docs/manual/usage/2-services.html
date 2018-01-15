@@ -235,10 +235,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>enforce secure exchange between services</li>
   <li>force https usage on the exposed service</li>
 </ul>
-<p>and then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.</p><div class="centered-img">
+<p>and then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.</p><div id="service-flags" class="centered-img">
 <img src="../img/new-service-flags.png" /></div>
 <p>in the <code>service targets</code> section, you will be able to choose where the call will be forwarded. You can use multiple target, in that case, Otoroshi will perform a round robin load balancing between the targets. You can also specify a target root, if you say that the target root is <code>/foo/</code>, then any call to <code>https://my.api.foo</code> will call <code>http://192.168.0.42/foo/</code> and nay call to <code>https://my.api.foo/bar</code> will call <code>http://192.168.0.42/foo/bar</code>.</p>
-<p>In the URL patterns section, you will be able to choose which URL will be private and which URL will be public. By default all service are private and each call must provide an <code>api key</code>. But sometimes, you need to access a service publicly. In that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern <code>/.*</code>). You also have a private pattern field to restrict public patterns.</p><div class="centered-img">
+<p>In the URL patterns section, you will be able to choose which URL will be private and which URL will be public. By default all service are private and each call must provide an <code>api key</code>. But sometimes, you need to access a service publicly. In that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern <code>/.*</code>). You also have a private pattern field to restrict public patterns.</p><div id="targets" class="centered-img">
 <img src="../img/new-service-patterns.png" /></div>
 <h3><a href="#secure-exchange" name="secure-exchange" class="anchor"><span class="anchor-link"></span></a>Secure exchange</h3>
 <p>if you change to enable secure communication for a service, then you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. Otoroshi is also sending a <code>JWT token</code>in a header named <code>Otoroshi-Claim</code> that the target app can validate.</p><div class="centered-img">
@@ -254,7 +254,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <img src="../img/new-service-client.png" /></div>
 <h3><a href="#service-settings" name="service-settings" class="anchor"><span class="anchor-link"></span></a>Service settings</h3>
 <p>You can also provide some additionnal informations about a service, like an <code>Open API</code> descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.</p>
-<p>Here you can also define some headers that will be added to each request to the targets. And you will be able to define headers to route the call only if the defined header is present on the request.</p><div class="centered-img">
+<p>Here you can also define some headers that will be added to each request to the targets. And you will be able to define headers to route the call only if the defined header is present on the request.</p><div id="service-meta" class="centered-img">
 <img src="../img/new-service-meta.png" /></div>
 <h3><a href="#custom-error-templates" name="custom-error-templates" class="anchor"><span class="anchor-link"></span></a>Custom error templates</h3>
 <p>finally, you can define custom error templates that will be displayed when an error occurs when Otoroshi try to reach the target or when Otoroshi itself has an error. You can also define custom template for maintenance and service page</p>

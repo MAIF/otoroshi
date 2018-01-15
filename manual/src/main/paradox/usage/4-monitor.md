@@ -14,7 +14,7 @@ If you have defined an healthcheck URL in the service descriptor, you can access
 <img src="../img/service-healthcheck.png" />
 @@@
 
-## Service live stats.
+## Service live stats
 
 You can also monitor live stats like total of served request, average response time, average overhead, etc. The live stats page can be accessed from the sidebar of the service page.
 

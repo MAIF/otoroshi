@@ -18,7 +18,7 @@ and use the credentials generated in Otoroshi boot logs.
 
 Once logged in, the first screen you should see will look like
 
-@@@ div { .centered-img }
+@@@ div { .centered-img #first-login }
 <img src="../img/first-login.png" />
 @@@
 
