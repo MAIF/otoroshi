@@ -38,7 +38,7 @@ mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/linux-ot
 # TODO : build cli for windows
 
 # tag github
-git tag -am "Release Otoroshi version $VERSION"
+git tag -am "Release Otoroshi version $VERSION" 1.0.0
 git push --tags
 
 # push otoroshi.jar on bintray
