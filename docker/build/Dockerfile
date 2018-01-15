@@ -7,7 +7,6 @@ RUN mkdir -p /usr/app
 WORKDIR /usr/app
 
 COPY . /usr/app
-COPY ../../otoroshi/target/universal/otoroshi-1.0.0.zip /usr/app
 
 RUN apk update \
   && apk upgrade \
