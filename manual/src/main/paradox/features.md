@@ -32,7 +32,7 @@ All the features supported by **Otoroshi** are listed below
 * @ref:[Support configurable daily quota per Api key](./usage/3-apikeys.md#quotas)
 * @ref:[Support configurable monthly quota per Api key](./usage/3-apikeys.md#quotas)
 * @ref:[Api keys are authorized for a group of services](./usage/3-apikeys.md)
-* @ref:[Api keys can be passed with custom headers, `Authorization: Basic ` headers or `Authorization: Bearer ` JWT token signed with Api key secret](./usage/3-apikeys.md)
+* @ref:[Api keys can be passed with custom headers, `Authorization: Basic ` headers or `Authorization: Bearer ](./usage/3-apikeys.md)
 * @ref:[Add current Api key quotas usage in response headers](./usage/3-apikeys.md#quotas)
 * @ref:[Add current latencies in response headers](./usage/3-apikeys.md#quotas)
 * @ref:[Support service duplication through web UI](./usage/2-services.md#service-flags)
