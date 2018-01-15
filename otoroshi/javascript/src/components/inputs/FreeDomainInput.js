@@ -85,6 +85,9 @@ export class FreeDomainInput extends Component {
   };
 
   render() {
+    const stateValue = this.state.value;
+    const propsValue = parseDomain(this.props.value);
+    const value = (stateValue !== propsValue) ? propsValue : stateValue;
     return (
       <div className="form-group">
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
@@ -95,7 +98,7 @@ export class FreeDomainInput extends Component {
             type="text"
             placeholder={this.props.placeholder}
             className="form-control"
-            value={this.state.value}
+            value={value}
             onChange={this.change}
           />
           {this.state.error && <span className="label label-danger">{this.state.error}</span>}
