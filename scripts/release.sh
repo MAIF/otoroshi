@@ -89,6 +89,15 @@ rm ./otoroshi-dist.zip
 # push docker image on bintray
 docker tag otoroshi "maif-docker-docker.bintray.io/otoroshi:$VERSION"
 docker push "maif-docker-docker.bintray.io/otoroshi:$VERSION"
+
+cd $LOCATION/docker/otoroshicli
+cp ../../clients/cli/target/release/otoroshicli ./otoroshicli
+# build docker image
+docker build --no-cache -t otoroshicli .
+rm ./otoroshicli
+# push docker image on bintray
+docker tag otoroshicli "maif-docker-docker.bintray.io/otoroshicli:$VERSION"
+docker push "maif-docker-docker.bintray.io/otoroshicli:$VERSION"
 cd $LOCATION
 
 # update version number and commit / push

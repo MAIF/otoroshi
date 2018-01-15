@@ -8,8 +8,7 @@ WORKDIR /usr/app
 
 COPY . /usr/app
 
-RUN wget https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli \
-  && chmod +x otoroshicli 
+RUN chmod +x otoroshicli 
 
 VOLUME /usr/app
 
