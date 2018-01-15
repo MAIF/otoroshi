@@ -6,23 +6,23 @@ This section is not finished yet so, as Otoroshi is available as a @ref:[Docker 
 
 ## Running Otoroshi on AWS
 
-just deploy the @ref:[Docker image](../getotoroshi/fromdocker.md) using [Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html)
+just deploy the @ref:[Docker image](../firstrun/run.md#from-docker) using [Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html)
 
 ## Running Otoroshi on GCE
 
-just deploy the @ref:[Docker image](../getotoroshi/fromdocker.md) using [Google Compute Engine container integration](https://cloud.google.com/compute/docs/containers/deploying-containers)
+just deploy the @ref:[Docker image](../firstrun/run.md#from-docker) using [Google Compute Engine container integration](https://cloud.google.com/compute/docs/containers/deploying-containers)
 
 ## Running Otoroshi on Azure
 
-just deploy the @ref:[Docker image](../getotoroshi/fromdocker.md) using [Azure Container Service](https://azure.microsoft.com/en-us/services/container-service/)
+just deploy the @ref:[Docker image](../firstrun/run.md#from-docker) using [Azure Container Service](https://azure.microsoft.com/en-us/services/container-service/)
 
 ## Running Otoroshi on Heroku
 
-just deploy the @ref:[Docker image](../getotoroshi/fromdocker.md) using [Docker integration](https://devcenter.heroku.com/articles/container-registry-and-runtime)
+just deploy the @ref:[Docker image](../firstrun/run.md#from-docker) using [Docker integration](https://devcenter.heroku.com/articles/container-registry-and-runtime)
 
 ## Running Otoroshi on CloudFoundry
 
-just deploy the @ref:[Docker image](../getotoroshi/fromdocker.md) using [Docker integration](https://docs.cloudfoundry.org/adminguide/docker.html)
+just deploy the @ref:[Docker image](../firstrun/run.md#from-docker) using [Docker integration](https://docs.cloudfoundry.org/adminguide/docker.html)
 
 ## Running Otoroshi on your own infrastructure
 

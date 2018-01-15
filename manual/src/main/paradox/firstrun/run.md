@@ -19,7 +19,7 @@ java -jar otoroshi-vx.x.x.jar
 ## From docker
 
 ```sh
-docker run -p "8080:8080" otoroshi
+docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi
 ```
 
 you can also pass useful args like 
@@ -37,13 +37,13 @@ The list of possible env variables is available @ref:[here](../firstrun/env.md)
 You can use a volume to provide configuration like
 
 ```sh
-docker run -p "8080:8080" -v "/home/user/oto/conf:/usr/app/otoroshi/conf" otoroshi
+docker run -p "8080:8080" -v "/home/user/oto/conf:/usr/app/otoroshi/conf" maif-docker-docker.bintray.io/otoroshi
 ```
 
 You can also use a volume if you choose to use `leveldb` datastore like 
 
 ```sh
-docker run -p "8080:8080" -v "/home/user/oto/data:/usr/app/otoroshi/leveldb" otoroshi -Dapp.storage=leveldb
+docker run -p "8080:8080" -v "/home/user/oto/data:/usr/app/otoroshi/leveldb" maif-docker-docker.bintray.io/otoroshi -Dapp.storage=leveldb
 ```
 
 ## Run examples
