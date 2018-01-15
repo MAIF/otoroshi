@@ -9,11 +9,3 @@ docker pull maif-docker-docker.bintray.io/otoroshi:1.0.0
 # or with last snapshot
 docker pull maif-docker-docker.bintray.io/otoroshi:latest
 ```
-
-then just run it :
-
-```sh
-docker pull maif-docker-docker.bintray.io/otoroshi:1.0.0
-# or with last snapshot
-docker pull maif-docker-docker.bintray.io/otoroshi:latest
-```
