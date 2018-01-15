@@ -107,10 +107,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
 
   def index = BackOfficeAction.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(
-        views.html.backoffice
-          .index(!(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty), ctx.user, ctx.request, env)
-      )
+      ctx.user match {
+        case Some(user) => Redirect("/bo/dashboard")
+        case None => {
+          Ok(
+            views.html.backoffice
+              .index(!(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty), ctx.user, ctx.request, env)
+          )
+        }
+      }
     }
   }
 
