@@ -219,19 +219,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>first, fetch the last Docker image of Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">docker pull maif-docker-docker.bintray.io/otoroshi
 </code></pre>
-<p>then just run it :</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; otoroshi
-</code></pre>
-<p>you can also pass useful args like :</p>
-<pre><code>docker run -p &quot;8080:8080&quot; otoroshi -Dconfig.file=/home/user/otoroshi.conf -Dlogger.file=./home/user/otoroshi.xml
-</code></pre>
-<p>If you want to provide your own config file, you can read <a href="../firstrun/configfile.html">the documentation about config files</a></p>
-<p>You can also provide some ENV variable using the <code>--env</code> flag to customize your Otoroshi instance, the list of possible ENV variables is available <a href="../firstrun/env.html">here</a>.</p>
-<p>You can use a volume to provide configuration like :</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;/home/user/oto/conf:/usr/app/otoroshi/conf&quot; otoroshi
-</code></pre>
-<p>You can also use a volume if you choose to use <code>leveldb</code> datastore like :</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;/home/user/oto/data:/usr/app/otoroshi/leveldb&quot; otoroshi -Dapp.storage=leveldb
+<p>you can also choose a specific version </p>
+<pre class="prettyprint"><code class="language-sh">docker pull maif-docker-docker.bintray.io/otoroshi:1.0.0
+docker pull maif-docker-docker.bintray.io/otoroshi:latest
 </code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../firstrun/index.html">First run</a></p>
