@@ -38,5 +38,3 @@ You can also use a volume if you choose to use `leveldb` datastore like
 docker run -p "8080:8080" -v "/home/user/oto/data:/usr/app/otoroshi/leveldb" otoroshi -Dapp.storage=leveldb
 ```
 
-## Pouet
-

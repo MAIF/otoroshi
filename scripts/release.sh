@@ -38,7 +38,7 @@ mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/linux-ot
 # TODO : build cli for windows
 
 # tag github
-git tag -am "Release Otoroshi version $VERSION" 1.0.0
+git tag -am "Release Otoroshi version $VERSION" "$VERSION"
 git push --tags
 
 # push otoroshi.jar on bintray
@@ -53,11 +53,29 @@ curl -T "$LOCATION/release-$VERSION/macos-otoroshicli" -umathieuancelin:$BINTRAY
 # push win-otoroshicli.exe on bintray
 # curl -T "$LOCATION/release-$VERSION/win-otoroshicli.exe" -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H "X-Bintray-Version: $VERSION" -H 'X-Bintray-Package: win-otoroshicli' "https://api.bintray.com/content/maif/binaries/win-otoroshicli/$VERSION/otoroshicli.exe"
 
-# TODO : push otoroshi.jar on github
-# TODO : push otoroshi-dist on github
-# TODO : push mac-otoroshicli on github
-# TODO : push linux-otoroshicli on github
-# TODO : push win-otoroshicli.exe on github
+create_release () {
+  curl -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/MAIF/otoroshi/releases" -d "
+  {
+    \"tag_name\": \"$VERSION\",
+    \"name\": \"$VERSION\",
+    \"body\": \"Otoroshi version $VERSION\",
+    \"draft\": true,
+    \"prerelease\": false
+  }" | jqn 'property("id")'
+}
+
+# Create github release
+ID=`create_release`
+# push otoroshi.jar on github
+curl -T "$LOCATION/release-$VERSION/otoroshi.jar" -H "Content-Type: application/octet-stream"  -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets?name=otoroshi.jar",
+# push otoroshi-dist on github
+curl -T "$LOCATION/release-$VERSION/otoroshi-dist.zip" -H "Content-Type: application/zip"  -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets?name=otoroshi-dist.zip",
+# push mac-otoroshicli on github
+curl -T "$LOCATION/release-$VERSION/mac-otoroshicli" -H "Content-Type: application/octet-stream"  -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets?name=mac-otoroshicli",
+# push linux-otoroshicli on github
+curl -T "$LOCATION/release-$VERSION/linux-otoroshicli" -H "Content-Type: application/octet-stream"  -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets?name=linux-otoroshicli",
+# push win-otoroshicli.exe on github
+# curl -T "$LOCATION/release-$VERSION/win-otoroshicli.exe" -H "Content-Type: application/octet-stream"  -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets?name=otoroshicli.exe",
 
 cd $LOCATION/docker/build
 # build docker image
@@ -68,3 +86,4 @@ docker push "maif-docker-docker.bintray.io/otoroshi:$VERSION"
 cd $LOCATION
 
 # TODO : update version number and commit / push
+# TODO : remove release folder
