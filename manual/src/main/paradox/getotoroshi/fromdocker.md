@@ -2,39 +2,15 @@
 
 If your a Docker aficionado, Otoroshi is provided as a Docker image that your can pull directly from Official repos.
 
-first, fetch the last Docker image of Otoroshi
+To fetch the last Docker image of Otoroshi, just do
 
 ```sh
 docker pull maif-docker-docker.bintray.io/otoroshi
 ```
 
-then just run it
+you can also choose a specific version 
 
 ```sh
-docker run -p "8080:8080" otoroshi
+docker pull maif-docker-docker.bintray.io/otoroshi:latest
+docker pull maif-docker-docker.bintray.io/otoroshi:1.0.0
 ```
-
-you can also pass useful args like 
-
-```
-docker run -p "8080:8080" otoroshi -Dconfig.file=/home/user/otoroshi.conf -Dlogger.file=./home/user/otoroshi.xml
-```
-
-If you want to provide your own config file, you can read @ref:[the documentation about config files](../firstrun/configfile.md)
-
-You can also provide some ENV variable using the `--env` flag to customize your Otoroshi instance
-
-The list of possible env variables is available @ref:[here](../firstrun/env.md)
-
-You can use a volume to provide configuration like
-
-```sh
-docker run -p "8080:8080" -v "/home/user/oto/conf:/usr/app/otoroshi/conf" otoroshi
-```
-
-You can also use a volume if you choose to use `leveldb` datastore like 
-
-```sh
-docker run -p "8080:8080" -v "/home/user/oto/data:/usr/app/otoroshi/leveldb" otoroshi -Dapp.storage=leveldb
-```
-
