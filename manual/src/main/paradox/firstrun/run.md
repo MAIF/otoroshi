@@ -5,7 +5,7 @@ Now you are ready to run Otoroshi. You can run the following command with some t
 ## From .zip file
 
 ```sh
-unzip otoroshi-vx.x.x.zip
+unzip otoroshi-dist.zip
 cd otoroshi-vx.x.x
 ./bin/otoroshi
 ```
@@ -13,13 +13,13 @@ cd otoroshi-vx.x.x
 ## From .jar file
 
 ```sh
-java -jar otoroshi-vx.x.x.jar
+java -jar otoroshi.jar
 ```
 
 ## From docker
 
 ```sh
-docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi
+docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi:1.0.0
 ```
 
 You can also pass useful args like :

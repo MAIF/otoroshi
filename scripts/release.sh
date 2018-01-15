@@ -40,6 +40,7 @@ mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/linux-ot
 
 # tag github
 git commit -am "Prepare the release of Otoroshi version $VERSION"
+git push origin master
 git tag -am "Release Otoroshi version $VERSION" "$VERSION"
 git push --tags
 

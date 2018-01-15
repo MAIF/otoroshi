@@ -13,13 +13,13 @@ Otoroshi is an awesome reverse proxy built with Scala that handles all the calls
 ## Now some sh :)
 
 ```sh
-wget -q --show-progress https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar
+wget -q --show-progress https://dl.bintray.com/maif/binaries/otoroshi.jar/1.0.0/otoroshi.jar
 wget -q --show-progress https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
-wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.0.0/otoroshicli
 # or if you use linux
-wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.0.0/otoroshicli
 # or if you use windows
-wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0.0/otoroshicli.exe
 
 # Run the Otoroshi server
 java -jar otoroshi.jar &
@@ -104,11 +104,11 @@ export OTOROSHI_PORT=8080
 export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 
 wget -q --show-progress https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
-wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.0.0/otoroshicli
 # or if you use linux
-wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.0.0/otoroshicli
 # or if you use windows
-wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/latest/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0.0/otoroshicli.exe
 
 docker run -p "$OTOROSHI_PORT:8080" maif-docker-docker.bintray.io/otoroshi &
 
