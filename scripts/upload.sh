@@ -19,6 +19,6 @@ then
   then
     echo "Uploading otoroshi.jar"
     curl -T ./otoroshi/target/scala-2.11/otoroshi.jar -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H 'X-Bintray-Version: latest' -H 'X-Bintray-Package: otoroshi.jar' https://api.bintray.com/content/maif/binaries/otoroshi.jar/latest/otoroshi.jar
-    curl -T ./otoroshi/target/universal/otoroshi-1.0.0.zip -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H 'X-Bintray-Version: latest' -H 'X-Bintray-Package: otoroshi-dist' https://api.bintray.com/content/maif/binaries/otoroshi-dist/latest/otoroshi-dist.zip
+    curl -T ./otoroshi/target/universal/otoroshi-1.0.1.zip -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H 'X-Bintray-Version: latest' -H 'X-Bintray-Package: otoroshi-dist' https://api.bintray.com/content/maif/binaries/otoroshi-dist/latest/otoroshi-dist.zip
   fi
 fi

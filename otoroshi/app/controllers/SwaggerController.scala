@@ -1151,7 +1151,7 @@ class SwaggerController()(implicit env: Env) extends Controller {
     Json.obj(
       "swagger" -> "2.0",
       "info" -> Json.obj(
-        "version"     -> "1.0.0",
+        "version"     -> "1.0.1",
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact" -> Json.obj(
