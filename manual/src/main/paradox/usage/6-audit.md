@@ -1,9 +1,9 @@
 # Auditing Otoroshi
 
-With Otoroshi, any admin action and any sucpicious/alert action is recorded. Those records are stored in the Otoroshi datastore (only the last n records, defined by the `app.events.maxSize` @ref:[config key](../firstrun/configfile.md)). All the records can be send through the analytics mechanism (WebHook and/or Kafka) for further usage. We recommand sending away those records for security reasons.
+With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi's datastore (only the last n records, defined by the `app.events.maxSize` @ref:[config key](../firstrun/configfile.md)). All the records can be send through the analytics mechanism (WebHook and/or Kafka) for external and/or further usage. We recommand sending away those records for security reasons.
 
 @@@ warning
-You have to use @ref:[the Elastic connector](../connectors/elastic.md) to enable analytics features in Otoroshi
+You have to use @ref:[the Elastic connector](../connectors/elastic.md) to enable analytics features in Otoroshi.
 @@@
 
 ## Audit trail

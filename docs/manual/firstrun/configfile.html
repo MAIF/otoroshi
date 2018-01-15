@@ -64,7 +64,7 @@
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -161,7 +161,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -215,7 +215,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#config-with-files" name="config-with-files" class="anchor"><span class="anchor-link"></span></a>Config. with files</h1>
-<p>There is a lot of things you can configure in Otoroshi. By default, Otoroshi provides a configuration that should be enough for testing. But you should take a look here when you will be ready for production.</p>
+<p>There is a lot of things you can configure in Otoroshi. By default, Otoroshi provides a configuration that should be enough for testing purpose. But you&rsquo;ll likely need to update this configuration when you&rsquo;ll need to move into production.</p>
 <h2><a href="#common-configuration" name="common-configuration" class="anchor"><span class="anchor-link"></span></a>Common configuration</h2>
 <table>
   <thead>
@@ -231,25 +231,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>app.domain</code> </td>
       <td align="center">string </td>
       <td>&ldquo;foo.bar&rdquo; </td>
-      <td>the domain on which Otoroshi UI/API will be exposes</td>
+      <td>the domain on which Otoroshi UI/API is be exposed</td>
     </tr>
     <tr>
       <td><code>app.rootScheme</code> </td>
       <td align="center">string </td>
       <td>&ldquo;http&rdquo; </td>
-      <td>the scheme on which Otoroshi will be exposed, either &ldquo;http&rdquo; or &ldquo;https&rdquo; </td>
+      <td>the scheme on which Otoroshi is exposed, either &ldquo;http&rdquo; or &ldquo;https&rdquo; </td>
     </tr>
     <tr>
       <td><code>app.snowflake.seed</code> </td>
       <td align="center">number </td>
       <td>0 </td>
-      <td>this number will be used to generate unique ids across the cluster. Each Otorshi instance must have a unique seed. </td>
+      <td>this number will is used to generate unique ids across the cluster. Each Otorshi instance must have a unique seed. </td>
     </tr>
     <tr>
       <td><code>app.events.maxSize</code> </td>
       <td align="center">number </td>
       <td>1000 </td>
-      <td>max number of analytic and allert events stored localy </td>
+      <td>max number of analytic and alert events stored locally </td>
     </tr>
     <tr>
       <td><code>app.backoffice.subdomain</code> </td>
@@ -267,7 +267,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>app.privateapps.subdomain</code> </td>
       <td align="center">string </td>
       <td>&ldquo;privateapps&rdquo; </td>
-      <td>the subdomain on wich private apps UI will be served </td>
+      <td>the subdomain on which private apps UI are served </td>
     </tr>
     <tr>
       <td><code>app.privateapps.session.exp</code> </td>
@@ -290,9 +290,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </tbody>
 </table>
 <h2><a href="#admin-api-configuration" name="admin-api-configuration" class="anchor"><span class="anchor-link"></span></a>Admin API configuration</h2>
-<p>when Otoroshi starts for the first time, the DB is empty. As Otoroshi uses Otoroshi to expose its admin REST API, you have to provide the details for the admin API exposition. <strong>This part is super important</strong> because if you go to production with the default values, your Otoroshi server won&rsquo;t be secured anymore. </p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>When Otoroshi starts for the first time, it&rsquo;s datastore is empty. As Otoroshi uses Otoroshi to expose its admin REST API, you&rsquo;ll have to provide the details for the admin API exposition. <strong>This part is super important</strong> because if you go to production with the default values, your Otoroshi server won&rsquo;t be secured anymore.</p><div class="callout warning "><div class="callout-title">Warning</div>
 <p>YOU HAVE TO CUSTOMIZE THE FOLLOWING VALUES BEFORE GOING TO PRODUCTION !!</p></div>
-<p>Here, some terms in the description will be osbcure to you, but you will learm their meaning in the following chapters :)</p>
+<p>Some of the following terms will seem osbcure to you, but you will learm their meaning in the following chapters :)</p>
 <table>
   <thead>
     <tr>
@@ -319,7 +319,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>app.adminapi.defaultValues.backOfficeGroupId</code> </td>
       <td align="center">string </td>
       <td>&ldquo;admin-api-group&rdquo; </td>
-      <td>the name of the service groups that will contains the service descriptors for the Otoroshi admin API </td>
+      <td>the name of the service groups that will contain the service descriptors for the Otoroshi admin API </td>
     </tr>
     <tr>
       <td><code>app.adminapi.defaultValues.backOfficeApiKeyClientId</code> </td>
@@ -349,12 +349,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>app.adminapi.proxy.local</code> </td>
       <td align="center">boolean </td>
       <td>true </td>
-      <td>whether or not the admin API is accessible on <code>127.0.0.1</code>. This setting is useful for the backoffice UI to access Otoroshi admin API </td>
+      <td>whether or not the admin API is accessible through <code>127.0.0.1</code>. This setting is useful for the backoffice UI to access Otoroshi admin API </td>
     </tr>
   </tbody>
 </table>
 <h2><a href="#db-configuration" name="db-configuration" class="anchor"><span class="anchor-link"></span></a>DB configuration</h2>
-<p>as Otoroshi supports multiple DB, you have to provide some details about how to connect/configure it.</p>
+<p>As Otoroshi supports multiple datastores, you&rsquo;ll have to provide some details about how to connect/configure it.</p>
 <table>
   <thead>
     <tr>
@@ -375,7 +375,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>app.importFrom</code> </td>
       <td align="center">string </td>
       <td> </td>
-      <td>a file path or a URL to an Otoroshi export file. If the DB is empty at startup, this file will be used to import data to the empty DB </td>
+      <td>a file path or a URL to an Otoroshi export file. If the datastore is empty on startup, this file will be used to import data to the empty DB </td>
     </tr>
     <tr>
       <td><code>app.importFromHeaders</code> </td>

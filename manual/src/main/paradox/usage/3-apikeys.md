@@ -1,10 +1,10 @@
-# Managing api keys
+# Managing API keys
 
-now that you know how to create service groups and service descriptors, we will see how to create api keys
+Now that you know how to create service groups and service descriptors, we will see how to create API keys.
 
 ## Otoroshi entities
 
-There are 3 major entities at the core of Otoroshi
+There are 3 major entities at the core of Otoroshi.
 
 * service groups
 * service descriptors
@@ -14,52 +14,51 @@ There are 3 major entities at the core of Otoroshi
 <img src="../img/models-apikey.png" />
 @@@
 
-an `api key` exist for a `service group` so an `api key` will allow you to access any `service descriptor` contained in a `service group`. You can of course create multiple `api key` for a `service group`.
+An `API key` related to a `service group` to allow you to access any `service descriptor` contained in a `service group`. You can, of course, create multiple `API key` for a given `service group`.
 
-In the Otoroshi admin dashboard, we chose to access `api keys` from `service descriptors` only, but when you access `api keys` for a `service descriptor`, you actually access `api keys` for the `service group` containing the `service descriptor`.
+In the Otoroshi admin dashboard, we chose to access `API keys` from `service descriptors` only, but when you access `API keys` for a `service descriptor`, you actually access `API keys` for the `service group` containing the `service descriptor`.
 
-`api keys` can be passed to Otoroshi through
+`API keys` can be provided to Otoroshi through :
 
 * `Authorization: Basic $base64(client_id:client_secret)` header
-* `Authorization: Bearer $jwt_token` where the JWT token has been signed with the `api key` client secret
+* `Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret
 * `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` header
 
-## List api keys for a service descriptor
+## List API keys for a service descriptor
 
-go to a service descriptor using `All services` quick link in the sidebar or the search box,
-
+Go to a service descriptor using `All services` quick link in the sidebar or the search box.
 
 @@@ div { .centered-img }
 <img src="../img/sidebar-all-services.png" />
 @@@
 
-select a `service descriptor` 
+Select a `service descriptor`.
 
 @@@ div { .centered-img }
 <img src="../img/all-services.png" />
 @@@
 
-and click on `API keys` in the sidebar
+Click on `API keys` in the sidebar
 
 @@@ div { .centered-img }
 <img src="../img/sidebar-apikeys.png" />
 @@@
 
-and you should see the list of api keys for that `service descriptor`
+You should see the list of API keys for that `service descriptor`
 
 @@@ div { .centered-img }
 <img src="../img/apikeys-list.png" />
 @@@
 
-## Create an api key for a service descriptor
+## Create an API key for a service descriptor
 
 @@@ div { .centered-img }
 <img src="../img/add-apikey.png" />
 @@@
 
-now you can add a name for your new apikey, you can also change the client id and the client secret. You can also configure the throttling rate of the apikey (calls per second), and the authorized number of call by day and by month. You can also activate or de-activate the api key from that screen.
+You can add a name for your new API key, you can also change client's id and client's secret. You can also configure the throttling rate of the API key (calls per second), and the authorized number of call per day and per month. You may also activate or de-activate the api key from that screen.
 
-Informations about current quotas usage will be returned in response headers
+Informations about current quotas usage will be returned in response headers.
 
 * `Otoroshi-Daily-Calls-Remaining` : authorized calls remaining for this day
 * `Otoroshi-Monthly-Calls-Remaining` : authorized calls remaining for this month
@@ -70,23 +69,23 @@ Informations about current quotas usage will be returned in response headers
 <img src="../img/create-apikey.png" />
 @@@
 
-## Update an api key
+## Update an API key
 
-to update an `api key`, just click on the edit button <img src="../img/edit.png" /> of your `api key`
+To update an `API key`, just click on the edit button <img src="../img/edit.png" /> of your `API key`
 
 @@@ div { .centered-img }
 <img src="../img/apikey-edit.png" />
 @@@
 
-update the name, secret, state and quotas (if needed) of the `api key` and click on the `Update ApiKey` button
+Update the name, secret, state and quotas (if needed) of the `API key` and click on the `Update API key` button
 
 @@@ div { .centered-img }
 <img src="../img/apikey-update.png" />
 @@@
 
-## Delete an api key
+## Delete an API key
 
-to delete an `api key`, just click on the delete button <img src="../img/delete.png" /> of your `api key`
+To delete an `API key`, just click on the delete button <img src="../img/delete.png" /> of your `API key`
 
 @@@ div { .centered-img }
 <img src="../img/apikey-delete.png" />

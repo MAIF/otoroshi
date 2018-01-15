@@ -1,6 +1,6 @@
 # Run Otoroshi
 
-Now you are ready to run Otoroshi. You can run the following command with some tweaks dependencing on how you want to configure Otoroshi. If you want to pass a custom configuration file, use the `-Dconfig.file=/path/to/file.conf` flag in the following commands.
+Now you are ready to run Otoroshi. You can run the following command with some tweaks depending on the way you want to configure Otoroshi. If you want to pass a custom configuration file, use the `-Dconfig.file=/path/to/file.conf` flag in the following commands.
 
 ## From .zip file
 
@@ -22,25 +22,25 @@ java -jar otoroshi-vx.x.x.jar
 docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi
 ```
 
-you can also pass useful args like 
+You can also pass useful args like :
 
 ```
 docker run -p "8080:8080" otoroshi -Dconfig.file=/home/user/otoroshi.conf -Dlogger.file=./home/user/otoroshi.xml
 ```
 
-If you want to provide your own config file, you can read @ref:[the documentation about config files](../firstrun/configfile.md)
+If you want to provide your own config file, you can read @ref:[the documentation about config files](../firstrun/configfile.md).
 
-You can also provide some ENV variable using the `--env` flag to customize your Otoroshi instance
+You can also provide some ENV variable using the `--env` flag to customize your Otoroshi instance.
 
-The list of possible env variables is available @ref:[here](../firstrun/env.md)
+The list of possible env variables is available @ref:[here](../firstrun/env.md).
 
-You can use a volume to provide configuration like
+You can use a volume to provide configuration like :
 
 ```sh
 docker run -p "8080:8080" -v "/home/user/oto/conf:/usr/app/otoroshi/conf" maif-docker-docker.bintray.io/otoroshi
 ```
 
-You can also use a volume if you choose to use `leveldb` datastore like 
+You can also use a volume if you choose to use `leveldb` datastore like :
 
 ```sh
 docker run -p "8080:8080" -v "/home/user/oto/data:/usr/app/otoroshi/leveldb" maif-docker-docker.bintray.io/otoroshi -Dapp.storage=leveldb
@@ -64,7 +64,7 @@ $ java \
 [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ```
 
-if you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log. When you will log into the admin dashboard, Otoroshi will ask you to create another account to avoid security issues.
+If you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log. When you will log into the admin dashboard, Otoroshi will ask you to create another account to avoid security issues.
 
 ```sh
 $ java \
@@ -79,4 +79,3 @@ $ java \
 [info] play.api.Play - Application started (Prod)
 [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ```
-

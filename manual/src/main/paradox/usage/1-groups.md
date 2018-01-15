@@ -1,22 +1,22 @@
 # Managing service groups
 
-go to `settings (cog icon) / All service groups` to access the list of service groups
+Go to `settings (cog icon) / All service groups` to access the list of service groups.
 
 @@@ div { .centered-img }
 <img src="../img/settings-menu-groups.png" />
 @@@
 
-and you should see the list of existing `Service groups`
+And you should see the list of existing `Service groups`.
 
 @@@ div { .centered-img }
 <img src="../img/service-groups.png" />
 @@@
 
-but what is a `Service group` anyway ?
+But what is a `Service group` anyway ?
 
 ## Otoroshi entities
 
-There are 3 major entities at the core of Otoroshi
+There are 3 major entities at the core of Otoroshi :
 
 * **service groups**
 * service descriptors
@@ -26,11 +26,11 @@ There are 3 major entities at the core of Otoroshi
 <img src="../img/models-group.png" />
 @@@
 
-a `service group` is just come kind of container for `service descriptors`. A `service group` also has some `api keys` assigned that will be used to access all the `service descriptors` contained in the `service group`.
+A `service group` is just some kind of logical container for `service descriptors`. A `service group` also has some `api keys` assigned that will be used to access all the `service descriptors` contained in the `service group`.
 
 ## Create a service group
 
-A `service group` is a really simple structure with an `id`, a name and a description. To create a new one, juste click on the `Add item` button
+A `service group` is a really simple structure with an `id`, a name and a description. To create a new one, just click on the `Add item` button.
 
 @@@ div { .centered-img }
 <img src="../img/service-groups-add.png" />
@@ -48,21 +48,21 @@ and click on `Create group`
 <img src="../img/service-groups-create.png" />
 @@@
 
-then you should the your brand new `Service group` in the list of `Service groups`
+Then, you should find your brand new `Service group` in the list of `Service groups`
 
 @@@ div { .centered-img }
 <img src="../img/service-groups-created.png" />
 @@@
 
-## Update a service 
+## Update a service
 
-to update a `Service group`, just click on the edit button <img src="../img/edit.png" /> of your `Service group`
+To update a `Service group`, just click on the edit button <img src="../img/edit.png" /> of your `Service group`
 
 @@@ div { .centered-img }
 <img src="../img/service-groups-edit.png" />
 @@@
 
-update the name and description of the `Service group` and click on the `Update group` button
+Update the name and description of the `Service group` and click on the `Update group` button to validate name update.
 
 @@@ div { .centered-img }
 <img src="../img/service-groups-update.png" />
@@ -70,13 +70,13 @@ update the name and description of the `Service group` and click on the `Update 
 
 ## Delete a service group
 
-to delete a `Service group`, just click on the delete button <img src="../img/delete.png" /> of your `Service group`
+To delete a `Service group`, just click on the delete button <img src="../img/delete.png" /> of your `Service group`
 
 @@@ div { .centered-img }
 <img src="../img/service-groups-delete.png" />
 @@@
 
-and confirm the command
+Finally confirm the command
 
 @@@ div { .centered-img }
 <img src="../img/service-groups-delete-confirm.png" />

@@ -2,7 +2,8 @@
 
 **Otoroshi** is a modern http reverse proxy with a thin layer of api management written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
 
-The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of the gate to devour those who approach the shrine for only self-serving purposes.
+
+> *The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of the gate to devour those who approach the shrine for only self-serving purposes.*
 
 @@@ div { .centered-img }
 [![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://api.bintray.com/packages/maif/binaries/otoroshi.jar/images/download.svg) ](https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar)
@@ -78,7 +79,7 @@ Every release, along with the migration instructions, is documented on the [Gith
 
 The work on Otoroshi was funded by <a href="https://www.maif.fr/" target="_blank">MAIF</a> with the help of the community.
 
-## Licence 
+## Licence
 
 Otoroshi is Open Source and available under the [Apache 2 License](https://opensource.org/licenses/Apache-2.0)
 
@@ -95,7 +96,7 @@ Otoroshi is Open Source and available under the [Apache 2 License](https://opens
 * [Using Otoroshi](usage/index.md)
 * [Integrations](integrations/index.md)
 * [Admin REST API](api.md)
-* [Rust CLI](cli.md)
+* [Official Rust CLI](cli.md)
 * [Deploy to production](deploy/index.md)
 * [Connectors](connectors/index.md)
 

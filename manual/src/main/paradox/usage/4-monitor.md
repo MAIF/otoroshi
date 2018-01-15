@@ -1,6 +1,6 @@
 # Monitoring services
 
-Once you have declared services, you can monitor them with Otoroshi
+Once you have declared services, you can monitor them with Otoroshi.
 
 @@@ warning
 You have to use @ref:[the Elastic connector](../connectors/elastic.md) to enable analytics features in Otoroshi
@@ -8,7 +8,7 @@ You have to use @ref:[the Elastic connector](../connectors/elastic.md) to enable
 
 ## Service healthcheck
 
-If you have defined an healthcheck URL in the service descriptor, you can access the healthcheck page from the sidebar of the service page.
+If you have defined an health check URL in the service descriptor, you can access the health check page from the sidebar of the service page.
 
 @@@ div { .centered-img }
 <img src="../img/service-healthcheck.png" />

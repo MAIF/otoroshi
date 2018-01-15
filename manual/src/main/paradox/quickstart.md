@@ -8,7 +8,7 @@ what you will need :
 
 ## The elevator pitch
 
-Otoroshi is an awesome reverse proxy built in scala that handle all the calls to and between your microservices without service locator and let you change configuration dynamically at runtime.
+Otoroshi is an awesome reverse proxy built with Scala that handles all the calls to and between your microservices without service locator and lets you change configuration dynamically at runtime.
 
 ## Now some sh :)
 
@@ -84,7 +84,7 @@ first you need to add the following line to your `/etc/hosts` file.
 127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar
 ```
 
-you can user the following command 
+you can user the following command
 
 ```sh
 sudo echo "127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar" >> /etc/hosts

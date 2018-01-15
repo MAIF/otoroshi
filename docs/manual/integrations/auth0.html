@@ -64,7 +64,7 @@
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -161,7 +161,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -215,19 +215,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#auth0" name="auth0" class="anchor"><span class="anchor-link"></span></a>Auth0</h1>
-<p>You can use Auth0 to log into the Otoroshi backoffice et Otoroshi private apps. Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Backoffice Auth0 settings</code> and <code>Private apps Auth0 settings</code> sections</p><div class="centered-img">
+<p>You can use Auth0 to log into Otoroshi&rsquo;s backoffice and Otoroshi&rsquo;s private apps.</p>
+<p>Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Backoffice Auth0 settings</code> and <code>Private apps Auth0 settings</code> sections.</p><div class="centered-img">
 <img src="../img/danger-zone-8-auth0.png" /></div>
-<p>now you can fill the following fields </p>
+<p>Now, you can fill the following fields :</p>
 <ul>
   <li><code>Client Id</code></li>
   <li><code>Client Service</code></li>
   <li><code>Domain</code></li>
 </ul>
-<p>for each section. For the <code>Callback URL</code> fields, use something like</p>
+<p>For the <code>Callback URL</code> fields, use something like</p>
 <pre><code>https://otoroshi.foo.bar/backoffice/auth0/callback
 https://privateapps.foo.bar/privateapps/auth0/callback
 </code></pre>
-<p>of course you have to replace <code>otoroshi.foo.bar</code> and <code>privateapps.foo.bar</code> with your own domain and sub-domains. Don&rsquo;t forget to customize the callback urls in your Auth0 backoffice too.</p>
+<p>Of course, you need to replace <code>otoroshi.foo.bar</code> and <code>privateapps.foo.bar</code> with your own domain and sub-domains. Don&rsquo;t forget to customize the callback URLs in your Auth0 backoffice too.</p>
 <p>Now if you logout, you will see the Auth0 option on the login screen</p><div class="centered-img">
 <img src="../img/login-auth0.png" /></div>
 <div class="nav-next">

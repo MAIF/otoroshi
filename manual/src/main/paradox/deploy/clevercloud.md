@@ -1,6 +1,6 @@
 # Clever Cloud
 
-Now you want to use Otoroshi on Clever Cloud. Otoroshi has been designed and create to run on Clever Cloud and a lot of choices were made because of how Clever Cloud works.
+Now you want to use Otoroshi on Clever Cloud. Otoroshi has been designed and created to run on Clever Cloud and a lot of choices were made because of how Clever Cloud works.
 
 ## Create an Otoroshi instance on CleverCloud
 
@@ -16,25 +16,25 @@ Create a new Clever Cloud app based on your fork.
 <img src="../img/deploy-cc-0.png" />
 @@@
 
-Then choose what kind of app your want to create, for Otoroshi, choose `Java or Scala + Play 2`
+Then, you need to choose what kind of app your want to create, for Otoroshi, choose `Java or Scala + Play 2`
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-1.png" />
 @@@
 
-then you will be asked to choose what kind of machine you want to use. `M` instance is a good choice but you can use a less powerful machine. Also, you can activate auto-scaling or multi-instances to avoid high availibility issues.
+Then, you will be asked to choose what kind of machine you want to use. `M` instances are a good choice but you can use a less powerful ones. You can also activate auto-scaling or multi-instances to provie high availibility.
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-2.png" />
 @@@
 
-then choose a name for your app
+Then choose a name for your app :
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-3.png" />
 @@@
 
-Now you just need to customize environnment variables and add the custom build script as pre deployment hook
+Now you just need to customize environnment variables and add the custom build script as pre deployment hook :
 
 `CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
 
@@ -42,13 +42,13 @@ Now you just need to customize environnment variables and add the custom build s
 <img src="../img/deploy-cc-4-bis.png" />
 @@@
 
-or using expert mode
+You can also use expert mode :
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-4.png" />
 @@@
 
-now your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like
+Now, your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like :
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-5.png" />
@@ -74,19 +74,19 @@ Then choose what kind of app your want to create, for Otoroshi, choose `Java + J
 <img src="../img/deploy-cc-jar-1.png" />
 @@@
 
-then you will be asked to choose what kind of machine you want to use. Also, you can activate auto-scaling or multi-instances to avoid high availibility issues.
+Next, set up choose instance size and auto-scalling.
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-2.png" />
 @@@
 
-then choose a name for your app
+Finally, choose a name for your app
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-3.png" />
 @@@
 
-Now you just need to customize environnment variables and add the custom build script as pre deployment hook
+Now you just need to customize environnment variables and add the custom build script as pre deployment hook :
 
 `CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
 
@@ -94,13 +94,13 @@ Now you just need to customize environnment variables and add the custom build s
 <img src="../img/deploy-cc-4-bis.png" />
 @@@
 
-or using expert mode
+You can also use expert mode :
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-4.png" />
 @@@
 
-now your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like
+Now, your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like :
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-5.png" />
@@ -108,7 +108,7 @@ now your app is ready, don't forget to add a custom domain name on clever app ma
 
 ## Example of CleverCloud env. variables
 
-you can add more env. variables to customize your Otoroshi instance like the following. Use the expert mode to copy/paste all the values in one shot
+You can add more env variables to customize your Otoroshi instance like the following. Use the expert mode to copy/paste all the values in one shot :
 
 ```
 APP_ENV=prod

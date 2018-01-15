@@ -64,7 +64,7 @@
   <ul>
     <li><a href="usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -161,7 +161,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -221,7 +221,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>5 minutes of free time</li>
 </ul>
 <h2><a href="#the-elevator-pitch" name="the-elevator-pitch" class="anchor"><span class="anchor-link"></span></a>The elevator pitch</h2>
-<p>Otoroshi is an awesome reverse proxy built in scala that handle all the calls to and between your microservices without service locator and let you change configuration dynamically at runtime.</p>
+<p>Otoroshi is an awesome reverse proxy built with Scala that handles all the calls to and between your microservices without service locator and lets you change configuration dynamically at runtime.</p>
 <h2><a href="#now-some-sh-" name="now-some-sh-" class="anchor"><span class="anchor-link"></span></a>Now some sh :)</h2>
 <pre class="prettyprint"><code class="language-sh">wget -q --show-progress https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar
 wget -q --show-progress https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
@@ -289,7 +289,7 @@ open &quot;http://api.hello.com:8080/&quot;
 <p>first you need to add the following line to your <code>/etc/hosts</code> file.</p>
 <pre><code>127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar
 </code></pre>
-<p>you can user the following command </p>
+<p>you can user the following command</p>
 <pre class="prettyprint"><code class="language-sh">sudo echo &quot;127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar&quot; &gt;&gt; /etc/hosts
 </code></pre>
 <p>Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a> and login with the credentials printed in the Otoroshi logs at startup ;-)</p>

@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Managing api keys · Otoroshi</title>
+<title>Managing API keys · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -64,7 +64,7 @@
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="active page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="active page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -161,7 +161,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="active page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="active page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -206,7 +206,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../usage/index.html">Using Otoroshi</a></li>
-  <li>Managing api keys</li>
+  <li>Managing API keys</li>
 </ul>
 </div>
 </div>
@@ -214,37 +214,37 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#managing-api-keys" name="managing-api-keys" class="anchor"><span class="anchor-link"></span></a>Managing api keys</h1>
-<p>now that you know how to create service groups and service descriptors, we will see how to create api keys</p>
+<h1><a href="#managing-api-keys" name="managing-api-keys" class="anchor"><span class="anchor-link"></span></a>Managing API keys</h1>
+<p>Now that you know how to create service groups and service descriptors, we will see how to create API keys.</p>
 <h2><a href="#otoroshi-entities" name="otoroshi-entities" class="anchor"><span class="anchor-link"></span></a>Otoroshi entities</h2>
-<p>There are 3 major entities at the core of Otoroshi</p>
+<p>There are 3 major entities at the core of Otoroshi.</p>
 <ul>
   <li>service groups</li>
   <li>service descriptors</li>
   <li><strong>api keys</strong></li>
 </ul><div class="centered-img">
 <img src="../img/models-apikey.png" /></div>
-<p>an <code>api key</code> exist for a <code>service group</code> so an <code>api key</code> will allow you to access any <code>service descriptor</code> contained in a <code>service group</code>. You can of course create multiple <code>api key</code> for a <code>service group</code>.</p>
-<p>In the Otoroshi admin dashboard, we chose to access <code>api keys</code> from <code>service descriptors</code> only, but when you access <code>api keys</code> for a <code>service descriptor</code>, you actually access <code>api keys</code> for the <code>service group</code> containing the <code>service descriptor</code>.</p>
-<p><code>api keys</code> can be passed to Otoroshi through</p>
+<p>An <code>API key</code> related to a <code>service group</code> to allow you to access any <code>service descriptor</code> contained in a <code>service group</code>. You can, of course, create multiple <code>API key</code> for a given <code>service group</code>.</p>
+<p>In the Otoroshi admin dashboard, we chose to access <code>API keys</code> from <code>service descriptors</code> only, but when you access <code>API keys</code> for a <code>service descriptor</code>, you actually access <code>API keys</code> for the <code>service group</code> containing the <code>service descriptor</code>.</p>
+<p><code>API keys</code> can be provided to Otoroshi through :</p>
 <ul>
   <li><code>Authorization: Basic $base64(client_id:client_secret)</code> header</li>
-  <li><code>Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>api key</code> client secret</li>
+  <li><code>Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret</li>
   <li><code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> header</li>
 </ul>
-<h2><a href="#list-api-keys-for-a-service-descriptor" name="list-api-keys-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>List api keys for a service descriptor</h2>
-<p>go to a service descriptor using <code>All services</code> quick link in the sidebar or the search box,</p><div class="centered-img">
+<h2><a href="#list-api-keys-for-a-service-descriptor" name="list-api-keys-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>List API keys for a service descriptor</h2>
+<p>Go to a service descriptor using <code>All services</code> quick link in the sidebar or the search box.</p><div class="centered-img">
 <img src="../img/sidebar-all-services.png" /></div>
-<p>select a <code>service descriptor</code> </p><div class="centered-img">
+<p>Select a <code>service descriptor</code>.</p><div class="centered-img">
 <img src="../img/all-services.png" /></div>
-<p>and click on <code>API keys</code> in the sidebar</p><div class="centered-img">
+<p>Click on <code>API keys</code> in the sidebar</p><div class="centered-img">
 <img src="../img/sidebar-apikeys.png" /></div>
-<p>and you should see the list of api keys for that <code>service descriptor</code></p><div class="centered-img">
+<p>You should see the list of API keys for that <code>service descriptor</code></p><div class="centered-img">
 <img src="../img/apikeys-list.png" /></div>
-<h2><a href="#create-an-api-key-for-a-service-descriptor" name="create-an-api-key-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>Create an api key for a service descriptor</h2><div class="centered-img">
+<h2><a href="#create-an-api-key-for-a-service-descriptor" name="create-an-api-key-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>Create an API key for a service descriptor</h2><div class="centered-img">
 <img src="../img/add-apikey.png" /></div>
-<p>now you can add a name for your new apikey, you can also change the client id and the client secret. You can also configure the throttling rate of the apikey (calls per second), and the authorized number of call by day and by month. You can also activate or de-activate the api key from that screen.</p>
-<p>Informations about current quotas usage will be returned in response headers</p>
+<p>You can add a name for your new API key, you can also change client&rsquo;s id and client&rsquo;s secret. You can also configure the throttling rate of the API key (calls per second), and the authorized number of call per day and per month. You may also activate or de-activate the api key from that screen.</p>
+<p>Informations about current quotas usage will be returned in response headers.</p>
 <ul>
   <li><code>Otoroshi-Daily-Calls-Remaining</code> : authorized calls remaining for this day</li>
   <li><code>Otoroshi-Monthly-Calls-Remaining</code> : authorized calls remaining for this month</li>
@@ -252,13 +252,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Otoroshi-Upstream-Latency</code> : latency between Otoroshi and target</li>
 </ul><div id="quotas" class="centered-img">
 <img src="../img/create-apikey.png" /></div>
-<h2><a href="#update-an-api-key" name="update-an-api-key" class="anchor"><span class="anchor-link"></span></a>Update an api key</h2>
-<p>to update an <code>api key</code>, just click on the edit button <img src="../img/edit.png" /> of your <code>api key</code></p><div class="centered-img">
+<h2><a href="#update-an-api-key" name="update-an-api-key" class="anchor"><span class="anchor-link"></span></a>Update an API key</h2>
+<p>To update an <code>API key</code>, just click on the edit button <img src="../img/edit.png" /> of your <code>API key</code></p><div class="centered-img">
 <img src="../img/apikey-edit.png" /></div>
-<p>update the name, secret, state and quotas (if needed) of the <code>api key</code> and click on the <code>Update ApiKey</code> button</p><div class="centered-img">
+<p>Update the name, secret, state and quotas (if needed) of the <code>API key</code> and click on the <code>Update API key</code> button</p><div class="centered-img">
 <img src="../img/apikey-update.png" /></div>
-<h2><a href="#delete-an-api-key" name="delete-an-api-key" class="anchor"><span class="anchor-link"></span></a>Delete an api key</h2>
-<p>to delete an <code>api key</code>, just click on the delete button <img src="../img/delete.png" /> of your <code>api key</code></p><div class="centered-img">
+<h2><a href="#delete-an-api-key" name="delete-an-api-key" class="anchor"><span class="anchor-link"></span></a>Delete an API key</h2>
+<p>To delete an <code>API key</code>, just click on the delete button <img src="../img/delete.png" /> of your <code>API key</code></p><div class="centered-img">
 <img src="../img/apikey-delete.png" /></div>
 <p>and confirm the command</p><div class="centered-img">
 <img src="../img/apikey-delete-confirm.png" /></div>
@@ -272,13 +272,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../usage/3-apikeys.html#managing-api-keys" class="header">Managing api keys</a>
+  <li><a href="../usage/3-apikeys.html#managing-api-keys" class="header">Managing API keys</a>
   <ul>
     <li><a href="../usage/3-apikeys.html#otoroshi-entities" class="header">Otoroshi entities</a></li>
-    <li><a href="../usage/3-apikeys.html#list-api-keys-for-a-service-descriptor" class="header">List api keys for a service descriptor</a></li>
-    <li><a href="../usage/3-apikeys.html#create-an-api-key-for-a-service-descriptor" class="header">Create an api key for a service descriptor</a></li>
-    <li><a href="../usage/3-apikeys.html#update-an-api-key" class="header">Update an api key</a></li>
-    <li><a href="../usage/3-apikeys.html#delete-an-api-key" class="header">Delete an api key</a></li>
+    <li><a href="../usage/3-apikeys.html#list-api-keys-for-a-service-descriptor" class="header">List API keys for a service descriptor</a></li>
+    <li><a href="../usage/3-apikeys.html#create-an-api-key-for-a-service-descriptor" class="header">Create an API key for a service descriptor</a></li>
+    <li><a href="../usage/3-apikeys.html#update-an-api-key" class="header">Update an API key</a></li>
+    <li><a href="../usage/3-apikeys.html#delete-an-api-key" class="header">Delete an API key</a></li>
   </ul></li>
 </ul>
 </div>

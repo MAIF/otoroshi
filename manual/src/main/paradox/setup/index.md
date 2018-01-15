@@ -1,6 +1,6 @@
 # Setup Otoroshi
 
-Now that Otoroshi is running, you are ready to log into the Otoroshi admin dashboard and setup your instance. Just go to 
+Now that Otoroshi is running, you are ready to log into the Otoroshi admin dashboard and setup your instance. Just go to :
 
 <a href="http://otoroshi.foo.bar:8080" target="_blank">http://otoroshi.foo.bar:8080</a>
 
@@ -8,7 +8,7 @@ Now that Otoroshi is running, you are ready to log into the Otoroshi admin dashb
 <img src="../img/base-page.png" />
 @@@
 
-and use the credentials generated in Otoroshi boot logs.
+Use the credentials generated in Otoroshi boot logs.
 
 @@@ div { .centered-img }
 <img src="../img/login-page.png" />
@@ -16,13 +16,13 @@ and use the credentials generated in Otoroshi boot logs.
 
 (of course, you can change this url dependending on the configuration you provided to Otoroshi).
 
-Once logged in, the first screen you should see will look like
+Once logged in, the first screen you'll see should look like :
 
 @@@ div { .centered-img #first-login }
 <img src="../img/first-login.png" />
 @@@
 
-as you can see, Otoroshi is not really happy about you being logged with a generated admin account. 
+As you can see, Otoroshi is not really happy about you being logged with a generated admin account.
 
 But we will fix that in the next chapter
 

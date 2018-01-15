@@ -64,7 +64,7 @@
   <ul>
     <li><a href="../usage/1-groups.html" class="active page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -161,7 +161,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../usage/1-groups.html" class="active page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
@@ -215,38 +215,38 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#managing-service-groups" name="managing-service-groups" class="anchor"><span class="anchor-link"></span></a>Managing service groups</h1>
-<p>go to <code>settings (cog icon) / All service groups</code> to access the list of service groups</p><div class="centered-img">
+<p>Go to <code>settings (cog icon) / All service groups</code> to access the list of service groups.</p><div class="centered-img">
 <img src="../img/settings-menu-groups.png" /></div>
-<p>and you should see the list of existing <code>Service groups</code></p><div class="centered-img">
+<p>And you should see the list of existing <code>Service groups</code>.</p><div class="centered-img">
 <img src="../img/service-groups.png" /></div>
-<p>but what is a <code>Service group</code> anyway ?</p>
+<p>But what is a <code>Service group</code> anyway ?</p>
 <h2><a href="#otoroshi-entities" name="otoroshi-entities" class="anchor"><span class="anchor-link"></span></a>Otoroshi entities</h2>
-<p>There are 3 major entities at the core of Otoroshi</p>
+<p>There are 3 major entities at the core of Otoroshi :</p>
 <ul>
   <li><strong>service groups</strong></li>
   <li>service descriptors</li>
   <li>api keys</li>
 </ul><div class="centered-img">
 <img src="../img/models-group.png" /></div>
-<p>a <code>service group</code> is just come kind of container for <code>service descriptors</code>. A <code>service group</code> also has some <code>api keys</code> assigned that will be used to access all the <code>service descriptors</code> contained in the <code>service group</code>.</p>
+<p>A <code>service group</code> is just some kind of logical container for <code>service descriptors</code>. A <code>service group</code> also has some <code>api keys</code> assigned that will be used to access all the <code>service descriptors</code> contained in the <code>service group</code>.</p>
 <h2><a href="#create-a-service-group" name="create-a-service-group" class="anchor"><span class="anchor-link"></span></a>Create a service group</h2>
-<p>A <code>service group</code> is a really simple structure with an <code>id</code>, a name and a description. To create a new one, juste click on the <code>Add item</code> button</p><div class="centered-img">
+<p>A <code>service group</code> is a really simple structure with an <code>id</code>, a name and a description. To create a new one, just click on the <code>Add item</code> button.</p><div class="centered-img">
 <img src="../img/service-groups-add.png" /></div>
 <p>modify the name and the description of the group</p><div class="centered-img">
 <img src="../img/service-groups-new.png" /></div>
 <p>and click on <code>Create group</code></p><div class="centered-img">
 <img src="../img/service-groups-create.png" /></div>
-<p>then you should the your brand new <code>Service group</code> in the list of <code>Service groups</code></p><div class="centered-img">
+<p>Then, you should find your brand new <code>Service group</code> in the list of <code>Service groups</code></p><div class="centered-img">
 <img src="../img/service-groups-created.png" /></div>
 <h2><a href="#update-a-service" name="update-a-service" class="anchor"><span class="anchor-link"></span></a>Update a service</h2>
-<p>to update a <code>Service group</code>, just click on the edit button <img src="../img/edit.png" /> of your <code>Service group</code></p><div class="centered-img">
+<p>To update a <code>Service group</code>, just click on the edit button <img src="../img/edit.png" /> of your <code>Service group</code></p><div class="centered-img">
 <img src="../img/service-groups-edit.png" /></div>
-<p>update the name and description of the <code>Service group</code> and click on the <code>Update group</code> button</p><div class="centered-img">
+<p>Update the name and description of the <code>Service group</code> and click on the <code>Update group</code> button to validate name update.</p><div class="centered-img">
 <img src="../img/service-groups-update.png" /></div>
 <h2><a href="#delete-a-service-group" name="delete-a-service-group" class="anchor"><span class="anchor-link"></span></a>Delete a service group</h2>
-<p>to delete a <code>Service group</code>, just click on the delete button <img src="../img/delete.png" /> of your <code>Service group</code></p><div class="centered-img">
+<p>To delete a <code>Service group</code>, just click on the delete button <img src="../img/delete.png" /> of your <code>Service group</code></p><div class="centered-img">
 <img src="../img/service-groups-delete.png" /></div>
-<p>and confirm the command</p><div class="centered-img">
+<p>Finally confirm the command</p><div class="centered-img">
 <img src="../img/service-groups-delete-confirm.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../usage/2-services.html">Managing services</a></p>

@@ -4,7 +4,7 @@ Otoroshi provides a command line tool to command Otoroshi instances.
 
 ## Download
 
-first, download the Otoroshi CLI depending on your operating system
+First, download the Otoroshi CLI depending on your operating system :
 
 ```sh
 wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/latest/otoroshicli
@@ -18,7 +18,7 @@ wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/lat
 
 The documentation is not written yet, but you can explore the cli usage using the help flag `-h`
 
-You can read more about it [here](https://github.com/MAIF/otoroshi/tree/master/clients/cli)
+You can read more about it [here](https://github.com/MAIF/otoroshi/tree/master/clients/cli).
 
 ```
 $ otoroshicli -h
@@ -63,7 +63,7 @@ SUBCOMMANDS:
     tryout      Features for Otoroshi tryout
 ```
 
-then 
+then :
 
 ```
 $ otoroshicli apikeys -h

@@ -1,6 +1,6 @@
 # Managing services
 
-Now let's create some services. Services or `service descriptor` let you declare how to proxy a call from a domain name to another domain name (or multiple). Let say I have an API exposed at `http://192.168.0.42` and I want to expose it at `https://my.api.foo`. Otoroshi will proxy all calls to `https://my.api.foo` and forward them to `http://192.168.0.42`. While doing that, it will also log everyhting, control accesses, etc .
+Now let's create services. Services or `service descriptor` let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). Let's say you have an API exposed on `http://192.168.0.42` and I want to expose it on `https://my.api.foo`. Otoroshi will proxy all calls to `https://my.api.foo` and forward them to `http://192.168.0.42`. While doing that, it will also log everyhting, control accesses, etc.
 
 ## Otoroshi entities
 
@@ -28,15 +28,17 @@ You will have a serie of toggle buttons to
 * enforce secure exchange between services
 * force https usage on the exposed service
 
-and then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.
+Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.
 
 @@@ div { .centered-img #service-flags }
 <img src="../img/new-service-flags.png" />
 @@@
 
-in the `service targets` section, you will be able to choose where the call will be forwarded. You can use multiple target, in that case, Otoroshi will perform a round robin load balancing between the targets. You can also specify a target root, if you say that the target root is `/foo/`, then any call to `https://my.api.foo` will call `http://192.168.0.42/foo/` and nay call to `https://my.api.foo/bar` will call `http://192.168.0.42/foo/bar`.
+In the `service targets` section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets.
 
-In the URL patterns section, you will be able to choose which URL will be private and which URL will be public. By default all service are private and each call must provide an `api key`. But sometimes, you need to access a service publicly. In  that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern `/.*`). You also have a private pattern field to restrict public patterns.
+You can also specify a target root, if you say that the target root is `/foo/`, then any call to `https://my.api.foo` will call `http://192.168.0.42/foo/` and nay call to `https://my.api.foo/bar` will call `http://192.168.0.42/foo/bar`.
+
+In the URL patterns section, you will be able to choose, URL by URL which is private and which is public. By default, all services are private and each call must provide an `api key`. But sometimes, you need to access a service publicly. In that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern `/.*`). You also have a `private pattern` field to restrict public patterns.
 
 @@@ div { .centered-img #targets }
 <img src="../img/new-service-patterns.png" />
@@ -44,7 +46,7 @@ In the URL patterns section, you will be able to choose which URL will be privat
 
 ### Secure exchange
 
-if you change to enable secure communication for a service, then you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`. Otoroshi is also sending a `JWT token`in a header named `Otoroshi-Claim` that the target app can validate.
+If you enable secure communication for a given service, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`. Otoroshi is also sending a `JWT token`in a header named `Otoroshi-Claim` that the target app can validate.
 
 @@@ div { .centered-img }
 <img src="../img/exchange.png" />
@@ -52,7 +54,7 @@ if you change to enable secure communication for a service, then you will have t
 
 ### Canary mode
 
-Otoroshi provides a feature called `Canary mode`. It let you define new targets for a service, and route a percentage of the traffic on those targets. It's a good way of testing a new version of a service before public release. As any client need to be routed to the same version of targets any time, Otoroshi will issue a special header and a cookie containing a `session id`. The header is named `Otoroshi-Canary-Id`.
+Otoroshi provides a feature called `Canary mode`. It lets you define new targets for a service, and route a percentage of the traffic on those targets. It's a good way to test a new version of a service before public release. As any client need to be routed to the same version of targets any time, Otoroshi will issue a special header and a cookie containing a `session id`. The header is named `Otoroshi-Canary-Id`.
 
 @@@ div { .centered-img }
 <img src="../img/new-service-canary.png" />
@@ -68,7 +70,7 @@ Otoroshi is also capable of checking the health of a service. You can define a U
 
 ### Service circuit breaker
 
-In Otoroshi, each service has its own client settings with a circuit breaker and some retry capabilities. In the `Client settings` section, you will be able to customize the client behavior.
+In Otoroshi, each service has its own client settings with a circuit breaker and some retry capabilities. In the `Client settings` section, you will be able to customize the client's behavior.
 
 @@@ div { .centered-img }
 <img src="../img/new-service-client.png" />
@@ -76,7 +78,7 @@ In Otoroshi, each service has its own client settings with a circuit breaker and
 
 ### Service settings
 
-You can also provide some additionnal informations about a service, like an `Open API` descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.
+You can also provide some additionnal information about a given service, like an `Open API` descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.
 
 Here you can also define some headers that will be added to each request to the targets. And you will be able to define headers to route the call only if the defined header is present on the request.
 
@@ -86,4 +88,4 @@ Here you can also define some headers that will be added to each request to the 
 
 ### Custom error templates
 
-finally, you can define custom error templates that will be displayed when an error occurs when Otoroshi try to reach the target or when Otoroshi itself has an error. You can also define custom template for maintenance and service page
+Finally, you can define custom error templates that will be displayed when an error occurs when Otoroshi try to reach the target or when Otoroshi itself has an error. You can also define custom templates for maintenance and service pages.

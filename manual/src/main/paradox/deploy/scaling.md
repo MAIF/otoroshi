@@ -1,12 +1,12 @@
 # Scaling Otoroshi *
 
 @@@ warning
-this section is still under construction. Please come back later
+this section is still under construction...
 @@@
 
 ## Using multiple instances with a front load balancer
 
-Otoroshi has been designed to work with multiple instances. If you already have an infrastructure using frontal loadbalancing, you just have to declare Otoroshi instances as the target of all domain names handled by Otoroshi
+Otoroshi has been designed to work with multiple instances. If you already have an infrastructure using frontal load balancing, you just have to declare Otoroshi instances as the target of all domain names handled by Otoroshi
 
 ## Using master / workers mode of Otoroshi
 

@@ -64,7 +64,7 @@
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="active page">Auditing Otoroshi</a></li>
@@ -161,7 +161,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
     <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
-    <li><a href="../usage/3-apikeys.html" class="page">Managing api keys</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
     <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
     <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
     <li><a href="../usage/6-audit.html" class="active page">Auditing Otoroshi</a></li>
@@ -215,8 +215,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#auditing-otoroshi" name="auditing-otoroshi" class="anchor"><span class="anchor-link"></span></a>Auditing Otoroshi</h1>
-<p>With Otoroshi, any admin action and any sucpicious/alert action is recorded. Those records are stored in the Otoroshi datastore (only the last n records, defined by the <code>app.events.maxSize</code> <a href="../firstrun/configfile.html">config key</a>). All the records can be send through the analytics mechanism (WebHook and/or Kafka) for further usage. We recommand sending away those records for security reasons.</p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>You have to use <a href="../connectors/elastic.html">the Elastic connector</a> to enable analytics features in Otoroshi</p></div>
+<p>With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi&rsquo;s datastore (only the last n records, defined by the <code>app.events.maxSize</code> <a href="../firstrun/configfile.html">config key</a>). All the records can be send through the analytics mechanism (WebHook and/or Kafka) for external and/or further usage. We recommand sending away those records for security reasons.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>You have to use <a href="../connectors/elastic.html">the Elastic connector</a> to enable analytics features in Otoroshi.</p></div>
 <h2><a href="#audit-trail" name="audit-trail" class="anchor"><span class="anchor-link"></span></a>Audit trail</h2>
 <p>To see last <code>app.events.maxSize</code> admin actions on Otoroshi from the UI, go to <code>settings (cog icon) / Audit log</code>.</p><div class="centered-img">
 <img src="../img/audit-log.png" /></div>

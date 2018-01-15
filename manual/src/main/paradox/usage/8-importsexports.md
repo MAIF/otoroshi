@@ -4,13 +4,13 @@ With Otoroshi you can easily save the current state of the proxy and restore it 
 
 ## Full export
 
-Click on the full export button
+Click on the `Full export` button.
 
 @@@ div { .centered-img }
 <img src="../img/full-export-1.png" />
 @@@
 
-and your browser will start to download a JSON file containing the internal state of your Otoroshi cluster.
+Your browser will start to download a JSON file containing the internal state of your Otoroshi cluster.
 
 @@@ div { .centered-img }
 <img src="../img/full-export-2.png" />
@@ -24,13 +24,13 @@ If you want to restore an export, go to `settings (cog icon) / Danger Zone` and 
 <img src="../img/full-import-1.png" />
 @@@
 
-Choose an existing export file on your system
+Choose export file on your system.
 
 @@@ div { .centered-img }
 <img src="../img/full-import-1-bis.png" />
 @@@
 
-then click on the `Flush datastore and import ...` button, confirm and you will be logged out
+Click on the `Flush datastore and import ...` button, confirm and you will be logged out.
 
 @@@ div { .centered-img }
 <img src="../img/full-import-2.png" />
