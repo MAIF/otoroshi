@@ -50,13 +50,9 @@ You can also use expert mode :
 <img src="../img/deploy-cc-4.png" />
 @@@
 
-Now, your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like :
+Now, your app is ready, don't forget to add a custom domains name on the CleverCloud app matching the Otoroshi app domain. For instance if you used domain names in env. variables like `changeme`, `changeme-admin-internal-api`, `changeme-api` on the `cleverapps.io` domain, declare `changeme.cleverapps.io`, `changeme-api.cleverapps.io`,  `changeme-admin-internal-api.cleverapps.io`.
 
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-5.png" />
-@@@
-
-and to get the login/password tuple for first login from the app. logs.
+You will find the login/password tuple for first login in the app. logs.
 
 ## Build and deploy Otoroshi from its source code
 
@@ -94,6 +90,8 @@ Now you just need to customize environnment variables and add the custom build s
 
 `CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
 
+at this point, you can also add other env. variables to configure Otoroshi like in [the example provided below](#example-of-clevercloud-env-variables)
+
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-4-bis.png" />
 @@@
@@ -104,13 +102,9 @@ You can also use expert mode :
 <img src="../img/deploy-cc-4.png" />
 @@@
 
-Now, your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like :
+Now, your app is ready, don't forget to add a custom domains name on the CleverCloud app matching the Otoroshi app domain. For instance if you used domain names in env. variables like `changeme`, `changeme-admin-internal-api`, `changeme-api` on the `cleverapps.io` domain, declare `changeme.cleverapps.io`, `changeme-api.cleverapps.io`,  `changeme-admin-internal-api.cleverapps.io`.
 
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-5.png" />
-@@@
-
-and to get the login/password tuple for first login from the app. logs.
+You will find the login/password tuple for first login in the app. logs.
 
 ## Example of CleverCloud env. variables
 
@@ -128,7 +122,6 @@ ADMIN_API_GROUP=psIZ0hI6eAQ2vp7DQoFfdUSfdmamtlkbXwYCe9WQHGBZMO6o5Kn1r2VVSmI61IVX
 ADMIN_API_CLIENT_ID=pWkwudAifrflg8Bh
 ADMIN_API_CLIENT_SECRET=ip53UuY5BFiM3wXkVUhhYrVdbsDYsANCNdRMnW3pU4I268ylsF6xxkvusS6Wv4AW
 ADMIN_API_SERVICE_ID=GVQUWMZHaEYr1tCTNe9CdXOVE4DQnu1VUAx7YyXDlo5XupY3laZlWUnGyDt1vfGx
-ADMIN_API_LOCAL=false
 CACHE_DEPENDENCIES=true
 CC_PRE_BUILD_HOOK=./clevercloud/build.sh
 CLAIM_SHAREDKEY=Tx1uQXW11pLNlZ25S4A08Uf8HbWDPxZ3KGSSm0B1s90gRk10PNy4d1HKY4Dnvvv5
