@@ -1,7 +1,7 @@
 {
   "name": "otoroshi-ui",
   "version": "1.0.1",
-  "description": "React app for opun-otoroshi",
+  "description": "React app for otoroshi",
   "private": true,
   "main": "src/backoffice.js",
   "author": "Mathieu ANCELIN",
