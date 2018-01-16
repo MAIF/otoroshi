@@ -34,9 +34,11 @@ Finally, choose a name for your app
 <img src="../img/deploy-cc-3.png" />
 @@@
 
-Now you just need to customize environnment variables and add the custom build script as pre deployment hook :
+Now you just need to customize environnment variables and add the custom build script as pre buid hook :
 
 `CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
+
+at this point, you can also add other env. variables to configure Otoroshi like in the example provided below](#example-of-clevercloud-env-variables)
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-4-bis.png" />
@@ -88,7 +90,7 @@ Then choose a name for your app :
 <img src="../img/deploy-cc-3.png" />
 @@@
 
-Now you just need to customize environnment variables and add the custom build script as pre deployment hook :
+Now you just need to customize environnment variables and add the custom build script as pre build hook :
 
 `CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
 
