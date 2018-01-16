@@ -38,7 +38,7 @@ Now you just need to customize environnment variables and add the custom build s
 
 `CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
 
-at this point, you can also add other env. variables to configure Otoroshi like in the example provided below](#example-of-clevercloud-env-variables)
+at this point, you can also add other env. variables to configure Otoroshi like in [the example provided below](#example-of-clevercloud-env-variables)
 
 @@@ div { .centered-img }
 <img src="../img/deploy-cc-4-bis.png" />
