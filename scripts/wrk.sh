@@ -35,13 +35,13 @@ cd wrk_test
 LOCATION=`pwd`
 
 if [ ! -f "$LOCATION/otoroshi.jar" ]; then
-    wget -q --show-progress 'https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar'
+    wget -q --show-progress 'https://dl.bintray.com/maif/binaries/otoroshi.jar/snapshot/otoroshi.jar'
 fi 
 if [ ! -f "$LOCATION/otoroshicli.toml" ]; then
     wget -q --show-progress https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
 fi
 if [ ! -f "$LOCATION/otoroshicli" ]; then	
-	wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+	wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/snapshot/otoroshicli
 fi
 if [ ! -f "$LOCATION/traefik_darwin-amd64" ]; then	
   wget -q --show-progress https://github.com/containous/traefik/releases/download/v1.5.0-rc4/traefik_darwin-amd64

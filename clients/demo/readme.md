@@ -7,9 +7,9 @@ a small server/injector based demo of Otoroshi and it loadbalancing/retry capabi
 get and start Otoroshi
 
 ```sh
-wget 'https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar'
+wget 'https://dl.bintray.com/maif/binaries/otoroshi.jar/snapshot/otoroshi.jar'
 wget https://raw.githubusercontent.com/MAIF/otoroshi/master/clients/cli/otoroshicli.toml
-wget https://dl.bintray.com/maif/binaries/mac-otoroshicli/latest/otoroshicli
+wget https://dl.bintray.com/maif/binaries/mac-otoroshicli/snapshot/otoroshicli
 chmod +x otoroshicli
 
 java -jar otoroshi.jar &
