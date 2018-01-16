@@ -4,6 +4,60 @@ Now you want to use Otoroshi on Clever Cloud. Otoroshi has been designed and cre
 
 ## Create an Otoroshi instance on CleverCloud
 
+First, fork our project template on Github at https://github.com/MAIF/otoroshi-jar-clevercloud-template.
+
+If you want to customize the build script, edit `./clevercloud/build.sh`
+
+If you want to customize the configuration @ref:[use env. variables](../firstrun/env.md), you can use [the example below](##example-of-clevercloud-env-variables)
+
+Create a new CleverCloud app based on your fork.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-jar-0.png" />
+@@@
+
+Then choose what kind of app your want to create, for Otoroshi, choose `Java + Jar`
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-jar-1.png" />
+@@@
+
+Next, set up choose instance size and auto-scalling. Otoroshi can run on small instances, especially if you just want to test it.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-2.png" />
+@@@
+
+Finally, choose a name for your app
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-3.png" />
+@@@
+
+Now you just need to customize environnment variables and add the custom build script as pre deployment hook :
+
+`CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-4-bis.png" />
+@@@
+
+You can also use expert mode :
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-4.png" />
+@@@
+
+Now, your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like :
+
+@@@ div { .centered-img }
+<img src="../img/deploy-cc-5.png" />
+@@@
+
+and to get the login/password tuple for first login from the app. logs.
+
+## Build and deploy Otoroshi from its source code
+
 First, fork our project template on Github at https://github.com/MAIF/otoroshi-clevercloud-template.
 
 If you want to customize the build script, edit `./clevercloud/build.sh`
@@ -54,57 +108,7 @@ Now, your app is ready, don't forget to add a custom domain name on clever app m
 <img src="../img/deploy-cc-5.png" />
 @@@
 
-## Use a pre-built version of Otoroshi
-
-First, fork our project template on Github at https://github.com/MAIF/otoroshi-jar-clevercloud-template.
-
-If you want to customize the build script, edit `./clevercloud/build.sh`
-
-If you want to customize the configuration @ref:[use env. variables](../firstrun/env.md)
-
-Create a new CleverCloud app based on your fork.
-
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-jar-0.png" />
-@@@
-
-Then choose what kind of app your want to create, for Otoroshi, choose `Java + Jar`
-
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-jar-1.png" />
-@@@
-
-Next, set up choose instance size and auto-scalling.
-
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-2.png" />
-@@@
-
-Finally, choose a name for your app
-
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-3.png" />
-@@@
-
-Now you just need to customize environnment variables and add the custom build script as pre deployment hook :
-
-`CC_PRE_BUILD_HOOK=./clevercloud/build.sh`
-
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-4-bis.png" />
-@@@
-
-You can also use expert mode :
-
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-4.png" />
-@@@
-
-Now, your app is ready, don't forget to add a custom domain name on clever app matching the Otoroshi app domain like :
-
-@@@ div { .centered-img }
-<img src="../img/deploy-cc-5.png" />
-@@@
+and to get the login/password tuple for first login from the app. logs.
 
 ## Example of CleverCloud env. variables
 
@@ -112,7 +116,7 @@ You can add more env variables to customize your Otoroshi instance like the foll
 
 ```
 APP_ENV=prod
-APP_STORAGE=redis
+APP_STORAGE=inmemory
 APP_DOMAIN=foo.bar
 APP_ROOT_SCHEME=https
 APP_BACKOFFICE_SUBDOMAIN=otoroshi
@@ -129,9 +133,6 @@ CC_PRE_BUILD_HOOK=./clevercloud/build.sh
 CLAIM_SHAREDKEY=Tx1uQXW11pLNlZ25S4A08Uf8HbWDPxZ3KGSSm0B1s90gRk10PNy4d1HKY4Dnvvv5
 ENABLE_METRICS=true
 JAVA_VERSION=8
-REDIS_HOST=xxx
-REDIS_PORT=xxx
-REDIS_PASSWORD=xxx
 PORT=8080
 PLAY_CRYPTO_SECRET=7rNFga4AComd6ey09W9PaHqllLmPHb8WHBhlRe9xjTHOPlN15BCeSQf610cmLU1w
 SESSION_SECURE_ONLY=true
