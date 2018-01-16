@@ -8,7 +8,7 @@ First, fork our project template on Github at https://github.com/MAIF/otoroshi-j
 
 If you want to customize the build script, edit `./clevercloud/build.sh`
 
-If you want to customize the configuration @ref:[use env. variables](../firstrun/env.md), you can use [the example below](##example-of-clevercloud-env-variables)
+If you want to customize the configuration @ref:[use env. variables](../firstrun/env.md), you can use [the example below](#example-of-clevercloud-env-variables)
 
 Create a new CleverCloud app based on your fork.
 
