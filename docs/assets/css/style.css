@@ -237,6 +237,10 @@ h2 {
   .more-details {
     text-align: left;
   }
+
+  .contentCircle{
+    margin-right: 20px;;
+  }
   .tagN2 {
     margin-top: -40px;
   }
