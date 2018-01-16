@@ -261,12 +261,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>You can add more env variables to customize your Otoroshi instance like the following. Use the expert mode to copy/paste all the values in one shot :</p>
 <pre><code>APP_ENV=prod
 APP_STORAGE=inmemory
-APP_DOMAIN=foo.bar
+APP_DOMAIN=cleverapps.io
 APP_ROOT_SCHEME=https
-APP_BACKOFFICE_SUBDOMAIN=otoroshi
-APP_PRIVATEAPPS_SUBDOMAIN=privateapps
-ADMIN_API_TARGET_SUBDOMAIN=otoroshi-admin-internal-api
-ADMIN_API_EXPOSED_SUBDOMAIN=otoroshi-api
+APP_BACKOFFICE_SUBDOMAIN=changeme
+ADMIN_API_TARGET_SUBDOMAIN=changeme-admin-internal-api
+ADMIN_API_EXPOSED_SUBDOMAIN=changeme-api
 ADMIN_API_GROUP=psIZ0hI6eAQ2vp7DQoFfdUSfdmamtlkbXwYCe9WQHGBZMO6o5Kn1r2VVSmI61IVX
 ADMIN_API_CLIENT_ID=pWkwudAifrflg8Bh
 ADMIN_API_CLIENT_SECRET=ip53UuY5BFiM3wXkVUhhYrVdbsDYsANCNdRMnW3pU4I268ylsF6xxkvusS6Wv4AW
@@ -281,7 +280,7 @@ PORT=8080
 PLAY_CRYPTO_SECRET=7rNFga4AComd6ey09W9PaHqllLmPHb8WHBhlRe9xjTHOPlN15BCeSQf610cmLU1w
 SESSION_SECURE_ONLY=true
 SESSION_MAX_AGE=259200000
-SESSION_DOMAIN=.foo.bar
+SESSION_DOMAIN=changeme.cleverapps.io
 SESSION_NAME=otoroshi-session
 NETTY_TRANSPORT=native
 USER_AGENT=otoroshi
