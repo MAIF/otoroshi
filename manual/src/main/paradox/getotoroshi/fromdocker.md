@@ -1,6 +1,6 @@
 # From docker
 
-If your a Docker aficionado, Otoroshi is provided as a Docker image that your can pull directly from Official repos.
+If you're a Docker aficionado, Otoroshi is provided as a Docker image that your can pull directly from Official repos.
 
 first, fetch the last Docker image of Otoroshi :
 

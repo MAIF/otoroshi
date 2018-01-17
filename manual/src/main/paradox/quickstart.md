@@ -84,7 +84,7 @@ first you need to add the following line to your `/etc/hosts` file.
 127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar
 ```
 
-you can user the following command
+you can use the following command
 
 ```sh
 sudo echo "127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar" >> /etc/hosts

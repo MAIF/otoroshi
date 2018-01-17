@@ -9,7 +9,7 @@ Available datastores are the following :
 * in memory
 * redis
 * cassandra
-* levelDB (not for suitable for production use)
+* levelDB (not suitable for production usage)
 
 The **levelDB** datastore is pretty handy for testing purposes, but is not supposed to be used in production mode.
 
