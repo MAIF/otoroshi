@@ -7,10 +7,6 @@ body {
   background-color: #F7A600;
 }
 
-.izaColor {
-  background-color: #DC5F9F;
-}
-
 a {
   color: #FFF;
   text-decoration: underline;
@@ -18,6 +14,21 @@ a {
 
 a:hover {
   color: #F7A600;
+}
+
+.home {
+  position: fixed;
+  z-index: 1001;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+.home a {
+  color: #c68401;
+}
+
+.home a:hover {
+  color: #bc810b;
 }
 
 .tagN2 {
@@ -178,19 +189,16 @@ h2 {
   margin-left: -5%;
 }
 
-@media screen and (max-width: 1000px) {
-  .titleOnLine {
-    font-size: 26px;
-  }
+@media screen and (max-width: 991px) {
   .intro {
     font-size: 16px;
   }
-}
-
-@media screen and (max-width: 991px) {
   .colDashRight {
     border: none;
     padding-right: 15px;
+  }
+  .titleOnLine {
+    font-size: 26px;
   }
   .titleOnLine li {
     text-align: center;
@@ -205,6 +213,9 @@ h2 {
 }
 
 @media screen and (max-width: 770px) {
+  .home .fa-home {
+    font-size: 1.5em;
+  }
   .sidebar-content {
     width: 200px;
     padding-left: 30px;
@@ -237,9 +248,8 @@ h2 {
   .more-details {
     text-align: left;
   }
-
-  .contentCircle{
-    margin-right: 20px;;
+  .contentCircle {
+    margin-right: 20px;
   }
   .tagN2 {
     margin-top: -40px;
