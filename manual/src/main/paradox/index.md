@@ -34,13 +34,11 @@ docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi:1.0.0
 
 now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
 
-<!---
-or you can try it online with Google Cloud Shell if you're a user of the Google Cloud Platform
+You can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
 
 @@@ div { .centered-img }
-[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&print=instructions.txt&tutorial=tutorial.md)
+[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&tutorial=tutorial.md)
 @@@
--->
 
 ## Documentation
 
