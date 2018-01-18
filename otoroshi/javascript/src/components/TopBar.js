@@ -169,7 +169,7 @@ export class TopBar extends Component {
             <ul className="nav navbar-nav navbar-right">
               <li>
                 <a href="/backoffice/auth0/logout">
-                  {window.__userid} <span className="glyphicon glyphicon-off" />
+                  <span className="topbar-userName">{window.__userid} </span><span className="glyphicon glyphicon-off" />
                 </a>
               </li>
             </ul>
@@ -323,7 +323,7 @@ export class TopBar extends Component {
                       data-placement="bottom"
                       title="You are using the default admin account with the default (very unsecured) password. You should create a new admin account quickly."
                       style={{ backgroundColor: '#c9302c' }}>
-                      <i className="glyphicon glyphicon-alert" /> default admin account
+                      <i className="glyphicon glyphicon-alert" /><span className="topbar-adminAlert"> default admin account</span>
                     </span>
                   </a>
                 </li>

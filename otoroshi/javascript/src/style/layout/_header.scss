@@ -77,3 +77,14 @@
     font-size: 14px
   }
 }
+
+@media screen and (min-width:768px) and (max-width: 1000px) {
+  .topbar-adminAlert  {
+    display: none;
+  }
+}
+@media screen and (min-width:768px) and (max-width: 850px) {
+  .topbar-userName{
+    display: none;
+  }
+}
