@@ -6,6 +6,11 @@ what you will need :
 * wget
 * 5 minutes of free time
 
+You can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
+
+@@@ div { .centered-img }
+[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&tutorial=tutorial.md)
+
 ## The elevator pitch
 
 Otoroshi is an awesome reverse proxy built with Scala that handles all the calls to and between your microservices without service locator and lets you change configuration dynamically at runtime.
@@ -112,7 +117,7 @@ wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.0
 # or if you use windows
 wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0.0/otoroshicli.exe
 
-chmod +x otoroshicli
+chmod +x otoroshicli 
 
 docker run -p "$OTOROSHI_PORT:8080" maif-docker-docker.bintray.io/otoroshi &
 
