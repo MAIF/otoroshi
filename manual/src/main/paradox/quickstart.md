@@ -10,6 +10,7 @@ You can also try Otoroshi online with Google Cloud Shell if you're a user of the
 
 @@@ div { .centered-img }
 [![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&tutorial=tutorial.md)
+@@@
 
 ## The elevator pitch
 
