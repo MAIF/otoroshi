@@ -80,3 +80,14 @@
   width: 50%;
   left: 25%;
 }
+
+@media screen and (max-width:767px) {
+  .sidebar {
+    display: none;
+    top:71px;
+    width: 100%
+  }
+  .logo {
+    width: 20%;
+  }
+}
