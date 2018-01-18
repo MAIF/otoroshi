@@ -21,6 +21,8 @@ wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1
 # or if you use windows
 wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0.0/otoroshicli.exe
 
+chmod +x otoroshicli
+
 # Run the Otoroshi server
 java -jar otoroshi.jar &
 
@@ -84,7 +86,7 @@ first you need to add the following line to your `/etc/hosts` file.
 127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar
 ```
 
-you can user the following command
+you can use the following command
 
 ```sh
 sudo echo "127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar" >> /etc/hosts
@@ -109,6 +111,8 @@ wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1
 wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.0.0/otoroshicli
 # or if you use windows
 wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0.0/otoroshicli.exe
+
+chmod +x otoroshicli
 
 docker run -p "$OTOROSHI_PORT:8080" maif-docker-docker.bintray.io/otoroshi &
 
