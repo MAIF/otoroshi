@@ -142,6 +142,10 @@ h2 {
   margin-top: 40%;
 }
 
+.inner-circle--lowerText {
+  font-size: 13px;
+}
+
 .sidebar {
   background: linear-gradient(90deg, #F7A600 50%, #2E3031 50%);
   position: fixed;
@@ -213,6 +217,9 @@ h2 {
 }
 
 @media screen and (max-width: 770px) {
+  .home {
+    position: absolute;
+  }
   .home .fa-home {
     font-size: 1.5em;
   }
@@ -269,5 +276,23 @@ h2 {
   }
   .linkN2 {
     padding-left: 20px;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .outer-circle {
+    height: 80px;
+    width: 80px;
+  }
+  .inner-circle {
+    height: 70px;
+    width: 70px;
+    margin: -35px 0px 0px -35px;
+  }
+  .inner-circle p {
+    font-size: 12px;
+  }
+  .inner-circle p.inner-circle--lowerText {
+    font-size: 10px;
   }
 }
