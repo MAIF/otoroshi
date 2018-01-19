@@ -22,6 +22,14 @@ tune_linux () {
   ulimit -n 9999999
 }
 
+build_sozu () {
+  git clone https://github.com/sozu-proxy/sozu.git --depth=1
+  cd $LOCATION/sozu/ctl && cargo build --release; cd $LOCATION/sozu/bin && cargo build --release
+  cp $LOCATION/sozu/target/release/sozu $LOCATION/sozu
+  cp $LOCATION/sozu/target/release/sozuctl $LOCATION/sozuctl
+  cd $LOCATION
+  rm -rf $LOCATION/sozu
+}
 
 echo "Prepare test ...."
 
@@ -50,11 +58,18 @@ fi
 if [ ! -f "$LOCATION/traefik.toml" ]; then	
   wget -q --show-progress https://gist.githubusercontent.com/mathieuancelin/a32506603c8425963b30d6d6a6c148fb/raw/c6bfec26078e44d21b4358efdf43f0cbeaaa5789/traefik.toml
 fi
+if [ ! -f "$LOCATION/sozu" ]; then	
+  build_sozu
+fi
+if [ ! -f "$LOCATION/sozu.toml" ]; then	
+  wget -q --show-progress https://gist.githubusercontent.com/mathieuancelin/2d4b16443199e93926c640e4fdb2ec17/raw/dd97412975d6c2cd9de88cdd948b8023e4d884ed/sozu.toml
+fi
 
 USE_CACHE=true JAVA_OPTS='-Xms2G -Xmx8G' java -jar otoroshi.jar >> /dev/null &
 
 chmod +x traefik_darwin-amd64
 ./traefik_darwin-amd64 --configFile=traefik.toml &
+./sozu start -c sozu.toml &
 
 docker run -d -p "8081:80" emilevauge/whoami  >> /dev/null
 docker run -d -p "8082:80" emilevauge/whoami  >> /dev/null
@@ -79,14 +94,17 @@ chmod +x otoroshicli
 echo "Warm up ..."
 wrk -t1 -c1 -d20s -H "Host: test.foo.bar" http://127.0.0.1:8080/ >> /dev/null
 wrk -t1 -c1 -d20s -H "Host: test.foo.bar" http://127.0.0.1:8000/ >> /dev/null
+wrk -t1 -c1 -d20s -H "Host: test.foo.bar" http://127.0.0.1:8088/ >> /dev/null
 
 echo "Running test at `date`"
 wrk -t2 -c200 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:8080/
 wrk -t2 -c200 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:8000/
+wrk -t2 -c200 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:8088/
 
 docker kill $(docker ps -q) >> /dev/null
 killall java  >> /dev/null
 killall traefik_darwin-amd64  >> /dev/null
+killall sozu  >> /dev/null
 rm -f RUNNING_PID
 rm -rf logs
 
