@@ -32,7 +32,7 @@ or using docker
 docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi:1.0.0
 ```
 
-now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
+now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
 
 You can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
 
