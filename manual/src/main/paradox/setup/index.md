@@ -4,14 +4,24 @@ Now that Otoroshi is running, you are ready to log into the Otoroshi admin dashb
 
 <a href="http://otoroshi.foo.bar:8080" target="_blank">http://otoroshi.foo.bar:8080</a>
 
+and you will see the following page
+ 
 @@@ div { .centered-img }
 <img src="../img/base-page.png" />
 @@@
 
-Use the credentials generated in Otoroshi boot logs.
+now click on the login button and you will see the login page
 
 @@@ div { .centered-img }
 <img src="../img/login-page.png" />
+@@@
+
+@@@ warning
+Use the credentials generated in Otoroshi **logs** during **first run**.
+@@@
+
+@@@ div { .centered-img #first-login-example }
+<img src="../img/first-login.gif" />
 @@@
 
 (of course, you can change this url dependending on the configuration you provided to Otoroshi).
