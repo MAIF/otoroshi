@@ -11,25 +11,25 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 case class ServiceDescriptorQuery(subdomain: String,
-                                  env: String = "prod",
+                                  line: String = "prod",
                                   domain: String,
                                   root: String = "/",
                                   matchingHeaders: Map[String, String] = Map.empty[String, String]) {
 
-  def asKey(implicit env: Env): String = s"${env.storageRoot}:desclookup:$env:$domain:$subdomain:$root"
+  def asKey(implicit _env: Env): String = s"${_env.storageRoot}:desclookup:$line:$domain:$subdomain:$root"
 
   def toHost: String = subdomain match {
-    case s if s.isEmpty                  => s"$env.$domain"
-    case s if s.isEmpty && env == "prod" => s"$domain"
-    case s if env == "prod"              => s"$subdomain.$domain"
-    case s                               => s"$subdomain.$env.$domain"
+    case s if s.isEmpty                   => s"$line.$domain"
+    case s if s.isEmpty && line == "prod" => s"$domain"
+    case s if line == "prod"              => s"$subdomain.$domain"
+    case s                                => s"$subdomain.$line.$domain"
   }
 
   def toDevHost: String = subdomain match {
-    case s if s.isEmpty                  => s"dev.$domain"
-    case s if s.isEmpty && env == "prod" => s"$domain"
-    case s if env == "prod"              => s"$subdomain.$domain"
-    case s                               => s"$subdomain.dev.$domain"
+    case s if s.isEmpty                   => s"dev.$domain"
+    case s if s.isEmpty && line == "prod" => s"$domain"
+    case s if line == "prod"              => s"$subdomain.$domain"
+    case s                                => s"$subdomain.dev.$domain"
   }
 
   private val existsCache     = new java.util.concurrent.ConcurrentHashMap[String, Boolean]
