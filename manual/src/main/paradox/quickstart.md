@@ -6,7 +6,13 @@ what you will need :
 * wget
 * 5 minutes of free time
 
-You can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
+If you don't/can't have these tools on your machine, you can start a sandboxed environment using here with the following command
+
+```sh
+docker run -p "8080:8080" -it maif-docker-docker.bintray.io/otoroshi-demo bash
+```
+
+or you can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
 
 @@@ div { .centered-img }
 [![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&tutorial=tutorial.md)
