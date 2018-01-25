@@ -1,32 +1,32 @@
-name := """otoroshi"""
+name := """otoroshi-play26"""
 organization := "fr.maif"
 version := "1.0.1"
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.3"
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
+  //.enablePlugins(PlayScala, PlayNettyServer)
+  //.disablePlugins(PlayAkkaHttpServer)
 
 libraryDependencies ++= Seq(
   ws,
-  cache,
   filters,
-  "org.gnieh"                %% "diffson-play-json"        % "2.1.0" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
+  "org.gnieh"                %% "diffson-play-json"        % "2.2.5" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
   "org.iq80.leveldb"         % "leveldb"                   % "0.9",
   "com.softwaremill.macwire" %% "macros"                   % "2.3.0" % "provided",
-  "com.typesafe.akka"        %% "akka-http-core"           % "2.4.11",
-  "com.typesafe.akka"        %% "akka-stream-kafka"        % "0.17",
+  "com.typesafe.akka"        %% "akka-http-core"           % "10.0.11",
+  "com.typesafe.play"        %% "play-json"                % "2.6.8",
+  "com.typesafe.play"        %% "play-json-joda"           % "2.6.8",
+  "com.typesafe.akka"        %% "akka-stream-kafka"        % "0.18",
   "com.github.etaty"         %% "rediscala"                % "1.8.0",
-  "com.github.mkroli"        %% "dns4s-akka"               % "0.10" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
-  "com.github.gphat"         %% "censorinus"               % "2.1.6",
-  "io.dropwizard.metrics"    % "metrics-core"              % "3.1.2",
-  "com.auth0"                % "java-jwt"                  % "3.1.0",
+  "com.github.gphat"         %% "censorinus"               % "2.1.8",
+  "io.dropwizard.metrics"    % "metrics-core"              % "4.0.2",
+  "com.auth0"                % "java-jwt"                  % "3.3.0",
   "com.yubico"               % "u2flib-server-core"        % "0.16.0",
   "com.yubico"               % "u2flib-server-attestation" % "0.16.0",
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
-  "org.typelevel"            %% "cats"                     % "0.9.0",
-  "com.chuusai"              %% "shapeless"                % "2.3.2",
-  "org.scalatestplus.play"   %% "scalatestplus-play"       % "1.5.1" % Test,
-  "com.datastax.cassandra"   % "cassandra-driver-core"     % "3.3.0" classifier "shaded" excludeAll (
+  "org.scalatestplus.play"   %% "scalatestplus-play"       % "3.1.2" % Test,
+  "com.datastax.cassandra"   % "cassandra-driver-core"     % "3.4.0" classifier "shaded" excludeAll (
     ExclusionRule(organization = "io.netty"),
     ExclusionRule(organization = "com.typesafe.akka")
   )
@@ -57,6 +57,7 @@ fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
 assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
+  case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)

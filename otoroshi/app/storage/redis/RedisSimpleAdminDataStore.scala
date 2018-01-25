@@ -5,6 +5,8 @@ import akka.http.scaladsl.util.FastFuture
 import env.Env
 import models.SimpleAdminDataStore
 import play.api.libs.json._
+import play.api.libs.json.JodaReads._
+import play.api.libs.json.JodaWrites._
 import redis.RedisClientMasterSlaves
 
 import scala.util.Success

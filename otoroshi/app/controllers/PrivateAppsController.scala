@@ -2,9 +2,10 @@ package controllers
 
 import actions.PrivateAppsAction
 import env.Env
-import play.api.mvc.Controller
+import play.api.mvc._
 
-class PrivateAppsController(env: Env, PrivateAppsAction: PrivateAppsAction) extends Controller {
+class PrivateAppsController(env: Env, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)
+    extends AbstractController(cc) {
 
   implicit lazy val ec = env.privateAppsExecutionContext
 

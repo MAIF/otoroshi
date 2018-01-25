@@ -96,8 +96,8 @@ class CleverCloudClient(env: Env, val settings: CleverSettings, val orgaId: Stri
 
     val builder = env.Ws
       .url(url)
-      .withHeaders("Authorization" -> params)
-      .withQueryString(queryParams: _*)
+      .withHttpHeaders("Authorization" -> params)
+      .withQueryStringParameters(queryParams: _*)
 
     // logger.debug(
     //   s"""
@@ -108,7 +108,7 @@ class CleverCloudClient(env: Env, val settings: CleverSettings, val orgaId: Stri
       case GET    => builder.get()
       case POST   => builder.post(body)
       case DELETE => builder.delete()
-      case PUT    => builder.withHeaders("Content-Type" -> "application/json").put("")
+      case PUT    => builder.withHttpHeaders("Content-Type" -> "application/json").put("")
     }
 
   }

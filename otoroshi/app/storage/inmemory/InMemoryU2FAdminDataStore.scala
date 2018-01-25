@@ -5,6 +5,8 @@ import env.Env
 import models.U2FAdminDataStore
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.JodaReads._
+import play.api.libs.json.JodaWrites._
 import storage.RedisLike
 
 import scala.concurrent.{ExecutionContext, Future}

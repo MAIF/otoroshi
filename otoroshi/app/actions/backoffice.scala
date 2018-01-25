@@ -5,9 +5,9 @@ import controllers.routes
 import env.Env
 import events.{Alerts, BlackListedBackOfficeUserAlert}
 import models.BackOfficeUser
-import play.api.mvc.{ActionBuilder, Request, Result, Results}
+import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOfficeUser]) {
   def connected: Boolean = user.isDefined
@@ -18,7 +18,9 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
   def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
 }
 
-class BackOfficeAction()(implicit env: Env) extends ActionBuilder[BackOfficeActionContext] {
+class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+    extends ActionBuilder[BackOfficeActionContext, AnyContent]
+    with ActionFunction[Request, BackOfficeActionContext] {
 
   implicit lazy val ec = env.backOfficeExecutionContext
 
@@ -42,9 +44,13 @@ class BackOfficeAction()(implicit env: Env) extends ActionBuilder[BackOfficeActi
       }
     }
   }
+
+  override protected def executionContext: ExecutionContext = ec
 }
 
-class BackOfficeActionAuth()(implicit env: Env) extends ActionBuilder[BackOfficeActionContextAuth] {
+class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env)
+    extends ActionBuilder[BackOfficeActionContextAuth, AnyContent]
+    with ActionFunction[Request, BackOfficeActionContextAuth] {
 
   implicit lazy val ec = env.backOfficeExecutionContext
 
@@ -96,4 +102,6 @@ class BackOfficeActionAuth()(implicit env: Env) extends ActionBuilder[BackOffice
       }
     }
   }
+
+  override protected def executionContext: ExecutionContext = ec
 }

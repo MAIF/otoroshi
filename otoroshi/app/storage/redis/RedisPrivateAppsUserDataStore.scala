@@ -3,6 +3,8 @@ package storage.redis
 import env.Env
 import models.{Key, PrivateAppsUser, PrivateAppsUserDataStore}
 import play.api.libs.json.{Format, Json}
+import play.api.libs.json.JodaReads._
+import play.api.libs.json.JodaWrites._
 import redis.RedisClientMasterSlaves
 
 class RedisPrivateAppsUserDataStore(redisCli: RedisClientMasterSlaves, env: Env)
