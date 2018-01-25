@@ -71,7 +71,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       .map { res =>
         val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
         Status(res.status)
-          .sendEntity(HttpEntity.Streamed(res.bodyAsSource, res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt), res.headers.get("Content-Type").flatMap(_.headOption)))
+          .sendEntity(
+            HttpEntity.Streamed(res.bodyAsSource,
+                                res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
+                                res.headers.get("Content-Type").flatMap(_.headOption))
+          )
           .withHeaders(res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type"): _*)
           .as(ctype)
       }

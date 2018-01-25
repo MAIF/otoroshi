@@ -169,7 +169,9 @@ class Env(val configuration: Configuration,
       .setKeepAlive(true)
       .setHttpClientCodecMaxChunkSize(1024 * 100)
       .build()
-    AhcWSClient(config.copy(wsClientConfig = config.wsClientConfig.copy(compressionEnabled = false)))(gatewayMaterializer)
+    AhcWSClient(config.copy(wsClientConfig = config.wsClientConfig.copy(compressionEnabled = false)))(
+      gatewayMaterializer
+    )
   }
 
   lazy val kafkaActorSytem = ActorSystem(

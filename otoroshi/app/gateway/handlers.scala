@@ -50,7 +50,11 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     new Throwable().printStackTrace()
     val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
     logger.error(s"Client Error: $message on ${request.uri} ($statusCode)")
-    Errors.craftResponseResult(s"Client Error: an error occured on ${request.uri} ($statusCode)", Status(statusCode), request, None, Some("errors.client.error"))
+    Errors.craftResponseResult(s"Client Error: an error occured on ${request.uri} ($statusCode)",
+                               Status(statusCode),
+                               request,
+                               None,
+                               Some("errors.client.error"))
   }
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
@@ -105,19 +109,18 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody
   def hasBody(request: Request[_]): Boolean = request.hasBody
-    // (request.method, request.headers.get("Content-Length")) match {
-    //   case ("GET", Some(_))    => true
-    //   case ("GET", None)       => false
-    //   case ("HEAD", Some(_))   => true
-    //   case ("HEAD", None)      => false
-    //   case ("PATCH", _)        => true
-    //   case ("POST", _)         => true
-    //   case ("PUT", _)          => true
-    //   case ("DELETE", Some(_)) => true
-    //   case ("DELETE", None)    => false
-    //   case _                   => true
-    // }
-
+  // (request.method, request.headers.get("Content-Length")) match {
+  //   case ("GET", Some(_))    => true
+  //   case ("GET", None)       => false
+  //   case ("HEAD", Some(_))   => true
+  //   case ("HEAD", None)      => false
+  //   case ("PATCH", _)        => true
+  //   case ("POST", _)         => true
+  //   case ("PUT", _)          => true
+  //   case ("DELETE", Some(_)) => true
+  //   case ("DELETE", None)    => false
+  //   case _                   => true
+  // }
 
   def matchRedirection(host: String): Boolean =
     env.redirections.nonEmpty && env.redirections.exists(it => host.contains(it))
