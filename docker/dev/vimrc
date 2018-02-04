@@ -1,0 +1,29 @@
+call plug#begin('~/.vim/plugged')
+
+" Make sure you use single quotes
+
+" Shorthand notation; fetches https://github.com/junegunn/vim-easy-align
+Plug 'junegunn/vim-easy-align'
+
+" On-demand loading
+Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+
+Plug 'derekwyatt/vim-scala'
+Plug 'rust-lang/rust.vim'
+Plug 'pangloss/vim-javascript'
+Plug 'mxw/vim-jsx'
+Plug 'tfnico/vim-gradle'
+Plug 'godlygeek/tabular'
+Plug 'mattn/emmet-vim'
+Plug 'spf13/vim-autoclose'
+
+" Initialize plugin system
+call plug#end()
+
+map <C-n> :NERDTreeToggle<CR>
+autocmd vimenter * NERDTree
+set number
+set ruler
+set cursorline
+set foldmethod=manual
+set encoding=utf8
