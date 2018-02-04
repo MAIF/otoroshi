@@ -154,6 +154,7 @@ class Env(val configuration: Configuration,
     val gwWsClient = AhcWSClient(
       builder
         .configure()
+        .setCompressionEnforced(false)
         .setKeepAlive(true)
         .setHttpClientCodecMaxChunkSize(1024 * 100)
         .build()

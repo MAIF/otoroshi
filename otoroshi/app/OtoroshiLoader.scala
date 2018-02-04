@@ -32,7 +32,7 @@ package object modules {
 
     lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
     lazy val gzipFilter                                 = wire[GzipFilter]
-    override lazy val httpFilters: Seq[EssentialFilter] = Seq(gzipFilter)
+    override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
