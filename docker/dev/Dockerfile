@@ -9,7 +9,7 @@ WORKDIR $HOME
 COPY . $HOME/
 
 RUN apt-get update -y
-RUN apt-get install -y git wget curl vim tmux openssh-server zsh ack tig tree apt-transport-https openssl
+RUN apt-get install -y git wget curl vim tmux openssh-server zsh ack tig tree apt-transport-https openssl build-essential
 RUN git clone https://github.com/robbyrussell/oh-my-zsh.git
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
 RUN chmod -R 777 $HOME/.nvm 
