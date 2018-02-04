@@ -22,6 +22,8 @@ RUN chmod +x $HOME/install-rustup.sh
 RUN $HOME/install-rustup.sh -y
 RUN $HOME/.cargo/bin/rustup update
 RUN $HOME/.cargo/bin/rustup default stable
+RUN $HOME/.cargo/bin/cargo install cargo-watch
+RUN $HOME/.cargo/bin/rustup component add rustfmt-preview --toolchain=nightly
 RUN wget --quiet https://github.com/sbt/sbt/releases/download/v1.1.0/sbt-1.1.0.zip
 RUN unzip $HOME/sbt-1.1.0.zip
 RUN mkdir -p $HOME/.sbt/1.0/plugins
