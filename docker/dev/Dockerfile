@@ -20,6 +20,8 @@ RUN apt-get install yarn -y
 RUN curl https://sh.rustup.rs > $HOME/install-rustup.sh
 RUN chmod +x $HOME/install-rustup.sh
 RUN $HOME/install-rustup.sh -y
+RUN $HOME/.cargo/bin/rustup toolchain install stable
+RUN $HOME/.cargo/bin/rustup toolchain install nightly
 RUN $HOME/.cargo/bin/rustup update
 RUN $HOME/.cargo/bin/rustup default stable
 RUN $HOME/.cargo/bin/cargo install cargo-watch
