@@ -19,18 +19,21 @@ function parseDomain(service) {
 
 export class FreeDomainInput extends Component {
   state = {
+    rawValue: parseDomain(this.props.value),
     value: parseDomain(this.props.value),
     error: null,
   };
 
   change = e => {
     const rawValue = e.target.value;
+    this.setState({ rawValue });
     const newService = _.cloneDeep(this.props.value);
     this.setState({ value: rawValue });
     if (rawValue.indexOf('https://') === 0) {
       newService.forceHttps = true;
-    }
-    if (rawValue.indexOf('http://') === 0) {
+    } else if (rawValue.indexOf('http://') === 0) {
+      newService.forceHttps = false;
+    } else {
       newService.forceHttps = false;
     }
     let value = e.target.value
@@ -76,6 +79,9 @@ export class FreeDomainInput extends Component {
       newService.env = 'prod';
       newService.subdomain = '';
     } else {
+      newService.domain = '';
+      newService.env = 'prod';
+      newService.subdomain = '';
       this.setState({
         error:
           'Should follow pattern: (http|https)://subdomain?.env?.domain.tld?/root? or regex (http|https)://(.*?).?(.*?).?(.*?).?(.*)/?(.*)',
@@ -86,7 +92,7 @@ export class FreeDomainInput extends Component {
 
   render() {
     const stateValue = this.state.value;
-    const propsValue = parseDomain(this.props.value);
+    const propsValue = this.state.rawValue; // parseDomain(this.props.value);
     const value = stateValue !== propsValue ? propsValue : stateValue;
     return (
       <div className="form-group">
