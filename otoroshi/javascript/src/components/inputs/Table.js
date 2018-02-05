@@ -272,7 +272,7 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-sm btn-primary"
                   {...createTooltip(
-                    `Open this ${this.props.itemName} in a new window`,
+                    `Open this ${this.props.itemName}`,
                     'top',
                     true
                   )}

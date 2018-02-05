@@ -43,12 +43,13 @@ export class GroupsPage extends Component {
         updateItem={BackOfficeServices.updateGroup}
         deleteItem={BackOfficeServices.deleteGroup}
         createItem={BackOfficeServices.createGroup}
-        navigateTo={item =>
-          this.props.history.push({
-            pathname: `/services`,
-            query: { group: item.id, groupName: item.name },
-          })
-        }
+        navigateTo={item => {
+          window.location = `/bo/dashboard/services?group=${item.id}&groupName=${item.name}`;
+          // this.props.history.push({
+          //   pathname: `/services`,
+          //   query: { group: item.id, groupName: item.name },
+          // })
+        }}
         itemUrl={i => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
         showActions={true}
         showLink={true}
