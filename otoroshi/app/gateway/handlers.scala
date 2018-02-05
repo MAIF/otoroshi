@@ -2,6 +2,7 @@ package gateway
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 
+import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
@@ -69,6 +70,33 @@ object SameThreadExecutionContext extends ExecutionContext {
   override def execute(runnable: Runnable): Unit = runnable.run()
 }
 
+case class AnalyticsQueueEvent(descriptor: ServiceDescriptor,
+                               callDuration: Long,
+                               callOverhead: Long,
+                               dataIn: Long,
+                               dataOut: Long,
+                               upstreamLatency: Long,
+                               config: models.GlobalConfig)
+
+object AnalyticsQueue {
+  def props(env: Env) = Props(new AnalyticsQueue(env))
+}
+
+class AnalyticsQueue(env: Env) extends Actor {
+  override def receive: Receive = {
+    case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
+      descriptor
+        .updateMetrics(duration,
+          overhead,
+          dataIn,
+          dataOut,
+          upstreamLatency,
+          config)(context.dispatcher, env)
+      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher,  env)
+    }
+  }
+}
+
 class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                             router: Router,
                             errorHandler: HttpErrorHandler,
@@ -82,6 +110,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
 
   lazy val logger      = Logger("otoroshi-http-handler")
   lazy val debugLogger = Logger("otoroshi-http-handler-debug")
+
+  lazy val analyticsQueue = env.pressureActorSystem.actorOf(AnalyticsQueue.props(env))
 
   val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -529,19 +559,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           val duration: Long =
                             if (descriptor.id == env.backOfficeServiceId && actualDuration > 300L) 300L
                             else actualDuration
-                          // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, http://${req.host}${req.uri} => $url, $from)")
-                          descriptor
-                            .updateMetrics(duration,
-                                           overhead,
-                                           counterIn.get(),
-                                           counterOut.get(),
-                                           resp.upstreamLatency,
-                                           globalConfig)(env.pressureExecutionContext, env) // USE_OTHER_EC
-                            .andThen {
-                              case Failure(e) => logger.error("Error while updating call metrics reporting", e)
-                            }(env.pressureExecutionContext)
-                          env.datastores.globalConfigDataStore.updateQuotas(globalConfig)(env.pressureExecutionContext,
-                                                                                          env) // USE_OTHER_EC
+
+                          analyticsQueue ! AnalyticsQueueEvent(descriptor, duration, overhead, counterIn.get(), counterOut.get(), resp.upstreamLatency, globalConfig)
+
                           quotas.andThen {
                             case Success(q) => {
                               val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")

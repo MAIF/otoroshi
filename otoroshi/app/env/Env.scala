@@ -143,9 +143,14 @@ class Env(val configuration: Configuration,
   lazy val privateAppsExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(
     Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-private-apps-requests"))
   )
-  lazy val pressureExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(
-    Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-pressure"))
+  lazy val pressureActorSystem = ActorSystem(
+    "otoroshi-pressure-system",
+    configuration
+      .getOptional[Configuration]("app.actorsystems.pressure")
+      .map(_.underlying)
+      .getOrElse(ConfigFactory.empty)
   )
+  lazy val pressureExecutionContext: ExecutionContext = pressureActorSystem.dispatcher
 
   lazy val gatewayActorSystem = ActorSystem(
     "otoroshi-gateway-system",
@@ -262,6 +267,7 @@ class Env(val configuration: Configuration,
     internalActorSystem.terminate()
     // redisActorSystem.terminate()
     gatewayActorSystem.terminate()
+    pressureActorSystem.terminate()
     kafkaActorSytem.terminate()
     statsdActorSytem.terminate()
     datastores.after(configuration, environment, lifecycle)
