@@ -33,7 +33,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def globalLiveStats() = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -73,7 +73,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def hostMetrics() = ApiAction { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -128,7 +128,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def serviceLiveStats(id: String, every: Option[Int]) = ApiAction { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -208,7 +208,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def allLines() = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -229,7 +229,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -250,7 +250,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(ak) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -271,7 +271,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case JsSuccess(ak, _) => {
         env.datastores.globalConfigDataStore.singleton().flatMap { conf =>
           val admEvt = AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -282,7 +282,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           )
           Audit.send(admEvt)
           Alerts.send(
-            GlobalConfigModification(env.snowflakeGenerator.nextId().toString,
+            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      user,
                                      conf.toJson,
@@ -305,7 +305,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
         case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
         case JsSuccess(ak, _) => {
           val admEvt = AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -316,7 +316,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           )
           Audit.send(admEvt)
           Alerts.send(
-            GlobalConfigModification(env.snowflakeGenerator.nextId().toString,
+            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      user,
                                      conf.toJson,
@@ -342,7 +342,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
         group.save().map {
           case true => {
             val event: AdminApiEvent = AdminApiEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               Some(ctx.apiKey),
               ctx.user,
@@ -353,7 +353,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             )
             Audit.send(event)
             Alerts.send(
-              ServiceGroupCreatedAlert(env.snowflakeGenerator.nextId().toString,
+              ServiceGroupCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                        env.env,
                                        ctx.user.getOrElse(ctx.apiKey.toJson),
                                        event)
@@ -375,7 +375,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             BadRequest(Json.obj("error" -> "Bad ServiceGroup format")).asFuture
           case JsSuccess(newGroup, _) if newGroup.id == serviceGroupId => {
             val event: AdminApiEvent = AdminApiEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               Some(ctx.apiKey),
               ctx.user,
@@ -386,7 +386,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             )
             Audit.send(event)
             Alerts.send(
-              ServiceGroupUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+              ServiceGroupUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                        env.env,
                                        ctx.user.getOrElse(ctx.apiKey.toJson),
                                        event)
@@ -411,7 +411,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             BadRequest(Json.obj("error" -> "Bad ServiceGroup format")).asFuture
           case JsSuccess(newGroup, _) if newGroup.id == serviceGroupId => {
             val event: AdminApiEvent = AdminApiEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               Some(ctx.apiKey),
               ctx.user,
@@ -422,7 +422,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             )
             Audit.send(event)
             Alerts.send(
-              ServiceGroupUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+              ServiceGroupUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                        env.env,
                                        ctx.user.getOrElse(ctx.apiKey.toJson),
                                        event)
@@ -440,7 +440,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(dev) =>
         dev.delete().map { res =>
           val event: AdminApiEvent = AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -451,7 +451,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           )
           Audit.send(event)
           Alerts.send(
-            ServiceGroupDeletedAlert(env.snowflakeGenerator.nextId().toString,
+            ServiceGroupDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
                                      event)
@@ -483,7 +483,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -521,7 +521,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(group) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -546,7 +546,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(group) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -611,7 +611,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             case false => InternalServerError(Json.obj("error" -> "ServiceDescriptor not stored ..."))
             case true => {
               val event: AdminApiEvent = AdminApiEvent(
-                env.snowflakeGenerator.nextId().toString,
+                env.snowflakeGenerator.nextIdStr(),
                 env.env,
                 Some(ctx.apiKey),
                 ctx.user,
@@ -622,7 +622,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               )
               Audit.send(event)
               Alerts.send(
-                ServiceCreatedAlert(env.snowflakeGenerator.nextId().toString,
+                ServiceCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                     env.env,
                                     ctx.user.getOrElse(ctx.apiKey.toJson),
                                     event)
@@ -645,7 +645,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             BadRequest(Json.obj("error" -> "Bad ServiceDescriptor format")).asFuture
           case JsSuccess(newDesc, _) if newDesc.id == serviceId => {
             val event: AdminApiEvent = AdminApiEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               Some(ctx.apiKey),
               ctx.user,
@@ -656,7 +656,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             )
             Audit.send(event)
             Alerts.send(
-              ServiceUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+              ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                   env.env,
                                   ctx.user.getOrElse(ctx.apiKey.toJson),
                                   event)
@@ -693,7 +693,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             BadRequest(Json.obj("error" -> "Bad ServiceDescriptor format")).asFuture
           case JsSuccess(newDesc, _) if newDesc.id == serviceId => {
             val event: AdminApiEvent = AdminApiEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               Some(ctx.apiKey),
               ctx.user,
@@ -704,7 +704,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             )
             Audit.send(event)
             Alerts.send(
-              ServiceUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+              ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                   env.env,
                                   ctx.user.getOrElse(ctx.apiKey.toJson),
                                   event)
@@ -733,7 +733,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(desc) =>
         desc.delete().map { res =>
           val admEvt = AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -744,7 +744,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           )
           Audit.send(admEvt)
           Alerts.send(
-            ServiceDeletedAlert(env.snowflakeGenerator.nextId().toString,
+            ServiceDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                 env.env,
                                 ctx.user.getOrElse(ctx.apiKey.toJson),
                                 admEvt)
@@ -780,7 +780,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       .isDefined
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -826,7 +826,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(desc) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -847,7 +847,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(desc) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -868,7 +868,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
       case Some(desc) => {
         val event = AdminApiEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           Some(ctx.apiKey),
           ctx.user,
@@ -888,7 +888,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                               env.env,
                               ctx.user.getOrElse(ctx.apiKey.toJson),
                               event)
@@ -909,7 +909,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
       case Some(desc) => {
         val event = AdminApiEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           Some(ctx.apiKey),
           ctx.user,
@@ -931,7 +931,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                               env.env,
                               ctx.user.getOrElse(ctx.apiKey.toJson),
                               event)
@@ -952,7 +952,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
       case Some(desc) => {
         val event = AdminApiEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           Some(ctx.apiKey),
           ctx.user,
@@ -974,7 +974,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                               env.env,
                               ctx.user.getOrElse(ctx.apiKey.toJson),
                               event)
@@ -992,7 +992,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def serviceLiveStats(serviceId: String) = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -1029,7 +1029,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def serviceStats(serviceId: String, from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -1344,7 +1344,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def globalStats(from: Option[String] = None, to: Option[String] = None) = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -1687,7 +1687,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
     ctx =>
       Audit.send(
         AdminApiEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           Some(ctx.apiKey),
           ctx.user,
@@ -1746,7 +1746,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Some(desc) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -1790,7 +1790,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
               case true => {
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -1823,7 +1823,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
               case true => {
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -1850,7 +1850,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           case Some(errorTemplate) =>
             env.datastores.errorTemplateDataStore.delete(desc.id).map { _ =>
               val event: AdminApiEvent = AdminApiEvent(
-                env.snowflakeGenerator.nextId().toString,
+                env.snowflakeGenerator.nextIdStr(),
                 env.env,
                 Some(ctx.apiKey),
                 ctx.user,
@@ -1892,7 +1892,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                   case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
                   case true => {
                     val event: AdminApiEvent = AdminApiEvent(
-                      env.snowflakeGenerator.nextId().toString,
+                      env.snowflakeGenerator.nextIdStr(),
                       env.env,
                       Some(ctx.apiKey),
                       ctx.user,
@@ -1903,7 +1903,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                     )
                     Audit.send(event)
                     Alerts.send(
-                      ApiKeyCreatedAlert(env.snowflakeGenerator.nextId().toString,
+                      ApiKeyCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                          env.env,
                                          ctx.user.getOrElse(ctx.apiKey.toJson),
                                          event)
@@ -1940,7 +1940,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               case false => InternalServerError(Json.obj("error" -> "ApiKey not stored ..."))
               case true => {
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -1951,7 +1951,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 )
                 Audit.send(event)
                 Alerts.send(
-                  ApiKeyCreatedAlert(env.snowflakeGenerator.nextId().toString,
+                  ApiKeyCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
                                      event)
@@ -1984,7 +1984,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -1995,7 +1995,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 )
                 Audit.send(event)
                 Alerts.send(
-                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
                                      event)
@@ -2028,7 +2028,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -2039,7 +2039,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 )
                 Audit.send(event)
                 Alerts.send(
-                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
                                      event)
@@ -2067,7 +2067,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -2078,7 +2078,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 )
                 Audit.send(event)
                 Alerts.send(
-                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
                                      event)
@@ -2109,7 +2109,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -2120,7 +2120,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 )
                 Audit.send(event)
                 Alerts.send(
-                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
                                      event)
@@ -2143,7 +2143,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
           case Some(apiKey) if apiKey.authorizedGroup == group.id => {
             val event: AdminApiEvent = AdminApiEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               Some(ctx.apiKey),
               ctx.user,
@@ -2154,7 +2154,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             )
             Audit.send(event)
             Alerts.send(
-              ApiKeyDeletedAlert(env.snowflakeGenerator.nextId().toString,
+              ApiKeyDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                  env.env,
                                  ctx.user.getOrElse(ctx.apiKey.toJson),
                                  event)
@@ -2178,7 +2178,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             ).asFuture
           case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
             val event: AdminApiEvent = AdminApiEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               Some(ctx.apiKey),
               ctx.user,
@@ -2189,7 +2189,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             )
             Audit.send(event)
             Alerts.send(
-              ApiKeyDeletedAlert(env.snowflakeGenerator.nextId().toString,
+              ApiKeyDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                  env.env,
                                  ctx.user.getOrElse(ctx.apiKey.toJson),
                                  event)
@@ -2216,7 +2216,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Success(apiKeys) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -2264,7 +2264,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       case Success(apiKeys) => {
         Audit.send(
           AdminApiEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             Some(ctx.apiKey),
             ctx.user,
@@ -2300,7 +2300,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def allApiKeys() = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -2352,7 +2352,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
             Audit.send(
               AdminApiEvent(
-                env.snowflakeGenerator.nextId().toString,
+                env.snowflakeGenerator.nextIdStr(),
                 env.env,
                 Some(ctx.apiKey),
                 ctx.user,
@@ -2379,7 +2379,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           case Some(apiKey) if apiKey.authorizedGroup == group.id => {
             Audit.send(
               AdminApiEvent(
-                env.snowflakeGenerator.nextId().toString,
+                env.snowflakeGenerator.nextIdStr(),
                 env.env,
                 Some(ctx.apiKey),
                 ctx.user,
@@ -2411,7 +2411,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               case Some(group) => {
                 Audit.send(
                   AdminApiEvent(
-                    env.snowflakeGenerator.nextId().toString,
+                    env.snowflakeGenerator.nextIdStr(),
                     env.env,
                     Some(ctx.apiKey),
                     ctx.user,
@@ -2445,7 +2445,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               case Some(group) => {
                 val newApiKey = apiKey.copy(authorizedGroup = group.id)
                 val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextId().toString,
+                  env.snowflakeGenerator.nextIdStr(),
                   env.env,
                   Some(ctx.apiKey),
                   ctx.user,
@@ -2456,7 +2456,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
                 )
                 Audit.send(event)
                 Alerts.send(
-                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextId().toString,
+                  ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
                                      event)
@@ -2481,7 +2481,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
             Audit.send(
               AdminApiEvent(
-                env.snowflakeGenerator.nextId().toString,
+                env.snowflakeGenerator.nextIdStr(),
                 env.env,
                 Some(ctx.apiKey),
                 ctx.user,
@@ -2508,7 +2508,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
           case Some(apiKey) if apiKey.authorizedGroup == group.id => {
             Audit.send(
               AdminApiEvent(
-                env.snowflakeGenerator.nextId().toString,
+                env.snowflakeGenerator.nextIdStr(),
                 env.env,
                 Some(ctx.apiKey),
                 ctx.user,
@@ -2548,7 +2548,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   def fullExport() = ApiAction.async { ctx =>
     env.datastores.globalConfigDataStore.fullExport().map { e =>
       val event = AdminApiEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         Some(ctx.apiKey),
         ctx.user,
@@ -2559,7 +2559,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
       )
       Audit.send(event)
       Alerts.send(
-        OtoroshiExportAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user.getOrElse(Json.obj()), event, e)
+        OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(Json.obj()), event, e)
       )
       Ok(Json.prettyPrint(e)).as("application/json")
     }

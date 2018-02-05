@@ -63,7 +63,7 @@ class BackOfficeActionAuth()(implicit env: Env) extends ActionBuilder[BackOffice
             case Some(user) => {
               env.datastores.backOfficeUserDataStore.blacklisted(user.email).flatMap {
                 case true => {
-                  Alerts.send(BlackListedBackOfficeUserAlert(env.snowflakeGenerator.nextId().toString, env.env, user))
+                  Alerts.send(BlackListedBackOfficeUserAlert(env.snowflakeGenerator.nextIdStr(), env.env, user))
                   FastFuture.successful(
                     Results.NotFound(views.html.otoroshi.error("Error", env)).removingFromSession("bousr")(request)
                   )

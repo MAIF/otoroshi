@@ -5,6 +5,7 @@ import scala.util.Random
 
 class IdGenerator(generatorId: Long) {
   def nextId(): Long = IdGenerator.nextId(generatorId)
+  def nextIdStr(): String = IdGenerator.nextIdStr(generatorId)
 }
 
 object IdGenerator {
@@ -18,6 +19,7 @@ object IdGenerator {
   private[this] val minus         = 1288834974657L
   private[this] val counter       = new AtomicLong(-1L)
   private[this] val lastTimestamp = new AtomicLong(-1L)
+  private[this] val duplicates    = new AtomicLong(-0L)
 
   def apply(generatorId: Long) = new IdGenerator(generatorId)
 
@@ -28,6 +30,15 @@ object IdGenerator {
     lastTimestamp.set(timestamp)
     counter.compareAndSet(4095, -1L)
     ((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()
+  }
+
+  def nextIdStr(generatorId: Long): String = synchronized {
+    if (generatorId > 1024L) throw new RuntimeException("Generator id can't be larger than 1024")
+    val timestamp = System.currentTimeMillis
+    val append = if (timestamp < lastTimestamp.get()) s"-${duplicates.incrementAndGet() + generatorId}" else ""
+    lastTimestamp.set(timestamp)
+    counter.compareAndSet(4095, -1L)
+    (((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()) + append
   }
 
   def uuid: String =

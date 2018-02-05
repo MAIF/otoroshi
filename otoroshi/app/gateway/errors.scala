@@ -22,7 +22,7 @@ object Errors {
                           req: RequestHeader,
                           maybeDescriptor: Option[ServiceDescriptor] = None,
                           maybeCauseId: Option[String])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    val errorId = env.snowflakeGenerator.nextId()
+    val errorId = env.snowflakeGenerator.nextIdStr()
     maybeDescriptor.foreach { descriptor =>
       val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
       // TODO : mark as error ???
@@ -34,8 +34,8 @@ object Errors {
         fromTo = s"$fromLbl###${descriptor.name}"
       )
       GatewayEvent(
-        `@id` = errorId.toString,
-        reqId = env.snowflakeGenerator.nextId(),
+        `@id` = errorId,
+        reqId = env.snowflakeGenerator.nextIdStr(),
         parentReqId = None,
         `@timestamp` = DateTime.now(),
         protocol = req.version,
@@ -139,7 +139,7 @@ object Errors {
               status
                 .apply(
                   errorTemplate
-                    .renderHtml(status.header.status, maybeCauseId.getOrElse("--"), message, errorId.toString)
+                    .renderHtml(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
                 )
                 .as("text/html")
                 .withHeaders(
@@ -153,7 +153,7 @@ object Errors {
               status
                 .apply(
                   errorTemplate
-                    .renderJson(status.header.status, maybeCauseId.getOrElse("--"), message, errorId.toString)
+                    .renderJson(status.header.status, maybeCauseId.getOrElse("--"), message, errorId)
                 )
                 .withHeaders(
                   env.Headers.OtoroshiGatewayError -> "true",

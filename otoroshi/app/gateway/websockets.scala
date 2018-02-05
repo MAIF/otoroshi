@@ -240,7 +240,7 @@ class WebSocketHandler()(implicit env: Env) {
                       paUsr: Option[PrivateAppsUser] = None
                   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                     logger.info("[WEBSOCKET] Call downstream !!!")
-                    val snowflake   = env.snowflakeGenerator.nextId().toString
+                    val snowflake   = env.snowflakeGenerator.nextIdStr()
                     val state       = IdGenerator.extendedToken(128)
                     val rawUri      = req.uri.substring(1)
                     val uriParts    = rawUri.split("/").toSeq
@@ -327,9 +327,9 @@ class WebSocketHandler()(implicit env: Env) {
                               fromTo = s"$fromLbl###${descriptor.name}"
                             )
                             GatewayEvent(
-                              `@id` = env.snowflakeGenerator.nextId().toString,
-                              reqId = snowflake.toLong,
-                              parentReqId = fromOtoroshi.map(_.toLong),
+                              `@id` = env.snowflakeGenerator.nextIdStr(),
+                              reqId = snowflake,
+                              parentReqId = fromOtoroshi,
                               `@timestamp` = DateTime.now(),
                               protocol = req.version,
                               to = Location(
@@ -435,7 +435,7 @@ class WebSocketHandler()(implicit env: Env) {
                             .asLeft[WSFlow]
                         case Some(key) if key.isInvalid(clientSecret) => {
                           Alerts.send(
-                            RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextId().toString,
+                            RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
                                                     DateTime.now(),
                                                     env.env,
                                                     req,
@@ -492,7 +492,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     }
                                   case Failure(e) => {
                                     Alerts.send(
-                                      RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextId().toString,
+                                      RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
                                                               DateTime.now(),
                                                               env.env,
                                                               req,
@@ -551,7 +551,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 .asLeft[WSFlow]
                             case Some(key) if key.isInvalid(apiKeySecret) => {
                               Alerts.send(
-                                RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextId().toString,
+                                RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
                                                         DateTime.now(),
                                                         env.env,
                                                         req,

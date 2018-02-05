@@ -63,10 +63,10 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
                 env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
                   case false => {
                     env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
-                    Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextId().toString, env.env, boUser))
+                    Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
                   }
                   case true => {
-                    Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextId().toString, env.env, boUser))
+                    Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
                   }
                 }
                 Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
@@ -110,7 +110,7 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
   def deleteAdmin(username: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.simpleAdminDataStore.deleteUser(username).map { d =>
       val event = BackOfficeEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         ctx.user,
         "DELETE_ADMIN",
@@ -119,7 +119,7 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
         Json.obj("username" -> username)
       )
       Audit.send(event)
-      Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user, event))
+      Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
       Ok(Json.obj("done" -> true))
     }
   }
@@ -239,10 +239,10 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
                       env.datastores.u2FAdminDataStore.hasAlreadyLoggedIn(username).map {
                         case false => {
                           env.datastores.u2FAdminDataStore.alreadyLoggedIn(username)
-                          Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextId().toString, env.env, boUser))
+                          Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
                         }
                         case true => {
-                          Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextId().toString, env.env, boUser))
+                          Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
                         }
                       }
                       Ok(
@@ -277,7 +277,7 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
   def deleteU2FAdmin(username: String, id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.u2FAdminDataStore.deleteUser(username, id).map { d =>
       val event = BackOfficeEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         ctx.user,
         "DELETE_U2F_ADMIN",
@@ -286,7 +286,7 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
         Json.obj("username" -> username, "id" -> id)
       )
       Audit.send(event)
-      Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user, event))
+      Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
       Ok(Json.obj("done" -> true))
     }
   }

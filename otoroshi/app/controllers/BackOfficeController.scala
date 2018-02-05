@@ -164,7 +164,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
           .url(url)
           .withRequestTimeout(10.seconds)
           .withHeaders(
-            env.Headers.OtoroshiRequestId -> env.snowflakeGenerator.nextId().toString,
+            env.Headers.OtoroshiRequestId -> env.snowflakeGenerator.nextIdStr(),
             env.Headers.OtoroshiState     -> state,
             env.Headers.OtoroshiClaim     -> claim
           )
@@ -190,7 +190,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
   def searchServicesApi() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val query = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()
     Audit.send(
-      BackOfficeEvent(env.snowflakeGenerator.nextId().toString,
+      BackOfficeEvent(env.snowflakeGenerator.nextIdStr(),
                       env.env,
                       ctx.user,
                       "SERVICESEARCH",
@@ -270,7 +270,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
       env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
         val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           ctx.user,
           "DISCARD_SESSION",
@@ -279,7 +279,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
           Json.obj("sessionId" -> id)
         )
         Audit.send(event)
-        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user, event))
+        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -291,7 +291,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
       env.datastores.backOfficeUserDataStore.discardAllSessions() map { _ =>
         val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           ctx.user,
           "DISCARD_SESSIONS",
@@ -300,7 +300,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
           Json.obj()
         )
         Audit.send(event)
-        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user, event))
+        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -322,7 +322,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
       env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
         val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           ctx.user,
           "DISCARD_PRIVATE_APPS_SESSION",
@@ -331,7 +331,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
           Json.obj("sessionId" -> id)
         )
         Audit.send(event)
-        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user, event))
+        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -343,7 +343,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
       env.datastores.privateAppsUserDataStore.deleteAll() map { _ =>
         val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextId().toString,
+          env.snowflakeGenerator.nextIdStr(),
           env.env,
           ctx.user,
           "DISCARD_PRIVATE_APPS_SESSIONS",
@@ -352,7 +352,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
           Json.obj()
         )
         Audit.send(event)
-        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user, event))
+        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -367,7 +367,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
       env.datastores.backOfficeUserDataStore.discardAllSessions()
     } map { _ =>
       val event = BackOfficeEvent(
-        env.snowflakeGenerator.nextId().toString,
+        env.snowflakeGenerator.nextIdStr(),
         env.env,
         ctx.user,
         "ACTIVATE_PANIC_MODE",
@@ -376,7 +376,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
         Json.obj()
       )
       Audit.send(event)
-      Alerts.send(PanicModeAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user, event))
+      Alerts.send(PanicModeAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
       Ok(Json.obj("done" -> true))
     } recover {
       case _ => Ok(Json.obj("done" -> false))
