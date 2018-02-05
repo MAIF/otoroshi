@@ -23,7 +23,7 @@ tmux send-keys -t $SESSION_NAME:2 vim C-m
 tmux send-keys -t $SESSION_NAME:4 vim C-m
 
 # Window "all-files"
-tmux send-keys -t $SESSION_NAME:5 vim C-m
+tmux send-keys -t $SESSION_NAME:6 vim C-m
 
 # Window "server-build"
 tmux split-window -h -c $LOCATION/otoroshi/javascript -t $SESSION_NAME:1
