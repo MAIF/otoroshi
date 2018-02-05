@@ -88,7 +88,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
   def backOfficeLogout(redirect: Option[String]) = BackOfficeActionAuth.async { ctx =>
     implicit val request = ctx.request
     ctx.user.delete().map { _ =>
-      Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextId().toString, env.env, ctx.user))
+      Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
       redirect match {
         case Some(url) => Redirect(url).removingFromSession("bousr", "bo-redirect-after-login")
         case None =>
@@ -197,11 +197,11 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
                             env.datastores.backOfficeUserDataStore.hasAlreadyLoggedIn(email).map {
                               case false => {
                                 env.datastores.backOfficeUserDataStore.alreadyLoggedIn(email)
-                                Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextId().toString, env.env, boUser))
+                                Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
                               }
                               case true => {
                                 Alerts
-                                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextId().toString, env.env, boUser))
+                                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
                               }
                             }
                             Redirect(

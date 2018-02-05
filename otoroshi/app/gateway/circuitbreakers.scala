@@ -107,7 +107,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
           }
           Audit.send(
             CircuitBreakerOpenedEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
               descriptor
@@ -115,7 +115,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
           )
           Alerts.send(
             CircuitBreakerOpenedAlert(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
               descriptor
@@ -128,7 +128,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
           }
           Audit.send(
             CircuitBreakerClosedEvent(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
               descriptor
@@ -136,7 +136,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
           )
           Alerts.send(
             CircuitBreakerClosedAlert(
-              env.snowflakeGenerator.nextId().toString,
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
               descriptor

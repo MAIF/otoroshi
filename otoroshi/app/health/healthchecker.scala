@@ -33,7 +33,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
       .sequence(desc.targets.map(t => s"${t.scheme}://${t.host}${desc.healthCheck.url}").map { url =>
         val start = System.currentTimeMillis()
         val state = IdGenerator.extendedToken(128)
-        val value = env.snowflakeGenerator.nextId().toString
+        val value = env.snowflakeGenerator.nextIdStr()
         val claim = OtoroshiClaim(
           iss = env.Headers.OtoroshiIssuer,
           sub = "HealthChecker",

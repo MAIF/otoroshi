@@ -314,7 +314,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
       if (currentHandledRequests > globalConfig.maxConcurrentRequests) {
         Audit.send(
           MaxConcurrentRequestReachedEvent(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             globalConfig.maxConcurrentRequests,
             currentHandledRequests
@@ -322,7 +322,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
         )
         Alerts.send(
           MaxConcurrentRequestReachedAlert(
-            env.snowflakeGenerator.nextId().toString,
+            env.snowflakeGenerator.nextIdStr(),
             env.env,
             globalConfig.maxConcurrentRequests,
             currentHandledRequests
@@ -477,7 +477,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                     def actuallyCallDownstream(target: Target,
                                                apiKey: Option[ApiKey] = None,
                                                paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                      val snowflake = env.snowflakeGenerator.nextId().toString
+                      val snowflake = env.snowflakeGenerator.nextIdStr()
                       val state     = IdGenerator.extendedToken(128)
                       val rawUri    = req.uri.substring(1)
                       val uriParts  = rawUri.split("/").toSeq
@@ -573,9 +573,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 fromTo = s"$fromLbl###${descriptor.name}"
                               )
                               GatewayEvent(
-                                `@id` = env.snowflakeGenerator.nextId().toString,
-                                reqId = snowflake.toLong,
-                                parentReqId = fromOtoroshi.map(_.toLong),
+                                `@id` = env.snowflakeGenerator.nextIdStr(),
+                                reqId = snowflake,
+                                parentReqId = fromOtoroshi,
                                 `@timestamp` = DateTime.now(),
                                 protocol = req.version,
                                 to = Location(
@@ -865,7 +865,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                        Some("errors.invalid.api.key"))
                           case Some(key) if key.isInvalid(clientSecret) => {
                             Alerts.send(
-                              RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextId().toString,
+                              RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
                                                       DateTime.now(),
                                                       env.env,
                                                       req,
@@ -916,7 +916,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       }
                                     case Failure(e) => {
                                       Alerts.send(
-                                        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextId().toString,
+                                        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
                                                                 DateTime.now(),
                                                                 env.env,
                                                                 req,
@@ -967,7 +967,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                              Some("errors.invalid.api.key"))
                                 case Some(key) if key.isInvalid(apiKeySecret) => {
                                   Alerts.send(
-                                    RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextId().toString,
+                                    RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
                                                             DateTime.now(),
                                                             env.env,
                                                             req,
