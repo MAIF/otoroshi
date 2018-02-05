@@ -28,8 +28,8 @@ tmux send-keys -t $SESSION_NAME:6 vim C-m
 # Window "server-build"
 tmux split-window -h -c $LOCATION/otoroshi/javascript -t $SESSION_NAME:1
 tmux split-window -v -l 5 -c $LOCATION/otoroshi -t $SESSION_NAME:1.1 
-tmux split-window -v -c $LOCATION/manual -t $SESSION_NAME:1.3 -p 25
 tmux split-window -v -c $LOCATION/otoroshi -t $SESSION_NAME:1.3 -p 25
+tmux split-window -v -l 5 -c $LOCATION/manual -t $SESSION_NAME:1.3
 
 tmux send-keys -t $SESSION_NAME:1.1 "cd $LOCATION/otoroshi" C-m
 tmux send-keys -t $SESSION_NAME:1.1 clear C-m
@@ -43,8 +43,8 @@ tmux send-keys -t $SESSION_NAME:1.4 clear C-m
 tmux send-keys -t $SESSION_NAME:1.1 "sbt"  C-m
 tmux send-keys -t $SESSION_NAME:1.2 "./scripts/fmt.sh"
 tmux send-keys -t $SESSION_NAME:1.3 "yarn start" C-m
-tmux send-keys -t $SESSION_NAME:1.5 "sbt '~paradox'" C-m
-tmux send-keys -t $SESSION_NAME:1.4 "git"
+tmux send-keys -t $SESSION_NAME:1.4 "sbt '~paradox'" C-m
+tmux send-keys -t $SESSION_NAME:1.5 "git"
 
 # Window "cli-build"
 tmux split-window -h -c $LOCATION/clients/cli -t $SESSION_NAME:3
