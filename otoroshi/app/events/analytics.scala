@@ -95,6 +95,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
       logger.debug("SEND_TO_ANALYTICS: Event sent to stream")
       val myself = self
       queue.offer(ge).andThen {
+        case Success(QueueOfferResult.Enqueued) => logger.debug("SEND_TO_ANALYTICS: Event enqueued")
         case Success(QueueOfferResult.Dropped) =>
           logger.error("SEND_TO_ANALYTICS_ERROR: Enqueue Dropped AnalyticEvent :(")
         case Success(QueueOfferResult.QueueClosed) =>
@@ -103,9 +104,9 @@ class AnalyticsActor(implicit env: Env) extends Actor {
         case Success(QueueOfferResult.Failure(t)) =>
           logger.error("SEND_TO_ANALYTICS_ERROR: Enqueue Failre AnalyticEvent :(", t)
           context.stop(myself)
-        case Success(QueueOfferResult.Enqueued) => logger.debug("SEND_TO_ANALYTICS: Event enqueued")
         case e =>
           logger.error(s"SEND_TO_ANALYTICS_ERROR: analytics actor error : ${e}")
+          context.stop(myself)
       }
     }
     case _ =>
