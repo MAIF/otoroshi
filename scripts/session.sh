@@ -14,12 +14,16 @@ tmux new-window -c $LOCATION/otoroshi -t $SESSION_NAME:2 -n server-editor
 tmux new-window -c $LOCATION/clients/cli -t $SESSION_NAME:3 -n cli-build
 tmux new-window -c $LOCATION/clients/cli -t $SESSION_NAME:4 -n cli-editor
 tmux new-window -c $LOCATION/clients/demo -t $SESSION_NAME:5 -n demo-env
+tmux new-window -c $LOCATION -t $SESSION_NAME:6 -n all-files
 
 # Window "server-editor"
 tmux send-keys -t $SESSION_NAME:2 vim C-m
 
-# Window "server-editor"
+# Window "cli-editor"
 tmux send-keys -t $SESSION_NAME:4 vim C-m
+
+# Window "all-files"
+tmux send-keys -t $SESSION_NAME:5 vim C-m
 
 # Window "server-build"
 tmux split-window -h -c $LOCATION/otoroshi/javascript -t $SESSION_NAME:1
