@@ -31,6 +31,7 @@ tmux split-window -v -l 5 -c $LOCATION/otoroshi -t $SESSION_NAME:1.1
 tmux split-window -v -c $LOCATION/manual -t $SESSION_NAME:1.3 -p 25
 tmux split-window -v -c $LOCATION/otoroshi -t $SESSION_NAME:1.3 -p 25
 
+tmux send-keys -t $SESSION_NAME:1.1 "cd $LOCATION/otoroshi" C-m
 tmux send-keys -t $SESSION_NAME:1.1 clear C-m
 tmux send-keys -t $SESSION_NAME:1.2 clear C-m
 tmux send-keys -t $SESSION_NAME:1.3 clear C-m
@@ -39,7 +40,7 @@ tmux send-keys -t $SESSION_NAME:1.3 "yarn install" C-m
 tmux send-keys -t $SESSION_NAME:1.5 clear C-m
 tmux send-keys -t $SESSION_NAME:1.4 clear C-m
 
-tmux send-keys -t $SESSION_NAME:1.1 "sbt '~run'"  C-m
+tmux send-keys -t $SESSION_NAME:1.1 "sbt"  C-m
 tmux send-keys -t $SESSION_NAME:1.2 "./scripts/fmt.sh"
 tmux send-keys -t $SESSION_NAME:1.3 "yarn start" C-m
 tmux send-keys -t $SESSION_NAME:1.5 "sbt '~paradox'" C-m
