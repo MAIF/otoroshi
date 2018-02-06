@@ -14,41 +14,38 @@
 }
 
 @authScript = {
-    <!--script type="text/javascript" src="//use.typekit.net/iws6ohy.js"></script>
-    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>-->
-    <script src="https://cdn.auth0.com/js/lock-9.0.min.js"></script>
+    <script src="https://cdn.auth0.com/js/lock/11.2.2/lock.js"></script>
     <script>
+        $(document).ready(function() {
             var AUTH0_CLIENT_ID = '@config.clientId';
             var AUTH0_DOMAIN = '@config.domain';
             var AUTH0_CALLBACK_URL = '@config.callbackURL';
-    </script>
-    <script>
-            $(document).ready(function() {
-                var lock = new Auth0Lock(AUTH0_CLIENT_ID, AUTH0_DOMAIN);
-                lock.show({
-                    callbackURL: AUTH0_CALLBACK_URL,
-                    width: 510,
-                    disableSignupAction:true,
-                    closable: false,
-                    languageDictionary: {
-                        signin: {
-                            title: "Connexion to Otoroshi BackOffice"
-                        },
-                        signup: {
-                            title: "Sign in to Otoroshi BackOffice"
-                        }
-                    },
-                    icon: "/assets/images/otoroshi-logo-color.png"
-                });
+            var lock = new Auth0Lock(AUTH0_CLIENT_ID, AUTH0_DOMAIN, {
+                auth: {
+                    redirectUrl: AUTH0_CALLBACK_URL,
+                    responseType: "code",
+                    redirect: true,
+                    autoParseHash: false,
+                },
+                allowForgotPassword: false,
+                closable: false,
+                theme: {
+                    labeledSubmitButton: false,
+                    logo: "/assets/images/otoroshi-logo-color.png",
+                    primaryColor: "#f9b000",
+                    connectionName: {
+                        primaryColor: "#f9b000", 
+                    }
+                },
+                languageDictionary: {
+                    title: "Otoroshi BackOffice"
+                },
+                icon: "/assets/images/otoroshi-logo-color.png"
             });
+            lock.show();
+        });
     </script>
 }
 
 @unauthmain("Login to Otoroshi dashboard", _env, moreScripts = authScript, moreStyles = customStyle) {
-    <div class="container">
-        <div class="login-page clearfix">
-            <div class="login-box auth0-box before">
-            </div>
-        </div>
-    </div>
 }
