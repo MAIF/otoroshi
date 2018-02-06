@@ -41,7 +41,7 @@ tmux send-keys -t $SESSION_NAME:1.5 clear C-m
 tmux send-keys -t $SESSION_NAME:1.4 clear C-m
 
 tmux send-keys -t $SESSION_NAME:1.1 "sbt"  C-m
-tmux send-keys -t $SESSION_NAME:1.2 "./scripts/fmt.sh"
+tmux send-keys -t $SESSION_NAME:1.2 "sh ./scripts/fmt.sh"
 tmux send-keys -t $SESSION_NAME:1.3 "yarn start" C-m
 tmux send-keys -t $SESSION_NAME:1.4 "sbt '~paradox'" C-m
 tmux send-keys -t $SESSION_NAME:1.5 "git"
