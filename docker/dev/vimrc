@@ -27,3 +27,4 @@ set ruler
 set cursorline
 set foldmethod=manual
 set encoding=utf8
+set noswapfile
