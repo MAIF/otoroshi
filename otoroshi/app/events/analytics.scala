@@ -70,7 +70,8 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             .map(
               evt =>
                 webhook.url
-                  .replace("@product", env.eventsName)
+                  //.replace("@product", env.eventsName)
+                  .replace("@service", evt.`@service`)
                   .replace("@serviceId", evt.`@serviceId`)
                   .replace("@id", evt.`@id`)
                   .replace("@messageType", evt.`@type`)
@@ -247,7 +248,7 @@ object GatewayEvent {
     "@serviceId"      -> o.`@serviceId`,
     "@service"        -> o.`@service`,
     "descriptor"      -> ServiceDescriptor.toJson(o.descriptor),
-    "@product"        -> env.eventsName,
+    "@product"        -> o.`@product`,
     "remainingQuotas" -> o.remainingQuotas,
     "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue]
   )
