@@ -41,7 +41,7 @@ mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/linux-ot
 # tag github
 git commit -am "Prepare the release of Otoroshi version $VERSION"
 git push origin master
-git tag -am "Release Otoroshi version $VERSION" "$VERSION"
+git tag -am "Release Otoroshi version $VERSION" "v$VERSION"
 git push --tags
 
 # push otoroshi.jar on bintray
@@ -59,7 +59,7 @@ curl -T "$LOCATION/release-$VERSION/mac-otoroshicli" -umathieuancelin:$BINTRAY_A
 create_release () {
   curl -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/MAIF/otoroshi/releases" -d "
   {
-    \"tag_name\": \"$VERSION\",
+    \"tag_name\": \"v$VERSION\",
     \"name\": \"$VERSION\",
     \"body\": \"Otoroshi version $VERSION\",
     \"draft\": true,
