@@ -37,7 +37,7 @@ RUN mv $HOME/vimrc $HOME/.vimrc
 RUN mv $HOME/zshrc $HOME/.zshrc
 RUN vim -c ":PlugInstall" -c ":qa"
 RUN export NVM_DIR="/root/.nvm" && . "$NVM_DIR/nvm.sh" && nvm install 8.6.0 && nvm use 8.6.0 && nvm alias default 8.6.0
-RUN git clone https://github.com/MAIF/otoroshi.git $HOME/otoroshi
+RUN mkdir $HOME/otoroshi && cd $HOME/otoroshi && git init && git remote add origin https://github.com/MAIF/otoroshi.git
 RUN rm -f $HOME/Docker
 RUN rm -f $HOME/install-rustup.sh
 

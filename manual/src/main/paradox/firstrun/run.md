@@ -19,7 +19,7 @@ java -jar otoroshi.jar
 ## From docker
 
 ```sh
-docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi:1.0.0
+docker run -p "8080:8080" maif-docker-docker.bintray.io/otoroshi:1.0.1
 ```
 
 You can also pass useful args like :

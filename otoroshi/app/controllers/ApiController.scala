@@ -282,12 +282,7 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
           )
           Audit.send(admEvt)
           Alerts.send(
-            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(),
-                                     env.env,
-                                     user,
-                                     conf.toJson,
-                                     ak.toJson,
-                                     admEvt)
+            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(), env.env, user, conf.toJson, ak.toJson, admEvt)
           )
           ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
         }
@@ -316,12 +311,7 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
           )
           Audit.send(admEvt)
           Alerts.send(
-            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(),
-                                     env.env,
-                                     user,
-                                     conf.toJson,
-                                     ak.toJson,
-                                     admEvt)
+            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(), env.env, user, conf.toJson, ak.toJson, admEvt)
           )
           ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
         }
@@ -888,10 +878,7 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
-                              env.env,
-                              ctx.user.getOrElse(ctx.apiKey.toJson),
-                              event)
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
         )
         ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
@@ -931,10 +918,7 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
-                              env.env,
-                              ctx.user.getOrElse(ctx.apiKey.toJson),
-                              event)
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
         )
         ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
@@ -974,10 +958,7 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
-                              env.env,
-                              ctx.user.getOrElse(ctx.apiKey.toJson),
-                              event)
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
         )
         ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
