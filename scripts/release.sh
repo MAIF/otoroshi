@@ -100,6 +100,22 @@ docker tag otoroshicli "maif-docker-docker.bintray.io/otoroshicli:$VERSION"
 docker push "maif-docker-docker.bintray.io/otoroshicli:$VERSION"
 cd $LOCATION
 
+cd $LOCATION/docker/demo
+# build docker image
+docker build --no-cache -t otoroshi-demo .
+# push docker image on bintray
+docker tag otoroshicli "maif-docker-docker.bintray.io/otoroshi-demo:$VERSION"
+docker push "maif-docker-docker.bintray.io/otoroshi-demo:$VERSION"
+cd $LOCATION
+
+cd $LOCATION/docker/dev
+# build docker image
+docker build --no-cache -t otoroshi-dev .
+# push docker image on bintray
+docker tag otoroshicli "maif-docker-docker.bintray.io/otoroshi-dev:$VERSION"
+docker push "maif-docker-docker.bintray.io/otoroshi-dev:$VERSION"
+cd $LOCATION
+
 # update version number and commit / push
 echo "Please change version in the following files and commit / push"
 echo "                                                            "
@@ -112,4 +128,4 @@ echo "  * manual/index.md                                         "
 echo "                                                            "
 
 # remove release folder
-rm -rf "$LOCATION/release-$VERSION"
+# rm -rf "$LOCATION/release-$VERSION"
