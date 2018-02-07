@@ -271,11 +271,7 @@ export class Table extends Component {
                 <button
                   type="button"
                   className="btn btn-sm btn-primary"
-                  {...createTooltip(
-                    `Open this ${this.props.itemName}`,
-                    'top',
-                    true
-                  )}
+                  {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   onClick={e => this.gotoItem(e, item)}>
                   <i className="glyphicon glyphicon-link" />
                 </button>

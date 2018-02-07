@@ -80,13 +80,8 @@ class AnalyticsQueue(env: Env) extends Actor {
   override def receive: Receive = {
     case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
       descriptor
-        .updateMetrics(duration,
-          overhead,
-          dataIn,
-          dataOut,
-          upstreamLatency,
-          config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher,  env)
+        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
+      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
     }
   }
 }
@@ -552,9 +547,15 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           val duration: Long =
                             if (descriptor.id == env.backOfficeServiceId && actualDuration > 300L) 300L
                             else actualDuration
-                          
-                          analyticsQueue ! AnalyticsQueueEvent(descriptor, duration, overhead, counterIn.get(), counterOut.get(), resp.upstreamLatency, globalConfig)
-                          
+
+                          analyticsQueue ! AnalyticsQueueEvent(descriptor,
+                                                               duration,
+                                                               overhead,
+                                                               counterIn.get(),
+                                                               counterOut.get(),
+                                                               resp.upstreamLatency,
+                                                               globalConfig)
+
                           quotas.andThen {
                             case Success(q) => {
                               val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")

@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.util.Random
 
 class IdGenerator(generatorId: Long) {
-  def nextId(): Long = IdGenerator.nextId(generatorId)
+  def nextId(): Long      = IdGenerator.nextId(generatorId)
   def nextIdStr(): String = IdGenerator.nextIdStr(generatorId)
 }
 
@@ -35,7 +35,7 @@ object IdGenerator {
   def nextIdStr(generatorId: Long): String = synchronized {
     if (generatorId > 1024L) throw new RuntimeException("Generator id can't be larger than 1024")
     val timestamp = System.currentTimeMillis
-    val append = if (timestamp < lastTimestamp.get()) s"-${duplicates.incrementAndGet() + generatorId}" else ""
+    val append    = if (timestamp < lastTimestamp.get()) s"-${duplicates.incrementAndGet() + generatorId}" else ""
     lastTimestamp.set(timestamp)
     counter.compareAndSet(4095, -1L)
     (((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()) + append
