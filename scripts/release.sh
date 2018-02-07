@@ -119,12 +119,15 @@ cd $LOCATION
 # update version number and commit / push
 echo "Please change version in the following files and commit / push"
 echo "                                                            "
-echo "  * otoroshi/build.sbt                                      "
-echo "  * manual/build.sbt                                        "
+echo "  * clients/cli/Cargo.lock                                  "
 echo "  * clients/cli/Cargo.toml                                  "
+echo "  * clients/cli/src/main.rs                                 "
 echo "  * docker/build/Dockerfile                                 "
 echo "  * docker/otoroshicli/Dockerfile                           "
-echo "  * manual/index.md                                         "
+echo "  * otoroshi/app/controllers/SwaggerController.scala        "
+echo "  * otoroshi/build.sbt                                      "
+echo "  * otoroshi/javascript/package.json                        "
+echo "  * scripts/upload.sh                                       "
 echo "                                                            "
 
 # remove release folder
