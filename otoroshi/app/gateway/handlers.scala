@@ -90,10 +90,6 @@ class AnalyticsQueue(env: Env) extends Actor {
   override def receive: Receive = {
     case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
       descriptor
-<<<<<<< HEAD
-        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
-=======
         .updateMetrics(duration,
           overhead,
           dataIn,
@@ -101,7 +97,6 @@ class AnalyticsQueue(env: Env) extends Actor {
           upstreamLatency,
           config)(context.dispatcher, env)
       env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher,  env)
->>>>>>> Enhance performances
     }
   }
 }
