@@ -51,15 +51,11 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     new Throwable().printStackTrace()
     val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
     logger.error(s"Client Error: $message on ${request.uri} ($statusCode)")
-<<<<<<< HEAD
     Errors.craftResponseResult(s"Client Error: an error occured on ${request.uri} ($statusCode)",
                                Status(statusCode),
                                request,
                                None,
                                Some("errors.client.error"))
-=======
-    Errors.craftResponseResult(s"Client Error: an error occured on ${request.uri} ($statusCode)", Status(statusCode), request, None, Some("errors.client.error"))
->>>>>>> Use Play 2.6
   }
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
