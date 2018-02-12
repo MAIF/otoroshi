@@ -10,6 +10,7 @@ There is a lot of things you can configure in Otoroshi. By default, Otoroshi pro
 | `app.rootScheme` | string | "http" | the scheme on which Otoroshi is exposed, either "http" or "https" |
 | `app.snowflake.seed` | number | 0 | this number will is used to generate unique ids across the cluster. Each Otorshi instance must have a unique seed. |
 | `app.events.maxSize` | number | 1000 | max number of analytic and alert events stored locally |
+| `app.backoffice.exposed` | boolean | true | does the current Otoroshi instance exposed a backoffice ui|
 | `app.backoffice.subdomain` | string | "otoroshi" | the subdomain on wich Otoroshi backoffice will be served |
 | `app.backoffice.session.exp` | number | 86400000 | the number of seconds before the Otoroshi backoffice session expires |
 | `app.privateapps.subdomain` | string | "privateapps" | the subdomain on which private apps UI are served |
@@ -29,6 +30,7 @@ Some of the following terms will seem obscure to you, but you will learn their m
 
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
+| `app.adminapi.exposed` | boolean | true | does the current Otoroshi instance expose an admin API |
 | `app.adminapi.targetSubdomain` | string | "otoroshi-admin-internal-api" | the subdomain on wich admin API call will be redirected from `app.adminapi.exposedDubdomain` |
 | `app.adminapi.exposedDubdomain` | string | "otoroshi-api" | the subdomain on wich the Otoroshi admin API will be exposed |
 | `app.adminapi.defaultValues.backOfficeGroupId` | string | "admin-api-group" | the name of the service groups that will contain the service descriptors for the Otoroshi admin API |

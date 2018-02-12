@@ -87,6 +87,8 @@ class Env(val configuration: Configuration,
   lazy val secret: String                 = configuration.getString("play.crypto.secret").get
   lazy val sharedKey: String              = configuration.getString("app.claim.sharedKey").get
   lazy val env: String                    = configuration.getString("app.env").getOrElse("prod")
+  lazy val exposeAdminApi: Boolean        = configuration.getBoolean("app.adminapi.exposed").getOrElse(true)
+  lazy val exposeAdminDashboard: Boolean  = configuration.getBoolean("app.backoffice.exposed").getOrElse(true)
   lazy val adminApiProxyHttps: Boolean    = configuration.getBoolean("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean = configuration.getBoolean("app.adminapi.proxy.local").getOrElse(true)
   lazy val redirectToDev: Boolean = env
