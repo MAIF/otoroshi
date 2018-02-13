@@ -199,9 +199,9 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
       Option(expirations.get(key))
         .map(e => {
           val ttlValue = e - System.currentTimeMillis()
-          if (ttlValue < 0) -1l else ttlValue
+          if (ttlValue < 0) 0L else ttlValue
         })
-        .getOrElse(-1l)
+        .getOrElse(0L)
     )
 
   override def ttl(key: String): Future[Long] =
