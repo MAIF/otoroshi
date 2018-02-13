@@ -416,7 +416,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                         env.circuitBeakersHolder
                           .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                          .call(desc, bodyAlreadyConsumed, (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                          .call(desc, bodyAlreadyConsumed, s"${req.method} ${req.uri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                           case BodyAlreadyConsumedException =>
                             Errors.craftResponseResult(
                               s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",

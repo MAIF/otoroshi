@@ -36,37 +36,46 @@ object Timeout {
 
 object Retry {
 
-  private[this] def retryPromise[T](times: Int,
+  lazy val logger = Logger("otoroshi-circuit-breaker")
+
+  private[this] def retryPromise[T](totalCalls: Int,
+                                    times: Int,
                                     delay: Long,
                                     factor: Long,
                                     promise: Promise[T],
                                     failure: Option[Throwable],
+                                    ctx: String,
                                     f: () => Future[T])(implicit ec: ExecutionContext, scheduler: Scheduler): Unit =
     (times, failure) match {
       case (0, Some(e)) =>
+        logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => ${e.getMessage}")
         promise.tryFailure(e)
       case (0, None) =>
+        logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => lost exception")
         promise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
       case (i, _) =>
+        if (times > 1 && (times - 1L < totalCalls)) {
+          logger.warn(s"Retrying call for $ctx ($times/$totalCalls attemps)")
+        }
         f().onComplete {
           case Success(t) =>
             promise.trySuccess(t)
           case Failure(e) =>
             if (delay == 0L) {
-              retryPromise[T](times - 1, 0L, factor, promise, Some(e), f)
+              retryPromise[T](totalCalls, times - 1, 0L, factor, promise, Some(e), ctx, f)
             } else {
               val newDelay: Long = delay * factor
               Timeout.timeout(Done, delay.millis).fast.map { _ =>
-                retryPromise[T](times - 1, newDelay, factor, promise, Some(e), f)
+                retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f)
               }
             }
         }(ec)
     }
 
-  def retry[T](times: Int, delay: Long = 0, factor: Long = 2L)(f: () => Future[T])(implicit ec: ExecutionContext,
+  def retry[T](times: Int, delay: Long = 0, factor: Long = 2L, ctx: String)(f: () => Future[T])(implicit ec: ExecutionContext,
                                                                                    scheduler: Scheduler): Future[T] = {
     val promise = Promise[T]()
-    retryPromise[T](times, delay, factor, promise, None, f)
+    retryPromise[T](times, times, delay, factor, promise, None, ctx, f)
     promise.future
   }
 }
@@ -150,7 +159,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     }
   }
 
-  def call(descriptor: ServiceDescriptor, bodyAlreadyConsumed: AtomicBoolean, f: Target => Future[Result])(
+  def call(descriptor: ServiceDescriptor, bodyAlreadyConsumed: AtomicBoolean, ctx: String, f: Target => Future[Result])(
       implicit env: Env
   ): Future[Result] = {
     val failure = Timeout
@@ -158,7 +167,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
                                    descriptor.clientConfig.retryInitialDelay,
-                                   descriptor.clientConfig.backoffFactor) { () =>
+                                   descriptor.clientConfig.backoffFactor,
+                                   descriptor.name + " : " + ctx) { () =>
       if (bodyAlreadyConsumed.get) {
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
@@ -175,7 +185,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     Future.firstCompletedOf(Seq(maybeSuccess, failure))
   }
 
-  def callWS(descriptor: ServiceDescriptor, f: Target => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
+  def callWS(descriptor: ServiceDescriptor, ctx: String, f: Target => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
       implicit env: Env
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val failure = Timeout
@@ -183,7 +193,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
                                    descriptor.clientConfig.retryInitialDelay,
-                                   descriptor.clientConfig.backoffFactor) { () =>
+                                   descriptor.clientConfig.backoffFactor,
+                                   descriptor.name + " : " + ctx) { () =>
       chooseTarget(descriptor) match {
         case Some((target, breaker)) =>
           logger.debug(s"Try to call WS target : $target")

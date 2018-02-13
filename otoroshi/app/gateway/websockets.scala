@@ -183,7 +183,7 @@ class WebSocketHandler()(implicit env: Env) {
                     if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                       env.circuitBeakersHolder
                         .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                        .callWS(desc, (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                        .callWS(desc, s"WS ${req.method} ${req.uri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                         case RequestTimeoutException =>
                           Errors
                             .craftResponseResult(
