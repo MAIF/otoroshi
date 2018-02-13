@@ -58,7 +58,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
         Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
       )
-    ) ++ ctx.request.headers.get("Content-Type").map { ctype =>
+    ) ++ ctx.request.headers.get("Content-Type").filter(_ => ctx.request.hasBody).map { ctype =>
       "Content-Type" -> ctype
     } ++ ctx.request.headers.get("Accept").map { accept =>
       "Accept" -> accept
