@@ -14,8 +14,10 @@ RUN apk update \
   && unzip ./otoroshi-dist.zip \
   && mv otoroshi-1.0.2 otoroshi \
   && chmod +x otoroshi/bin/otoroshi \
-  && mkdir otoroshi/leveldb
+  && mkdir otoroshi/leveldb \
+  && mkdir otoroshi/imports
 
+VOLUME /usr/app/otoroshi/imports
 VOLUME /usr/app/otoroshi/leveldb
 VOLUME /usr/app/otoroshi/conf
 
