@@ -134,7 +134,11 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
   val headersOutFiltered = Seq(
     env.Headers.OtoroshiStateResp,
     "Transfer-Encoding",
-    "Content-Length"
+    "Content-Length",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info",
   ).map(_.toLowerCase)
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody

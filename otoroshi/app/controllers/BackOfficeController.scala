@@ -49,20 +49,23 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     val localUrl = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
     val url      = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
     logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
+    val headers = Seq(
+      "Host"                           -> host,
+      env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
+      env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
+      env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,
+      env.Headers.OtoroshiClientSecret -> env.backOfficeApiKey.clientSecret,
+      env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
+        Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+      )
+    ) ++ ctx.request.headers.get("Content-Type").map { ctype =>
+      "Content-Type" -> ctype
+    } ++ ctx.request.headers.get("Accept").map { accept =>
+      "Accept" -> accept
+    }
     env.Ws
       .url(s"$url/$path")
-      .withHttpHeaders(
-        "Host"                           -> host,
-        env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
-        env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
-        env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,
-        env.Headers.OtoroshiClientSecret -> env.backOfficeApiKey.clientSecret,
-        env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-          Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
-        ),
-        //"Accept"       -> "application/json",
-        //"Content-Type" -> "application/json"
-      )
+      .withHttpHeaders(headers: _*)
       .withFollowRedirects(false)
       .withMethod(ctx.request.method)
       .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
