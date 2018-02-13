@@ -657,6 +657,9 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             if (desc.clientConfig != newDesc.clientConfig) {
               env.circuitBeakersHolder.resetCircuitBreakersFor(serviceId) // pretty much useless as its mono instance
             }
+            if (desc.groupId != newDesc.groupId) {
+              env.datastores.apiKeyDataStore.clearFastLookupByService(newDesc.id)
+            }
             ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
             newDesc.save().map { _ =>
               ServiceDescriptorQuery(newDesc.subdomain, newDesc.env, newDesc.domain, newDesc.root)
@@ -704,6 +707,9 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             }
             if (desc.clientConfig != newDesc.clientConfig) {
               env.circuitBeakersHolder.resetCircuitBreakersFor(serviceId) // pretty much useless as its mono instance
+            }
+            if (desc.groupId != newDesc.groupId) {
+              env.datastores.apiKeyDataStore.clearFastLookupByService(newDesc.id)
             }
             ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
             newDesc.save().map { _ =>

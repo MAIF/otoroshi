@@ -149,4 +149,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
                                                                    env: Env): Future[Long]
   def addFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def addFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext,
+                                                                   env: Env): Future[Long]
 }

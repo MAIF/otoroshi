@@ -333,8 +333,8 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
     getValueAt(key).map {
       case Some(v) =>
         val ttlValue = v.toLong - System.currentTimeMillis()
-        if (ttlValue < 0) 0l else ttlValue
-      case None => 0L
+        if (ttlValue < 0) -1L else ttlValue
+      case None => -1L
     }
 
   override def ttl(key: String): Future[Long] =
