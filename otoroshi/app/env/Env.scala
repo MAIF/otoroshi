@@ -380,7 +380,7 @@ class Env(val configuration: Configuration,
 
   lazy val sessionDomain = configuration.getOptional[String]("play.http.session.domain").get
   lazy val sessionMaxAge = configuration.getOptional[Int]("play.http.session.maxAge").getOrElse(86400)
-  lazy val playSecret    = configuration.getOptional[String]("play.crypto.secret").get
+  lazy val playSecret    = configuration.getOptional[String]("play.http.secret.key").get
 
   def sign(message: String): String =
     scala.util.Try {
