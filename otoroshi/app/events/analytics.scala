@@ -68,7 +68,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             .map(
               evt =>
                 webhook.url
-                  //.replace("@product", env.eventsName)
+                //.replace("@product", env.eventsName)
                   .replace("@service", evt.`@service`)
                   .replace("@serviceId", evt.`@serviceId`)
                   .replace("@id", evt.`@id`)
