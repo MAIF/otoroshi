@@ -61,6 +61,7 @@ object Retry {
           case Success(t) =>
             promise.trySuccess(t)
           case Failure(e) =>
+            logger.warn(s"Error calling $ctx ($times/$totalCalls attemps) : ${e.getMessage}")
             if (delay == 0L) {
               retryPromise[T](totalCalls, times - 1, 0L, factor, promise, Some(e), ctx, f)
             } else {
