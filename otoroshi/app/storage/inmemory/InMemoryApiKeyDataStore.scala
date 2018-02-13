@@ -29,6 +29,10 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
   def monthlyQuotaKey(name: String): String = s"${_env.storageRoot}:apikey:quotas:monthly:$name"
   def throttlingKey(name: String): String   = s"${_env.storageRoot}:apikey:quotas:second:$name"
 
+  override def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    redisCli.del(s"${env.storageRoot}:apikey:byservice:$serviceId")
+  }
+
   override def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                             env: Env): Future[Long] =
     redisCli.srem(s"${env.storageRoot}:apikey:byservice:$serviceId", apiKey.clientId)
@@ -45,6 +49,10 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
   override def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                         env: Env): Future[Long] =
     redisCli.srem(s"${env.storageRoot}:apikey:bygroup:$groupId", apiKey.clientId)
+
+  override def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    redisCli.del(s"${env.storageRoot}:apikey:bygroup:$groupId")
+  }
 
   override def addFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                      env: Env): Future[Long] = {

@@ -31,6 +31,10 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   def monthlyQuotaKey(name: String): String = s"${_env.storageRoot}:apikey:quotas:monthly:$name"
   def throttlingKey(name: String): String   = s"${_env.storageRoot}:apikey:quotas:second:$name"
 
+  override def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    redisCli.del(s"${env.storageRoot}:apikey:byservice:$serviceId")
+  }
+
   override def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,
                                                                             env: Env): Future[Long] =
     redisCli.srem(s"${env.storageRoot}:apikey:byservice:$serviceId", apiKey.clientId)
@@ -42,6 +46,10 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       r <- redisCli.sadd(key, apiKey.clientId)
       _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
     } yield r
+  }
+
+  override def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    redisCli.del(s"${env.storageRoot}:apikey:bygroup:$groupId")
   }
 
   override def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext,

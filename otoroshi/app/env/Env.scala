@@ -90,6 +90,8 @@ class Env(val configuration: Configuration,
   lazy val secret: String              = configuration.getOptional[String]("play.crypto.secret").get
   lazy val sharedKey: String           = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                 = configuration.getOptional[String]("app.env").getOrElse("prod")
+  lazy val exposeAdminApi: Boolean        = configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
+  lazy val exposeAdminDashboard: Boolean  = configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
   lazy val adminApiProxyHttps: Boolean = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
     configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)

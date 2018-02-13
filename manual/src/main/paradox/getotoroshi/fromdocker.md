@@ -5,7 +5,7 @@ If you're a Docker aficionado, Otoroshi is provided as a Docker image that your 
 first, fetch the last Docker image of Otoroshi :
 
 ```sh
-docker pull maif-docker-docker.bintray.io/otoroshi:1.0.1
+docker pull maif-docker-docker.bintray.io/otoroshi:1.0.2
 # or with last snapshot
 docker pull maif-docker-docker.bintray.io/otoroshi:latest
 ```

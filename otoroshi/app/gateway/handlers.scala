@@ -187,8 +187,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
         case _ if request.uri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
         case env.backOfficeHost if !isSecured && toHttps && env.isProd      => Some(redirectToHttps())
         case env.privateAppsHost if !isSecured && toHttps && env.isProd     => Some(redirectToHttps())
-        case env.adminApiHost                                               => super.routeRequest(request)
-        case env.backOfficeHost                                             => super.routeRequest(request)
+        case env.adminApiHost if env.exposeAdminApi                         => super.routeRequest(request)
+        case env.backOfficeHost if env.exposeAdminDashboard                 => super.routeRequest(request)
         case env.privateAppsHost                                            => super.routeRequest(request)
         case _ =>
           request.headers.get("Sec-WebSocket-Version") match {
