@@ -76,7 +76,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                                 res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                                 res.headers.get("Content-Type").flatMap(_.headOption))
           )
-          .withHeaders(res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type"): _*)
+          .withHeaders(res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type").filter(_._1 != "Content-Length"): _*)
           .as(ctype)
       }
   }
