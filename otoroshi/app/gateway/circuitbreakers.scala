@@ -54,7 +54,7 @@ object Retry {
         logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => lost exception")
         promise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
       case (i, _) =>
-        if (totalCalls > 1 && ((times - 1L) < totalCalls)) {
+        if (totalCalls > 1 && (times < totalCalls) {
           logger.warn(s"Retrying call for $ctx ($times/$totalCalls attemps)")
         }
         f().onComplete {
