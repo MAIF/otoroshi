@@ -33,8 +33,8 @@ package object modules {
       with HttpFiltersComponents
       with AhcWSComponents {
 
-    lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
-    lazy val gzipFilter                                 = wire[GzipFilter]
+    // lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
+    // lazy val gzipFilter                                 = wire[GzipFilter]
     override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
