@@ -128,7 +128,11 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     "Host",
     "X-Forwarded-For",
     "X-Forwarded-Proto",
-    "X-Forwarded-Protocol"
+    "X-Forwarded-Protocol",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info",
   ).map(_.toLowerCase)
 
   val headersOutFiltered = Seq(

@@ -4,9 +4,9 @@ version := "1.0.3"
 scalaVersion := "2.12.4"
 
 lazy val root = (project in file("."))
-  .enablePlugins(PlayScala)
-  //.enablePlugins(PlayScala, PlayNettyServer)
-  //.disablePlugins(PlayAkkaHttpServer)
+  .enablePlugins(PlayScala, PlayNettyServer)
+  .disablePlugins(PlayAkkaHttpServer)
+  //.disablePlugins(PlayNettyServer)
 
 libraryDependencies ++= Seq(
   ws,

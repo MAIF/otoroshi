@@ -23,7 +23,9 @@ import play.api.mvc._
 import utils.LocalCache
 import security._
 import org.mindrot.jbcrypt.BCrypt
+import akka.http.scaladsl.util.FastFuture._
 
+import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.Success
 
@@ -68,14 +70,16 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       .withHttpHeaders(headers: _*)
       .withFollowRedirects(false)
       .withMethod(ctx.request.method)
+      .withRequestTimeout(1.minute)
       .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
       .withBody(if (ctx.request.hasBody) SourceBody(ctx.request.body) else EmptyBody)
       .stream()
+      .fast
       .map { res =>
         val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
         Status(res.status)
           .sendEntity(
-            HttpEntity.Streamed(res.bodyAsSource,
+            HttpEntity.Streamed(Source.lazily(() => res.bodyAsSource),
                                 res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                                 res.headers.get("Content-Type").flatMap(_.headOption))
           )
