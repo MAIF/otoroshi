@@ -655,7 +655,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
                       //}
                       val upstreamStart = System.currentTimeMillis()
-                      env.gatewayClient
+                      env.Ws
                         .url(url)
                         //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
                         .withRequestTimeout(1.hour) // we should monitor leaks
@@ -745,6 +745,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                                                                                         Seq.empty[(String, String)]
                                                                                                                       })
                             val contentType = headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                            val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                             // meterOut.mark(responseHeader.length)
                             // counterOut.addAndGet(responseHeader.length)
 
@@ -797,20 +798,20 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       .concat(
                                         Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
                                       ),
-                                    Some(contentType)
+                                    contentTypeOpt
                                   )
                                 } else {
                                   HttpEntity.Streamed(
                                     finalStream,
                                     resp.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong),
-                                    Some(contentType)
+                                    contentTypeOpt
                                   )
                                 }
                               FastFuture.successful(
                                 Status(resp.status)
                                   .sendEntity(entity)
                                   .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                  .as(contentType)
+                                  //.as(contentType)
                                   .withCookies(withTrackingCookies: _*)
                               )
                             } else {
