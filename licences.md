@@ -8,23 +8,18 @@ Otoroshi dependencies and licences
 * org.gnieh.diffson-play-json - Apache2 : https://github.com/gnieh/diffson     
 * org.iq80.leveldb.leveldb - Apache2 : https://github.com/dain/leveldb                 
 * com.softwaremill.macwire.macros - Apache2 : https://github.com/adamw/macwire                  
-* com.typesafe.akka.akka-http-core    - Apache2 : https://github.com/akka/akka-http       
 * com.typesafe.akka.akka-stream-kafka - Apache2 : https://github.com/akka/alpakka
 * com.github.etaty.rediscala - Apache2 : https://github.com/etaty/rediscala              
-* com.github.mkroli.dns4s-akka - Apache2 : https://github.com/mkroli/dns4s           
 * com.github.gphat.censorinus - MIT : https://github.com/gphat/censorinus            
 * io.dropwizard.metrics.metrics-core - Apache2 : https://github.com/dropwizard/metrics           
 * com.auth0.java-jwt - MIT : https://github.com/auth0/java-jwt                
 * com.yubico.u2flib-server-core - BSD3 : https://github.com/Yubico/java-u2flib-server
 * com.yubico.u2flib-server-attestation - BSD3 : https://github.com/Yubico/java-u2flib-server
 * de.svenkubiak.jBCrypt - ISC : https://github.com/jeremyh/jBCrypt         
-* org.typelevel.cats - MIT : https://github.com/typelevel/cats                 
-* com.chuusai.shapeless - Apache2 : https://github.com/milessabin/shapeless    
 * org.scalatestplus.play.scalatestplus-play - Apache2 : https://github.com/playframework/scalatestplus-play
 * com.datastax.cassandra.cassandra-driver-core - Apache2 : https://github.com/datastax/java-driver
 * com.typesafe.play.sbt-plugin - Apache2 : https://github.com/playframework/playframework
 * io.get-coursier.sbt-coursier - Apache2 : https://github.com/coursier/coursier
-* net.virtual-void.sbt-dependency-graph - Apache2 : https://github.com/jrudolph/sbt-dependency-graph
 * com.lucidchart.sbt-scalafmt - Apache2 : https://github.com/scalameta/scalafmt
 * com.eed3si9n.sbt-assembly - MIT : https://github.com/softprops/assembly-sbt
 

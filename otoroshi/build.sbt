@@ -6,9 +6,6 @@ scalaVersion := "2.12.4"
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayFilters)
-  //.enablePlugins(PlayScala, PlayNettyServer)
-  //.disablePlugins(PlayAkkaHttpServer)
-  //.disablePlugins(PlayNettyServer)
 
 libraryDependencies ++= Seq(
   ws,
@@ -16,7 +13,6 @@ libraryDependencies ++= Seq(
   "org.gnieh"                %% "diffson-play-json"        % "2.2.5" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
   "org.iq80.leveldb"         % "leveldb"                   % "0.9",
   "com.softwaremill.macwire" %% "macros"                   % "2.3.0" % "provided",
-  "com.typesafe.akka"        %% "akka-http-core"           % "10.0.11",
   "com.typesafe.play"        %% "play-json"                % "2.6.8",
   "com.typesafe.play"        %% "play-json-joda"           % "2.6.8",
   "com.typesafe.akka"        %% "akka-stream-kafka"        % "0.18",
