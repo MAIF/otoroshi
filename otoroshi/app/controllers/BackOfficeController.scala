@@ -46,10 +46,25 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     Accumulator.source[ByteString].map(Right.apply)
   }
 
+  def hasBody(request: Request[_]): Boolean = 
+    (request.method, request.headers.get("Content-Length")) match {
+      case ("GET", Some(_))    => true
+      case ("GET", None)       => false
+      case ("HEAD", Some(_))   => true
+      case ("HEAD", None)      => false
+      case ("PATCH", _)        => true
+      case ("POST", _)         => true
+      case ("PUT", _)          => true
+      case ("DELETE", Some(_)) => true
+      case ("DELETE", None)    => false
+      case _                   => true
+    }
+
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     val host     = if (env.isDev) env.adminApiExposedHost else env.adminApiExposedHost
     val localUrl = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
     val url      = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
+    lazy val currentReqHasBody = hasBody(ctx.request)
     logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
     val headers = Seq(
       "Host"                           -> host,
@@ -60,7 +75,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
         Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
       )
-    ) ++ ctx.request.headers.get("Content-Type").filter(_ => ctx.request.hasBody).map { ctype =>
+    ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
       "Content-Type" -> ctype
     } ++ ctx.request.headers.get("Accept").map { accept =>
       "Accept" -> accept
@@ -72,7 +87,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       .withMethod(ctx.request.method)
       .withRequestTimeout(1.minute)
       .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
-      .withBody(if (ctx.request.hasBody) SourceBody(ctx.request.body) else EmptyBody)
+      .withBody(if (currentReqHasBody) SourceBody(ctx.request.body) else EmptyBody)
       .stream()
       .fast
       .map { res =>
