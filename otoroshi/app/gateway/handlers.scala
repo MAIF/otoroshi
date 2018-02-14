@@ -146,19 +146,20 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
   ).map(_.toLowerCase)
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody
-  def hasBody(request: Request[_]): Boolean = request.hasBody
-  // (request.method, request.headers.get("Content-Length")) match {
-  //   case ("GET", Some(_))    => true
-  //   case ("GET", None)       => false
-  //   case ("HEAD", Some(_))   => true
-  //   case ("HEAD", None)      => false
-  //   case ("PATCH", _)        => true
-  //   case ("POST", _)         => true
-  //   case ("PUT", _)          => true
-  //   case ("DELETE", Some(_)) => true
-  //   case ("DELETE", None)    => false
-  //   case _                   => true
-  // }
+  // def hasBody(request: Request[_]): Boolean = request.hasBody
+  def hasBody(request: Request[_]): Boolean = 
+    (request.method, request.headers.get("Content-Length")) match {
+      case ("GET", Some(_))    => true
+      case ("GET", None)       => false
+      case ("HEAD", Some(_))   => true
+      case ("HEAD", None)      => false
+      case ("PATCH", _)        => true
+      case ("POST", _)         => true
+      case ("PUT", _)          => true
+      case ("DELETE", Some(_)) => true
+      case ("DELETE", None)    => false
+      case _                   => true
+    }
 
   def matchRedirection(host: String): Boolean =
     env.redirections.nonEmpty && env.redirections.exists(it => host.contains(it))
@@ -495,6 +496,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
                       val root   = descriptor.root
                       val url    = s"$scheme://$host$root$uri"
+                      lazy val currentReqHasBody = hasBody(req)
                       // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                       val fromOtoroshi = req.headers
                         .get(env.Headers.OtoroshiRequestId)
@@ -526,6 +528,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       logger.trace(s"Claim is : $claim")
                       val headersIn: Seq[(String, String)] =
                         (req.headers.toSimpleMap
+                          .filterNot(t => if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true else false )
                           .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                           env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
                           "Host"                          -> host,
@@ -544,7 +547,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           bs
                         })
                       }
-                      val body = if (hasBody(req)) SourceBody(lazySource) else EmptyBody // Stream IN
+                      val body = if (currentReqHasBody) SourceBody(lazySource) else EmptyBody // Stream IN
                       // val requestHeader = ByteString(
                       //   req.method + " " + req.uri + " HTTP/1.1\n" + headersIn
                       //     .map(h => s"${h._1}: ${h._2}")
@@ -655,7 +658,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
                       //}
                       val upstreamStart = System.currentTimeMillis()
-                      env.Ws
+                      env.gatewayClient
                         .url(url)
                         //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
                         .withRequestTimeout(1.hour) // we should monitor leaks
@@ -798,20 +801,20 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       .concat(
                                         Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
                                       ),
-                                    contentTypeOpt
+                                    Some(contentType) // contentTypeOpt
                                   )
                                 } else {
                                   HttpEntity.Streamed(
                                     finalStream,
                                     resp.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong),
-                                    contentTypeOpt
+                                    Some(contentType) // contentTypeOpt
                                   )
                                 }
                               FastFuture.successful(
                                 Status(resp.status)
                                   .sendEntity(entity)
                                   .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                  //.as(contentType)
+                                  .as(contentType) //
                                   .withCookies(withTrackingCookies: _*)
                               )
                             } else {
