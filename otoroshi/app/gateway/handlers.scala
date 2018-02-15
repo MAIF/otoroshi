@@ -41,14 +41,6 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
   lazy val logger = Logger("otoroshi-error-handler")
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
-    //val (message, image): (String, String) = Option
-    //  .apply(mess)
-    //  .filterNot(_.trim.isEmpty)
-    //  // .map(m => (m, "hugeMistake.jpg"))
-    //  .map(m => ("An error occurred ...", "hugeMistake.jpg"))
-    //  .orElse(Errors.messages.get(statusCode))
-    //  .getOrElse(("Client Error", "hugeMistake.jpg"))
-    new Throwable().printStackTrace()
     val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
     logger.error(s"Client Error: $message on ${request.uri} ($statusCode)")
     Errors.craftResponseResult(s"Client Error: an error occured on ${request.uri} ($statusCode)",
