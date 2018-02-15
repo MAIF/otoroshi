@@ -3,8 +3,7 @@ package storage.inmemory
 import env.Env
 import models._
 import play.api.libs.json._
-import play.api.libs.json.JodaReads._
-import play.api.libs.json.JodaWrites._
+import utils.JsonImplicits._
 import storage.{RedisLike, RedisLikeStore}
 import utils.LocalCache
 import com.typesafe.config.ConfigRenderOptions

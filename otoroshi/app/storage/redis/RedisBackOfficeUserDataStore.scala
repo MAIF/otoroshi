@@ -6,8 +6,7 @@ import akka.util.ByteString
 import env.Env
 import models.{BackOfficeUser, BackOfficeUserDataStore, Key}
 import play.api.libs.json.{Format, JsValue, Json}
-import play.api.libs.json.JodaWrites._
-import play.api.libs.json.JodaReads._
+import utils.JsonImplicits._
 import redis.RedisClientMasterSlaves
 
 import scala.concurrent.{ExecutionContext, Future}

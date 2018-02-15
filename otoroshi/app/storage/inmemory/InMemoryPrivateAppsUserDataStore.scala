@@ -3,8 +3,7 @@ package storage.inmemory
 import env.Env
 import models.{Key, PrivateAppsUser, PrivateAppsUserDataStore}
 import play.api.libs.json.{Format, Json}
-import play.api.libs.json.JodaReads._
-import play.api.libs.json.JodaWrites._
+import utils.JsonImplicits._
 import storage.{RedisLike, RedisLikeStore}
 
 class InMemoryPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)

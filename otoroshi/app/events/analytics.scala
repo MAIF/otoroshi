@@ -11,8 +11,7 @@ import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.json.JodaReads._
-import play.api.libs.json.JodaWrites._
+import utils.JsonImplicits._
 import security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.duration.FiniteDuration
