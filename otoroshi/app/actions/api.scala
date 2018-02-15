@@ -35,8 +35,8 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
     ex match {
-      case Some(e) => logger.error("error mess " + message, e)
-      case None    => logger.error("error mess " + message)
+      case Some(e) => logger.error(s"error message: $message", e)
+      case None    => logger.error(s"error message: $message")
     }
     FastFuture.successful(
       Results
