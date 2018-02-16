@@ -14,7 +14,7 @@ object Implicits {
   }
 }
 
-class SwaggerController()(implicit env: Env) extends Controller {
+class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   import Implicits._
 

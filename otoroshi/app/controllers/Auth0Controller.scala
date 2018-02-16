@@ -10,7 +10,7 @@ import models.{BackOfficeUser, GlobalConfig, PrivateAppsUser}
 import play.api.Logger
 import play.api.http.MimeTypes
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.Controller
+import play.api.mvc._
 import play.mvc.Http.HeaderNames
 import security.{Auth0Config, IdGenerator}
 
@@ -19,8 +19,9 @@ import scala.concurrent.duration.Duration
 
 class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
                       PrivateAppsAction: PrivateAppsAction,
-                      BackOfficeAction: BackOfficeAction)(implicit env: Env)
-    extends Controller {
+                      BackOfficeAction: BackOfficeAction,
+                      cc: ControllerComponents)(implicit env: Env)
+    extends AbstractController(cc) {
 
   implicit lazy val ec = env.auth0ExecutionContext
 
@@ -231,7 +232,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     val Auth0Config(clientSecret, clientId, callback, domain) = config
     val tokenResponse = env.Ws
       .url(s"https://$domain/oauth/token")
-      .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+      .withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
       .post(
         Json.obj(
           "client_id"     -> clientId,
@@ -256,7 +257,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     val Auth0Config(_, _, _, domain) = config
     val userResponse = env.Ws
       .url(s"https://$domain/userinfo")
-      .withQueryString("access_token" -> accessToken)
+      .withQueryStringParameters("access_token" -> accessToken)
       .get()
     userResponse.flatMap(response => FastFuture.successful(response.json))
   }

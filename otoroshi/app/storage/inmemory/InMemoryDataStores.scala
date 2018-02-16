@@ -21,11 +21,14 @@ class InMemoryDataStores(configuration: Configuration,
 
   lazy val logger = Logger("otoroshi-in-memory-datastores")
 
-  lazy val redisStatsItems: Int = configuration.getInt("app.inmemory.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.inmemory.windowSize").getOrElse(99)
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-inmemory-system",
-      configuration.getConfig("app.actorsystems.inmemory").map(_.underlying).getOrElse(ConfigFactory.empty)
+      configuration
+        .getOptional[Configuration]("app.actorsystems.inmemory")
+        .map(_.underlying)
+        .getOrElse(ConfigFactory.empty)
     )
   lazy val redis = new InMemoryRedis(actorSystem)
 

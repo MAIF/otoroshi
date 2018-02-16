@@ -15,7 +15,7 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsSuccess, Json, _}
-import play.api.mvc.Controller
+import play.api.mvc._
 import security.IdGenerator
 import utils.future.Implicits._
 
@@ -23,7 +23,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
-class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller {
+class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.apiExecutionContext
   implicit lazy val mat = env.materializer
@@ -1041,8 +1041,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchHits() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/_count")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1059,8 +1059,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchDataIn() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/data.dataIn/_sum")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1077,8 +1077,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchDataOut() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/data.dataOut/_sum")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1095,8 +1095,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchAvgDuration() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/duration/_avg")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1113,8 +1113,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchAvgOverhead() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/overhead/_avg")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1131,8 +1131,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchStatusesPiechart() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/status/_piechart")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1149,8 +1149,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchStatusesHistogram() =
                 env.Ws
                   .url(source.url + "/httpStatus/_histogram")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1167,8 +1167,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchDataInStatsHistogram() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/data.dataIn/_histogram/stats")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1185,8 +1185,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchDataOutStatsHistogram() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/data.dataOut/_histogram/stats")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1203,8 +1203,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchDurationStatsHistogram() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/duration/_histogram/stats")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1221,8 +1221,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchDurationPercentilesHistogram() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/duration/_histogram/percentiles")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1239,8 +1239,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchOverheadPercentilesHistogram() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/overhead/_histogram/percentiles")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1257,8 +1257,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               def fetchOverheadStatsHistogram() =
                 env.Ws
                   .url(source.url + "/GatewayEvent/overhead/_histogram/stats")
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "services" -> desc.name,
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -1355,8 +1355,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchHits() =
               env.Ws
                 .url(source.url + "/GatewayEvent/_count")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1372,8 +1372,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchDataIn() =
               env.Ws
                 .url(source.url + "/GatewayEvent/data.dataIn/_sum")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1389,8 +1389,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchDataOut() =
               env.Ws
                 .url(source.url + "/GatewayEvent/data.dataOut/_sum")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1406,8 +1406,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchAvgDuration() =
               env.Ws
                 .url(source.url + "/GatewayEvent/duration/_avg")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1423,8 +1423,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchAvgOverhead() =
               env.Ws
                 .url(source.url + "/GatewayEvent/overhead/_avg")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1440,8 +1440,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchStatusesPiechart() =
               env.Ws
                 .url(source.url + "/GatewayEvent/status/_piechart")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1457,8 +1457,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchStatusesHistogram() =
               env.Ws
                 .url(source.url + "/httpStatus/_histogram")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1474,8 +1474,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchDataInStatsHistogram() =
               env.Ws
                 .url(source.url + "/GatewayEvent/data.dataIn/_histogram/stats")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1491,8 +1491,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchDataOutStatsHistogram() =
               env.Ws
                 .url(source.url + "/GatewayEvent/data.dataOut/_histogram/stats")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1508,8 +1508,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchDurationStatsHistogram() =
               env.Ws
                 .url(source.url + "/GatewayEvent/duration/_histogram/stats")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1525,8 +1525,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchDurationPercentilesHistogram() =
               env.Ws
                 .url(source.url + "/GatewayEvent/duration/_histogram/percentiles")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1542,8 +1542,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchOverheadPercentilesHistogram() =
               env.Ws
                 .url(source.url + "/GatewayEvent/overhead/_histogram/percentiles")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1559,8 +1559,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchOverheadStatsHistogram() =
               env.Ws
                 .url(source.url + "/GatewayEvent/overhead/_histogram/stats")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
                     .getOrElse(DateTime.now().minusHours(1))
@@ -1576,8 +1576,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchProductPiechart() =
               env.Ws
                 .url(source.url + "/GatewayEvent/@product/_piechart")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "size" -> (nbrOfServices * 4).toString, // hell yeah
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
@@ -1594,8 +1594,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
             def fetchServicePiechart() =
               env.Ws
                 .url(source.url + "/GatewayEvent/@service/_piechart")
-                .withHeaders(source.headers.toSeq: _*)
-                .withQueryString(
+                .withHttpHeaders(source.headers.toSeq: _*)
+                .withQueryStringParameters(
                   "size" -> (nbrOfServices * 4).toString, // hell yeah
                   "from" -> from
                     .map(f => new DateTime(f.toLong))
@@ -1697,8 +1697,8 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
               case Some(source) => {
                 env.Ws
                   .url(source.url)
-                  .withHeaders(source.headers.toSeq: _*)
-                  .withQueryString(
+                  .withHttpHeaders(source.headers.toSeq: _*)
+                  .withQueryStringParameters(
                     "@type" -> "GatewayEvent",
                     "from" -> from
                       .map(f => new DateTime(f.toLong))
@@ -2553,7 +2553,7 @@ class ApiController(ApiAction: ApiAction)(implicit env: Env) extends Controller 
   }
 
   def fullImportFromFile() = ApiAction.async(parse.temporaryFile) { ctx =>
-    val source = scala.io.Source.fromFile(ctx.request.body.file, "utf-8").getLines().mkString("\n")
+    val source = scala.io.Source.fromFile(ctx.request.body.path.toFile, "utf-8").getLines().mkString("\n")
     val json   = Json.parse(source).as[JsObject]
     env.datastores.globalConfigDataStore
       .fullImport(json)

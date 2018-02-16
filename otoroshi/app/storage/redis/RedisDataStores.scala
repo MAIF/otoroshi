@@ -2,7 +2,7 @@ package storage.redis
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigObject}
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
@@ -19,29 +19,32 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
 
   lazy val logger = Logger("otoroshi-redis-datastores")
 
-  lazy val redisStatsItems: Int = configuration.getInt("app.redis.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.redis.windowSize").getOrElse(99)
   lazy val redisActorSystem =
     ActorSystem(
       "otoroshi-redis-system",
-      configuration.getConfig("app.actorsystems.redis").map(_.underlying).getOrElse(ConfigFactory.empty)
+      configuration
+        .getOptional[Configuration]("app.actorsystems.redis")
+        .map(_.underlying)
+        .getOrElse(ConfigFactory.empty)
     )
   lazy val redisDispatcher = redisActorSystem.dispatcher
   lazy val redis = {
-    import collection.JavaConversions._
+    // import collection.JavaConverters._
     implicit val ec = redisDispatcher
     val master = RedisServer(
-      host = configuration.getString("app.redis.host").getOrElse("localhost"),
-      port = configuration.getInt("app.redis.port").getOrElse(6379),
-      password = configuration.getString("app.redis.password")
+      host = configuration.getOptional[String]("app.redis.host").getOrElse("localhost"),
+      port = configuration.getOptional[Int]("app.redis.port").getOrElse(6379),
+      password = configuration.getOptional[String]("app.redis.password")
     )
     val slaves = configuration
-      .getObjectList("app.redis.slaves")
-      .map(_.toIndexedSeq.map { cfgobj =>
-        val config = Configuration(cfgobj.toConfig)
+      .getOptional[Seq[Configuration]]("app.redis.slaves")
+      .map(_.map { config =>
+        // val config = Configuration(cfgobj.toConfig)
         RedisServer(
-          host = config.getString("host").getOrElse("localhost"),
-          port = config.getInt("port").getOrElse(6379),
-          password = config.getString("password")
+          host = config.getOptional[String]("host").getOrElse("localhost"),
+          port = config.getOptional[Int]("port").getOrElse(6379),
+          password = config.getOptional[String]("password")
         )
       })
       .getOrElse(Seq.empty[RedisServer])

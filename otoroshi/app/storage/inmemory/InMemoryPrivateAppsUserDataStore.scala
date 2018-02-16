@@ -3,6 +3,7 @@ package storage.inmemory
 import env.Env
 import models.{Key, PrivateAppsUser, PrivateAppsUserDataStore}
 import play.api.libs.json.{Format, Json}
+import utils.JsonImplicits._
 import storage.{RedisLike, RedisLikeStore}
 
 class InMemoryPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)

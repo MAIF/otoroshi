@@ -5,11 +5,12 @@ import akka.http.scaladsl.util.FastFuture
 import env.Env
 import models._
 import play.api.libs.json._
+import utils.JsonImplicits._
 import redis.RedisClientMasterSlaves
 import utils.LocalCache
-import com.typesafe.config.ConfigRenderOptions
+import com.typesafe.config.{Config, ConfigRenderOptions}
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import env.Env
 
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -202,7 +203,9 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
 
   override def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
     val appConfig =
-      Json.parse(env.configuration.getConfig("app").get.underlying.root().render(ConfigRenderOptions.concise()))
+      Json.parse(
+        env.configuration.getOptional[Configuration]("app").get.underlying.root().render(ConfigRenderOptions.concise())
+      )
     for {
       config       <- env.datastores.globalConfigDataStore.singleton()
       descs        <- env.datastores.serviceDescriptorDataStore.findAll()

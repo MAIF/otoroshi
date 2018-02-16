@@ -20,7 +20,7 @@ import play.api.Logger
 import play.api.http.{Status => _, _}
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{EmptyBody, StreamedBody}
+import play.api.libs.ws.{EmptyBody, SourceBody}
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
@@ -41,15 +41,13 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
   lazy val logger = Logger("otoroshi-error-handler")
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
-    val (message, image): (String, String) = Option
-      .apply(mess)
-      .filterNot(_.trim.isEmpty)
-      // .map(m => (m, "hugeMistake.jpg"))
-      .map(m => ("An error occurred ...", "hugeMistake.jpg"))
-      .orElse(Errors.messages.get(statusCode))
-      .getOrElse(("Client Error", "hugeMistake.jpg"))
+    val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
     logger.error(s"Client Error: $message on ${request.uri} ($statusCode)")
-    Errors.craftResponseResult(message, Status(statusCode), request, None, Some("errors.client.error"))
+    Errors.craftResponseResult(s"Client Error: an error occured on ${request.uri} ($statusCode)",
+                               Status(statusCode),
+                               request,
+                               None,
+                               Some("errors.client.error"))
   }
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
@@ -80,8 +78,13 @@ class AnalyticsQueue(env: Env) extends Actor {
   override def receive: Receive = {
     case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
       descriptor
-        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
+        .updateMetrics(duration,
+          overhead,
+          dataIn,
+          dataOut,
+          upstreamLatency,
+          config)(context.dispatcher, env)
+      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher,  env)
     }
   }
 }
@@ -90,7 +93,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                             router: Router,
                             errorHandler: HttpErrorHandler,
                             configuration: HttpConfiguration,
-                            filters: HttpFilters)(implicit env: Env, mat: Materializer)
+                            filters: HttpFilters,
+                            actionBuilder: ActionBuilder[Request, AnyContent])(implicit env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(router, errorHandler, configuration, filters) {
 
   implicit lazy val ec        = env.gatewayExecutor
@@ -116,17 +120,26 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     "Host",
     "X-Forwarded-For",
     "X-Forwarded-Proto",
-    "X-Forwarded-Protocol"
+    "X-Forwarded-Protocol",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info",
   ).map(_.toLowerCase)
 
   val headersOutFiltered = Seq(
     env.Headers.OtoroshiStateResp,
     "Transfer-Encoding",
-    "Content-Length"
+    "Content-Length",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info",
   ).map(_.toLowerCase)
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody
-  def hasBody(request: Request[_]): Boolean =
+  // def hasBody(request: Request[_]): Boolean = request.hasBody
+  def hasBody(request: Request[_]): Boolean = 
     (request.method, request.headers.get("Content-Length")) match {
       case ("GET", Some(_))    => true
       case ("GET", None)       => false
@@ -187,7 +200,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     }
   }
 
-  def setPrivateAppsCookies() = Action.async { req =>
+  def setPrivateAppsCookies() = actionBuilder.async { req =>
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val sessionIdOpt: Option[String]  = req.queryString.get("sessionId").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
@@ -199,7 +212,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     }
   }
 
-  def removePrivateAppsCookies() = Action.async { req =>
+  def removePrivateAppsCookies() = actionBuilder.async { req =>
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
     (redirectToOpt, hostOpt) match {
@@ -210,7 +223,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     }
   }
 
-  def tooBig(message: String) = Action.async { req =>
+  def tooBig(message: String) = actionBuilder.async { req =>
     Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"))
   }
 
@@ -227,7 +240,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     }
   }
 
-  def redirectToHttps() = Action { req =>
+  def redirectToHttps() = actionBuilder { req =>
     val domain = req.domain
     val protocol = req.headers
       .get("X-Forwarded-Protocol")
@@ -244,7 +257,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     Redirect(s"${env.rootScheme}$domain${req.uri}").withHeaders("otoroshi-redirect-to" -> "https")
   }
 
-  def redirectToMainDomain() = Action { req =>
+  def redirectToMainDomain() = actionBuilder { req =>
     val domain: String = env.redirections.foldLeft(req.domain)((domain, item) => domain.replace(item, env.domain))
     val protocol = req.headers
       .get("X-Forwarded-Protocol")
@@ -270,7 +283,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     }
   }
 
-  def forwardCall() = Action.async(sourceBodyParser) { req =>
+  def forwardCall() = actionBuilder.async(sourceBodyParser) { req =>
     // TODO : add metrics + JMX
     // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
     // val meterOut            = Metrics.metrics.meter("GatewayDataOut")
@@ -400,7 +413,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                         env.circuitBeakersHolder
                           .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                          .call(desc, bodyAlreadyConsumed, (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                          .call(desc, bodyAlreadyConsumed, s"${req.method} ${req.uri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                           case BodyAlreadyConsumedException =>
                             Errors.craftResponseResult(
                               s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
@@ -475,6 +488,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
                       val root   = descriptor.root
                       val url    = s"$scheme://$host$root$uri"
+                      lazy val currentReqHasBody = hasBody(req)
                       // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                       val fromOtoroshi = req.headers
                         .get(env.Headers.OtoroshiRequestId)
@@ -506,6 +520,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       logger.trace(s"Claim is : $claim")
                       val headersIn: Seq[(String, String)] =
                         (req.headers.toSimpleMap
+                          .filterNot(t => if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true else false )
                           .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                           env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
                           "Host"                          -> host,
@@ -524,7 +539,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           bs
                         })
                       }
-                      val body = if (hasBody(req)) StreamedBody(lazySource) else EmptyBody // Stream IN
+                      val body = if (currentReqHasBody) SourceBody(lazySource) else EmptyBody // Stream IN
                       // val requestHeader = ByteString(
                       //   req.method + " " + req.uri + " HTTP/1.1\n" + headersIn
                       //     .map(h => s"${h._1}: ${h._2}")
@@ -641,7 +656,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                         .withRequestTimeout(1.hour) // we should monitor leaks
                         .withMethod(req.method)
                         // .withQueryString(queryString: _*)
-                        .withHeaders(headersIn: _*)
+                        .withHttpHeaders(headersIn: _*)
                         .withBody(body)
                         .withFollowRedirects(false)
                         .stream()
@@ -650,14 +665,14 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                         .flatMap { tuple =>
                           val (resp, remainingQuotas) = tuple
                           // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-                          val headers = resp.headers.headers.mapValues(_.head)
+                          val headers = resp.headers.mapValues(_.head)
                           // logger.warn(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                           // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                           // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
                           if (env.notDev && descriptor.enforceSecureCommunication
                               && !descriptor.isUriExcludedFromSecuredCommunication(uri)
                               && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
-                            if (resp.headers.status == 404 && headers
+                            if (resp.status == 404 && headers
                                   .get("X-CleverCloudUpgrade")
                                   .contains("true")) {
                               Errors.craftResponseResult(
@@ -680,7 +695,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                   "claim"  -> claim,
                                   "method" -> req.method,
                                   "query"  -> req.rawQueryString,
-                                  "status" -> resp.headers.status,
+                                  "status" -> resp.status,
                                   "headersIn" -> JsArray(
                                     req.headers.toSimpleMap
                                       .map(t => Json.obj("name" -> t._1, "value" -> t._2))
@@ -725,20 +740,21 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                                                                                         Seq.empty[(String, String)]
                                                                                                                       })
                             val contentType = headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                            val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                             // meterOut.mark(responseHeader.length)
                             // counterOut.addAndGet(responseHeader.length)
 
-                            val finalStream = resp.body
+                            val finalStream = resp.bodyAsSource
                               .alsoTo(Sink.onComplete {
                                 case Success(_) =>
                                   // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.uri}")
-                                  promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
+                                  promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
                                 case Failure(e) =>
                                   logger.error(
                                     s"error while transfering stream for ${protocol}://${req.host}${req.uri}",
                                     e
                                   )
-                                  promise.trySuccess(ProxyDone(resp.headers.status, upstreamLatency))
+                                  promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
                               })
                               .map { bs =>
                                 // debugLogger.trace(s"chunk on ${req.uri} => ${bs.utf8String}")
@@ -758,7 +774,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
                                 .fast
                                 .map { body =>
-                                  Status(resp.headers.status)(body)
+                                  Status(resp.status)(body)
                                     .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
                                     .as(contentType)
                                     .withCookies(withTrackingCookies: _*)
@@ -766,7 +782,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                             } else if (globalConfig.streamEntityOnly) { // only temporary
                               // stream out
                               val entity =
-                                if (resp.headers.headers
+                                if (resp.headers
                                       .get("Transfer-Encoding")
                                       .flatMap(_.lastOption)
                                       .filter(_ == "chunked")
@@ -777,45 +793,45 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                       .concat(
                                         Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
                                       ),
-                                    Some(contentType)
+                                    Some(contentType) // contentTypeOpt
                                   )
                                 } else {
                                   HttpEntity.Streamed(
                                     finalStream,
-                                    resp.headers.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong),
-                                    Some(contentType)
+                                    resp.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong),
+                                    Some(contentType) // contentTypeOpt
                                   )
                                 }
                               FastFuture.successful(
-                                Status(resp.headers.status)
+                                Status(resp.status)
                                   .sendEntity(entity)
                                   .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                  .as(contentType)
+                                  .as(contentType) //
                                   .withCookies(withTrackingCookies: _*)
                               )
                             } else {
-                              val response = resp.headers.headers
+                              val response = resp.headers
                                 .get("Transfer-Encoding")
                                 .flatMap(_.lastOption)
                                 .filter(_ == "chunked")
                                 .map { _ =>
                                   // stream out
-                                  Status(resp.headers.status)
+                                  Status(resp.status)
                                     .chunked(finalStream)
                                     .withHeaders(headersOut: _*)
                                     .withCookies(withTrackingCookies: _*)
                                   // .as(contentType)
                                 } getOrElse {
                                 // stream out
-                                Status(resp.headers.status)
+                                Status(resp.status)
                                   .sendEntity(
                                     HttpEntity.Streamed(
                                       finalStream,
-                                      resp.headers.headers
+                                      resp.headers
                                         .get("Content-Length")
                                         .flatMap(_.lastOption)
                                         .map(_.toLong),
-                                      resp.headers.headers.get("Content-Type").flatMap(_.lastOption)
+                                      resp.headers.get("Content-Type").flatMap(_.lastOption)
                                     )
                                   )
                                   .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)

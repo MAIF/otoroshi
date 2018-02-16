@@ -14,7 +14,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
 
   import actorSystem.dispatcher
 
-  import collection.JavaConversions._
+  import collection.JavaConverters._
   import scala.concurrent.duration._
 
   private val store       = new ConcurrentHashMap[String, Any]()
@@ -22,7 +22,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
 
   private val cancel = actorSystem.scheduler.schedule(0.millis, 10.millis) {
     val time = System.currentTimeMillis()
-    expirations.entrySet().foreach { entry =>
+    expirations.entrySet().asScala.foreach { entry =>
       if (entry.getValue < time) {
         store.remove(entry.getKey)
         expirations.remove(entry.getKey)
@@ -96,6 +96,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
     FastFuture.successful(
       store
         .keySet()
+        .asScala
         .filter { k =>
           pat.matcher(k).find
         }
@@ -114,6 +115,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
     Future.successful {
       hash
         .keySet()
+        .asScala
         .filter(k => fields.contains(k))
         .map(k => {
           hash.remove(k)
@@ -129,7 +131,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
     } else {
       store.get(key).asInstanceOf[ConcurrentHashMap[String, ByteString]]
     }
-    FastFuture.successful(hash.toMap)
+    FastFuture.successful(hash.asScala.toMap)
   }
 
   override def hset(key: String, field: String, value: String): Future[Boolean] = hsetBS(key, field, ByteString(value))
@@ -165,13 +167,13 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
       store.putIfAbsent(key, emptySeq())
     }
     val seq = store.get(key).asInstanceOf[java.util.List[ByteString]]
-    seq.addAll(0, values)
+    seq.addAll(0, values.asJava)
     FastFuture.successful(values.size)
   }
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     val seq    = Option(store.get(key)).map(_.asInstanceOf[java.util.List[ByteString]]).getOrElse(emptySeq())
-    val result = seq.toSeq.slice(start.toInt, stop.toInt - start.toInt)
+    val result = seq.asScala.slice(start.toInt, stop.toInt - start.toInt).toSeq
     FastFuture.successful(result.toSeq)
   }
 
@@ -180,7 +182,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
       store.putIfAbsent(key, emptySeq())
     }
     val seq    = store.get(key).asInstanceOf[java.util.List[ByteString]]
-    val result = seq.toSeq.slice(start.toInt, stop.toInt - start.toInt)
+    val result = seq.asScala.slice(start.toInt, stop.toInt - start.toInt).asJava
     seq.retainAll(result)
     FastFuture.successful(true)
   }
@@ -222,7 +224,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
       store.putIfAbsent(key, emptySet())
     }
     val seq = store.get(key).asInstanceOf[java.util.Set[ByteString]]
-    seq.addAll(members)
+    seq.addAll(members.asJava)
     FastFuture.successful(members.size)
   }
 
@@ -235,7 +237,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
 
   override def smembers(key: String): Future[Seq[ByteString]] = {
     val seq = Option(store.get(key)).map(_.asInstanceOf[java.util.Set[ByteString]]).getOrElse(emptySet())
-    FastFuture.successful(seq.toSeq)
+    FastFuture.successful(seq.asScala.toSeq)
   }
 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
@@ -245,8 +247,8 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
       store.putIfAbsent(key, emptySet())
     }
     val seq    = store.get(key).asInstanceOf[java.util.Set[ByteString]]
-    val newSeq = seq.filterNot(b => members.contains(b))
-    seq.retainAll(newSeq)
+    val newSeq = seq.asScala.filterNot(b => members.contains(b))
+    seq.retainAll(newSeq.asJava)
     FastFuture.successful(members.size)
   }
 

@@ -19,7 +19,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
   import org.iq80.leveldb._
   import org.iq80.leveldb.impl.Iq80DBFactory._
 
-  import collection.JavaConversions._
+  import collection.JavaConverters._
   import scala.concurrent.duration._
 
   private val options     = new Options().createIfMissing(true)
@@ -28,7 +28,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
 
   private val cancel = actorSystem.scheduler.schedule(0.millis, 10.millis) {
     val time = System.currentTimeMillis()
-    expirations.entrySet().foreach { entry =>
+    expirations.entrySet().asScala.foreach { entry =>
       if (entry.getValue < time) {
         db.delete(bytes(entry.getKey))
         expirations.remove(entry.getKey)

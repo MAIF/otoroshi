@@ -22,12 +22,15 @@ class LevelDbDataStores(configuration: Configuration,
 
   lazy val logger = Logger("otoroshi-leveldb-datastores")
 
-  lazy val dbPath: String       = configuration.getString("app.leveldb.path").getOrElse("./leveldb")
-  lazy val redisStatsItems: Int = configuration.getInt("app.leveldb.windowSize").getOrElse(99)
+  lazy val dbPath: String       = configuration.getOptional[String]("app.leveldb.path").getOrElse("./leveldb")
+  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.leveldb.windowSize").getOrElse(99)
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-leveldb-system",
-      configuration.getConfig("app.actorsystems.leveldb").map(_.underlying).getOrElse(ConfigFactory.empty)
+      configuration
+        .getOptional[Configuration]("app.actorsystems.leveldb")
+        .map(_.underlying)
+        .getOrElse(ConfigFactory.empty)
     )
   lazy val redis = new LevelDbRedis(actorSystem, dbPath)
 

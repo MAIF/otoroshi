@@ -7,6 +7,7 @@ import env.Env
 import models.U2FAdminDataStore
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
+import utils.JsonImplicits._
 import redis.RedisClientMasterSlaves
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -6,7 +6,6 @@ import actions.{BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
 import com.yubico.u2f.U2F
 import com.yubico.u2f.attestation.MetadataService
-import com.yubico.u2f.data.DeviceRegistration
 import com.yubico.u2f.data.messages.{
   AuthenticateRequestData,
   AuthenticateResponse,
@@ -16,19 +15,19 @@ import com.yubico.u2f.data.messages.{
 import env.Env
 import events._
 import models.BackOfficeUser
-import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.Controller
+import play.api.mvc._
 import security.IdGenerator
-
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 import utils.future.Implicits._
 
-class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env)
-    extends Controller {
+import scala.concurrent.duration.Duration
+
+class U2FController(BackOfficeAction: BackOfficeAction,
+                    BackOfficeActionAuth: BackOfficeActionAuth,
+                    cc: ControllerComponents)(implicit env: Env)
+    extends AbstractController(cc) {
 
   implicit lazy val ec = env.backOfficeExecutionContext
 
@@ -128,9 +127,9 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
     val appId = s"${env.rootScheme}${env.backOfficeHost}"
     (ctx.request.body \ "username").asOpt[String] match {
       case Some(u) => {
-        import collection.JavaConversions.asJavaIterable
+        import collection.JavaConverters._
         env.datastores.u2FAdminDataStore.getUserRegistration(u).flatMap { it =>
-          val registerRequestData = u2f.startRegistration(appId, it.map(_._1))
+          val registerRequestData = u2f.startRegistration(appId, it.map(_._1).asJava)
           logger.info(s"registerRequestData ${Json.prettyPrint(Json.parse(registerRequestData.toJson))}")
           env.datastores.u2FAdminDataStore
             .addRequest(registerRequestData.getRequestId, registerRequestData.toJson)
@@ -145,7 +144,7 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
   }
 
   def u2fRegisterFinish() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    import collection.JavaConversions._
+    import collection.JavaConverters._
     val usernameOpt = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt = (ctx.request.body \ "password").asOpt[String]
     val labelOpt    = (ctx.request.body \ "label").asOpt[String]
@@ -165,9 +164,9 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
                 val jsonAttestation = Json.obj(
                   "isTrusted"          -> attestation.isTrusted,
                   "metadataIdentifier" -> attestation.getMetadataIdentifier,
-                  "vendorProperties"   -> JsObject(attestation.getVendorProperties.toMap.mapValues(JsString.apply)),
-                  "deviceProperties"   -> JsObject(attestation.getDeviceProperties.toMap.mapValues(JsString.apply)),
-                  "transports"         -> JsArray(attestation.getTransports.toIndexedSeq.map(t => JsString(t.name()))),
+                  "vendorProperties"   -> JsObject(attestation.getVendorProperties.asScala.mapValues(JsString.apply)),
+                  "deviceProperties"   -> JsObject(attestation.getDeviceProperties.asScala.mapValues(JsString.apply)),
+                  "transports"         -> JsArray(attestation.getTransports.asScala.toSeq.map(t => JsString(t.name()))),
                   "registration"       -> Json.parse(registration.toJsonWithAttestationCert)
                 )
                 logger.info(s"$username => ${Json.prettyPrint(jsonAttestation)}")
@@ -190,9 +189,9 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
     val appId = s"${env.rootScheme}${env.backOfficeHost}"
     (ctx.request.body \ "username").asOpt[String] match {
       case Some(u) => {
-        import collection.JavaConversions.asJavaIterable
+        import collection.JavaConverters._
         env.datastores.u2FAdminDataStore.getUserRegistration(u).flatMap { it =>
-          val authenticateRequestData = u2f.startAuthentication(appId, it.map(_._1))
+          val authenticateRequestData = u2f.startAuthentication(appId, it.map(_._1).asJava)
           logger.info(s"authenticateRequestData ${Json.prettyPrint(Json.parse(authenticateRequestData.toJson))}")
           env.datastores.u2FAdminDataStore
             .addRequest(authenticateRequestData.getRequestId, authenticateRequestData.toJson)
@@ -208,7 +207,7 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
 
   def u2fAuthenticationFinish() = BackOfficeAction.async(parse.json) { ctx =>
     implicit val req = ctx.request
-    import collection.JavaConversions._
+    import collection.JavaConverters._
     val usernameOpt = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt = (ctx.request.body \ "password").asOpt[String]
     val responseOpt = (ctx.request.body \ "tokenResponse").asOpt[JsObject]
@@ -220,7 +219,8 @@ class U2FController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: Ba
           case Some(data) => {
             env.datastores.u2FAdminDataStore.getUserRegistration(username).flatMap { it =>
               val authenticateRequest = AuthenticateRequestData.fromJson(data)
-              val registration        = u2f.finishAuthentication(authenticateRequest, authenticateResponse, it.map(_._1))
+              val registration =
+                u2f.finishAuthentication(authenticateRequest, authenticateResponse, it.map(_._1).asJava)
               env.datastores.u2FAdminDataStore.deleteRequest(authenticateRequest.getRequestId).flatMap { _ =>
                 val keyHandle = registration.getKeyHandle
                 val user      = it.filter(_._1.getKeyHandle == keyHandle).head._2

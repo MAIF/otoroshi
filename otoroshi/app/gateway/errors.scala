@@ -123,6 +123,7 @@ object Errors {
             .apply(Json.obj(env.Headers.OtoroshiGatewayError -> message))
             .withHeaders(
               env.Headers.OtoroshiGatewayError -> "true",
+              env.Headers.OtoroshiErrorMsg     -> message,
               env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
             )
         )

@@ -3,6 +3,7 @@ package storage.inmemory
 import env.Env
 import models._
 import play.api.libs.json._
+import utils.JsonImplicits._
 import storage.{RedisLike, RedisLikeStore}
 import utils.LocalCache
 import com.typesafe.config.ConfigRenderOptions
@@ -191,7 +192,14 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
     val appConfig =
-      Json.parse(env.configuration.getConfig("app").get.underlying.root().render(ConfigRenderOptions.concise()))
+      Json.parse(
+        env.configuration
+          .getOptional[play.api.Configuration]("app")
+          .get
+          .underlying
+          .root()
+          .render(ConfigRenderOptions.concise())
+      )
     for {
       config       <- env.datastores.globalConfigDataStore.singleton()
       descs        <- env.datastores.serviceDescriptorDataStore.findAll()

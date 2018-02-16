@@ -4,9 +4,9 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import env.Env
 import models.PrivateAppsUser
-import play.api.mvc.{ActionBuilder, Request, Result, Results}
+import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class PrivateAppsActionContext[A](request: Request[A],
                                        user: Option[PrivateAppsUser],
@@ -14,7 +14,9 @@ case class PrivateAppsActionContext[A](request: Request[A],
   def connected: Boolean = user.isDefined
 }
 
-class PrivateAppsAction()(implicit env: Env) extends ActionBuilder[PrivateAppsActionContext] {
+class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+    extends ActionBuilder[PrivateAppsActionContext, AnyContent]
+    with ActionFunction[Request, PrivateAppsActionContext] {
 
   implicit lazy val ec = env.privateAppsExecutionContext
 
@@ -41,4 +43,6 @@ class PrivateAppsAction()(implicit env: Env) extends ActionBuilder[PrivateAppsAc
       }
     }
   }
+
+  override protected def executionContext: ExecutionContext = ec
 }

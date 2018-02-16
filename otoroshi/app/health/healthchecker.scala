@@ -45,7 +45,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
         env.Ws
           .url(url)
           .withRequestTimeout(Duration(30, TimeUnit.SECONDS))
-          .withHeaders(
+          .withHttpHeaders(
             env.Headers.OtoroshiState                -> state,
             env.Headers.OtoroshiClaim                -> claim,
             env.Headers.OtoroshiHealthCheckLogicTest -> value

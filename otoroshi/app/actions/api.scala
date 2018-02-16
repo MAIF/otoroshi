@@ -8,11 +8,11 @@ import env.Env
 import models.{ApiKey, GlobalConfig}
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{ActionBuilder, Request, Result, Results}
+import play.api.mvc._
 import security.OtoroshiClaim
 import utils.future.Implicits._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
@@ -23,7 +23,9 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
   def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
 }
 
-class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
+class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+    extends ActionBuilder[ApiActionContext, AnyContent]
+    with ActionFunction[Request, ApiActionContext] {
 
   implicit lazy val ec = env.apiExecutionContext
 
@@ -33,8 +35,8 @@ class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
 
   def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
     ex match {
-      case Some(e) => logger.error("error mess " + message, e)
-      case None    => logger.error("error mess " + message)
+      case Some(e) => logger.error(s"error message: $message", e)
+      case None    => logger.error(s"error message: $message")
     }
     FastFuture.successful(
       Results
@@ -90,4 +92,6 @@ class ApiAction()(implicit env: Env) extends ActionBuilder[ApiActionContext] {
       case _ => error(s"Not found")
     }
   }
+
+  override protected def executionContext: ExecutionContext = ec
 }

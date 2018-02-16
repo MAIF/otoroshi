@@ -27,7 +27,7 @@ case class BackOfficeEvent(`@id`: String,
 
   override def toJson(implicit env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
-    "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
     "@product"     -> env.eventsName,
     "@serviceId"   -> `@serviceId`,
@@ -61,7 +61,7 @@ case class AdminApiEvent(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -89,7 +89,7 @@ case class CircuitBreakerOpenedEvent(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -113,7 +113,7 @@ case class CircuitBreakerClosedEvent(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -137,7 +137,7 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,

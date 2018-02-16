@@ -6,30 +6,27 @@ import java.util.concurrent.{Executors, ThreadFactory, TimeUnit}
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import akka.io.IO
-import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
-import dns.DnsHandlerActor
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
 import models._
+import org.mindrot.jbcrypt.BCrypt
 import play.api._
-import play.api.libs.ws._
-import play.api.libs.ws.ahc._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, Json}
-import security.{Auth0Config, ClaimCrypto, IdGenerator}
+import play.api.libs.ws._
+import play.api.libs.ws.ahc._
+import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
+import security.{ClaimCrypto, IdGenerator}
 import storage.DataStores
 import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores
 import storage.leveldb.LevelDbDataStores
 import storage.redis.RedisDataStores
-import org.mindrot.jbcrypt.BCrypt
 
-import scala.collection.JavaConversions._
-import scala.concurrent.duration.{Duration, _}
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.Success
@@ -55,7 +52,10 @@ class Env(val configuration: Configuration,
   val (internalActorSystem, analyticsActor, alertsActor, healthCheckerActor) = {
     implicit val as = ActorSystem(
       "otoroshi-internal-system",
-      configuration.getConfig("app.actorsystems.internal").map(_.underlying).getOrElse(ConfigFactory.empty)
+      configuration
+        .getOptional[Configuration]("app.actorsystems.internal")
+        .map(_.underlying)
+        .getOrElse(ConfigFactory.empty)
     )
     implicit val mat = ActorMaterializer.create(as)
     implicit val ec  = as.dispatcher
@@ -70,44 +70,52 @@ class Env(val configuration: Configuration,
 
   lazy val websocketHandlerActorSystem = ActorSystem(
     "otoroshi-websockets-system",
-    configuration.getConfig("app.actorsystems.websockets").map(_.underlying).getOrElse(ConfigFactory.empty)
+    configuration
+      .getOptional[Configuration]("app.actorsystems.websockets")
+      .map(_.underlying)
+      .getOrElse(ConfigFactory.empty)
   )
 
-  lazy val maxWebhookSize: Int = configuration.getInt("app.webhooks.size").getOrElse(100)
+  lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
-  //lazy val middleFingers: Boolean = configuration.getBoolean("app.middleFingers").getOrElse(false)
-  //lazy val maxLocalLogsSize: Int = configuration.getInt("app.events.maxSize").getOrElse(1000)
+  //lazy val middleFingers: Boolean = configuration.getOptional[Boolean]]("app.middleFingers").getOrElse(false)
+  //lazy val maxLocalLogsSize: Int = configuration.getOptional[Int]("app.events.maxSize").getOrElse(1000)
 
-  lazy val auth0UserMeta: String          = configuration.getString("app.userMeta").getOrElse("otoroshi_data")
-  lazy val eventsName: String             = configuration.getString("app.eventsName").getOrElse("otoroshi")
-  lazy val storageRoot: String            = configuration.getString("app.storageRoot").getOrElse("otoroshi")
-  lazy val useCache: Boolean              = configuration.getBoolean("app.useCache").getOrElse(false)
-  lazy val useRedisScan: Boolean          = configuration.getBoolean("app.redis.useScan").getOrElse(false)
-  lazy val commitId: String               = configuration.getString("app.commitId").getOrElse("HEAD")
-  lazy val secret: String                 = configuration.getString("play.crypto.secret").get
-  lazy val sharedKey: String              = configuration.getString("app.claim.sharedKey").get
-  lazy val env: String                    = configuration.getString("app.env").getOrElse("prod")
-  lazy val exposeAdminApi: Boolean        = configuration.getBoolean("app.adminapi.exposed").getOrElse(true)
-  lazy val exposeAdminDashboard: Boolean  = configuration.getBoolean("app.backoffice.exposed").getOrElse(true)
-  lazy val adminApiProxyHttps: Boolean    = configuration.getBoolean("app.adminapi.proxy.https").getOrElse(false)
-  lazy val adminApiProxyUseLocal: Boolean = configuration.getBoolean("app.adminapi.proxy.local").getOrElse(true)
+  lazy val auth0UserMeta: String       = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")
+  lazy val eventsName: String          = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
+  lazy val storageRoot: String         = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")
+  lazy val useCache: Boolean           = configuration.getOptional[Boolean]("app.useCache").getOrElse(false)
+  lazy val useRedisScan: Boolean       = configuration.getOptional[Boolean]("app.redis.useScan").getOrElse(false)
+  lazy val commitId: String            = configuration.getOptional[String]("app.commitId").getOrElse("HEAD")
+  lazy val secret: String              = configuration.getOptional[String]("play.crypto.secret").get
+  lazy val sharedKey: String           = configuration.getOptional[String]("app.claim.sharedKey").get
+  lazy val env: String                 = configuration.getOptional[String]("app.env").getOrElse("prod")
+  lazy val exposeAdminApi: Boolean        = configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
+  lazy val exposeAdminDashboard: Boolean  = configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
+  lazy val adminApiProxyHttps: Boolean = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
+  lazy val adminApiProxyUseLocal: Boolean =
+    configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
   lazy val redirectToDev: Boolean = env
-    .toLowerCase() == "dev" && configuration.getBoolean("app.redirectToDev").getOrElse(false)
-  lazy val envInUrl: String = configuration.getString("app.env").filterNot(_ == "prod").map(v => s"$v.").getOrElse("")
-  lazy val domain: String   = configuration.getString("app.domain").getOrElse("foo.bar")
+    .toLowerCase() == "dev" && configuration.getOptional[Boolean]("app.redirectToDev").getOrElse(false)
+  lazy val envInUrl: String =
+    configuration.getOptional[String]("app.env").filterNot(_ == "prod").map(v => s"$v.").getOrElse("")
+  lazy val domain: String = configuration.getOptional[String]("app.domain").getOrElse("foo.bar")
   lazy val adminApiSubDomain: String =
-    configuration.getString("app.adminapi.targetSubdomain").getOrElse("otoroshi-admin-internal-api")
+    configuration.getOptional[String]("app.adminapi.targetSubdomain").getOrElse("otoroshi-admin-internal-api")
   lazy val adminApiExposedSubDomain: String =
-    configuration.getString("app.adminapi.exposedDubdomain").getOrElse("otoroshi-api")
-  lazy val backOfficeSubDomain: String  = configuration.getString("app.backoffice.subdomain").getOrElse("otoroshi")
-  lazy val privateAppsSubDomain: String = configuration.getString("app.privateapps.subdomain").getOrElse("privateapps")
-  lazy val retries: Int                 = configuration.getInt("app.retries").getOrElse(5)
+    configuration.getOptional[String]("app.adminapi.exposedDubdomain").getOrElse("otoroshi-api")
+  lazy val backOfficeSubDomain: String =
+    configuration.getOptional[String]("app.backoffice.subdomain").getOrElse("otoroshi")
+  lazy val privateAppsSubDomain: String =
+    configuration.getOptional[String]("app.privateapps.subdomain").getOrElse("privateapps")
+  lazy val retries: Int = configuration.getOptional[Int]("app.retries").getOrElse(5)
 
-  lazy val backOfficeServiceId      = configuration.getString("app.adminapi.defaultValues.backOfficeServiceId").get
-  lazy val backOfficeGroupId        = configuration.getString("app.adminapi.defaultValues.backOfficeGroupId").get
-  lazy val backOfficeApiKeyClientId = configuration.getString("app.adminapi.defaultValues.backOfficeApiKeyClientId").get
+  lazy val backOfficeServiceId = configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeServiceId").get
+  lazy val backOfficeGroupId   = configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeGroupId").get
+  lazy val backOfficeApiKeyClientId =
+    configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeApiKeyClientId").get
   lazy val backOfficeApiKeyClientSecret =
-    configuration.getString("app.adminapi.defaultValues.backOfficeApiKeyClientSecret").get
+    configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeApiKeyClientSecret").get
 
   def composeUrl(subdomain: String): String     = s"$subdomain.$envInUrl$domain"
   def composeMainUrl(subdomain: String): String = if (isDev) composeUrl(subdomain) else s"$subdomain.$domain"
@@ -140,7 +148,7 @@ class Env(val configuration: Configuration,
   lazy val pressureActorSystem = ActorSystem(
     "otoroshi-pressure-system",
     configuration
-      .getConfig("app.actorsystems.gateway")
+      .getOptional[Configuration]("app.actorsystems.pressure")
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
   )
@@ -148,34 +156,38 @@ class Env(val configuration: Configuration,
 
   lazy val gatewayActorSystem = ActorSystem(
     "otoroshi-gateway-system",
-    configuration.getConfig("app.actorsystems.gateway").map(_.underlying).getOrElse(ConfigFactory.empty)
+    configuration
+      .getOptional[Configuration]("app.actorsystems.gateway")
+      .map(_.underlying)
+      .getOrElse(ConfigFactory.empty)
   )
 
   lazy val gatewayExecutor     = gatewayActorSystem.dispatcher
   lazy val gatewayMaterializer = ActorMaterializer.create(gatewayActorSystem)
 
   lazy val gatewayClient = {
-    val parser  = new WSConfigParser(configuration, environment)
-    val config  = new AhcWSClientConfig(wsClientConfig = parser.parse())
+    val parser  = new WSConfigParser(configuration.underlying, environment.classLoader)
+    val config  = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(keepAlive = true)
     val builder = new AhcConfigBuilder(config)
-    val gwWsClient = AhcWSClient(
-      builder
-        .configure()
-        .setCompressionEnforced(false)
-        .setKeepAlive(true)
-        .setHttpClientCodecMaxChunkSize(1024 * 100)
-        .build()
-    )(gatewayMaterializer)
-    gwWsClient
+    // TODO : use it
+    val ahcConfig: AsyncHttpClientConfig = builder
+      .configure()
+      .setCompressionEnforced(false)
+      .setKeepAlive(true)
+      .setHttpClientCodecMaxChunkSize(1024 * 100)
+      .build()
+    AhcWSClient(config.copy(wsClientConfig = config.wsClientConfig.copy(compressionEnabled = false)))(
+      gatewayMaterializer
+    )
   }
 
   lazy val kafkaActorSytem = ActorSystem(
     "otoroshi-kafka-system",
-    configuration.getConfig("app.actorsystems.kafka").map(_.underlying).getOrElse(ConfigFactory.empty)
+    configuration.getOptional[Configuration]("app.actorsystems.kafka").map(_.underlying).getOrElse(ConfigFactory.empty)
   )
   lazy val statsdActorSytem = ActorSystem(
     "otoroshi-statsd-system",
-    configuration.getConfig("app.actorsystems.statsd").map(_.underlying).getOrElse(ConfigFactory.empty)
+    configuration.getOptional[Configuration]("app.actorsystems.statsd").map(_.underlying).getOrElse(ConfigFactory.empty)
   )
 
   lazy val statsd = new StatsdWrapper(statsdActorSytem, this)
@@ -186,45 +198,48 @@ class Env(val configuration: Configuration,
   lazy val notDev = !isDev
   lazy val hash   = s"${System.currentTimeMillis()}"
 
-  lazy val privateAppsSessionExp = configuration.getLong("app.privateapps.session.exp").get
-  lazy val backOfficeSessionExp  = configuration.getLong("app.backoffice.session.exp").get
+  lazy val privateAppsSessionExp = configuration.getOptional[Long]("app.privateapps.session.exp").get
+  lazy val backOfficeSessionExp  = configuration.getOptional[Long]("app.backoffice.session.exp").get
 
-  lazy val exposedRootScheme = configuration.getString("app.rootScheme").getOrElse("https")
+  lazy val exposedRootScheme = configuration.getOptional[String]("app.rootScheme").getOrElse("https")
 
   def rootScheme               = if (isDev) "http://" else s"${exposedRootScheme}://"
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
 
   def Ws = wsClient
 
-  lazy val snowflakeSeed      = configuration.getLong("app.snowflake.seed").get
+  lazy val snowflakeSeed      = configuration.getOptional[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator = IdGenerator(snowflakeSeed)
   lazy val redirections: Seq[String] =
-    configuration.getStringList("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String])
+    configuration.getOptional[Seq[String]]("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String])
 
   lazy val crypto = ClaimCrypto(sharedKey)
 
   object Headers {
-    lazy val OtoroshiVizFromLabel               = configuration.getString("otoroshi.headers.trace.label").get
-    lazy val OtoroshiVizFrom                    = configuration.getString("otoroshi.headers.trace.from").get
-    lazy val OtoroshiGatewayParentRequest       = configuration.getString("otoroshi.headers.trace.parent").get
-    lazy val OtoroshiAdminProfile               = configuration.getString("otoroshi.headers.request.adminprofile").get
-    lazy val OtoroshiClientId                   = configuration.getString("otoroshi.headers.request.clientid").get
-    lazy val OtoroshiClientSecret               = configuration.getString("otoroshi.headers.request.clientsecret").get
-    lazy val OtoroshiRequestId                  = configuration.getString("otoroshi.headers.request.id").get
-    lazy val OtoroshiProxiedHost                = configuration.getString("otoroshi.headers.response.proxyhost").get
-    lazy val OtoroshiGatewayError               = configuration.getString("otoroshi.headers.response.error").get
-    lazy val OtoroshiErrorMsg                   = configuration.getString("otoroshi.headers.response.errormsg").get
-    lazy val OtoroshiProxyLatency               = configuration.getString("otoroshi.headers.response.proxylatency").get
-    lazy val OtoroshiUpstreamLatency            = configuration.getString("otoroshi.headers.response.upstreamlatency").get
-    lazy val OtoroshiDailyCallsRemaining        = configuration.getString("otoroshi.headers.response.dailyquota").get
-    lazy val OtoroshiMonthlyCallsRemaining      = configuration.getString("otoroshi.headers.response.monthlyquota").get
-    lazy val OtoroshiState                      = configuration.getString("otoroshi.headers.comm.state").get
-    lazy val OtoroshiStateResp                  = configuration.getString("otoroshi.headers.comm.stateresp").get
-    lazy val OtoroshiClaim                      = configuration.getString("otoroshi.headers.comm.claim").get
-    lazy val OtoroshiHealthCheckLogicTest       = configuration.getString("otoroshi.headers.healthcheck.test").get
-    lazy val OtoroshiHealthCheckLogicTestResult = configuration.getString("otoroshi.headers.healthcheck.testresult").get
-    lazy val OtoroshiIssuer                     = configuration.getString("otoroshi.headers.jwt.issuer").get
-    lazy val OtoroshiTrackerId                  = configuration.getString("otoroshi.headers.canary.tracker").get
+    lazy val OtoroshiVizFromLabel         = configuration.getOptional[String]("otoroshi.headers.trace.label").get
+    lazy val OtoroshiVizFrom              = configuration.getOptional[String]("otoroshi.headers.trace.from").get
+    lazy val OtoroshiGatewayParentRequest = configuration.getOptional[String]("otoroshi.headers.trace.parent").get
+    lazy val OtoroshiAdminProfile         = configuration.getOptional[String]("otoroshi.headers.request.adminprofile").get
+    lazy val OtoroshiClientId             = configuration.getOptional[String]("otoroshi.headers.request.clientid").get
+    lazy val OtoroshiClientSecret         = configuration.getOptional[String]("otoroshi.headers.request.clientsecret").get
+    lazy val OtoroshiRequestId            = configuration.getOptional[String]("otoroshi.headers.request.id").get
+    lazy val OtoroshiProxiedHost          = configuration.getOptional[String]("otoroshi.headers.response.proxyhost").get
+    lazy val OtoroshiGatewayError         = configuration.getOptional[String]("otoroshi.headers.response.error").get
+    lazy val OtoroshiErrorMsg             = configuration.getOptional[String]("otoroshi.headers.response.errormsg").get
+    lazy val OtoroshiProxyLatency         = configuration.getOptional[String]("otoroshi.headers.response.proxylatency").get
+    lazy val OtoroshiUpstreamLatency =
+      configuration.getOptional[String]("otoroshi.headers.response.upstreamlatency").get
+    lazy val OtoroshiDailyCallsRemaining = configuration.getOptional[String]("otoroshi.headers.response.dailyquota").get
+    lazy val OtoroshiMonthlyCallsRemaining =
+      configuration.getOptional[String]("otoroshi.headers.response.monthlyquota").get
+    lazy val OtoroshiState                = configuration.getOptional[String]("otoroshi.headers.comm.state").get
+    lazy val OtoroshiStateResp            = configuration.getOptional[String]("otoroshi.headers.comm.stateresp").get
+    lazy val OtoroshiClaim                = configuration.getOptional[String]("otoroshi.headers.comm.claim").get
+    lazy val OtoroshiHealthCheckLogicTest = configuration.getOptional[String]("otoroshi.headers.healthcheck.test").get
+    lazy val OtoroshiHealthCheckLogicTestResult =
+      configuration.getOptional[String]("otoroshi.headers.healthcheck.testresult").get
+    lazy val OtoroshiIssuer    = configuration.getOptional[String]("otoroshi.headers.jwt.issuer").get
+    lazy val OtoroshiTrackerId = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
   }
 
   private def factory(of: String) = new ThreadFactory {
@@ -235,7 +250,7 @@ class Env(val configuration: Configuration,
   logger.warn(s"Listening commands on $adminApiExposedHost for env ${env}")
 
   lazy val datastores: DataStores = {
-    configuration.getString("app.storage").getOrElse("redis") match {
+    configuration.getOptional[String]("app.storage").getOrElse("redis") match {
       case "redis"     => new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory"  => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle, this)
@@ -261,24 +276,11 @@ class Env(val configuration: Configuration,
     FastFuture.successful(())
   })
 
-  {
-    if (env.toLowerCase == "dev") {
-      // https://github.com/mkroli/dns4s/blob/master/dsl.md
-      import akka.util.Timeout
-      import com.github.mkroli.dns4s.akka.Dns
-      implicit val system  = ActorSystem("DnsServer")
-      implicit val ec      = system.dispatcher
-      implicit val timeout = Timeout(5 seconds)
-      val props            = DnsHandlerActor.props(this)
-      IO(Dns) ? Dns.Bind(system.actorOf(props), configuration.getInt("app.dnsport").getOrElse(5354))
-      lifecycle.addStopHook(() => {
-        system.terminate().map(_ => ())
-      })
-    }
-  }
-
   lazy val port =
-    configuration.getInt("play.server.http.port").orElse(configuration.getInt("http.port")).getOrElse(9999)
+    configuration
+      .getOptional[Int]("play.server.http.port")
+      .orElse(configuration.getOptional[Int]("http.port"))
+      .getOrElse(9999)
 
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,
@@ -325,20 +327,18 @@ class Env(val configuration: Configuration,
     case _ =>
       implicit val ec = internalActorSystem.dispatcher
 
-      import collection.JavaConversions._
-
       datastores.globalConfigDataStore.isOtoroshiEmpty().andThen {
         case Success(true) => {
           logger.warn(s"The main datastore seems to be empty, registering some basic services")
           val password = IdGenerator.token(32)
           val headers: Seq[(String, String)] = configuration
-            .getStringList("app.importFromHeaders")
+            .getOptional[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
             .getOrElse(Seq.empty[(String, String)])
-          configuration.getString("app.importFrom") match {
+          configuration.getOptional[String]("app.importFrom") match {
             case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
               logger.warn(s"Importing from URL: $url")
-              wsClient.url(url).withHeaders(headers: _*).get().fast.map { resp =>
+              wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
                 val json = resp.json.as[JsObject]
                 datastores.globalConfigDataStore.fullImport(json)(ec, this)
               }
@@ -378,9 +378,9 @@ class Env(val configuration: Configuration,
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  lazy val sessionDomain = configuration.getString("play.http.session.domain").get
-  lazy val sessionMaxAge = configuration.getInt("play.http.session.maxAge").getOrElse(86400)
-  lazy val playSecret    = configuration.getString("play.crypto.secret").get
+  lazy val sessionDomain = configuration.getOptional[String]("play.http.session.domain").get
+  lazy val sessionMaxAge = configuration.getOptional[Int]("play.http.session.maxAge").getOrElse(86400)
+  lazy val playSecret    = configuration.getOptional[String]("play.http.secret.key").get
 
   def sign(message: String): String =
     scala.util.Try {

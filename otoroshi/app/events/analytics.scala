@@ -11,6 +11,7 @@ import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
+import utils.JsonImplicits._
 import security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.duration.FiniteDuration
@@ -68,16 +69,16 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             .map(
               evt =>
                 webhook.url
-                //.replace("@product", env.eventsName)
+                  //.replace("@product", env.eventsName)
                   .replace("@service", evt.`@service`)
                   .replace("@serviceId", evt.`@serviceId`)
                   .replace("@id", evt.`@id`)
                   .replace("@messageType", evt.`@type`)
             )
             .getOrElse(webhook.url)
-          env.Ws.url(url).withHeaders(headers: _*).post(JsArray(evts.map(_.toJson))).andThen {
+          env.Ws.url(url).withHttpHeaders(headers: _*).post(JsArray(evts.map(_.toJson))).andThen {
             case Success(resp) => {
-              logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.allHeaders} - ${resp.body}")
+              logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")
             }
             case Failure(e) => {
               logger.error("SEND_TO_ANALYTICS_FAILURE: Error while sending AnalyticEvent", e)

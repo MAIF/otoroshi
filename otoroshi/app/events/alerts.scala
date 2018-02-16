@@ -38,7 +38,7 @@ case class MaxConcurrentRequestReachedAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -62,7 +62,7 @@ case class CircuitBreakerOpenedAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -86,7 +86,7 @@ case class CircuitBreakerClosedAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -110,7 +110,7 @@ case class SessionDiscardedAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -133,7 +133,7 @@ case class SessionsDiscardedAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -156,7 +156,7 @@ case class PanicModeAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -180,7 +180,7 @@ case class OtoroshiExportAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -205,7 +205,7 @@ case class U2FAdminDeletedAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -228,7 +228,7 @@ case class BlackListedBackOfficeUserAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -250,7 +250,7 @@ case class AdminLoggedInAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
-    "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
     "@product"     -> _env.eventsName,
     "@serviceId"   -> `@serviceId`,
@@ -272,7 +272,7 @@ case class AdminFirstLogin(`@id`: String, `@env`: String, user: BackOfficeUser, 
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
-    "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
     "@product"     -> _env.eventsName,
     "@serviceId"   -> `@serviceId`,
@@ -297,7 +297,7 @@ case class AdminLoggedOutAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
-    "@timestamp"   -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"        -> `@type`,
     "@product"     -> _env.eventsName,
     "@serviceId"   -> `@serviceId`,
@@ -319,7 +319,7 @@ case class DbResetAlert(`@id`: String, `@env`: String, user: JsValue, `@timestam
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -338,7 +338,7 @@ case class DangerZoneAccessAlert(`@id`: String, `@env`: String, user: JsValue, `
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -363,7 +363,7 @@ case class GlobalConfigModification(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -391,7 +391,7 @@ case class RevokedApiKeyUsageAlert(`@id`: String,
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
-    "@timestamp" -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,
     "@product"   -> _env.eventsName,
     "@serviceId" -> `@serviceId`,
@@ -414,7 +414,7 @@ case class ServiceGroupCreatedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -436,7 +436,7 @@ case class ServiceGroupUpdatedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -458,7 +458,7 @@ case class ServiceGroupDeletedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -480,7 +480,7 @@ case class ServiceCreatedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -502,7 +502,7 @@ case class ServiceUpdatedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -524,7 +524,7 @@ case class ServiceDeletedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -546,7 +546,7 @@ case class ApiKeyCreatedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -568,7 +568,7 @@ case class ApiKeyUpdatedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -590,7 +590,7 @@ case class ApiKeyDeletedAlert(`@id`: String,
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"           -> `@id`,
-    "@timestamp"    -> Writes.DefaultJodaDateWrites.writes(`@timestamp`),
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"         -> `@type`,
     "@product"      -> _env.eventsName,
     "@serviceId"    -> `@serviceId`,
@@ -686,7 +686,7 @@ class AlertsActor(implicit env: Env) extends Actor {
               val url = webhook.url
               env.Ws
                 .url(url)
-                .withHeaders(webhook.headers.toSeq: _*)
+                .withHttpHeaders(webhook.headers.toSeq: _*)
                 .post(Json.obj("event" -> "ALERT", "payload" -> evt.toJson))
                 .andThen {
                   case Failure(e) => {

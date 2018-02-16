@@ -11,6 +11,7 @@ import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.EssentialFilter
 import play.filters.gzip.{GzipFilter, GzipFilterConfig}
+import play.filters.HttpFiltersComponents
 
 import router.Routes
 
@@ -18,7 +19,7 @@ class OtoroshiLoader extends ApplicationLoader {
 
   def load(context: Context): Application = {
     LoggerConfigurator(context.environment.classLoader).foreach {
-      _.configure(context.environment)
+      _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
     new OtoroshiComponentsInstances(context).application
   }
@@ -28,10 +29,12 @@ package object modules {
 
   class OtoroshiComponentsInstances(context: Context)
       extends BuiltInComponentsFromContext(context)
+      with AssetsComponents
+      with HttpFiltersComponents
       with AhcWSComponents {
 
-    lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
-    lazy val gzipFilter                                 = wire[GzipFilter]
+    // lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
+    // lazy val gzipFilter                                 = wire[GzipFilter]
     override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
@@ -56,8 +59,9 @@ package object modules {
     lazy val privateAppsController = wire[PrivateAppsController]
     lazy val u2fController         = wire[U2FController]
 
-    lazy val assets: Assets = wire[Assets]
+    override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
+      //com.google.common.base.Preconditions.checkArgument("yo", new Object())
       // add the prefix string in local scope for the Routes constructor
       val prefix: String = "/"
       wire[Routes]

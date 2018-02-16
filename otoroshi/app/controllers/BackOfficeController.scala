@@ -18,18 +18,22 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.StreamedBody
+import play.api.libs.ws.{EmptyBody, SourceBody}
 import play.api.mvc._
 import utils.LocalCache
 import security._
 import org.mindrot.jbcrypt.BCrypt
+import akka.http.scaladsl.util.FastFuture._
 
+import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.Success
 
-class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionAuth: BackOfficeActionAuth)(
+class BackOfficeController(BackOfficeAction: BackOfficeAction,
+                           BackOfficeActionAuth: BackOfficeActionAuth,
+                           cc: ControllerComponents)(
     implicit env: Env
-) extends Controller {
+) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.backOfficeExecutionContext
   implicit lazy val lat = env.materializer
@@ -42,35 +46,59 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     Accumulator.source[ByteString].map(Right.apply)
   }
 
+  def hasBody(request: Request[_]): Boolean = 
+    (request.method, request.headers.get("Content-Length")) match {
+      case ("GET", Some(_))    => true
+      case ("GET", None)       => false
+      case ("HEAD", Some(_))   => true
+      case ("HEAD", None)      => false
+      case ("PATCH", _)        => true
+      case ("POST", _)         => true
+      case ("PUT", _)          => true
+      case ("DELETE", Some(_)) => true
+      case ("DELETE", None)    => false
+      case _                   => true
+    }
+
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     val host     = if (env.isDev) env.adminApiExposedHost else env.adminApiExposedHost
     val localUrl = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
     val url      = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
+    lazy val currentReqHasBody = hasBody(ctx.request)
     logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
+    val headers = Seq(
+      "Host"                           -> host,
+      env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
+      env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
+      env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,
+      env.Headers.OtoroshiClientSecret -> env.backOfficeApiKey.clientSecret,
+      env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
+        Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+      )
+    ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
+      "Content-Type" -> ctype
+    } ++ ctx.request.headers.get("Accept").map { accept =>
+      "Accept" -> accept
+    }
     env.Ws
       .url(s"$url/$path")
-      .withHeaders(
-        "Host"                           -> host,
-        env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
-        env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
-        env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,
-        env.Headers.OtoroshiClientSecret -> env.backOfficeApiKey.clientSecret,
-        env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-          Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
-        ),
-        "Accept"       -> "application/json",
-        "Content-Type" -> "application/json"
-      )
+      .withHttpHeaders(headers: _*)
       .withFollowRedirects(false)
       .withMethod(ctx.request.method)
-      .withQueryString(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
-      .withBody(StreamedBody(ctx.request.body))
+      .withRequestTimeout(1.minute)
+      .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+      .withBody(if (currentReqHasBody) SourceBody(ctx.request.body) else EmptyBody)
       .stream()
+      .fast
       .map { res =>
-        val ctype = res.headers.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
-        Status(res.headers.status)
-          .sendEntity(HttpEntity.Streamed(res.body, None, Some(ctype)))
-          .withHeaders(res.headers.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type"): _*)
+        val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+        Status(res.status)
+          .sendEntity(
+            HttpEntity.Streamed(Source.lazily(() => res.bodyAsSource),
+                                res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
+                                res.headers.get("Content-Type").flatMap(_.headOption))
+          )
+          .withHeaders(res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type").filter(_._1 != "Content-Length"): _*)
           .as(ctype)
       }
   }
@@ -163,7 +191,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
         env.Ws
           .url(url)
           .withRequestTimeout(10.seconds)
-          .withHeaders(
+          .withHttpHeaders(
             env.Headers.OtoroshiRequestId -> env.snowflakeGenerator.nextIdStr(),
             env.Headers.OtoroshiState     -> state,
             env.Headers.OtoroshiClaim     -> claim
@@ -440,7 +468,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
   }
 
   def getAllLoggers() = BackOfficeActionAuth { ctx =>
-    import collection.JavaConversions._
+    import collection.JavaConverters._
 
     val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     val paginationPageSize: Int =
@@ -448,7 +476,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction, BackOfficeActionA
     val paginationPosition = (paginationPage - 1) * paginationPageSize
 
     val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
-    val rawLoggers    = loggerContext.getLoggerList.toIndexedSeq.drop(paginationPosition).take(paginationPageSize)
+    val rawLoggers    = loggerContext.getLoggerList.asScala.drop(paginationPosition).take(paginationPageSize)
     val loggers = JsArray(rawLoggers.map(logger => {
       val level: String = Option(logger.getLevel).map(_.levelStr).getOrElse("OFF")
       Json.obj("name" -> logger.getName, "level" -> level)

@@ -47,7 +47,7 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
   import actorSystem.dispatcher
   import com.datastax.driver.core._
 
-  import collection.JavaConversions._
+  import collection.JavaConverters._
   import scala.concurrent.duration._
 
   val poolingOptions = new PoolingOptions()
@@ -63,7 +63,7 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
   private val cancel = actorSystem.scheduler.schedule(0.millis, 1.second) {
     val time = System.currentTimeMillis()
     session.executeAsync("SELECT key, value from otoroshi.expirations;").asFuture.map { rs =>
-      rs.foreach { row =>
+      rs.asScala.foreach { row =>
         val key   = row.getString("key")
         val value = row.getLong("value")
         if (value < time) {
@@ -99,14 +99,26 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
 
   private def getAllKeys(): Future[Seq[String]] =
     for {
-      values <- session.executeAsync("SELECT key from otoroshi.values;").asFuture.map(_.map(_.getString("key")).toSeq)
-      lists  <- session.executeAsync("SELECT key from otoroshi.lists;").asFuture.map(_.map(_.getString("key")).toSeq)
-      sets   <- session.executeAsync("SELECT key from otoroshi.sets;").asFuture.map(_.map(_.getString("key")).toSeq)
-      hashs  <- session.executeAsync("SELECT key from otoroshi.hashs;").asFuture.map(_.map(_.getString("key")).toSeq)
+      values <- session
+                 .executeAsync("SELECT key from otoroshi.values;")
+                 .asFuture
+                 .map(_.asScala.map(_.getString("key")).toSeq)
+      lists <- session
+                .executeAsync("SELECT key from otoroshi.lists;")
+                .asFuture
+                .map(_.asScala.map(_.getString("key")).toSeq)
+      sets <- session
+               .executeAsync("SELECT key from otoroshi.sets;")
+               .asFuture
+               .map(_.asScala.map(_.getString("key")).toSeq)
+      hashs <- session
+                .executeAsync("SELECT key from otoroshi.hashs;")
+                .asFuture
+                .map(_.asScala.map(_.getString("key")).toSeq)
       counters <- session
                    .executeAsync("SELECT key from otoroshi.counters;")
                    .asFuture
-                   .map(_.map(_.getString("key")).toSeq)
+                   .map(_.asScala.map(_.getString("key")).toSeq)
     } yield values ++ lists ++ sets ++ hashs ++ counters
 
   private def getValueAt(key: String): Future[Option[String]] =
@@ -134,7 +146,7 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
     session.executeAsync(s"SELECT value from otoroshi.lists where key = '$key';").asFuture.map { rs =>
       Try(rs.one().getList("value", classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.map(ByteString.apply).toSeq)
+        .map(_.asScala.map(ByteString.apply).toSeq)
         .getOrElse(Seq.empty[ByteString])
     }
 
@@ -142,7 +154,7 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
     session.executeAsync(s"SELECT value from otoroshi.sets where key = '$key';").asFuture.map { rs =>
       Try(rs.one().getSet("value", classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.toSet.map((e: String) => ByteString(e)))
+        .map(_.asScala.toSet.map((e: String) => ByteString(e)))
         .getOrElse(Set.empty[ByteString])
     }
 
@@ -150,7 +162,7 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
     session.executeAsync(s"SELECT value from otoroshi.hashs where key = '$key';").asFuture.map { rs =>
       Try(rs.one().getMap("value", classOf[String], classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.toMap.mapValues(ByteString.apply))
+        .map(_.asScala.toMap.mapValues(ByteString.apply))
         .getOrElse(Map.empty[String, ByteString])
     }
 
@@ -227,23 +239,23 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
       a <- session
             .executeAsync(s"SELECT key FROM otoroshi.values WHERE key = '$key' LIMIT 1")
             .asFuture
-            .map(rs => rs.nonEmpty)
+            .map(rs => rs.asScala.nonEmpty)
       b <- session
             .executeAsync(s"SELECT key FROM otoroshi.lists WHERE key = '$key' LIMIT 1")
             .asFuture
-            .map(rs => rs.nonEmpty)
+            .map(rs => rs.asScala.nonEmpty)
       c <- session
             .executeAsync(s"SELECT key FROM otoroshi.sets WHERE key = '$key' LIMIT 1")
             .asFuture
-            .map(rs => rs.nonEmpty)
+            .map(rs => rs.asScala.nonEmpty)
       d <- session
             .executeAsync(s"SELECT key FROM otoroshi.counters WHERE key = '$key' LIMIT 1")
             .asFuture
-            .map(rs => rs.nonEmpty)
+            .map(rs => rs.asScala.nonEmpty)
       e <- session
             .executeAsync(s"SELECT key FROM otoroshi.hashs WHERE key = '$key' LIMIT 1")
             .asFuture
-            .map(rs => rs.nonEmpty)
+            .map(rs => rs.asScala.nonEmpty)
     } yield a && b && c && d && e
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] =

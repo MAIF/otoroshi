@@ -23,18 +23,21 @@ class CassandraDataStores(configuration: Configuration,
   lazy val logger = Logger("otoroshi-cassandra-datastores")
 
   lazy val cassandraContactPoints: Seq[String] = configuration
-    .getString("app.cassandra.hosts")
+    .getOptional[String]("app.cassandra.hosts")
     .map(_.split(",").toSeq)
     .orElse(
-      configuration.getString("app.cassandra.host").map(e => Seq(e))
+      configuration.getOptional[String]("app.cassandra.host").map(e => Seq(e))
     )
     .getOrElse(Seq("127.0.0.1"))
-  lazy val cassandraPort: Int   = configuration.getInt("app.cassandra.port").getOrElse(9042)
-  lazy val redisStatsItems: Int = configuration.getInt("app.cassandra.windowSize").getOrElse(99)
+  lazy val cassandraPort: Int   = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
+  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-cassandra-system",
-      configuration.getConfig("app.actorsystems.cassandra").map(_.underlying).getOrElse(ConfigFactory.empty)
+      configuration
+        .getOptional[Configuration]("app.actorsystems.cassandra")
+        .map(_.underlying)
+        .getOrElse(ConfigFactory.empty)
     )
   lazy val redis = new CassandraRedis(actorSystem, cassandraContactPoints, cassandraPort)
 
