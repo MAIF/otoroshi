@@ -27,9 +27,9 @@ rm -f $LOCATION/otoroshi/target/scala-$SCALA_VERSION/otoroshi.jar
 echo "Building Otoroshi"
 sbt ";clean;compile;assembly"
 check_scala_version
-java -jar $LOCATION/otoroshi/target/scala-$SCALA_VERSION/otoroshi.jar &
+java -jar $LOCATION/otoroshi/target/scala-$SCALA_VERSION/otoroshi.jar -Dapp.inmemory.experimental=true &
 
-sleep 60
+sleep 30
 
 echo "Configuring Otoroshi"
 $LOCATION/clients/cli/target/debug/otoroshicli services create \
@@ -51,8 +51,7 @@ $LOCATION/clients/cli/target/debug/otoroshicli config update \
   --throttling-quota 9999999  >> /dev/null
 
 echo "Warm up for 70 sec ..."
-wrk -t1 -c1 -d10s -H "Host: test.foo.bar" http://127.0.0.1:8080/ >> /dev/null
-wrk -t1 -c1 -d60s -H "Host: test.foo.bar" http://127.0.0.1:8080/ >> /dev/null
+wrk -t2 -c200 -d70s -H "Host: test.foo.bar" http://127.0.0.1:8080/ >> /dev/null
 echo "Actual test ..."
 wrk -t2 -c200 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:8080/
 

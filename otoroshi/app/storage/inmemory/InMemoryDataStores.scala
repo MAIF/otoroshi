@@ -21,7 +21,8 @@ class InMemoryDataStores(configuration: Configuration,
 
   lazy val logger = Logger("otoroshi-in-memory-datastores")
 
-  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.inmemory.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
+  lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-inmemory-system",
@@ -30,7 +31,7 @@ class InMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis = new InMemoryRedis(actorSystem)
+  lazy val redis = if (experimental) new InMemoryRedisExperimental(actorSystem, logger) else new InMemoryRedis(actorSystem)
 
   override def before(configuration: Configuration,
                       environment: Environment,
