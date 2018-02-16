@@ -23,7 +23,7 @@ sh ./scripts/build.sh ui
 # build server
 sh ./scripts/build.sh server
 
-cp -v "./otoroshi/target/scala-2.11/otoroshi.jar" "$LOCATION/release-$VERSION"
+cp -v "./otoroshi/target/scala-2.12/otoroshi.jar" "$LOCATION/release-$VERSION"
 cp -v "./otoroshi/target/universal/otoroshi-$VERSION.zip" "$LOCATION/release-$VERSION"
 
 # build cli for mac

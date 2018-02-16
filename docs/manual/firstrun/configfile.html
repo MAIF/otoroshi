@@ -580,7 +580,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </tbody>
 </table>
 <h2><a href="#play-specific-configuration" name="play-specific-configuration" class="anchor"><span class="anchor-link"></span></a>Play specific configuration</h2>
-<p>As Otoroshi is a <a href="https://www.playframework.com/">Play app</a>, you should take a look at <a href="https://www.playframework.com/documentation/2.5.x/Configuration">Play configuration documentation</a> to tune its internal configuration</p>
+<p>As Otoroshi is a <a href="https://www.playframework.com/">Play app</a>, you should take a look at <a href="https://www.playframework.com/documentation/2.6.x/Configuration">Play configuration documentation</a> to tune its internal configuration</p>
 <table>
   <thead>
     <tr>
@@ -604,7 +604,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td>the https port used by Otoroshi. You can use &lsquo;disabled&rsquo; as value if you don&rsquo;t want to use https </td>
     </tr>
     <tr>
-      <td><code>play.crypto.secret</code> </td>
+      <td><code>play.http.secret.key</code> </td>
       <td align="center">string </td>
       <td>&ldquo;secret&rdquo; </td>
       <td>the secret used to sign Otoroshi session cookie </td>
@@ -671,6 +671,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     </tr>
   </tbody>
 </table>
+<h2><a href="#more-config-options" name="more-config-options" class="anchor"><span class="anchor-link"></span></a>More config. options</h2>
+<p>See <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf">https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf</a> and <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf">https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf</a></p>
 <h2><a href="#example-of-configuration-file" name="example-of-configuration-file" class="anchor"><span class="anchor-link"></span></a>Example of configuration file</h2>
 <pre class="prettyprint"><code class="language-conf">include &quot;base.conf&quot;
 
@@ -745,6 +747,7 @@ play.http {
     <li><a href="../firstrun/configfile.html#db-configuration" class="header">DB configuration</a></li>
     <li><a href="../firstrun/configfile.html#headers-configuration" class="header">Headers configuration</a></li>
     <li><a href="../firstrun/configfile.html#play-specific-configuration" class="header">Play specific configuration</a></li>
+    <li><a href="../firstrun/configfile.html#more-config-options" class="header">More config. options</a></li>
     <li><a href="../firstrun/configfile.html#example-of-configuration-file" class="header">Example of configuration file</a></li>
   </ul></li>
 </ul>

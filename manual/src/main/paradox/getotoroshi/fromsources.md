@@ -20,7 +20,7 @@ then you need to run the `build.sh` script to build the documentation, the React
 sh ./scripts/build.sh
 ```
 
-and that's all, you can grab your Otoroshi package at `otoroshi/target/scala-2.11/otoroshi` or `otoroshi/target/universal/`.
+and that's all, you can grab your Otoroshi package at `otoroshi/target/scala-2.12/otoroshi` or `otoroshi/target/universal/`.
 
 For those who want to build only parts of Otoroshi, read the following.
 
@@ -53,4 +53,4 @@ Go to the `otoroshi` folder and run :
 sbt ';clean;compile;dist;assembly'
 ```
 
-You will find your Otoroshi package at `otoroshi/target/scala-2.11/otoroshi` or `otoroshi/target/universal/`.
+You will find your Otoroshi package at `otoroshi/target/scala-2.12/otoroshi` or `otoroshi/target/universal/`.

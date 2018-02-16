@@ -28,6 +28,6 @@ Deploy the @ref:[Docker image](../firstrun/run.md#from-docker) using [Docker int
 
 As Otoroshi is a [Play Framework](https://www.playframework.com) application, you can read the doc about putting a `Play` app in production.
 
-https://www.playframework.com/documentation/2.5.x/ProductionConfiguration
+https://www.playframework.com/documentation/2.6.x/ProductionConfiguration
 
 Download the latest @ref:[Otoroshi distribution](../getotoroshi/frombinaries.md), unzip it, customize it and run it.

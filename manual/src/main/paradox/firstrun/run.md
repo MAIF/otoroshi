@@ -67,7 +67,7 @@ $ java \
 [warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
 [warn] otoroshi-env - Importing from: /home/user/otoroshi.json
 [info] play.api.Play - Application started (Prod)
-[info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ```
 
 If you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log. When you will log into the admin dashboard, Otoroshi will ask you to create another account to avoid security issues.
@@ -83,5 +83,5 @@ $ java \
 [warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
 [warn] otoroshi-env - You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / HHUsiF2UC3OPdmg0lGngEv3RrbIwWV5W
 [info] play.api.Play - Application started (Prod)
-[info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ```

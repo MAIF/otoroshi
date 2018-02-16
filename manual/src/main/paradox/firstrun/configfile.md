@@ -87,13 +87,13 @@ Otoroshi uses a fair amount of http headers in order to work properly. The name 
 
 ## Play specific configuration
 
-As Otoroshi is a [Play app](https://www.playframework.com/), you should take a look at [Play configuration documentation](https://www.playframework.com/documentation/2.5.x/Configuration) to tune its internal configuration
+As Otoroshi is a [Play app](https://www.playframework.com/), you should take a look at [Play configuration documentation](https://www.playframework.com/documentation/2.6.x/Configuration) to tune its internal configuration
 
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
 | `http.port` | number | 8080 | the http port used by Otoroshi. You can use 'disabled' as value if you don't want to use http |
 | `https.port` | number | disabled | the https port used by Otoroshi. You can use 'disabled' as value if you don't want to use https |
-| `play.crypto.secret` | string | "secret" | the secret used to sign Otoroshi session cookie |
+| `play.http.secret.key` | string | "secret" | the secret used to sign Otoroshi session cookie |
 | `play.http.session.secure` | boolean | false | whether or not the Otoroshi backoffice session will be served over https only |
 | `play.http.session.httpOnly` | boolean | true | whether or not the Otoroshi backoffice session will be accessible from Javascript |
 | `play.http.session.maxAge` | number | 259200000 | the number of seconds before Otoroshi backoffice session expired |
@@ -104,6 +104,10 @@ As Otoroshi is a [Play app](https://www.playframework.com/), you should take a l
 | `play.server.https.keyStore.type` | string | | the key store type, defaults to JKS |
 | `play.server.https.keyStore.password` | string | | the password, defaults to a blank password |
 | `play.server.https.keyStore.algorithm` | string | | the key store algorithm, defaults to the platforms default algorithm |
+
+## More config. options
+
+See https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf and https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf
 
 ## Example of configuration file
 

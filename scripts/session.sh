@@ -76,7 +76,7 @@ tmux send-keys -t $SESSION_NAME:5.5 clear C-m
 tmux send-keys -t $SESSION_NAME:5.2 clear C-m
 tmux send-keys -t $SESSION_NAME:5.6 clear C-m
 
-tmux send-keys -t $SESSION_NAME:5.1 "java -jar ../../otoroshi/target/scala-2.11/otoroshi.jar" 
+tmux send-keys -t $SESSION_NAME:5.1 "java -jar ../../otoroshi/target/scala-2.12/otoroshi.jar" 
 tmux send-keys -t $SESSION_NAME:5.2 "node demo.js server --port 8081 --name 'server 1'" 
 tmux send-keys -t $SESSION_NAME:5.3 "node demo.js server --port 8081 --name 'server 2'" 
 tmux send-keys -t $SESSION_NAME:5.4 "node demo.js server --port 8081 --name 'server 3'" 

@@ -224,8 +224,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>You can use <a href="https://en.wikipedia.org/wiki/IP_Virtual_Server">IPVS</a> to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.</p>
 <h2><a href="#using-dns-round-robin" name="using-dns-round-robin" class="anchor"><span class="anchor-link"></span></a>Using DNS Round Robin</h2>
 <p>You can use <a href="https://en.wikipedia.org/wiki/Round-robin_DNS">DNS round robin technique</a> to declare multiple A records under the domain names handled by Otoroshi.</p>
-<h2><a href="#using-netty-so-reuseport-on-linux" name="using-netty-so-reuseport-on-linux" class="anchor"><span class="anchor-link"></span></a>Using Netty SO_REUSEPORT on Linux</h2>
-<p>If you plan to use the DNS Round Robin technique, you can also run 2 instance of Otoroshi per host using the <code>SO_REUSEPORT</code> of Netty if Otoroshi is running on Linux. Just add <code>play.server.netty.option.child.SO_REUSEPORT = true</code> in your prod config file, and the 2 instances will share the same port.</p>
 <h2><a href="#using-software-l4-load-balancers" name="using-software-l4-load-balancers" class="anchor"><span class="anchor-link"></span></a>Using software L4 load balancers</h2>
 <p>You can use software L4 load balancers like NGINX or HAProxy to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.</p>
 <div class="nav-next">
@@ -244,7 +242,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html#using-master-workers-mode-of-otoroshi" class="header">Using master / workers mode of Otoroshi</a></li>
     <li><a href="../deploy/scaling.html#using-ipvs" class="header">Using IPVS</a></li>
     <li><a href="../deploy/scaling.html#using-dns-round-robin" class="header">Using DNS Round Robin</a></li>
-    <li><a href="../deploy/scaling.html#using-netty-so-reuseport-on-linux" class="header">Using Netty SO_REUSEPORT on Linux</a></li>
     <li><a href="../deploy/scaling.html#using-software-l4-load-balancers" class="header">Using software L4 load balancers</a></li>
   </ul></li>
 </ul>

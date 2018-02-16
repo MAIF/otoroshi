@@ -133,6 +133,5 @@ SESSION_SECURE_ONLY=true
 SESSION_MAX_AGE=259200000
 SESSION_DOMAIN=changeme.cleverapps.io
 SESSION_NAME=otoroshi-session
-NETTY_TRANSPORT=native
 USER_AGENT=otoroshi
 ```

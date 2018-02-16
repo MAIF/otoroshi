@@ -20,10 +20,6 @@ You can use [IPVS](https://en.wikipedia.org/wiki/IP_Virtual_Server) to load bala
 
 You can use [DNS round robin technique](https://en.wikipedia.org/wiki/Round-robin_DNS) to declare multiple A records under the domain names handled by Otoroshi.
 
-## Using Netty SO_REUSEPORT on Linux
-
-If you plan to use the DNS Round Robin technique, you can also run 2 instance of Otoroshi per host using the `SO_REUSEPORT` of Netty if Otoroshi is running on Linux. Just add `play.server.netty.option.child.SO_REUSEPORT = true` in your prod config file, and the 2 instances will share the same port.
-
 ## Using software L4 load balancers
 
 You can use software L4 load balancers like NGINX or HAProxy to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.

@@ -6,7 +6,7 @@ git:
   depth: 1
 
 scala:
-  - "2.11.8"
+  - "2.12.4"
 
 jdk:
   - oraclejdk8

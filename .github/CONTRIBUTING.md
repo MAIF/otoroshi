@@ -23,12 +23,12 @@ We follow the standard GitHub [fork & pull](https://help.github.com/articles/usi
 
 1. To avoid duplicated effort, it might be good to check the [issue tracker](https://github.com/MAIF/otoroshi/issues) and [existing pull requests](https://github.com/MAIF/otoroshi/pulls) for existing work.
    - If there is no ticket yet, feel free to [create one](https://github.com/MAIF/otoroshi/issues/new) to discuss the problem and the approach you want to take to solve it.
-1. [Fork the project](https://github.com/MAIF/otoroshi#fork-destination-box) on GitHub. You'll need to create a feature-branch for your work on your fork, as this way you'll be able to submit a pull request against the mainline Akka.
+1. [Fork the project](https://github.com/MAIF/otoroshi#fork-destination-box) on GitHub. You'll need to create a feature-branch for your work on your fork, as this way you'll be able to submit a pull request against the mainline Otoroshi.
 1. Create a branch on your fork and work on the feature. For example: `git checkout -b wip-awesome-new-feature`
    - Please make sure to follow the general quality guidelines (specified below) when developing your patch.
    - Please write additional tests covering your feature and adjust existing ones if needed before submitting your pull request. 
 1. Once your feature is complete, prepare the commit with a good commit message, for example: `Adding canary mode support for services #42` (note the reference to the ticket it aimed to resolve).
-1. If it's a new feature, or a change of behaviour, document it on the [akka-docs](https://github.com/MAIF/otoroshi/tree/master/manual), remember, an undocumented feature is not a feature.
+1. If it's a new feature, or a change of behaviour, document it on the [Otoroshi docs](https://github.com/MAIF/otoroshi/tree/master/manual), remember, an undocumented feature is not a feature.
 1. Now it's finally time to [submit the pull request](https://help.github.com/articles/using-pull-requests)!
     - Please make sure to include a reference to the issue you're solving *in the comment* for the Pull Request, this will cause the PR to be linked properly with the Issue. Examples of good phrases for this are: "Resolves #1234" or "Refs #1234".
 1. Now both committers and interested people will review your code. This process is to ensure the code we merge is of the best possible quality, and that no silly mistakes slip through. You're expected to follow-up these comments by adding new commits to the same branch. The commit messages of those commits can be more loose, for example: `Removed debugging using printline`, as they all will be squashed into one commit before merging into the main branch.
