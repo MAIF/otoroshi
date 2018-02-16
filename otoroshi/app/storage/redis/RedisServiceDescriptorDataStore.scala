@@ -80,9 +80,11 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     // incrementCalls
     val callsShiftGlobalTime = redisCli.lpush(serviceCallStatsKey("global"), time).flatMap { _ =>
       redisCli.ltrim(serviceCallStatsKey("global"), 0, maxQueueSize)
+      redisCli.expire(serviceCallStatsKey("global"), 10)
     }
     val callsShiftServiceTime = redisCli.lpush(serviceCallStatsKey(id), time).flatMap { _ =>
       redisCli.ltrim(serviceCallStatsKey(id), 0, maxQueueSize)
+      redisCli.expire(serviceCallStatsKey(id), 10)
     }
     val callsIncrementGlobalCalls  = redisCli.incr(serviceCallKey("global"))
     val callsIncrementServiceCalls = redisCli.incr(serviceCallKey(id))
@@ -107,18 +109,22 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     val dataInIncrementService = redisCli.incrby(dataInForServiceKey(id), dataIn).fast.map(_ => ())
     val dataInShiftService = redisCli.lpush(dataInForServiceStatsKey(id), slugDataIn).flatMap { _ =>
       redisCli.ltrim(dataInForServiceStatsKey(id), 0, maxQueueSize)
+      redisCli.expire(dataInForServiceStatsKey(id), 10)
     }
     val dataInShiftGlobal = redisCli.lpush(dataInForServiceStatsKey("global"), slugDataIn).flatMap { _ =>
       redisCli.ltrim(dataInForServiceStatsKey("global"), 0, maxQueueSize)
+      redisCli.expire(dataInForServiceStatsKey("global"), 10)
     }
     // incrementDataOut
     val dataOutIncrementGlobal  = redisCli.incrby(dataOutGlobalKey(), dataOut).fast.map(_ => ())
     val dataOutIncrementService = redisCli.incrby(dataOutForServiceKey(id), dataOut).fast.map(_ => ())
     val dataOutShiftService = redisCli.lpush(dataOutForServiceStatsKey(id), slugDataOut).flatMap { _ =>
       redisCli.ltrim(dataOutForServiceStatsKey(id), 0, maxQueueSize)
+      redisCli.expire(dataOutForServiceStatsKey(id), 10)
     }
     val dataOutShiftGlobal = redisCli.lpush(dataOutForServiceStatsKey("global"), slugDataOut).flatMap { _ =>
       redisCli.ltrim(dataOutForServiceStatsKey("global"), 0, maxQueueSize)
+      redisCli.expire(dataOutForServiceStatsKey("global"), 10)
     }
     // now wait for all
     for {
