@@ -604,6 +604,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td>the https port used by Otoroshi. You can use &lsquo;disabled&rsquo; as value if you don&rsquo;t want to use https </td>
     </tr>
     <tr>
+      <td><code>http2.enabled</code> </td>
+      <td align="center">boolean </td>
+      <td>false </td>
+      <td>whether or not http2 is enabled on the Otoroshi server. You need to configure https (listed bellow) to be able to use it </td>
+    </tr>
+    <tr>
       <td><code>play.http.secret.key</code> </td>
       <td align="center">string </td>
       <td>&ldquo;secret&rdquo; </td>
@@ -654,13 +660,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <tr>
       <td><code>play.server.https.keyStore.type</code> </td>
       <td align="center">string </td>
-      <td> </td>
+      <td>JKS </td>
       <td>the key store type, defaults to JKS </td>
     </tr>
     <tr>
       <td><code>play.server.https.keyStore.password</code> </td>
       <td align="center">string </td>
-      <td> </td>
+      <td>&rsquo;&rsquo; </td>
       <td>the password, defaults to a blank password </td>
     </tr>
     <tr>
@@ -673,6 +679,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </table>
 <h2><a href="#more-config-options" name="more-config-options" class="anchor"><span class="anchor-link"></span></a>More config. options</h2>
 <p>See <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf">https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf</a> and <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf">https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf</a></p>
+<p>if you want to configure https on your Otoroshi server, just read <a href="https://www.playframework.com/documentation/2.6.x/ConfiguringHttps">PlayFramework documentation about it</a></p>
 <h2><a href="#example-of-configuration-file" name="example-of-configuration-file" class="anchor"><span class="anchor-link"></span></a>Example of configuration file</h2>
 <pre class="prettyprint"><code class="language-conf">include &quot;base.conf&quot;
 

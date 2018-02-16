@@ -93,6 +93,7 @@ As Otoroshi is a [Play app](https://www.playframework.com/), you should take a l
 | ---- |:----:| -------------- | ----- |
 | `http.port` | number | 8080 | the http port used by Otoroshi. You can use 'disabled' as value if you don't want to use http |
 | `https.port` | number | disabled | the https port used by Otoroshi. You can use 'disabled' as value if you don't want to use https |
+| `http2.enabled` | boolean | false | whether or not http2 is enabled on the Otoroshi server. You need to configure https (listed bellow) to be able to use it |
 | `play.http.secret.key` | string | "secret" | the secret used to sign Otoroshi session cookie |
 | `play.http.session.secure` | boolean | false | whether or not the Otoroshi backoffice session will be served over https only |
 | `play.http.session.httpOnly` | boolean | true | whether or not the Otoroshi backoffice session will be accessible from Javascript |
@@ -101,13 +102,15 @@ As Otoroshi is a [Play app](https://www.playframework.com/), you should take a l
 | `play.http.session.cookieName` |  string | "otoroshi-session" | the name of the Otoroshi backoffice session |
 | `play.ws.play.ws.useragent` | string | "Otoroshi" | the user agent sent by Otoroshi if not present on the original http request |
 | `play.server.https.keyStore.path` | string | | the path to the keystore containing the private key and certificate, if not provided generates a keystore for you |
-| `play.server.https.keyStore.type` | string | | the key store type, defaults to JKS |
-| `play.server.https.keyStore.password` | string | | the password, defaults to a blank password |
+| `play.server.https.keyStore.type` | string | JKS | the key store type, defaults to JKS |
+| `play.server.https.keyStore.password` | string | '' | the password, defaults to a blank password |
 | `play.server.https.keyStore.algorithm` | string | | the key store algorithm, defaults to the platforms default algorithm |
 
 ## More config. options
 
 See https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf and https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf
+
+if you want to configure https on your Otoroshi server, just read [PlayFramework documentation about it](https://www.playframework.com/documentation/2.6.x/ConfiguringHttps)
 
 ## Example of configuration file
 
