@@ -103,6 +103,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       }
   }
 
+  def robotTxt = Action { req =>
+    logger.warn(s"Rendering robot.txt on ${req.host}")
+    Ok("""User-agent: *
+    |Disallow: /""".stripMargin)
+  }
+
   def version = BackOfficeAction {
     Ok(Json.obj("version" -> commitVersion))
   }

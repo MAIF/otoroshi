@@ -1,5 +1,6 @@
 
 GET     /                                                     controllers.BackOfficeController.index
+GET     /robot.txt                                            controllers.BackOfficeController.robotTxt
 GET     /error                                                controllers.BackOfficeController.error(message: Option[String])
 GET     /auth0error                                           controllers.Auth0Controller.auth0error(error: Option[String], error_description: Option[String])
 
