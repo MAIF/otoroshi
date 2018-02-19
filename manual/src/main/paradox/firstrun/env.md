@@ -7,6 +7,7 @@ app.storage = ${?APP_STORAGE}
 app.importFrom = ${?APP_IMPORT_FROM}
 app.domain = ${?APP_DOMAIN}
 app.rootScheme = ${?APP_ROOT_SCHEME}
+app.throttlingWindow = ${?THROTTLING_WINDOW}
 app.snowflake.seed = ${?INSTANCE_NUMBER}
 app.events.maxSize = ${?MAX_EVENTS_SIZE}
 app.backoffice.expised = ${?APP_BACKOFFICE_EXPOSED}

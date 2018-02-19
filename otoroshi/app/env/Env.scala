@@ -81,6 +81,7 @@ class Env(val configuration: Configuration,
   //lazy val middleFingers: Boolean = configuration.getOptional[Boolean]]("app.middleFingers").getOrElse(false)
   //lazy val maxLocalLogsSize: Int = configuration.getOptional[Int]("app.events.maxSize").getOrElse(1000)
 
+  lazy val throttlingWindow: Int       = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
   lazy val auth0UserMeta: String       = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")
   lazy val eventsName: String          = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
   lazy val storageRoot: String         = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")

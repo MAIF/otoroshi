@@ -71,8 +71,8 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
     } yield
       RemainingQuotas(
         authorizedCallsPerSec = apiKey.throttlingQuota,
-        currentCallsPerSec = (secCalls / 10).toInt,
-        remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / 10).toInt,
+        currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
+        remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
         authorizedCallsPerDay = apiKey.dailyQuota,
         currentCallsPerDay = dailyCalls,
         remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
@@ -90,7 +90,7 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
       _        <- redisCli.incrby(totalCallsKey(apiKey.clientId), 1L)
       secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), 1L)
       secTtl <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-                 case _ => redisCli.expire(throttlingKey(apiKey.clientId), 10)
+                 case _ => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
                }
       dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), 1L)
       dailyTtl <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
@@ -103,8 +103,8 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
     } yield
       RemainingQuotas(
         authorizedCallsPerSec = apiKey.throttlingQuota,
-        currentCallsPerSec = (secCalls / 10).toInt,
-        remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / 10).toInt,
+        currentCallsPerSec = (secCalls / env.throttlingWindow).toInt,
+        remainingCallsPerSec = apiKey.throttlingQuota - (secCalls / env.throttlingWindow).toInt,
         authorizedCallsPerDay = apiKey.dailyQuota,
         currentCallsPerDay = dailyCalls,
         remainingCallsPerDay = apiKey.dailyQuota - dailyCalls,
@@ -125,7 +125,7 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
     redisCli
       .get(throttlingKey(apiKey.clientId))
       .fast
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (apiKey.throttlingQuota * 10))
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (apiKey.throttlingQuota * env.throttlingWindow))
 
   override def withinDailyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L) <= apiKey.dailyQuota)

@@ -17,6 +17,7 @@ There is a lot of things you can configure in Otoroshi. By default, Otoroshi pro
 | `app.privateapps.session.exp` | number | 86400000 | the number of seconds before the private apps session expires |
 | `app.claim.sharedKey` | string | "secret" | the shared secret used for signing the JWT token passed between Otoroshi and backend services |
 | `app.webhooks.size` | number | 100 | number of events sent at most when calling one of the analytics webhooks |
+| `app.throttlingWindow` | number | 10 | time window (in seconds) used to compute throttling quotas for ApiKeys |
 
 ## Admin API configuration
 
