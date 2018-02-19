@@ -225,7 +225,7 @@ cd otoroshi-vx.x.x
 <pre class="prettyprint"><code class="language-sh">java -jar otoroshi.jar
 </code></pre>
 <h2><a href="#from-docker" name="from-docker" class="anchor"><span class="anchor-link"></span></a>From docker</h2>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif-docker-docker.bintray.io/otoroshi:1.0.2
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1.0.2
 </code></pre>
 <p>You can also pass useful args like :</p>
 <pre><code>docker run -p &quot;8080:8080&quot; otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
@@ -234,13 +234,13 @@ cd otoroshi-vx.x.x
 <p>You can also provide some ENV variable using the <code>--env</code> flag to customize your Otoroshi instance.</p>
 <p>The list of possible env variables is available <a href="env.html">here</a>.</p>
 <p>You can use a volume to provide configuration like :</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/conf&quot; maif-docker-docker.bintray.io/otoroshi
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/conf&quot; maif/otoroshi
 </code></pre>
 <p>You can also use a volume if you choose to use <code>leveldb</code> datastore like :</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd)/leveldb:/usr/app/otoroshi/leveldb&quot; maif-docker-docker.bintray.io/otoroshi -Dapp.storage=leveldb
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd)/leveldb:/usr/app/otoroshi/leveldb&quot; maif/otoroshi -Dapp.storage=leveldb
 </code></pre>
 <p>You can also use a volume if you choose to use exports files :</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/imports&quot; maif-docker-docker.bintray.io/otoroshi -Dapp.importFrom=/usr/app/otoroshi/imports/export.json
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/imports&quot; maif/otoroshi -Dapp.importFrom=/usr/app/otoroshi/imports/export.json
 </code></pre>
 <h2><a href="#run-examples" name="run-examples" class="anchor"><span class="anchor-link"></span></a>Run examples</h2>
 <pre class="prettyprint"><code class="language-sh">$ java \

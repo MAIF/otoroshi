@@ -86,35 +86,35 @@ cp ../../otoroshi/target/universal/otoroshi-$VERSION.zip ./otoroshi-dist.zip
 # build docker image
 docker build --no-cache -t otoroshi .
 rm ./otoroshi-dist.zip
-# push docker image on bintray
-docker tag otoroshi "maif-docker-docker.bintray.io/otoroshi:$VERSION"
-docker push "maif-docker-docker.bintray.io/otoroshi:$VERSION"
+# push docker image on dockerhub
+docker tag otoroshi "maif/otoroshi:$VERSION"
+docker push "maif/otoroshi:$VERSION"
 
 cd $LOCATION/docker/otoroshicli
 cp ../../clients/cli/target/release/otoroshicli ./otoroshicli
 # build docker image
 docker build --no-cache -t otoroshicli .
 rm ./otoroshicli
-# push docker image on bintray
-docker tag otoroshicli "maif-docker-docker.bintray.io/otoroshicli:$VERSION"
-docker push "maif-docker-docker.bintray.io/otoroshicli:$VERSION"
+# push docker image on dockerhub
+docker tag otoroshicli "maif/otoroshicli:$VERSION"
+docker push "maif/otoroshicli:$VERSION"
 cd $LOCATION
 
 cd $LOCATION/docker/demo
 # build docker image
 docker build --no-cache -t otoroshi-demo .
-# push docker image on bintray
-docker tag otoroshicli "maif-docker-docker.bintray.io/otoroshi-demo:$VERSION"
-docker push "maif-docker-docker.bintray.io/otoroshi-demo:$VERSION"
+# push docker image on dockerhub
+docker tag otoroshicli "maif/otoroshi-demo:$VERSION"
+docker push "maif/otoroshi-demo:$VERSION"
 cd $LOCATION
 
-cd $LOCATION/docker/dev
+# cd $LOCATION/docker/dev
 # build docker image
-docker build --no-cache -t otoroshi-dev .
-# push docker image on bintray
-docker tag otoroshicli "maif-docker-docker.bintray.io/otoroshi-dev:$VERSION"
-docker push "maif-docker-docker.bintray.io/otoroshi-dev:$VERSION"
-cd $LOCATION
+# docker build --no-cache -t otoroshi-dev .
+# push docker image on dockerhub
+# docker tag otoroshicli "maif/otoroshi-dev:$VERSION"
+# docker push "maif/otoroshi-dev:$VERSION"
+# cd $LOCATION
 
 # update version number and commit / push
 echo "Please change version in the following files and commit / push"

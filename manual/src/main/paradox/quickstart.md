@@ -9,7 +9,7 @@ what you will need :
 If you don't/can't have these tools on your machine, you can start a sandboxed environment using here with the following command
 
 ```sh
-docker run -p "8080:8080" -it maif-docker-docker.bintray.io/otoroshi-demo bash
+docker run -p "8080:8080" -it maif/otoroshi-demo bash
 ```
 
 or you can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
@@ -124,7 +124,7 @@ wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0
 
 chmod +x otoroshicli 
 
-docker run -p "$OTOROSHI_PORT:8080" maif-docker-docker.bintray.io/otoroshi &
+docker run -p "$OTOROSHI_PORT:8080" maif/otoroshi &
 
 # Check if admin api works
 ./otoroshicli services all
