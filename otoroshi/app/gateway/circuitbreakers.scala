@@ -73,8 +73,9 @@ object Retry {
         }(ec)
     }
 
-  def retry[T](times: Int, delay: Long = 0, factor: Long = 2L, ctx: String)(f: () => Future[T])(implicit ec: ExecutionContext,
-                                                                                   scheduler: Scheduler): Future[T] = {
+  def retry[T](times: Int, delay: Long = 0, factor: Long = 2L, ctx: String)(
+      f: () => Future[T]
+  )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
     val promise = Promise[T]()
     retryPromise[T](times, times, delay, factor, promise, None, ctx, f)
     promise.future
@@ -186,7 +187,9 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     Future.firstCompletedOf(Seq(maybeSuccess, failure))
   }
 
-  def callWS(descriptor: ServiceDescriptor, ctx: String, f: Target => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
+  def callWS(descriptor: ServiceDescriptor,
+             ctx: String,
+             f: Target => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
       implicit env: Env
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val failure = Timeout

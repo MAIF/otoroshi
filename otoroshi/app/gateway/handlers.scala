@@ -78,13 +78,8 @@ class AnalyticsQueue(env: Env) extends Actor {
   override def receive: Receive = {
     case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
       descriptor
-        .updateMetrics(duration,
-          overhead,
-          dataIn,
-          dataOut,
-          upstreamLatency,
-          config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher,  env)
+        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
+      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
     }
   }
 }
@@ -139,7 +134,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody
   // def hasBody(request: Request[_]): Boolean = request.hasBody
-  def hasBody(request: Request[_]): Boolean = 
+  def hasBody(request: Request[_]): Boolean =
     (request.method, request.headers.get("Content-Length")) match {
       case ("GET", Some(_))    => true
       case ("GET", None)       => false
@@ -413,7 +408,10 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                         env.circuitBeakersHolder
                           .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                          .call(desc, bodyAlreadyConsumed, s"${req.method} ${req.uri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                          .call(desc,
+                                bodyAlreadyConsumed,
+                                s"${req.method} ${req.uri}",
+                                (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                           case BodyAlreadyConsumedException =>
                             Errors.craftResponseResult(
                               s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
@@ -478,15 +476,15 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                     def actuallyCallDownstream(target: Target,
                                                apiKey: Option[ApiKey] = None,
                                                paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                      val snowflake = env.snowflakeGenerator.nextIdStr()
-                      val state     = IdGenerator.extendedToken(128)
-                      val rawUri    = req.uri.substring(1)
-                      val uriParts  = rawUri.split("/").toSeq
-                      val uri: String = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
-                      val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                      val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
-                      val root   = descriptor.root
-                      val url    = s"$scheme://$host$root$uri"
+                      val snowflake              = env.snowflakeGenerator.nextIdStr()
+                      val state                  = IdGenerator.extendedToken(128)
+                      val rawUri                 = req.uri.substring(1)
+                      val uriParts               = rawUri.split("/").toSeq
+                      val uri: String            = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
+                      val scheme                 = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
+                      val host                   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
+                      val root                   = descriptor.root
+                      val url                    = s"$scheme://$host$root$uri"
                       lazy val currentReqHasBody = hasBody(req)
                       // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                       val fromOtoroshi = req.headers
@@ -519,7 +517,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       logger.trace(s"Claim is : $claim")
                       val headersIn: Seq[(String, String)] =
                         (req.headers.toSimpleMap
-                          .filterNot(t => if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true else false )
+                          .filterNot(t => if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true else false)
                           .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                           env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
                           "Host"                          -> host,
@@ -738,7 +736,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                                                                                       } else {
                                                                                                                         Seq.empty[(String, String)]
                                                                                                                       })
-                            val contentType = headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                            val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
                             val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                             // meterOut.mark(responseHeader.length)
                             // counterOut.addAndGet(responseHeader.length)

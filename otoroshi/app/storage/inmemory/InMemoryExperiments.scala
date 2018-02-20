@@ -99,21 +99,18 @@ class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extend
   override def keys(pattern: String): Future[Seq[String]] = {
     val pat = patterns.getOrElseUpdate(pattern, Pattern.compile(pattern.replaceAll("\\*", ".*")))
     FastFuture.successful(
-      store
-        .keySet
-        .filter { k =>
-          pat.matcher(k).find
-        }
-        .toSeq
+      store.keySet.filter { k =>
+        pat.matcher(k).find
+      }.toSeq
     )
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def hdel(key: String, fields: String*): Future[Long] = {
-    val hash = store.get(key).map(_.asInstanceOf[TrieMap[String, ByteString]]).getOrElse(new TrieMap[String, ByteString]())
-    val value = hash
-      .keySet
+    val hash =
+      store.get(key).map(_.asInstanceOf[TrieMap[String, ByteString]]).getOrElse(new TrieMap[String, ByteString]())
+    val value = hash.keySet
       .filter(k => fields.contains(k))
       .map { k =>
         hash.remove(k)
@@ -124,14 +121,16 @@ class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extend
   }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
-    val hash = store.get(key).map(_.asInstanceOf[TrieMap[String, ByteString]]).getOrElse(new TrieMap[String, ByteString]())
+    val hash =
+      store.get(key).map(_.asInstanceOf[TrieMap[String, ByteString]]).getOrElse(new TrieMap[String, ByteString]())
     FastFuture.successful(hash.toMap)
   }
 
   override def hset(key: String, field: String, value: String): Future[Boolean] = hsetBS(key, field, ByteString(value))
 
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = {
-    val hash = store.get(key).map(_.asInstanceOf[TrieMap[String, ByteString]]).getOrElse(new TrieMap[String, ByteString]())
+    val hash =
+      store.get(key).map(_.asInstanceOf[TrieMap[String, ByteString]]).getOrElse(new TrieMap[String, ByteString]())
     hash.put(field, value)
     store.put(key, hash)
     FastFuture.successful(true)
@@ -181,7 +180,8 @@ class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extend
 
   override def pttl(key: String): Future[Long] =
     FastFuture.successful(
-      expirations.get(key)
+      expirations
+        .get(key)
         .map(e => {
           val ttlValue = e - System.currentTimeMillis()
           if (ttlValue < 0) -1L else ttlValue
@@ -250,4 +250,3 @@ class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extend
     FastFuture.successful(seq.size.toLong)
   }
 }
-

@@ -81,19 +81,19 @@ class Env(val configuration: Configuration,
   //lazy val middleFingers: Boolean = configuration.getOptional[Boolean]]("app.middleFingers").getOrElse(false)
   //lazy val maxLocalLogsSize: Int = configuration.getOptional[Int]("app.events.maxSize").getOrElse(1000)
 
-  lazy val throttlingWindow: Int       = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
-  lazy val auth0UserMeta: String       = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")
-  lazy val eventsName: String          = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
-  lazy val storageRoot: String         = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")
-  lazy val useCache: Boolean           = configuration.getOptional[Boolean]("app.useCache").getOrElse(false)
-  lazy val useRedisScan: Boolean       = configuration.getOptional[Boolean]("app.redis.useScan").getOrElse(false)
-  lazy val commitId: String            = configuration.getOptional[String]("app.commitId").getOrElse("HEAD")
-  lazy val secret: String              = configuration.getOptional[String]("play.crypto.secret").get
-  lazy val sharedKey: String           = configuration.getOptional[String]("app.claim.sharedKey").get
-  lazy val env: String                 = configuration.getOptional[String]("app.env").getOrElse("prod")
-  lazy val exposeAdminApi: Boolean        = configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
-  lazy val exposeAdminDashboard: Boolean  = configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
-  lazy val adminApiProxyHttps: Boolean = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
+  lazy val throttlingWindow: Int         = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
+  lazy val auth0UserMeta: String         = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")
+  lazy val eventsName: String            = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
+  lazy val storageRoot: String           = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")
+  lazy val useCache: Boolean             = configuration.getOptional[Boolean]("app.useCache").getOrElse(false)
+  lazy val useRedisScan: Boolean         = configuration.getOptional[Boolean]("app.redis.useScan").getOrElse(false)
+  lazy val commitId: String              = configuration.getOptional[String]("app.commitId").getOrElse("HEAD")
+  lazy val secret: String                = configuration.getOptional[String]("play.crypto.secret").get
+  lazy val sharedKey: String             = configuration.getOptional[String]("app.claim.sharedKey").get
+  lazy val env: String                   = configuration.getOptional[String]("app.env").getOrElse("prod")
+  lazy val exposeAdminApi: Boolean       = configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
+  lazy val exposeAdminDashboard: Boolean = configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
+  lazy val adminApiProxyHttps: Boolean   = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
     configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
   lazy val redirectToDev: Boolean = env

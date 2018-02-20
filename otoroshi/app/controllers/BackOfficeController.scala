@@ -46,7 +46,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def hasBody(request: Request[_]): Boolean = 
+  def hasBody(request: Request[_]): Boolean =
     (request.method, request.headers.get("Content-Length")) match {
       case ("GET", Some(_))    => true
       case ("GET", None)       => false
@@ -61,9 +61,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
 
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
-    val host     = if (env.isDev) env.adminApiExposedHost else env.adminApiExposedHost
-    val localUrl = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
-    val url      = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
+    val host                   = if (env.isDev) env.adminApiExposedHost else env.adminApiExposedHost
+    val localUrl               = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
+    val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
     lazy val currentReqHasBody = hasBody(ctx.request)
     logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
     val headers = Seq(
@@ -94,11 +94,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
         Status(res.status)
           .sendEntity(
-            HttpEntity.Streamed(Source.lazily(() => res.bodyAsSource),
-                                res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
-                                res.headers.get("Content-Type").flatMap(_.headOption))
+            HttpEntity.Streamed(
+              Source.lazily(() => res.bodyAsSource),
+              res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
+              res.headers.get("Content-Type").flatMap(_.headOption)
+            )
           )
-          .withHeaders(res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type").filter(_._1 != "Content-Length"): _*)
+          .withHeaders(
+            res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type").filter(_._1 != "Content-Length"): _*
+          )
           .as(ctype)
       }
   }
