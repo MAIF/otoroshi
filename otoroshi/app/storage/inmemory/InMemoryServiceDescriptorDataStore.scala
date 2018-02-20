@@ -268,7 +268,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
             val headersSeq        = query.matchingHeaders.toSeq
             val allHeadersMatched = sr.matchingHeaders.toSeq.map(t => headersSeq.contains(t)).forall(a => a)
             val rootMatched = sr.matchingRoot match {
-              case Some(matchingRoot) => matchingRoot == query.root
+              case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
               case None               => true
             }
             allHeadersMatched && rootMatched
@@ -293,7 +293,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
             val headersSeq        = query.matchingHeaders.toSeq
             val allHeadersMatched = sr.matchingHeaders.toSeq.map(t => headersSeq.contains(t)).forall(a => a)
             val rootMatched = sr.matchingRoot match {
-              case Some(matchingRoot) => matchingRoot == query.root
+              case Some(matchingRoot) => query.root.startsWith(matchingRoot) // matchingRoot == query.root
               case None               => true
             }
             allHeadersMatched && rootMatched
