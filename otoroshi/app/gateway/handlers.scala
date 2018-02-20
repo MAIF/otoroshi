@@ -347,10 +347,10 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                        Some("errors.service.not.found"))
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
             val uriParts = req.uri.split("/").toSeq
-            val root     = req.uri // if (uriParts.isEmpty) "/" else "/" + uriParts.tail.head
+            val root     = if (uriParts.isEmpty) "/" else "/" + uriParts.tail.head
 
             env.datastores.serviceDescriptorDataStore
-              .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, root, req.headers.toSimpleMap))
+              .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.uri, req.headers.toSimpleMap))
               .fast
               .flatMap {
                 case None =>
@@ -482,8 +482,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       val state     = IdGenerator.extendedToken(128)
                       val rawUri    = req.uri.substring(1)
                       val uriParts  = rawUri.split("/").toSeq
-                      val uri: String =
-                        if (descriptor.matchingRoot.isDefined) req.uri.replace(descriptor.matchingRoot.get, "") else rawUri
+                      val uri: String = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
                         //if (descriptor.matchingRoot.isDefined) uriParts.tail.mkString("/") else rawUri
                       val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
                       val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host

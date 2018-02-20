@@ -112,10 +112,10 @@ class WebSocketHandler()(implicit env: Env) {
             .asLeft[WSFlow]
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           val uriParts = req.uri.split("/").toSeq
-          val root     = req.uri // if (uriParts.isEmpty) "/" else "/" + uriParts.tail.head
+          val root     = if (uriParts.isEmpty) "/" else "/" + uriParts.tail.head
 
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, root, req.headers.toSimpleMap))
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.uri, req.headers.toSimpleMap))
             .flatMap {
               case None =>
                 Errors
@@ -244,8 +244,7 @@ class WebSocketHandler()(implicit env: Env) {
                     val state       = IdGenerator.extendedToken(128)
                     val rawUri      = req.uri.substring(1)
                     val uriParts    = rawUri.split("/").toSeq
-                    val uri: String = 
-                      if (descriptor.matchingRoot.isDefined) req.uri.replace(descriptor.matchingRoot.get, "") else rawUri
+                    val uri: String = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
                       // if (descriptor.matchingRoot.isDefined) uriParts.tail.mkString("/") else rawUri
                     // val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty) descriptor.targets.size else 1)
                     // // Round robin loadbalancing is happening here !!!!!
