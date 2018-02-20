@@ -245,7 +245,6 @@ class WebSocketHandler()(implicit env: Env) {
                     val rawUri      = req.uri.substring(1)
                     val uriParts    = rawUri.split("/").toSeq
                     val uri: String = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
-                      // if (descriptor.matchingRoot.isDefined) uriParts.tail.mkString("/") else rawUri
                     // val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty) descriptor.targets.size else 1)
                     // // Round robin loadbalancing is happening here !!!!!
                     // val target = descriptor.targets.apply(index.toInt)

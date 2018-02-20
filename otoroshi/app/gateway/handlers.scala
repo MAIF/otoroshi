@@ -483,7 +483,6 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       val rawUri    = req.uri.substring(1)
                       val uriParts  = rawUri.split("/").toSeq
                       val uri: String = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
-                        //if (descriptor.matchingRoot.isDefined) uriParts.tail.mkString("/") else rawUri
                       val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
                       val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
                       val root   = descriptor.root
