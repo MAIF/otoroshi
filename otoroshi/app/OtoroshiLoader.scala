@@ -1,7 +1,7 @@
 import actions._
 import controllers._
 import modules._
-import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, LoggerConfigurator}
+import play.api._
 import play.api.ApplicationLoader.Context
 import play.api.routing.Router
 import com.softwaremill.macwire._
@@ -9,10 +9,8 @@ import env.Env
 import gateway.{CircuitBreakersHolder, ErrorHandler, GatewayRequestHandler, WebSocketHandler}
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.EssentialFilter
-import play.filters.gzip.{GzipFilter, GzipFilterConfig}
+import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.filters.HttpFiltersComponents
-
 import router.Routes
 
 class OtoroshiLoader extends ApplicationLoader {
@@ -61,7 +59,6 @@ package object modules {
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
-      //com.google.common.base.Preconditions.checkArgument("yo", new Object())
       // add the prefix string in local scope for the Routes constructor
       val prefix: String = "/"
       wire[Routes]

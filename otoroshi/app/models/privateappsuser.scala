@@ -18,7 +18,7 @@ case class PrivateAppsUser(randomId: String,
                            createdAt: DateTime = DateTime.now(),
                            expiredAt: DateTime = DateTime.now()) {
   def otoroshiData(implicit env: Env): Option[Map[String, String]] =
-    (profile \ "app_metadata" \ env.auth0UserMeta).asOpt[Map[String, String]]
+    (profile \ env.auth0AppMeta \ env.auth0UserMeta).asOpt[Map[String, String]]
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ "name").asOpt[String]
   def userId: Option[String]              = (profile \ "user_id").asOpt[String]
