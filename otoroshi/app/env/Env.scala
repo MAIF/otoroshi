@@ -88,7 +88,6 @@ class Env(val configuration: Configuration,
   lazy val storageRoot: String           = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")
   lazy val useCache: Boolean             = configuration.getOptional[Boolean]("app.useCache").getOrElse(false)
   lazy val useRedisScan: Boolean         = configuration.getOptional[Boolean]("app.redis.useScan").getOrElse(false)
-  lazy val commitId: String              = configuration.getOptional[String]("app.commitId").getOrElse("HEAD")
   lazy val secret: String                = configuration.getOptional[String]("play.crypto.secret").get
   lazy val sharedKey: String             = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                   = configuration.getOptional[String]("app.env").getOrElse("prod")

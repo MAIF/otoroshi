@@ -448,8 +448,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               Some("errors.connection.refused")
                             )
                           case error if error != null && error.getMessage != null =>
+                            logger.error(s"Something went wrong, you should try later", error)
                             Errors.craftResponseResult(
-                              s"Something went wrong, you should try later. Thanks for your understanding. ${error.getMessage}",
+                              s"Something went wrong, you should try later. Thanks for your understanding.",
                               BadGateway,
                               req,
                               Some(descriptor),
