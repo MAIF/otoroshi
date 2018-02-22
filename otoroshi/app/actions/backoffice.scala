@@ -1,7 +1,6 @@
 package actions
 
 import akka.http.scaladsl.util.FastFuture
-import controllers.routes
 import env.Env
 import events.{Alerts, BlackListedBackOfficeUserAlert}
 import models.BackOfficeUser

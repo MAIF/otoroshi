@@ -631,6 +631,7 @@ impl OtoroshiClient {
         maintenance_mode: bool,
         build_mode: bool,
         enforce_secure_communication: bool,
+        send_headers_back: bool,
         sec_com_excluded_patterns: Vec<&str>,
         public_pattern: Vec<&str>,
         private_pattern: Vec<&str>,
@@ -686,6 +687,10 @@ impl OtoroshiClient {
         fields.push(format!(
             r#""enforceSecureCommunication":{}"#,
             enforce_secure_communication
+        ));
+        fields.push(format!(
+            r#""sendOtoroshiHeadersBack":{}"#,
+            send_headers_back
         ));
         if !sec_com_excluded_patterns.is_empty() {
             let values = sec_com_excluded_patterns
@@ -861,6 +866,7 @@ impl OtoroshiClient {
         maintenance_mode: Option<&str>,
         build_mode: Option<&str>,
         enforce_secure_communication: Option<&str>,
+        send_headers_back: Option<&str>,
         sec_com_excluded_patterns: Vec<&str>,
         public_pattern: Vec<&str>,
         private_pattern: Vec<&str>,
@@ -975,8 +981,14 @@ impl OtoroshiClient {
         });
         enforce_secure_communication.m_foreach(|enforce_secure_communication| {
             updates.push(format!(
-                r#"{{ "op": "replace", "path": "/enforceSecureCommunication", "value": "{}" }}"#,
+                r#"{{ "op": "replace", "path": "/enforceSecureCommunication", "value": {} }}"#,
                 enforce_secure_communication
+            ))
+        });
+        send_headers_back.m_foreach(|send_headers_back| {
+            updates.push(format!(
+                r#"{{ "op": "replace", "path": "/sendOtoroshiHeadersBack", "value": {} }}"#,
+                send_headers_back
             ))
         });
         if !sec_com_excluded_patterns.is_empty() {

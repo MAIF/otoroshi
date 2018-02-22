@@ -526,6 +526,12 @@ export class ServicePage extends Component {
               />
             </WithEnv>
             <BooleanInput
+              label="Send headers back"
+              value={this.state.service.sendOtoroshiHeadersBack}
+              help="When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
+              onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
+            />
+            <BooleanInput
               label="Secured service"
               value={this.state.service.enforceSecureCommunication}
               help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."

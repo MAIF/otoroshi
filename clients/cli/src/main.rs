@@ -603,6 +603,10 @@ development version of Otoroshi."#,
                                 .long("enforce-secure-communication"),
                         )
                         .arg(
+                            Arg::with_name("send-headers-back")
+                                .long("send-headers-back"),
+                        )
+                        .arg(
                             Arg::with_name("secure-communication-exclusion")
                                 .long("secure-communication-exclusion")
                                 .multiple(true)
@@ -769,6 +773,11 @@ development version of Otoroshi."#,
                         .arg(
                             Arg::with_name("enforce-secure-communication")
                                 .long("enforce-secure-communication")
+                                .takes_value(true),
+                        )
+                        .arg(
+                            Arg::with_name("send-headers-back")
+                                .long("send-headers-back")
                                 .takes_value(true),
                         )
                         .arg(
@@ -1450,6 +1459,7 @@ development version of Otoroshi."#,
                     subcommand.is_present("maintenance-mode"),
                     subcommand.is_present("build-mode"),
                     subcommand.is_present("enforce-secure-communication"),
+                    subcommand.is_present("send-headers-back"),
                     subcommand
                         .values_of("secure-communication-exclusion")
                         .map(|i| i.collect())
@@ -1519,6 +1529,7 @@ development version of Otoroshi."#,
                     subcommand.value_of("maintenance-mode"),
                     subcommand.value_of("build-mode"),
                     subcommand.value_of("enforce-secure-communication"),
+                    subcommand.value_of("send-headers-back"),
                     subcommand
                         .values_of("secure-communication-exclusion")
                         .map(|i| i.collect())

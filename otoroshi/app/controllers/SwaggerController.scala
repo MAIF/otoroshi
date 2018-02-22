@@ -275,6 +275,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "maintenanceMode"            -> SimpleBooleanType ~~> "Display a maintainance page when a user try to use the service",
       "buildMode"                  -> SimpleBooleanType ~~> "Display a construction page when a user try to use the service",
       "enforceSecureCommunication" -> SimpleBooleanType ~~> "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
+      "sendOtoroshiHeadersBack"    -> SimpleBooleanType ~~> "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...",
       "secComExcludedPatterns"     -> ArrayOf(SimpleStringType) ~~> "URI patterns excluded from secured communications",
       "publicPatterns"             -> ArrayOf(SimpleStringType) ~~> "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'",
       "privatePatterns"            -> ArrayOf(SimpleStringType) ~~> "If you define a public pattern that is a little bit too much, you can make some of public URL private again",

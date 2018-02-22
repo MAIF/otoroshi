@@ -522,10 +522,15 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                           env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
                           "Host"                          -> host,
-                          env.Headers.OtoroshiRequestId   -> snowflake,
-                          env.Headers.OtoroshiState       -> state,
-                          env.Headers.OtoroshiClaim       -> claim
-                        ) ++ descriptor.additionalHeaders ++ fromOtoroshi
+                          env.Headers.OtoroshiRequestId   -> snowflake
+                        ) ++ (if (descriptor.enforceSecureCommunication) {
+                          Map(
+                            env.Headers.OtoroshiState       -> state,
+                            env.Headers.OtoroshiClaim       -> claim
+                          )
+                        } else {
+                          Map.empty[String, String]
+                        }) ++ descriptor.additionalHeaders ++ fromOtoroshi
                           .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                           .getOrElse(Map.empty[String, String])).toSeq
 
@@ -722,14 +727,20 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           } else {
                             val upstreamLatency = System.currentTimeMillis() - upstreamStart
                             val headersOut = headers.toSeq
-                              .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ Seq(
-                              env.Headers.OtoroshiRequestId       -> snowflake,
-                              env.Headers.OtoroshiProxyLatency    -> s"$overhead",
-                              env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
-                              //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
+                              .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
+                              if (descriptor.sendOtoroshiHeadersBack) {
+                                Seq(
+                                  env.Headers.OtoroshiRequestId       -> snowflake,
+                                  env.Headers.OtoroshiProxyLatency    -> s"$overhead",
+                                  env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
+                                  //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
+                                )
+                              } else {
+                                Seq.empty[(String, String)]
+                              }
                             ) ++ Some(trackingId)
                               .filter(_ => desc.canary.enabled)
-                              .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (apiKey.isDefined) {
+                              .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
                                                                                                                         Seq(
                                                                                                                           env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
                                                                                                                           env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
