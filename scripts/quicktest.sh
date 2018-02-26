@@ -27,7 +27,7 @@ rm -f $LOCATION/otoroshi/target/scala-$SCALA_VERSION/otoroshi.jar
 echo "Building Otoroshi"
 sbt ";clean;compile;assembly"
 check_scala_version
-java -jar $LOCATION/otoroshi/target/scala-$SCALA_VERSION/otoroshi.jar -Dapp.inmemory.experimental=true &
+java -jar $LOCATION/otoroshi/target/scala-$SCALA_VERSION/otoroshi.jar &
 
 sleep 30
 
