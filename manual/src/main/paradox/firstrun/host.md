@@ -11,5 +11,5 @@ Of course, you have to change the values according to the setting you put in Oto
 * `app.domain` => `foo.bar`
 * `app.backoffice.subdomain` => `otoroshi`
 * `app.privateapps.subdomain` => `privateapps`
-* `app.adminapi.exposedDubdomain` => `otoroshi-api`
+* `app.adminapi.exposedSubdomain` => `otoroshi-api`
 * `app.adminapi.targetSubdomain` => `otoroshi-admin-internal-api`

@@ -32,8 +32,8 @@ Some of the following terms will seem obscure to you, but you will learn their m
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
 | `app.adminapi.exposed` | boolean | true | does the current Otoroshi instance expose an admin API |
-| `app.adminapi.targetSubdomain` | string | "otoroshi-admin-internal-api" | the subdomain on wich admin API call will be redirected from `app.adminapi.exposedDubdomain` |
-| `app.adminapi.exposedDubdomain` | string | "otoroshi-api" | the subdomain on wich the Otoroshi admin API will be exposed |
+| `app.adminapi.targetSubdomain` | string | "otoroshi-admin-internal-api" | the subdomain on wich admin API call will be redirected from `app.adminapi.exposedSubdomain` |
+| `app.adminapi.exposedSubdomain` | string | "otoroshi-api" | the subdomain on wich the Otoroshi admin API will be exposed |
 | `app.adminapi.defaultValues.backOfficeGroupId` | string | "admin-api-group" | the name of the service groups that will contain the service descriptors for the Otoroshi admin API |
 | `app.adminapi.defaultValues.backOfficeApiKeyClientId` | string | "admin-api-apikey-id" | the client id of the Otoroshi admin API apikey |
 | `app.adminapi.defaultValues.backOfficeApiKeyClientSecret` | string | "admin-api-apikey-secret" | the client secret of the Otoroshi admin API apikey  |
@@ -146,7 +146,7 @@ app {
   }
   adminapi {
     targetSubdomain = "otoroshi-admin-internal-api"
-    exposedDubdomain = "otoroshi-api"
+    exposedSubdomain = "otoroshi-api"
     defaultValues {
       backOfficeGroupId = "admin-api-group"
       backOfficeApiKeyClientId = "admin-api-apikey-id"
