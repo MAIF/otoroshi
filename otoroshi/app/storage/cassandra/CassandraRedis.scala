@@ -1,6 +1,6 @@
 package storage.cassandra
 
-import java.util.concurrent.{Executor, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, Executor, TimeUnit}
 import java.util.regex.Pattern
 
 import akka.actor.ActorSystem
@@ -49,6 +49,8 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
 
   import collection.JavaConverters._
   import scala.concurrent.duration._
+
+  private val patterns = new ConcurrentHashMap[String, Pattern]()
 
   val poolingOptions = new PoolingOptions()
   val cluster = Cluster
@@ -262,8 +264,7 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
     Future.sequence(keys.map(k => get(k)))
 
   override def keys(pattern: String): Future[Seq[String]] = {
-    val regex = pattern.replaceAll("\\*", ".*")
-    val pat   = Pattern.compile(regex)
+    val pat = patterns.computeIfAbsent(pattern, _ => Pattern.compile(pattern.replaceAll("\\*", ".*")))
     getAllKeys().map(_.filter { k =>
       pat.matcher(k).find
     })

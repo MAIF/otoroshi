@@ -524,13 +524,13 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           "Host"                          -> host,
                           env.Headers.OtoroshiRequestId   -> snowflake
                         ) ++ (if (descriptor.enforceSecureCommunication) {
-                          Map(
-                            env.Headers.OtoroshiState       -> state,
-                            env.Headers.OtoroshiClaim       -> claim
-                          )
-                        } else {
-                          Map.empty[String, String]
-                        }) ++ descriptor.additionalHeaders ++ fromOtoroshi
+                                Map(
+                                  env.Headers.OtoroshiState -> state,
+                                  env.Headers.OtoroshiClaim -> claim
+                                )
+                              } else {
+                                Map.empty[String, String]
+                              }) ++ descriptor.additionalHeaders ++ fromOtoroshi
                           .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                           .getOrElse(Map.empty[String, String])).toSeq
 

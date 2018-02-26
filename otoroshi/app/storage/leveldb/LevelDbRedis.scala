@@ -25,6 +25,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
   private val options     = new Options().createIfMissing(true)
   private val db          = factory.open(new File(dbPath), options)
   private val expirations = new ConcurrentHashMap[String, Long]()
+  private val patterns    = new ConcurrentHashMap[String, Pattern]()
 
   private val cancel = actorSystem.scheduler.schedule(0.millis, 10.millis) {
     val time = System.currentTimeMillis()
@@ -113,8 +114,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
     Future.sequence(keys.map(k => get(k)))
 
   override def keys(pattern: String): Future[Seq[String]] = {
-    val regex = pattern.replaceAll("\\*", ".*")
-    val pat   = Pattern.compile(regex)
+    val pat = patterns.computeIfAbsent(pattern, _ => Pattern.compile(pattern.replaceAll("\\*", ".*")))
     FastFuture.successful(getAllKeys().filter { k =>
       pat.matcher(k).find
     })
