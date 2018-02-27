@@ -4,6 +4,8 @@
 
 **Otoroshi** is a layer of lightweight api management on top of a modern http reverse proxy written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
 
+**Otoroshi** is written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> on top of <a href="https://akka.io">akka</a> and <a href="https://www.playframework.com">playframework</a>.
+
 ## Reference Documentation
 
 The reference documentation is available at https://maif.github.io/otoroshi/manual/
