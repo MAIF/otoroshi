@@ -2,3 +2,4 @@
 wrk_test
 release-*
 *.swp
+cassandra-data

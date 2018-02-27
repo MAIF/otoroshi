@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.datastax.driver.core.{ResultSet, ResultSetFuture}
+import play.api.Logger
 import storage.RedisLike
 
 import scala.concurrent.{Future, Promise}
@@ -15,6 +16,8 @@ import scala.util.Try
 object Implicits {
 
   val blocking = false
+
+  private lazy val logger = Logger("otoroshi-cassandra-datastores")
 
   implicit class EnhancedResultSetFuture(val rsf: ResultSetFuture) extends AnyVal {
     def asFuture(implicit executor: Executor): Future[ResultSet] = {
@@ -29,7 +32,9 @@ object Implicits {
                 val rs = rsf.getUninterruptibly(100, TimeUnit.MILLISECONDS)
                 promise.trySuccess(rs)
               } catch {
-                case e: Throwable => promise.tryFailure(e)
+                case e: Throwable => 
+                  logger.error("Cassandra error", e)
+                  promise.tryFailure(e)
               }
           },
           executor
@@ -41,7 +46,7 @@ object Implicits {
 }
 
 // Really dumb and naive support for cassandra, not production ready I guess
-class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], contactPort: Int) extends RedisLike {
+class CassandraRedis(actorSystem: ActorSystem, cassandraReplicationStrategy: String, cassandraReplicationFactor: Int, cassandraNetworkTopologyOptions: String, contactPoints: Seq[String], contactPort: Int) extends RedisLike {
 
   import Implicits._
   import actorSystem.dispatcher
@@ -81,9 +86,15 @@ class CassandraRedis(actorSystem: ActorSystem, contactPoints: Seq[String], conta
   }
 
   override def start(): Unit = {
-    session.execute(
-      "CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'SimpleStrategy', 'replication_factor':3};"
-    )
+    if (cassandraReplicationStrategy == "NetworkTopologyStrategy") {
+      session.execute(
+        s"CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'NetworkTopologyStrategy', $cassandraNetworkTopologyOptions};"
+      )
+    } else {
+      session.execute(
+        s"CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'SimpleStrategy', 'replication_factor':$cassandraReplicationFactor};"
+      )
+    }
     session.execute("USE otoroshi")
     session.execute("CREATE TABLE IF NOT EXISTS otoroshi.values ( key text, value text, PRIMARY KEY (key) );")
     session.execute("CREATE TABLE IF NOT EXISTS otoroshi.lists ( key text, value list<text>, PRIMARY KEY (key) );")
