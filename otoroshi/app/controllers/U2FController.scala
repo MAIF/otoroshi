@@ -86,10 +86,11 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     val usernameOpt = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt = (ctx.request.body \ "password").asOpt[String]
     val labelOpt    = (ctx.request.body \ "label").asOpt[String]
-    (usernameOpt, passwordOpt, labelOpt) match {
-      case (Some(username), Some(password), Some(label)) => {
+    val authorizedGroupOpt    = (ctx.request.body \ "authorizedGroup").asOpt[String]
+    (usernameOpt, passwordOpt, labelOpt, authorizedGroupOpt) match {
+      case (Some(username), Some(password), Some(label), authorizedGroup) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-        env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, None).map { _ => // TODO : add authorizedGroup ???
+        env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, authorizedGroup).map { _ =>
           Ok(Json.obj("username" -> username))
         }
       }
