@@ -143,9 +143,9 @@ class AdminClearanceChecker()(implicit env: Env) {
     } else req.path.replace("/bo/api/proxy", "") match {
       case r"/api/groups/$group@([^/]+)/[./]*" if req.method == "GET" && group != groupId => FastFuture.successful(Results.Ok(Json.arr()))
       case r"/api/groups/$group@([^/]+)/[./]*" if group != groupId => FastFuture.successful(Results.Ok(Json.obj("done" -> false)))
-      case r"/api/services/$serviceId@([^/]+)/apikeys/:clientId/quotas" => callIfServiceIsInGroup(groupId, serviceId)(f)
-      case r"/api/services/$serviceId@([^/]+)/apikeys/:clientId/group" => callIfServiceIsInGroup(groupId, serviceId)(f)
-      case r"/api/services/$serviceId@([^/]+)/apikeys/:clientId" => callIfServiceIsInGroup(groupId, serviceId)(f)
+      case r"/api/services/$serviceId@([^/]+)/apikeys/[^/]+/quotas" => callIfServiceIsInGroup(groupId, serviceId)(f)
+      case r"/api/services/$serviceId@([^/]+)/apikeys/[^/]+/group" => callIfServiceIsInGroup(groupId, serviceId)(f)
+      case r"/api/services/$serviceId@([^/]+)/apikeys/[^/]+" => callIfServiceIsInGroup(groupId, serviceId)(f)
       case r"/api/services/$serviceId@([^/]+)/apikeys" => callIfServiceIsInGroup(groupId, serviceId)(f)
       case r"/api/services/$serviceId@([^/]+)/template" => callIfServiceIsInGroup(groupId, serviceId)(f)
       case r"/api/services/$serviceId@([^/]+)/targets" => callIfServiceIsInGroup(groupId, serviceId)(f)
