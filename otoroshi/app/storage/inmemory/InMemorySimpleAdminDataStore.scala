@@ -36,15 +36,20 @@ class InMemorySimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends Simpl
   override def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.del(key(username))
 
-  override def registerUser(username: String, password: String, label: String)(implicit ec: ExecutionContext,
+  override def registerUser(username: String, password: String, label: String, authorizedGroup: Option[String])(implicit ec: ExecutionContext,
                                                                                env: Env): Future[Boolean] = {
     // logger.warn(password)
+    val group: JsValue = authorizedGroup match {
+      case Some(g) => JsString(g)
+      case None => JsNull
+    }
     redisCli.set(key(username),
                  Json.stringify(
                    Json.obj(
                      "username"  -> username,
                      "password"  -> password,
                      "label"     -> label,
+                     "authorizedGroup" -> group,
                      "createdAt" -> DateTime.now()
                    )
                  ))
