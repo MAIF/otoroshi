@@ -113,6 +113,13 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
   override protected def executionContext: ExecutionContext = ec
 }
 
+/**
+ * A class to check if a user can do something based on clearance metadata (only authorized on one service group)
+ * This class is only an experimentation to see if we actually need this feature.
+ * If so, it will be rewritten from scratch to implement it correctly everywhere based on a fine grained habiliation model.
+ *
+ * PLEASE BE INDULGENT THE FOLLOWING CODE :)
+ */
 class AdminClearanceChecker()(implicit env: Env) {
 
   import kaleidoscope._
