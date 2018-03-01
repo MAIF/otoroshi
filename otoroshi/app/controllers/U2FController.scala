@@ -48,9 +48,9 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       case (Some(username), Some(pass)) => {
         env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
           case Some(user) => {
-            val password = (user \ "password").as[String]
-            val label    = (user \ "label").as[String]
-            val authorizedGroup    = (user \ "authorizedGroup").asOpt[String]
+            val password        = (user \ "password").as[String]
+            val label           = (user \ "label").as[String]
+            val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
             if (BCrypt.checkpw(pass, password)) {
               logger.info(s"Login successful for simple admin '$username'")
               BackOfficeUser(IdGenerator.token(64),
@@ -59,17 +59,19 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                              Json.obj(
                                "name"  -> label,
                                "email" -> username
-                             ), authorizedGroup).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
-                env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
-                  case false => {
-                    env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
-                    Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                             ),
+                             authorizedGroup).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map {
+                boUser =>
+                  env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
+                    case false => {
+                      env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
+                      Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                    }
+                    case true => {
+                      Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                    }
                   }
-                  case true => {
-                    Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
-                  }
-                }
-                Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
+                  Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
               }
             } else {
               Unauthorized(Json.obj("error" -> "not authorized")).asFuture
@@ -83,10 +85,10 @@ class U2FController(BackOfficeAction: BackOfficeAction,
   }
 
   def registerSimpleAdmin = BackOfficeActionAuth.async(parse.json) { ctx =>
-    val usernameOpt = (ctx.request.body \ "username").asOpt[String]
-    val passwordOpt = (ctx.request.body \ "password").asOpt[String]
-    val labelOpt    = (ctx.request.body \ "label").asOpt[String]
-    val authorizedGroupOpt    = (ctx.request.body \ "authorizedGroup").asOpt[String]
+    val usernameOpt        = (ctx.request.body \ "username").asOpt[String]
+    val passwordOpt        = (ctx.request.body \ "password").asOpt[String]
+    val labelOpt           = (ctx.request.body \ "label").asOpt[String]
+    val authorizedGroupOpt = (ctx.request.body \ "authorizedGroup").asOpt[String]
     (usernameOpt, passwordOpt, labelOpt, authorizedGroupOpt) match {
       case (Some(username), Some(password), Some(label), authorizedGroup) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
@@ -224,21 +226,24 @@ class U2FController(BackOfficeAction: BackOfficeAction,
               val registration =
                 u2f.finishAuthentication(authenticateRequest, authenticateResponse, it.map(_._1).asJava)
               env.datastores.u2FAdminDataStore.deleteRequest(authenticateRequest.getRequestId).flatMap { _ =>
-                val keyHandle = registration.getKeyHandle
-                val user      = it.filter(_._1.getKeyHandle == keyHandle).head._2
-                val password  = (user \ "password").as[String]
-                val label     = (user \ "label").as[String]
-                val authorizedGroup    = (user \ "authorizedGroup").asOpt[String]
+                val keyHandle       = registration.getKeyHandle
+                val user            = it.filter(_._1.getKeyHandle == keyHandle).head._2
+                val password        = (user \ "password").as[String]
+                val label           = (user \ "label").as[String]
+                val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
                 if (BCrypt.checkpw(pass, password)) {
                   env.datastores.u2FAdminDataStore.registerUser(username, password, label, registration).flatMap { _ =>
                     logger.info(s"Login successful for user '$username'")
-                    BackOfficeUser(IdGenerator.token(64),
-                                   username,
-                                   username,
-                                   Json.obj(
-                                     "name"  -> label,
-                                     "email" -> username
-                                   ), authorizedGroup).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
+                    BackOfficeUser(
+                      IdGenerator.token(64),
+                      username,
+                      username,
+                      Json.obj(
+                        "name"  -> label,
+                        "email" -> username
+                      ),
+                      authorizedGroup
+                    ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                       env.datastores.u2FAdminDataStore.hasAlreadyLoggedIn(username).map {
                         case false => {
                           env.datastores.u2FAdminDataStore.alreadyLoggedIn(username)

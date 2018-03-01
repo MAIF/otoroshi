@@ -368,7 +368,8 @@ class Env(val configuration: Configuration,
                 _ <- defaultGroupApiKey.save()(ec, this)
                 _ <- datastores.simpleAdminDataStore.registerUser("admin@otoroshi.io",
                                                                   BCrypt.hashpw(password, BCrypt.gensalt()),
-                                                                  "Otoroshi Admin", None)(ec, this)
+                                                                  "Otoroshi Admin",
+                                                                  None)(ec, this)
               } yield ()
             }
           }

@@ -32,7 +32,7 @@ object Implicits {
                 val rs = rsf.getUninterruptibly(100, TimeUnit.MILLISECONDS)
                 promise.trySuccess(rs)
               } catch {
-                case e: Throwable => 
+                case e: Throwable =>
                   logger.error("Cassandra error", e)
                   promise.tryFailure(e)
               }
@@ -46,7 +46,13 @@ object Implicits {
 }
 
 // Really dumb and naive support for cassandra, not production ready I guess
-class CassandraRedis(actorSystem: ActorSystem, cassandraReplicationStrategy: String, cassandraReplicationFactor: Int, cassandraNetworkTopologyOptions: String, contactPoints: Seq[String], contactPort: Int) extends RedisLike {
+class CassandraRedis(actorSystem: ActorSystem,
+                     cassandraReplicationStrategy: String,
+                     cassandraReplicationFactor: Int,
+                     cassandraNetworkTopologyOptions: String,
+                     contactPoints: Seq[String],
+                     contactPort: Int)
+    extends RedisLike {
 
   import Implicits._
   import actorSystem.dispatcher

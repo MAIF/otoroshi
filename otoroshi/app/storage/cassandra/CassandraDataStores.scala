@@ -29,9 +29,12 @@ class CassandraDataStores(configuration: Configuration,
       configuration.getOptional[String]("app.cassandra.host").map(e => Seq(e))
     )
     .getOrElse(Seq("127.0.0.1"))
-  lazy val cassandraReplicationStrategy: String   = configuration.getOptional[String]("app.cassandra.replicationStrategy").getOrElse("SimpleStrategy")
-  lazy val cassandraReplicationOptions: String   = configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
-  lazy val cassandraReplicationFactor: Int   = configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
+  lazy val cassandraReplicationStrategy: String =
+    configuration.getOptional[String]("app.cassandra.replicationStrategy").getOrElse("SimpleStrategy")
+  lazy val cassandraReplicationOptions: String =
+    configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
+  lazy val cassandraReplicationFactor: Int =
+    configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
   lazy val cassandraPort: Int   = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
   lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
   lazy val actorSystem =
@@ -42,7 +45,12 @@ class CassandraDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis = new CassandraRedis(actorSystem, cassandraReplicationStrategy, cassandraReplicationFactor, cassandraReplicationOptions, cassandraContactPoints, cassandraPort)
+  lazy val redis = new CassandraRedis(actorSystem,
+                                      cassandraReplicationStrategy,
+                                      cassandraReplicationFactor,
+                                      cassandraReplicationOptions,
+                                      cassandraContactPoints,
+                                      cassandraPort)
 
   override def before(configuration: Configuration,
                       environment: Environment,
