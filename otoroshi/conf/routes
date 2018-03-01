@@ -143,6 +143,7 @@ POST    /api/otoroshi.json                                    controllers.ApiCon
 POST    /api/import                                           controllers.ApiController.fullImportFromFile()
 
 GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
+# POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()
 GET     /api/swagger/ui                                       controllers.SwaggerController.swaggerUi()

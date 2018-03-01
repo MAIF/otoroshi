@@ -252,7 +252,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           .toLowerCase()
           .contains(query)
       }
-      Ok(JsArray(filtered.map(s => Json.obj("serviceId" -> s.id, "name" -> s.name, "env" -> s.env))))
+      Ok(JsArray(filtered.map(s => Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env))))
     }
   }
 

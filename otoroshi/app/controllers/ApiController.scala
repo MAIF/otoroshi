@@ -13,6 +13,7 @@ import env.Env
 import events._
 import models._
 import org.joda.time.DateTime
+import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.libs.json.{JsSuccess, Json, _}
 import play.api.mvc._
@@ -2572,4 +2573,22 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         case e => InternalServerError(Json.obj("error" -> e.getMessage))
       }
   }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  // def registerSimpleAdmin() = ApiAction.async(parse.json) { ctx =>
+  //   val usernameOpt = (ctx.request.body \ "username").asOpt[String]
+  //   val passwordOpt = (ctx.request.body \ "password").asOpt[String]
+  //   val labelOpt    = (ctx.request.body \ "label").asOpt[String]
+  //   val authorizedGroupOpt    = (ctx.request.body \ "authorizedGroup").asOpt[String]
+  //   (usernameOpt, passwordOpt, labelOpt, authorizedGroupOpt) match {
+  //     case (Some(username), Some(password), Some(label), authorizedGroup) => {
+  //       val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+  //       env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, authorizedGroup).map { _ =>
+  //         Ok(Json.obj("username" -> username))
+  //       }
+  //     }
+  //     case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
+  //   }
+  // }
 }

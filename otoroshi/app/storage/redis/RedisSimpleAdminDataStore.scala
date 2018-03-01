@@ -38,19 +38,25 @@ class RedisSimpleAdminDataStore(redisCli: RedisClientMasterSlaves) extends Simpl
   override def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.del(key(username))
 
-  override def registerUser(username: String, password: String, label: String)(implicit ec: ExecutionContext,
-                                                                               env: Env): Future[Boolean] =
+  override def registerUser(username: String, password: String, label: String, authorizedGroup: Option[String])(implicit ec: ExecutionContext,
+                                                                               env: Env): Future[Boolean] = {
+    val group: JsValue = authorizedGroup match {
+      case Some(g) => JsString(g)
+      case None => JsNull
+    }
     redisCli.set(key(username),
-                 ByteString(
-                   Json.stringify(
-                     Json.obj(
-                       "username"  -> username,
-                       "password"  -> password,
-                       "label"     -> label,
-                       "createdAt" -> DateTime.now()
-                     )
-                   )
-                 ))
+      ByteString(
+        Json.stringify(
+          Json.obj(
+            "username" -> username,
+            "password" -> password,
+            "label" -> label,
+            "authorizedGroup" -> group,
+            "createdAt" -> DateTime.now()
+          )
+        )
+      ))
+  }
 
   override def hasAlreadyLoggedIn(username: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli.sismember(s"${env.storageRoot}:users:alreadyloggedin", username)

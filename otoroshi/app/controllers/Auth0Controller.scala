@@ -191,7 +191,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
                         val name  = (user \ "name").as[String]
                         val email = (user \ "email").as[String]
                         logger.info(s"Login successful for user '$email'")
-                        BackOfficeUser(IdGenerator.token(64), name, email, user)
+                        BackOfficeUser(IdGenerator.token(64), name, email, user, None) // TODO : get from app_meta
                           .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
                           .map { boUser =>
                             env.datastores.backOfficeUserDataStore.hasAlreadyLoggedIn(email).map {
