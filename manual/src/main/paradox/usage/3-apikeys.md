@@ -20,9 +20,11 @@ In the Otoroshi admin dashboard, we chose to access `API keys` from `service des
 
 `API keys` can be provided to Otoroshi through :
 
-* `Authorization: Basic $base64(client_id:client_secret)` header
-* `Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret
-* `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` header
+* `Otoroshi-Authorization: Basic $base64(client_id:client_secret)` header, in that case, the `Otoroshi-Authorization` header will **not** be sent to the target
+* `Authorization: Basic $base64(client_id:client_secret)` header, in that case, the `Authorization` header **will** be sent to the target
+* `Otoroshi-Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret, in that case, the `Otoroshi-Authorization` header will **not** be sent to the target
+* `Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret, in that case, the `Authorization` header **will** be sent to the target
+* `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers, in that case the `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers will not be sent to the target.
 
 ## List API keys for a service descriptor
 
@@ -96,3 +98,31 @@ and confirm the command
 @@@ div { .centered-img }
 <img src="../img/apikey-delete-confirm.png" />
 @@@
+
+## Use a JWT token to pass an API key
+
+You can use a JWT token to pass an API key to Otoroshi. 
+You can use `Otoroshi-Authorization: Bearer $jwt_token` and `Authorization: Bearer $jwt_token` header to pass the JWT token.
+You have to create a JWT token with a signing algorythm that can be `HS256` or `HS256`. Then you have to provide an `iss` claim with the value of your API key `clientId` and sign the JWT token with your API key `clientSecret`.
+
+For example, with an API key like `clientId=abcdef` and `clientSecret=1234456789`, your JWT token should look like
+
+```json
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+{
+  "iss":"abcdef",
+  "name": "John Doe",
+  "admin": true
+}
+```
+
+in that case, when you sign the token with the secret of the API key `1234456789`, the signature will be `_eancnYCD3makSSox2v2xErjNYkRtcX558QiJGCbino`, resulting in a encoded JWT header like
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+eyJpc3MiOiJhYmNkZWYiLCJuYW1lIjoiSm9obiBEb2UiLCJhZG1pbiI6dHJ1ZX0.
+_eancnYCD3makSSox2v2xErjNYkRtcX558QiJGCbino
+```
