@@ -916,7 +916,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                         Try {
                           JWT.decode(jwtTokenValue)
                         } map { jwt =>
-                          Option(jwt.getClaim("clientId")).map(_.asString()) match {
+                          Option(jwt.getClaim("iss")).map(_.asString()) match {
                             case Some(clientId) =>
                               env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
                                 case Some(apiKey) => {
