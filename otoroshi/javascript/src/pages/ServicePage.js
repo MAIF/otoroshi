@@ -1018,6 +1018,7 @@ export class TemplateInput extends Component {
         'message-400': '400',
         'message-403': '403',
         'message-404': '404',
+        'message-417': '417',
         'message-429': '429',
         'message-500': '500',
         'message-502': '502',
@@ -1041,6 +1042,8 @@ export class TemplateInput extends Component {
         'errors.bad.api.key': 'Bad ApiKey provided',
         'errors.no.api.key': 'No ApiKey provided',
         'errors.ip.address.not.allowed': 'IP address not allow',
+        'errors.not.found': 'Page not found',
+        'errors.bad.origin': 'Bad origin',
       },
     }).then(template => {
       this.setState({ template });

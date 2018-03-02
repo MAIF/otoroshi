@@ -5,12 +5,14 @@ import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import env.Env
+import gateway.Errors
 import events.{Alerts, BlackListedBackOfficeUserAlert}
 import models.BackOfficeUser
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
+import play.api.mvc.Results.Status
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -44,8 +46,7 @@ class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
         }
       }
       case _ => {
-        // TODO : based on Accept header
-        FastFuture.successful(Results.NotFound(views.html.otoroshi.error("Not found", env)))
+        Errors.craftResponseResult(s"Not found", Status(404), request, None, Some("errors.not.found"))
       }
     }
   }
@@ -118,13 +119,12 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
           .map(u => u.authority.copy(port = 0).toString()) match {
           case Some(origin) if origin == env.backOfficeHost => callAction()
           case Some(origin) if origin != env.backOfficeHost =>
-            FastFuture.successful(Results.ExpectationFailed(Json.obj("error" -> "Bad Origin")))
+            Errors.craftResponseResult(s"Bad origin", Status(417), request, None, Some("errors.bad.origin"))
           case None => callAction()
         }
       }
       case _ => {
-        // TODO : based on Accept header
-        FastFuture.successful(Results.NotFound(views.html.otoroshi.error("Not found", env)))
+        Errors.craftResponseResult(s"Not found", Status(404), request, None, Some("errors.not.found"))
       }
     }
   }
