@@ -1,5 +1,7 @@
 package actions
 
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import env.Env
@@ -67,41 +69,57 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
     val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.backOfficeHost => {
-        // val redirectTo = env.rootScheme + env.backOfficeHost + controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.uri}")).url
-        val redirectTo = env.rootScheme + request.host + controllers.routes.BackOfficeController.index().url
-        request.session.get("bousr").map { id =>
-          env.datastores.backOfficeUserDataStore.findById(id).flatMap {
-            case Some(user) => {
-              env.datastores.backOfficeUserDataStore.blacklisted(user.email).flatMap {
-                case true => {
-                  Alerts.send(BlackListedBackOfficeUserAlert(env.snowflakeGenerator.nextIdStr(), env.env, user))
-                  FastFuture.successful(
-                    Results.NotFound(views.html.otoroshi.error("Error", env)).removingFromSession("bousr")(request)
-                  )
-                }
-                case false =>
-                  checker.check(req, user) {
-                    block(BackOfficeActionContextAuth(request, user))
+
+        def callAction() = {
+          // val redirectTo = env.rootScheme + env.backOfficeHost + controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.uri}")).url
+          val redirectTo = env.rootScheme + request.host + controllers.routes.BackOfficeController.index().url
+          request.session.get("bousr").map { id =>
+            env.datastores.backOfficeUserDataStore.findById(id).flatMap {
+              case Some(user) => {
+                env.datastores.backOfficeUserDataStore.blacklisted(user.email).flatMap {
+                  case true => {
+                    Alerts.send(BlackListedBackOfficeUserAlert(env.snowflakeGenerator.nextIdStr(), env.env, user))
+                    FastFuture.successful(
+                      Results.NotFound(views.html.otoroshi.error("Error", env)).removingFromSession("bousr")(request)
+                    )
                   }
+                  case false =>
+                    checker.check(req, user) {
+                      block(BackOfficeActionContextAuth(request, user))
+                    }
+                }
               }
+              case None =>
+                FastFuture.successful(
+                  Results
+                    .Redirect(redirectTo)
+                    .addingToSession(
+                      "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.uri}"
+                    )
+                )
             }
-            case None =>
-              FastFuture.successful(
-                Results
-                  .Redirect(redirectTo)
-                  .addingToSession(
-                    "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.uri}"
-                  )
-              )
+          } getOrElse {
+            FastFuture.successful(
+              Results
+                .Redirect(redirectTo)
+                .addingToSession(
+                  "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.uri}"
+                )
+            )
           }
-        } getOrElse {
-          FastFuture.successful(
-            Results
-              .Redirect(redirectTo)
-              .addingToSession(
-                "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.uri}"
-              )
+        }
+
+        request.headers
+          .get("Origin")
+          .map(Uri.apply)
+          .orElse(
+            request.headers.get("Referer").map(Uri.apply).map(uri => uri.copy(path = Path.Empty))
           )
+          .map(u => u.authority.copy(port = 0).toString()) match {
+          case Some(origin) if origin == env.backOfficeHost => callAction()
+          case Some(origin) if origin != env.backOfficeHost =>
+            FastFuture.successful(Results.ExpectationFailed(Json.obj("error" -> "Bad Origin")))
+          case None => callAction()
         }
       }
       case _ => {
