@@ -53,12 +53,27 @@ class WebSocketHandler()(implicit env: Env) {
     env.Headers.OtoroshiState,
     env.Headers.OtoroshiClaim,
     env.Headers.OtoroshiRequestId,
-    "Host"
+    env.Headers.OtoroshiClientId,
+    env.Headers.OtoroshiClientSecret,
+    env.Headers.OtoroshiAuthorization,
+    "Host",
+    "X-Forwarded-For",
+    "X-Forwarded-Proto",
+    "X-Forwarded-Protocol",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info",
   ).map(_.toLowerCase)
 
   val headersOutFiltered = Seq(
     env.Headers.OtoroshiStateResp,
-    "Transfer-Encoding"
+    "Transfer-Encoding",
+    "Content-Length",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info",
   ).map(_.toLowerCase)
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
