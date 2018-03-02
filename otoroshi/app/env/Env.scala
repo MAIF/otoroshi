@@ -224,6 +224,7 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiClientId             = configuration.getOptional[String]("otoroshi.headers.request.clientid").get
     lazy val OtoroshiClientSecret         = configuration.getOptional[String]("otoroshi.headers.request.clientsecret").get
     lazy val OtoroshiRequestId            = configuration.getOptional[String]("otoroshi.headers.request.id").get
+    lazy val OtoroshiAuthorization        = configuration.getOptional[String]("otoroshi.headers.request.authorization").get
     lazy val OtoroshiProxiedHost          = configuration.getOptional[String]("otoroshi.headers.response.proxyhost").get
     lazy val OtoroshiGatewayError         = configuration.getOptional[String]("otoroshi.headers.response.error").get
     lazy val OtoroshiErrorMsg             = configuration.getOptional[String]("otoroshi.headers.response.errormsg").get

@@ -112,6 +112,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     env.Headers.OtoroshiRequestId,
     env.Headers.OtoroshiClientId,
     env.Headers.OtoroshiClientSecret,
+    env.Headers.OtoroshiAuthorization,
     "Host",
     "X-Forwarded-For",
     "X-Forwarded-Proto",
@@ -855,12 +856,14 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
 
                     def passWithApiKey(config: GlobalConfig): Future[Result] = {
                       val authByJwtToken = req.headers
-                        .get("Authorization")
+                        .get(env.Headers.OtoroshiAuthorization)
+                        .orElse(req.headers.get("Authorization"))
                         .filter(_.startsWith("Bearer "))
                         .map(_.replace("Bearer ", ""))
                         .orElse(req.queryString.get("bearer_auth").flatMap(_.lastOption))
                       val authBasic = req.headers
-                        .get("Authorization")
+                        .get(env.Headers.OtoroshiAuthorization)
+                        .orElse(req.headers.get("Authorization"))
                         .filter(_.startsWith("Basic "))
                         .map(_.replace("Basic ", ""))
                         .flatMap(e => Try(decodeBase64(e)).toOption)
