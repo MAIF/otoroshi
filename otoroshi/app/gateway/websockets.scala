@@ -127,7 +127,6 @@ class WebSocketHandler()(implicit env: Env) {
             .asLeft[WSFlow]
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           val uriParts = req.uri.split("/").toSeq
-          val root     = if (uriParts.isEmpty) "/" else "/" + uriParts.tail.head
 
           env.datastores.serviceDescriptorDataStore
             .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.uri, req.headers.toSimpleMap))
