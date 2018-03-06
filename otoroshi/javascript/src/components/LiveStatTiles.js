@@ -47,54 +47,25 @@ class Metric extends Component {
       <div
         className="metric"
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderRadius: 4,
-          backgroundColor: 'rgb(73, 73, 72)',
-          width: props.width || 300,
-          height: 100,
-          margin: 10,
-          fontFamily: 'Roboto',
-          fontSize: 23,
-          fontWeight: 'bold',
-          color: 'white',
+          width: props.width || 300
         }}>
         <div
-          style={{
-            zIndex: 103,
-            position: 'absolute',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
+        className="metric-text"
+        >
           <span
-            style={{
-              textShadow:
-                'rgb(0, 0, 0) 1px 1px, rgb(0, 0, 0) -1px 1px, rgb(0, 0, 0) -1px -1px, rgb(0, 0, 0) 1px -1px',
-            }}>
+            className="metric-text-value"
+            >
             {props.value}
           </span>
           <span
-            style={{
-              textShadow:
-                'rgb(0, 0, 0) 1px 1px, rgb(0, 0, 0) -1px 1px, rgb(0, 0, 0) -1px -1px, rgb(0, 0, 0) 1px -1px',
-              fontSize: 22,
-              fontWeight: 'normal',
-            }}>
+          className="metric-text-title"
+          >
             {props.legend}
           </span>
         </div>
         <div
-          style={{
-            width: '100%',
-            height: '100%',
-            zIndex: 100,
-            position: 'relative',
-            marginTop: 10,
-          }}>
+        className="metric-box"
+        >
           <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
             <SparklinesLine color="rgb(249, 176, 0)" />
             <SparklinesSpots />
@@ -220,12 +191,12 @@ export class LiveStatTiles extends Component {
     return (
       <div>
         <h4 className="live-title">LIVE METRICS</h4>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginTop: 20 }}>
+        <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.rate} legend="requests per second" />
           <Metric time={Date.now()} value={this.state.duration} legend="ms. per request" />
           <Metric time={Date.now()} value={this.state.overhead} legend="ms. overhead per request" />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginTop: 20 }}>
+        <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.dataInRate} />
           <Metric time={Date.now()} value={this.state.dataOutRate} />
           <Metric
@@ -235,7 +206,7 @@ export class LiveStatTiles extends Component {
           />
         </div>
         <h4 className="live-title">GLOBAL METRICS</h4>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginTop: 20 }}>
+        <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.requests} legend="requests served" />
           <Metric time={Date.now()} value={this.state.dataIn} />
           <Metric time={Date.now()} value={this.state.dataOut} />
