@@ -112,7 +112,13 @@ export class TopBar extends Component {
           value: 'Services-map',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/sessions'),
+          action: () => (window.location.href = '/bo/dashboard/sessions/admin'),
+          env: <span className="glyphicon glyphicon-lock" />,
+          label: 'Admin. sessions',
+          value: 'Admin-sessions',
+        });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/sessions/private'),
           env: <span className="glyphicon glyphicon-lock" />,
           label: 'Priv. apps sessions',
           value: 'Priv-apps-sessions',
