@@ -172,7 +172,7 @@ export class TopBar extends Component {
       document.removeEventListener('keydown', this.listenToSlash);
     }
   }
-  
+
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
@@ -227,6 +227,7 @@ export class TopBar extends Component {
               )}
               <div className="form-group" style={{ marginRight: 10 }}>
                 <Async
+                  ref={r => this.selector = r}
                   name="service-search"
                   value="one"
                   placeholder="Search service, line, etc ..."
