@@ -3,7 +3,7 @@
   z-index: 9999;
 }
 //zone recherche quand select open
-.is-open > .Select-control {
+.is-open > .Select-control,.Select.is-focused > .Select-control{
   background-color: $fondNavbar;
   color: #fff;
  }
