@@ -1,12 +1,13 @@
 body {
-  padding-top: 60px;
-  padding-bottom: 20px;
   font-family: Raleway, Helvetica, sans-serif;
   font-weight: 500;
   background-color: $fondBody;
   color: $grisTexte;
 }
-
+#app{
+  padding-top: 60px;
+  padding-bottom: 20px;
+}
 a,
 a:hover {
   color: $primaryColor
