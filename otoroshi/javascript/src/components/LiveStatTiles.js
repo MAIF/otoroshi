@@ -173,9 +173,9 @@ export class LiveStatTiles extends Component {
       concurrentHandledRequests: data.concurrentHandledRequests.prettify(),
       dataInRate: `${valueInRate.prettify()} ${unitInRate}/sec in`,
       dataOutRate: `${valueOutRate.prettify()} ${unitOutRate}/sec out`,
-      dataRate: `${parseFloat((valueOutRate + valueInRate).toFixed(3)).prettify()} ${
-        unitOutRate
-      }/sec`,
+      dataRate: `${parseFloat(
+        (valueOutRate + valueInRate).toFixed(3)
+      ).prettify()} ${unitOutRate}/sec`,
     });
   };
 
