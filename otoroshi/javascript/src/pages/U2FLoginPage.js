@@ -27,7 +27,7 @@ export class U2FLoginPage extends Component {
     }
     const username = this.state.email;
     const password = this.state.password;
-    this.setState({ error: null, email: '', password: '', message: null });
+    this.setState({ message: null });
     fetch(`/bo/u2f/login/start`, {
       method: 'POST',
       credentials: 'include',
@@ -96,7 +96,7 @@ export class U2FLoginPage extends Component {
     }
     const username = this.state.email;
     const password = this.state.password;
-    this.setState({ error: null, email: '', password: '', message: null });
+    this.setState({ message: null });
     return fetch(`/bo/simple/login`, {
       method: 'POST',
       credentials: 'include',
