@@ -153,6 +153,26 @@ export class TopBar extends Component {
     }
   }
 
+  listenToSlash = e => {
+    if (e.keyCode === 191 && e.target.tagName.toLowerCase() !== 'input') {
+      setTimeout(() => this.selector.focus());
+    } 
+  };
+
+  componentDidMount() {
+    if (!this.mounted) {
+      this.mounted = true;
+      document.addEventListener('keydown', this.listenToSlash, false);
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.mounted) {
+      this.mounted = false;
+      document.removeEventListener('keydown', this.listenToSlash);
+    }
+  }
+  
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
@@ -211,6 +231,7 @@ export class TopBar extends Component {
                   value="one"
                   placeholder="Search service, line, etc ..."
                   loadOptions={this.searchServicesOptions}
+                  openOnFocus={true}
                   onChange={i => i.action()}
                   filterOptions={(opts, value, excluded, conf) => {
                     const [env, searched] = extractEnv(value);
