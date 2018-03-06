@@ -10,15 +10,6 @@ export class Help extends Component {
           data-toggle="tooltip"
           data-placement="top"
           title={this.props.text}
-          style={{
-            fontSize: 13,
-            paddingBottom: 10,
-            position: 'absolute',
-            marginLeft: 5,
-            marginTop: -5,
-            paddingTop: 8,
-            color: '#00B4CD',
-          }}
         />
       );
     }
