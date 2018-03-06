@@ -43,24 +43,29 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/bo/dashboard/admins'),
           env: <span className="glyphicon glyphicon-user" />,
           label: 'Admins',
+          value: 'Admins',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/sessions'),
           env: <span className="glyphicon glyphicon-bishop" />,
           label: 'Admins sessions',
+          value: 'Admins-sessions',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/alerts'),
           env: <span className="glyphicon glyphicon-list" />,
           label: 'Alerts Log',
+          value: 'Alerts-Log',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/audit'),
           env: <span className="glyphicon glyphicon-list" />,
           label: 'Audit Log',
+          value: 'Audit-Log',
         });
         options.push({
           label: 'CleverCloud Apps',
+          value: 'CleverCloud-Apps',
           env: <i className="glyphicon glyphicon-list-alt" />,
           action: () => (window.location.href = '/bo/dashboard/clever'),
         });
@@ -68,9 +73,11 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/bo/dashboard/dangerzone'),
           env: <span className="glyphicon glyphicon-alert" />,
           label: 'Danger Zone',
+          value: 'Danger-Zone',
         });
         options.push({
           label: 'Documentation',
+          value: 'Documentation',
           env: <i className="glyphicon glyphicon-book" />,
           action: () => (window.location.href = '/docs/index.html'),
         });
@@ -78,9 +85,11 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/bo/dashboard/stats'),
           env: <span className="glyphicon glyphicon-signal" />,
           label: 'Global Analytics',
+          value: 'Global-Analytics',
         });
         options.push({
           label: 'Groups',
+          value: 'Groups',
           env: <i className="glyphicon glyphicon-folder-open" />,
           action: () => (window.location.href = '/bo/dashboard/groups'),
         });
@@ -88,9 +97,11 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/bo/dashboard/loggers'),
           env: <span className="glyphicon glyphicon-book" />,
           label: 'Loggers level',
+          value: 'Loggers-level',
         });
         options.push({
           label: 'Services',
+          value: 'Services',
           env: <i className="fa fa-cubes" />,
           action: () => (window.location.href = '/bo/dashboard/services'),
         });
@@ -98,16 +109,25 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/bo/dashboard/map'),
           env: <span className="glyphicon glyphicon-globe" />,
           label: 'Services map',
+          value: 'Services-map',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/sessions'),
+          action: () => (window.location.href = '/bo/dashboard/sessions/admin'),
+          env: <span className="glyphicon glyphicon-lock" />,
+          label: 'Admin. sessions',
+          value: 'Admin-sessions',
+        });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/sessions/private'),
           env: <span className="glyphicon glyphicon-lock" />,
           label: 'Priv. apps sessions',
+          value: 'Priv-apps-sessions',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/top10'),
           env: <span className="glyphicon glyphicon-fire" />,
           label: 'Top 10 services',
+          value: 'Top-10-services',
         });
         return { options };
       });
