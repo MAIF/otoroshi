@@ -46,12 +46,6 @@ export class TopBar extends Component {
           value: 'Admins',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/sessions'),
-          env: <span className="glyphicon glyphicon-bishop" />,
-          label: 'Admins sessions',
-          value: 'Admins-sessions',
-        });
-        options.push({
           action: () => (window.location.href = '/bo/dashboard/alerts'),
           env: <span className="glyphicon glyphicon-list" />,
           label: 'Alerts Log',
@@ -113,7 +107,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/sessions/admin'),
-          env: <span className="glyphicon glyphicon-lock" />,
+          env: <span className="glyphicon glyphicon-bishop" />,
           label: 'Admin. sessions',
           value: 'Admin-sessions',
         });
