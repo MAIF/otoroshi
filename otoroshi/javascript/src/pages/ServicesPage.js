@@ -39,7 +39,7 @@ export class ServicesPage extends Component {
       content: item => item.enabled,
       cell: (v, item) =>
         item.enabled ? (
-          <span className="glyphicon glyphicon-ok-sign" style={{ color: '#5cb85c' }} />
+          <span className="glyphicon glyphicon-ok-sign"/>
         ) : (
           ''
         ),
@@ -63,9 +63,9 @@ export class ServicesPage extends Component {
         !item.privateApp &&
         item.privatePatterns.length === 0 &&
         item.publicPatterns.indexOf('/.*') > -1 ? (
-          <i style={{ color: 'orange' }} className="glyphicon glyphicon-remove-sign" />
+          <i lassName="glyphicon glyphicon-remove-sign" />
         ) : (
-          <i style={{ color: '#5cb85c' }} className="fa fa-globe fa-lg" aria-hidden="true" />
+          <i className="fa fa-globe fa-lg" aria-hidden="true" />
         ),
     },
     {
@@ -75,9 +75,9 @@ export class ServicesPage extends Component {
       content: item => item.enforceSecureCommunication,
       cell: (v, item) =>
         item.enforceSecureCommunication ? (
-          <i style={{ color: '#5cb85c' }} className="fa fa-lock fa-lg" />
+          <i className="fa fa-lock fa-lg" />
         ) : (
-          <i style={{ color: 'orange' }} className="fa fa-unlock-alt fa-lg" />
+          <i className="fa fa-unlock-alt fa-lg" />
         ),
     },
     {
@@ -90,9 +90,9 @@ export class ServicesPage extends Component {
       cell: (v, item) =>
         item.targets.map(i => i.scheme).filter(i => i.toLowerCase() === 'https').length ===
         item.targets.length ? (
-          <i style={{ color: '#5cb85c' }} className="fa fa-lock fa-lg" />
+          <i className="fa fa-lock fa-lg" />
         ) : (
-          <i style={{ color: 'orange' }} className="fa fa-unlock-alt fa-lg" />
+          <i className="fa fa-unlock-alt fa-lg" />
         ),
     },
   ];
@@ -106,7 +106,7 @@ export class ServicesPage extends Component {
         notFilterable: true,
         cell: (v, item) =>
           item.redirectToLocal ? (
-            <span style={{ color: '#5bc0de' }} className="glyphicon glyphicon-ok-sign" />
+            <span className="glyphicon glyphicon-ok-sign" />
           ) : (
             ''
           ),

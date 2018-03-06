@@ -90,6 +90,13 @@ h4 {
     top: 4px;
 }
 
+.fa-globe,.glyphicon-ok-sign,.fa-lock {
+  color:$savecolor;
+}
+
+.fa-unlock-alt, .glyphicon-remove-sign {
+  color:orange;
+}
 .backoffice-container  .label {
     margin-right: 5px;
 }
