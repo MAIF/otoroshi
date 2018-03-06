@@ -1,177 +1,239 @@
 /* Space out content a bit */
+
 body {
-    /*padding-top: 20px;*/
-    padding-bottom: 20px;
-    background-color: #373735;
-    font-family: 'Raleway', Helvetica, sans-serif;
+  padding-bottom: 20px;
+  background-color: #373735;
+  font-family: 'Raleway', Helvetica, sans-serif;
 }
-.navbar-brand{
-    background-color: #F9B000;
-    color:  white;
-    font-weight: 700;
-    transition-duration: 0.5s;
-    flex-direction: column;
-    text-align: center;
-    padding-top:    4px;
+
+.navbar-brand {
+  background-color: #F9B000;
+  color: white;
+  font-weight: 700;
+  transition-duration: 0.5s;
+  flex-direction: column;
+  text-align: center;
+  padding-top: 4px;
 }
-a.navbar-brand :focus,  a.navbar-brand:hover {
-    color:  white;
+
+a.navbar-brand :focus, a.navbar-brand:hover {
+  color: white;
 }
-.navbar-brand:hover{
-    background-color: #ffc02e;
+
+.navbar-brand:hover {
+  background-color: #ffc02e;
 }
 
 .navbar-brand, .navbar-nav>li>a {
-    text-shadow:    none;
+  text-shadow: none;
 }
 
 .navbar-inverse .navbar-nav>li>a {
-    transition-duration: 0.5s;
-    color: #f9b000;
+  transition-duration: 0.5s;
+  color: #f9b000;
 }
+
 .navbar-inverse .navbar-nav>li>a:focus, .navbar-inverse .navbar-nav>li>a:hover {
-color : #ffc02e;
+  color: #ffc02e;
 }
+
 /* Everything but the jumbotron gets side spacing for mobile first views */
-.header,
-.marketing,
-.footer {
-    padding-right: 15px;
-    padding-left: 15px;
+
+.header, .marketing, .footer {
+  padding-right: 15px;
+  padding-left: 15px;
 }
 
 /* Custom page header */
+
 .header {
-    /*padding-bottom: 20px;*/
-    /*border-bottom: 1px solid #e5e5e5;*/
+  /*padding-bottom: 20px;*/
+  /*border-bottom: 1px solid #e5e5e5;*/
 }
+
 /* Make the masthead heading the same height as the navigation */
+
 .header h3 {
-    margin-top: 0;
-    margin-bottom: 0;
-    line-height: 40px;
+  margin-top: 0;
+  margin-bottom: 0;
+  line-height: 40px;
 }
 
 /*auth0*/
+
 @media screen and (min-width: 510px) {
-        #a0-lock .a0-panel {
-            width: 510px !important;
-        }
+  #a0-lock .a0-panel {
+    width: 510px !important;
+  }
 }
 
 .logoOtoroshi {
-    width: 240px;
-    margin-top: 40px;
-    animation-name: floatInSpace;
-    -webkit-animation-name: floatInSpace;
-    animation-iteration-count: infinite;
-    -webkit-animation-iteration-count: infinite;
-    animation-timing-function: linear;
-    -webkit-animation-timing-function: linear;
-    animation-duration: 15s;
-    -webkit-animation-duration: 15s;
+  width: 240px;
+  margin-top: 40px;
+  animation-name: floatInSpace;
+  -webkit-animation-name: floatInSpace;
+  animation-iteration-count: infinite;
+  -webkit-animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  -webkit-animation-timing-function: linear;
+  animation-duration: 15s;
+  -webkit-animation-duration: 15s;
 }
 
 @keyframes floatInSpace {
-   0% { transform: perspective(500px) translate3d(2px, 1px, 0px); }
-   8% { transform: perspective(500px) translate3d(5px, -2px, -3px); }
-   16% { transform: perspective(500px) translate3d(8px, 1px, -7px); }
-   24% { transform: perspective(500px) translate3d(10px, 2px, -10px); }
-   32% { transform: perspective(500px) translate3d(7px, 4px, -13px); }
-   40% { transform: perspective(500px) translate3d(6px, 6px, -17px); }
-   48% { transform: perspective(500px) translate3d(4px, 7px, -20px); }
-   56% { transform: perspective(500px) translate3d(1px, 6px, -17px); }
-   64% { transform: perspective(500px) translate3d(-2px, 7px, -13px); }
-   73% { transform: perspective(500px) translate3d(-2px, 4px, -10px); }
-   81% { transform: perspective(500px) translate3d(-4px, 3px, -7px); }
-   91% { transform: perspective(500px) translate3d(-2px, 2px, -3px); }
-   100% { transform: perspective(500px) translate3d(2px, 1px, 0px); }
+  0% {
+    transform: perspective(500px) translate3d(2px, 1px, 0px);
+  }
+  8% {
+    transform: perspective(500px) translate3d(5px, -2px, -3px);
+  }
+  16% {
+    transform: perspective(500px) translate3d(8px, 1px, -7px);
+  }
+  24% {
+    transform: perspective(500px) translate3d(10px, 2px, -10px);
+  }
+  32% {
+    transform: perspective(500px) translate3d(7px, 4px, -13px);
+  }
+  40% {
+    transform: perspective(500px) translate3d(6px, 6px, -17px);
+  }
+  48% {
+    transform: perspective(500px) translate3d(4px, 7px, -20px);
+  }
+  56% {
+    transform: perspective(500px) translate3d(1px, 6px, -17px);
+  }
+  64% {
+    transform: perspective(500px) translate3d(-2px, 7px, -13px);
+  }
+  73% {
+    transform: perspective(500px) translate3d(-2px, 4px, -10px);
+  }
+  81% {
+    transform: perspective(500px) translate3d(-4px, 3px, -7px);
+  }
+  91% {
+    transform: perspective(500px) translate3d(-2px, 2px, -3px);
+  }
+  100% {
+    transform: perspective(500px) translate3d(2px, 1px, 0px);
+  }
 }
 
 @-webkit-keyframes floatInSpace {
-   0% { transform: perspective(500px) translate3d(2px, 1px, 0px); }
-   8% { transform: perspective(500px) translate3d(5px, -2px, -3px); }
-   16% { transform: perspective(500px) translate3d(8px, 1px, -7px); }
-   24% { transform: perspective(500px) translate3d(10px, 2px, -10px); }
-   32% { transform: perspective(500px) translate3d(7px, 4px, -13px); }
-   40% { transform: perspective(500px) translate3d(6px, 6px, -17px); }
-   48% { transform: perspective(500px) translate3d(4px, 7px, -20px); }
-   56% { transform: perspective(500px) translate3d(1px, 6px, -17px); }
-   64% { transform: perspective(500px) translate3d(-2px, 7px, -13px); }
-   73% { transform: perspective(500px) translate3d(-2px, 4px, -10px); }
-   81% { transform: perspective(500px) translate3d(-4px, 3px, -7px); }
-   91% { transform: perspective(500px) translate3d(-2px, 2px, -3px); }
-   100% { transform: perspective(500px) translate3d(2px, 1px, 0px); }
+  0% {
+    transform: perspective(500px) translate3d(2px, 1px, 0px);
+  }
+  8% {
+    transform: perspective(500px) translate3d(5px, -2px, -3px);
+  }
+  16% {
+    transform: perspective(500px) translate3d(8px, 1px, -7px);
+  }
+  24% {
+    transform: perspective(500px) translate3d(10px, 2px, -10px);
+  }
+  32% {
+    transform: perspective(500px) translate3d(7px, 4px, -13px);
+  }
+  40% {
+    transform: perspective(500px) translate3d(6px, 6px, -17px);
+  }
+  48% {
+    transform: perspective(500px) translate3d(4px, 7px, -20px);
+  }
+  56% {
+    transform: perspective(500px) translate3d(1px, 6px, -17px);
+  }
+  64% {
+    transform: perspective(500px) translate3d(-2px, 7px, -13px);
+  }
+  73% {
+    transform: perspective(500px) translate3d(-2px, 4px, -10px);
+  }
+  81% {
+    transform: perspective(500px) translate3d(-4px, 3px, -7px);
+  }
+  91% {
+    transform: perspective(500px) translate3d(-2px, 2px, -3px);
+  }
+  100% {
+    transform: perspective(500px) translate3d(2px, 1px, 0px);
+  }
 }
 
 /* Custom page footer */
+
 .footer {
-    padding-top: 19px;
-    color: #777;
-    /*border-top: 1px solid #e5e5e5;*/
+  padding-top: 19px;
+  color: #777;
+  /*border-top: 1px solid #e5e5e5;*/
 }
 
 /* Customize container */
+
 @media (min-width: 768px) {
-    .container {
-        max-width: 730px;
-    }
+  .container {
+    max-width: 730px;
+  }
 }
-.container-narrow > hr {
-    margin: 30px 0;
+
+.container-narrow>hr {
+  margin: 30px 0;
 }
 
 /* Main marketing message and sign up button */
+
 .jumbotron {
-    text-align: center;
-    border-bottom: 1px solid #e5e5e5;
-        background-color: #494948;
-        padding-top: 20px;  
+  text-align: center;
+  border-bottom: 1px solid #e5e5e5;
+  background-color: #494948;
+  padding-top: 20px;
 }
 
-.jumbotron .btn {/*
-    padding: 14px 24px;
-    font-size: 21px;*/
-    background:     none;
-    color : #F9B000;
-    /*box-shadow:     none;*/
-    border-color:  #F9B000; 
-        margin-left: 20px;
+.jumbotron .btn {
+  background: none;
+  color: #F9B000;
+  border-color: #F9B000;
+  margin-left: 20px;
 }
 
 .jumbotron .connectOK .btn {
-    border:none;
+  border: none;
 }
 
-.jumbotron h1{
-    color: white;
-    font-weight: 700;
-
-    margin-bottom: 40px;
+.jumbotron h1 {
+  color: white;
+  font-weight: 700;
+  margin-bottom: 40px;
 }
+
 /* Supporting marketing content */
+
 .marketing {
-    margin: 40px 0;
+  margin: 40px 0;
 }
-.marketing p + h4 {
-    margin-top: 28px;
+
+.marketing p+h4 {
+  margin-top: 28px;
 }
 
 /* Responsive: Portrait tablets and up */
+
 @media screen and (min-width: 768px) {
-    /* Remove the padding we set earlier */
-    .header,
-    .marketing,
-    .footer {
-        padding-right: 0;
-        padding-left: 0;
-    }
-    /* Space out the masthead */
-    .header {
-        margin-bottom: 30px;
-    }
-    /* Remove the bottom border on the jumbotron for visual effect */
-    .jumbotron {
-        border-bottom: 0;
-    }
+  /* Remove the padding we set earlier */
+  .header, .marketing, .footer {
+    padding-right: 0;
+    padding-left: 0;
+  }
+  /* Space out the masthead */
+  .header {
+    margin-bottom: 30px;
+  }
+  /* Remove the bottom border on the jumbotron for visual effect */
+  .jumbotron {
+    border-bottom: 0;
+  }
 }
