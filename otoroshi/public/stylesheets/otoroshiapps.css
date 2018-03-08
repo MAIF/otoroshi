@@ -220,9 +220,6 @@ a.navbar-brand :focus, a.navbar-brand:hover {
   margin-top: 28px;
 }
 
-/* Responsive: Portrait tablets and up */
-
-@media screen and (min-width: 768px) {
   /* Remove the padding we set earlier */
   .header, .marketing, .footer {
     padding-right: 0;
@@ -236,4 +233,3 @@ a.navbar-brand :focus, a.navbar-brand:hover {
   .jumbotron {
     border-bottom: 0;
   }
-}
