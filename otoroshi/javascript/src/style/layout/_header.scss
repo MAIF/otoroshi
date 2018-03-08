@@ -66,13 +66,13 @@
      padding: 15px 15px;
 }
 
-@media (max-width:1300px) {
+@media screen and (max-width:1300px) {
   .navbar-inverse .navbar-brand {
     flex-direction: column;
   }
 }
 
-@media (max-width:1200px) {
+@media screen and (max-width:1200px) {
   .navbar-inverse .navbar-brand {
     font-size: 14px
   }
@@ -89,8 +89,20 @@
   }
 }
 
-@media (max-width:767px) {
-#navbar .navbar-left.nav>li {
-    display: inline-block;
-}
+@media screen and (max-width:767px) {
+  #navbar .navbar-left.nav>li {
+      display: inline-block;
+  }
+  #navbar .Select-control {
+    width: 100% !important;
+  }
+  .link-logout{
+  text-align: center;
+  }
+
+
+  .navbar-collapse.in {
+      overflow-y: inherit;
+      margin-top: 60px;
+  }
 }

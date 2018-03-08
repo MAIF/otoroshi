@@ -150,7 +150,7 @@ export class TopBar extends Component {
   listenToSlash = e => {
     if (e.keyCode === 191 && e.target.tagName.toLowerCase() !== 'input') {
       setTimeout(() => this.selector.focus());
-    } 
+    }
   };
 
   componentDidMount() {
@@ -202,7 +202,7 @@ export class TopBar extends Component {
           <div id="navbar" className="navbar-collapse collapse">
             <ul className="nav navbar-nav navbar-right">
               <li>
-                <a href="/backoffice/auth0/logout">
+                <a href="/backoffice/auth0/logout" className="link-logout">
                   <span className="topbar-userName">{window.__userid} </span>
                   <span className="glyphicon glyphicon-off" />
                 </a>
