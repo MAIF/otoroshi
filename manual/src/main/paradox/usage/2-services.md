@@ -52,6 +52,91 @@ If you enable secure communication for a given service, you will have to add a f
 <img src="../img/exchange.png" />
 @@@
 
+for instance, if you want to write a filter to make sure that requests only comes from Otoroshi, you can write something like the following (using playframework 2.6).
+
+```scala
+import akka.stream.Materializer
+import com.auth0.jwt._
+import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.interfaces._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.typedmap._
+import play.api.mvc._
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util._
+
+object OtoroshiFilter {
+  object Attrs {
+    val OtoroshiClaim: TypedKey[DecodedJWT] = TypedKey("otoroshi-claim")
+  }
+}
+
+class OtoroshiFilter(env: String, sharedKey: String)(implicit ec: ExecutionContext, val mat: Materializer) extends Filter {
+
+  def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
+    val maybeState = requestHeader.headers.get("Otoroshi-State")
+    val maybeClaim = requestHeader.headers.get("Otoroshi-Claim")
+    env match {
+      case "dev" =>
+        nextFilter(requestHeader).map { result =>
+          result.withHeaders(
+            "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
+          )
+        }
+      case "prod" if maybeClaim.isEmpty && maybeState.isEmpty =>
+        Future.successful(
+          Results.Unauthorized(
+            Json.obj("error" -> "Bad request !!!")
+          )
+        )
+      case "prod" if maybeClaim.isEmpty =>
+        Future.successful(
+          Results.Unauthorized(
+            Json.obj("error" -> "Bad claim !!!")
+          ).withHeaders(
+            "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
+          )
+        )
+      case "prod" =>
+        Try {
+          val algorithm = Algorithm.HMAC512(sharedKey)
+          val verifier = JWT
+            .require(algorithm)
+            .withIssuer("Otoroshi")
+            .acceptLeeway(5000)
+            .build()
+          val decoded = verifier.verify(maybeClaim.get)
+          nextFilter(requestHeader.addAttr(OtoroshiFilter.Attrs.OtoroshiClaim, decoded)).map { result =>
+            result.withHeaders(
+              "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
+            )
+          }
+        } recoverWith {
+          case e => Success(
+            Future.successful(
+              Results.Unauthorized(
+                Json.obj("error" -> "Claim error !!!", "m" -> e.getMessage)
+              ).withHeaders(
+                "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
+              )
+            )
+          )
+        } get
+      case _ =>
+        Future.successful(
+          Results.Unauthorized(
+            Json.obj("error" -> "Bad env !!!")
+          ).withHeaders(
+            "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
+          )
+        )
+    }
+  }
+}
+```
+
 ### Canary mode
 
 Otoroshi provides a feature called `Canary mode`. It lets you define new targets for a service, and route a percentage of the traffic on those targets. It's a good way to test a new version of a service before public release. As any client need to be routed to the same version of targets any time, Otoroshi will issue a special header and a cookie containing a `session id`. The header is named `Otoroshi-Canary-Id`.
