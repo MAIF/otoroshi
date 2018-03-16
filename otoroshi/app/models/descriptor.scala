@@ -463,7 +463,10 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           scheme = "https"
         )
       ),
-      privateApp = false
+      privateApp = false,
+      sendOtoroshiHeadersBack = false,
+      enforceSecureCommunication = false,
+      forceHttps = if (env.exposedRootSchemeIsHttps) true else false,
     )
   def updateMetrics(id: String,
                     callDuration: Long,
