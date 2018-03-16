@@ -464,8 +464,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         )
       ),
       privateApp = false,
-      sendOtoroshiHeadersBack = false,
-      enforceSecureCommunication = false,
+      sendOtoroshiHeadersBack = false, // try to hide otoroshi as much as possible
+      enforceSecureCommunication = false, // try to hide otoroshi as much as possible
       forceHttps = if (env.exposedRootSchemeIsHttps) true else false,
     )
   def updateMetrics(id: String,
