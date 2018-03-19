@@ -221,7 +221,7 @@ export class TopBar extends Component {
               )}
               <div className="form-group" style={{ marginRight: 10 }}>
                 <Async
-                  ref={r => this.selector = r}
+                  ref={r => (this.selector = r)}
                   name="service-search"
                   value="one"
                   placeholder="Search service, line, etc ..."

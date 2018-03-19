@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "1.0.2",
+    "version" : "1.1.0",
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
     "contact" : {
@@ -2789,6 +2789,11 @@
                 "example" : true,
                 "description" : "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside"
               },
+              "sendOtoroshiHeadersBack" : {
+                "type" : "boolean",
+                "example" : true,
+                "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
+              },
               "secComExcludedPatterns" : {
                 "type" : "array",
                 "items" : {
@@ -3170,6 +3175,11 @@
           "type" : "boolean",
           "example" : true,
           "description" : "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside"
+        },
+        "sendOtoroshiHeadersBack" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
         },
         "secComExcludedPatterns" : {
           "type" : "array",

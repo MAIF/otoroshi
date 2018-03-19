@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.0.2
+1.1.0
 </div>
 </div>
 <div class="nav-toc">
@@ -127,7 +127,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.0.2
+1.1.0
 </div>
 </div>
 <div class="nav-toc">
@@ -293,6 +293,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td>100 </td>
       <td>number of events sent at most when calling one of the analytics webhooks </td>
     </tr>
+    <tr>
+      <td><code>app.throttlingWindow</code> </td>
+      <td align="center">number </td>
+      <td>10 </td>
+      <td>time window (in seconds) used to compute throttling quotas for ApiKeys </td>
+    </tr>
   </tbody>
 </table>
 <h2><a href="#admin-api-configuration" name="admin-api-configuration" class="anchor"><span class="anchor-link"></span></a>Admin API configuration</h2>
@@ -319,10 +325,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>app.adminapi.targetSubdomain</code> </td>
       <td align="center">string </td>
       <td>&ldquo;otoroshi-admin-internal-api&rdquo; </td>
-      <td>the subdomain on wich admin API call will be redirected from <code>app.adminapi.exposedDubdomain</code> </td>
+      <td>the subdomain on wich admin API call will be redirected from <code>app.adminapi.exposedSubdomain</code> </td>
     </tr>
     <tr>
-      <td><code>app.adminapi.exposedDubdomain</code> </td>
+      <td><code>app.adminapi.exposedSubdomain</code> </td>
       <td align="center">string </td>
       <td>&ldquo;otoroshi-api&rdquo; </td>
       <td>the subdomain on wich the Otoroshi admin API will be exposed </td>
@@ -711,7 +717,7 @@ app {
   }
   adminapi {
     targetSubdomain = &quot;otoroshi-admin-internal-api&quot;
-    exposedDubdomain = &quot;otoroshi-api&quot;
+    exposedSubdomain = &quot;otoroshi-api&quot;
     defaultValues {
       backOfficeGroupId = &quot;admin-api-group&quot;
       backOfficeApiKeyClientId = &quot;admin-api-apikey-id&quot;

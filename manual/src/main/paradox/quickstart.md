@@ -25,12 +25,12 @@ Otoroshi is an awesome reverse proxy built with Scala that handles all the calls
 ## Now some sh :)
 
 ```sh
-wget -q --show-progress https://dl.bintray.com/maif/binaries/otoroshi.jar/1.0.2/otoroshi.jar
-wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.0.2/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.0/otoroshi.jar
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.1.0/otoroshicli
 # or if you use linux
-wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.0.2/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.1.0/otoroshicli
 # or if you use windows
-wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0.2/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.1.0/otoroshicli.exe
 
 chmod +x otoroshicli
 
@@ -116,11 +116,11 @@ If you want to use Docker, just follow these instructions
 export OTOROSHI_PORT=8080
 export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 
-wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.0.2/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.1.0/otoroshicli
 # or if you use linux
-wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.0.2/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.1.0/otoroshicli
 # or if you use windows
-wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.0.2/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.1.0/otoroshicli.exe
 
 chmod +x otoroshicli 
 

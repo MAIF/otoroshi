@@ -154,7 +154,7 @@ fn main() {
     }.unwrap();
 
     let app = App::new("otoroshicli")
-        .version("1.0.3")
+        .version("1.1.0")
         .author("Mathieu ANCELIN <mathieu.ancelin@gmail.com>")
         .about(
             r#"   ____  __________  ____  ____  _____ __  ______     ________    ____

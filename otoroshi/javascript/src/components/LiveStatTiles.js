@@ -47,25 +47,13 @@ class Metric extends Component {
       <div
         className="metric"
         style={{
-          width: props.width || 300
+          width: props.width || 300,
         }}>
-        <div
-        className="metric-text"
-        >
-          <span
-            className="metric-text-value"
-            >
-            {props.value}
-          </span>
-          <span
-          className="metric-text-title"
-          >
-            {props.legend}
-          </span>
+        <div className="metric-text">
+          <span className="metric-text-value">{props.value}</span>
+          <span className="metric-text-title">{props.legend}</span>
         </div>
-        <div
-        className="metric-box"
-        >
+        <div className="metric-box">
           <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
             <SparklinesLine color="rgb(249, 176, 0)" />
             <SparklinesSpots />

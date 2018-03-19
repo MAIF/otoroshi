@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.0.2
+1.1.0
 </div>
 </div>
 <div class="nav-toc">
@@ -127,7 +127,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.0.2
+1.1.0
 </div>
 </div>
 <div class="nav-toc">
@@ -232,11 +232,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>activate / deactivate a service</li>
   <li>display maintenance page for a service</li>
   <li>display contruction page for a service</li>
+  <li>enable otoroshi custom response headers containing request id, latency, etc</li>
   <li>enforce secure exchange between services</li>
   <li>force https usage on the exposed service</li>
 </ul>
 <p>Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.</p><div id="service-flags" class="centered-img">
-<img src="../img/new-service-flags.png" /></div>
+<img src="../img/new-service-flags2.png" /></div>
 <p>In the <code>service targets</code> section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets.</p>
 <p>You can also specify a target root, if you say that the target root is <code>/foo/</code>, then any call to <code>https://my.api.foo</code> will call <code>http://192.168.0.42/foo/</code> and nay call to <code>https://my.api.foo/bar</code> will call <code>http://192.168.0.42/foo/bar</code>.</p>
 <p>In the URL patterns section, you will be able to choose, URL by URL which is private and which is public. By default, all services are private and each call must provide an <code>api key</code>. But sometimes, you need to access a service publicly. In that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern <code>/.*</code>). You also have a <code>private pattern</code> field to restrict public patterns.</p><div id="targets" class="centered-img">
@@ -244,6 +245,230 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#secure-exchange" name="secure-exchange" class="anchor"><span class="anchor-link"></span></a>Secure exchange</h3>
 <p>If you enable secure communication for a given service, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. Otoroshi is also sending a <code>JWT token</code>in a header named <code>Otoroshi-Claim</code> that the target app can validate.</p><div class="centered-img">
 <img src="../img/exchange.png" /></div>
+<p>The <code>Otoroshi-Claim</code> is a JWT containing some informations about the service that is called and the client if available. The claim is signed with the <code>app.claim.sharedKey</code> config property (or using the <code>$CLAIM_SHAREDKEY</code> env. variable) and uses the <code>HMAC512</code> signing algorythm. In a near future, you will be able to define dedicated keys for specific services and use whatever signing algorythm you want. For example, for a service named <code>my-service</code> with a signing key <code>secret</code>, the basic JWT token that will be sent should look like the following</p>
+<pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiItLSIsImF1ZCI6Im15LXNlcnZpY2UiLCJpc3MiOiJPdG9yb3NoaSIsImV4cCI6MTUyMTQ0OTkwNiwiaWF0IjoxNTIxNDQ5ODc2LCJqdGkiOiI3MTAyNWNjMTktMmFjNy00Yjk3LTljYzctMWM0ODEzYmM1OTI0In0.mRcfuFVFPLUV1FWHyL6rLHIJIu0KEpBkKQCk5xh-_cBt9cb6uD6enynDU0H1X2VpW5-bFxWCy4U4V78CbAQv4g
+</code></pre>
+<p>if you decode it, the payload will look something like</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;sub&quot;: &quot;apikey_client_id&quot;,
+  &quot;aud&quot;: &quot;my-service&quot;,
+  &quot;iss&quot;: &quot;Otoroshi&quot;,
+  &quot;exp&quot;: 1521449906,
+  &quot;iat&quot;: 1521449876,
+  &quot;jti&quot;: &quot;71025cc19-2ac7-4b97-9cc7-1c4813bc5924&quot;
+}
+</code></pre>
+<p>if your service is using the private apps mechanism, then the JWT token will have more fields coming from it&rsquo;s Auth0 profile (all those fields are optional and could not be present)</p>
+<ul>
+  <li><code>email</code></li>
+  <li><code>name</code></li>
+  <li><code>picture</code></li>
+  <li><code>user_id</code></li>
+  <li><code>given_name</code></li>
+  <li><code>family_name</code></li>
+  <li><code>gender</code></li>
+  <li><code>locale</code></li>
+  <li><code>nickname</code></li>
+</ul>
+<p>finally the last possible fields are metadata about the client. Those metadata can be placed on the <code>ApiKey</code>s (using <code>ApiKey</code> metadata) or in the Auth0 profile. In Auth0, the metadata is a flat object placed in the <code>profile / http://yourdomain/app_metadata / otoroshi_data</code>. You might need to write an Auth0 rule to copy app metadata under <code>http://yourdomain/app_metadata</code>, the <code>http://yourdomain/app_metadata</code> value is a config property <code>app.appMeta</code>. The rule could be something like the following</p>
+<pre class="prettyprint"><code class="language-js">function (user, context, callback) {
+  var namespace = &#39;http://yourdomain/&#39;;
+  context.idToken[namespace + &#39;user_id&#39;] = user.user_id;
+  context.idToken[namespace + &#39;user_metadata&#39;] = user.user_metadata;
+  context.idToken[namespace + &#39;app_metadata&#39;] = user.app_metadata;
+  callback(null, user, context);
+}
+</code></pre>
+<p>If you want to validate the <code>Otoroshi-Claim</code> on the target app side to ensure that the input requests only comes from <code>Otoroshi</code>, you will have to write an HTTP filter to do the job. For instance, if you want to write a filter to make sure that requests only comes from Otoroshi, you can write something like the following (using playframework 2.6).</p>
+<dl>
+  <dt>Scala</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-scala">import akka.stream.Materializer
+import com.auth0.jwt._
+import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.interfaces._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.typedmap._
+import play.api.mvc._
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util._
+
+object OtoroshiFilter {
+  object Attrs {
+    val OtoroshiClaim: TypedKey[DecodedJWT] = TypedKey(&quot;otoroshi-claim&quot;)
+  }
+}
+
+class OtoroshiFilter(env: String, sharedKey: String)(implicit ec: ExecutionContext, val mat: Materializer) extends Filter {
+
+  def apply(nextFilter: RequestHeader =&gt; Future[Result])(requestHeader: RequestHeader): Future[Result] = {
+    val maybeState = requestHeader.headers.get(&quot;Otoroshi-State&quot;)
+    val maybeClaim = requestHeader.headers.get(&quot;Otoroshi-Claim&quot;)
+    env match {
+      case &quot;dev&quot; =&gt;
+        nextFilter(requestHeader).map { result =&gt;
+          result.withHeaders(
+            &quot;Otoroshi-State-Resp&quot; -&gt; maybeState.getOrElse(&quot;--&quot;)
+          )
+        }
+      case &quot;prod&quot; if maybeClaim.isEmpty &amp;&amp; maybeState.isEmpty =&gt;
+        Future.successful(
+          Results.Unauthorized(
+            Json.obj(&quot;error&quot; -&gt; &quot;Bad request !!!&quot;)
+          )
+        )
+      case &quot;prod&quot; if maybeClaim.isEmpty =&gt;
+        Future.successful(
+          Results.Unauthorized(
+            Json.obj(&quot;error&quot; -&gt; &quot;Bad claim !!!&quot;)
+          ).withHeaders(
+            &quot;Otoroshi-State-Resp&quot; -&gt; maybeState.getOrElse(&quot;--&quot;)
+          )
+        )
+      case &quot;prod&quot; =&gt;
+        Try {
+          val algorithm = Algorithm.HMAC512(sharedKey)
+          val verifier = JWT
+            .require(algorithm)
+            .withIssuer(&quot;Otoroshi&quot;)
+            .acceptLeeway(5000)
+            .build()
+          val decoded = verifier.verify(maybeClaim.get)
+          nextFilter(requestHeader.addAttr(OtoroshiFilter.Attrs.OtoroshiClaim, decoded)).map { result =&gt;
+            result.withHeaders(
+              &quot;Otoroshi-State-Resp&quot; -&gt; maybeState.getOrElse(&quot;--&quot;)
+            )
+          }
+        } recoverWith {
+          case e =&gt; Success(
+            Future.successful(
+              Results.Unauthorized(
+                Json.obj(&quot;error&quot; -&gt; &quot;Claim error !!!&quot;, &quot;m&quot; -&gt; e.getMessage)
+              ).withHeaders(
+                &quot;Otoroshi-State-Resp&quot; -&gt; maybeState.getOrElse(&quot;--&quot;)
+              )
+            )
+          )
+        } get
+      case _ =&gt;
+        Future.successful(
+          Results.Unauthorized(
+            Json.obj(&quot;error&quot; -&gt; &quot;Bad env !!!&quot;)
+          ).withHeaders(
+            &quot;Otoroshi-State-Resp&quot; -&gt; maybeState.getOrElse(&quot;--&quot;)
+          )
+        )
+    }
+  }
+}</code></pre></dd>
+  <dt>Java</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-java">package filters;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import io.vavr.control.Option;
+import org.reactivecouchbase.json.Json;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+public class OtoroshiFilter implements Filter {
+
+    private static final long JWT_VALIDATION_LEEWAY = 5000L;
+
+    private final String mode;
+
+    private final String sharedKey;
+
+    private final String requestIdHeaderName;
+    private final String issuer;
+    private final String claimHeaderName;
+    private final String stateHeaderName;
+    private final String stateRespHeaderName;
+
+    private final Logger Logger = LoggerFactory.getLogger(OtoroshiFilter.class);
+
+    public OtoroshiFilter(String mode, String sharedKey, String issuer, String requestIdHeaderName, String claimHeaderName, String stateHeaderName, String stateRespHeaderName) {
+        this.mode = mode;
+        this.sharedKey = sharedKey;
+        this.requestIdHeaderName = requestIdHeaderName;
+        this.issuer = issuer;
+        this.claimHeaderName = claimHeaderName;
+        this.stateHeaderName = stateHeaderName;
+        this.stateRespHeaderName = stateRespHeaderName;
+    }
+
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res,
+                         FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) req;
+        HttpServletResponse response = (HttpServletResponse) res;
+        Logger.info(&quot;Filtering request for &quot; + request.getRequestURI());
+        if (mode.equalsIgnoreCase(&quot;dev&quot;)) {
+            response.setHeader(stateRespHeaderName, Option.of(request.getHeader(stateHeaderName)).getOrElse(&quot;--&quot;));
+            chain.doFilter(req, res);
+            return;
+        } else {
+            try {
+                Option.of(request.getHeader(requestIdHeaderName)).forEach(id -&gt; Logger.info(&quot;Request from Otoroshi with id : &quot; + id + &quot; on &quot; + request.getRequestURI()));
+                Option&lt;String&gt; maybeState = Option.of(request.getHeader(stateHeaderName));
+                Option&lt;String&gt; maybeClaim = Option.of(request.getHeader(claimHeaderName));
+                if (maybeClaim.isEmpty() || maybeState.isEmpty()) {
+                    response.setContentType(&quot;application/json&quot;);
+                    response.sendError(400, Json.obj().with(&quot;error&quot;, &quot;Bad request ...&quot;).stringify());
+                    return;
+                } else {
+                    if (maybeClaim.isEmpty()) {
+                        response.setContentType(&quot;application/json&quot;);
+                        response.setHeader(stateRespHeaderName, maybeState.get());
+                        response.sendError(400, Json.obj().with(&quot;error&quot;, &quot;Bad Claim ...&quot;).stringify());
+                        return;
+                    } else {
+                        try {
+                            Algorithm algorithm = Algorithm.HMAC512(sharedKey);
+                            JWTVerifier verifier = JWT.require(algorithm)
+                                    .withIssuer(issuer)
+                                    .acceptLeeway(JWT_VALIDATION_LEEWAY)
+                                    .build();
+                            verifier.verify(maybeClaim.get());
+                        } catch (UnsupportedEncodingException exception) {
+                            response.setContentType(&quot;application/json&quot;);
+                            response.setHeader(stateRespHeaderName, maybeState.get());
+                            response.sendError(400, Json.obj().with(&quot;error&quot;, &quot;Bad Encoding ...&quot;).stringify());
+                            return;
+                        } catch (JWTVerificationException exception) {
+                            Logger.error(&quot;Failed to verify token: &quot; + maybeClaim.get());
+                            Logger.error(&quot;Got exception: &quot; + exception.getMessage(), exception);
+                            response.setContentType(&quot;application/json&quot;);
+                            response.setHeader(stateRespHeaderName, maybeState.get());
+                            response.sendError(400, Json.obj().with(&quot;error&quot;, &quot;Bad Signature ...&quot;).stringify());
+                            return;
+                        }
+                        response.setHeader(stateRespHeaderName, maybeState.get());
+                        chain.doFilter(req, res);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(&quot;Error decoding jwt token&quot;, e);
+                response.setContentType(&quot;application/json&quot;);
+                response.sendError(400, Json.obj().with(&quot;error&quot;, e.getMessage()).stringify());
+                return;
+            }
+        }
+    }
+}</code></pre></dd>
+</dl>
 <h3><a href="#canary-mode" name="canary-mode" class="anchor"><span class="anchor-link"></span></a>Canary mode</h3>
 <p>Otoroshi provides a feature called <code>Canary mode</code>. It lets you define new targets for a service, and route a percentage of the traffic on those targets. It&rsquo;s a good way to test a new version of a service before public release. As any client need to be routed to the same version of targets any time, Otoroshi will issue a special header and a cookie containing a <code>session id</code>. The header is named <code>Otoroshi-Canary-Id</code>.</p><div class="centered-img">
 <img src="../img/new-service-canary.png" /></div>

@@ -156,11 +156,7 @@ export class U2FLoginPage extends Component {
                 onClick={this.simpleLogin}>
                 Login
               </button>
-              <button
-                type="button"
-                className="btn"
-                style={{ marginLeft: 10 }}
-                onClick={this.login}>
+              <button type="button" className="btn" style={{ marginLeft: 10 }} onClick={this.login}>
                 Login with FIDO U2F
               </button>
             </div>

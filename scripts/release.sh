@@ -68,16 +68,16 @@ create_release () {
 }
 
 # Create github release
-ID=`create_release`
-echo "Release ID is $ID"
+#ID=`create_release`
+#echo "Release ID is $ID"
 # push otoroshi.jar on github
-curl -T "$LOCATION/release-$VERSION/otoroshi.jar" -H "Content-Type: application/octet-stream" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=otoroshi.jar"
+# curl -T "$LOCATION/release-$VERSION/otoroshi.jar" -H "Content-Type: application/octet-stream" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=otoroshi.jar"
 # push otoroshi-dist on github
-curl -T "$LOCATION/release-$VERSION/otoroshi-$VERSION.zip" -H "Content-Type: application/zip" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=otoroshi-dist.zip"
+#curl -T "$LOCATION/release-$VERSION/otoroshi-$VERSION.zip" -H "Content-Type: application/zip" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=otoroshi-dist.zip"
 # push mac-otoroshicli on github
-curl -T "$LOCATION/release-$VERSION/mac-otoroshicli" -H "Content-Type: application/octet-stream" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=mac-otoroshicli"
+#curl -T "$LOCATION/release-$VERSION/mac-otoroshicli" -H "Content-Type: application/octet-stream" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=mac-otoroshicli"
 # push linux-otoroshicli on github
-curl -T "$LOCATION/release-$VERSION/linux-otoroshicli" -H "Content-Type: application/octet-stream" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=linux-otoroshicli"
+#curl -T "$LOCATION/release-$VERSION/linux-otoroshicli" -H "Content-Type: application/octet-stream" -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=linux-otoroshicli"
 # push win-otoroshicli.exe on github
 # curl -T "$LOCATION/release-$VERSION/win-otoroshicli.exe" -H "Content-Type: application/octet-stream"  -H "Authorization: token $GITHUB_TOKEN" "https://uploads.github.com/repos/MAIF/otoroshi/releases/$ID/assets\?name\=otoroshicli.exe",
 

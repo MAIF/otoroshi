@@ -37,12 +37,7 @@ export class ServicesPage extends Component {
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       content: item => item.enabled,
-      cell: (v, item) =>
-        item.enabled ? (
-          <span className="glyphicon glyphicon-ok-sign"/>
-        ) : (
-          ''
-        ),
+      cell: (v, item) => (item.enabled ? <span className="glyphicon glyphicon-ok-sign" /> : ''),
     },
     {
       title: 'Private',
@@ -105,11 +100,7 @@ export class ServicesPage extends Component {
         style: { textAlign: 'center', width: 55 },
         notFilterable: true,
         cell: (v, item) =>
-          item.redirectToLocal ? (
-            <span className="glyphicon glyphicon-ok-sign" />
-          ) : (
-            ''
-          ),
+          item.redirectToLocal ? <span className="glyphicon glyphicon-ok-sign" /> : '',
       });
     }
   }

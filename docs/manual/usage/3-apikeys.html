@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.0.2
+1.1.0
 </div>
 </div>
 <div class="nav-toc">
@@ -127,7 +127,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.0.2
+1.1.0
 </div>
 </div>
 <div class="nav-toc">
@@ -228,9 +228,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>In the Otoroshi admin dashboard, we chose to access <code>API keys</code> from <code>service descriptors</code> only, but when you access <code>API keys</code> for a <code>service descriptor</code>, you actually access <code>API keys</code> for the <code>service group</code> containing the <code>service descriptor</code>.</p>
 <p><code>API keys</code> can be provided to Otoroshi through :</p>
 <ul>
-  <li><code>Authorization: Basic $base64(client_id:client_secret)</code> header</li>
-  <li><code>Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret</li>
-  <li><code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> header</li>
+  <li><code>Otoroshi-Authorization: Basic $base64(client_id:client_secret)</code> header, in that case, the <code>Otoroshi-Authorization</code> header will <strong>not</strong> be sent to the target</li>
+  <li><code>Authorization: Basic $base64(client_id:client_secret)</code> header, in that case, the <code>Authorization</code> header <strong>will</strong> be sent to the target</li>
+  <li><code>Otoroshi-Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the <code>Otoroshi-Authorization</code> header will <strong>not</strong> be sent to the target</li>
+  <li><code>Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the <code>Authorization</code> header <strong>will</strong> be sent to the target</li>
+  <li><code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers, in that case the <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers will not be sent to the target.</li>
 </ul>
 <h2><a href="#list-api-keys-for-a-service-descriptor" name="list-api-keys-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>List API keys for a service descriptor</h2>
 <p>Go to a service descriptor using <code>All services</code> quick link in the sidebar or the search box.</p><div class="centered-img">
@@ -262,6 +264,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <img src="../img/apikey-delete.png" /></div>
 <p>and confirm the command</p><div class="centered-img">
 <img src="../img/apikey-delete-confirm.png" /></div>
+<h2><a href="#use-a-jwt-token-to-pass-an-api-key" name="use-a-jwt-token-to-pass-an-api-key" class="anchor"><span class="anchor-link"></span></a>Use a JWT token to pass an API key</h2>
+<p>You can use a JWT token to pass an API key to Otoroshi. You can use <code>Otoroshi-Authorization: Bearer $jwt_token</code> and <code>Authorization: Bearer $jwt_token</code> header to pass the JWT token. You have to create a JWT token with a signing algorythm that can be <code>HS256</code> or <code>HS256</code>. Then you have to provide an <code>iss</code> claim with the value of your API key <code>clientId</code> and sign the JWT token with your API key <code>clientSecret</code>.</p>
+<p>For example, with an API key like <code>clientId=abcdef</code> and <code>clientSecret=1234456789</code>, your JWT token should look like</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;alg&quot;: &quot;HS256&quot;,
+  &quot;typ&quot;: &quot;JWT&quot;
+}
+{
+  &quot;iss&quot;:&quot;abcdef&quot;,
+  &quot;name&quot;: &quot;John Doe&quot;,
+  &quot;admin&quot;: true
+}
+</code></pre>
+<p>in that case, when you sign the token with the secret of the API key <code>1234456789</code>, the signature will be <code>_eancnYCD3makSSox2v2xErjNYkRtcX558QiJGCbino</code>, resulting in a encoded JWT header like</p>
+<pre><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+eyJpc3MiOiJhYmNkZWYiLCJuYW1lIjoiSm9obiBEb2UiLCJhZG1pbiI6dHJ1ZX0.
+_eancnYCD3makSSox2v2xErjNYkRtcX558QiJGCbino
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../usage/4-monitor.html">Monitoring services</a></p>
 </div>
@@ -279,6 +299,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../usage/3-apikeys.html#create-an-api-key-for-a-service-descriptor" class="header">Create an API key for a service descriptor</a></li>
     <li><a href="../usage/3-apikeys.html#update-an-api-key" class="header">Update an API key</a></li>
     <li><a href="../usage/3-apikeys.html#delete-an-api-key" class="header">Delete an API key</a></li>
+    <li><a href="../usage/3-apikeys.html#use-a-jwt-token-to-pass-an-api-key" class="header">Use a JWT token to pass an API key</a></li>
   </ul></li>
 </ul>
 </div>

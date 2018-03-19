@@ -54,7 +54,6 @@ if (action === 'server') {
   app.get('/*', (req, res) => res.status(200).send({ message: `Hello from ${name}`, name }));
   app.listen(port, () => console.log(`serving API with name '${name}' on http://0.0.0.0:${port}`));
 } else if (action === 'injector') {
-
   const host = String(argv.host || 'api.foo.bar');
   const location = String(argv.location || '127.0.0.1:8080');
   const clientId = String(argv.clientId || '--');
@@ -75,8 +74,8 @@ if (action === 'server') {
     return fetch(`http://${location}/`, {
       method: 'GET',
       headers: {
-        'Host': host,
-        'Accept': 'application/json',
+        Host: host,
+        Accept: 'application/json',
         'Otoroshi-Client-Id': clientId || '--',
         'Otoroshi-Client-Secret': clientSecret || '--',
       },
