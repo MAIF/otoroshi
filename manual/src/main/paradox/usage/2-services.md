@@ -25,13 +25,14 @@ You will have a serie of toggle buttons to
 * activate / deactivate a service
 * display maintenance page for a service
 * display contruction page for a service
+* enable otoroshi custom response headers containing request id, latency, etc 
 * enforce secure exchange between services
 * force https usage on the exposed service
 
 Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.
 
 @@@ div { .centered-img #service-flags }
-<img src="../img/new-service-flags.png" />
+<img src="../img/new-service-flags2.png" />
 @@@
 
 In the `service targets` section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets.
@@ -52,90 +53,57 @@ If you enable secure communication for a given service, you will have to add a f
 <img src="../img/exchange.png" />
 @@@
 
-for instance, if you want to write a filter to make sure that requests only comes from Otoroshi, you can write something like the following (using playframework 2.6).
+The `Otoroshi-Claim` is a JWT containing some informations about the service that is called and the client if available. The claim is signed with the `app.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. In a near future, you will be able to define dedicated keys for specific services and use whatever signing algorythm you want. For example, for a service named `my-service` with a signing key `secret`, the basic JWT token that will be sent should look like the following
 
-```scala
-import akka.stream.Materializer
-import com.auth0.jwt._
-import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.interfaces._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.typedmap._
-import play.api.mvc._
+```
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiItLSIsImF1ZCI6Im15LXNlcnZpY2UiLCJpc3MiOiJPdG9yb3NoaSIsImV4cCI6MTUyMTQ0OTkwNiwiaWF0IjoxNTIxNDQ5ODc2LCJqdGkiOiI3MTAyNWNjMTktMmFjNy00Yjk3LTljYzctMWM0ODEzYmM1OTI0In0.mRcfuFVFPLUV1FWHyL6rLHIJIu0KEpBkKQCk5xh-_cBt9cb6uD6enynDU0H1X2VpW5-bFxWCy4U4V78CbAQv4g
+```
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+if you decode it, the payload will look something like
 
-object OtoroshiFilter {
-  object Attrs {
-    val OtoroshiClaim: TypedKey[DecodedJWT] = TypedKey("otoroshi-claim")
-  }
-}
-
-class OtoroshiFilter(env: String, sharedKey: String)(implicit ec: ExecutionContext, val mat: Materializer) extends Filter {
-
-  def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
-    val maybeState = requestHeader.headers.get("Otoroshi-State")
-    val maybeClaim = requestHeader.headers.get("Otoroshi-Claim")
-    env match {
-      case "dev" =>
-        nextFilter(requestHeader).map { result =>
-          result.withHeaders(
-            "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
-          )
-        }
-      case "prod" if maybeClaim.isEmpty && maybeState.isEmpty =>
-        Future.successful(
-          Results.Unauthorized(
-            Json.obj("error" -> "Bad request !!!")
-          )
-        )
-      case "prod" if maybeClaim.isEmpty =>
-        Future.successful(
-          Results.Unauthorized(
-            Json.obj("error" -> "Bad claim !!!")
-          ).withHeaders(
-            "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
-          )
-        )
-      case "prod" =>
-        Try {
-          val algorithm = Algorithm.HMAC512(sharedKey)
-          val verifier = JWT
-            .require(algorithm)
-            .withIssuer("Otoroshi")
-            .acceptLeeway(5000)
-            .build()
-          val decoded = verifier.verify(maybeClaim.get)
-          nextFilter(requestHeader.addAttr(OtoroshiFilter.Attrs.OtoroshiClaim, decoded)).map { result =>
-            result.withHeaders(
-              "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
-            )
-          }
-        } recoverWith {
-          case e => Success(
-            Future.successful(
-              Results.Unauthorized(
-                Json.obj("error" -> "Claim error !!!", "m" -> e.getMessage)
-              ).withHeaders(
-                "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
-              )
-            )
-          )
-        } get
-      case _ =>
-        Future.successful(
-          Results.Unauthorized(
-            Json.obj("error" -> "Bad env !!!")
-          ).withHeaders(
-            "Otoroshi-State-Resp" -> maybeState.getOrElse("--")
-          )
-        )
-    }
-  }
+```json
+{
+  "sub": "apikey_client_id",
+  "aud": "my-service",
+  "iss": "Otoroshi",
+  "exp": 1521449906,
+  "iat": 1521449876,
+  "jti": "71025cc19-2ac7-4b97-9cc7-1c4813bc5924"
 }
 ```
+
+if your service is using the private apps mechanism, then the JWT token will have more fields coming from it's Auth0 profile (all those fields are optional and could not be present)
+
+* `email`
+* `name`
+* `picture`
+* `user_id`
+* `given_name`
+* `family_name`
+* `gender`
+* `locale`
+* `nickname`
+
+finally the last possible fields are metadata about the client. Those metadata can be placed on the `ApiKey`s (using `ApiKey` metadata) or in the Auth0 profile. In Auth0, the metadata is a flat object placed in the `profile / http://yourdomain/app_metadata / otoroshi_data`. You might need to write an Auth0 rule to copy app metadata under `http://yourdomain/app_metadata`, the `http://yourdomain/app_metadata` value is a config property `app.appMeta`. The rule could be something like the following
+
+```js
+function (user, context, callback) {
+  var namespace = 'http://yourdomain/';
+  context.idToken[namespace + 'user_id'] = user.user_id;
+  context.idToken[namespace + 'user_metadata'] = user.user_metadata;
+  context.idToken[namespace + 'app_metadata'] = user.app_metadata;
+  callback(null, user, context);
+}
+```
+
+If you want to validate the `Otoroshi-Claim` on the target app side to ensure that the input requests only comes from `Otoroshi`, you will have to write an HTTP filter to do the job. For instance, if you want to write a filter to make sure that requests only comes from Otoroshi, you can write something like the following (using playframework 2.6).
+
+Scala
+:   @@snip [filter.scala](../snippets/filter.scala)
+
+Java
+:   @@snip [filter.java](../snippets/filter.java)
+
 
 ### Canary mode
 
