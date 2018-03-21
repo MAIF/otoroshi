@@ -42,8 +42,15 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
     redisCli.smembers(query.asKey).map(_.map(_.utf8String))
 
   override def fastLookupExists(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,
-                                                               env: Env): Future[Boolean] =
-    redisCli.exists(query.asKey)
+                                                               env: Env): Future[Boolean] = {
+    for {
+      // exists <- redisCli.exists(query.asKey)
+      size   <- redisCli.scard(query.asKey)
+    } yield {
+      // exists && size > 0L
+      size > 0L
+    }
+  }
 
   override def addFastLookups(
       query: ServiceDescriptorQuery,
@@ -261,18 +268,20 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
     val start = System.currentTimeMillis()
     query.exists().flatMap {
       case true => {
-        logger.debug(s"Service descriptors for $query")
+        logger.debug(s"Service descriptors exists for fast lookups ${query.asKey}")
         query
           .getServices()
-          .map(_.filter { sr =>
-            val headersSeq        = query.matchingHeaders.toSeq
-            val allHeadersMatched = sr.matchingHeaders.toSeq.map(t => headersSeq.contains(t)).forall(a => a)
-            val rootMatched = sr.matchingRoot match {
-              case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-              case None               => true
+          .map { services =>
+            services.filter { sr =>
+              val headersSeq        = query.matchingHeaders.toSeq
+              val allHeadersMatched = sr.matchingHeaders.toSeq.map(t => headersSeq.contains(t)).forall(a => a)
+              val rootMatched = sr.matchingRoot match {
+                case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+                case None               => true
+              }
+              allHeadersMatched && rootMatched
             }
-            allHeadersMatched && rootMatched
-          })
+          }
       }
       case false => {
         logger.debug("Full scan of services, should not pass here anymore ...")
