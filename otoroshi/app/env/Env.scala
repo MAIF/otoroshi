@@ -332,7 +332,8 @@ class Env(val configuration: Configuration,
       datastores.globalConfigDataStore.isOtoroshiEmpty().andThen {
         case Success(true) => {
           logger.warn(s"The main datastore seems to be empty, registering some basic services")
-          val password = IdGenerator.token(32)
+          val login    = configuration.getOptional[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
+          val password = configuration.getOptional[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
           val headers: Seq[(String, String)] = configuration
             .getOptional[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
@@ -358,7 +359,7 @@ class Env(val configuration: Configuration,
                                               "default-apikey",
                                               "default")
               logger.warn(
-                s"You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / $password"
+                s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
               )
               for {
                 _ <- defaultConfig.save()(ec, this)
@@ -367,7 +368,7 @@ class Env(val configuration: Configuration,
                 _ <- backOfficeDescriptor.save()(ec, this)
                 _ <- backOfficeApiKey.save()(ec, this)
                 _ <- defaultGroupApiKey.save()(ec, this)
-                _ <- datastores.simpleAdminDataStore.registerUser("admin@otoroshi.io",
+                _ <- datastores.simpleAdminDataStore.registerUser(login,
                                                                   BCrypt.hashpw(password, BCrypt.gensalt()),
                                                                   "Otoroshi Admin",
                                                                   None)(ec, this)
