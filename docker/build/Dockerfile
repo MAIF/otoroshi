@@ -12,7 +12,7 @@ RUN apk update \
   && apk upgrade \
   && apk add bash \
   && unzip ./otoroshi-dist.zip \
-  && mv otoroshi-1.1.1 otoroshi \
+  && mv otoroshi-1.1.2 otoroshi \
   && chmod +x otoroshi/bin/otoroshi \
   && mkdir otoroshi/leveldb \
   && mkdir otoroshi/imports
