@@ -327,7 +327,7 @@ case class ServiceDescriptor(
       p => utils.RegexPool.regex(p).matches(uri)
     )
   def isUriExcludedFromSecuredCommunication(uri: String): Boolean =
-    !secComExcludedPatterns.exists(p => utils.RegexPool.regex(p).matches(uri))
+    secComExcludedPatterns.exists(p => utils.RegexPool.regex(p).matches(uri))
   def isPrivate = privateApp
   def updateMetrics(callDuration: Long,
                     callOverhead: Long,
