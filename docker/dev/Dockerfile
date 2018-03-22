@@ -26,8 +26,8 @@ RUN $HOME/.cargo/bin/rustup update
 RUN $HOME/.cargo/bin/rustup default stable
 RUN $HOME/.cargo/bin/cargo install cargo-watch
 RUN $HOME/.cargo/bin/rustup component add rustfmt-preview --toolchain=nightly
-RUN wget --quiet https://github.com/sbt/sbt/releases/download/v1.1.0/sbt-1.1.0.zip
-RUN unzip $HOME/sbt-1.1.0.zip
+RUN wget --quiet https://github.com/sbt/sbt/releases/download/v1.1.1/sbt-1.1.1.zip
+RUN unzip $HOME/sbt-1.1.1.zip
 RUN mkdir -p $HOME/.sbt/1.0/plugins
 RUN touch $HOME/.sbt/1.0/plugins/build.sbt
 RUN echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.1")' >> $HOME/.sbt/1.0/plugins/build.sbt
