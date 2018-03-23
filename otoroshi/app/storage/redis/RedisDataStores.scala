@@ -98,4 +98,5 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def errorTemplateDataStore: ErrorTemplateDataStore         = _errorTemplateDataStore
   override def requestsDataStore: RequestsDataStore                   = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
+  override def flushAll(): Future[Boolean]                            = redis.flushall()
 }

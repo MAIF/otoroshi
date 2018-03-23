@@ -2,13 +2,12 @@ package models
 
 import java.util.concurrent.TimeUnit
 
-import akka.http.scaladsl.util.FastFuture._
 import env.Env
-import play.api.libs.json._
-import utils.JsonImplicits._
-import storage.BasicStore
 import org.joda.time.DateTime
 import play.api.Logger
+import play.api.libs.json._
+import storage.BasicStore
+import utils.JsonImplicits._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -45,6 +44,7 @@ object PrivateAppsUser {
   lazy val logger = Logger("otoroshi-privateapps-user")
   val fmt = Json.format[PrivateAppsUser]
   def toJson(value: PrivateAppsUser): JsValue = fmt.writes(value)
+  def fromJsonSafe(value: JsValue): JsResult[PrivateAppsUser] = fmt.reads(value)
   def fromJsons(value: JsValue): PrivateAppsUser =
     try {
       fmt.reads(value).get

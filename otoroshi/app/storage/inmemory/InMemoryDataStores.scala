@@ -79,4 +79,5 @@ class InMemoryDataStores(configuration: Configuration,
   override def errorTemplateDataStore: ErrorTemplateDataStore         = _errorTemplateDataStore
   override def requestsDataStore: RequestsDataStore                   = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
+  override def flushAll(): Future[Boolean]                            = redis.flushall()
 }

@@ -2574,7 +2574,36 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
   }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  def createPrivateAppSession() = ApiAction.async(parse.json) { ctx =>
+    env.clusterMode match {
+      case Some("master") => {
+        PrivateAppsUser.fromJsonSafe(ctx.request.body) match {
+          case JsError(e) => BadRequest(Json.obj("error" -> "Bad PrivateAppUser format")).asFuture
+          case JsSuccess(newPrivateAppUser, _) => {
+            newPrivateAppUser.saveWithExpiration().map { _ =>
+              Ok(Json.obj("done" -> true))
+            }
+          }
+        }
+      }
+      case _ => FastFuture.successful(NotFound(Json.obj("error" -> "api not found")))
+    }
+  }
+
+  def fetchPrivateAppSessions() = ApiAction.async(parse.json) { ctx =>
+    env.clusterMode match {
+      case Some("master") => {
+        env.datastores.privateAppsUserDataStore.findAll().map { sessions =>
+          Ok(JsArray(sessions.map(_.toJson)))
+        }
+      }
+      case _ => FastFuture.successful(NotFound(Json.obj("error" -> "api not found")))
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // def registerSimpleAdmin() = ApiAction.async(parse.json) { ctx =>
   //   val usernameOpt = (ctx.request.body \ "username").asOpt[String]

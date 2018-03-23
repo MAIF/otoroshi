@@ -268,7 +268,12 @@ class Env(val configuration: Configuration,
     case Some("master") => (None, true, false)
     case Some("worker") => (Some(
       PollingCluster(PollingClusterConfig(
-        every = configuration.getOptional[Long]("app.cluster.polling.every").getOrElse(2000)
+        every = configuration.getOptional[Long]("app.cluster.polling.every").getOrElse(2000),
+        otoroshiLocation = configuration.getOptional[String]("app.cluster.polling.masterLocation").getOrElse("127.0.0.1"),
+        otoroshiHost = configuration.getOptional[String]("app.cluster.polling.masterHost").getOrElse("otoroshi.foo.bar"),
+        otoroshiScheme = configuration.getOptional[String]("app.cluster.polling.masterScheme").getOrElse("http"),
+        otoroshiClientId = configuration.getOptional[String]("app.cluster.polling.masterClientId").getOrElse("--"),
+        otoroshiClientSecret = configuration.getOptional[String]("app.cluster.polling.masterClientSecret").getOrElse("--"),
       ), this)
     ), false, true)
     case _ => (None, false, false)

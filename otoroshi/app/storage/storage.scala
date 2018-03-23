@@ -34,6 +34,7 @@ trait DataStores {
   def errorTemplateDataStore: ErrorTemplateDataStore
   def requestsDataStore: RequestsDataStore
   def canaryDataStore: CanaryDataStore
+  def flushAll(): Future[Boolean]
 }
 
 trait BasicStore[T] {
