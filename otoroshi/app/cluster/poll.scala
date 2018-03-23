@@ -1,6 +1,7 @@
 package cluster.polling
 
 import akka.actor.{Actor, ActorRef, Props}
+import akka.http.scaladsl.util.FastFuture
 import env.Env
 import models._
 import play.api.Logger
@@ -8,6 +9,7 @@ import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.libs.ws.WSAuthScheme
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 sealed trait PollingClusterMessage
 case object Sync extends PollingClusterMessage
@@ -48,7 +50,7 @@ case class PollingClusterConfig(
 object PollingCluster {
 
   /**
-   * TODO
+   * TODO (search for 'TODO : #75' in code)
    *
    * [x] add an instance type in the configuration (single, master, worker)
    * [x] if in worker mode, then exposeAdminApi and exposeAdminDashboard should be false, or set to false.
@@ -88,15 +90,17 @@ object PollingCluster {
       serviceDescriptors = (masterConfig \ "serviceDescriptors").as[JsArray]
       errorTemplates     = (masterConfig \ "errorTemplates").as[JsArray]
       paSessions         = (masterConfig \ "pappsSessions").as[JsArray]
-      // TODO : extract stats diff
+      // TODO : #75 extract stats diff
       _ <- env.datastores.flushAll()
       _ <- globalConfig.save()
-      _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
-      _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))
-      _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))
+      _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).filterNot(_.id == env.backOfficeDescriptor.groupId).map(_.save()))
+      _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).filterNot(_.clientId == env.backOfficeApiKey.clientId).map(_.save()))
+      _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).filterNot(_.id == env.backOfficeDescriptor.id).map(_.save()))
       _ <- Future.sequence(errorTemplates.value.map(ErrorTemplate.fromJsons).map(_.save()))
       _ <- Future.sequence(paSessions.value.map(PrivateAppsUser.fromJsons).map(_.saveWithExpiration()))
-      // TODO : send stats diffs
+      e <- env.datastores.globalConfigDataStore.fullExport()
+      _ <- FastFuture.successful(logger.info(s"new state ${Json.prettyPrint(e.as[JsObject].-("appConfig"))}"))
+      // TODO : #75 send stats diffs
     } yield ()
   }
 }
@@ -108,6 +112,7 @@ object PollingClusterActor {
 class PollingClusterActor(config: PollingClusterConfig)(implicit env: Env) extends Actor {
 
   import context.dispatcher
+
   import scala.concurrent.duration._
 
   lazy val logger = play.api.Logger("otoroshi-cluster-polling-actor")
@@ -122,7 +127,13 @@ class PollingClusterActor(config: PollingClusterConfig)(implicit env: Env) exten
   }
 
   override def receive: Receive = {
-    case Sync => PollingCluster.sync(config, logger).map(_ => schedule())
+    case Sync => PollingCluster.sync(config, logger).andThen {
+      case Success(_) => schedule()
+      case Failure(e) => {
+        logger.error("Error while sync with master", e)
+        schedule()
+      }
+    }
     case _ => logger.info("Unhandled message type")
   }
 }

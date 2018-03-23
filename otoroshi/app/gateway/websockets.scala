@@ -80,7 +80,8 @@ class WebSocketHandler()(implicit env: Env) {
 
   def isPrivateAppsSessionValid(req: RequestHeader): Future[Option[PrivateAppsUser]] =
     req.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
-      env.datastores.privateAppsUserDataStore.findById(id)
+      // TODO : #75 if in worker mode, fetch from master
+    env.datastores.privateAppsUserDataStore.findById(id)
     } getOrElse {
       FastFuture.successful(None)
     }

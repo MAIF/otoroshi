@@ -131,6 +131,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
               .flatMap {
                 case (idToken, accessToken) =>
                   getUser(accessToken, privateAppsAuth0Config).flatMap { user =>
+                    // TODO : #75 if in worker mode, create session on the master
                     PrivateAppsUser(IdGenerator.token(64),
                                     (user \ "name").as[String],
                                     (user \ "email").as[String],

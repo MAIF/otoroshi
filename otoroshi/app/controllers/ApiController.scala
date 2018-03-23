@@ -2583,7 +2583,7 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
           case JsError(e) => BadRequest(Json.obj("error" -> "Bad PrivateAppUser format")).asFuture
           case JsSuccess(newPrivateAppUser, _) => {
             newPrivateAppUser.saveWithExpiration().map { _ =>
-              Ok(Json.obj("done" -> true))
+              Ok(Json.obj("done" -> true, "session" -> newPrivateAppUser.toJson))
             }
           }
         }

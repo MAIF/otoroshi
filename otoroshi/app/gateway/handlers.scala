@@ -230,7 +230,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
         env.extractPrivateSessionId(cookie)
       }
       .map { id =>
-        env.datastores.privateAppsUserDataStore.findById(id)
+        // TODO : #75 if in worker mode, fetch from master
+      env.datastores.privateAppsUserDataStore.findById(id)
       } getOrElse {
       FastFuture.successful(None)
     }

@@ -29,7 +29,10 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
           request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
             env.datastores.privateAppsUserDataStore.findById(id).flatMap {
               case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))
-              case None       => block(PrivateAppsActionContext(request, None, globalConfig))
+              case None       => {
+                // TODO : #75 if in worker mode, fetch from master
+                block(PrivateAppsActionContext(request, None, globalConfig))
+              }
             }
           } getOrElse {
             block(PrivateAppsActionContext(request, None, globalConfig)).fast
