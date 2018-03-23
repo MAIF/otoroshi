@@ -62,6 +62,7 @@ class Env(val configuration: Configuration,
     implicit val ec  = as.dispatcher
     val aa           = as.actorOf(AnalyticsActorSupervizer.props(this))
     val ala          = as.actorOf(AlertsActorSupervizer.props(this))
+    // TODO : #75 do not use if in worker mode
     val ha           = as.actorOf(HealthCheckerActor.props(this))
     timeout(FiniteDuration(5, SECONDS)).andThen { case _ if isProd => ha ! StartHealthCheck() }
     (as, aa, ala, ha)
@@ -269,11 +270,12 @@ class Env(val configuration: Configuration,
     case Some("worker") => (Some(
       PollingCluster(PollingClusterConfig(
         every = configuration.getOptional[Long]("app.cluster.polling.every").getOrElse(2000),
-        otoroshiLocation = configuration.getOptional[String]("app.cluster.polling.masterLocation").getOrElse("127.0.0.1"),
+        otoroshiLocations = configuration.getOptional[String]("app.cluster.polling.masterLocations").getOrElse("127.0.0.1").split(",").map(_.trim).toSeq,
         otoroshiHost = configuration.getOptional[String]("app.cluster.polling.masterHost").getOrElse("otoroshi.foo.bar"),
         otoroshiScheme = configuration.getOptional[String]("app.cluster.polling.masterScheme").getOrElse("http"),
         otoroshiClientId = configuration.getOptional[String]("app.cluster.polling.masterClientId").getOrElse("--"),
         otoroshiClientSecret = configuration.getOptional[String]("app.cluster.polling.masterClientSecret").getOrElse("--"),
+        retry = configuration.getOptional[Int]("app.cluster.polling.retry").getOrElse(5),
       ), this)
     ), false, true)
     case _ => (None, false, false)
