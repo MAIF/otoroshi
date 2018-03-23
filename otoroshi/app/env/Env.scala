@@ -7,6 +7,7 @@ import akka.actor.{ActorSystem, PoisonPill}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
+import cluster.polling.{PollingCluster, PollingClusterConfig}
 import com.typesafe.config.ConfigFactory
 import events._
 import gateway.CircuitBreakersHolder
@@ -261,10 +262,23 @@ class Env(val configuration: Configuration,
     }
   }
 
+  val clusterMode = configuration.getOptional[String]("app.cluster.mode")
+  val (clusterRef, isMaster, isWorker) = clusterMode match {
+    case Some("single") => (None, false, false)
+    case Some("master") => (None, true, false)
+    case Some("worker") => (Some(
+      PollingCluster(PollingClusterConfig(
+        every = configuration.getOptional[Long]("app.cluster.polling.every").getOrElse(2000)
+      ), this)
+    ), false, true)
+    case _ => (None, false, false)
+  }
+
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
+    clusterRef.foreach(_ ! PoisonPill)
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill

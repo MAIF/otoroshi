@@ -178,15 +178,15 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
       val toHttps = env.exposedRootSchemeIsHttps
       val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
       host match {
-        case str if matchRedirection(str)                                   => Some(redirectToMainDomain())
-        case _ if request.uri.contains("__otoroshi_assets")                 => super.routeRequest(request)
-        case _ if request.uri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
-        case _ if request.uri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
-        case env.backOfficeHost if !isSecured && toHttps && env.isProd      => Some(redirectToHttps())
-        case env.privateAppsHost if !isSecured && toHttps && env.isProd     => Some(redirectToHttps())
-        case env.adminApiHost if env.exposeAdminApi                         => super.routeRequest(request)
-        case env.backOfficeHost if env.exposeAdminDashboard                 => super.routeRequest(request)
-        case env.privateAppsHost                                            => super.routeRequest(request)
+        case str if matchRedirection(str)                                    => Some(redirectToMainDomain())
+        case _ if request.uri.contains("__otoroshi_assets")                  => super.routeRequest(request)
+        case _ if request.uri.startsWith("/__otoroshi_private_apps_login")   => Some(setPrivateAppsCookies())
+        case _ if request.uri.startsWith("/__otoroshi_private_apps_logout")  => Some(removePrivateAppsCookies())
+        case env.backOfficeHost if !isSecured && toHttps && env.isProd       => Some(redirectToHttps())
+        case env.privateAppsHost if !isSecured && toHttps && env.isProd      => Some(redirectToHttps())
+        case env.adminApiHost if env.exposeAdminApi && !env.isWorker         => super.routeRequest(request)
+        case env.backOfficeHost if env.exposeAdminDashboard && !env.isWorker => super.routeRequest(request)
+        case env.privateAppsHost                                             => super.routeRequest(request)
         case _ =>
           request.headers.get("Sec-WebSocket-Version") match {
             case None    => Some(forwardCall())

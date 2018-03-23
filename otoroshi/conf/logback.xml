@@ -68,6 +68,7 @@
   <logger name="otoroshi-swagger-controller" level="WARN" />
   <logger name="otoroshi-regex-pool" level="WARN" />
   <logger name="otoroshi-http-handler-debug" level="WARN" />
+  <logger name="otoroshi-cluster-polling-actor" level="INFO" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />

@@ -1,12 +1,14 @@
 package models
 
-import akka.http.scaladsl.util.FastFuture._
+import java.util.concurrent.TimeUnit
 
+import akka.http.scaladsl.util.FastFuture._
 import env.Env
 import play.api.libs.json._
 import utils.JsonImplicits._
 import storage.BasicStore
 import org.joda.time.DateTime
+import play.api.Logger
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,6 +30,11 @@ case class PrivateAppsUser(randomId: String,
       .set(this.copy(expiredAt = DateTime.now().plusMillis(duration.toMillis.toInt)), Some(duration))
       .map(_ => this)
 
+  def saveWithExpiration()(implicit ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
+    env.datastores.privateAppsUserDataStore
+      .set(this, Some(Duration(this.expiredAt.getMillis - DateTime.now().getMillis, TimeUnit.MILLISECONDS)))
+      .map(_ => this)
+
   def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.privateAppsUserDataStore.delete(randomId)
 
@@ -35,7 +42,18 @@ case class PrivateAppsUser(randomId: String,
 }
 
 object PrivateAppsUser {
+  lazy val logger = Logger("otoroshi-privateapps-user")
   val fmt = Json.format[PrivateAppsUser]
+  def toJson(value: PrivateAppsUser): JsValue = fmt.writes(value)
+  def fromJsons(value: JsValue): PrivateAppsUser =
+    try {
+      fmt.reads(value).get
+    } catch {
+      case e: Throwable => {
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
+      }
+    }
 }
 
 trait PrivateAppsUserDataStore extends BasicStore[PrivateAppsUser]
