@@ -85,9 +85,9 @@ object PollingCluster {
   }
 
   def fetchConfig(config: PollingClusterConfig)(implicit env: Env, scheduler: Scheduler,  ec: ExecutionContext): Future[JsValue] = {
-    val index = counter.incrementAndGet() % (if (config.otoroshiLocations.nonEmpty) config.otoroshiLocations.size else 1)
-    val location = config.otoroshiLocations.apply(index.toInt)
     Retry.retry(config.retry, ctx = "master-fetch") { () =>
+      val index = counter.incrementAndGet() % (if (config.otoroshiLocations.nonEmpty) config.otoroshiLocations.size else 1)
+      val location = config.otoroshiLocations.apply(index.toInt)
       env.Ws.url(s"${config.otoroshiScheme}://$location/api/otoroshi.json")
         .withHttpHeaders(
           "Host" -> config.otoroshiHost
