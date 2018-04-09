@@ -9,6 +9,7 @@ import actions.ApiAction
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import env.Env
 import events._
 import models._
@@ -16,6 +17,7 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.libs.json.{JsSuccess, Json, _}
+import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import security.IdGenerator
 import utils.future.Implicits._
@@ -30,6 +32,10 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
   implicit lazy val mat = env.materializer
 
   lazy val logger = Logger("otoroshi-admin-api")
+
+  val sourceBodyParser = BodyParser("ApiController BodyParser") { _ =>
+    Accumulator.source[ByteString].map(Right.apply)
+  }
 
   def globalLiveStats() = ApiAction.async { ctx =>
     Audit.send(
@@ -2564,14 +2570,15 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       }
   }
 
-  def fullImport() = ApiAction.async(parse.json) { ctx =>
-    val json = ctx.request.body.as[JsObject]
-    env.datastores.globalConfigDataStore
-      .fullImport(json)
-      .map(_ => Ok(Json.obj("done" -> true)))
-      .recover {
-        case e => InternalServerError(Json.obj("error" -> e.getMessage))
-      }
+  def fullImport() = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+      val json = Json.parse(body.utf8String).as[JsObject]
+      env.datastores.globalConfigDataStore
+        .fullImport(json)
+        .map(_ => Ok(Json.obj("done" -> true)))
+    } recover {
+      case e => InternalServerError(Json.obj("error" -> e.getMessage))
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
