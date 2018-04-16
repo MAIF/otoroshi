@@ -530,7 +530,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 )
                               } else {
                                 Map.empty[String, String]
-                              }) ++ descriptor.additionalHeaders ++ fromOtoroshi
+                              }) ++ descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
                           .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                           .getOrElse(Map.empty[String, String])).toSeq
 

@@ -302,7 +302,7 @@ class WebSocketHandler()(implicit env: Env) {
                       env.Headers.OtoroshiRequestId   -> snowflake,
                       env.Headers.OtoroshiState       -> state,
                       env.Headers.OtoroshiClaim       -> claim
-                    ) ++ descriptor.additionalHeaders ++ fromOtoroshi
+                    ) ++ descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
                       .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                       .getOrElse(Map.empty[String, String])).toSeq
 
