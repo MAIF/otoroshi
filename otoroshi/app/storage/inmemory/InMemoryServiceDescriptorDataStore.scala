@@ -272,7 +272,12 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
         query
           .getServices()
           .map { services =>
-            services.filter { sr =>
+            services.sortWith {
+              case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined => a.matchingRoot.get.size > b.matchingRoot.get.size
+              case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined=> true
+              case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined=> true
+              case _ => false
+            }.filter { sr =>
               val headersSeq        = query.matchingHeaders.toSeq
               val allHeadersMatched = sr.matchingHeaders.toSeq.map(t => headersSeq.contains(t)).forall(a => a)
               val rootMatched = sr.matchingRoot match {
@@ -298,7 +303,12 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
             }
           }
           query.addServices(validDescriptors)
-          validDescriptors.filter { sr =>
+          validDescriptors.sortWith {
+            case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined => a.matchingRoot.get.size > b.matchingRoot.get.size
+            case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined=> true
+            case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined=> true
+            case _ => false
+          }.filter { sr =>
             val headersSeq        = query.matchingHeaders.toSeq
             val allHeadersMatched = sr.matchingHeaders.toSeq.map(t => headersSeq.contains(t)).forall(a => a)
             val rootMatched = sr.matchingRoot match {
