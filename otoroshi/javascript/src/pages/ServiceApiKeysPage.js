@@ -66,14 +66,43 @@ const ResetSecret = ({ changeValue }) => (
         type="button"
         className="btn btn-danger btn-xs"
         onClick={e => changeValue('clientSecret', faker.random.alphaNumeric(64))}>
-        Reset secret
+        <i className="glyphicon glyphicon-refresh" /> Reset secret
       </button>
     </div>
   </div>
 );
 
+class CopyCredentials extends Component {
+  render() {
+    const props = this.props;
+    return (
+      <div className="form-group">
+        <label className="col-sm-2 control-label" />
+        <div className="col-sm-10">
+          <input ref={r => this.clipboard = r} style={{ position: 'fixed', left: -12000, top: -12000 }} type="text" value={props.rawValue.clientId + ':' + props.rawValue.clientSecret} />
+          <button
+            type="button"
+            className="btn btn-success btn-xs"
+            onClick={e => {
+              this.clipboard.select();
+              document.execCommand('Copy');
+            }}>
+            <i className="glyphicon glyphicon-copy" /> Copy credentials to clipboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
 export class ServiceApiKeysPage extends Component {
   formSchema = {
+    copyCredentials: {
+      type: CopyCredentials,
+      props: {
+        label: '',
+      },
+    },
     resetSecret: {
       type: ResetSecret,
       props: {
@@ -186,6 +215,7 @@ export class ServiceApiKeysPage extends Component {
     'clientId',
     'clientSecret',
     'clientName',
+    'copyCredentials',
     'resetSecret',
     '---',
     'enabled',
