@@ -103,7 +103,7 @@ and confirm the command
 
 You can use a JWT token to pass an API key to Otoroshi. 
 You can use `Otoroshi-Authorization: Bearer $jwt_token` and `Authorization: Bearer $jwt_token` header to pass the JWT token.
-You have to create a JWT token with a signing algorythm that can be `HS256` or `HS256`. Then you have to provide an `iss` claim with the value of your API key `clientId` and sign the JWT token with your API key `clientSecret`.
+You have to create a JWT token with a signing algorythm that can be `HS256` or `HS512`. Then you have to provide an `iss` claim with the value of your API key `clientId` and sign the JWT token with your API key `clientSecret`.
 
 For example, with an API key like `clientId=abcdef` and `clientSecret=1234456789`, your JWT token should look like
 
