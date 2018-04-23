@@ -2,16 +2,21 @@ FROM openjdk:8
 
 LABEL maintainer "MAIF <oss@maif.fr>"
 
-RUN mkdir -p /usr/otoroshi
+RUN groupadd -g 999 otoroshi && useradd -r -u 999 -g otoroshi otoroshi
 
-WORKDIR /usr/otoroshi
+RUN mkdir -p /otoroshi
 
-COPY . /usr/otoroshi
+WORKDIR /otoroshi
+
+COPY . /otoroshi
 
 RUN apt-get update -y \
   && apt-get install  -y curl \
   && wget https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.2/otoroshi.jar \
   && wget https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.1.2/otoroshicli \
-  && chmod +x otoroshicli
+  && chmod +x otoroshicli \
+  && chown -R otoroshi:otoroshi /otoroshi
+
+USER otoroshi
 
 CMD [""]
