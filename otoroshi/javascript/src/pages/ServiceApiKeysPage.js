@@ -79,7 +79,7 @@ class CopyCredentials extends Component {
       <div className="form-group">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
-          <input ref={r => this.clipboard = r} style={{ position: 'fixed', left: -12000, top: -12000 }} type="text" value={props.rawValue.clientId + ':' + props.rawValue.clientSecret} />
+          <input ref={r => this.clipboard = r} style={{ position: 'fixed', left: 0, top: -250 }} type="text" value={props.rawValue.clientId + ':' + props.rawValue.clientSecret} />
           <button
             type="button"
             className="btn btn-success btn-xs"
