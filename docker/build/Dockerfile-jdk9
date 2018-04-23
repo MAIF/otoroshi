@@ -17,6 +17,11 @@ RUN unzip ./otoroshi-dist.zip \
   && mkdir otoroshi/imports \
   && chown -R otoroshi:otoroshi /usr/app/otoroshi
 
+RUN rm -f $JAVA_HOME/lib/security/cacerts \
+  && rm -f /etc/ssl/certs/java/cacerts \
+  && update-ca-certificates -f \
+  && ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts
+
 VOLUME /usr/app/otoroshi/imports
 VOLUME /usr/app/otoroshi/leveldb
 VOLUME /usr/app/otoroshi/conf
