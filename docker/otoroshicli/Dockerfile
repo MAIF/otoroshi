@@ -4,17 +4,17 @@ LABEL maintainer "MAIF <oss@maif.fr>"
 
 RUN groupadd -g 999 otoroshi && useradd -r -u 999 -g otoroshi otoroshi
 
-USER otoroshi
+RUN mkdir -p /otoroshi
 
-RUN mkdir -p /usr/app
+WORKDIR /otoroshi
 
-WORKDIR /usr/app
-
-COPY . /usr/app
+COPY . /otoroshi
 
 RUN chmod +x otoroshicli 
 
-VOLUME /usr/app
+VOLUME /otoroshi
+
+USER otoroshi
 
 ENTRYPOINT ["./entrypoint.sh"]
 
