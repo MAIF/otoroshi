@@ -264,6 +264,7 @@ export class ServiceApiKeysPage extends Component {
         updateItem={this.updateItem}
         deleteItem={this.deleteItem}
         createItem={this.createItem}
+        stayAfterSave={true}
         showActions={true}
         showLink={false}
         rowNavigation={true}

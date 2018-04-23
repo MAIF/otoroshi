@@ -30,6 +30,7 @@ export class Table extends Component {
     deleteItem: PropTypes.func,
     createItem: PropTypes.func,
     navigateTo: PropTypes.func,
+    stayAfterSave: PropTypes.bool.isRequired,
     showActions: PropTypes.bool.isRequired,
     showLink: PropTypes.bool.isRequired,
     formSchema: PropTypes.object,
@@ -41,6 +42,7 @@ export class Table extends Component {
 
   static defaultProps = {
     rowNavigation: false,
+    stayAfterSave: false,
     pageSize: 15,
   };
 
@@ -130,7 +132,7 @@ export class Table extends Component {
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showAddForm: false });
-    window.history.back();
+    window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
   };
 
   showAddForm = e => {
@@ -146,7 +148,7 @@ export class Table extends Component {
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showEditForm: false });
-    window.history.back();
+    window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
   };
 
   showEditForm = (e, item) => {
@@ -170,7 +172,8 @@ export class Table extends Component {
           return this.props.fetchItems();
         })
         .then(items => {
-          this.setState({ items });
+          window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
+          this.setState({ items, showEditForm: false, showAddForm: false });
         });
     }
   };
@@ -183,7 +186,18 @@ export class Table extends Component {
         return this.props.fetchItems();
       })
       .then(items => {
+        window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
         this.setState({ items, showAddForm: false });
+      });
+  };
+
+  createItemAndStay = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    this.props
+      .createItem(this.state.currentItem)
+      .then(() => {
+        window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(this.state.currentItem)}`);
+        this.setState({ showAddForm: false, showEditForm: true });
       });
   };
 
@@ -197,6 +211,12 @@ export class Table extends Component {
       .then(items => {
         this.setState({ items, showEditForm: false });
       });
+  };
+
+  updateItemAndStay = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    this.props
+      .updateItem(this.state.currentItem)
   };
 
   render() {
@@ -357,6 +377,9 @@ export class Table extends Component {
               <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
                 Cancel
               </button>
+              {this.props.stayAfterSave && <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
+                <i className="glyphicon glyphicon-hdd" /> Create and stay on this {this.props.itemName}
+              </button>}
               <button type="button" className="btn btn-primary" onClick={this.createItem}>
                 <i className="glyphicon glyphicon-hdd" /> Create {this.props.itemName}
               </button>
@@ -381,8 +404,11 @@ export class Table extends Component {
                 <i className="glyphicon glyphicon-trash" /> Delete
               </button>
               <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
-                Cancel
+                <i className="glyphicon glyphicon-remove" />  Cancel
               </button>
+              {this.props.stayAfterSave && <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
+                <i className="glyphicon glyphicon-hdd" /> Update and stay on this {this.props.itemName}
+              </button>}
               <button type="button" className="btn btn-success" onClick={this.updateItem}>
                 <i className="glyphicon glyphicon-hdd" /> Update {this.props.itemName}
               </button>

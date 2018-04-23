@@ -39,6 +39,7 @@ export class GroupsPage extends Component {
         formSchema={this.formSchema}
         formFlow={this.formFlow}
         columns={this.columns}
+        stayAfterSave={true}
         fetchItems={BackOfficeServices.findAllGroups}
         updateItem={BackOfficeServices.updateGroup}
         deleteItem={BackOfficeServices.deleteGroup}
