@@ -10,7 +10,8 @@ WORKDIR /otoroshi
 
 COPY . /otoroshi
 
-RUN chmod +x otoroshicli 
+RUN chmod +x otoroshicli \
+  && chown -R otoroshi:otoroshi /otoroshi
 
 VOLUME /otoroshi
 
