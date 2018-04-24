@@ -1,6 +1,6 @@
 package env
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import java.util.concurrent.{Executors, ThreadFactory, TimeUnit}
 
 import akka.actor.{ActorSystem, PoisonPill}
@@ -15,7 +15,7 @@ import models._
 import org.mindrot.jbcrypt.BCrypt
 import play.api._
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
@@ -29,7 +29,7 @@ import storage.redis.RedisDataStores
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class Env(val configuration: Configuration,
           environment: Environment,
@@ -325,6 +325,9 @@ class Env(val configuration: Configuration,
     )
   )
 
+  lazy val otoroshiVersion = "1.1.0-SNAPSHOT"
+  lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
+
   timeout(300.millis).andThen {
     case _ =>
       implicit val ec = internalActorSystem.dispatcher
@@ -372,6 +375,36 @@ class Env(val configuration: Configuration,
                       .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(ec, this)
               } yield ()
             }
+          }
+        }
+      }
+
+      if (isProd) {
+        internalActorSystem.scheduler.schedule(1.second, 24.hours) {
+          datastores.globalConfigDataStore.singleton()(internalActorSystem.dispatcher, this).map { globalConfig =>
+            val cleanVersion = otoroshiVersion.toLowerCase().replace(".", "").replace("v", "").replace("-snapshot", "").toInt
+            wsClient.url("https://updates.otoroshi.io/api/versions/latest")
+              .withRequestTimeout(10.seconds)
+              .withHttpHeaders(
+                "Otoroshi-Version" -> otoroshiVersion,
+                "Otoroshi-Id" -> globalConfig.otoroshiId
+              )
+              .get().map { response =>
+              val body = response.json.as[JsObject]
+
+              val latestVersion = (body \ "version_raw").as[String]
+              val latestVersionClean = (body \ "version_number").as[Int]
+              latestVersionHolder.set(body ++ Json.obj(
+                "current_version_raw" -> otoroshiVersion,
+                "current_version_number" -> cleanVersion,
+                "outdated" -> (latestVersionClean > cleanVersion)
+              ))
+              if (latestVersionClean > cleanVersion) {
+                logger.warn(s"A new version of Otoroshi ($latestVersion, your version is $otoroshiVersion) is available. You can download it on https://maif.github.io/otoroshi/ or at https://github.com/MAIF/otoroshi/releases/tag/$latestVersion")
+              }
+            }
+          }.andThen {
+            case Failure(e) => e.printStackTrace()
           }
         }
       }

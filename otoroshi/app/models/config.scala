@@ -5,7 +5,7 @@ import events._
 import play.api.Logger
 import play.api.libs.json._
 import storage.BasicStore
-import security.Auth0Config
+import security.{Auth0Config, IdGenerator}
 import utils.CleverCloudClient
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
 
@@ -62,7 +62,8 @@ case class GlobalConfig(
     statsdConfig: Option[StatsdConfig] = None,
     maxWebhookSize: Int = 100,
     middleFingers: Boolean = false,
-    maxLogsSize: Int = 10000
+    maxLogsSize: Int = 10000,
+    otoroshiId: String = IdGenerator.uuid
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -180,7 +181,8 @@ object GlobalConfig {
         "cleverSettings"          -> cleverSettings,
         "maxWebhookSize"          -> o.maxWebhookSize,
         "middleFingers"           -> o.middleFingers,
-        "maxLogsSize"             -> o.maxLogsSize
+        "maxLogsSize"             -> o.maxLogsSize,
+        "otoroshiId"              -> o.otoroshiId
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -193,6 +195,7 @@ object GlobalConfig {
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),
           maxHttp10ResponseSize = (json \ "maxHttp10ResponseSize").asOpt[Long].getOrElse(4 * (1024 * 1024)),
           useCircuitBreakers = (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
+          otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(IdGenerator.uuid),
           apiReadOnly = (json \ "apiReadOnly").asOpt[Boolean].getOrElse(false),
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
           ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](IpFiltering.format).getOrElse(IpFiltering()),

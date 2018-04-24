@@ -136,7 +136,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "redirectToDev"      -> env.redirectToDev,
             "displayPrivateApps" -> config.privateAppsAuth0Config.isDefined,
             "clientIdHeader"     -> env.Headers.OtoroshiClientId,
-            "clientSecretHeader" -> env.Headers.OtoroshiClientSecret
+            "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
+            "version"            -> env.latestVersionHolder.get()
           )
         )
       }

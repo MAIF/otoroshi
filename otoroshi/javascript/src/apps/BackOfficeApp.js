@@ -27,6 +27,7 @@ import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
+import { UpdateOtoroshiVersion } from '../components/UpdateOtoroshiVersion';
 import { DefaultSidebar } from '../components/DefaultSidebar';
 import { DynamicSidebar } from '../components/DynamicSidebar';
 import { DynamicTitle } from '../components/DynamicTitle';
@@ -101,7 +102,13 @@ class BackOfficeAppContainer extends Component {
     return (
       <div>
         <ReloadNewVersion />
-        <WithEnv>{env => <TopBar {...this.props} changePassword={env.changePassword} />}</WithEnv>
+        <WithEnv>{env => {
+          return [
+            <UpdateOtoroshiVersion env={env} />,
+            <TopBar {...this.props} changePassword={env.changePassword} />
+          ];
+        }}</WithEnv>
+        {/*<WithEnv>{env => <TopBar {...this.props} changePassword={env.changePassword} />}</WithEnv>*/}
         <div className="container-fluid">
           <div className="row">
             <div className="col-sm-2 sidebar" id="sidebar">
