@@ -347,9 +347,9 @@ export class ServiceApiKeysPage extends Component {
     'throttlingQuota',
     'dailyQuota',
     'monthlyQuota',
-    'resetQuotas',
     '>>>Quotas consumption',
-    'remainingQuotas'
+    'remainingQuotas',
+    'resetQuotas',
   ];
 
   sidebarContent(name) {
