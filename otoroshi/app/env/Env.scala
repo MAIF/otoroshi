@@ -325,7 +325,7 @@ class Env(val configuration: Configuration,
     )
   )
 
-  lazy val otoroshiVersion = "1.1.0-SNAPSHOT"
+  lazy val otoroshiVersion = "1.1.2-SNAPSHOT"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
 
   timeout(300.millis).andThen {
