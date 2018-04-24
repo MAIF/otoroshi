@@ -150,7 +150,7 @@ class DailyRemainingQuotas extends Component {
     return [
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Consumed daily call
+          Consumed daily calls
           <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The number of calls consumed today" />
         </label>
         <div className="col-sm-10">
@@ -162,7 +162,7 @@ class DailyRemainingQuotas extends Component {
       </div>,
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Remaining daily call
+          Remaining daily calls
           <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The remaining number of calls for today" />
         </label>
         <div className="col-sm-10">
@@ -174,7 +174,7 @@ class DailyRemainingQuotas extends Component {
       </div>,
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Consumed monthly call
+          Consumed monthly calls
           <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The number of calls consumed this month" />
         </label>
         <div className="col-sm-10">
@@ -186,7 +186,7 @@ class DailyRemainingQuotas extends Component {
       </div>,
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Remaining monthly call
+          Remaining monthly calls
           <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The remaining number of calls for this month" />
         </label>
         <div className="col-sm-10">
