@@ -72,6 +72,33 @@ const ResetSecret = ({ changeValue }) => (
   </div>
 );
 
+class ResetQuotas extends Component {
+
+  resetQuotas = (e) => {
+    e.preventDefault();
+    BackOfficeServices.resetRemainingQuotas(this.props.rawValue.authorizedGroup, this.props.rawValue.clientId).then(() => {
+      window.location.reload();
+    });
+  };
+  
+  render() {
+    console.log(this.props)
+    return (
+      <div className="form-group">
+        <label className="col-sm-2 control-label" />
+        <div className="col-sm-10">
+          <button
+            type="button"
+            className="btn btn-danger btn-xs"
+            onClick={this.resetQuotas}>
+            <i className="glyphicon glyphicon-refresh" /> Reset quotas
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
 class CopyCredentials extends Component {
   render() {
     const props = this.props;
@@ -95,8 +122,92 @@ class CopyCredentials extends Component {
   }
 }
 
+class DailyRemainingQuotas extends Component {
+
+  state = {
+    quotas: null
+  };
+
+  componentDidMount() {
+    BackOfficeServices.fetchRemainingQuotas(this.props.rawValue.authorizedGroup, this.props.rawValue.clientId).then(quotas => {
+      console.log(quotas);
+      this.setState({ quotas });
+    });
+  }
+
+  render() {
+    const quotas = this.state.quotas || {
+      authorizedCallsPerSec: 0,
+      currentCallsPerSec: 0,
+      remainingCallsPerSec: 0,
+      authorizedCallsPerDay: 0,
+      currentCallsPerDay: 0,
+      remainingCallsPerDay: 0,
+      authorizedCallsPerMonth: 0,
+      currentCallsPerMonth: 0,
+      remainingCallsPerMonth: 0
+    };
+    return [
+      <div className="form-group">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+          Consumed daily call
+          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The number of calls consumed today" />
+        </label>
+        <div className="col-sm-10">
+          <div className="input-group">
+            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.currentCallsPerDay} />
+            <div className="input-group-addon">calls consumed today</div>
+          </div>
+        </div>
+      </div>,
+      <div className="form-group">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+          Remaining daily call
+          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The remaining number of calls for today" />
+        </label>
+        <div className="col-sm-10">
+          <div className="input-group">
+            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.remainingCallsPerDay} />
+            <div className="input-group-addon">calls remaining for today</div>
+          </div>
+        </div>
+      </div>,
+      <div className="form-group">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+          Consumed monthly call
+          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The number of calls consumed this month" />
+        </label>
+        <div className="col-sm-10">
+          <div className="input-group">
+            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.currentCallsPerMonth} />
+            <div className="input-group-addon">calls consumed this month</div>
+          </div>
+        </div>
+      </div>,
+      <div className="form-group">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+          Remaining monthly call
+          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The remaining number of calls for this month" />
+        </label>
+        <div className="col-sm-10">
+          <div className="input-group">
+            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.remainingCallsPerMonth} />
+            <div className="input-group-addon">calls remaining for this month</div>
+          </div>
+        </div>
+      </div>
+    ];
+  }
+}
+
 export class ServiceApiKeysPage extends Component {
   formSchema = {
+    remainingQuotas: {
+      type: DailyRemainingQuotas,
+      props: {
+        label: '',
+      },
+    },
     copyCredentials: {
       type: CopyCredentials,
       props: {
@@ -105,6 +216,12 @@ export class ServiceApiKeysPage extends Component {
     },
     resetSecret: {
       type: ResetSecret,
+      props: {
+        label: '',
+      },
+    },
+    resetQuotas: {
+      type: ResetQuotas,
       props: {
         label: '',
       },
@@ -230,6 +347,9 @@ export class ServiceApiKeysPage extends Component {
     'throttlingQuota',
     'dailyQuota',
     'monthlyQuota',
+    'resetQuotas',
+    '>>>Consumed',
+    'remainingQuotas'
   ];
 
   sidebarContent(name) {

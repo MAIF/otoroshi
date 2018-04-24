@@ -659,6 +659,17 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         PathParam("clientId", "the api key id")
       ),
       goodResponse = GoodResponse(Ref("Quotas"))
+    ),
+    "delete" -> Operation(
+      tag = "apikeys",
+      summary = "Reset the quota state of an api key",
+      description = "Reset the quota state of an api key",
+      operationId = "resetApiKeyQuotas",
+      parameters = Json.arr(
+        PathParam("serviceId", "The api key service id"),
+        PathParam("clientId", "the api key id")
+      ),
+      goodResponse = GoodResponse(Ref("Quotas"))
     )
   )
 
@@ -668,6 +679,17 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Get the quota state of an api key",
       description = "Get the quota state of an api key",
       operationId = "apiKeyFromGroupQuotas",
+      parameters = Json.arr(
+        PathParam("groupId", "The api key group id"),
+        PathParam("clientId", "the api key id")
+      ),
+      goodResponse = GoodResponse(Ref("Quotas"))
+    ),
+    "delete" -> Operation(
+      tag = "apikeys",
+      summary = "Reset the quota state of an api key",
+      description = "Reset the quota state of an api key",
+      operationId = "resetApiKeyFromGroupQuotas",
       parameters = Json.arr(
         PathParam("groupId", "The api key group id"),
         PathParam("clientId", "the api key id")

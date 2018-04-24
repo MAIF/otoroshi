@@ -87,9 +87,19 @@ export function allServices(env, group) {
   }).then(r => r.json());
 }
 
-export function fetchRemainingQuotas(serviceId, clientId) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${clientId}/quotas`, {
+export function fetchRemainingQuotas(groupId, clientId) {
+  return fetch(`/bo/api/proxy/api/groups/${groupId}/apikeys/${clientId}/quotas`, {
     method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function resetRemainingQuotas(groupId, clientId) {
+  return fetch(`/bo/api/proxy/api/groups/${groupId}/apikeys/${clientId}/quotas`, {
+    method: 'DELETE',
     credentials: 'include',
     headers: {
       Accept: 'application/json',
