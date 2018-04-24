@@ -327,6 +327,7 @@ class Env(val configuration: Configuration,
 
   lazy val otoroshiVersion = "1.1.2-SNAPSHOT"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
+  lazy val checkForUpdates = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 
   timeout(300.millis).andThen {
     case _ =>
@@ -379,7 +380,7 @@ class Env(val configuration: Configuration,
         }
       }
 
-      if (isProd) {
+      if (isProd && checkForUpdates) {
         internalActorSystem.scheduler.schedule(1.second, 24.hours) {
           datastores.globalConfigDataStore.singleton()(internalActorSystem.dispatcher, this).map { globalConfig =>
             val cleanVersion = otoroshiVersion.toLowerCase().replace(".", "").replace("v", "").replace("-snapshot", "").toInt
