@@ -348,7 +348,7 @@ export class ServiceApiKeysPage extends Component {
     'dailyQuota',
     'monthlyQuota',
     'resetQuotas',
-    '>>>Consumed',
+    '>>>Quotas consumption',
     'remainingQuotas'
   ];
 
