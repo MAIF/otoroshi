@@ -2491,6 +2491,35 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
     }
   }
 
+  def resetApiKeyQuotas(serviceId: String, clientId: String) = ApiAction.async { ctx =>
+    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+      case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+      case Some(desc) =>
+        env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+          case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
+          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+            NotFound(
+              Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
+            ).asFuture
+          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
+            Audit.send(
+              AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                Some(ctx.apiKey),
+                ctx.user,
+                "RESET_SERVICE_APIKEY_QUOTAS",
+                s"User reset an apikey quotas for a service descriptor",
+                ctx.from,
+                Json.obj("serviceId" -> serviceId, "clientId" -> clientId)
+              )
+            )
+            env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
+          }
+        }
+    }
+  }
+
   def apiKeyFromGroupQuotas(groupId: String, clientId: String) = ApiAction.async { ctx =>
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Group with id: '$groupId' not found")).asFuture
@@ -2513,6 +2542,33 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
               )
             )
             apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
+          }
+        }
+    }
+  }
+
+  def resetApiKeyFromGroupQuotas(groupId: String, clientId: String) = ApiAction.async { ctx =>
+    env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
+      case None => NotFound(Json.obj("error" -> s"Group with id: '$groupId' not found")).asFuture
+      case Some(group) =>
+        env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+          case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
+          case Some(apiKey) if apiKey.authorizedGroup != group.id =>
+            NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
+          case Some(apiKey) if apiKey.authorizedGroup == group.id => {
+            Audit.send(
+              AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                Some(ctx.apiKey),
+                ctx.user,
+                "RESET_SERVICE_APIKEY_QUOTAS",
+                s"User accessed an apikey quotas from a service descriptor",
+                ctx.from,
+                Json.obj("groupId" -> groupId, "clientId" -> clientId)
+              )
+            )
+            env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
           }
         }
     }

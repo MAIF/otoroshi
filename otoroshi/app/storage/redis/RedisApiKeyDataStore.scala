@@ -83,6 +83,38 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
         remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
       )
 
+  override def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
+    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
+    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
+    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+    for {
+      _ <- redisCli.set(totalCallsKey(apiKey.clientId), "0")
+      _ <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith {
+        case _ => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
+      }
+      _ <- redisCli.set(dailyQuotaKey(apiKey.clientId), "0")
+      _ <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
+        case _ => redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
+      }
+      _ <- redisCli.set(monthlyQuotaKey(apiKey.clientId), "0")
+      _ <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
+        case _ => redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
+      }
+    } yield
+      RemainingQuotas(
+        authorizedCallsPerSec = apiKey.throttlingQuota,
+        currentCallsPerSec = (0L / env.throttlingWindow).toInt,
+        remainingCallsPerSec = apiKey.throttlingQuota - (0L / env.throttlingWindow).toInt,
+        authorizedCallsPerDay = apiKey.dailyQuota,
+        currentCallsPerDay = 0,
+        remainingCallsPerDay = apiKey.dailyQuota - 0,
+        authorizedCallsPerMonth = apiKey.monthlyQuota,
+        currentCallsPerMonth = 0,
+        remainingCallsPerMonth = apiKey.monthlyQuota - 0
+      )
+  }
+
   override def updateQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis

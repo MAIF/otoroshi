@@ -78,6 +78,7 @@ GET     /api/new/group                                        controllers.ApiCon
 
 ## ApiKeys
 GET     /api/services/:serviceId/apikeys/:clientId/quotas     controllers.ApiController.apiKeyQuotas(serviceId, clientId)
+DELETE  /api/services/:serviceId/apikeys/:clientId/quotas     controllers.ApiController.resetApiKeyQuotas(serviceId, clientId)
 GET     /api/services/:serviceId/apikeys/:clientId/group      controllers.ApiController.apiKeyGroup(serviceId, clientId)
 PUT     /api/services/:serviceId/apikeys/:clientId/group      controllers.ApiController.updateApiKeyGroup(serviceId, clientId)
 GET     /api/services/:serviceId/apikeys/:clientId            controllers.ApiController.apiKey(serviceId, clientId)
@@ -88,6 +89,7 @@ POST    /api/services/:serviceId/apikeys                      controllers.ApiCon
 GET     /api/services/:serviceId/apikeys                      controllers.ApiController.apiKeys(serviceId)
 
 GET     /api/groups/:groupId/apikeys/:clientId/quotas         controllers.ApiController.apiKeyFromGroupQuotas(groupId, clientId)
+DELETE  /api/groups/:groupId/apikeys/:clientId/quotas         controllers.ApiController.resetApiKeyFromGroupQuotas(groupId, clientId)
 GET     /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.apiKeyFromGroup(groupId, clientId)
 PUT     /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.updateApiKeyFromGroup(groupId, clientId)
 PATCH   /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.patchApiKeyFromGroup(groupId, clientId)

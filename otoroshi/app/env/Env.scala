@@ -381,7 +381,7 @@ class Env(val configuration: Configuration,
       }
 
       if (isProd && checkForUpdates) {
-        internalActorSystem.scheduler.schedule(1.second, 24.hours) {
+        internalActorSystem.scheduler.schedule(5.second, 24.hours) {
           datastores.globalConfigDataStore.singleton()(internalActorSystem.dispatcher, this).map { globalConfig =>
             val cleanVersion = otoroshiVersion.toLowerCase().replace(".", "").replace("v", "").replace("-snapshot", "").toInt
             wsClient.url("https://updates.otoroshi.io/api/versions/latest")
