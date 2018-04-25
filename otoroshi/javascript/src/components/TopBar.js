@@ -173,6 +173,7 @@ export class TopBar extends Component {
       <nav className="navbar navbar-inverse navbar-fixed-top">
         <div className="navbar-header col-md-2">
           <button
+            id="toggle-navigation"
             type="button"
             className="navbar-toggle collapsed"
             data-toggle="collapse"
@@ -185,6 +186,7 @@ export class TopBar extends Component {
             <span className="icon-bar" />
           </button>
           <button
+            id="toggle-sidebar"
             type="button"
             className="navbar-toggle collapsed menu"
             data-toggle="collapse"
