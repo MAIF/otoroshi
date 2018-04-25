@@ -38,7 +38,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def SimpleObjectType =
     Json.obj("type"                 -> "object",
-             "required"             -> Json.arr(),
+             //"required"             -> Json.arr(),
              "example"              -> Json.obj("key" -> "value"),
              "additionalProperties" -> Json.obj("type" -> "string"))
   def SimpleStringType   = Json.obj("type" -> "string", "example"  -> "a string value")
@@ -137,10 +137,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       ),
       "security" -> Json.arr(
         Json.obj(
-          "otoroshi_auth" -> Json.arr(
-            "write:admins",
-            "read:admins"
-          )
+          "otoroshi_auth" -> Json.arr()
         )
       )
     )
@@ -265,7 +262,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "subdomain"                  -> SimpleStringType ~~> "The subdomain on which the service is available",
       "targets"                    -> ArrayOf(Ref("Target")) ~~> "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
       "root"                       -> SimpleStringType ~~> "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar",
-      "matchingRoot"               -> OptionalStringType ~~> "The root path on which the service is available",
+      "matchingRoot"               -> SimpleStringType ~~> "The root path on which the service is available",
       "localHost"                  -> SimpleStringType ~~> "The host used localy, mainly localhost:xxxx",
       "localScheme"                -> SimpleStringType ~~> "The scheme used localy, mainly http",
       "redirectToLocal"            -> SimpleBooleanType ~~> "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests",
@@ -533,15 +530,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
           "enum" -> Json.arr("add", "replace", "remove", "copy", "test")
         ),
         "path" -> SimpleStringType,
-        "value" -> Json.obj(
-          "schemas" -> Json.obj(
-            "AnyValue" -> Json.obj(
-              "nullable"    -> true,
-              "description" -> "Can be any value - string, number, boolean, array or object."
-            )
-          ),
-          "required" -> false
-        )
+        "value" -> Json.obj()
       )
     )
   )
@@ -1043,7 +1032,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       tag = "configuration",
       summary = "Update the global configuration",
       description = "Update the global configuration",
-      operationId = "patchGlobalConfig",
+      operationId = "putGlobalConfig",
       parameters = Json.arr(
         BodyParam("The updated global config", Ref("GlobalConfig"))
       ),
@@ -1230,12 +1219,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
             summary = "Get live feed of otoroshi stats",
             description = "Get live feed of global otoroshi stats (global) or for a service {id}",
             operationId = "serviceLiveStats",
+            produces = Json.arr("application/json", "text/event-stream"),
             parameters = Json.arr(
               PathParam("id", "The service id or global for otoroshi stats")
             ),
             goodResponse = Json.obj(
               "description" -> "Successful operation",
-              "contentType" -> "text/event-stream",
               "schema"      -> Ref("Stats")
             )
           )

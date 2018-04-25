@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "1.1.1",
+    "version" : "1.1.2",
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
     "contact" : {
@@ -42,7 +42,7 @@
     "description" : "Find out more about Otoroshi",
     "url" : "https://maif.github.io/otoroshi/"
   },
-  "host" : "otoroshi-api.foo.bar",
+  "host" : "otoroshi-api.dev.opunmaif.fr",
   "basePath" : "/api",
   "schemes" : [ "http" ],
   "paths" : {
@@ -73,7 +73,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -104,7 +104,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -135,7 +135,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -166,7 +166,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -206,7 +206,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -249,7 +249,48 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "apikeys" ],
+        "summary" : "Reset the quota state of an api key",
+        "description" : "Reset the quota state of an api key",
+        "operationId" : "resetApiKeyQuotas",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "serviceId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The api key service id"
+        }, {
+          "in" : "path",
+          "name" : "clientId",
+          "required" : true,
+          "type" : "string",
+          "description" : "the api key id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Quotas"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -292,7 +333,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -335,7 +376,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "put" : {
@@ -384,7 +425,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "patch" : {
@@ -433,7 +474,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "delete" : {
@@ -474,7 +515,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -514,7 +555,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "post" : {
@@ -557,7 +598,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -600,7 +641,48 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "apikeys" ],
+        "summary" : "Reset the quota state of an api key",
+        "description" : "Reset the quota state of an api key",
+        "operationId" : "resetApiKeyFromGroupQuotas",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "groupId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The api key group id"
+        }, {
+          "in" : "path",
+          "name" : "clientId",
+          "required" : true,
+          "type" : "string",
+          "description" : "the api key id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Quotas"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -643,7 +725,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "put" : {
@@ -692,7 +774,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "patch" : {
@@ -741,7 +823,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "delete" : {
@@ -782,7 +864,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -822,7 +904,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "post" : {
@@ -865,7 +947,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -899,7 +981,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -936,7 +1018,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "put" : {
@@ -979,7 +1061,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "post" : {
@@ -1022,7 +1104,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "delete" : {
@@ -1057,7 +1139,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1097,7 +1179,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "post" : {
@@ -1143,7 +1225,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "patch" : {
@@ -1189,7 +1271,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "delete" : {
@@ -1227,7 +1309,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1264,7 +1346,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "put" : {
@@ -1307,7 +1389,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "patch" : {
@@ -1350,7 +1432,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "delete" : {
@@ -1385,7 +1467,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1419,7 +1501,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "post" : {
@@ -1456,7 +1538,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1496,7 +1578,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1533,7 +1615,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "put" : {
@@ -1576,7 +1658,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "patch" : {
@@ -1619,7 +1701,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "delete" : {
@@ -1654,7 +1736,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1688,7 +1770,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "post" : {
@@ -1725,7 +1807,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1736,7 +1818,7 @@
         "summary" : "Get live feed of otoroshi stats",
         "description" : "Get live feed of global otoroshi stats (global) or for a service {id}",
         "operationId" : "serviceLiveStats",
-        "produces" : [ "application/json" ],
+        "produces" : [ "application/json", "text/event-stream" ],
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -1756,14 +1838,13 @@
           },
           "200" : {
             "description" : "Successful operation",
-            "contentType" : "text/event-stream",
             "schema" : {
               "$ref" : "#/definitions/Stats"
             }
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1794,7 +1875,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1825,7 +1906,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "put" : {
@@ -1833,7 +1914,7 @@
         "tags" : [ "configuration" ],
         "summary" : "Update the global configuration",
         "description" : "Update the global configuration",
-        "operationId" : "patchGlobalConfig",
+        "operationId" : "putGlobalConfig",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -1862,7 +1943,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "patch" : {
@@ -1899,7 +1980,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -1930,7 +2011,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       },
       "post" : {
@@ -1967,7 +2048,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     },
@@ -2006,7 +2087,7 @@
           }
         },
         "security" : [ {
-          "otoroshi_auth" : [ "write:admins", "read:admins" ]
+          "otoroshi_auth" : [ ]
         } ]
       }
     }
@@ -2067,7 +2148,6 @@
         },
         "metadata" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
@@ -2278,7 +2358,6 @@
         },
         "messages" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
@@ -2513,7 +2592,6 @@
         },
         "appConfig" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
@@ -2552,7 +2630,6 @@
               },
               "registration" : {
                 "type" : "object",
-                "required" : [ ],
                 "example" : {
                   "key" : "value"
                 },
@@ -2675,7 +2752,6 @@
               },
               "metadata" : {
                 "type" : "object",
-                "required" : [ ],
                 "example" : {
                   "key" : "value"
                 },
@@ -2740,7 +2816,6 @@
               },
               "matchingRoot" : {
                 "type" : "string",
-                "required" : false,
                 "example" : "a string value",
                 "description" : "The root path on which the service is available"
               },
@@ -2838,7 +2913,6 @@
               },
               "metadata" : {
                 "type" : "object",
-                "required" : [ ],
                 "example" : {
                   "key" : "value"
                 },
@@ -2849,7 +2923,6 @@
               },
               "matchingHeaders" : {
                 "type" : "object",
-                "required" : [ ],
                 "example" : {
                   "key" : "value"
                 },
@@ -2860,7 +2933,6 @@
               },
               "additionalHeaders" : {
                 "type" : "object",
-                "required" : [ ],
                 "example" : {
                   "key" : "value"
                 },
@@ -2907,7 +2979,6 @@
               },
               "messages" : {
                 "type" : "object",
-                "required" : [ ],
                 "example" : {
                   "key" : "value"
                 },
@@ -3004,15 +3075,7 @@
             "type" : "string",
             "example" : "a string value"
           },
-          "value" : {
-            "schemas" : {
-              "AnyValue" : {
-                "nullable" : true,
-                "description" : "Can be any value - string, number, boolean, array or object."
-              }
-            },
-            "required" : false
-          }
+          "value" : { }
         }
       }
     },
@@ -3127,7 +3190,6 @@
         },
         "matchingRoot" : {
           "type" : "string",
-          "required" : false,
           "example" : "a string value",
           "description" : "The root path on which the service is available"
         },
@@ -3225,7 +3287,6 @@
         },
         "metadata" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
@@ -3236,7 +3297,6 @@
         },
         "matchingHeaders" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
@@ -3247,7 +3307,6 @@
         },
         "additionalHeaders" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
@@ -3416,7 +3475,6 @@
         },
         "registration" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
@@ -3440,7 +3498,6 @@
         },
         "headers" : {
           "type" : "object",
-          "required" : [ ],
           "example" : {
             "key" : "value"
           },
