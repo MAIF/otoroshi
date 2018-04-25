@@ -40,7 +40,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   lazy val logger = Logger("otoroshi-backoffice-api")
 
-  lazy val commitVersion = Option(System.getenv("COMMIT_ID")).getOrElse("--")
+  lazy val commitVersion = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
 
   val sourceBodyParser = BodyParser("BackOfficeApi BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
