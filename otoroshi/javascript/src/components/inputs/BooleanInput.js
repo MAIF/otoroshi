@@ -53,3 +53,31 @@ export class BooleanInput extends Component {
     );
   }
 }
+
+export class SimpleBooleanInput extends Component {
+  toggleOff = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    console.log('off')
+    this.props.onChange(false);
+  };
+
+  toggleOn = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    console.log('on')
+    this.props.onChange(true);
+  };
+
+  toggle = value => {
+    this.props.onChange(value);
+  };
+
+  render() {
+    const value = !!this.props.value;
+    return (
+      <div>
+        {value && <OnSwitch onChange={this.toggleOff} />}
+        {!value && <OffSwitch onChange={this.toggleOn} />}
+      </div>
+    );
+  }
+}

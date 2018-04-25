@@ -6,6 +6,10 @@ import { createTooltip } from '../../tooltips';
 
 import ReactTable from 'react-table';
 
+function urlTo(url) {
+  window.history.replaceState({}, '', url);
+}
+
 function LoadingComponent(props) {
   return (
     <div
@@ -132,14 +136,14 @@ export class Table extends Component {
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showAddForm: false });
-    window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
+    urlTo(`/bo/dashboard/${this.props.selfUrl}`);
   };
 
   showAddForm = e => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
     this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`);
-    window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}/add`);
+    urlTo(`/bo/dashboard/${this.props.selfUrl}/add`);
     this.setState({ currentItem: this.props.defaultValue(), showAddForm: true });
   };
 
@@ -148,15 +152,13 @@ export class Table extends Component {
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showEditForm: false });
-    window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
+    urlTo(`/bo/dashboard/${this.props.selfUrl}`);
   };
 
   showEditForm = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
-    window.history.pushState(
-      {},
-      '',
+    urlTo(
       `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`
     );
     this.props.parentProps.setTitle(`Update a ${this.props.itemName}`);
@@ -172,7 +174,7 @@ export class Table extends Component {
           return this.props.fetchItems();
         })
         .then(items => {
-          window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
+          urlTo(`/bo/dashboard/${this.props.selfUrl}`);
           this.setState({ items, showEditForm: false, showAddForm: false });
         });
     }
@@ -186,7 +188,7 @@ export class Table extends Component {
         return this.props.fetchItems();
       })
       .then(items => {
-        window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}`);
+        urlTo(`/bo/dashboard/${this.props.selfUrl}`);
         this.setState({ items, showAddForm: false });
       });
   };
@@ -196,7 +198,7 @@ export class Table extends Component {
     this.props
       .createItem(this.state.currentItem)
       .then(() => {
-        window.history.pushState({}, '', `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(this.state.currentItem)}`);
+        urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(this.state.currentItem)}`);
         this.setState({ showAddForm: false, showEditForm: true });
       });
   };

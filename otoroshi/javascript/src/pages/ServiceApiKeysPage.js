@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, SelectInput } from '../components/inputs';
+import { Table, SelectInput, SimpleBooleanInput } from '../components/inputs';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { WithEnv } from '../components/WithEnv';
 import faker from 'faker';
@@ -91,7 +91,7 @@ class ResetQuotas extends Component {
             type="button"
             className="btn btn-danger btn-xs"
             onClick={this.resetQuotas}>
-            <i className="glyphicon glyphicon-refresh" /> Reset quotas
+            <i className="glyphicon glyphicon-refresh" /> Reset quotas consumption
           </button>
         </div>
       </div>
@@ -118,6 +118,21 @@ class CopyCredentials extends Component {
           </button>
         </div>
       </div>
+    );
+  }
+}
+
+class CopyFromLineItem extends Component {
+  render() {
+    const item = this.props.item;
+    return (
+      <button type="button" className="btn btn-sm btn-info" onClick={e => {
+        this.clipboard.select();
+        document.execCommand('Copy');
+      }}>
+        <i className="glyphicon glyphicon-copy" />
+        <input type="text" ref={r => this.clipboard = r} style={{ position: 'fixed', left: 0, top: -250 }} value={item.clientId + ':' + item.clientSecret} />
+      </button>
     );
   }
 }
@@ -229,17 +244,17 @@ export class ServiceApiKeysPage extends Component {
     clientId: {
       type: 'string',
       props: {
-        label: 'Client Id',
+        label: 'ApiKey Id',
         placeholder: 'The ApiKey id',
-        help: 'The client id is a unique random key that will represent this API key',
+        help: 'The id is a unique random key that will represent this API key',
       },
     },
     clientSecret: {
       type: 'string',
       props: {
-        label: 'Client Secret',
+        label: 'ApiKey Secret',
         placeholder: 'The ApiKey secret',
-        help: 'The client secret is a random key used to validate the API key',
+        help: 'The secret is a random key used to validate the API key',
       },
     },
     both: { type: Both, props: { label: 'Both' } },
@@ -248,7 +263,7 @@ export class ServiceApiKeysPage extends Component {
     clientName: {
       type: 'string',
       props: {
-        label: 'Client Name',
+        label: 'ApiKey Name',
         help: 'A name for the API key, used for debug purposes',
         placeholder: `The name of the client (ie. ${faker.name.firstName()} ${faker.name.lastName()}'s ApiKey)`,
       },
@@ -316,15 +331,24 @@ export class ServiceApiKeysPage extends Component {
       content: item => item.clientName,
     },
     {
-      title: 'Client Id',
+      title: 'ApiKey Id',
       content: item => item.clientId,
+    },
+    {
+      title: 'Credentials',
+      style: { textAlign: 'center', width: 90 },
+      notFilterable: true,
+      content: item => item.clientName,
+      cell: (v, item, table) => <CopyFromLineItem item={item} table={table} />,
     },
     {
       title: 'Active',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       content: item => item.enabled,
-      cell: (v, item) => (item.enabled ? <span className="glyphicon glyphicon-ok-sign" /> : ''),
+      cell: (v, item, table) => <SimpleBooleanInput value={item.enabled} onChange={value => {
+        BackOfficeServices.updateApiKey(this.props.params.serviceId, { ...item, enabled: value }).then(() => table.update());
+      }} />,
     },
   ];
 
