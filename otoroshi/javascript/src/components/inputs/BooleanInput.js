@@ -57,13 +57,13 @@ export class BooleanInput extends Component {
 export class SimpleBooleanInput extends Component {
   toggleOff = e => {
     if (e && e.preventDefault) e.preventDefault();
-    console.log('off')
+    console.log('off');
     this.props.onChange(false);
   };
 
   toggleOn = e => {
     if (e && e.preventDefault) e.preventDefault();
-    console.log('on')
+    console.log('on');
     this.props.onChange(true);
   };
 

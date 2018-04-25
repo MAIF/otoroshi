@@ -102,12 +102,14 @@ class BackOfficeAppContainer extends Component {
     return (
       <div>
         <ReloadNewVersion />
-        <WithEnv>{env => {
-          return [
-            <UpdateOtoroshiVersion env={env} />,
-            <TopBar {...this.props} changePassword={env.changePassword} />
-          ];
-        }}</WithEnv>
+        <WithEnv>
+          {env => {
+            return [
+              <UpdateOtoroshiVersion env={env} />,
+              <TopBar {...this.props} changePassword={env.changePassword} />,
+            ];
+          }}
+        </WithEnv>
         {/*<WithEnv>{env => <TopBar {...this.props} changePassword={env.changePassword} />}</WithEnv>*/}
         <div className="container-fluid">
           <div className="row">

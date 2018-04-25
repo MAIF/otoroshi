@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
 
 export class UpdateOtoroshiVersion extends Component {
-
   render() {
     let show = false;
     let lastPresentation = localStorage.getItem('otoroshi_outdated_popup');
     if (lastPresentation) {
       lastPresentation = JSON.parse(lastPresentation);
-      if ((lastPresentation.closed_at + (24 * 60 * 60 * 1000)) < Date.now()) {
+      if (lastPresentation.closed_at + 24 * 60 * 60 * 1000 < Date.now()) {
         show = true;
       }
     } else {
@@ -17,21 +16,32 @@ export class UpdateOtoroshiVersion extends Component {
       return (
         <div className="newVersionPopup">
           A new version of Otoroshi is available ({this.props.env.version.version_raw})
-          <a className="btn btn-info btn-sm"
-             style={{ marginLeft: 5 }}
-             target="_blank"
-             onClick={e => {
-               localStorage.setItem('otoroshi_outdated_popup', JSON.stringify({ closed_at: Date.now() }));
-               this.forceUpdate();
-             }}
-             href={`https://github.com/MAIF/otoroshi/releases/tag/${this.props.env.version.version_raw}`}>Download</a>
+          <a
+            className="btn btn-info btn-sm"
+            style={{ marginLeft: 5 }}
+            target="_blank"
+            onClick={e => {
+              localStorage.setItem(
+                'otoroshi_outdated_popup',
+                JSON.stringify({ closed_at: Date.now() })
+              );
+              this.forceUpdate();
+            }}
+            href={`https://github.com/MAIF/otoroshi/releases/tag/${
+              this.props.env.version.version_raw
+            }`}>
+            Download
+          </a>
           <button
             type="button"
             className="btn btn-danger btn-sm"
             style={{ marginLeft: 5 }}
             onClick={e => {
               e.preventDefault();
-              localStorage.setItem('otoroshi_outdated_popup', JSON.stringify({ closed_at: Date.now() }));
+              localStorage.setItem(
+                'otoroshi_outdated_popup',
+                JSON.stringify({ closed_at: Date.now() })
+              );
               this.forceUpdate();
             }}>
             <i className="glyphicon glyphicon-remove" />

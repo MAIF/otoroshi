@@ -73,24 +73,23 @@ const ResetSecret = ({ changeValue }) => (
 );
 
 class ResetQuotas extends Component {
-
-  resetQuotas = (e) => {
+  resetQuotas = e => {
     e.preventDefault();
-    BackOfficeServices.resetRemainingQuotas(this.props.rawValue.authorizedGroup, this.props.rawValue.clientId).then(() => {
+    BackOfficeServices.resetRemainingQuotas(
+      this.props.rawValue.authorizedGroup,
+      this.props.rawValue.clientId
+    ).then(() => {
       window.location.reload();
     });
   };
-  
+
   render() {
-    console.log(this.props)
+    console.log(this.props);
     return (
       <div className="form-group">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
-          <button
-            type="button"
-            className="btn btn-danger btn-xs"
-            onClick={this.resetQuotas}>
+          <button type="button" className="btn btn-danger btn-xs" onClick={this.resetQuotas}>
             <i className="glyphicon glyphicon-refresh" /> Reset quotas consumption
           </button>
         </div>
@@ -106,7 +105,12 @@ class CopyCredentials extends Component {
       <div className="form-group">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
-          <input ref={r => this.clipboard = r} style={{ position: 'fixed', left: 0, top: -250 }} type="text" value={props.rawValue.clientId + ':' + props.rawValue.clientSecret} />
+          <input
+            ref={r => (this.clipboard = r)}
+            style={{ position: 'fixed', left: 0, top: -250 }}
+            type="text"
+            value={props.rawValue.clientId + ':' + props.rawValue.clientSecret}
+          />
           <button
             type="button"
             className="btn btn-success btn-xs"
@@ -126,25 +130,35 @@ class CopyFromLineItem extends Component {
   render() {
     const item = this.props.item;
     return (
-      <button type="button" className="btn btn-sm btn-info" onClick={e => {
-        this.clipboard.select();
-        document.execCommand('Copy');
-      }}>
+      <button
+        type="button"
+        className="btn btn-sm btn-info"
+        onClick={e => {
+          this.clipboard.select();
+          document.execCommand('Copy');
+        }}>
         <i className="glyphicon glyphicon-copy" />
-        <input type="text" ref={r => this.clipboard = r} style={{ position: 'fixed', left: 0, top: -250 }} value={item.clientId + ':' + item.clientSecret} />
+        <input
+          type="text"
+          ref={r => (this.clipboard = r)}
+          style={{ position: 'fixed', left: 0, top: -250 }}
+          value={item.clientId + ':' + item.clientSecret}
+        />
       </button>
     );
   }
 }
 
 class DailyRemainingQuotas extends Component {
-
   state = {
-    quotas: null
+    quotas: null,
   };
 
   componentDidMount() {
-    BackOfficeServices.fetchRemainingQuotas(this.props.rawValue.authorizedGroup, this.props.rawValue.clientId).then(quotas => {
+    BackOfficeServices.fetchRemainingQuotas(
+      this.props.rawValue.authorizedGroup,
+      this.props.rawValue.clientId
+    ).then(quotas => {
       console.log(quotas);
       this.setState({ quotas });
     });
@@ -160,17 +174,28 @@ class DailyRemainingQuotas extends Component {
       remainingCallsPerDay: 0,
       authorizedCallsPerMonth: 0,
       currentCallsPerMonth: 0,
-      remainingCallsPerMonth: 0
+      remainingCallsPerMonth: 0,
     };
     return [
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Consumed daily calls
-          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The number of calls consumed today" />
+          <i
+            className="fa fa-question-circle-o"
+            data-toggle="tooltip"
+            data-placement="top"
+            title=""
+            data-original-title="The number of calls consumed today"
+          />
         </label>
         <div className="col-sm-10">
           <div className="input-group">
-            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.currentCallsPerDay} />
+            <input
+              type="number"
+              className="form-control"
+              id="input-Throttling quota"
+              value={quotas.currentCallsPerDay}
+            />
             <div className="input-group-addon">calls consumed today</div>
           </div>
         </div>
@@ -178,11 +203,22 @@ class DailyRemainingQuotas extends Component {
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Remaining daily calls
-          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The remaining number of calls for today" />
+          <i
+            className="fa fa-question-circle-o"
+            data-toggle="tooltip"
+            data-placement="top"
+            title=""
+            data-original-title="The remaining number of calls for today"
+          />
         </label>
         <div className="col-sm-10">
           <div className="input-group">
-            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.remainingCallsPerDay} />
+            <input
+              type="number"
+              className="form-control"
+              id="input-Throttling quota"
+              value={quotas.remainingCallsPerDay}
+            />
             <div className="input-group-addon">calls remaining for today</div>
           </div>
         </div>
@@ -190,11 +226,22 @@ class DailyRemainingQuotas extends Component {
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Consumed monthly calls
-          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The number of calls consumed this month" />
+          <i
+            className="fa fa-question-circle-o"
+            data-toggle="tooltip"
+            data-placement="top"
+            title=""
+            data-original-title="The number of calls consumed this month"
+          />
         </label>
         <div className="col-sm-10">
           <div className="input-group">
-            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.currentCallsPerMonth} />
+            <input
+              type="number"
+              className="form-control"
+              id="input-Throttling quota"
+              value={quotas.currentCallsPerMonth}
+            />
             <div className="input-group-addon">calls consumed this month</div>
           </div>
         </div>
@@ -202,15 +249,26 @@ class DailyRemainingQuotas extends Component {
       <div className="form-group">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Remaining monthly calls
-          <i className="fa fa-question-circle-o" data-toggle="tooltip" data-placement="top" title="" data-original-title="The remaining number of calls for this month" />
+          <i
+            className="fa fa-question-circle-o"
+            data-toggle="tooltip"
+            data-placement="top"
+            title=""
+            data-original-title="The remaining number of calls for this month"
+          />
         </label>
         <div className="col-sm-10">
           <div className="input-group">
-            <input type="number" className="form-control" id="input-Throttling quota" value={quotas.remainingCallsPerMonth} />
+            <input
+              type="number"
+              className="form-control"
+              id="input-Throttling quota"
+              value={quotas.remainingCallsPerMonth}
+            />
             <div className="input-group-addon">calls remaining for this month</div>
           </div>
         </div>
-      </div>
+      </div>,
     ];
   }
 }
@@ -346,9 +404,17 @@ export class ServiceApiKeysPage extends Component {
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       content: item => item.enabled,
-      cell: (v, item, table) => <SimpleBooleanInput value={item.enabled} onChange={value => {
-        BackOfficeServices.updateApiKey(this.props.params.serviceId, { ...item, enabled: value }).then(() => table.update());
-      }} />,
+      cell: (v, item, table) => (
+        <SimpleBooleanInput
+          value={item.enabled}
+          onChange={value => {
+            BackOfficeServices.updateApiKey(this.props.params.serviceId, {
+              ...item,
+              enabled: value,
+            }).then(() => table.update());
+          }}
+        />
+      ),
     },
   ];
 

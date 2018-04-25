@@ -272,20 +272,24 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
         query
           .getServices()
           .map { services =>
-            services.sortWith {
-              case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined => a.matchingRoot.get.size > b.matchingRoot.get.size
-              case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined=> true
-              case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined=> true
-              case _ => false
-            }.filter { sr =>
-              val headersSeq        = query.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty)
-              val allHeadersMatched = sr.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty).map(t => headersSeq.contains(t)).forall(a => a)
-              val rootMatched = sr.matchingRoot match {
-                case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-                case None               => true
+            services
+              .sortWith {
+                case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
+                  a.matchingRoot.get.size > b.matchingRoot.get.size
+                case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined => true
+                case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined => true
+                case _                                                               => false
               }
-              allHeadersMatched && rootMatched
-            }
+              .filter { sr =>
+                val headersSeq = query.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty)
+                val allHeadersMatched =
+                  sr.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty).map(t => headersSeq.contains(t)).forall(a => a)
+                val rootMatched = sr.matchingRoot match {
+                  case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+                  case None               => true
+                }
+                allHeadersMatched && rootMatched
+              }
           }
       }
       case false => {
@@ -303,20 +307,24 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
             }
           }
           query.addServices(validDescriptors)
-          validDescriptors.sortWith {
-            case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined => a.matchingRoot.get.size > b.matchingRoot.get.size
-            case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined=> true
-            case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined=> true
-            case _ => false
-          }.filter { sr =>
-            val headersSeq        = query.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty)
-            val allHeadersMatched = sr.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty).map(t => headersSeq.contains(t)).forall(a => a)
-            val rootMatched = sr.matchingRoot match {
-              case Some(matchingRoot) => query.root.startsWith(matchingRoot) // matchingRoot == query.root
-              case None               => true
+          validDescriptors
+            .sortWith {
+              case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
+                a.matchingRoot.get.size > b.matchingRoot.get.size
+              case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined => true
+              case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined => true
+              case _                                                               => false
             }
-            allHeadersMatched && rootMatched
-          }
+            .filter { sr =>
+              val headersSeq = query.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty)
+              val allHeadersMatched =
+                sr.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty).map(t => headersSeq.contains(t)).forall(a => a)
+              val rootMatched = sr.matchingRoot match {
+                case Some(matchingRoot) => query.root.startsWith(matchingRoot) // matchingRoot == query.root
+                case None               => true
+              }
+              allHeadersMatched && rootMatched
+            }
         }
       }
     } map { filteredDescriptors =>

@@ -89,16 +89,16 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
     for {
       _ <- redisCli.set(totalCallsKey(apiKey.clientId), "0")
       _ <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-        case _ => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
-      }
+            case _ => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
+          }
       _ <- redisCli.set(dailyQuotaKey(apiKey.clientId), "0")
       _ <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-        case _ => redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
-      }
+            case _ => redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
+          }
       _ <- redisCli.set(monthlyQuotaKey(apiKey.clientId), "0")
       _ <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-        case _ => redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
-      }
+            case _ => redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
+          }
     } yield
       RemainingQuotas(
         authorizedCallsPerSec = apiKey.throttlingQuota,

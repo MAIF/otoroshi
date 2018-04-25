@@ -158,9 +158,7 @@ export class Table extends Component {
   showEditForm = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
-    urlTo(
-      `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`
-    );
+    urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
     this.props.parentProps.setTitle(`Update a ${this.props.itemName}`);
     this.setState({ currentItem: item, showEditForm: true });
   };
@@ -195,12 +193,12 @@ export class Table extends Component {
 
   createItemAndStay = e => {
     if (e && e.preventDefault) e.preventDefault();
-    this.props
-      .createItem(this.state.currentItem)
-      .then(() => {
-        urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(this.state.currentItem)}`);
-        this.setState({ showAddForm: false, showEditForm: true });
-      });
+    this.props.createItem(this.state.currentItem).then(() => {
+      urlTo(
+        `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(this.state.currentItem)}`
+      );
+      this.setState({ showAddForm: false, showEditForm: true });
+    });
   };
 
   updateItem = e => {
@@ -217,8 +215,7 @@ export class Table extends Component {
 
   updateItemAndStay = e => {
     if (e && e.preventDefault) e.preventDefault();
-    this.props
-      .updateItem(this.state.currentItem)
+    this.props.updateItem(this.state.currentItem);
   };
 
   render() {
@@ -379,9 +376,12 @@ export class Table extends Component {
               <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
                 Cancel
               </button>
-              {this.props.stayAfterSave && <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
-                <i className="glyphicon glyphicon-hdd" /> Create and stay on this {this.props.itemName}
-              </button>}
+              {this.props.stayAfterSave && (
+                <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
+                  <i className="glyphicon glyphicon-hdd" /> Create and stay on this{' '}
+                  {this.props.itemName}
+                </button>
+              )}
               <button type="button" className="btn btn-primary" onClick={this.createItem}>
                 <i className="glyphicon glyphicon-hdd" /> Create {this.props.itemName}
               </button>
@@ -406,11 +406,14 @@ export class Table extends Component {
                 <i className="glyphicon glyphicon-trash" /> Delete
               </button>
               <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
-                <i className="glyphicon glyphicon-remove" />  Cancel
+                <i className="glyphicon glyphicon-remove" /> Cancel
               </button>
-              {this.props.stayAfterSave && <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
-                <i className="glyphicon glyphicon-hdd" /> Update and stay on this {this.props.itemName}
-              </button>}
+              {this.props.stayAfterSave && (
+                <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
+                  <i className="glyphicon glyphicon-hdd" /> Update and stay on this{' '}
+                  {this.props.itemName}
+                </button>
+              )}
               <button type="button" className="btn btn-success" onClick={this.updateItem}>
                 <i className="glyphicon glyphicon-hdd" /> Update {this.props.itemName}
               </button>

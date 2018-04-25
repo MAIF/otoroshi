@@ -325,9 +325,9 @@ class Env(val configuration: Configuration,
     )
   )
 
-  lazy val otoroshiVersion = "1.1.2-SNAPSHOT"
+  lazy val otoroshiVersion     = "1.1.2-SNAPSHOT"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
-  lazy val checkForUpdates = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
+  lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 
   timeout(300.millis).andThen {
     case _ =>
@@ -382,31 +382,41 @@ class Env(val configuration: Configuration,
 
       if (isProd && checkForUpdates) {
         internalActorSystem.scheduler.schedule(5.second, 24.hours) {
-          datastores.globalConfigDataStore.singleton()(internalActorSystem.dispatcher, this).map { globalConfig =>
-            val cleanVersion = otoroshiVersion.toLowerCase().replace(".", "").replace("v", "").replace("-snapshot", "").toInt
-            wsClient.url("https://updates.otoroshi.io/api/versions/latest")
-              .withRequestTimeout(10.seconds)
-              .withHttpHeaders(
-                "Otoroshi-Version" -> otoroshiVersion,
-                "Otoroshi-Id" -> globalConfig.otoroshiId
-              )
-              .get().map { response =>
-              val body = response.json.as[JsObject]
+          datastores.globalConfigDataStore
+            .singleton()(internalActorSystem.dispatcher, this)
+            .map { globalConfig =>
+              val cleanVersion =
+                otoroshiVersion.toLowerCase().replace(".", "").replace("v", "").replace("-snapshot", "").toInt
+              wsClient
+                .url("https://updates.otoroshi.io/api/versions/latest")
+                .withRequestTimeout(10.seconds)
+                .withHttpHeaders(
+                  "Otoroshi-Version" -> otoroshiVersion,
+                  "Otoroshi-Id"      -> globalConfig.otoroshiId
+                )
+                .get()
+                .map { response =>
+                  val body = response.json.as[JsObject]
 
-              val latestVersion = (body \ "version_raw").as[String]
-              val latestVersionClean = (body \ "version_number").as[Int]
-              latestVersionHolder.set(body ++ Json.obj(
-                "current_version_raw" -> otoroshiVersion,
-                "current_version_number" -> cleanVersion,
-                "outdated" -> (latestVersionClean > cleanVersion)
-              ))
-              if (latestVersionClean > cleanVersion) {
-                logger.warn(s"A new version of Otoroshi ($latestVersion, your version is $otoroshiVersion) is available. You can download it on https://maif.github.io/otoroshi/ or at https://github.com/MAIF/otoroshi/releases/tag/$latestVersion")
-              }
+                  val latestVersion      = (body \ "version_raw").as[String]
+                  val latestVersionClean = (body \ "version_number").as[Int]
+                  latestVersionHolder.set(
+                    body ++ Json.obj(
+                      "current_version_raw"    -> otoroshiVersion,
+                      "current_version_number" -> cleanVersion,
+                      "outdated"               -> (latestVersionClean > cleanVersion)
+                    )
+                  )
+                  if (latestVersionClean > cleanVersion) {
+                    logger.warn(
+                      s"A new version of Otoroshi ($latestVersion, your version is $otoroshiVersion) is available. You can download it on https://maif.github.io/otoroshi/ or at https://github.com/MAIF/otoroshi/releases/tag/$latestVersion"
+                    )
+                  }
+                }
             }
-          }.andThen {
-            case Failure(e) => e.printStackTrace()
-          }
+            .andThen {
+              case Failure(e) => e.printStackTrace()
+            }
         }
       }
       ()
