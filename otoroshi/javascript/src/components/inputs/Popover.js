@@ -64,6 +64,7 @@ export class DefaultAdminPopover extends Component {
         setTimeout(() => {
           $('.popovercancel').on('click', e => {
             $(this.ref).popover('hide');
+            localStorage.setItem('otoroshi_default_admin_popup', JSON.stringify({ closed_at: Date.now() }));
           });
         }, 1000);
       });
@@ -71,6 +72,19 @@ export class DefaultAdminPopover extends Component {
   };
 
   render() {
+    let show = false;
+    let lastPresentation = localStorage.getItem('otoroshi_default_admin_popup');
+    if (lastPresentation) {
+      lastPresentation = JSON.parse(lastPresentation);
+      if (lastPresentation.closed_at + 24 * 60 * 60 * 1000 < Date.now()) {
+        show = true;
+      }
+    } else {
+      show = true;
+    }
+    if (!show) {
+      return null;
+    }
     return (
       <li>
         <a
