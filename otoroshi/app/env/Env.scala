@@ -386,7 +386,8 @@ class Env(val configuration: Configuration,
             .singleton()(internalActorSystem.dispatcher, this)
             .map { globalConfig =>
               var cleanVersion: Double = otoroshiVersion.toLowerCase() match {
-                case v if v.contains("-snapshot") => v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble - 0.5
+                case v if v.contains("-snapshot") =>
+                  v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble - 0.5
                 case v => v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble
               }
               wsClient
