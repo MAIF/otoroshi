@@ -385,8 +385,10 @@ class Env(val configuration: Configuration,
           datastores.globalConfigDataStore
             .singleton()(internalActorSystem.dispatcher, this)
             .map { globalConfig =>
-              val cleanVersion =
-                otoroshiVersion.toLowerCase().replace(".", "").replace("v", "").replace("-snapshot", "").toInt
+              var cleanVersion: Double = otoroshiVersion.toLowerCase() match {
+                case v if v.contains("-snapshot") => v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble - 0.5
+                case v => v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble
+              }
               wsClient
                 .url("https://updates.otoroshi.io/api/versions/latest")
                 .withRequestTimeout(10.seconds)
@@ -399,7 +401,7 @@ class Env(val configuration: Configuration,
                   val body = response.json.as[JsObject]
 
                   val latestVersion      = (body \ "version_raw").as[String]
-                  val latestVersionClean = (body \ "version_number").as[Int]
+                  val latestVersionClean = (body \ "version_number").as[Double]
                   latestVersionHolder.set(
                     body ++ Json.obj(
                       "current_version_raw"    -> otoroshiVersion,
