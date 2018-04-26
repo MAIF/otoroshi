@@ -37,9 +37,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   // Types definitions
 
   def SimpleObjectType =
-    Json.obj("type"                 -> "object",
+    Json.obj("type" -> "object",
              //"required"             -> Json.arr(),
-             "example"              -> Json.obj("key" -> "value"),
+             "example"              -> Json.obj("key"  -> "value"),
              "additionalProperties" -> Json.obj("type" -> "string"))
   def SimpleStringType   = Json.obj("type" -> "string", "example"  -> "a string value")
   def SimpleDoubleType   = Json.obj("type" -> "integer", "format"  -> "double", "example" -> 42.2)
@@ -529,7 +529,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
           "type" -> "string",
           "enum" -> Json.arr("add", "replace", "remove", "copy", "test")
         ),
-        "path" -> SimpleStringType,
+        "path"  -> SimpleStringType,
         "value" -> Json.obj()
       )
     )

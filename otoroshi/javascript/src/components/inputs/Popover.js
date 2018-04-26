@@ -64,7 +64,10 @@ export class DefaultAdminPopover extends Component {
         setTimeout(() => {
           $('.popovercancel').on('click', e => {
             $(this.ref).popover('hide');
-            localStorage.setItem('otoroshi_default_admin_popup', JSON.stringify({ closed_at: Date.now() }));
+            localStorage.setItem(
+              'otoroshi_default_admin_popup',
+              JSON.stringify({ closed_at: Date.now() })
+            );
           });
         }, 1000);
       });
