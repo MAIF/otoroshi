@@ -34,8 +34,11 @@ wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.1
 
 chmod +x otoroshicli
 
-# Run the Otoroshi server
+# Run the Otoroshi server on Java 8
 java -jar otoroshi.jar &
+
+# Run the Otoroshi server on Java 9 and 10
+java --add-modules java.xml.bind -jar otoroshi.jar &
 
 # Check if admin api works
 ./otoroshicli services all

@@ -12,8 +12,16 @@ cd otoroshi-vx.x.x
 
 ## From .jar file
 
+For Java 8
+
 ```sh
 java -jar otoroshi.jar
+```
+
+For Java 9 and 10
+
+```sh
+java --add-modules java.xml.bind -jar otoroshi.jar
 ```
 
 ## From docker
