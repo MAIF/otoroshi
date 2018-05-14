@@ -75,12 +75,13 @@ class OtoroshiSpec(name: String, configurationSpec: Configuration)
           localHost = s"127.0.0.1:$basicTestPort",
           forceHttps = false,
           sendOtoroshiHeadersBack = true,
-          enforceSecureCommunication = false
+          enforceSecureCommunication = false,
+          publicPatterns = Seq("/.*")
         ).toJson)).futureValue
 
       creationResponse.status mustBe 200
 
-      val basicTestResponse1 = ws.url(s"http://127.0.0.1:$basicTestPort/api").withHttpHeaders(
+      val basicTestResponse1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
         "Host" -> "basictest.foo.bar"
       ).get().futureValue
 
