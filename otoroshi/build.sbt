@@ -48,6 +48,8 @@ publishArtifact in (Compile, packageDoc) := false
 
 scalafmtVersion in ThisBuild := "1.2.0"
 
+parallelExecution in Test := false
+
 // assembly
 mainClass in assembly := Some("play.core.server.ProdServerStart")
 test in assembly := {}

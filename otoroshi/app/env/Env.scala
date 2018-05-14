@@ -249,7 +249,7 @@ class Env(val configuration: Configuration,
     override def newThread(r: Runnable): Thread = new Thread(r, s"$of-${counter.incrementAndGet()}")
   }
 
-  logger.warn(s"Listening commands on $adminApiExposedHost for env ${env}")
+  logger.warn(s"Listening commands on $adminApiExposedHost ($port) for env ${env}")
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
