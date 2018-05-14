@@ -34,6 +34,8 @@ import utils.future.Implicits._
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+import utils.RequestImplicits._
+
 class WebSocketHandler()(implicit env: Env) {
 
   type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
@@ -119,17 +121,17 @@ class WebSocketHandler()(implicit env: Env) {
       ServiceLocation(req.host, globalConfig) match {
         case None =>
           Errors
-            .craftResponseResult(s"Service not found for URL ${req.host}::${req.uri}",
+            .craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}",
                                  Results.NotFound,
                                  req,
                                  None,
                                  Some("errors.service.not.found"))
             .asLeft[WSFlow]
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
-          val uriParts = req.uri.split("/").toSeq
+          val uriParts = req.relativeUri.split("/").toSeq
 
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.uri, req.headers.toSimpleMap))
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
             .flatMap {
               case None =>
                 Errors
@@ -197,7 +199,7 @@ class WebSocketHandler()(implicit env: Env) {
                     if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                       env.circuitBeakersHolder
                         .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                        .callWS(desc, s"WS ${req.method} ${req.uri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                        .callWS(desc, s"WS ${req.method} ${req.relativeUri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                         case RequestTimeoutException =>
                           Errors
                             .craftResponseResult(
@@ -256,9 +258,9 @@ class WebSocketHandler()(implicit env: Env) {
                     logger.info("[WEBSOCKET] Call downstream !!!")
                     val snowflake   = env.snowflakeGenerator.nextIdStr()
                     val state       = IdGenerator.extendedToken(128)
-                    val rawUri      = req.uri.substring(1)
+                    val rawUri      = req.relativeUri.substring(1)
                     val uriParts    = rawUri.split("/").toSeq
-                    val uri: String = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
+                    val uri: String = descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
                     // val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty) descriptor.targets.size else 1)
                     // // Round robin loadbalancing is happening here !!!!!
                     // val target = descriptor.targets.apply(index.toInt)
@@ -307,7 +309,7 @@ class WebSocketHandler()(implicit env: Env) {
                       .getOrElse(Map.empty[String, String])).toSeq
 
                     // val requestHeader = ByteString(
-                    //   req.method + " " + req.uri + " HTTP/1.1\n" + headersIn
+                    //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
                     //     .map(h => s"${h._1}: ${h._2}")
                     //     .mkString("\n") + "\n"
                     // )
@@ -323,7 +325,7 @@ class WebSocketHandler()(implicit env: Env) {
                     promise.future.andThen {
                       case Success(resp) => {
                         val duration = System.currentTimeMillis() - start
-                        // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, http://${req.host}${req.uri} => $url, $from)")
+                        // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, http://${req.host}${req.relativeUri} => $url, $from)")
                         descriptor
                           .updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), 0, globalConfig)
                           .andThen {
@@ -357,12 +359,12 @@ class WebSocketHandler()(implicit env: Env) {
                                   }
                                   .getOrElse("http"),
                                 host = req.host,
-                                uri = req.uri
+                                uri = req.relativeUri
                               ),
                               target = Location(
                                 scheme = scheme,
                                 host = host,
-                                uri = req.uri
+                                uri = req.relativeUri
                               ),
                               duration = duration,
                               overhead = overhead,
@@ -623,7 +625,7 @@ class WebSocketHandler()(implicit env: Env) {
                       case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                       case None => {
                         val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
-                          .privateAppsLoginPage(Some(s"http://${req.host}${req.uri}"))
+                          .privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
                           .url
                         logger.trace("should redirect to " + redirectTo)
                         FastFuture.successful(Left(Results.Redirect(redirectTo)))
@@ -660,9 +662,9 @@ class WebSocketHandler()(implicit env: Env) {
                             }
                             .getOrElse("http")
                           logger.info(
-                            s"redirects prod service from ${protocol}://$theDomain${req.uri} to https://$theDomain${req.uri}"
+                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                           )
-                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.uri}")))
+                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}")))
                         } else if (env.isProd && !isSecured && desc.forceHttps) {
                           val theDomain = req.domain
                           val protocol = req.headers
@@ -675,9 +677,9 @@ class WebSocketHandler()(implicit env: Env) {
                             }
                             .getOrElse("http")
                           logger.info(
-                            s"redirects prod service from ${protocol}://$theDomain${req.uri} to https://$theDomain${req.uri}"
+                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                           )
-                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.uri}")))
+                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}")))
                         } else if (!within) {
                           // TODO : count as served req here !!!
                           Errors
@@ -762,13 +764,13 @@ class WebSocketHandler()(implicit env: Env) {
                             .asLeft[WSFlow]
                         } else if (isUp) {
                           if (descriptor.isPrivate) {
-                            if (descriptor.isUriPublic(req.uri)) {
+                            if (descriptor.isUriPublic(req.relativeUri)) {
                               passWithAuth0(globalConfig)
                             } else {
                               passWithApiKey(globalConfig)
                             }
                           } else {
-                            if (descriptor.isUriPublic(req.uri)) {
+                            if (descriptor.isUriPublic(req.relativeUri)) {
                               callDownstream(globalConfig)
                             } else {
                               passWithApiKey(globalConfig)

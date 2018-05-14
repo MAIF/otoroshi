@@ -31,6 +31,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
+import utils.RequestImplicits._
 
 case class ProxyDone(status: Int, upstreamLatency: Long)
 
@@ -42,8 +43,8 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
     val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
-    logger.error(s"Client Error: $message on ${request.uri} ($statusCode)")
-    Errors.craftResponseResult(s"Client Error: an error occured on ${request.uri} ($statusCode)",
+    logger.error(s"Client Error: $message on ${request.relativeUri} ($statusCode)")
+    Errors.craftResponseResult(s"Client Error: an error occured on ${request.relativeUri} ($statusCode)",
                                Status(statusCode),
                                request,
                                None,
@@ -51,7 +52,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
   }
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
-    logger.error(s"Server Error ${exception.getMessage} on ${request.uri}", exception)
+    logger.error(s"Server Error ${exception.getMessage} on ${request.relativeUri}", exception)
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }
 }
@@ -164,7 +165,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
         case false => "http"
       }
       .getOrElse("http")
-    val url     = ByteString(s"$protocol://${request.host}${request.uri}")
+    val url     = ByteString(s"$protocol://${request.host}${request.relativeUri}")
     val cookies = request.cookies.map(_.value).map(ByteString.apply)
     val headers = request.headers.toSimpleMap.values.map(ByteString.apply)
     // logger.info(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
@@ -179,9 +180,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
       val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
       host match {
         case str if matchRedirection(str)                                   => Some(redirectToMainDomain())
-        case _ if request.uri.contains("__otoroshi_assets")                 => super.routeRequest(request)
-        case _ if request.uri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
-        case _ if request.uri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
+        case _ if request.relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
+        case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
+        case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
         case env.backOfficeHost if !isSecured && toHttps && env.isProd      => Some(redirectToHttps())
         case env.privateAppsHost if !isSecured && toHttps && env.isProd     => Some(redirectToHttps())
         case env.adminApiHost if env.exposeAdminApi                         => super.routeRequest(request)
@@ -248,9 +249,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
       }
       .getOrElse("http")
     logger.info(
-      s"redirectToHttps from ${protocol}://$domain${req.uri} to ${env.rootScheme}$domain${req.uri}"
+      s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
     )
-    Redirect(s"${env.rootScheme}$domain${req.uri}").withHeaders("otoroshi-redirect-to" -> "https")
+    Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
   }
 
   def redirectToMainDomain() = actionBuilder { req =>
@@ -264,8 +265,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
         case false => "http"
       }
       .getOrElse("http")
-    logger.warn(s"redirectToMainDomain from $protocol://${req.domain}${req.uri} to $protocol://$domain${req.uri}")
-    Redirect(s"$protocol://$domain${req.uri}")
+    logger.warn(s"redirectToMainDomain from $protocol://${req.domain}${req.relativeUri} to $protocol://$domain${req.relativeUri}")
+    Redirect(s"$protocol://$domain${req.relativeUri}")
   }
 
   def splitToCanary(desc: ServiceDescriptor, trackingId: String)(implicit env: Env): Future[ServiceDescriptor] = {
@@ -336,16 +337,16 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
 
         ServiceLocation(req.host, globalConfig) match {
           case None =>
-            Errors.craftResponseResult(s"Service not found for URL ${req.host}::${req.uri}",
+            Errors.craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}",
                                        NotFound,
                                        req,
                                        None,
                                        Some("errors.service.not.found"))
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
-            val uriParts = req.uri.split("/").toSeq
+            val uriParts = req.relativeUri.split("/").toSeq
 
             env.datastores.serviceDescriptorDataStore
-              .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.uri, req.headers.toSimpleMap))
+              .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
               .fast
               .flatMap {
                 case None =>
@@ -410,7 +411,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
                           .call(desc,
                                 bodyAlreadyConsumed,
-                                s"${req.method} ${req.uri}",
+                                s"${req.method} ${req.relativeUri}",
                                 (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                           case BodyAlreadyConsumedException =>
                             Errors.craftResponseResult(
@@ -479,9 +480,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
                       val snowflake              = env.snowflakeGenerator.nextIdStr()
                       val state                  = IdGenerator.extendedToken(128)
-                      val rawUri                 = req.uri.substring(1)
+                      val rawUri                 = req.relativeUri.substring(1)
                       val uriParts               = rawUri.split("/").toSeq
-                      val uri: String            = descriptor.matchingRoot.map(m => req.uri.replace(m, "")).getOrElse(rawUri)
+                      val uri: String            = descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
                       val scheme                 = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
                       val host                   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
                       val root                   = descriptor.root
@@ -544,7 +545,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       }
                       val body = if (currentReqHasBody) SourceBody(lazySource) else EmptyBody // Stream IN
                       // val requestHeader = ByteString(
-                      //   req.method + " " + req.uri + " HTTP/1.1\n" + headersIn
+                      //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
                       //     .map(h => s"${h._1}: ${h._2}")
                       //     .mkString("\n") + "\n"
                       // )
@@ -601,12 +602,12 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                     }
                                     .getOrElse("http"),
                                   host = req.host,
-                                  uri = req.uri
+                                  uri = req.relativeUri
                                 ),
                                 target = Location(
                                   scheme = scheme,
                                   host = host,
-                                  uri = req.uri
+                                  uri = req.relativeUri
                                 ),
                                 duration = duration,
                                 overhead = overhead,
@@ -689,7 +690,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
                               val exchange = Json.prettyPrint(
                                 Json.obj(
-                                  "uri"   -> req.uri,
+                                  "uri"   -> req.relativeUri,
                                   "url"   -> url,
                                   "state" -> state,
                                   "reveivedState" -> JsString(
@@ -756,17 +757,17 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                             val finalStream = resp.bodyAsSource
                               .alsoTo(Sink.onComplete {
                                 case Success(_) =>
-                                  // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.uri}")
+                                  // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
                                   promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
                                 case Failure(e) =>
                                   logger.error(
-                                    s"error while transfering stream for ${protocol}://${req.host}${req.uri}",
+                                    s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
                                     e
                                   )
                                   promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
                               })
                               .map { bs =>
-                                // debugLogger.trace(s"chunk on ${req.uri} => ${bs.utf8String}")
+                                // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
                                 // meterOut.mark(bs.length)
                                 counterOut.addAndGet(bs.length)
                                 bs
@@ -774,7 +775,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
 
                             if (req.version == "HTTP/1.0") {
                               logger.warn(
-                                s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.uri})"
+                                s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
                               )
                               finalStream
                                 .via(
@@ -1034,7 +1035,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                         case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                         case None => {
                           val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
-                            .privateAppsLoginPage(Some(s"http://${req.host}${req.uri}"))
+                            .privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
                             .url
                           logger.trace("should redirect to " + redirectTo)
                           FastFuture.successful(
@@ -1086,9 +1087,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                             }
                             .getOrElse("http")
                           logger.info(
-                            s"redirects prod service from ${protocol}://$theDomain${req.uri} to https://$theDomain${req.uri}"
+                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                           )
-                          FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.uri}"))
+                          FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
                         } else if (!within) {
                           // TODO : count as served req here !!!
                           Errors.craftResponseResult("[GLOBAL] You performed too much requests",
@@ -1159,7 +1160,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                      Some("errors.service.under.construction"))
                         } else if (isUp) {
                           if (descriptor.isPrivate) {
-                            if (descriptor.isUriPublic(req.uri)) {
+                            if (descriptor.isUriPublic(req.relativeUri)) {
                               passWithAuth0(globalConfig)
                             } else {
                               isPrivateAppsSessionValid(req).fast.flatMap {
@@ -1168,7 +1169,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               }
                             }
                           } else {
-                            if (descriptor.isUriPublic(req.uri)) {
+                            if (descriptor.isUriPublic(req.relativeUri)) {
                               callDownstream(globalConfig)
                             } else {
                               passWithApiKey(globalConfig)

@@ -13,6 +13,7 @@ import play.api.http.HttpEntity
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import play.api.mvc.Results.Status
+import utils.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -72,7 +73,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
       case env.backOfficeHost => {
 
         def callAction() = {
-          // val redirectTo = env.rootScheme + env.backOfficeHost + controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.uri}")).url
+          // val redirectTo = env.rootScheme + env.backOfficeHost + controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.relativeUri}")).url
           val redirectTo = env.rootScheme + request.host + controllers.routes.BackOfficeController.index().url
           request.session.get("bousr").map { id =>
             env.datastores.backOfficeUserDataStore.findById(id).flatMap {
@@ -95,7 +96,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
                   Results
                     .Redirect(redirectTo)
                     .addingToSession(
-                      "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.uri}"
+                      "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.relativeUri}"
                     )
                 )
             }
@@ -104,7 +105,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
               Results
                 .Redirect(redirectTo)
                 .addingToSession(
-                  "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.uri}"
+                  "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.relativeUri}"
                 )
             )
           }

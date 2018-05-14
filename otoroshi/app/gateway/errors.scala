@@ -8,6 +8,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.Json
 import play.api.mvc.Results.Status
 import play.api.mvc.{RequestHeader, Result}
+import utils.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,16 +51,16 @@ object Errors {
             }
             .getOrElse("http"),
           host = req.host,
-          uri = req.uri
+          uri = req.relativeUri
         ),
         target = Location(
           scheme = descriptor.target.scheme,
           host = descriptor.target.host,
-          uri = req.uri
+          uri = req.relativeUri
         ),
         duration = 0,
         overhead = 0,
-        url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.uri}",
+        url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.relativeUri}",
         from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),
         env = descriptor.env,
         data = DataInOut(
