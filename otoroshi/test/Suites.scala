@@ -25,10 +25,10 @@ object Configurations {
 
   val LevelDBConfiguration = Configuration(
     ConfigFactory
-      .parseString("""
+      .parseString(s"""
          |{
          |  app.storage = "leveldb"
-         |  app.leveldb.path = "./target/leveldb-test"
+         |  app.leveldb.path = "./target/leveldbs/test-${System.currentTimeMillis()}"
          |}
        """.stripMargin).resolve()
   )
@@ -78,10 +78,10 @@ object OtoroshiTests {
 class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
-    FileUtils.deleteDirectory(new File("./target/leveldb-test"))
+    FileUtils.deleteDirectory(new File("./target/leveldbs"))
   }
 
   override protected def afterAll(): Unit = {
-    FileUtils.deleteDirectory(new File("./target/leveldb-test"))
+    FileUtils.deleteDirectory(new File("./target/leveldbs"))
   }
 }
