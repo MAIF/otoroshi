@@ -22,6 +22,8 @@ class LevelDbDataStores(configuration: Configuration,
 
   lazy val logger = Logger("otoroshi-leveldb-datastores")
 
+  logger.info(s"path at $dbPath")
+
   lazy val dbPath: String       = configuration.getOptional[String]("app.leveldb.path").getOrElse("./leveldb")
   lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.leveldb.windowSize").getOrElse(99)
   lazy val actorSystem =

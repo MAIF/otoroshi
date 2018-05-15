@@ -7,7 +7,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsSuccess, Json, Reads}
 
-class OtoroshiApiSpec(name: String, configurationSpec: Configuration)
+class OtoroshiApiSpec(name: String, configurationSpec: => Configuration)
   extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper

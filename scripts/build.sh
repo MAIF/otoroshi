@@ -38,8 +38,8 @@ test_server () {
   cd $LOCATION/otoroshi
   TEST_STORE=inmemory sbt test
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-  #TEST_STORE=leveldb sbt test
-  #rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+  TEST_STORE=leveldb sbt test
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
   TEST_STORE=redis sbt test
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
   TEST_STORE=cassandra sbt test

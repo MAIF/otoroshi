@@ -5,10 +5,6 @@ import functional.{OtoroshiApiSpec, OtoroshiBasicSpec}
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
 import play.api.Configuration
-import storage.cassandra.CassandraDataStores
-import storage.inmemory.InMemoryDataStores
-import storage.leveldb.LevelDbDataStores
-import storage.redis.RedisDataStores
 
 import scala.util.Try
 
@@ -23,7 +19,7 @@ object Configurations {
        """.stripMargin).resolve()
   )
 
-  val LevelDBConfiguration = Configuration(
+  def LevelDBConfiguration = Configuration(
     ConfigFactory
       .parseString(s"""
          |{
@@ -61,17 +57,24 @@ object OtoroshiTests {
       case "cassandra" => ("Cassandra", Configurations.CassandraConfiguration)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
-    Seq(
-      new OtoroshiBasicSpec(name, config), // add private path, additional header, routing headers, matching root, target root, wildcard domain, whitelist, blacklist
-      new OtoroshiApiSpec(name, config)
-      // alerts spec
-      // audit spec
-      // websocket spec
-      // circuit breaker spec
-      // rate limit & quotas spec
-      // apikeys spec with quotas in headers
-      // canary spec
-    )
+    if (name == "LevelDB") {
+      Seq(
+        new OtoroshiBasicSpec(name, Configurations.LevelDBConfiguration),
+        new OtoroshiApiSpec(name, Configurations.LevelDBConfiguration)
+      )
+    } else {
+      Seq(
+        new OtoroshiBasicSpec(name, config), // add private path, additional header, routing headers, matching root, target root, wildcard domain, whitelist, blacklist
+        new OtoroshiApiSpec(name, config)
+        // alerts spec
+        // audit spec
+        // websocket spec
+        // circuit breaker spec
+        // rate limit & quotas spec
+        // apikeys spec with quotas in headers
+        // canary spec
+      )
+    }
   }
 }
 

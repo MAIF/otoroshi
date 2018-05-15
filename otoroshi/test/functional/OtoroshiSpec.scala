@@ -8,7 +8,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
-class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
+class OtoroshiBasicSpec(name: String, configurationSpec: => Configuration)
   extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
