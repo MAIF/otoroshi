@@ -27,8 +27,8 @@ before_install:
   - export PATH=$PATH:$HOME/.cargo/bin
   - rustup update
   - rustup default stable 
-  - docker run -p 9042:9042 -p 7000:7000 --env CASSANDRA_LISTEN_ADDRESS=127.0.0.1 cassandra:3.11
-  - docker run -p 6379:6379 redis:4.0.8 redis-server --appendonly yes
+  - docker run -d -p 9042:9042 -p 7000:7000 --env CASSANDRA_LISTEN_ADDRESS=127.0.0.1 cassandra:3.11
+  - docker run -d -p 6379:6379 redis:4.0.8 redis-server --appendonly yes
 
 script:
   - sh ./scripts/build.sh all
