@@ -14,6 +14,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
+  lazy val serviceHost = "basictest.foo.bar"
   lazy val ws = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -30,7 +31,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
 
     val callCounter = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
-    val basicTestServer = TargetService(Some("basictest.foo.bar"), "/api", "application/json", { _ =>
+    val basicTestServer = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
       callCounter.incrementAndGet()
       basicTestExpectedBody
     }).await()
@@ -52,8 +53,11 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       publicPatterns = Seq("/.*")
     )
 
-    s"return only one service descriptor after startup (for admin API)" in {
+    "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
+    }
+
+    s"return only one service descriptor after startup (for admin API)" in {
       val services = getOtoroshiServices().futureValue
       services.size mustBe 1
     }
@@ -65,7 +69,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       creationStatus mustBe 200
 
       val basicTestResponse1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse1.status mustBe 200
@@ -78,7 +82,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(enabled = false)).futureValue
 
       val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse2.status mustBe 404
@@ -87,7 +91,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(enabled = true)).futureValue
 
       val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse3.status mustBe 200
@@ -100,7 +104,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(maintenanceMode = true)).futureValue
 
       val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse2.status mustBe 503
@@ -110,7 +114,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(maintenanceMode = false)).futureValue
 
       val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse3.status mustBe 200
@@ -123,7 +127,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(buildMode = true)).futureValue
 
       val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse2.status mustBe 503
@@ -133,7 +137,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(buildMode = false)).futureValue
 
       val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse3.status mustBe 200
@@ -146,7 +150,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(forceHttps = true)).futureValue
 
       val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withFollowRedirects(false).withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse2.status mustBe 303
@@ -156,7 +160,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(forceHttps = false)).futureValue
 
       val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse3.status mustBe 200
@@ -167,7 +171,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
     "send specific headers back" in {
 
       val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse2.status mustBe 200
@@ -179,7 +183,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
       updateOtoroshiService(initialDescriptor.copy(sendOtoroshiHeadersBack = false)).futureValue
 
       val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse3.status mustBe 200
@@ -192,6 +196,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
     }
 
     "stop servers" in {
+      deleteOtoroshiService(initialDescriptor).futureValue
       basicTestServer.stop()
     }
   }

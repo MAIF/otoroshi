@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 import play.api.ApplicationLoader.Context
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.WSAuthScheme
-import play.api.{BuiltInComponents, Configuration}
+import play.api.{BuiltInComponents, Configuration, Logger}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -56,6 +56,42 @@ trait OneServerPerSuiteWithMyComponents
 trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
   lazy implicit val ec = otoroshiComponents.env.internalActorSystem.dispatcher
+  lazy val logger = Logger("otoroshi-spec-helper")
+
+  def otoroshiApiCall(method: String, path: String, payload: Option[JsValue] = None): Future[(JsValue, Int)] = {
+    val headers = Seq(
+      "Host" -> "otoroshi-api.foo.bar",
+      "Accept" -> "application/json"
+    )
+    if (payload.isDefined) {
+      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:$port$path")
+        .withHttpHeaders(headers :+ ("Content-Type" -> "application/json"): _*)
+        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+        .withFollowRedirects(false)
+        .withMethod(method)
+        .withBody(Json.stringify(payload.get))
+        .execute()
+        .map { response =>
+          if (response.status != 200) {
+            logger.error(response.body)
+          }
+          (response.json, response.status)
+        }
+    } else {
+      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:$port$path")
+        .withHttpHeaders(headers: _*)
+        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+        .withFollowRedirects(false)
+        .withMethod(method)
+        .execute()
+        .map { response =>
+          if (response.status != 200) {
+            logger.error(response.body)
+          }
+          (response.json, response.status)
+        }
+    }
+  }
 
   def getOtoroshiServices(): Future[Seq[ServiceDescriptor]] = {
     suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services").withHttpHeaders(
@@ -108,6 +144,19 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .put(Json.stringify(service.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+  }
+
+  def deleteOtoroshiService(service: ServiceDescriptor): Future[(JsValue, Int)] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services/${service.id}")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.foo.bar",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
       .map { resp =>
         (resp.json, resp.status)
       }
