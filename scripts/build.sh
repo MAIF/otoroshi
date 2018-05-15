@@ -31,7 +31,7 @@ build_manual () {
 
 build_server () {
   cd $LOCATION/otoroshi
-  sbt ';clean;compile;dist;assembly'
+  sbt ';clean;compile;test;dist;assembly'
 }
 
 case "${1}" in

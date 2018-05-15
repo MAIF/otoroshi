@@ -9,13 +9,15 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
+import models.{ApiKey, ServiceDescriptor, ServiceGroup}
 import modules.OtoroshiComponentsInstances
 import org.scalatest.TestSuite
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatestplus.play.components.OneServerPerSuiteWithComponents
+import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}
 import org.slf4j.LoggerFactory
 import play.api.ApplicationLoader.Context
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.ws.WSAuthScheme
 import play.api.{BuiltInComponents, Configuration}
 
 import scala.concurrent.duration._
@@ -38,6 +40,71 @@ trait OneServerPerSuiteWithMyComponents
 
   def otoroshiComponents = new OtoroshiTestComponentsInstances(context, getConfiguration)
   override def components: BuiltInComponents = otoroshiComponents
+}
+
+trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents with ScalaFutures with AddConfiguration {
+  this: TestSuite =>
+
+  def otoroshiComponents = new OtoroshiTestComponentsInstances(context, getConfiguration)
+  override def components: BuiltInComponents = otoroshiComponents
+}
+
+trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
+
+  lazy implicit val ec = otoroshiComponents.env.internalActorSystem.dispatcher
+
+  def getOtoroshiServices(): Future[Seq[ServiceDescriptor]] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services").withHttpHeaders(
+      "Host" -> "otoroshi-api.foo.bar",
+      "Accept" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
+      response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+    }
+  }
+
+  def getOtoroshiServiceGroups(): Future[Seq[ServiceGroup]] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/groups").withHttpHeaders(
+      "Host" -> "otoroshi-api.foo.bar",
+      "Accept" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
+      response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e))
+    }
+  }
+
+  def getOtoroshiApiKeys(): Future[Seq[ApiKey]] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/apikeys").withHttpHeaders(
+      "Host" -> "otoroshi-api.foo.bar",
+      "Accept" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
+      response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e))
+    }
+  }
+
+  def createOtoroshiService(service: ServiceDescriptor): Future[(JsValue, Int)] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.foo.bar",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(service.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+  }
+
+  def updateOtoroshiService(service: ServiceDescriptor): Future[(JsValue, Int)] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services/${service.id}")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.foo.bar",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .put(Json.stringify(service.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+  }
 }
 
 object Implicits {

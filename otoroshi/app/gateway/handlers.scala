@@ -1089,7 +1089,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           logger.info(
                             s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                           )
-                          FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
+                          //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
+                          FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
                         } else if (!within) {
                           // TODO : count as served req here !!!
                           Errors.craftResponseResult("[GLOBAL] You performed too much requests",
