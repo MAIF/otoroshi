@@ -1,6 +1,6 @@
 package storage.cassandra
 
-import java.util.concurrent.{ConcurrentHashMap, Executor, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, Executor, Executors, TimeUnit}
 import java.util.regex.Pattern
 
 import akka.actor.ActorSystem
@@ -64,6 +64,11 @@ class CassandraRedis(actorSystem: ActorSystem,
   private val patterns = new ConcurrentHashMap[String, Pattern]()
 
   val poolingOptions = new PoolingOptions()
+    .setMaxQueueSize(2048)
+    .setMaxRequestsPerConnection(HostDistance.IGNORED, 1024)
+    .setConnectionsPerHost(HostDistance.IGNORED, 128, 1024)
+    .setInitializationExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() * 2 + 1))
+
   val cluster = Cluster
     .builder()
     .withClusterName("otoroshi-cluster")
