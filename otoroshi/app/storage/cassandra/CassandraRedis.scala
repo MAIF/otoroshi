@@ -65,8 +65,10 @@ class CassandraRedis(actorSystem: ActorSystem,
 
   val poolingOptions = new PoolingOptions()
     .setMaxQueueSize(2048)
-    .setMaxRequestsPerConnection(HostDistance.IGNORED, 1024)
-    .setConnectionsPerHost(HostDistance.IGNORED, 128, 1024)
+    .setMaxRequestsPerConnection(HostDistance.LOCAL, 2048)
+    .setMaxRequestsPerConnection(HostDistance.REMOTE, 1024)
+    .setConnectionsPerHost(HostDistance.LOCAL, 256, 2048)
+    .setConnectionsPerHost(HostDistance.REMOTE, 128, 1024)
     .setInitializationExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() * 2 + 1))
 
   val cluster = Cluster
@@ -76,6 +78,7 @@ class CassandraRedis(actorSystem: ActorSystem,
     .withPort(contactPort)
     .withPoolingOptions(poolingOptions)
     .build()
+  
   val session = cluster.connect()
 
   private val cancel = actorSystem.scheduler.schedule(0.millis, 1.second) {
