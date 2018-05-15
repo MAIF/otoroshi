@@ -38,16 +38,20 @@ trait OneServerPerSuiteWithMyComponents
     with ScalaFutures
     with AddConfiguration { this: TestSuite =>
 
-  def otoroshiComponents = new OtoroshiTestComponentsInstances(context, getConfiguration)
+  val otoroshiComponents = {
+    val components = new OtoroshiTestComponentsInstances(context, getConfiguration)
+    println(s"Using env ${components.env}")
+    components
+  }
+
   override def components: BuiltInComponents = otoroshiComponents
 }
 
-trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents with ScalaFutures with AddConfiguration {
-  this: TestSuite =>
-
-  def otoroshiComponents = new OtoroshiTestComponentsInstances(context, getConfiguration)
-  override def components: BuiltInComponents = otoroshiComponents
-}
+//trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents with ScalaFutures with AddConfiguration {
+//  this: TestSuite =>
+//  val otoroshiComponents = new OtoroshiTestComponentsInstances(context, getConfiguration)
+//  override def components: BuiltInComponents = otoroshiComponents
+//}
 
 trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
@@ -58,6 +62,9 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       "Host" -> "otoroshi-api.foo.bar",
       "Accept" -> "application/json"
     ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
+      //if (response.status != 200) {
+      //  println(response.body)
+      //}
       response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
     }
   }

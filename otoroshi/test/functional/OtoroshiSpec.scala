@@ -53,6 +53,7 @@ class OtoroshiBasicSpec(name: String, configurationSpec: Configuration)
     )
 
     s"return only one service descriptor after startup (for admin API)" in {
+      getOtoroshiServices().futureValue // WARM UP
       val services = getOtoroshiServices().futureValue
       services.size mustBe 1
     }

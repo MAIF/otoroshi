@@ -34,12 +34,21 @@ build_server () {
   sbt ';clean;compile;test;dist;assembly'
 }
 
+test_server () {
+  cd $LOCATION/otoroshi
+  TEST_STORE=inmemory sbt test
+  TEST_STORE=leveldb sbt test
+  TEST_STORE=redis sbt test
+  TEST_STORE=cassandra sbt test
+}
+
 case "${1}" in
   all)
     clean
     build_ui
     build_manual
     build_server
+    test_server
     build_cli
     ;;
   cli)
@@ -62,6 +71,7 @@ case "${1}" in
     build_ui
     build_manual
     build_server
+    test_server
     build_cli
 esac
 
