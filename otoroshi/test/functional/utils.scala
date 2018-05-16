@@ -17,11 +17,11 @@ import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneSe
 import org.slf4j.LoggerFactory
 import play.api.ApplicationLoader.Context
 import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.libs.ws.WSAuthScheme
+import play.api.libs.ws.{WSAuthScheme, WSClient}
 import play.api.{BuiltInComponents, Configuration, Logger}
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Random, Try}
 
 trait AddConfiguration {
@@ -58,13 +58,29 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
   lazy implicit val ec = otoroshiComponents.env.internalActorSystem.dispatcher
   lazy val logger = Logger("otoroshi-spec-helper")
 
-  def otoroshiApiCall(method: String, path: String, payload: Option[JsValue] = None): Future[(JsValue, Int)] = {
+  def await(duration: FiniteDuration): Unit = {
+    val p = Promise[Unit]
+    otoroshiComponents.env.internalActorSystem.scheduler.scheduleOnce(duration) {
+      p.trySuccess(())
+    }
+    Await.result(p.future, duration + 1.second)
+  }
+
+  def awaitF(duration: FiniteDuration)(implicit system: ActorSystem): Future[Unit] = {
+    val p = Promise[Unit]
+    system.scheduler.scheduleOnce(duration) {
+      p.trySuccess(())
+    }
+    p.future
+  }
+
+  def otoroshiApiCall(method: String, path: String, payload: Option[JsValue] = None, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     val headers = Seq(
       "Host" -> "otoroshi-api.foo.bar",
       "Accept" -> "application/json"
     )
     if (payload.isDefined) {
-      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:$port$path")
+      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
         .withHttpHeaders(headers :+ ("Content-Type" -> "application/json"): _*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
@@ -78,7 +94,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
           (response.json, response.status)
         }
     } else {
-      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:$port$path")
+      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
         .withHttpHeaders(headers: _*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
@@ -93,8 +109,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     }
   }
 
-  def getOtoroshiServices(): Future[Seq[ServiceDescriptor]] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services").withHttpHeaders(
+  def getOtoroshiServices(customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[Seq[ServiceDescriptor]] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services").withHttpHeaders(
       "Host" -> "otoroshi-api.foo.bar",
       "Accept" -> "application/json"
     ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
@@ -105,8 +121,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     }
   }
 
-  def getOtoroshiServiceGroups(): Future[Seq[ServiceGroup]] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/groups").withHttpHeaders(
+  def getOtoroshiServiceGroups(customPort: Option[Int] = None): Future[Seq[ServiceGroup]] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups").withHttpHeaders(
       "Host" -> "otoroshi-api.foo.bar",
       "Accept" -> "application/json"
     ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
@@ -114,8 +130,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     }
   }
 
-  def getOtoroshiApiKeys(): Future[Seq[ApiKey]] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/apikeys").withHttpHeaders(
+  def getOtoroshiApiKeys(customPort: Option[Int] = None): Future[Seq[ApiKey]] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/apikeys").withHttpHeaders(
       "Host" -> "otoroshi-api.foo.bar",
       "Accept" -> "application/json"
     ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
@@ -123,8 +139,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     }
   }
 
-  def createOtoroshiService(service: ServiceDescriptor): Future[(JsValue, Int)] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services")
+  def createOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
       .withHttpHeaders(
         "Host" -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"
@@ -136,8 +152,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 
-  def updateOtoroshiService(service: ServiceDescriptor): Future[(JsValue, Int)] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services/${service.id}")
+  def updateOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
         "Host" -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"
@@ -149,8 +165,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 
-  def deleteOtoroshiService(service: ServiceDescriptor): Future[(JsValue, Int)] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:$port/api/services/${service.id}")
+  def deleteOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
         "Host" -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"

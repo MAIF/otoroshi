@@ -65,6 +65,7 @@ class CassandraRedis(actorSystem: ActorSystem,
 
   val poolingOptions = new PoolingOptions()
     .setMaxQueueSize(2048)
+    .setPoolTimeoutMillis(10000)
     .setMaxRequestsPerConnection(HostDistance.LOCAL, 512)
     .setMaxRequestsPerConnection(HostDistance.REMOTE, 256)
     .setConnectionsPerHost(HostDistance.LOCAL, 256, 512)

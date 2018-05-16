@@ -1,7 +1,7 @@
 import java.io.File
 
 import com.typesafe.config.ConfigFactory
-import functional.{OtoroshiApiSpec, OtoroshiBasicSpec}
+import functional.{OtoroshiApiSpec, OtoroshiBasicSpec, ProgrammaticApiSpec}
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
 import play.api.Configuration
@@ -60,12 +60,14 @@ object OtoroshiTests {
     if (name == "LevelDB") {
       Seq(
         new OtoroshiBasicSpec(name, Configurations.LevelDBConfiguration),
-        new OtoroshiApiSpec(name, Configurations.LevelDBConfiguration)
+        new OtoroshiApiSpec(name, Configurations.LevelDBConfiguration),
+        new ProgrammaticApiSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
       Seq(
         new OtoroshiBasicSpec(name, config), // add private path, additional header, routing headers, matching root, target root, wildcard domain, whitelist, blacklist
-        new OtoroshiApiSpec(name, config)
+        new OtoroshiApiSpec(name, config),
+        new ProgrammaticApiSpec(name, config)
         // alerts spec
         // audit spec
         // websocket spec
