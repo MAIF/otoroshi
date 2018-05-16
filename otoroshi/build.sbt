@@ -50,6 +50,10 @@ scalafmtVersion in ThisBuild := "1.2.0"
 
 parallelExecution in Test := false
 
+bintrayOrganization := Some("MAIF")
+bintrayRepository := "maven"
+licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
+
 // assembly
 mainClass in assembly := Some("play.core.server.ProdServerStart")
 test in assembly := {}

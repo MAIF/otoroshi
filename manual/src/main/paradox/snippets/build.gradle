@@ -1,5 +1,5 @@
 repositories {
-  jcenter()
+  bintray.repo(repoOwner: 'MAIF', repoName: 'maven')
 }
 
 dependencies {
