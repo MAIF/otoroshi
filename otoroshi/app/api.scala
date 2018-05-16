@@ -1,12 +1,15 @@
 package otoroshi.api
 
 import actions._
+import akka.actor.ActorSystem
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import env._
 import gateway.{CircuitBreakersHolder, ErrorHandler, GatewayRequestHandler, WebSocketHandler}
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
+import play.api.inject.Injector
+import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents}
 import play.api.routing.Router
@@ -14,6 +17,7 @@ import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
+import storage.DataStores
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
     extends AkkaHttpServerComponents
@@ -85,9 +89,9 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
 class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory.empty) {
 
-  lazy val components = new ProgrammaticOtoroshiComponents(serverConfig, configuration)
+  private lazy val components = new ProgrammaticOtoroshiComponents(serverConfig, configuration)
 
-  lazy val server = components.server
+  private lazy val server = components.server
 
   def start(): Otoroshi = {
     server.httpPort.get + 1
@@ -107,6 +111,12 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     }))
     this
   }
+
+  def env: Env = components.env
+  def dataStores: DataStores = components.env.datastores
+  def ws: WSClient = components.wsClient
+  def system: ActorSystem = components.actorSystem
+  def injector: Injector = components.injector
 }
 
 object Otoroshi {
