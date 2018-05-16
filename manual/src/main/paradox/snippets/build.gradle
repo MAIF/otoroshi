@@ -1,0 +1,7 @@
+repositories {
+  jcenter()
+}
+
+dependencies {
+  compile group: 'fr.maif.otoroshi', name: 'otoroshi_2.12', version: '1.1.2'
+}

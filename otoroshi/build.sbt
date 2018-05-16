@@ -1,5 +1,5 @@
 name := """otoroshi"""
-organization := "fr.maif"
+organization := "fr.maif.otoroshi"
 version := "1.1.2"
 scalaVersion := "2.12.5"
 

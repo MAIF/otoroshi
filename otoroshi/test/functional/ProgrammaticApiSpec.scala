@@ -88,7 +88,7 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
           port = Some(8888),
           rootDir = dir
         )
-      ).start()
+      ).startAndStopOnShutdown()
 
       implicit val env = otoroshi.env
 
@@ -113,7 +113,6 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
         callCounter.get() mustBe 1
       }
 
-      // create service using programmatic api
       otoroshi.dataStores.serviceDescriptorDataStore.set(otherDescriptor).futureValue
 
       {

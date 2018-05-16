@@ -19,6 +19,8 @@ import play.filters.HttpFiltersComponents
 import router.Routes
 import storage.DataStores
 
+import scala.concurrent.ExecutionContext
+
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
     extends AkkaHttpServerComponents
     with BuiltInComponents
@@ -112,6 +114,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     this
   }
 
+  def executionContext: ExecutionContext = components.executionContext
   def env: Env = components.env
   def dataStores: DataStores = components.env.datastores
   def ws: WSClient = components.wsClient
