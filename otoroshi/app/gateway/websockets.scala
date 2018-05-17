@@ -198,8 +198,8 @@ class WebSocketHandler()(implicit env: Env) {
                   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
                     if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                       env.circuitBeakersHolder
-                        .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                        .callWS(desc, s"WS ${req.method} ${req.relativeUri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                        .get(descriptor.id, () => new ServiceDescriptorCircuitBreaker())
+                        .callWS(descriptor, s"WS ${req.method} ${req.relativeUri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                         case _: scala.concurrent.TimeoutException =>
                           Errors.craftResponseResult(
                             s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",

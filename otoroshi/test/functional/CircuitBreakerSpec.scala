@@ -289,6 +289,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
     "stop servers" in {
       basicTestServer1.stop()
       basicTestServer2.stop()
+      basicTestServer3.stop()
       system.terminate()
     }
   }

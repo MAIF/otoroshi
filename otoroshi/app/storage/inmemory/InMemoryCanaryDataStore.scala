@@ -27,7 +27,7 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
     } yield true
 
   override def isCanary(serviceId: String, trackingId: String, traffic: Double)(implicit ec: ExecutionContext,
-                                                                                env: Env): Future[Boolean] =
+                                                                                env: Env): Future[Boolean] = {
     for {
       _              <- FastFuture.successful(())
       fcanarycount   = redisCli.get(canaryCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
@@ -73,6 +73,7 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
       logger.warn(s"user already canary: $alreadyCanary, user became canary: $isNowCanary")
       if (alreadyCanary) true else isNowCanary
     }
+  } 
 
   def canaryCampaign(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[ServiceCanaryCampaign] =
     for {

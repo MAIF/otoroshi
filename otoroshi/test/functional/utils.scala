@@ -244,7 +244,8 @@ class TargetService(host: Option[String], path: String, contentType: String, res
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (HttpMethods.GET, p) if p.toString() == path && host.isEmpty => {
+      case (HttpMethods.GET, p) if host.isEmpty => {
+      //case (_,_) => {
         FastFuture.successful(
           HttpResponse(
             200,
@@ -253,7 +254,7 @@ class TargetService(host: Option[String], path: String, contentType: String, res
           )
         )
       }
-      case (HttpMethods.GET, p) if p.toString() == path && TargetService.extractHost(request) == host.get => {
+      case (HttpMethods.GET, p) if TargetService.extractHost(request) == host.get => {
         FastFuture.successful(
           HttpResponse(
             200,
@@ -271,6 +272,45 @@ class TargetService(host: Option[String], path: String, contentType: String, res
   val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
 
   def await(): TargetService = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}
+
+class SimpleTargetService(host: Option[String], path: String, contentType: String, result: HttpRequest => String) {
+
+  val port = TargetService.freePort
+
+  implicit val system = ActorSystem()
+  implicit val ec     = system.dispatcher
+  implicit val mat    = ActorMaterializer.create(system)
+  implicit val http   = Http(system)
+
+  val logger = LoggerFactory.getLogger("otoroshi-test")
+
+  def handler(request: HttpRequest): Future[HttpResponse] = {
+    (request.method, request.uri.path) match {
+      case (_,_) => {
+        FastFuture.successful(
+          HttpResponse(
+            200,
+            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
+              ByteString(result(request)))
+          )
+        )
+      }
+    }
+  }
+
+  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+
+  def await(): SimpleTargetService = {
     Await.result(bound, 60.seconds)
     this
   }

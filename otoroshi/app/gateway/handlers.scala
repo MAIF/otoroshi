@@ -409,7 +409,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                       if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                         env.circuitBeakersHolder
                           .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                          .call(desc,
+                          .call(descriptor,
                                 bodyAlreadyConsumed,
                                 s"${req.method} ${req.relativeUri}",
                                 (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
