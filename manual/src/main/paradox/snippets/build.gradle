@@ -1,5 +1,5 @@
 repositories {
-  bintray.repo(repoOwner: 'MAIF', repoName: 'maven')
+  bintray.repo(repoOwner: 'maif', repoName: 'maven')
 }
 
 dependencies {

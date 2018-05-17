@@ -1,6 +1,6 @@
 name := """otoroshi"""
 organization := "fr.maif.otoroshi"
-version := "1.1.2"
+version := "1.1.2-beta"
 scalaVersion := "2.12.5"
 
 lazy val root = (project in file("."))
@@ -50,7 +50,7 @@ scalafmtVersion in ThisBuild := "1.2.0"
 
 parallelExecution in Test := false
 
-bintrayOrganization := Some("MAIF")
+bintrayOrganization := Some("maif")
 bintrayRepository := "maven"
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 
