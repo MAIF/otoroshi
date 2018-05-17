@@ -1,7 +1,7 @@
 import java.io.File
 
 import com.typesafe.config.ConfigFactory
-import functional.{OtoroshiApiSpec, OtoroshiBasicSpec, ProgrammaticApiSpec}
+import functional.{CircuitBreakerSpec, OtoroshiApiSpec, OtoroshiBasicSpec, ProgrammaticApiSpec}
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
 import play.api.Configuration
@@ -61,17 +61,18 @@ object OtoroshiTests {
       Seq(
         new OtoroshiBasicSpec(name, Configurations.LevelDBConfiguration),
         new OtoroshiApiSpec(name, Configurations.LevelDBConfiguration),
-        new ProgrammaticApiSpec(name, Configurations.LevelDBConfiguration)
+        new ProgrammaticApiSpec(name, Configurations.LevelDBConfiguration),
+        new CircuitBreakerSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
       Seq(
         new OtoroshiBasicSpec(name, config), // add private path, additional header, routing headers, matching root, target root, wildcard domain, whitelist, blacklist
         new OtoroshiApiSpec(name, config),
-        new ProgrammaticApiSpec(name, config)
+        new ProgrammaticApiSpec(name, config),
+        new CircuitBreakerSpec(name, config)
         // alerts spec
         // audit spec
         // websocket spec
-        // circuit breaker spec
         // rate limit & quotas spec
         // apikeys spec with quotas in headers
         // canary spec
@@ -81,7 +82,7 @@ object OtoroshiTests {
 }
 
 class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndAfterAll {
-  
+
   override protected def beforeAll(): Unit = {
     FileUtils.deleteDirectory(new File("./target/leveldbs"))
   }
@@ -90,3 +91,5 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndA
     FileUtils.deleteDirectory(new File("./target/leveldbs"))
   }
 }
+
+// class DevOtoroshiTests extends Suites(new CircuitBreakerSpec("DEV", Configurations.InMemoryConfiguration))
