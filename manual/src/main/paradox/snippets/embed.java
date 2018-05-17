@@ -8,6 +8,8 @@ import scala.Option;
 import scala.Unit$;
 
 import java.io.File;
+import java.util.Arrays;
+import java.io.File;
 
 public class MyApp {
 
@@ -22,7 +24,29 @@ public class MyApp {
                 Mode.Prod$.MODULE$,
                 System.getProperties()
             ),
-            ConfigFactory.parseString("")
+            ConfigFactory.parseString(String.join("\n", Arrays.asList(
+                "app {",
+                "  storage = \"leveldb\"",
+                "  importFrom = \"./my-state.json\"",
+                "  env = \"prod\"",
+                "  adminapi {",
+                "    targetSubdomain = \"otoroshi-admin-internal-api\"",
+                "    exposedSubdomain = \"otoroshi-api\"",
+                "    defaultValues {",
+                "      backOfficeGroupId = \"admin-api-group\"",
+                "      backOfficeApiKeyClientId = \"admin-api-apikey-id\"",
+                "      backOfficeApiKeyClientSecret = \"admin-api-apikey-secret\"",
+                "      backOfficeServiceId = \"admin-api-service\"",
+                "    }",
+                "  }",
+                "  claim {",
+                "    sharedKey = \"mysecret\"",
+                "  }",
+                "  leveldb {",
+                "    path = \"./leveldb\"",
+                "  }",
+                "}"
+            )))
         ).start();
 
         ServiceGroup group = ServiceGroup.apply("id", "name", "description");

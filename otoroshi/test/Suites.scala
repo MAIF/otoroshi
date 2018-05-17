@@ -81,7 +81,7 @@ object OtoroshiTests {
 }
 
 class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndAfterAll {
-
+  
   override protected def beforeAll(): Unit = {
     FileUtils.deleteDirectory(new File("./target/leveldbs"))
   }
