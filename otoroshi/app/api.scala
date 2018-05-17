@@ -1,25 +1,49 @@
 package otoroshi.api
 
 import actions._
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import com.softwaremill.macwire.wire
+import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import env._
 import gateway.{CircuitBreakersHolder, ErrorHandler, GatewayRequestHandler, WebSocketHandler}
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
+import play.api.inject.Injector
+import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents}
 import play.api.routing.Router
-import play.api.{BuiltInComponents, Logger, LoggerConfigurator}
+import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
+import storage.DataStores
 
-private class ProgrammaticComponents(_serverConfig: play.core.server.ServerConfig)
+import scala.concurrent.ExecutionContext
+
+class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
     extends AkkaHttpServerComponents
     with BuiltInComponents
     with AssetsComponents
     with AhcWSComponents
     with HttpFiltersComponents {
+
+  override lazy val configuration: Configuration = {
+    val sslConfig = serverConfig.sslPort.map { sslPort =>
+      s"""
+        |https.port=$sslPort
+        |play.server.https.port=$sslPort
+      """.stripMargin
+    }.getOrElse("")
+    val httpConfig = serverConfig.port.map { httpPort =>
+      s"""
+         |http.port=$httpPort
+         |play.server.http.port=$httpPort
+      """.stripMargin
+    }.getOrElse("")
+    Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(ConfigFactory.parseString(httpConfig + sslConfig))
+  }
 
   LoggerConfigurator(environment.classLoader).foreach {
     _.configure(environment, configuration, Map.empty)
@@ -66,15 +90,20 @@ private class ProgrammaticComponents(_serverConfig: play.core.server.ServerConfi
   }
 }
 
-class Otoroshi(serverConfig: ServerConfig) {
+class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory.empty) {
 
-  private lazy val components = new ProgrammaticComponents(serverConfig)
+  private lazy val components = new ProgrammaticOtoroshiComponents(serverConfig, configuration)
 
   private lazy val server = components.server
 
   def start(): Otoroshi = {
     server.httpPort.get + 1
     this
+  }
+
+  def startAndStopOnShutdown(): Otoroshi = {
+    server.httpPort.get + 1
+    stopOnShutdown()
   }
 
   def stop(): Unit = server.stop()
@@ -85,6 +114,19 @@ class Otoroshi(serverConfig: ServerConfig) {
     }))
     this
   }
+
+  implicit val materializer: Materializer = components.materializer
+  implicit val executionContext: ExecutionContext = components.executionContext
+  implicit val env: Env = components.env
+
+  val dataStores: DataStores = components.env.datastores
+  val ws: WSClient = components.wsClient
+  val system: ActorSystem = components.actorSystem
+  val injector: Injector = components.injector
+}
+
+object Otoroshi {
+  def apply(serverConfig: ServerConfig, configuration: Config = ConfigFactory.empty): Otoroshi = new Otoroshi(serverConfig, configuration)
 }
 
 object Main {

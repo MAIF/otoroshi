@@ -1,30 +1,20 @@
 package functional
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import com.typesafe.config.ConfigFactory
-import models.Target
-import org.scalatest.Suites
+import models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.libs.json.{JsArray, Json}
-import play.api.libs.ws.WSAuthScheme
 
-object OtoroshiSpec {
-  val configuration = Configuration(
-    ConfigFactory
-      .parseString("""
-      |{
-      |
-      |}
-    """.stripMargin).resolve()
-  )
-}
-
-class OtoroshiSpec(name: String, configurationSpec: Configuration)
+class OtoroshiBasicSpec(name: String, configurationSpec: => Configuration)
   extends PlaySpec
     with OneServerPerSuiteWithMyComponents
+    with OtoroshiSpecHelper
     with IntegrationPatience {
 
+  lazy val serviceHost = "basictest.foo.bar"
   lazy val ws = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -37,63 +27,177 @@ class OtoroshiSpec(name: String, configurationSpec: Configuration)
        """.stripMargin).resolve()
   )
 
-  s"Otoroshi admin API" should {
+  s"[$name] Otoroshi" should {
 
-    "return only one service descriptor (for admin API)" in {
+    val callCounter = new AtomicInteger(0)
+    val basicTestExpectedBody = """{"message":"hello world"}"""
+    val basicTestServer = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
+      callCounter.incrementAndGet()
+      basicTestExpectedBody
+    }).await()
+    val initialDescriptor = ServiceDescriptor(
+      id = "basic-test",
+      name = "basic-test",
+      env = "prod",
+      subdomain = "basictest",
+      domain = "foo.bar",
+      targets = Seq(
+        Target(
+          host = s"127.0.0.1:${basicTestServer.port}",
+          scheme = "http"
+        )
+      ),
+      localHost = s"127.0.0.1:${basicTestServer.port}",
+      forceHttps = false,
+      enforceSecureCommunication = false,
+      publicPatterns = Seq("/.*")
+    )
 
-      val response = ws.url(s"http://localhost:$port/api/services").withHttpHeaders(
-        "Host" -> "otoroshi-api.foo.bar",
-        "Accept" -> "application/json"
-      ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().futureValue
-
-      response.status mustBe 200
-      response.json.as[JsArray].value.size mustBe 1
+    "warm up" in {
+      getOtoroshiServices().futureValue // WARM UP
     }
 
-    "route a basic http call" in {
+    s"return only one service descriptor after startup (for admin API)" in {
+      val services = getOtoroshiServices().futureValue
+      services.size mustBe 1
+    }
 
-      val basicTestExpectedBody = """{"message":"hello world"}"""
-      val basicTestServer = TargetService(None, "/api", "application/json", _ => basicTestExpectedBody).await()
-      val basicTestPort = basicTestServer.port
+    s"route a basic http call" in {
 
-      val creationResponse = ws.url(s"http://localhost:$port/api/services").withHttpHeaders(
-        "Host" -> "otoroshi-api.foo.bar",
-        "Content-Type" -> "application/json"
-      ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-        .post(Json.stringify(models.ServiceDescriptor(
-          id = "basic-test",
-          name = "basic-test",
-          env = "prod",
-          subdomain = "basictest",
-          domain = "foo.bar",
-          targets = Seq(
-            Target(
-              host = s"127.0.0.1:$basicTestPort",
-              scheme = "http"
-            )
-          ),
-          localHost = s"127.0.0.1:$basicTestPort",
-          forceHttps = false,
-          sendOtoroshiHeadersBack = true,
-          enforceSecureCommunication = false
-        ).toJson)).futureValue
+      val (_, creationStatus) = createOtoroshiService(initialDescriptor).futureValue
 
-      creationResponse.status mustBe 200
+      creationStatus mustBe 200
 
-      val basicTestResponse1 = ws.url(s"http://127.0.0.1:$basicTestPort/api").withHttpHeaders(
-        "Host" -> "basictest.foo.bar"
+      val basicTestResponse1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
       ).get().futureValue
 
       basicTestResponse1.status mustBe 200
       basicTestResponse1.body mustBe basicTestExpectedBody
+      callCounter.get() mustBe 1
+    }
 
+    "provide a way to disable a service descriptor" in {
+
+      updateOtoroshiService(initialDescriptor.copy(enabled = false)).futureValue
+
+      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse2.status mustBe 404
+      callCounter.get() mustBe 1
+
+      updateOtoroshiService(initialDescriptor.copy(enabled = true)).futureValue
+
+      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse3.status mustBe 200
+      basicTestResponse3.body mustBe basicTestExpectedBody
+      callCounter.get() mustBe 2
+    }
+
+    "provide a way to pass a service descriptor in maintenance mode" in {
+
+      updateOtoroshiService(initialDescriptor.copy(maintenanceMode = true)).futureValue
+
+      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse2.status mustBe 503
+      basicTestResponse2.body.contains("Service in maintenance mode") mustBe true
+      callCounter.get() mustBe 2
+
+      updateOtoroshiService(initialDescriptor.copy(maintenanceMode = false)).futureValue
+
+      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse3.status mustBe 200
+      basicTestResponse3.body mustBe basicTestExpectedBody
+      callCounter.get() mustBe 3
+    }
+
+    "provide a way to pass a service descriptor in build mode" in {
+
+      updateOtoroshiService(initialDescriptor.copy(buildMode = true)).futureValue
+
+      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse2.status mustBe 503
+      basicTestResponse2.body.contains("Service under construction") mustBe true
+      callCounter.get() mustBe 3
+
+      updateOtoroshiService(initialDescriptor.copy(buildMode = false)).futureValue
+
+      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse3.status mustBe 200
+      basicTestResponse3.body mustBe basicTestExpectedBody
+      callCounter.get() mustBe 4
+    }
+
+    "provide a way to force https for a service descriptor" in {
+
+      updateOtoroshiService(initialDescriptor.copy(forceHttps = true)).futureValue
+
+      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withFollowRedirects(false).withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse2.status mustBe 303
+      basicTestResponse2.header("Location") mustBe Some("https://basictest.foo.bar/api")
+      callCounter.get() mustBe 4
+
+      updateOtoroshiService(initialDescriptor.copy(forceHttps = false)).futureValue
+
+      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse3.status mustBe 200
+      basicTestResponse3.body mustBe basicTestExpectedBody
+      callCounter.get() mustBe 5
+    }
+
+    "send specific headers back" in {
+
+      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse2.status mustBe 200
+      basicTestResponse2.header("Otoroshi-Request-Id").isDefined mustBe true
+      basicTestResponse2.header("Otoroshi-Proxy-Latency").isDefined mustBe true
+      basicTestResponse2.header("Otoroshi-Upstream-Latency").isDefined mustBe true
+      callCounter.get() mustBe 6
+
+      updateOtoroshiService(initialDescriptor.copy(sendOtoroshiHeadersBack = false)).futureValue
+
+      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> serviceHost
+      ).get().futureValue
+
+      basicTestResponse3.status mustBe 200
+      basicTestResponse3.header("Otoroshi-Request-Id").isEmpty mustBe true
+      basicTestResponse3.header("Otoroshi-Proxy-Latency").isEmpty mustBe true
+      basicTestResponse3.header("Otoroshi-Upstream-Latency").isEmpty mustBe true
+      callCounter.get() mustBe 7
+
+      updateOtoroshiService(initialDescriptor.copy(sendOtoroshiHeadersBack = true)).futureValue
+    }
+
+    "stop servers" in {
+      deleteOtoroshiService(initialDescriptor).futureValue
       basicTestServer.stop()
-
     }
   }
 }
-
-class OtoroshiTests
-  extends Suites(
-    new OtoroshiSpec("InMemory", OtoroshiSpec.configuration)
-  )

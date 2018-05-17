@@ -1,6 +1,6 @@
 name := """otoroshi"""
-organization := "fr.maif"
-version := "1.1.2"
+organization := "fr.maif.otoroshi"
+version := "1.1.2-beta"
 scalaVersion := "2.12.5"
 
 lazy val root = (project in file("."))
@@ -50,6 +50,10 @@ scalafmtVersion in ThisBuild := "1.2.0"
 
 parallelExecution in Test := false
 
+bintrayOrganization := Some("maif")
+bintrayRepository := "maven"
+licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
+
 // assembly
 mainClass in assembly := Some("play.core.server.ProdServerStart")
 test in assembly := {}
@@ -68,4 +72,12 @@ lazy val packageAll = taskKey[Unit]("PackageAll")
 packageAll := {
   (dist in Compile).value
   (assembly in Compile).value
+}
+
+import play.sbt.PlayImport.PlayKeys._
+
+packagedArtifacts in publish := {
+  val artifacts: Map[sbt.Artifact, java.io.File] = (packagedArtifacts in publishLocal).value
+  val assets: java.io.File = (playPackageAssets in Compile).value
+  artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
 }
