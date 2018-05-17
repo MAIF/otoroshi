@@ -11,6 +11,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import otoroshi.api.Otoroshi
 import play.api.Configuration
+import play.api.libs.json.Json
 import play.core.server.ServerConfig
 
 class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
@@ -46,6 +47,8 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
         callCounter.incrementAndGet()
         basicTestExpectedBody
       }).await()
+
+      Json.prettyPrint
 
       val initialDescriptor = ServiceDescriptor(
         id = "basic-test",

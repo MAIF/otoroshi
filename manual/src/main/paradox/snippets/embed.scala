@@ -1,7 +1,7 @@
 package myapp
 
 import java.nio.file.Files
-import models.{ServiceDescriptor, Target, ApiKey}
+import models.{ServiceDescriptor, Target, ApiKey, ServiceGroup}
 import com.typesafe.config.ConfigFactory
 import otoroshi.api.Otoroshi
 import play.core.server.ServerConfig
@@ -81,6 +81,7 @@ for {
   // here your otoroshi is configured to serve http://127.0.0.1:8080 on http://api.foo.bar:8888
   // ...
   otoroshi.stop()
+  System.exit(0)
 }
 
 
