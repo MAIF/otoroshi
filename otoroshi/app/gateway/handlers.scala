@@ -429,6 +429,14 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               Some(descriptor),
                               Some("errors.request.timeout")
                             )
+                          case _: scala.concurrent.TimeoutException =>
+                            Errors.craftResponseResult(
+                              s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                              BadGateway,
+                              req,
+                              Some(descriptor),
+                              Some("errors.request.timeout")
+                            )
                           case AllCircuitBreakersOpenException =>
                             Errors.craftResponseResult(
                               s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",

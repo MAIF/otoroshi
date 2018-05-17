@@ -240,9 +240,8 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       }
 
       val basicTestResponse1 = callServer()
-
       basicTestResponse1.status mustBe 502
-      basicTestResponse1.body.contains("Something went wrong, you should try later. Thanks for your understanding.") mustBe true
+      basicTestResponse1.body.contains("Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -279,9 +278,10 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       }
 
       val basicTestResponse1 = callServer()
+      println(basicTestResponse1.body)
 
       basicTestResponse1.status mustBe 502
-      println(basicTestResponse1.body)
+      basicTestResponse1.body.contains("Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }

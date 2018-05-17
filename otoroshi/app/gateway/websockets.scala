@@ -200,6 +200,14 @@ class WebSocketHandler()(implicit env: Env) {
                       env.circuitBeakersHolder
                         .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
                         .callWS(desc, s"WS ${req.method} ${req.relativeUri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                        case _: scala.concurrent.TimeoutException =>
+                          Errors.craftResponseResult(
+                            s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                            BadGateway,
+                            req,
+                            Some(descriptor),
+                            Some("errors.request.timeout")
+                          ).asLeft[WSFlow]
                         case RequestTimeoutException =>
                           Errors
                             .craftResponseResult(
