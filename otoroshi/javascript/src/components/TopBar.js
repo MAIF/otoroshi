@@ -171,106 +171,63 @@ export class TopBar extends Component {
     const selected = (this.props.params || {}).lineId;
     return (
       <nav className="navbar navbar-inverse navbar-fixed-top">
-        <div className="navbar-header col-md-2">
-          <button
-            id="toggle-navigation"
-            type="button"
-            className="navbar-toggle collapsed"
-            data-toggle="collapse"
-            data-target="#navbar"
-            aria-expanded="false"
-            aria-controls="navbar">
-            <span className="sr-only">Toggle navigation</span>
-            <span className="icon-bar" />
-            <span className="icon-bar" />
-            <span className="icon-bar" />
-          </button>
-          <button
-            id="toggle-sidebar"
-            type="button"
-            className="navbar-toggle collapsed menu"
-            data-toggle="collapse"
-            data-target="#sidebar"
-            aria-expanded="false"
-            aria-controls="sidebar">
-            <span className="sr-only">Toggle sidebar</span>
-            <span>Menu</span>
-          </button>
-          <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-            <span>おとろし</span> &nbsp; Otoroshi
-          </a>
-        </div>
         <div className="container-fluid">
-          <div id="navbar" className="navbar-collapse collapse">
+        <div className="row">
+          <div className="navbar-header col-sm-2">
+            <button
+              id="toggle-sidebar"
+              type="button"
+              className="navbar-toggle collapsed menu"
+              data-toggle="collapse"
+              data-target="#sidebar"
+              aria-expanded="false"
+              aria-controls="sidebar">
+              <span className="sr-only">Toggle sidebar</span>
+              <span>Menu</span>
+            </button>
+            <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
+              <span>おとろし</span> &nbsp; Otoroshi
+            </a>
+          </div>
             <ul className="nav navbar-nav navbar-right">
+            {window.__apiReadOnly && (
               <li>
-                <a href="/backoffice/auth0/logout" className="link-logout">
-                  <span className="topbar-userName">{window.__userid} </span>
-                  <span className="glyphicon glyphicon-off" />
+                <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
+                  <span className="fa fa-lock fa-lg" />
                 </a>
               </li>
-            </ul>
-            <form className="navbar-form navbar-left">
-              {selected && (
-                <div className="form-group" style={{ marginRight: 10 }}>
-                  <span
-                    title="Current line"
-                    className="label label-success"
-                    style={{ fontSize: 20, cursor: 'pointer' }}>
-                    {selected}
-                  </span>
-                </div>
-              )}
-              <div className="form-group" style={{ marginRight: 10 }}>
-                <Async
-                  ref={r => (this.selector = r)}
-                  name="service-search"
-                  value="one"
-                  placeholder="Search service, line, etc ..."
-                  loadOptions={this.searchServicesOptions}
-                  openOnFocus={true}
-                  onChange={i => i.action()}
-                  filterOptions={(opts, value, excluded, conf) => {
-                    const [env, searched] = extractEnv(value);
-                    const filteredOpts = !!env ? opts.filter(i => i.env === env) : opts;
-                    const matched = fuzzy.filter(searched, filteredOpts, {
-                      extract: i => i.label,
-                      pre: '<',
-                      post: '>',
-                    });
-                    return matched.map(i => i.original);
-                  }}
-                  optionRenderer={p => {
-                    return (
-                      <div style={{ display: 'flex' }}>
-                        <div style={{ width: 60 }}>
-                          {p.env &&
-                            _.isString(p.env) && (
-                              <span className={`label ${this.color(p.env)}`}>
-                                {p.env.replace('experiments', 'exps.')}
-                              </span>
-                            )}
-                          {p.env && !_.isString(p.env) && p.env}
-                        </div>
-                        <span>{p.label}</span>
-                      </div>
-                    );
-                  }}
-                  style={{ width: 400 }}
-                />
-              </div>
-            </form>
-            <ul className="nav navbar-nav navbar-left">
-              <li className="dropdown">
+            )}
+            {this.props.changePassword && (
+              <li onClick={e => (window.location = '/bo/dashboard/admins')} style={{ verticalAlign: 'top'}}>
                 <a
-                  href="#"
+                  href="/bo/dashboard/admins"
                   className="dropdown-toggle"
                   data-toggle="dropdown"
                   role="button"
                   aria-haspopup="true"
                   aria-expanded="false">
-                  <i className="fa fa-cog fa-2" aria-hidden="true" />
+                  <span
+                    className="badge"
+                    data-toggle="tooltip"
+                    data-placement="bottom"
+                    title="You are using the default admin account with the default (very unsecured) password. You should create a new admin account quickly."
+                    style={{ backgroundColor: '#c9302c',marginBottom: 5 }}>
+                    <i className="glyphicon glyphicon-alert" />
+                  </span>
                 </a>
+              </li>
+            )}
+              <li className="dropdown userManagement">
+              <a
+                href="#"
+                className="dropdown-toggle"
+                data-toggle="dropdown"
+                role="button"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <i className="fa fa-cog fa-2" aria-hidden="true"/>
+              </a>
                 <ul className="dropdown-menu">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="glyphicon glyphicon-user" /> All users</a>
@@ -345,41 +302,66 @@ export class TopBar extends Component {
                       <span className="glyphicon glyphicon-alert" /> Danger Zone
                     </a>
                   </li>
+                  <li role="separator" className="divider" />
+                  <li>
+                    <a href="/backoffice/auth0/logout" className="link-logout">
+                      <span className="glyphicon glyphicon-off" /><span className="topbar-userName"> {window.__userid} </span>
+                    </a>
+                  </li>
                 </ul>
               </li>
-              {this.props.changePassword && (
-                <li onClick={e => (window.location = '/bo/dashboard/admins')}>
-                  <a
-                    href="/bo/dashboard/admins"
-                    className="dropdown-toggle"
-                    data-toggle="dropdown"
-                    role="button"
-                    aria-haspopup="true"
-                    aria-expanded="false">
-                    <span
-                      className="badge"
-                      data-toggle="tooltip"
-                      data-placement="bottom"
-                      title="You are using the default admin account with the default (very unsecured) password. You should create a new admin account quickly."
-                      style={{ backgroundColor: '#c9302c' }}>
-                      <i className="glyphicon glyphicon-alert" />
-                      <span className="topbar-adminAlert"> default admin account</span>
-                    </span>
-                  </a>
-                </li>
-              )}
-
-              {window.location.pathname === '/bo/dashboard' &&
-                this.props.changePassword && <DefaultAdminPopover />}
-
-              {window.__apiReadOnly && (
-                <li>
-                  <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
-                    <span className="fa fa-lock fa-lg" />
-                  </a>
-                </li>
-              )}
             </ul>
+            <form id="navbar" className="navbar-form navbar-left">
+              {selected && (
+                <div className="form-group" style={{marginRight: 10}}>
+                  <span
+                    title="Current line"
+                    className="label label-success"
+                    style={{ fontSize: 20, cursor: 'pointer' }}>
+                    {selected}
+                  </span>
+                </div>
+              )}
+              <div className="form-group" style={{ marginLeft: 10,marginRight: 10 }}>
+                <Async
+                  ref={r => (this.selector = r)}
+                  name="service-search"
+                  value="one"
+                  placeholder="Search service, line, etc ..."
+                  loadOptions={this.searchServicesOptions}
+                  openOnFocus={true}
+                  onChange={i => i.action()}
+                  filterOptions={(opts, value, excluded, conf) => {
+                    const [env, searched] = extractEnv(value);
+                    const filteredOpts = !!env ? opts.filter(i => i.env === env) : opts;
+                    const matched = fuzzy.filter(searched, filteredOpts, {
+                      extract: i => i.label,
+                      pre: '<',
+                      post: '>',
+                    });
+                    return matched.map(i => i.original);
+                  }}
+                  optionRenderer={p => {
+                    return (
+                      <div style={{ display: 'flex' }}>
+                        <div style={{ width: 60 }}>
+                          {p.env &&
+                            _.isString(p.env) && (
+                              <span className={`label ${this.color(p.env)}`}>
+                                {p.env.replace('experiments', 'exps.')}
+                              </span>
+                            )}
+                          {p.env && !_.isString(p.env) && p.env}
+                        </div>
+                        <span>{p.label}</span>
+                      </div>
+                    );
+                  }}
+                  style={{ width: 400 }}
+                />
+              </div>
+            </form>
+
           </div>
         </div>
       </nav>
