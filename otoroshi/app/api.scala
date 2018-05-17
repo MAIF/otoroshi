@@ -2,6 +2,7 @@ package otoroshi.api
 
 import actions._
 import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
@@ -114,12 +115,14 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     this
   }
 
-  def executionContext: ExecutionContext = components.executionContext
-  def env: Env = components.env
-  def dataStores: DataStores = components.env.datastores
-  def ws: WSClient = components.wsClient
-  def system: ActorSystem = components.actorSystem
-  def injector: Injector = components.injector
+  implicit val materializer: Materializer = components.materializer
+  implicit val executionContext: ExecutionContext = components.executionContext
+  implicit val env: Env = components.env
+  
+  val dataStores: DataStores = components.env.datastores
+  val ws: WSClient = components.wsClient
+  val system: ActorSystem = components.actorSystem
+  val injector: Injector = components.injector
 }
 
 object Otoroshi {

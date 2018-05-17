@@ -47,7 +47,7 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
         callCounter.incrementAndGet()
         basicTestExpectedBody
       }).await()
-      
+
       val initialDescriptor = ServiceDescriptor(
         id = "basic-test",
         name = "basic-test",

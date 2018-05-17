@@ -73,3 +73,11 @@ packageAll := {
   (dist in Compile).value
   (assembly in Compile).value
 }
+
+import play.sbt.PlayImport.PlayKeys._
+
+packagedArtifacts in publish := {
+  val artifacts: Map[sbt.Artifact, java.io.File] = (packagedArtifacts in publishLocal).value
+  val assets: java.io.File = (playPackageAssets in Compile).value
+  artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
+}
