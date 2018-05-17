@@ -18,3 +18,6 @@ Now just instanciate an Otoroshi proxy with the configuration you like and you w
 
 Scala
 :   @@snip [embed.scala](./snippets/embed.scala)
+
+Java
+:   @@snip [embed.java](./snippets/embed.java)
