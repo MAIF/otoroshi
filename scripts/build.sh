@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 LOCATION=`pwd`
 
@@ -34,12 +34,25 @@ build_server () {
   sbt ';clean;compile;dist;assembly'
 }
 
+test_server () {
+  cd $LOCATION/otoroshi
+  TEST_STORE=inmemory sbt test
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+  TEST_STORE=leveldb sbt test
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+  TEST_STORE=redis sbt test
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+  TEST_STORE=cassandra sbt test
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+}
+
 case "${1}" in
   all)
     clean
     build_ui
     build_manual
     build_server
+    test_server
     build_cli
     ;;
   cli)
@@ -62,6 +75,7 @@ case "${1}" in
     build_ui
     build_manual
     build_server
+    test_server
     build_cli
 esac
 

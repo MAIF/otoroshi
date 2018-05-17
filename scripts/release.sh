@@ -59,6 +59,10 @@ curl -T "$LOCATION/release-$VERSION/mac-otoroshicli" -umathieuancelin:$BINTRAY_A
 # push win-otoroshicli.exe on bintray
 # curl -T "$LOCATION/release-$VERSION/win-otoroshicli.exe" -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H "X-Bintray-Version: $VERSION" -H 'X-Bintray-Package: win-otoroshicli' "https://api.bintray.com/content/maif/binaries/win-otoroshicli/$VERSION/otoroshicli.exe"
 
+cd $LOCATION/otoroshi
+sbt publish
+cd $LOCATION
+
 create_release () {
   curl -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/MAIF/otoroshi/releases" -d "
   {
