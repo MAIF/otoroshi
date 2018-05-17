@@ -82,7 +82,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val privateAppsController = wire[PrivateAppsController]
   lazy val u2fController         = wire[U2FController]
 
-  override lazy val assets: Assets = Assets()//wire[Assets]
+  override lazy val assets: Assets = wire[Assets]
 
   lazy val router: Router = {
     val prefix: String = "/"
