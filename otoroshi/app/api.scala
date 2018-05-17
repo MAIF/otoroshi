@@ -2,7 +2,7 @@ package otoroshi.api
 
 import actions._
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
@@ -82,7 +82,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val privateAppsController = wire[PrivateAppsController]
   lazy val u2fController         = wire[U2FController]
 
-  override lazy val assets: Assets = wire[Assets]
+  override lazy val assets: Assets = Assets()//wire[Assets]
 
   lazy val router: Router = {
     val prefix: String = "/"
@@ -118,7 +118,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   implicit val materializer: Materializer = components.materializer
   implicit val executionContext: ExecutionContext = components.executionContext
   implicit val env: Env = components.env
-  
+
   val dataStores: DataStores = components.env.datastores
   val ws: WSClient = components.wsClient
   val system: ActorSystem = components.actorSystem
