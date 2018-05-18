@@ -31,6 +31,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
   lazy val ws = otoroshiComponents.wsClient
   implicit val system = ActorSystem("otoroshi-test")
   implicit val mat = ActorMaterializer.create(system)
+  implicit val http = Http()(system)
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -97,22 +98,22 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
         //   Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.both).alsoTo(Sink.onComplete { _ =>
         //     println(s"[WEBSOCKET] client flow stopped")
         //   }))
-        Http().singleWebSocketRequest(WebSocketRequest(s"ws://127.0.0.1:$port")
+        http.singleWebSocketRequest(WebSocketRequest(s"ws://127.0.0.1:$port")
           .copy(extraHeaders = List(Host("ws.foo.bar"))),
           Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.both).alsoTo(Sink.onComplete { _ =>
             println(s"[WEBSOCKET] client flow stopped")
           }))
 
-      val connected = upgradeResponse.map { upgrade =>
-        if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-          Done
-        } else {
-          val body = upgrade.response.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).futureValue.utf8String
-          throw new RuntimeException(s"Connection failed: ${upgrade.response.status} :: $body")
-        }
-      }
+      //val connected = upgradeResponse.map { upgrade =>
+      //  if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+      //    Done
+      //  } else {
+      //    val body = upgrade.response.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).futureValue.utf8String
+      //    throw new RuntimeException(s"Connection failed: ${upgrade.response.status} :: $body")
+      //  }
+      //}
 
-      connected.onComplete(println)
+      //connected.onComplete(println)
 
       await(2.seconds)
 
