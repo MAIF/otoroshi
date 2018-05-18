@@ -195,6 +195,207 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       updateOtoroshiService(initialDescriptor.copy(sendOtoroshiHeadersBack = true)).futureValue
     }
 
+    "Send additionnal headers to target" in {
+      val counter = new AtomicInteger(0)
+      val body = """{"message":"hello world"}"""
+      val server = TargetService(None, "/api", "application/json", { r =>
+        r.headers.find(_.name() == "X-Foo").map(_.value()) mustBe Some("Bar")
+        counter.incrementAndGet()
+        body
+      }).await()
+      val service = ServiceDescriptor(
+        id = "header-test",
+        name = "header-test",
+        env = "prod",
+        subdomain = "header",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        additionalHeaders = Map("X-Foo" -> "Bar")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> "header.foo.bar"
+      ).get().futureValue
+
+      resp1.status mustBe 200
+      resp1.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Route only if header is present" in {
+      val counter = new AtomicInteger(0)
+      val body = """{"message":"hello world"}"""
+      val server = TargetService(None, "/api", "application/json", { _ =>
+        counter.incrementAndGet()
+        body
+      }).await()
+      val service = ServiceDescriptor(
+        id = "match-test",
+        name = "match-test",
+        env = "prod",
+        subdomain = "match",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        matchingHeaders = Map("X-Foo" -> "Bar")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> "match.foo.bar"
+      ).get().futureValue
+      val resp2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> "match.foo.bar",
+        "X-Foo" -> "Bar"
+      ).get().futureValue
+
+      resp1.status mustBe 404
+      resp2.status mustBe 200
+      resp2.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Route only if matching root is present" in {
+      val counter = new AtomicInteger(0)
+      val body = """{"message":"hello world"}"""
+      val server = TargetService(None, "/api", "application/json", { _ =>
+        counter.incrementAndGet()
+        body
+      }).await()
+      val service = ServiceDescriptor(
+        id = "matchroot-test",
+        name = "matchroot-test",
+        env = "prod",
+        subdomain = "matchroot",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        matchingRoot = Some("/foo")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws.url(s"http://127.0.0.1:$port/foo/api").withHttpHeaders(
+        "Host" -> "matchroot.foo.bar"
+      ).get().futureValue
+
+
+      resp1.status mustBe 200
+      resp1.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Add root to target call" in {
+      val counter = new AtomicInteger(0)
+      val body = """{"message":"hello world"}"""
+      val server = TargetService(None, "/api", "application/json", { _ =>
+        counter.incrementAndGet()
+        body
+      }).await()
+      val service = ServiceDescriptor(
+        id = "root-test",
+        name = "root-test",
+        env = "prod",
+        subdomain = "root",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        root = "/api",
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws.url(s"http://127.0.0.1:$port").withHttpHeaders(
+        "Host" -> "root.foo.bar"
+      ).get().futureValue
+
+      resp1.status mustBe 200
+      resp1.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Match wildcard domains" in {
+      val counter = new AtomicInteger(0)
+      val body = """{"message":"hello world"}"""
+      val server = TargetService(None, "/api", "application/json", { _ =>
+        counter.incrementAndGet()
+        body
+      }).await()
+      val service = ServiceDescriptor(
+        id = "wildcard-test",
+        name = "wildcard-test",
+        env = "prod",
+        subdomain = "wild*",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> "wildcard.foo.bar"
+      ).get().futureValue
+      val resp2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> "wildbar.foo.bar"
+      ).get().futureValue
+      val resp3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
+        "Host" -> "wildfoo.foo.bar"
+      ).get().futureValue
+
+      resp1.status mustBe 200
+      resp1.body mustBe body
+      resp2.status mustBe 200
+      resp3.body mustBe body
+      resp3.status mustBe 200
+      resp3.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
     "stop servers" in {
       deleteOtoroshiService(initialDescriptor).futureValue
       basicTestServer.stop()

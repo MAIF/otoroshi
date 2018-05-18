@@ -67,16 +67,14 @@ object OtoroshiTests {
       )
     } else {
       Seq(
-        new BasicSpec(name, config), // add private path, additional header, routing headers, matching root, target root, wildcard domain, whitelist, blacklist
+        new BasicSpec(name, config),
         new AdminApiSpec(name, config),
         new ProgrammaticApiSpec(name, config),
         new CircuitBreakerSpec(name, config),
         new CanarySpec(name, config)
-        // alerts spec
-        // audit spec
+        // alerts spec & audit spec
         // websocket spec
         // rate limit & quotas spec
-        // apikeys spec with quotas in headers
       )
     }
   }
@@ -93,4 +91,4 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndA
   }
 }
 
-//class DevOtoroshiTests extends Suites(new ApiKeysSpec("DEV", Configurations.InMemoryConfiguration))
+//class DevOtoroshiTests extends Suites(new BasicSpec("DEV", Configurations.InMemoryConfiguration))

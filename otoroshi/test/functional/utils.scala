@@ -258,7 +258,6 @@ class TargetService(host: Option[String], path: String, contentType: String, res
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
       case (HttpMethods.GET, p) if host.isEmpty => {
-      //case (_,_) => {
         FastFuture.successful(
           HttpResponse(
             200,
