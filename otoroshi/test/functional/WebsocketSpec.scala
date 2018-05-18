@@ -114,8 +114,8 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
 
       await(300.seconds)
 
-      // serverCounter.get mustBe 11
-      // clientCounter.get mustBe 11
+      serverCounter.get mustBe 11
+      clientCounter.get mustBe 11
 
       deleteOtoroshiService(service).futureValue
     }
