@@ -16,7 +16,9 @@ import com.typesafe.config.ConfigFactory
 import models.{ApiKey, ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.api.Otoroshi
 import play.api.Configuration
+import play.core.server.ServerConfig
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -26,12 +28,6 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
-
-  lazy val serviceHost = "ws.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
-  implicit val system = ActorSystem("otoroshi-test")
-  implicit val mat = ActorMaterializer.create(system)
-  implicit val http = Http()(system)
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -45,32 +41,43 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
 
   s"[$name] Otoroshi" should {
 
-    val serverCounter = new AtomicInteger(0)
-    val clientCounter = new AtomicInteger(0)
-    val server = new WebsocketServer(serverCounter).await()
-    val service = ServiceDescriptor(
-      id = "ws-test",
-      name = "ws-test",
-      env = "prod",
-      subdomain = "ws",
-      domain = "foo.bar",
-      targets = Seq(
-        Target(
-          host = s"echo.websocket.org",
-          scheme = "http"
-        )
-      ),
-      forceHttps = false,
-      enforceSecureCommunication = false,
-      publicPatterns = Seq("/.*")
-    )
-    
-    "warm up" in {
-      getOtoroshiServices().futureValue // WARM UP
-    }
-
     "support websockets" in {
-      createOtoroshiService(service).futureValue
+
+      implicit val system = ActorSystem("otoroshi-test")
+      implicit val mat = ActorMaterializer.create(system)
+      implicit val http = Http()(system)
+
+      val service = ServiceDescriptor(
+        id = "ws-test",
+        name = "ws-test",
+        env = "prod",
+        subdomain = "ws",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"echo.websocket.org",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*")
+      )
+
+      val clientCounter = new AtomicInteger(0)
+
+      val otoroshi = Otoroshi(
+        ServerConfig(
+          address = "0.0.0.0",
+          port = Some(8888)
+        )
+      ).startAndStopOnShutdown()
+
+      implicit val env = otoroshi.env
+
+      getOtoroshiServices(Some(8888), otoroshi.ws).futureValue // WARM UP
+
+      createOtoroshiService(service, Some(8888), otoroshi.ws).futureValue
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
         clientCounter.incrementAndGet()
@@ -78,6 +85,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
       }
 
       val nameSource: Source[Message, NotUsed] =
+        Source.fromFuture(awaitF(1.second).map(_ => TextMessage("yo"))).concat(
         Source(
           List(
             TextMessage("mathieu"),
@@ -90,41 +98,19 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
             TextMessage("emmanuel"),
             TextMessage("frederic")
           )
-        )
+        ))
 
+      http.singleWebSocketRequest(WebSocketRequest(s"ws://127.0.0.1:$port")
+        .copy(extraHeaders = List(Host("ws.foo.bar"))),
+        Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.both).alsoTo(Sink.onComplete { _ =>
+          println(s"[WEBSOCKET] client flow stopped")
+        }))
 
-      val (upgradeResponse, _) =
-        // Http().singleWebSocketRequest(WebSocketRequest(s"ws://echo.websocket.org"),
-        //   Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.both).alsoTo(Sink.onComplete { _ =>
-        //     println(s"[WEBSOCKET] client flow stopped")
-        //   }))
-        http.singleWebSocketRequest(WebSocketRequest(s"ws://127.0.0.1:$port")
-          .copy(extraHeaders = List(Host("ws.foo.bar"))),
-          Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.both).alsoTo(Sink.onComplete { _ =>
-            println(s"[WEBSOCKET] client flow stopped")
-          }))
+      awaitF(2.seconds).futureValue
 
-      //val connected = upgradeResponse.map { upgrade =>
-      //  if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-      //    Done
-      //  } else {
-      //    val body = upgrade.response.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).futureValue.utf8String
-      //    throw new RuntimeException(s"Connection failed: ${upgrade.response.status} :: $body")
-      //  }
-      //}
-
-      //connected.onComplete(println)
-
-      await(2.seconds)
-
-      //serverCounter.get mustBe 11
       clientCounter.get mustBe 9
 
-      deleteOtoroshiService(service).futureValue
-    }
-
-    "stop servers" in {
-      server.stop()
+      otoroshi.stop()
       system.terminate()
     }
   }
