@@ -63,7 +63,9 @@ object OtoroshiTests {
         new AdminApiSpec(name, Configurations.LevelDBConfiguration),
         new ProgrammaticApiSpec(name, Configurations.LevelDBConfiguration),
         new CircuitBreakerSpec(name, Configurations.LevelDBConfiguration),
-        new CanarySpec(name, Configurations.LevelDBConfiguration)
+        new CanarySpec(name, Configurations.LevelDBConfiguration),
+        new QuotasSpec(name, Configurations.LevelDBConfiguration),
+        new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
       Seq(
@@ -71,10 +73,10 @@ object OtoroshiTests {
         new AdminApiSpec(name, config),
         new ProgrammaticApiSpec(name, config),
         new CircuitBreakerSpec(name, config),
-        new CanarySpec(name, config)
-        // alerts spec & audit spec
+        new CanarySpec(name, config),
+        new QuotasSpec(name, config),
+        new AlertAndAnalyticsSpec(name, config)
         // websocket spec
-        // rate limit & quotas spec
       )
     }
   }
@@ -91,4 +93,4 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndA
   }
 }
 
-//class DevOtoroshiTests extends Suites(new QuotasSpec("DEV", Configurations.InMemoryConfiguration))
+//class DevOtoroshiTests extends Suites(new AlertAndAnalyticsSpec("DEV", Configurations.InMemoryConfiguration))

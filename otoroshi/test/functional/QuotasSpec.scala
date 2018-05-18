@@ -33,7 +33,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
        """.stripMargin).resolve()
   )
 
-  s"[$name] Otoroshi Circuit Breaker" should {
+  s"[$name] Otoroshi Quotas" should {
 
     val counter = new AtomicInteger(0)
     val body = """{"message":"hello world"}"""

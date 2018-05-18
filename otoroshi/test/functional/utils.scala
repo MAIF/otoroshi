@@ -2,6 +2,7 @@ package functional
 
 import java.net.ServerSocket
 import java.util.Optional
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -9,7 +10,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import models.{ApiKey, ServiceDescriptor, ServiceGroup}
+import models.{ApiKey, GlobalConfig, ServiceDescriptor, ServiceGroup}
 import modules.OtoroshiComponentsInstances
 import org.scalatest.TestSuite
 import org.scalatest.concurrent.ScalaFutures
@@ -109,6 +110,30 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     }
   }
 
+  def getOtoroshiConfig(customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig").withHttpHeaders(
+      "Host" -> "otoroshi-api.foo.bar",
+      "Accept" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
+      //if (response.status != 200) {
+      //  println(response.body)
+      //}
+      GlobalConfig.fromJsons(response.json)
+    }
+  }
+
+  def updateOtoroshiConfig(config: GlobalConfig, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig").withHttpHeaders(
+      "Host" -> "otoroshi-api.foo.bar",
+      "Content-Type" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).put(Json.stringify(config.toJson)).map { response =>
+      //if (response.status != 200) {
+      //  println(response.body)
+      //}
+      GlobalConfig.fromJsons(response.json)
+    }
+  }
+
   def getOtoroshiServices(customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[Seq[ServiceDescriptor]] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services").withHttpHeaders(
       "Host" -> "otoroshi-api.foo.bar",
@@ -160,6 +185,19 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post(Json.stringify(apiKey.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+  }
+
+  def deleteOtoroshiApiKey(apiKey: ApiKey, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups/default/apikeys/${apiKey.clientId}")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.foo.bar",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
       .map { resp =>
         (resp.json, resp.status)
       }
@@ -323,6 +361,79 @@ class SimpleTargetService(host: Option[String], path: String, contentType: Strin
   val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
 
   def await(): SimpleTargetService = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}
+
+class AlertServer(counter: AtomicInteger) {
+
+  val port = TargetService.freePort
+
+  implicit val system = ActorSystem()
+  implicit val ec     = system.dispatcher
+  implicit val mat    = ActorMaterializer.create(system)
+  implicit val http   = Http(system)
+
+  val logger = LoggerFactory.getLogger("otoroshi-test")
+
+  def handler(request: HttpRequest): Future[HttpResponse] = {
+    request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
+      val body = bodyByteString.utf8String
+      //println(Json.prettyPrint(Json.parse(body)))
+      counter.incrementAndGet()
+      HttpResponse(
+        200,
+        entity = HttpEntity(ContentTypes.`application/json`, ByteString(Json.stringify(Json.obj("done" -> true))))
+      )
+    }
+  }
+
+  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+
+  def await(): AlertServer = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}
+class AnalyticsServer(counter: AtomicInteger) {
+
+  val port = TargetService.freePort
+
+  implicit val system = ActorSystem()
+  implicit val ec     = system.dispatcher
+  implicit val mat    = ActorMaterializer.create(system)
+  implicit val http   = Http(system)
+
+  val logger = LoggerFactory.getLogger("otoroshi-test")
+
+  def handler(request: HttpRequest): Future[HttpResponse] = {
+    request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
+      val body = bodyByteString.utf8String
+      val events = Json.parse(body).as[JsArray].value
+      counter.addAndGet(events.size)
+      HttpResponse(
+        200,
+        entity = HttpEntity(ContentTypes.`application/json`, ByteString(Json.stringify(Json.obj("done" -> true))))
+      )
+    }
+  }
+
+  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+
+  def await(): AnalyticsServer = {
     Await.result(bound, 60.seconds)
     this
   }

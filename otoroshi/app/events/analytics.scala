@@ -35,7 +35,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
-    .groupedWithin(env.maxWebhookSize, FiniteDuration(30, TimeUnit.SECONDS))
+    .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS))
     .mapAsync(5) { evts =>
       logger.debug(s"SEND_TO_ANALYTICS_HOOK: will send ${evts.size} evts")
       env.datastores.globalConfigDataStore.singleton().fast.map { config =>
