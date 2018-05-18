@@ -155,7 +155,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
           "Host" -> "canary2.foo.bar",
           "Otoroshi-Canary-Id" -> id
         ).get().futureValue
-        println(r.body)
+        //println(r.body)
         (r.status, r.body, r.header("Otoroshi-Canary-Id").getOrElse("--"))
       }
 

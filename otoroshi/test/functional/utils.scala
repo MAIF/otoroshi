@@ -41,7 +41,7 @@ trait OneServerPerSuiteWithMyComponents
 
   val otoroshiComponents = {
     val components = new OtoroshiTestComponentsInstances(context, getConfiguration)
-    println(s"Using env ${components.env}")
+    //println(s"Using env ${components.env}")
     components
   }
 
