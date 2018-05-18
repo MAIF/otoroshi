@@ -44,8 +44,9 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
 
   s"[$name] Otoroshi" should {
 
-    val counter = new AtomicInteger(0)
-    val server = new WebsocketServer(counter).await()
+    val serverCounter = new AtomicInteger(0)
+    val clientCounter = new AtomicInteger(0)
+    val server = new WebsocketServer(serverCounter).await()
     val service = ServiceDescriptor(
       id = "ws-test",
       name = "ws-test",
@@ -70,31 +71,35 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
     "support websockets" in {
       createOtoroshiService(service).futureValue
 
-      val printSink: Sink[Message, Future[Done]] =
-        Sink.foreach { message =>
-          println("client received: " + message.asScala.asTextMessage.getStrictText)
-        }
+      val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
+        clientCounter.incrementAndGet()
+        println("client received: " + message.asScala.asTextMessage.getStrictText)
+      }
 
       val nameSource: Source[Message, NotUsed] =
-        Source(
-          List(
-            TextMessage("mathieu"),
-            TextMessage("alex"),
-            TextMessage("chris"),
-            TextMessage("francois"),
-            TextMessage("aurelie"),
-            TextMessage("loic"),
-            TextMessage("pierre"),
-            TextMessage("emmanuel"),
-            TextMessage("frederic")
+        Source.fromFuture(awaitF(2.seconds).map(_ => TextMessage("first"))).concat(
+          Source(
+            List(
+              TextMessage("mathieu"),
+              TextMessage("alex"),
+              TextMessage("chris"),
+              TextMessage("francois"),
+              TextMessage("aurelie"),
+              TextMessage("loic"),
+              TextMessage("pierre"),
+              TextMessage("emmanuel"),
+              TextMessage("frederic")
+            )
           )
+        ).concat(
+          Source.fromFuture(awaitF(2.seconds).map(_ => TextMessage("last")))
         )
 
-      val flow: Flow[Message, Message, Future[Done]] =
-        Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.left)
 
-      val (upgradeResponse, closed) =
-      Http().singleWebSocketRequest(WebSocketRequest(s"ws://127.0.0.1:$port/ws").copy(extraHeaders = List(Host("ws.foo.bar"))), flow)
+      val (upgradeResponse, _) =
+        Http().singleWebSocketRequest(WebSocketRequest(s"ws://127.0.0.1:$port/ws")
+          .copy(extraHeaders = List(Host("ws.foo.bar"))),
+          Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.both))
 
       val connected = upgradeResponse.map { upgrade =>
         if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
@@ -105,13 +110,12 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
         }
       }
 
-
       connected.onComplete(println)
 
-      await(10.seconds)
-      closed.foreach(_ => println("closed"))
+      await(300.seconds)
 
-      counter.get mustBe 9
+      // serverCounter.get mustBe 11
+      // clientCounter.get mustBe 11
 
       deleteOtoroshiService(service).futureValue
     }

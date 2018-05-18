@@ -874,10 +874,11 @@ class WebSocketProxyActor(url: String,
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case msg: PlayWSTextMessage => {
-      logger.debug(s"[WEBSOCKET] text message from client: $msg")
+      logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
     }
     case CloseMessage(status, reason) => {
+      logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
       Option(queueRef.get()).foreach(_.complete())
       out ! PoisonPill
     }
