@@ -658,36 +658,21 @@ class WebSocketHandler()(implicit env: Env) {
                                                Some("errors.too.much.requests"))
                           .asLeft[WSFlow]
                       } else {
-                        if (env.isProd && req.domain.endsWith(env.domain) && !isSecured) {
+                         if (env.isProd && !isSecured && desc.forceHttps) {
                           val theDomain = req.domain
                           val protocol = req.headers
                             .get("X-Forwarded-Protocol")
-                            .map(_ == "https")
+                            .map(_ == "wss")
                             .orElse(Some(req.secure))
                             .map {
-                              case true  => "https"
-                              case false => "http"
+                              case true  => "wss"
+                              case false => "ws"
                             }
-                            .getOrElse("http")
+                            .getOrElse("ws")
                           logger.info(
-                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
+                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to wss://$theDomain${req.relativeUri}"
                           )
-                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}")))
-                        } else if (env.isProd && !isSecured && desc.forceHttps) {
-                          val theDomain = req.domain
-                          val protocol = req.headers
-                            .get("X-Forwarded-Protocol")
-                            .map(_ == "https")
-                            .orElse(Some(req.secure))
-                            .map {
-                              case true  => "https"
-                              case false => "http"
-                            }
-                            .getOrElse("http")
-                          logger.info(
-                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
-                          )
-                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}")))
+                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}").withHeaders("foo2" -> "bar2")))
                         } else if (!within) {
                           // TODO : count as served req here !!!
                           Errors

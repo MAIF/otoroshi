@@ -7,8 +7,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import models.{ApiKey, GlobalConfig, ServiceDescriptor, ServiceGroup}
 import modules.OtoroshiComponentsInstances
@@ -408,6 +410,7 @@ class AlertServer(counter: AtomicInteger) {
     Await.result(system.terminate(), 60.seconds)
   }
 }
+
 class AnalyticsServer(counter: AtomicInteger) {
 
   val port = TargetService.freePort
@@ -434,6 +437,46 @@ class AnalyticsServer(counter: AtomicInteger) {
   val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
 
   def await(): AnalyticsServer = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}
+
+class WebsocketServer(counter: AtomicInteger) {
+
+  val port = TargetService.freePort
+
+  implicit val system = ActorSystem()
+  implicit val ec     = system.dispatcher
+  implicit val mat    = ActorMaterializer.create(system)
+  implicit val http   = Http(system)
+
+  val logger = LoggerFactory.getLogger("otoroshi-test")
+
+  val greeterWebSocketService =
+    Flow[Message]
+      .map { message =>
+        println("server received message")
+        counter.incrementAndGet()
+        TextMessage(Source.single("Hello ") ++ message.asTextMessage.getStreamedText)
+      }
+
+  def handler(request: HttpRequest): Future[HttpResponse] = {
+    request.header[UpgradeToWebSocket] match {
+      case Some(upgrade) => FastFuture.successful(upgrade.handleMessages(greeterWebSocketService))
+      case None => FastFuture.successful(HttpResponse(400, entity = "Not a valid websocket request!"))
+    }
+  }
+
+  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+
+  def await(): WebsocketServer = {
     Await.result(bound, 60.seconds)
     this
   }
