@@ -32,7 +32,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
        """.stripMargin).resolve()
   )
 
-  s"[$name] Otoroshi Circuit Breaker" should {
+  s"[$name] Otoroshi ApiKeys" should {
 
     val callCounter1 = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""

@@ -91,4 +91,4 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndA
   }
 }
 
-//class DevOtoroshiTests extends Suites(new BasicSpec("DEV", Configurations.InMemoryConfiguration))
+//class DevOtoroshiTests extends Suites(new QuotasSpec("DEV", Configurations.InMemoryConfiguration))
