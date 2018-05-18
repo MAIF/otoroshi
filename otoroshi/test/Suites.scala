@@ -59,16 +59,16 @@ object OtoroshiTests {
     }
     if (name == "LevelDB") {
       Seq(
-        new OtoroshiBasicSpec(name, Configurations.LevelDBConfiguration),
-        new OtoroshiApiSpec(name, Configurations.LevelDBConfiguration),
+        new BasicSpec(name, Configurations.LevelDBConfiguration),
+        new AdminApiSpec(name, Configurations.LevelDBConfiguration),
         new ProgrammaticApiSpec(name, Configurations.LevelDBConfiguration),
         new CircuitBreakerSpec(name, Configurations.LevelDBConfiguration),
         new CanarySpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
       Seq(
-        new OtoroshiBasicSpec(name, config), // add private path, additional header, routing headers, matching root, target root, wildcard domain, whitelist, blacklist
-        new OtoroshiApiSpec(name, config),
+        new BasicSpec(name, config), // add private path, additional header, routing headers, matching root, target root, wildcard domain, whitelist, blacklist
+        new AdminApiSpec(name, config),
         new ProgrammaticApiSpec(name, config),
         new CircuitBreakerSpec(name, config),
         new CanarySpec(name, config)
@@ -93,4 +93,4 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndA
   }
 }
 
-// class DevOtoroshiTests extends Suites(new CanarySpec("DEV", Configurations.InMemoryConfiguration))
+//class DevOtoroshiTests extends Suites(new ApiKeysSpec("DEV", Configurations.InMemoryConfiguration))

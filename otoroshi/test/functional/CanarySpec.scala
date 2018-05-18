@@ -2,7 +2,6 @@ package functional
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience

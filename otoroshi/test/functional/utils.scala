@@ -152,6 +152,19 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 
+  def createOtoroshiApiKey(apiKey: ApiKey, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups/default/apikeys")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.foo.bar",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(apiKey.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+  }
+
   def updateOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
