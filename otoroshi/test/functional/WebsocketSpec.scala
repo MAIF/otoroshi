@@ -71,9 +71,8 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
       createOtoroshiService(service).futureValue
 
       val printSink: Sink[Message, Future[Done]] =
-        Sink.foreach {
-          case message =>
-            println("client received: " + message.asTextMessage.getStreamedText)
+        Sink.foreach { message =>
+          println("client received: " + message.asScala.asTextMessage.getStrictText)
         }
 
       val nameSource: Source[Message, NotUsed] =
