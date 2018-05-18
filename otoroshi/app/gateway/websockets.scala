@@ -847,8 +847,8 @@ class WebSocketProxyActor(url: String,
       queueRef.set(materialized._2)
       connected.andThen {
         case Success(r) => {
-          implicit val ec  = context.dispatcher
-          implicit val mat = ActorMaterializer.create(context)
+          implicit val ec  = env.gatewayActorSystem.dispatcher
+          implicit val mat = env.gatewayMaterializer
           logger.info(
             s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
           )
