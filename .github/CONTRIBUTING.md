@@ -78,6 +78,30 @@ to build the documentation, run the following command at the root of the reposit
 sh ./scripts/doc.sh
 ```
 
+## Tests
+
+Every new feature should provide corresponding tests to ensure everything is working and will still working in future releases. To run the tests, just run
+
+```sh
+sbt test
+```
+
+you can also run the tests using other datastores
+
+```sh
+TEST_STORE=inmemory sbt test
+TEST_STORE=leveldb sbt test
+TEST_STORE=redis sbt test
+TEST_STORE=cassandra sbt test
+```
+
+cassandra and redis tests will try to connect to local instance of cassandra and redis running on standard ports.
+
+```sh
+docker run -d -p 9042:9042 -p 7000:7000 --env CASSANDRA_LISTEN_ADDRESS=127.0.0.1 cassandra:3.11
+docker run -d -p 6379:6379 redis:4.0.8 redis-server --appendonly yes
+```
+
 ## Source style
 
 The whole code of Otoroshi is automatically formatted using 
