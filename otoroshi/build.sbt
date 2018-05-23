@@ -81,3 +81,7 @@ packagedArtifacts in publish := {
   val assets: java.io.File = (playPackageAssets in Compile).value
   artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
 }
+
+// should fix issues with https targets on jdk8u161
+libraryDependencies += "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % "2.0.7"
+javaAgents += "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % "2.0.7" % "runtime"
