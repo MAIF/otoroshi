@@ -1,0 +1,10 @@
+{
+  "name": "lb-test-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "express": "4.16.3",
+    "lodash": "4.17.10",
+    "minimist": "1.2.0"
+  }
+}
