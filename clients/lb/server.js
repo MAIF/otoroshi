@@ -247,7 +247,9 @@ setTimeout(() => {
       console.log(`[wrk-load-err] ${chunk}`);
     });
     wrkLoad.on('exit', (e) => {
-      process.exit();
+      setTimeout(() => {
+        process.exit();
+      }, 2000)
     });
   });
 }, 10000)
