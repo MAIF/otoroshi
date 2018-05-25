@@ -5,7 +5,68 @@ const argv = require('minimist')(process.argv.slice(2));
 const from = argv.fromPort;
 const to = argv.toPort + 1;
 const processes = [];
-
+const otoPort = argv.otoPort || 8091;
+const pass = "UdjDabLqV0JcHEaZQYaPjevjAbNUEBqh";
+const a = {
+  "id": "lb-test",
+  "groupId": "default",
+  "name": "lb-test",
+  "env": "prod",
+  "domain": "foo.bar",
+  "subdomain": "test",
+  "targets": _.range(from, to).map(port => {
+    return {
+      "host" : `127.0.0.1:${port}`,
+      "scheme": "http"
+    };
+  }),
+  "root": "/",
+  "matchingRoot": null,
+  "localHost": `127.0.0.1:${otoPort}`,
+  "localScheme": "http",
+  "redirectToLocal": false,
+  "enabled": true,
+  "privateApp": false,
+  "forceHttps": false,
+  "maintenanceMode": false,
+  "buildMode": false,
+  "enforceSecureCommunication": false,
+  "sendOtoroshiHeadersBack": true,
+  "secComExcludedPatterns": [],
+  "publicPatterns": ['/.*'],
+  "privatePatterns": [],
+  "additionalHeaders": {},
+  "matchingHeaders": {},
+  "ipFiltering": {
+    "whitelist": [],
+    "blacklist": []
+  },
+  "api": {
+    "exposeApi": false
+  },
+  "healthCheck": {
+    "enabled": false,
+    "url": "/"
+  },
+  "clientConfig": {
+    "useCircuitBreaker": true,
+    "retries": 3,
+    "maxErrors": 20,
+    "retryInitialDelay": 50,
+    "backoffFactor": 2,
+    "callTimeout": 30000,
+    "globalTimeout": 30000,
+    "sampleInterval": 2000
+  },
+  "canary": {
+    "enabled": false,
+    "traffic": 0.2,
+    "targets": [],
+    "root": "/"
+  },
+  "metadata": {}
+};
+ 
 _.range(from, to).forEach((port, idx) => {
   const cp = fork('fork.js', [`--port=${port}`, `--idx=${idx}`]);
   processes.push(cp);
@@ -163,14 +224,38 @@ configApp.get('/otoroshi.json', (req, res) => {
     "errorTemplates": []
   });
 });
-configApp.listen(configPort, () => console.log(`Config server listening on port ${configPort}!`));
+
+configApp.listen(configPort, () => {
+  console.log(`Config server listening on port ${configPort}!`);
+  console.log("Starting Otoroshi ...");
+  const otoroshi = exec(`java -Dhttp.port=${otoPort} -Dapp.importFrom=http://127.0.0.1:${configPort}/otoroshi.json  -jar ../../otoroshi/target/scala-2.12/otoroshi.jar`);
+  processes.push(otoroshi);
+});
 
 setTimeout(() => {
-  console.log(`curl -H 'Host: test.foo.bar' http://127.0.0.1:${otoPort}/`);
-  console.log('node server.js --fromPort=8040 --toPort=8079 --port=8100');
-  console.log(`java -Dhttp.port=${otoPort} -Dapp.importFrom=http://127.0.0.1:${configPort}/otoroshi.json -jar ./otoroshi/target/scala-2.12/otoroshi.jar`)
-  console.log(`wrk -t60 -c800 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:${otoPort}/`)
-}, 5000);
+  console.log('\nStarting warmup load test')
+  const wrk = exec(`wrk2 -R 2000 -t6 -c600 -d20s -H "Host: test.foo.bar" --latency http://127.0.0.1:${otoPort}/`);
+  processes.push(wrk);
+  wrk.on('exit', (e) => {
+    console.log('Starting actual load test')
+    const wrkLoad = exec(`wrk2 -R 2000 -t120 -c800 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:${otoPort}/`);
+    processes.push(wrkLoad);
+    wrkLoad.stdout.on('data', (chunk) => {
+      console.log(`[wrk-load] ${chunk}`);
+    });
+    wrkLoad.stderr.on('data', (chunk) => {
+      console.log(`[wrk-load-err] ${chunk}`);
+    });
+    wrkLoad.on('exit', (e) => {
+      process.exit();
+    });
+  });
+}, 10000)
+
+// curl -H 'Host: test.foo.bar' http://127.0.0.1:${otoPort}/
+// node server.js --fromPort=8040 --toPort=8079 --port=8100
+// java -Dhttp.port=${otoPort} -Dapp.importFrom=http://127.0.0.1:${configPort}/otoroshi.json -jar ./otoroshi/target/scala-2.12/otoroshi.jar
+// wrk2 -R 10000 -t60 -c800 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:${otoPort}/
 
 function exitHandler(options, err) {
   processes.forEach(a => a.kill());
@@ -183,65 +268,3 @@ process.on('SIGINT', exitHandler.bind(null, {exit:true}));
 process.on('SIGUSR1', exitHandler.bind(null, {exit:true}));
 process.on('SIGUSR2', exitHandler.bind(null, {exit:true}));
 process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
-
-const otoPort = 8091;
-const pass = "UdjDabLqV0JcHEaZQYaPjevjAbNUEBqh";
-const a = {
-  "id": "lb-test",
-  "groupId": "default",
-  "name": "lb-test",
-  "env": "prod",
-  "domain": "foo.bar",
-  "subdomain": "test",
-  "targets": _.range(from, to).map(port => {
-    return {
-      "host" : `127.0.0.1:${port}`,
-      "scheme": "http"
-    };
-  }),
-  "root": "/",
-  "matchingRoot": null,
-  "localHost": `127.0.0.1:${otoPort}`,
-  "localScheme": "http",
-  "redirectToLocal": false,
-  "enabled": true,
-  "privateApp": false,
-  "forceHttps": false,
-  "maintenanceMode": false,
-  "buildMode": false,
-  "enforceSecureCommunication": false,
-  "sendOtoroshiHeadersBack": true,
-  "secComExcludedPatterns": [],
-  "publicPatterns": ['/.*'],
-  "privatePatterns": [],
-  "additionalHeaders": {},
-  "matchingHeaders": {},
-  "ipFiltering": {
-    "whitelist": [],
-    "blacklist": []
-  },
-  "api": {
-    "exposeApi": false
-  },
-  "healthCheck": {
-    "enabled": false,
-    "url": "/"
-  },
-  "clientConfig": {
-    "useCircuitBreaker": true,
-    "retries": 3,
-    "maxErrors": 20,
-    "retryInitialDelay": 50,
-    "backoffFactor": 2,
-    "callTimeout": 30000,
-    "globalTimeout": 30000,
-    "sampleInterval": 2000
-  },
-  "canary": {
-    "enabled": false,
-    "traffic": 0.2,
-    "targets": [],
-    "root": "/"
-  },
-  "metadata": {}
-};
