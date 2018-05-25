@@ -331,6 +331,29 @@ export class TopBar extends Component {
                   loadOptions={this.searchServicesOptions}
                   openOnFocus={true}
                   onChange={i => i.action()}
+                  arrowRenderer={(a) => {
+                    return (
+                      <span className="Select-arrow-zone" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 40
+                      }}>
+                        <span style={{ width: 19, height: 20, marginRight: 6 }} title="You can jump directly into the search bar from anywhere just by typing '/'">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                            <defs>
+                              <rect id="a" width="19" height="20" rx="3"/>
+                            </defs>
+                            <g fill="none" fill-rule="evenodd">
+                              <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3"/>
+                              <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"/>
+                            </g>
+                          </svg>
+                        </span>
+                        <span className="Select-arrow"></span>
+                      </span>
+                    );
+                  }}
                   filterOptions={(opts, value, excluded, conf) => {
                     const [env, searched] = extractEnv(value);
                     const filteredOpts = !!env ? opts.filter(i => i.env === env) : opts;
@@ -361,10 +384,11 @@ export class TopBar extends Component {
                 />
               </div>
             </form>
-
           </div>
         </div>
       </nav>
     );
   }
 }
+
+// https://assets-cdn.github.com/images/search-shortcut-hint.svg
