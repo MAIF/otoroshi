@@ -32,6 +32,8 @@ export class AuditPage extends Component {
           selfUrl="audit"
           defaultTitle="Audit Log"
           defaultValue={() => ({})}
+          defaultSort={this.columns[0].title}
+          defaultSortDesc={true}
           itemName="Audit Event"
           formSchema={null}
           formFlow={null}

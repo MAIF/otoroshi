@@ -33,6 +33,8 @@ export class AlertPage extends Component {
           selfUrl="alerts"
           defaultTitle="Alert Log"
           defaultValue={() => ({})}
+          defaultSort={this.columns[0].title}
+          defaultSortDesc={true}
           itemName="Alert Event"
           formSchema={null}
           formFlow={null}

@@ -105,3 +105,20 @@ thead {
 table .displayGroupBtn{
   min-width: 100px;
 }
+
+.loadingPage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.8);
+  transition: all .3s ease;
+  z-index: 2;
+  pointer-events: none;
+  padding: 20px;
+  color: rgba(0, 0, 0, 0.5);
+  width: 130px;
+  align-items: center;
+  justify-content: center;
+}

@@ -341,7 +341,7 @@ export class Table extends Component {
                   loading={this.state.loading}
                   filterable={true}
                   filterAll={true}
-                  defaultSorted={[{ id: this.props.columns[0].title, desc: false }]}
+                  defaultSorted={[{ id: this.props.defaultSort || this.props.columns[0].title, desc: this.props.defaultSortDesc || false }]}
                   defaultFiltered={
                     this.props.search
                       ? [{ id: this.props.columns[0].title, value: this.props.search }]

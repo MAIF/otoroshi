@@ -157,6 +157,8 @@ export class ServiceEventsPage extends Component {
           }/events`}
           defaultTitle="Service Events"
           defaultValue={() => ({})}
+          defaultSort={this.columns[0].title}
+          defaultSortDesc={true}
           itemName="Events"
           formSchema={null}
           formFlow={null}
