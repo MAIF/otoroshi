@@ -66,11 +66,11 @@ class BackOfficeAppContainer extends Component {
   componentDidMount() {
     this.props.history.listen(() => {
       document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
-      document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
+      // document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
       document
         .getElementById('toggle-sidebar')
         .setAttribute('class', 'navbar-toggle menu collapsed');
-      document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
+      // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
     BackOfficeServices.fetchLines().then(lines => {
       BackOfficeServices.findAllGroups().then(groups => {

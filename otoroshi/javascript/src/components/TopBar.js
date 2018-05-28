@@ -344,7 +344,7 @@ export class TopBar extends Component {
                             <defs>
                               <rect id="a" width="19" height="20" rx="3"/>
                             </defs>
-                            <g fill="none" fill-rule="evenodd">
+                            <g fill="none" fillRule="evenodd">
                               <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3"/>
                               <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"/>
                             </g>
