@@ -140,9 +140,6 @@ class BackOfficeAppContainer extends Component {
                   <DynamicSidebar />
                   <DefaultSidebar lines={this.state.lines} addService={this.addService} />
                 </div>
-                <div className="logoContent">
-                  <img className="logo" src="/assets/images/logo.svg" />
-                </div>
               </div>
             </div>
             <div className="col-sm-10 col-sm-offset-2 main">
