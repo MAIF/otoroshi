@@ -487,6 +487,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                apiKey: Option[ApiKey] = None,
                                                paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
                       val snowflake              = env.snowflakeGenerator.nextIdStr()
+                      val requestTimestamp       = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
                       val state                  = IdGenerator.extendedToken(128)
                       val rawUri                 = req.relativeUri.substring(1)
                       val uriParts               = rawUri.split("/").toSeq
@@ -531,7 +532,8 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                           .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                           env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
                           "Host"                          -> host,
-                          env.Headers.OtoroshiRequestId   -> snowflake
+                          env.Headers.OtoroshiRequestId   -> snowflake,
+                          env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
                         ) ++ (if (descriptor.enforceSecureCommunication) {
                                 Map(
                                   env.Headers.OtoroshiState -> state,
@@ -740,6 +742,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               if (descriptor.sendOtoroshiHeadersBack) {
                                 Seq(
                                   env.Headers.OtoroshiRequestId       -> snowflake,
+                                  env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
                                   env.Headers.OtoroshiProxyLatency    -> s"$overhead",
                                   env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
                                   //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
