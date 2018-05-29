@@ -337,9 +337,9 @@ export class TopBar extends Component {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: 40
+                        width: 19
                       }}>
-                        <span style={{ width: 19, height: 20, marginRight: 6 }} title="You can jump directly into the search bar from anywhere just by typing '/'">
+                        <span style={{ width: 19, height: 20 }} title="You can jump directly into the search bar from anywhere just by typing '/'">
                           <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
                             <defs>
                               <rect id="a" width="19" height="20" rx="3"/>
@@ -350,7 +350,6 @@ export class TopBar extends Component {
                             </g>
                           </svg>
                         </span>
-                        <span className="Select-arrow"></span>
                       </span>
                     );
                   }}
