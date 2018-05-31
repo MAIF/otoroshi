@@ -17,6 +17,15 @@ services:
     depends_on:
       - backend
 
+  otoroshigraalvm:
+    build: ./otoroshi-graalvm
+    ports:
+      - 8092:8092
+    networks:
+      - bench
+    depends_on:
+      - backend
+
   backend:
     build: ./backend
     networks:
