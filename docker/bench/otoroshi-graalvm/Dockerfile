@@ -14,4 +14,4 @@ RUN apt-get update -y \
 
 EXPOSE 8091
 
-CMD ["/heimdallr/graalvm/bin/java", "-Dhttp.port=8092", "-Dapp.importFrom=http://backend:8100/otoroshi.json", "-jar", "otoroshi.jar" ]
+CMD ["/otoroshi/graalvm/bin/java", "-Dhttp.port=8092", "-Dapp.importFrom=http://backend:8100/otoroshi.json", "-jar", "otoroshi.jar" ]
