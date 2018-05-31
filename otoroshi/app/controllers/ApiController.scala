@@ -2,10 +2,10 @@ package controllers
 
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
-import javax.management.{Attribute, ObjectName}
 
+import javax.management.{Attribute, ObjectName}
 import gnieh.diffson.playJson._
-import actions.ApiAction
+import actions.{ApiAction, UnAuthApiAction}
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
@@ -20,13 +20,14 @@ import play.api.libs.json.{JsSuccess, Json, _}
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import security.IdGenerator
+import storage.{Healthy, Unhealthy, Unreachable}
 import utils.future.Implicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
-class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.apiExecutionContext
   implicit lazy val mat = env.materializer
@@ -35,6 +36,21 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
 
   val sourceBodyParser = BodyParser("ApiController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
+  }
+
+  def health() = UnAuthApiAction.async {
+    for {
+      _health <- env.datastores.health()
+    } yield {
+      Ok(Json.obj(
+        "otoroshi" -> "healthy",
+        "datastore" -> JsString(_health match {
+          case Healthy => "healthy"
+          case Unhealthy => "unhealthy"
+          case Unreachable => "unreachable"
+        })
+      ))
+    }
   }
 
   def globalLiveStats() = ApiAction.async { ctx =>

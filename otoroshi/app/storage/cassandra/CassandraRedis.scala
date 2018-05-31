@@ -8,9 +8,9 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.datastax.driver.core.{ResultSet, ResultSetFuture}
 import play.api.Logger
-import storage.RedisLike
+import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
 
 object Implicits {
@@ -442,4 +442,10 @@ class CassandraRedis(actorSystem: ActorSystem,
 
   override def scard(key: String): Future[Long] =
     smembers(key).map(_.size.toLong) // OUTCH !!!
+
+  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+    session.executeAsync("SHOW VERSION").asFuture.map(_ => Healthy).recover {
+      case _ => Unreachable
+    }
+  }
 }

@@ -95,3 +95,42 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   override protected def executionContext: ExecutionContext = ec
 }
+
+
+case class UnAuthApiActionContent[A](req: Request[A])
+
+class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+  extends ActionBuilder[UnAuthApiActionContent, AnyContent]
+    with ActionFunction[Request, UnAuthApiActionContent] {
+
+  implicit lazy val ec = env.apiExecutionContext
+
+  lazy val logger = Logger("otoroshi-api-action")
+
+  def error(message: String, ex: Option[Throwable] = None)(implicit request: Request[_]): Future[Result] = {
+    ex match {
+      case Some(e) => logger.error(s"error message: $message", e)
+      case None    => logger.error(s"error message: $message")
+    }
+    FastFuture.successful(
+      Results
+        .Unauthorized(Json.obj("error" -> message))
+        .withHeaders(
+          env.Headers.OtoroshiStateResp -> request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+        )
+    )
+  }
+
+  override def invokeBlock[A](request: Request[A], block: UnAuthApiActionContent[A] => Future[Result]): Future[Result] = {
+
+    implicit val req = request
+
+    val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+    host match {
+      case env.adminApiHost => block(UnAuthApiActionContent(request))
+      case _ => error(s"Not found")
+    }
+  }
+
+  override protected def executionContext: ExecutionContext = ec
+}

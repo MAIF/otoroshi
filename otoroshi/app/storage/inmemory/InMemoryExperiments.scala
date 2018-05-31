@@ -7,10 +7,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import play.api.Logger
-import storage.RedisLike
+import storage.{DataStoreHealth, Healthy, RedisLike}
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extends RedisLike {
 
@@ -249,4 +249,6 @@ class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extend
     val seq = store.apply(key).asInstanceOf[java.util.Set[ByteString]]
     FastFuture.successful(seq.size.toLong)
   }
+
+  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 }

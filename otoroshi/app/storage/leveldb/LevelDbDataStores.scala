@@ -8,11 +8,11 @@ import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import play.api.{Configuration, Environment, Logger}
 import play.api.inject.ApplicationLifecycle
-import storage.DataStores
+import storage.{DataStoreHealth, DataStores}
 import storage.inmemory._
 import env.Env
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class LevelDbDataStores(configuration: Configuration,
                         environment: Environment,
@@ -81,4 +81,5 @@ class LevelDbDataStores(configuration: Configuration,
   override def errorTemplateDataStore: ErrorTemplateDataStore         = _errorTemplateDataStore
   override def requestsDataStore: RequestsDataStore                   = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
+  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
 }

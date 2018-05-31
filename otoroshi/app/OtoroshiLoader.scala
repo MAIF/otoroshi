@@ -45,6 +45,7 @@ package object modules {
     override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
     override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
 
+    lazy val unAuthApiAction      = wire[UnAuthApiAction]
     lazy val apiAction            = wire[ApiAction]
     lazy val backOfficeAction     = wire[BackOfficeAction]
     lazy val backOfficeAuthAction = wire[BackOfficeActionAuth]

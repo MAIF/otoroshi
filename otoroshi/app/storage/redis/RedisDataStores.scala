@@ -9,10 +9,10 @@ import models._
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
-import storage.DataStores
+import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
 import env.Env
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class RedisDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env)
     extends DataStores {
@@ -98,4 +98,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def errorTemplateDataStore: ErrorTemplateDataStore         = _errorTemplateDataStore
   override def requestsDataStore: RequestsDataStore                   = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
+  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+    redis.info().map(_ => Healthy).recover {
+      case _ => Unreachable
+    }
+  }
 }

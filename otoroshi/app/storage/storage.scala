@@ -17,9 +17,15 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
+sealed trait DataStoreHealth
+case object Healthy extends DataStoreHealth
+case object Unhealthy extends DataStoreHealth
+case object Unreachable extends DataStoreHealth
+
 trait DataStores {
   def before(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle): Future[Unit]
   def after(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle): Future[Unit]
+  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth]
   def privateAppsUserDataStore: PrivateAppsUserDataStore
   def backOfficeUserDataStore: BackOfficeUserDataStore
   def serviceGroupDataStore: ServiceGroupDataStore
@@ -71,6 +77,7 @@ trait BasicStore[T] {
 }
 
 trait RedisLike {
+  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth]
   def start(): Unit = {}
   def stop(): Unit
   def flushall(): Future[Boolean]

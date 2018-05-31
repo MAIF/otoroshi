@@ -70,6 +70,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
   override lazy val serverConfig                           = _serverConfig
 
+  lazy val unAuthApiAction      = wire[UnAuthApiAction]
   lazy val apiAction            = wire[ApiAction]
   lazy val backOfficeAction     = wire[BackOfficeAction]
   lazy val backOfficeAuthAction = wire[BackOfficeActionAuth]

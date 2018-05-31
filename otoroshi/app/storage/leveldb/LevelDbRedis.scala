@@ -8,9 +8,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import storage.RedisLike
+import storage.{DataStoreHealth, Healthy, RedisLike}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
@@ -263,4 +263,6 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
     val seq = getSetAt(key)
     FastFuture.successful(seq.size.toLong)
   }
+
+  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 }

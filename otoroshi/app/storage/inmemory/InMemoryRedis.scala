@@ -6,9 +6,9 @@ import java.util.regex.Pattern
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import storage.RedisLike
+import storage.{DataStoreHealth, Healthy, RedisLike}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
 
@@ -259,4 +259,6 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
     val seq = store.get(key).asInstanceOf[java.util.Set[ByteString]]
     FastFuture.successful(seq.size.toLong)
   }
+
+  def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 }
