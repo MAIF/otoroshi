@@ -4,7 +4,7 @@ LOCATION=`pwd`
 
 fmt_cli () {
   cd $LOCATION/clients/cli
-  rustup run nightly cargo fmt -- --all
+  rustup run nightly cargo fmt
 }
 
 fmt_demo () {
