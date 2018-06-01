@@ -142,6 +142,35 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       )
     )
 
+  def NoAuthOperation(
+                 summary: String,
+                 tag: String,
+                 description: String = "",
+                 operationId: String = "",
+                 produces: JsArray = Json.arr("application/json"),
+                 parameters: JsArray = Json.arr(),
+                 goodCode: String = "200",
+                 goodResponse: JsObject
+               ): JsValue =
+    Json.obj(
+      "deprecated"  -> false,
+      "tags"        -> Json.arr(tag),
+      "summary"     -> summary,
+      "description" -> description,
+      "operationId" -> operationId,
+      "produces"    -> produces,
+      "parameters"  -> parameters,
+      "responses" -> Json.obj(
+        "400" -> Json.obj(
+          "description" -> "Bad resource format. Take another look to the swagger, or open an issue :)"
+        ),
+        "404" -> Json.obj(
+          "description" -> "Resource not found or does not exist"
+        ),
+        goodCode -> goodResponse
+      )
+    )
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -490,6 +519,25 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "apiKeys"            -> ArrayOf(ApiKey) ~~> "Current apik keys at the time of export",
       "serviceDescriptors" -> ArrayOf(Service) ~~> "Current service descriptors at the time of export",
       "errorTemplates"     -> ArrayOf(ErrorTemplate) ~~> "Current error templates at the time of export"
+    )
+  )
+
+  def OtoroshiHealth = Json.obj(
+    "description" -> "The structure that represent current Otoroshi health",
+    "type"        -> "object",
+    "required" -> Json.arr("label",
+      "otoroshi",
+      "datastore"
+    ),
+    "properties" -> Json.obj(
+      "otoroshi" -> Json.obj(
+        "type" -> "string",
+        "enum" -> Json.arr("healthy", "unhealthy", "down")
+      ),
+      "datastore" -> Json.obj(
+        "type" -> "string",
+        "enum" -> Json.arr("healthy", "unhealthy", "unreachable")
+      )
     )
   )
 
@@ -1063,6 +1111,16 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def CheckOtoroshiHealth = Json.obj(
+    "get" -> NoAuthOperation(
+      tag = "health",
+      summary = "Return current Otoroshi health",
+      description = "Import the full state of Otoroshi as a file",
+      operationId = "health",
+      goodResponse = GoodResponse(Ref("OtoroshiHealth"))
+    )
+  )
+
   def ServiceTargetsManagement = Json.obj(
     "get" -> Operation(
       tag = "services",
@@ -1240,7 +1298,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         ),
         "/api/globalconfig"  -> GlobalConfigManagement,
         "/api/otoroshi.json" -> ImportExportJson,
-        "/api/import"        -> ImportFromFile
+        "/api/import"        -> ImportFromFile,
+        "/health"            -> CheckOtoroshiHealth
       ),
       "securityDefinitions" -> Json.obj(
         "otoroshi_auth" -> Json.obj(
@@ -1265,6 +1324,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "GlobalConfig"      -> GlobalConfig,
         "Group"             -> Group,
         "HealthCheck"       -> HealthCheck,
+        "OtoroshiHealth"    -> OtoroshiHealth,
         "ImportExport"      -> ImportExport,
         "ImportExportStats" -> ImportExportStats,
         "IpFiltering"       -> IpFiltering,
