@@ -113,11 +113,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     |Disallow: /""".stripMargin)
   }
 
-  def version = BackOfficeAction {
+  def version = BackOfficeActionAuth {
     Ok(Json.obj("version" -> commitVersion))
   }
 
-  def getEnv() = BackOfficeAction.async { ctx =>
+  def getEnv() = BackOfficeActionAuth.async { ctx =>
     val hash = BCrypt.hashpw("password", BCrypt.gensalt())
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       env.datastores.simpleAdminDataStore.findAll().map { users =>
