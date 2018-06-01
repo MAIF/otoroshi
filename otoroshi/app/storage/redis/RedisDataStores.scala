@@ -2,7 +2,8 @@ package storage.redis
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
-import com.typesafe.config.{ConfigFactory, ConfigObject}
+import com.typesafe.config.ConfigFactory
+import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
@@ -10,7 +11,6 @@ import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
-import env.Env
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -81,8 +81,9 @@ class Env(val configuration: Configuration,
   //lazy val middleFingers: Boolean = configuration.getOptional[Boolean]]("app.middleFingers").getOrElse(false)
   //lazy val maxLocalLogsSize: Int = configuration.getOptional[Int]("app.events.maxSize").getOrElse(1000)
 
+  lazy val healthLimit: Double           = configuration.getOptional[Double]("app.healthLimit").getOrElse(2000.0)
   lazy val throttlingWindow: Int         = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
-  lazy val analyticsWindow: Int         = configuration.getOptional[Int]("app.analyticsWindow").getOrElse(30)
+  lazy val analyticsWindow: Int          = configuration.getOptional[Int]("app.analyticsWindow").getOrElse(30)
   lazy val auth0UserMeta: String         = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")
   lazy val auth0AppMeta: String          = configuration.getOptional[String]("app.appMeta").getOrElse("app_metadata")
   lazy val eventsName: String            = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
@@ -324,7 +325,8 @@ class Env(val configuration: Configuration,
     forceHttps = false,
     additionalHeaders = Map(
       "Host" -> backOfficeDescriptorHostHeader
-    )
+    ),
+    publicPatterns = Seq("/health")
   )
 
   lazy val otoroshiVersion     = "1.1.2-SNAPSHOT"
@@ -355,15 +357,15 @@ class Env(val configuration: Configuration,
             case Some(path) => {
               logger.warn(s"Importing from: $path")
               val source = Source.fromFile(path).getLines().mkString("\n")
-              val json   = Json.parse(source).as[JsObject]
+              val json = Json.parse(source).as[JsObject]
               datastores.globalConfigDataStore.fullImport(json)(ec, this)
             }
             case _ => {
               val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
               val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
-                                              "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
-                                              "default-apikey",
-                                              "default")
+                "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
+                "default-apikey",
+                "default")
               logger.warn(
                 s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
               )
@@ -375,10 +377,17 @@ class Env(val configuration: Configuration,
                 _ <- backOfficeApiKey.save()(ec, this)
                 _ <- defaultGroupApiKey.save()(ec, this)
                 _ <- datastores.simpleAdminDataStore
-                      .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(ec, this)
+                  .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(ec, this)
               } yield ()
             }
           }
+        }
+      }.map { _ =>
+        datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
+          case Some(s) if !s.publicPatterns.contains("/health") =>
+            logger.warn("Updating BackOffice service to handle health check ...")
+            s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
+          case _ =>
         }
       }
 

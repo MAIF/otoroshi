@@ -96,7 +96,6 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
   override protected def executionContext: ExecutionContext = ec
 }
 
-
 case class UnAuthApiActionContent[A](req: Request[A])
 
 class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)

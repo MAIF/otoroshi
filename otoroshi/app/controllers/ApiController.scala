@@ -40,10 +40,16 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def health() = UnAuthApiAction.async {
     for {
-      _health <- env.datastores.health()
+      _health  <- env.datastores.health()
+      overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
     } yield {
       Ok(Json.obj(
-        "otoroshi" -> "healthy",
+        "otoroshi" -> JsString(_health match {
+          case Healthy if overhead <= env.healthLimit => "healthy"
+          case Healthy if overhead > env.healthLimit => "unhealthy"
+          case Unhealthy => "unhealthy"
+          case Unreachable => "down"
+        }),
         "datastore" -> JsString(_health match {
           case Healthy => "healthy"
           case Unhealthy => "unhealthy"

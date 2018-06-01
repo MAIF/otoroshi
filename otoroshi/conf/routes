@@ -3,6 +3,7 @@ GET     /                                                     controllers.BackOf
 GET     /robot.txt                                            controllers.BackOfficeController.robotTxt
 GET     /error                                                controllers.BackOfficeController.error(message: Option[String])
 GET     /auth0error                                           controllers.Auth0Controller.auth0error(error: Option[String], error_description: Option[String])
+GET     /health                                               controllers.ApiController.health()
 
 # U2F URLs
 POST    /bo/u2f/register/start                                controllers.U2FController.u2fRegisterStart()
@@ -145,7 +146,6 @@ POST    /api/otoroshi.json                                    controllers.ApiCon
 POST    /api/import                                           controllers.ApiController.fullImportFromFile()
 
 GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
-GET     /api/health                                           controllers.ApiController.health()
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()
