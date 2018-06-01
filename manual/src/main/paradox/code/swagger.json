@@ -42,7 +42,7 @@
     "description" : "Find out more about Otoroshi",
     "url" : "https://maif.github.io/otoroshi/"
   },
-  "host" : "otoroshi-api.dev.opunmaif.fr",
+  "host" : "otoroshi-api.foo.bar",
   "basePath" : "/api",
   "schemes" : [ "http" ],
   "paths" : {
