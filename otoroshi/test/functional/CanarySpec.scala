@@ -9,13 +9,13 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
 class CanarySpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
   lazy val serviceHost = "canary.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
+  lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -24,7 +24,8 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
                       |  http.port=$port
                       |  play.server.http.port=$port
                       |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi Canary Mode" should {
@@ -35,14 +36,14 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
 
     "Split traffic" in {
 
-      val callCounter1 = new AtomicInteger(0)
+      val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
         callCounter1.incrementAndGet()
         basicTestExpectedBody1
       }).await()
 
-      val callCounter2 = new AtomicInteger(0)
+      val callCounter2           = new AtomicInteger(0)
       val basicTestExpectedBody2 = """{"message":"hello world 2"}"""
       val basicTestServer2 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
         callCounter2.incrementAndGet()
@@ -78,15 +79,19 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
       createOtoroshiService(service).futureValue
 
       def callServer() = {
-        val r = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> serviceHost
-        ).get().futureValue
+        val r = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> serviceHost
+          )
+          .get()
+          .futureValue
         (r.status, r.body, r.header("Otoroshi-Canary-Id").getOrElse("--"))
       }
 
       (0 to 24).foreach { _ =>
         val (status, _, id) = callServer()
-        status  mustBe 200
+        status mustBe 200
         id == "--" mustBe false
       }
 
@@ -101,14 +106,14 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
 
     "Always split traffic the same way" in {
 
-      val callCounter1 = new AtomicInteger(0)
+      val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
       val basicTestServer1 = new SimpleTargetService(Some(serviceHost), "/api", "application/json", { _ =>
         callCounter1.incrementAndGet()
         basicTestExpectedBody1
       }).await()
 
-      val callCounter2 = new AtomicInteger(0)
+      val callCounter2           = new AtomicInteger(0)
       val basicTestExpectedBody2 = """{"message":"hello world 2"}"""
       val basicTestServer2 = new SimpleTargetService(Some(serviceHost), "/api", "application/json", { _ =>
         callCounter2.incrementAndGet()
@@ -144,17 +149,25 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
       createOtoroshiService(service).futureValue
 
       def firstCallServer() = {
-        val r = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> "canary2.foo.bar"
-        ).get().futureValue
+        val r = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "canary2.foo.bar"
+          )
+          .get()
+          .futureValue
         (r.status, r.body, r.header("Otoroshi-Canary-Id").getOrElse("--"))
       }
 
       def callServer(id: String) = {
-        val r = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> "canary2.foo.bar",
-          "Otoroshi-Canary-Id" -> id
-        ).get().futureValue
+        val r = ws
+          .url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host"               -> "canary2.foo.bar",
+            "Otoroshi-Canary-Id" -> id
+          )
+          .get()
+          .futureValue
         //println(r.body)
         (r.status, r.body, r.header("Otoroshi-Canary-Id").getOrElse("--"))
       }
@@ -163,7 +176,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
 
       (0 to 24).foreach { _ =>
         val (status, _, id) = callServer(firstId)
-        status  mustBe 200
+        status mustBe 200
         id == "--" mustBe false
       }
 

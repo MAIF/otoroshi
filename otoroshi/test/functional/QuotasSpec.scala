@@ -13,14 +13,14 @@ import play.api.Configuration
 import scala.concurrent.duration._
 
 class QuotasSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
   lazy val serviceHost = "quotas.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
-  implicit val system = ActorSystem("otoroshi-test")
+  lazy val ws          = otoroshiComponents.wsClient
+  implicit val system  = ActorSystem("otoroshi-test")
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -30,13 +30,14 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
                       |  play.server.http.port=$port
                       |  throttlingWindow = 2
                       |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi Quotas" should {
 
     val counter = new AtomicInteger(0)
-    val body = """{"message":"hello world"}"""
+    val body    = """{"message":"hello world"}"""
     val server = TargetService(None, "/api", "application/json", { _ =>
       counter.incrementAndGet()
       body
@@ -84,8 +85,8 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       monthlyQuota = 3
     )
     val basicAuthThrottling = Base64.getUrlEncoder.encodeToString(s"apikey-throttling:1234".getBytes)
-    val basicAuthDaily = Base64.getUrlEncoder.encodeToString(s"apikey-daily:1234".getBytes)
-    val basicAuthMonthly = Base64.getUrlEncoder.encodeToString(s"apikey-monthly:1234".getBytes)
+    val basicAuthDaily      = Base64.getUrlEncoder.encodeToString(s"apikey-daily:1234".getBytes)
+    val basicAuthMonthly    = Base64.getUrlEncoder.encodeToString(s"apikey-monthly:1234".getBytes)
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
@@ -98,11 +99,12 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
     "prevent too many calls per second" in {
       def call(auth: String) = {
         ws.url(s"http://127.0.0.1:$port/api")
-        .withHttpHeaders(
-          "Host" -> serviceHost,
-          "Otoroshi-Authorization" -> s"Basic $auth"
-        )
-        .get().futureValue
+          .withHttpHeaders(
+            "Host"                   -> serviceHost,
+            "Otoroshi-Authorization" -> s"Basic $auth"
+          )
+          .get()
+          .futureValue
       }
 
       val counter200 = new AtomicInteger(0)
@@ -122,10 +124,11 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       def call(auth: String) = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"                   -> serviceHost,
             "Otoroshi-Authorization" -> s"Basic $auth"
           )
-          .get().futureValue
+          .get()
+          .futureValue
       }
 
       val resp1 = call(basicAuthDaily)
@@ -146,10 +149,11 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       def call(auth: String) = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"                   -> serviceHost,
             "Otoroshi-Authorization" -> s"Basic $auth"
           )
-          .get().futureValue
+          .get()
+          .futureValue
       }
 
       val resp1 = call(basicAuthMonthly)

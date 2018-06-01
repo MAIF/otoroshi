@@ -337,59 +337,63 @@ class Env(val configuration: Configuration,
     case _ =>
       implicit val ec = internalActorSystem.dispatcher
 
-      datastores.globalConfigDataStore.isOtoroshiEmpty().andThen {
-        case Success(true) => {
-          logger.warn(s"The main datastore seems to be empty, registering some basic services")
-          val login    = configuration.getOptional[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
-          val password = configuration.getOptional[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
-          val headers: Seq[(String, String)] = configuration
-            .getOptional[Seq[String]]("app.importFromHeaders")
-            .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
-            .getOrElse(Seq.empty[(String, String)])
-          configuration.getOptional[String]("app.importFrom") match {
-            case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
-              logger.warn(s"Importing from URL: $url")
-              wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
-                val json = resp.json.as[JsObject]
+      datastores.globalConfigDataStore
+        .isOtoroshiEmpty()
+        .andThen {
+          case Success(true) => {
+            logger.warn(s"The main datastore seems to be empty, registering some basic services")
+            val login    = configuration.getOptional[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
+            val password = configuration.getOptional[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
+            val headers: Seq[(String, String)] = configuration
+              .getOptional[Seq[String]]("app.importFromHeaders")
+              .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
+              .getOrElse(Seq.empty[(String, String)])
+            configuration.getOptional[String]("app.importFrom") match {
+              case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
+                logger.warn(s"Importing from URL: $url")
+                wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
+                  val json = resp.json.as[JsObject]
+                  datastores.globalConfigDataStore.fullImport(json)(ec, this)
+                }
+              }
+              case Some(path) => {
+                logger.warn(s"Importing from: $path")
+                val source = Source.fromFile(path).getLines().mkString("\n")
+                val json   = Json.parse(source).as[JsObject]
                 datastores.globalConfigDataStore.fullImport(json)(ec, this)
               }
-            }
-            case Some(path) => {
-              logger.warn(s"Importing from: $path")
-              val source = Source.fromFile(path).getLines().mkString("\n")
-              val json = Json.parse(source).as[JsObject]
-              datastores.globalConfigDataStore.fullImport(json)(ec, this)
-            }
-            case _ => {
-              val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
-              val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
-                "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
-                "default-apikey",
-                "default")
-              logger.warn(
-                s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
-              )
-              for {
-                _ <- defaultConfig.save()(ec, this)
-                _ <- backOfficeGroup.save()(ec, this)
-                _ <- defaultGroup.save()(ec, this)
-                _ <- backOfficeDescriptor.save()(ec, this)
-                _ <- backOfficeApiKey.save()(ec, this)
-                _ <- defaultGroupApiKey.save()(ec, this)
-                _ <- datastores.simpleAdminDataStore
-                  .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(ec, this)
-              } yield ()
+              case _ => {
+                val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
+                val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
+                                                "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
+                                                "default-apikey",
+                                                "default")
+                logger.warn(
+                  s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+                )
+                for {
+                  _ <- defaultConfig.save()(ec, this)
+                  _ <- backOfficeGroup.save()(ec, this)
+                  _ <- defaultGroup.save()(ec, this)
+                  _ <- backOfficeDescriptor.save()(ec, this)
+                  _ <- backOfficeApiKey.save()(ec, this)
+                  _ <- defaultGroupApiKey.save()(ec, this)
+                  _ <- datastores.simpleAdminDataStore
+                        .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(ec,
+                                                                                                                this)
+                } yield ()
+              }
             }
           }
         }
-      }.map { _ =>
-        datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
-          case Some(s) if !s.publicPatterns.contains("/health") =>
-            logger.warn("Updating BackOffice service to handle health check ...")
-            s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
-          case _ =>
+        .map { _ =>
+          datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
+            case Some(s) if !s.publicPatterns.contains("/health") =>
+              logger.warn("Updating BackOffice service to handle health check ...")
+              s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
+            case _ =>
+          }
         }
-      }
 
       if (isProd && checkForUpdates) {
         internalActorSystem.scheduler.schedule(5.second, 24.hours) {

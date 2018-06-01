@@ -391,18 +391,18 @@ case class RevokedApiKeyUsageAlert(`@id`: String,
   override def `@serviceId`: String = descriptor.id
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@id"         -> `@id`,
-    "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
-    "@type"       -> `@type`,
-    "@product"    -> _env.eventsName,
-    "@serviceId"  -> `@serviceId`,
-    "@service"    -> `@service`,
-    "@env"        -> `@env`,
-    "alert"       -> "RevokedApiKeyUsageAlert",
-    "from"        -> req.remoteAddress,
-    "to"          -> req.host,
-    "uri"         -> req.relativeUri,
-    "apiKey"      -> apiKey.toJson
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "alert"      -> "RevokedApiKeyUsageAlert",
+    "from"       -> req.remoteAddress,
+    "to"         -> req.host,
+    "uri"        -> req.relativeUri,
+    "apiKey"     -> apiKey.toJson
   )
 }
 case class ServiceGroupCreatedAlert(`@id`: String,

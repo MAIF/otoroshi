@@ -15,21 +15,22 @@ import play.api.libs.json.Json
 import play.core.server.ServerConfig
 
 class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "basictest.foo.bar"
+  lazy val serviceHost  = "basictest.foo.bar"
   lazy val serviceHost2 = "basictest2.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
+  lazy val ws           = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
       .parseString(s"""
         |http.port=$port
         |play.server.http.port=$port
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi Programmatic API" should {
@@ -39,9 +40,9 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
       import scala.concurrent.duration._
 
       implicit val system = ActorSystem("otoroshi-prog-api-test")
-      val dir = Files.createTempDirectory("otoroshi-prog-api-test").toFile
+      val dir             = Files.createTempDirectory("otoroshi-prog-api-test").toFile
 
-      val callCounter = new AtomicInteger(0)
+      val callCounter           = new AtomicInteger(0)
       val basicTestExpectedBody = """{"message":"hello world"}"""
       val basicTestServer = TargetService(None, "/api", "application/json", { _ =>
         callCounter.incrementAndGet()
@@ -105,9 +106,13 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
       status mustBe 200
 
       {
-        val basicTestResponse1 = otoroshi.ws.url(s"http://127.0.0.1:8888/api").withHttpHeaders(
-          "Host" -> serviceHost
-        ).get().futureValue
+        val basicTestResponse1 = otoroshi.ws
+          .url(s"http://127.0.0.1:8888/api")
+          .withHttpHeaders(
+            "Host" -> serviceHost
+          )
+          .get()
+          .futureValue
 
         basicTestResponse1.status mustBe 200
         basicTestResponse1.body mustBe basicTestExpectedBody
@@ -117,9 +122,13 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
       otoroshi.dataStores.serviceDescriptorDataStore.set(otherDescriptor).futureValue
 
       {
-        val basicTestResponse1 = otoroshi.ws.url(s"http://127.0.0.1:8888/api").withHttpHeaders(
-          "Host" -> serviceHost2
-        ).get().futureValue
+        val basicTestResponse1 = otoroshi.ws
+          .url(s"http://127.0.0.1:8888/api")
+          .withHttpHeaders(
+            "Host" -> serviceHost2
+          )
+          .get()
+          .futureValue
 
         basicTestResponse1.status mustBe 200
         basicTestResponse1.body mustBe basicTestExpectedBody

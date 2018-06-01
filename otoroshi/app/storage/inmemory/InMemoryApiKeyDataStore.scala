@@ -174,15 +174,16 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
       case Some(descriptor) => {
         val key = s"${env.storageRoot}:apikey:byservice:$serviceId"
         redisCli.smembers(key).fast.flatMap {
-          case list if list.isEmpty => env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-            keys.filter(_.authorizedGroup == descriptor.groupId)
-          } andThen {
-            case Success(keys) =>
-              for {
-                r <- redisCli.sadd(key, keys.map(_.clientId): _*)
-                _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
-              } yield ()
-          }
+          case list if list.isEmpty =>
+            env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+              keys.filter(_.authorizedGroup == descriptor.groupId)
+            } andThen {
+              case Success(keys) =>
+                for {
+                  r <- redisCli.sadd(key, keys.map(_.clientId): _*)
+                  _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
+                } yield ()
+            }
           case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String))
         }
       }
@@ -196,15 +197,16 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
       case Some(group) => {
         val key = s"${env.storageRoot}:apikey:bygroup:$groupId"
         redisCli.smembers(key).fast.flatMap {
-          case list if list.isEmpty => env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-            keys.filter(_.authorizedGroup == group.id)
-          } andThen {
-            case Success(keys) =>
-              for {
-                r <- redisCli.sadd(key, keys.map(_.clientId): _*)
-                _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
-              } yield ()
-          }
+          case list if list.isEmpty =>
+            env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+              keys.filter(_.authorizedGroup == group.id)
+            } andThen {
+              case Success(keys) =>
+                for {
+                  r <- redisCli.sadd(key, keys.map(_.clientId): _*)
+                  _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
+                } yield ()
+            }
           case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String))
         }
       }

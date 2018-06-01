@@ -16,7 +16,8 @@ object Configurations {
          |{
          |  app.storage = "inmemory"
          |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   def LevelDBConfiguration = Configuration(
@@ -26,7 +27,8 @@ object Configurations {
          |  app.storage = "leveldb"
          |  app.leveldb.path = "./target/leveldbs/test-${System.currentTimeMillis()}"
          |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   val RedisConfiguration = Configuration(
@@ -35,7 +37,8 @@ object Configurations {
          |{
          |  app.storage = "redis"
          |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   val CassandraConfiguration = Configuration(
@@ -44,7 +47,8 @@ object Configurations {
          |{
          |  app.storage = "cassandra"
          |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 }
 
@@ -83,7 +87,7 @@ object OtoroshiTests {
   }
 }
 
-class OtoroshiTests extends Suites(OtoroshiTests.getSuites():_*) with BeforeAndAfterAll {
+class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     FileUtils.deleteDirectory(new File("./target/leveldbs"))

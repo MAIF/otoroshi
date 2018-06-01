@@ -24,7 +24,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class WebsocketSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
@@ -36,7 +36,8 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
                       |  http.port=$port
                       |  play.server.http.port=$port
                       |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi" should {
@@ -44,8 +45,8 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
     "support websockets" in {
 
       implicit val system = ActorSystem("otoroshi-test")
-      implicit val mat = ActorMaterializer.create(system)
-      implicit val http = Http()(system)
+      implicit val mat    = ActorMaterializer.create(system)
+      implicit val http   = Http()(system)
 
       val service = ServiceDescriptor(
         id = "ws-test",
@@ -85,26 +86,33 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
       }
 
       val nameSource: Source[Message, NotUsed] =
-        Source.fromFuture(awaitF(1.second).map(_ => TextMessage("yo"))).concat(
-        Source(
-          List(
-            TextMessage("mathieu"),
-            TextMessage("alex"),
-            TextMessage("chris"),
-            TextMessage("francois"),
-            TextMessage("aurelie"),
-            TextMessage("loic"),
-            TextMessage("pierre"),
-            TextMessage("emmanuel"),
-            TextMessage("frederic")
+        Source
+          .fromFuture(awaitF(1.second).map(_ => TextMessage("yo")))
+          .concat(
+            Source(
+              List(
+                TextMessage("mathieu"),
+                TextMessage("alex"),
+                TextMessage("chris"),
+                TextMessage("francois"),
+                TextMessage("aurelie"),
+                TextMessage("loic"),
+                TextMessage("pierre"),
+                TextMessage("emmanuel"),
+                TextMessage("frederic")
+              )
+            )
           )
-        ))
 
-      http.singleWebSocketRequest(WebSocketRequest(s"ws://127.0.0.1:$port")
-        .copy(extraHeaders = List(Host("ws.foo.bar"))),
-        Flow.fromSinkAndSourceMat(printSink, nameSource)(Keep.both).alsoTo(Sink.onComplete { _ =>
-          println(s"[WEBSOCKET] client flow stopped")
-        }))
+      http.singleWebSocketRequest(
+        WebSocketRequest(s"ws://127.0.0.1:$port")
+          .copy(extraHeaders = List(Host("ws.foo.bar"))),
+        Flow
+          .fromSinkAndSourceMat(printSink, nameSource)(Keep.both)
+          .alsoTo(Sink.onComplete { _ =>
+            println(s"[WEBSOCKET] client flow stopped")
+          })
+      )
 
       awaitF(2.seconds).futureValue
 

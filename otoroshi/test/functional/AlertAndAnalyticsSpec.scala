@@ -13,14 +13,14 @@ import play.api.libs.json.Json
 import scala.concurrent.duration._
 
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
   lazy val serviceHost = "quotas.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
-  implicit val system = ActorSystem("otoroshi-test")
+  lazy val ws          = otoroshiComponents.wsClient
+  implicit val system  = ActorSystem("otoroshi-test")
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -30,11 +30,11 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
                       |  play.server.http.port=$port
                       |  app.analyticsWindow = 1
                       |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi Alerts and Analytics module" should {
-
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
@@ -43,7 +43,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
     "produce alerts when admin api are modified" in {
 
       val counter = new AtomicInteger(0)
-      val server = new AlertServer(counter).await()
+      val server  = new AlertServer(counter).await()
 
       val apiKey = ApiKey(
         clientId = "apikey-monthly",
@@ -54,9 +54,13 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
 
       val config = (for {
         config <- getOtoroshiConfig()
-        newConfig = config.copy(alertsWebhooks = Seq(Webhook(
-          url = s"http://127.0.0.1:${server.port}/events"
-        )))
+        newConfig = config.copy(
+          alertsWebhooks = Seq(
+            Webhook(
+              url = s"http://127.0.0.1:${server.port}/events"
+            )
+          )
+        )
         _ <- updateOtoroshiConfig(newConfig)
       } yield config).futureValue
 
@@ -78,7 +82,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
 
     "produce analytics events for everything" in {
       val counter = new AtomicInteger(0)
-      val server = new AnalyticsServer(counter).await()
+      val server  = new AnalyticsServer(counter).await()
 
       val apiKey = ApiKey(
         clientId = "apikey-monthly",
@@ -89,9 +93,13 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
 
       val config = (for {
         config <- getOtoroshiConfig()
-        newConfig = config.copy(analyticsWebhooks = Seq(Webhook(
-          url = s"http://127.0.0.1:${server.port}/events"
-        )))
+        newConfig = config.copy(
+          analyticsWebhooks = Seq(
+            Webhook(
+              url = s"http://127.0.0.1:${server.port}/events"
+            )
+          )
+        )
         _ <- updateOtoroshiConfig(newConfig)
       } yield config).futureValue
 

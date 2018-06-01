@@ -73,7 +73,7 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
       logger.warn(s"user already canary: $alreadyCanary, user became canary: $isNowCanary")
       if (alreadyCanary) true else isNowCanary
     }
-  } 
+  }
 
   def canaryCampaign(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[ServiceCanaryCampaign] =
     for {

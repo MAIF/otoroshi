@@ -83,19 +83,19 @@ class CassandraDataStores(configuration: Configuration,
   private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
   private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis, env)
 
-  override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
-  override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
-  override def serviceGroupDataStore: ServiceGroupDataStore           = _serviceGroupDataStore
-  override def globalConfigDataStore: GlobalConfigDataStore           = _globalConfigDataStore
-  override def apiKeyDataStore: ApiKeyDataStore                       = _apiKeyDataStore
-  override def serviceDescriptorDataStore: ServiceDescriptorDataStore = _serviceDescriptorDataStore
-  override def u2FAdminDataStore: U2FAdminDataStore                   = _u2FAdminDataStore
-  override def simpleAdminDataStore: SimpleAdminDataStore             = _simpleAdminDataStore
-  override def alertDataStore: AlertDataStore                         = _alertDataStore
-  override def auditDataStore: AuditDataStore                         = _auditDataStore
-  override def healthCheckDataStore: HealthCheckDataStore             = _healthCheckDataStore
-  override def errorTemplateDataStore: ErrorTemplateDataStore         = _errorTemplateDataStore
-  override def requestsDataStore: RequestsDataStore                   = _requestsDataStore
-  override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
+  override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
+  override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
+  override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
+  override def globalConfigDataStore: GlobalConfigDataStore                     = _globalConfigDataStore
+  override def apiKeyDataStore: ApiKeyDataStore                                 = _apiKeyDataStore
+  override def serviceDescriptorDataStore: ServiceDescriptorDataStore           = _serviceDescriptorDataStore
+  override def u2FAdminDataStore: U2FAdminDataStore                             = _u2FAdminDataStore
+  override def simpleAdminDataStore: SimpleAdminDataStore                       = _simpleAdminDataStore
+  override def alertDataStore: AlertDataStore                                   = _alertDataStore
+  override def auditDataStore: AuditDataStore                                   = _auditDataStore
+  override def healthCheckDataStore: HealthCheckDataStore                       = _healthCheckDataStore
+  override def errorTemplateDataStore: ErrorTemplateDataStore                   = _errorTemplateDataStore
+  override def requestsDataStore: RequestsDataStore                             = _requestsDataStore
+  override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
 }

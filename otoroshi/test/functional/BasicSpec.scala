@@ -9,13 +9,13 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
 class BasicSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
   lazy val serviceHost = "basictest.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
+  lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -24,12 +24,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
          |  http.port=$port
          |  play.server.http.port=$port
          |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi" should {
 
-    val callCounter = new AtomicInteger(0)
+    val callCounter           = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
     val basicTestServer = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
       callCounter.incrementAndGet()
@@ -68,9 +69,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       creationStatus mustBe 200
 
-      val basicTestResponse1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse1.status mustBe 200
       basicTestResponse1.body mustBe basicTestExpectedBody
@@ -81,18 +86,26 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(enabled = false)).futureValue
 
-      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse2.status mustBe 404
       callCounter.get() mustBe 1
 
       updateOtoroshiService(initialDescriptor.copy(enabled = true)).futureValue
 
-      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse3.status mustBe 200
       basicTestResponse3.body mustBe basicTestExpectedBody
@@ -103,9 +116,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(maintenanceMode = true)).futureValue
 
-      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse2.status mustBe 503
       basicTestResponse2.body.contains("Service in maintenance mode") mustBe true
@@ -113,9 +130,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(maintenanceMode = false)).futureValue
 
-      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse3.status mustBe 200
       basicTestResponse3.body mustBe basicTestExpectedBody
@@ -126,9 +147,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(buildMode = true)).futureValue
 
-      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse2.status mustBe 503
       basicTestResponse2.body.contains("Service under construction") mustBe true
@@ -136,9 +161,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(buildMode = false)).futureValue
 
-      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse3.status mustBe 200
       basicTestResponse3.body mustBe basicTestExpectedBody
@@ -149,9 +178,14 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(forceHttps = true)).futureValue
 
-      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withFollowRedirects(false).withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withFollowRedirects(false)
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse2.status mustBe 303
       basicTestResponse2.header("Location") mustBe Some("https://basictest.foo.bar/api")
@@ -159,9 +193,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(forceHttps = false)).futureValue
 
-      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse3.status mustBe 200
       basicTestResponse3.body mustBe basicTestExpectedBody
@@ -170,9 +208,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
     "send specific headers back" in {
 
-      val basicTestResponse2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse2.status mustBe 200
       basicTestResponse2.header("Otoroshi-Request-Id").isDefined mustBe true
@@ -182,9 +224,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       updateOtoroshiService(initialDescriptor.copy(sendOtoroshiHeadersBack = false)).futureValue
 
-      val basicTestResponse3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val basicTestResponse3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       basicTestResponse3.status mustBe 200
       basicTestResponse3.header("Otoroshi-Request-Id").isEmpty mustBe true
@@ -197,7 +243,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
     "Send additionnal headers to target" in {
       val counter = new AtomicInteger(0)
-      val body = """{"message":"hello world"}"""
+      val body    = """{"message":"hello world"}"""
       val server = TargetService(None, "/api", "application/json", { r =>
         r.headers.find(_.name() == "X-Foo").map(_.value()) mustBe Some("Bar")
         counter.incrementAndGet()
@@ -222,9 +268,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-      val resp1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "header.foo.bar"
-      ).get().futureValue
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "header.foo.bar"
+        )
+        .get()
+        .futureValue
 
       resp1.status mustBe 200
       resp1.body mustBe body
@@ -235,7 +285,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
     "Route only if header is present" in {
       val counter = new AtomicInteger(0)
-      val body = """{"message":"hello world"}"""
+      val body    = """{"message":"hello world"}"""
       val server = TargetService(None, "/api", "application/json", { _ =>
         counter.incrementAndGet()
         body
@@ -259,13 +309,21 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-      val resp1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "match.foo.bar"
-      ).get().futureValue
-      val resp2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "match.foo.bar",
-        "X-Foo" -> "Bar"
-      ).get().futureValue
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "match.foo.bar"
+        )
+        .get()
+        .futureValue
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host"  -> "match.foo.bar",
+          "X-Foo" -> "Bar"
+        )
+        .get()
+        .futureValue
 
       resp1.status mustBe 404
       resp2.status mustBe 200
@@ -277,7 +335,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
     "Route only if matching root is present" in {
       val counter = new AtomicInteger(0)
-      val body = """{"message":"hello world"}"""
+      val body    = """{"message":"hello world"}"""
       val server = TargetService(None, "/api", "application/json", { _ =>
         counter.incrementAndGet()
         body
@@ -301,10 +359,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-      val resp1 = ws.url(s"http://127.0.0.1:$port/foo/api").withHttpHeaders(
-        "Host" -> "matchroot.foo.bar"
-      ).get().futureValue
-
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/foo/api")
+        .withHttpHeaders(
+          "Host" -> "matchroot.foo.bar"
+        )
+        .get()
+        .futureValue
 
       resp1.status mustBe 200
       resp1.body mustBe body
@@ -315,7 +376,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
     "Add root to target call" in {
       val counter = new AtomicInteger(0)
-      val body = """{"message":"hello world"}"""
+      val body    = """{"message":"hello world"}"""
       val server = TargetService(None, "/api", "application/json", { _ =>
         counter.incrementAndGet()
         body
@@ -339,9 +400,13 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-      val resp1 = ws.url(s"http://127.0.0.1:$port").withHttpHeaders(
-        "Host" -> "root.foo.bar"
-      ).get().futureValue
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port")
+        .withHttpHeaders(
+          "Host" -> "root.foo.bar"
+        )
+        .get()
+        .futureValue
 
       resp1.status mustBe 200
       resp1.body mustBe body
@@ -352,7 +417,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
     "Match wildcard domains" in {
       val counter = new AtomicInteger(0)
-      val body = """{"message":"hello world"}"""
+      val body    = """{"message":"hello world"}"""
       val server = TargetService(None, "/api", "application/json", { _ =>
         counter.incrementAndGet()
         body
@@ -375,15 +440,27 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-      val resp1 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "wildcard.foo.bar"
-      ).get().futureValue
-      val resp2 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "wildbar.foo.bar"
-      ).get().futureValue
-      val resp3 = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> "wildfoo.foo.bar"
-      ).get().futureValue
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "wildcard.foo.bar"
+        )
+        .get()
+        .futureValue
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "wildbar.foo.bar"
+        )
+        .get()
+        .futureValue
+      val resp3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "wildfoo.foo.bar"
+        )
+        .get()
+        .futureValue
 
       resp1.status mustBe 200
       resp1.body mustBe body

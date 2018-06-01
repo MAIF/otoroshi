@@ -30,19 +30,25 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
     with HttpFiltersComponents {
 
   override lazy val configuration: Configuration = {
-    val sslConfig = serverConfig.sslPort.map { sslPort =>
-      s"""
+    val sslConfig = serverConfig.sslPort
+      .map { sslPort =>
+        s"""
         |https.port=$sslPort
         |play.server.https.port=$sslPort
       """.stripMargin
-    }.getOrElse("")
-    val httpConfig = serverConfig.port.map { httpPort =>
-      s"""
+      }
+      .getOrElse("")
+    val httpConfig = serverConfig.port
+      .map { httpPort =>
+        s"""
          |http.port=$httpPort
          |play.server.http.port=$httpPort
       """.stripMargin
-    }.getOrElse("")
-    Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(ConfigFactory.parseString(httpConfig + sslConfig))
+      }
+      .getOrElse("")
+    Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(
+      ConfigFactory.parseString(httpConfig + sslConfig)
+    )
   }
 
   LoggerConfigurator(environment.classLoader).foreach {
@@ -116,18 +122,19 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     this
   }
 
-  implicit val materializer: Materializer = components.materializer
+  implicit val materializer: Materializer         = components.materializer
   implicit val executionContext: ExecutionContext = components.executionContext
-  implicit val env: Env = components.env
+  implicit val env: Env                           = components.env
 
   val dataStores: DataStores = components.env.datastores
-  val ws: WSClient = components.wsClient
-  val system: ActorSystem = components.actorSystem
-  val injector: Injector = components.injector
+  val ws: WSClient           = components.wsClient
+  val system: ActorSystem    = components.actorSystem
+  val injector: Injector     = components.injector
 }
 
 object Otoroshi {
-  def apply(serverConfig: ServerConfig, configuration: Config = ConfigFactory.empty): Otoroshi = new Otoroshi(serverConfig, configuration)
+  def apply(serverConfig: ServerConfig, configuration: Config = ConfigFactory.empty): Otoroshi =
+    new Otoroshi(serverConfig, configuration)
 }
 
 object Main {

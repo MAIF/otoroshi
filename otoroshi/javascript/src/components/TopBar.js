@@ -172,62 +172,63 @@ export class TopBar extends Component {
     return (
       <nav className="navbar navbar-inverse navbar-fixed-top">
         <div className="container-fluid">
-        <div className="row">
-          <div className="navbar-header col-sm-2">
-            <button
-              id="toggle-sidebar"
-              type="button"
-              className="navbar-toggle collapsed menu"
-              data-toggle="collapse"
-              data-target="#sidebar"
-              aria-expanded="false"
-              aria-controls="sidebar">
-              <span className="sr-only">Toggle sidebar</span>
-              <span>Menu</span>
-            </button>
-            <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-              <span>おとろし</span> &nbsp; Otoroshi
-            </a>
-          </div>
+          <div className="row">
+            <div className="navbar-header col-sm-2">
+              <button
+                id="toggle-sidebar"
+                type="button"
+                className="navbar-toggle collapsed menu"
+                data-toggle="collapse"
+                data-target="#sidebar"
+                aria-expanded="false"
+                aria-controls="sidebar">
+                <span className="sr-only">Toggle sidebar</span>
+                <span>Menu</span>
+              </button>
+              <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
+                <span>おとろし</span> &nbsp; Otoroshi
+              </a>
+            </div>
             <ul className="nav navbar-nav navbar-right">
-            {window.__apiReadOnly && (
-              <li>
-                <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
-                  <span className="fa fa-lock fa-lg" />
-                </a>
-              </li>
-            )}
-            {this.props.changePassword && (
-              <li onClick={e => (window.location = '/bo/dashboard/admins')} style={{ verticalAlign: 'top'}}>
+              {window.__apiReadOnly && (
+                <li>
+                  <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
+                    <span className="fa fa-lock fa-lg" />
+                  </a>
+                </li>
+              )}
+              {this.props.changePassword && (
+                <li
+                  onClick={e => (window.location = '/bo/dashboard/admins')}
+                  style={{ verticalAlign: 'top' }}>
+                  <a
+                    href="/bo/dashboard/admins"
+                    className="dropdown-toggle"
+                    data-toggle="dropdown"
+                    role="button"
+                    aria-haspopup="true"
+                    aria-expanded="false">
+                    <span
+                      className="badge"
+                      data-toggle="tooltip"
+                      data-placement="bottom"
+                      title="You are using the default admin account with the default (very unsecured) password. You should create a new admin account quickly."
+                      style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
+                      <i className="glyphicon glyphicon-alert" />
+                    </span>
+                  </a>
+                </li>
+              )}
+              <li className="dropdown userManagement">
                 <a
-                  href="/bo/dashboard/admins"
+                  href="#"
                   className="dropdown-toggle"
                   data-toggle="dropdown"
                   role="button"
                   aria-haspopup="true"
                   aria-expanded="false">
-                  <span
-                    className="badge"
-                    data-toggle="tooltip"
-                    data-placement="bottom"
-                    title="You are using the default admin account with the default (very unsecured) password. You should create a new admin account quickly."
-                    style={{ backgroundColor: '#c9302c',marginBottom: 5 }}>
-                    <i className="glyphicon glyphicon-alert" />
-                  </span>
+                  <i className="fa fa-cog fa-2" aria-hidden="true" />
                 </a>
-              </li>
-            )}
-              <li className="dropdown userManagement">
-              <a
-                href="#"
-                className="dropdown-toggle"
-                data-toggle="dropdown"
-                role="button"
-                aria-haspopup="true"
-                aria-expanded="false"
-              >
-                <i className="fa fa-cog fa-2" aria-hidden="true"/>
-              </a>
                 <ul className="dropdown-menu">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="glyphicon glyphicon-user" /> All users</a>
@@ -305,7 +306,8 @@ export class TopBar extends Component {
                   <li role="separator" className="divider" />
                   <li>
                     <a href="/backoffice/auth0/logout" className="link-logout">
-                      <span className="glyphicon glyphicon-off" /><span className="topbar-userName"> {window.__userid} </span>
+                      <span className="glyphicon glyphicon-off" />
+                      <span className="topbar-userName"> {window.__userid} </span>
                     </a>
                   </li>
                 </ul>
@@ -313,7 +315,7 @@ export class TopBar extends Component {
             </ul>
             <form id="navbar" className="navbar-form navbar-left">
               {selected && (
-                <div className="form-group" style={{marginRight: 10}}>
+                <div className="form-group" style={{ marginRight: 10 }}>
                   <span
                     title="Current line"
                     className="label label-success"
@@ -322,7 +324,7 @@ export class TopBar extends Component {
                   </span>
                 </div>
               )}
-              <div className="form-group" style={{ marginLeft: 10,marginRight: 10 }}>
+              <div className="form-group" style={{ marginLeft: 10, marginRight: 10 }}>
                 <Async
                   ref={r => (this.selector = r)}
                   name="service-search"
@@ -331,22 +333,26 @@ export class TopBar extends Component {
                   loadOptions={this.searchServicesOptions}
                   openOnFocus={true}
                   onChange={i => i.action()}
-                  arrowRenderer={(a) => {
+                  arrowRenderer={a => {
                     return (
-                      <span className="Select-arrow-zone" style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 19
-                      }}>
-                        <span style={{ width: 19, height: 20 }} title="You can jump directly into the search bar from anywhere just by typing '/'">
+                      <span
+                        className="Select-arrow-zone"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 19,
+                        }}>
+                        <span
+                          style={{ width: 19, height: 20 }}
+                          title="You can jump directly into the search bar from anywhere just by typing '/'">
                           <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
                             <defs>
-                              <rect id="a" width="19" height="20" rx="3"/>
+                              <rect id="a" width="19" height="20" rx="3" />
                             </defs>
                             <g fill="none" fillRule="evenodd">
-                              <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3"/>
-                              <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z"/>
+                              <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3" />
+                              <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
                             </g>
                           </svg>
                         </span>

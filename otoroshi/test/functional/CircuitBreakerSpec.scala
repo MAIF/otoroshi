@@ -12,14 +12,14 @@ import play.api.Configuration
 import scala.concurrent.duration._
 
 class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
   lazy val serviceHost = "cb.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
-  implicit val system = ActorSystem("otoroshi-test")
+  lazy val ws          = otoroshiComponents.wsClient
+  implicit val system  = ActorSystem("otoroshi-test")
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -28,12 +28,13 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
                       |  http.port=$port
                       |  play.server.http.port=$port
                       |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi Circuit Breaker" should {
 
-    val callCounter1 = new AtomicInteger(0)
+    val callCounter1          = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
     val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
       callCounter1.incrementAndGet()
@@ -81,11 +82,13 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-
       def callServer() = {
-        ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> "cb.foo.bar"
-        ).get().futureValue
+        ws.url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "cb.foo.bar"
+          )
+          .get()
+          .futureValue
       }
 
       val basicTestResponse1 = callServer()
@@ -129,9 +132,12 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       createOtoroshiService(service).futureValue
 
       def callServer() = {
-        ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> "cb.foo.bar"
-        ).get().futureValue
+        ws.url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "cb.foo.bar"
+          )
+          .get()
+          .futureValue
       }
 
       val basicTestResponse1 = callServer()
@@ -188,11 +194,13 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-
       def callServer() = {
-        ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> "cb.foo.bar"
-        ).get().futureValue
+        ws.url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "cb.foo.bar"
+          )
+          .get()
+          .futureValue
       }
 
       val basicTestResponse1 = callServer()
@@ -232,16 +240,20 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-
       def callServer() = {
-        ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> "cb.foo.bar"
-        ).get().futureValue
+        ws.url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "cb.foo.bar"
+          )
+          .get()
+          .futureValue
       }
 
       val basicTestResponse1 = callServer()
       basicTestResponse1.status mustBe 502
-      basicTestResponse1.body.contains("Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding") mustBe true
+      basicTestResponse1.body.contains(
+        "Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding"
+      ) mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -270,18 +282,22 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service).futureValue
 
-
       def callServer() = {
-        ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-          "Host" -> "cb.foo.bar"
-        ).get().futureValue
+        ws.url(s"http://127.0.0.1:$port/api")
+          .withHttpHeaders(
+            "Host" -> "cb.foo.bar"
+          )
+          .get()
+          .futureValue
       }
 
       val basicTestResponse1 = callServer()
       //println(basicTestResponse1.body)
 
       basicTestResponse1.status mustBe 502
-      basicTestResponse1.body.contains("Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding") mustBe true
+      basicTestResponse1.body.contains(
+        "Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding"
+      ) mustBe true
 
       deleteOtoroshiService(service).futureValue
     }

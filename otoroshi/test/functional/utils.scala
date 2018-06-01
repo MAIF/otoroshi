@@ -32,12 +32,12 @@ trait AddConfiguration {
 }
 
 class OtoroshiTestComponentsInstances(context: Context, conf: Configuration => Configuration)
-  extends OtoroshiComponentsInstances(context) {
+    extends OtoroshiComponentsInstances(context) {
   override def configuration = conf(super.configuration)
 }
 
 trait OneServerPerSuiteWithMyComponents
-  extends OneServerPerSuiteWithComponents
+    extends OneServerPerSuiteWithComponents
     with ScalaFutures
     with AddConfiguration { this: TestSuite =>
 
@@ -59,7 +59,7 @@ trait OneServerPerSuiteWithMyComponents
 trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
   lazy implicit val ec = otoroshiComponents.env.internalActorSystem.dispatcher
-  lazy val logger = Logger("otoroshi-spec-helper")
+  lazy val logger      = Logger("otoroshi-spec-helper")
 
   def await(duration: FiniteDuration): Unit = {
     val p = Promise[Unit]
@@ -77,13 +77,17 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     p.future
   }
 
-  def otoroshiApiCall(method: String, path: String, payload: Option[JsValue] = None, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+  def otoroshiApiCall(method: String,
+                      path: String,
+                      payload: Option[JsValue] = None,
+                      customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     val headers = Seq(
-      "Host" -> "otoroshi-api.foo.bar",
+      "Host"   -> "otoroshi-api.foo.bar",
       "Accept" -> "application/json"
     )
     if (payload.isDefined) {
-      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
+      suite.otoroshiComponents.wsClient
+        .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
         .withHttpHeaders(headers :+ ("Content-Type" -> "application/json"): _*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
@@ -97,7 +101,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
           (response.json, response.status)
         }
     } else {
-      suite.otoroshiComponents.wsClient.url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
+      suite.otoroshiComponents.wsClient
+        .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
         .withHttpHeaders(headers: _*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
@@ -112,64 +117,92 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     }
   }
 
-  def getOtoroshiConfig(customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
-    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig").withHttpHeaders(
-      "Host" -> "otoroshi-api.foo.bar",
-      "Accept" -> "application/json"
-    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
-      //if (response.status != 200) {
-      //  println(response.body)
-      //}
-      GlobalConfig.fromJsons(response.json)
-    }
+  def getOtoroshiConfig(customPort: Option[Int] = None,
+                        ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { response =>
+        //if (response.status != 200) {
+        //  println(response.body)
+        //}
+        GlobalConfig.fromJsons(response.json)
+      }
   }
 
-  def updateOtoroshiConfig(config: GlobalConfig, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
-    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig").withHttpHeaders(
-      "Host" -> "otoroshi-api.foo.bar",
-      "Content-Type" -> "application/json"
-    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).put(Json.stringify(config.toJson)).map { response =>
-      //if (response.status != 200) {
-      //  println(response.body)
-      //}
-      GlobalConfig.fromJsons(response.json)
-    }
+  def updateOtoroshiConfig(config: GlobalConfig,
+                           customPort: Option[Int] = None,
+                           ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.foo.bar",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .put(Json.stringify(config.toJson))
+      .map { response =>
+        //if (response.status != 200) {
+        //  println(response.body)
+        //}
+        GlobalConfig.fromJsons(response.json)
+      }
   }
 
-  def getOtoroshiServices(customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[Seq[ServiceDescriptor]] = {
-    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services").withHttpHeaders(
-      "Host" -> "otoroshi-api.foo.bar",
-      "Accept" -> "application/json"
-    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
-      //if (response.status != 200) {
-      //  println(response.body)
-      //}
-      response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
-    }
+  def getOtoroshiServices(customPort: Option[Int] = None,
+                          ws: WSClient = suite.otoroshiComponents.wsClient): Future[Seq[ServiceDescriptor]] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { response =>
+        //if (response.status != 200) {
+        //  println(response.body)
+        //}
+        response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+      }
   }
 
   def getOtoroshiServiceGroups(customPort: Option[Int] = None): Future[Seq[ServiceGroup]] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups").withHttpHeaders(
-      "Host" -> "otoroshi-api.foo.bar",
-      "Accept" -> "application/json"
-    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
-      response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e))
-    }
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/groups")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { response =>
+        response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e))
+      }
   }
 
   def getOtoroshiApiKeys(customPort: Option[Int] = None): Future[Seq[ApiKey]] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/apikeys").withHttpHeaders(
-      "Host" -> "otoroshi-api.foo.bar",
-      "Accept" -> "application/json"
-    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC).get().map { response =>
-      response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e))
-    }
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/apikeys")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { response =>
+        response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e))
+      }
   }
 
-  def createOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+  def createOtoroshiService(service: ServiceDescriptor,
+                            customPort: Option[Int] = None,
+                            ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
       .withHttpHeaders(
-        "Host" -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -179,10 +212,12 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 
-  def createOtoroshiApiKey(apiKey: ApiKey, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+  def createOtoroshiApiKey(apiKey: ApiKey,
+                           customPort: Option[Int] = None,
+                           ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups/default/apikeys")
       .withHttpHeaders(
-        "Host" -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -192,10 +227,12 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 
-  def deleteOtoroshiApiKey(apiKey: ApiKey, customPort: Option[Int] = None, ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+  def deleteOtoroshiApiKey(apiKey: ApiKey,
+                           customPort: Option[Int] = None,
+                           ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups/default/apikeys/${apiKey.clientId}")
       .withHttpHeaders(
-        "Host" -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -206,9 +243,10 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
   }
 
   def updateOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
-        "Host" -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -219,9 +257,10 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
   }
 
   def deleteOtoroshiService(service: ServiceDescriptor, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
-    suite.otoroshiComponents.wsClient.url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
-        "Host" -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.foo.bar",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -253,14 +292,13 @@ object HttpResponses {
 
   def NotFound(path: String) = HttpResponse(
     404,
-    entity =
-      HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> s"$path not found")))
+    entity = HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> s"$path not found")))
   )
 
   def GatewayTimeout() = HttpResponse(
     504,
-    entity = HttpEntity(ContentTypes.`application/json`,
-      Json.stringify(Json.obj("error-test" -> s"Target servers timeout")))
+    entity =
+      HttpEntity(ContentTypes.`application/json`, Json.stringify(Json.obj("error-test" -> s"Target servers timeout")))
   )
 
   def BadGateway(message: String) = HttpResponse(
@@ -302,7 +340,7 @@ class TargetService(host: Option[String], path: String, contentType: String, res
           HttpResponse(
             200,
             entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
-              ByteString(result(request)))
+                                ByteString(result(request)))
           )
         )
       }
@@ -311,7 +349,7 @@ class TargetService(host: Option[String], path: String, contentType: String, res
           HttpResponse(
             200,
             entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
-              ByteString(result(request)))
+                                ByteString(result(request)))
           )
         )
       }
@@ -348,12 +386,12 @@ class SimpleTargetService(host: Option[String], path: String, contentType: Strin
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (_,_) => {
+      case (_, _) => {
         FastFuture.successful(
           HttpResponse(
             200,
             entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
-              ByteString(result(request)))
+                                ByteString(result(request)))
           )
         )
       }
@@ -424,7 +462,7 @@ class AnalyticsServer(counter: AtomicInteger) {
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
-      val body = bodyByteString.utf8String
+      val body   = bodyByteString.utf8String
       val events = Json.parse(body).as[JsArray].value
       counter.addAndGet(events.size)
       HttpResponse(
@@ -470,7 +508,7 @@ class WebsocketServer(counter: AtomicInteger) {
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.header[UpgradeToWebSocket] match {
       case Some(upgrade) => FastFuture.successful(upgrade.handleMessages(greeterWebSocketService))
-      case None => FastFuture.successful(HttpResponse(400, entity = "Not a valid websocket request!"))
+      case None          => FastFuture.successful(HttpResponse(400, entity = "Not a valid websocket request!"))
     }
   }
 

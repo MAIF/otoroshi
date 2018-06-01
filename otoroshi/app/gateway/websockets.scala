@@ -199,15 +199,19 @@ class WebSocketHandler()(implicit env: Env) {
                     if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                       env.circuitBeakersHolder
                         .get(descriptor.id, () => new ServiceDescriptorCircuitBreaker())
-                        .callWS(descriptor, s"WS ${req.method} ${req.relativeUri}", (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                        .callWS(descriptor,
+                                s"WS ${req.method} ${req.relativeUri}",
+                                (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
                         case _: scala.concurrent.TimeoutException =>
-                          Errors.craftResponseResult(
-                            s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                            BadGateway,
-                            req,
-                            Some(descriptor),
-                            Some("errors.request.timeout")
-                          ).asLeft[WSFlow]
+                          Errors
+                            .craftResponseResult(
+                              s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                              BadGateway,
+                              req,
+                              Some(descriptor),
+                              Some("errors.request.timeout")
+                            )
+                            .asLeft[WSFlow]
                         case RequestTimeoutException =>
                           Errors
                             .craftResponseResult(
@@ -658,7 +662,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                Some("errors.too.much.requests"))
                           .asLeft[WSFlow]
                       } else {
-                         if (env.isProd && !isSecured && desc.forceHttps) {
+                        if (env.isProd && !isSecured && desc.forceHttps) {
                           val theDomain = req.domain
                           val protocol = req.headers
                             .get("X-Forwarded-Protocol")
@@ -672,7 +676,13 @@ class WebSocketHandler()(implicit env: Env) {
                           logger.info(
                             s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to wss://$theDomain${req.relativeUri}"
                           )
-                          FastFuture.successful(Left(Results.Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}").withHeaders("foo2" -> "bar2")))
+                          FastFuture.successful(
+                            Left(
+                              Results
+                                .Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}")
+                                .withHeaders("foo2" -> "bar2")
+                            )
+                          )
                         } else if (!within) {
                           // TODO : count as served req here !!!
                           Errors

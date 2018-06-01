@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.1
+1.1.2
 </div>
 </div>
 <div class="nav-toc">
@@ -80,6 +80,7 @@
     <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
   </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
+  <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
   <li><a href="cli.html" class="page">Rust CLI</a></li>
   <li><a href="deploy/index.html" class="page">Deploy to production</a>
   <ul>
@@ -127,7 +128,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.1
+1.1.2
 </div>
 </div>
 <div class="nav-toc">
@@ -177,6 +178,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
   </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
+  <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
   <li><a href="cli.html" class="page">Rust CLI</a></li>
   <li><a href="deploy/index.html" class="page">Deploy to production</a>
   <ul>
@@ -212,18 +214,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <blockquote>
   <p><em>The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. It&rsquo;s a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of the gate to devour those who approach the shrine for only self-serving purposes.</em></p>
 </blockquote><div class="centered-img">
-<p><a href="https://travis-ci.org/MAIF/otoroshi"><img src="https://travis-ci.org/MAIF/otoroshi.svg?branch=master" alt="Build Status" /></a> <a href="https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"><img src="https://badges.gitter.im/MAIF/otoroshi.svg" alt="Join the chat at https://gitter.im/MAIF/otoroshi" /></a> <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.1/otoroshi.jar"> <img src="https://img.shields.io/github/release/MAIF/otoroshi.svg" alt="Download" /> </a></p></div><div class="centered-img">
+<p><a href="https://travis-ci.org/MAIF/otoroshi"><img src="https://travis-ci.org/MAIF/otoroshi.svg?branch=master" alt="Build Status" /></a> <a href="https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"><img src="https://badges.gitter.im/MAIF/otoroshi.svg" alt="Join the chat at https://gitter.im/MAIF/otoroshi" /></a> <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.2/otoroshi.jar"> <img src="https://img.shields.io/github/release/MAIF/otoroshi.svg" alt="Download" /> </a></p></div><div class="centered-img">
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img></div>
 <h2><a href="#installation" name="installation" class="anchor"><span class="anchor-link"></span></a>Installation</h2>
-<p>You can download the latest build of Otoroshi as a <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.1/otoroshi.jar">fat jar</a>, as a <a href="https://dl.bintray.com/maif/binaries/otoroshi-dist/1.1.1/otoroshi-dist.zip">zip package</a> or as a <a href="getotoroshi/fromdocker.html">docker image</a>.</p>
+<p>You can download the latest build of Otoroshi as a <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.2/otoroshi.jar">fat jar</a>, as a <a href="https://dl.bintray.com/maif/binaries/otoroshi-dist/1.1.2/otoroshi-dist.zip">zip package</a> or as a <a href="getotoroshi/fromdocker.html">docker image</a>.</p>
 <p>You can install and run Otoroshi with this little bash snippet</p>
-<pre class="prettyprint"><code class="language-sh">wget -q --show-progress &#39;https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.1/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">wget -q --show-progress &#39;https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.2/otoroshi.jar&#39;
 # run the following line if you want to use the admin UI in your browser
 sudo echo &quot;127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar&quot; &gt;&gt; /etc/hosts
+# Java 8
 java -jar otoroshi.jar
+# Java 9 and 10
+java --add-modules java.xml.bind -jar otoroshi.jar
 </code></pre>
 <p>or using docker</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1.1.1
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1.1.2
 </code></pre>
 <p>now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a>, <strong>log in with the credential generated in the logs</strong> and explore by yourself, if you want better instructions, just go to the <a href="quickstart.html">Quick Start</a> or directly to the <a href="getotoroshi/index.html">installation instructions</a></p>
 <p>You can also try Otoroshi online with Google Cloud Shell if you&rsquo;re a user of the Google Cloud Platform</p><div class="centered-img">
@@ -240,6 +245,7 @@ java -jar otoroshi.jar
   <li><a href="setup/index.html">Setup Otoroshi</a></li>
   <li><a href="usage/index.html">Using Otoroshi</a></li>
   <li><a href="integrations/index.html">Third party Integrations</a></li>
+  <li><a href="embedding.html">Embedding Otoroshi</a></li>
   <li><a href="api.html">Admin REST API</a></li>
   <li><a href="cli.html">Rust CLI</a></li>
   <li><a href="deploy/index.html">Deploy to production</a></li>

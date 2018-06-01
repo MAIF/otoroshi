@@ -13,14 +13,14 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
 class ApiKeysSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
   lazy val serviceHost = "auth.foo.bar"
-  lazy val ws = otoroshiComponents.wsClient
-  implicit val system = ActorSystem("otoroshi-test")
+  lazy val ws          = otoroshiComponents.wsClient
+  implicit val system  = ActorSystem("otoroshi-test")
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -29,12 +29,13 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
                       |  http.port=$port
                       |  play.server.http.port=$port
                       |}
-       """.stripMargin).resolve()
+       """.stripMargin)
+      .resolve()
   )
 
   s"[$name] Otoroshi ApiKeys" should {
 
-    val callCounter1 = new AtomicInteger(0)
+    val callCounter1          = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
     val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
       callCounter1.incrementAndGet()
@@ -111,7 +112,8 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     )
     val basicAuth = Base64.getUrlEncoder.encodeToString(s"apikey-test:1234".getBytes)
     val algorithm = Algorithm.HMAC256("1234")
-    val bearerAuth = JWT.create()
+    val bearerAuth = JWT
+      .create()
       .withIssuer("apikey-test")
       .withClaim("name", "John Doe")
       .withClaim("admin", true)
@@ -125,9 +127,13 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Prevent to access private by default service" in {
       createOtoroshiService(privateByDefaultService).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       resp.status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
@@ -138,9 +144,13 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Prevent to access private by patterns service" in {
       createOtoroshiService(privateByPatternService).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       resp.status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
@@ -151,9 +161,13 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Prevent to access not public by patterns service" in {
       createOtoroshiService(notPublicByPatternService).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api").withHttpHeaders(
-        "Host" -> serviceHost
-      ).get().futureValue
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost
+        )
+        .get()
+        .futureValue
 
       resp.status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
@@ -164,13 +178,15 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Allow access with otoroshi headers (Otoroshi-Client-Id, Otoroshi-Client-Secret)" in {
       createOtoroshiService(service).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
-          "Otoroshi-Client-Id" -> "apikey-test",
+          "Host"                   -> serviceHost,
+          "Otoroshi-Client-Id"     -> "apikey-test",
           "Otoroshi-Client-Secret" -> "1234"
         )
-        .get().futureValue
+        .get()
+        .futureValue
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
@@ -181,12 +197,14 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Allow access with basic otoroshi header (Otoroshi-Authorization)" in {
       createOtoroshiService(service).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"                   -> serviceHost,
           "Otoroshi-Authorization" -> s"Basic $basicAuth"
         )
-        .get().futureValue
+        .get()
+        .futureValue
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
@@ -197,12 +215,14 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Allow access with basic otoroshi query param (basic_auth)" in {
       createOtoroshiService(service).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withQueryStringParameters("basic_auth" -> basicAuth)
         .withHttpHeaders(
           "Host" -> serviceHost
         )
-        .get().futureValue
+        .get()
+        .futureValue
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
@@ -213,12 +233,14 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Allow access with basic auth header (Authorization)" in {
       createOtoroshiService(service).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"          -> serviceHost,
           "Authorization" -> s"Basic $basicAuth"
         )
-        .get().futureValue
+        .get()
+        .futureValue
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
@@ -229,12 +251,14 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Allow access with bearer auth header (Authorization)" in {
       createOtoroshiService(service).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"          -> serviceHost,
           "Authorization" -> s"Bearer $bearerAuth"
         )
-        .get().futureValue
+        .get()
+        .futureValue
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
@@ -245,12 +269,14 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Allow access with bearer otoroshi header (Otoroshi-Authorization)" in {
       createOtoroshiService(service).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"                   -> serviceHost,
           "Otoroshi-Authorization" -> s"Bearer $bearerAuth"
         )
-        .get().futureValue
+        .get()
+        .futureValue
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
@@ -261,12 +287,14 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "Allow access with bearer otoroshi query param (bearer_auth)" in {
       createOtoroshiService(service).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withQueryStringParameters("bearer_auth" -> bearerAuth)
         .withHttpHeaders(
           "Host" -> serviceHost
         )
-        .get().futureValue
+        .get()
+        .futureValue
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true

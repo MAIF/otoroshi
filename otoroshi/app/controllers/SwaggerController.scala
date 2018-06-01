@@ -143,15 +143,15 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
 
   def NoAuthOperation(
-                 summary: String,
-                 tag: String,
-                 description: String = "",
-                 operationId: String = "",
-                 produces: JsArray = Json.arr("application/json"),
-                 parameters: JsArray = Json.arr(),
-                 goodCode: String = "200",
-                 goodResponse: JsObject
-               ): JsValue =
+      summary: String,
+      tag: String,
+      description: String = "",
+      operationId: String = "",
+      produces: JsArray = Json.arr("application/json"),
+      parameters: JsArray = Json.arr(),
+      goodCode: String = "200",
+      goodResponse: JsObject
+  ): JsValue =
     Json.obj(
       "deprecated"  -> false,
       "tags"        -> Json.arr(tag),
@@ -525,10 +525,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   def OtoroshiHealth = Json.obj(
     "description" -> "The structure that represent current Otoroshi health",
     "type"        -> "object",
-    "required" -> Json.arr("label",
-      "otoroshi",
-      "datastore"
-    ),
+    "required"    -> Json.arr("label", "otoroshi", "datastore"),
     "properties" -> Json.obj(
       "otoroshi" -> Json.obj(
         "type" -> "string",

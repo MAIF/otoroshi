@@ -179,15 +179,15 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
       val toHttps = env.exposedRootSchemeIsHttps
       val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
       host match {
-        case str if matchRedirection(str)                                   => Some(redirectToMainDomain())
+        case str if matchRedirection(str)                                           => Some(redirectToMainDomain())
         case _ if request.relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
         case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
         case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
-        case env.backOfficeHost if !isSecured && toHttps && env.isProd      => Some(redirectToHttps())
-        case env.privateAppsHost if !isSecured && toHttps && env.isProd     => Some(redirectToHttps())
-        case env.adminApiHost if env.exposeAdminApi                         => super.routeRequest(request)
-        case env.backOfficeHost if env.exposeAdminDashboard                 => super.routeRequest(request)
-        case env.privateAppsHost                                            => super.routeRequest(request)
+        case env.backOfficeHost if !isSecured && toHttps && env.isProd              => Some(redirectToHttps())
+        case env.privateAppsHost if !isSecured && toHttps && env.isProd             => Some(redirectToHttps())
+        case env.adminApiHost if env.exposeAdminApi                                 => super.routeRequest(request)
+        case env.backOfficeHost if env.exposeAdminDashboard                         => super.routeRequest(request)
+        case env.privateAppsHost                                                    => super.routeRequest(request)
         case _ =>
           request.headers.get("Sec-WebSocket-Version") match {
             case None    => Some(forwardCall())
@@ -265,7 +265,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
         case false => "http"
       }
       .getOrElse("http")
-    logger.warn(s"redirectToMainDomain from $protocol://${req.domain}${req.relativeUri} to $protocol://$domain${req.relativeUri}")
+    logger.warn(
+      s"redirectToMainDomain from $protocol://${req.domain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
+    )
     Redirect(s"$protocol://$domain${req.relativeUri}")
   }
 
@@ -486,12 +488,13 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                     def actuallyCallDownstream(target: Target,
                                                apiKey: Option[ApiKey] = None,
                                                paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                      val snowflake              = env.snowflakeGenerator.nextIdStr()
-                      val requestTimestamp       = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-                      val state                  = IdGenerator.extendedToken(128)
-                      val rawUri                 = req.relativeUri.substring(1)
-                      val uriParts               = rawUri.split("/").toSeq
-                      val uri: String            = descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
+                      val snowflake        = env.snowflakeGenerator.nextIdStr()
+                      val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+                      val state            = IdGenerator.extendedToken(128)
+                      val rawUri           = req.relativeUri.substring(1)
+                      val uriParts         = rawUri.split("/").toSeq
+                      val uri: String =
+                        descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
                       val scheme                 = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
                       val host                   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
                       val root                   = descriptor.root
@@ -530,9 +533,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                         (req.headers.toSimpleMap
                           .filterNot(t => if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true else false)
                           .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                          env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
-                          "Host"                          -> host,
-                          env.Headers.OtoroshiRequestId   -> snowflake,
+                          env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
+                          "Host"                               -> host,
+                          env.Headers.OtoroshiRequestId        -> snowflake,
                           env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
                         ) ++ (if (descriptor.enforceSecureCommunication) {
                                 Map(
@@ -741,10 +744,10 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
                               if (descriptor.sendOtoroshiHeadersBack) {
                                 Seq(
-                                  env.Headers.OtoroshiRequestId       -> snowflake,
+                                  env.Headers.OtoroshiRequestId        -> snowflake,
                                   env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-                                  env.Headers.OtoroshiProxyLatency    -> s"$overhead",
-                                  env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
+                                  env.Headers.OtoroshiProxyLatency     -> s"$overhead",
+                                  env.Headers.OtoroshiUpstreamLatency  -> s"$upstreamLatency" //,
                                   //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
                                 )
                               } else {

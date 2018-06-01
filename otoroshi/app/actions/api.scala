@@ -99,7 +99,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 case class UnAuthApiActionContent[A](req: Request[A])
 
 class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
-  extends ActionBuilder[UnAuthApiActionContent, AnyContent]
+    extends ActionBuilder[UnAuthApiActionContent, AnyContent]
     with ActionFunction[Request, UnAuthApiActionContent] {
 
   implicit lazy val ec = env.apiExecutionContext
@@ -120,14 +120,15 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     )
   }
 
-  override def invokeBlock[A](request: Request[A], block: UnAuthApiActionContent[A] => Future[Result]): Future[Result] = {
+  override def invokeBlock[A](request: Request[A],
+                              block: UnAuthApiActionContent[A] => Future[Result]): Future[Result] = {
 
     implicit val req = request
 
     val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.adminApiHost => block(UnAuthApiActionContent(request))
-      case _ => error(s"Not found")
+      case _                => error(s"Not found")
     }
   }
 

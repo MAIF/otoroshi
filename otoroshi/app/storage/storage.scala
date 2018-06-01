@@ -18,8 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 sealed trait DataStoreHealth
-case object Healthy extends DataStoreHealth
-case object Unhealthy extends DataStoreHealth
+case object Healthy     extends DataStoreHealth
+case object Unhealthy   extends DataStoreHealth
 case object Unreachable extends DataStoreHealth
 
 trait DataStores {
