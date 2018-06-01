@@ -169,60 +169,48 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= apiKey.monthlyQuota)
 
   // optimized
-  override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case Some(descriptor) => {
         val key = s"${env.storageRoot}:apikey:byservice:$serviceId"
-        redisCli.exists(key).fast.flatMap {
-          case true => {
-            logger.debug(s"ApiKeys for service $serviceId from datastore")
-            redisCli.smembers(key).fast.map(_.map(_.utf8String)).flatMap { ids =>
-              env.datastores.apiKeyDataStore.findAllById(ids)
-            }
+        redisCli.smembers(key).fast.flatMap {
+          case list if list.isEmpty => env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+            keys.filter(_.authorizedGroup == descriptor.groupId)
+          } andThen {
+            case Success(keys) =>
+              for {
+                r <- redisCli.sadd(key, keys.map(_.clientId): _*)
+                _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
+              } yield ()
           }
-          case false => {
-            env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-              keys.filter(_.authorizedGroup == descriptor.groupId)
-            } andThen {
-              case Success(keys) =>
-                for {
-                  r <- redisCli.sadd(key, keys.map(_.clientId): _*)
-                  _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
-                } yield ()
-            }
-          }
+          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String))
         }
       }
       case None => FastFuture.failed(new ServiceNotFoundException(serviceId))
     }
+  }
 
   // optimized
-  override def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  override def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case Some(group) => {
         val key = s"${env.storageRoot}:apikey:bygroup:$groupId"
-        redisCli.exists(key).fast.flatMap {
-          case true => {
-            logger.debug(s"ApiKeys for group $groupId from datastore")
-            redisCli.smembers(key).fast.map(_.map(_.utf8String)).flatMap { ids =>
-              env.datastores.apiKeyDataStore.findAllById(ids)
-            }
+        redisCli.smembers(key).fast.flatMap {
+          case list if list.isEmpty => env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+            keys.filter(_.authorizedGroup == group.id)
+          } andThen {
+            case Success(keys) =>
+              for {
+                r <- redisCli.sadd(key, keys.map(_.clientId): _*)
+                _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
+              } yield ()
           }
-          case false => {
-            env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-              keys.filter(_.authorizedGroup == group.id)
-            } andThen {
-              case Success(keys) =>
-                for {
-                  r <- redisCli.sadd(key, keys.map(_.clientId): _*)
-                  _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
-                } yield ()
-            }
-          }
+          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String))
         }
       }
       case None => FastFuture.failed(new GroupNotFoundException(groupId))
     }
+  }
 
   // optimized
   override def findAuthorizeKeyFor(clientId: String, serviceId: String)(implicit ec: ExecutionContext,

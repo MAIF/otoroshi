@@ -44,10 +44,8 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
   override def fastLookupExists(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,
                                                                env: Env): Future[Boolean] = {
     for {
-      // exists <- redisCli.exists(query.asKey)
       size <- redisCli.scard(query.asKey)
     } yield {
-      // exists && size > 0L
       size > 0L
     }
   }
