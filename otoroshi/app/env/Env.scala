@@ -404,8 +404,8 @@ class Env(val configuration: Configuration,
                 case v if v.contains("-snapshot") =>
                   v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble - 0.5
                 case v if v.contains("-dev") =>
-                  v.replace(".", "").replace("v", "").replace("-dev", "").toDouble - 0.5
-                case v => v.replace(".", "").replace("v", "").replace("-dev", "").replace("-snapshot", "").toDouble
+                  v.replace(".", "").replace("-dev", "").replace("v", "").toDouble - 0.5
+                case v => v.replace(".", "").replace("-dev", "").replace("v", "").replace("-snapshot", "").toDouble
               }
               wsClient
                 .url("https://updates.otoroshi.io/api/versions/latest")
