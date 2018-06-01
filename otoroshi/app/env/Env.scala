@@ -329,7 +329,7 @@ class Env(val configuration: Configuration,
     publicPatterns = Seq("/health")
   )
 
-  lazy val otoroshiVersion     = "1.1.2"
+  lazy val otoroshiVersion     = "1.2.0-dev"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -403,7 +403,9 @@ class Env(val configuration: Configuration,
               var cleanVersion: Double = otoroshiVersion.toLowerCase() match {
                 case v if v.contains("-snapshot") =>
                   v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble - 0.5
-                case v => v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble
+                case v if v.contains("-dev") =>
+                  v.replace(".", "").replace("v", "").replace("-dev", "").toDouble - 0.5
+                case v => v.replace(".", "").replace("v", "").replace("-dev", "").replace("-snapshot", "").toDouble
               }
               wsClient
                 .url("https://updates.otoroshi.io/api/versions/latest")

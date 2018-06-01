@@ -1,6 +1,6 @@
 # Otoroshi
 
-[![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://dl.bintray.com/maif/binaries/otoroshi.jar/1.1.2/otoroshi.jar)
+[![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://dl.bintray.com/maif/binaries/otoroshi.jar/1.2.0-dev/otoroshi.jar)
 
 **Otoroshi** is a layer of lightweight api management on top of a modern http reverse proxy written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
 

@@ -11,7 +11,7 @@ WORKDIR /usr/app
 COPY . /usr/app
 
 RUN unzip ./otoroshi-dist.zip \
-  && mv otoroshi-1.1.2 otoroshi \
+  && mv otoroshi-1.2.0-dev otoroshi \
   && chmod +x otoroshi/bin/otoroshi \
   && mkdir otoroshi/leveldb \
   && mkdir otoroshi/imports \

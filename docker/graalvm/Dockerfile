@@ -12,7 +12,7 @@ COPY . /otoroshi
 
 RUN apt-get update -y \
   && apt-get install -y curl build-essential zlib1g-dev \
-  && wget https://dl.bintray.com/maif/binaries/otoroshi.jar/latest/otoroshi.jar \
+  && wget https://dl.bintray.com/maif/binaries/otoroshi.jar/snapshot/otoroshi.jar \
   && wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc1/graalvm-ce-1.0.0-rc1-linux-amd64.tar.gz \
   && tar -xvf graalvm-ce-1.0.0-rc1-linux-amd64.tar.gz \
   && mv graalvm-1.0.0-rc1 graalvm \
