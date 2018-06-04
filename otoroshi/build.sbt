@@ -1,7 +1,7 @@
 name := """otoroshi"""
 organization := "fr.maif.otoroshi"
 version := "1.2.0-dev"
-scalaVersion := "2.12.5"
+scalaVersion := "2.12.6"
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
