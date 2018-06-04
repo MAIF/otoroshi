@@ -8,6 +8,8 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
+import scala.util.Failure
+
 class BasicSpec(name: String, configurationSpec: => Configuration)
     extends PlaySpec
     with OneServerPerSuiteWithMyComponents
@@ -55,7 +57,9 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     )
 
     "warm up" in {
-      getOtoroshiServices().futureValue // WARM UP
+      getOtoroshiServices().andThen {
+        case Failure(e) => e.printStackTrace()
+      }.futureValue // WARM UP
     }
 
     s"return only one service descriptor after startup (for admin API)" in {
@@ -328,6 +332,65 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       resp1.status mustBe 404
       resp2.status mustBe 200
       resp2.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Route only if header is present and matches regex" in {
+      val counter = new AtomicInteger(0)
+      val body    = """{"message":"hello world"}"""
+      val server = TargetService(None, "/api", "application/json", { _ =>
+        counter.incrementAndGet()
+        body
+      }).await()
+      val service = ServiceDescriptor(
+        id = "match-test",
+        name = "match-test",
+        env = "prod",
+        subdomain = "match",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        matchingHeaders = Map("X-Session" -> "^(.*?;)?(user=jason)(;.*)?$")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "match.foo.bar"
+        )
+        .get()
+        .futureValue
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host"  -> "match.foo.bar",
+          "X-Session" -> "user=mathieu"
+        )
+        .get()
+        .futureValue
+      val resp3 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host"  -> "match.foo.bar",
+          "X-Session" -> "user=jason"
+        )
+        .get()
+        .futureValue
+
+      resp1.status mustBe 404
+      resp2.status mustBe 404
+      resp3.status mustBe 200
+      resp3.body mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()

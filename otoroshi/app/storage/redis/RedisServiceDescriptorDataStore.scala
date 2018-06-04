@@ -8,6 +8,8 @@ import play.api.Logger
 import play.api.libs.json.Format
 import redis.RedisClientMasterSlaves
 
+import utils.RegexPool
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueueSize: Int, _env: Env)
@@ -259,6 +261,38 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
   override def dataOutFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.get(dataOutForServiceKey(id)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
 
+  @inline
+  def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery): Boolean = {
+    val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
+    val allHeadersMatched: Boolean =
+      sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall {
+        case (key, value) =>
+          val regex = RegexPool.regex(value)
+          headersSeq.get(key).exists(h => regex.matches(h))
+      }
+    allHeadersMatched
+  }
+
+  @inline
+  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery): Seq[ServiceDescriptor] = {
+    services
+      .sortWith {
+        case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
+          a.matchingRoot.get.size > b.matchingRoot.get.size
+        case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined => true
+        case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined => true
+        case _                                                               => false
+      }
+      .filter { sr =>
+        val allHeadersMatched = matchAllHeaders(sr, query)
+        val rootMatched = sr.matchingRoot match {
+          case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+          case None               => true
+        }
+        allHeadersMatched && rootMatched
+      }
+  }
+
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
   override def find(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,
                                                    env: Env): Future[Option[ServiceDescriptor]] = {
@@ -269,56 +303,20 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
         query
           .getServices()
           .fast
-          .map(_.sortWith {
-            case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
-              a.matchingRoot.get.size > b.matchingRoot.get.size
-            case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined => true
-            case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined => true
-            case _                                                               => false
-          }.filter { sr =>
-            val headersSeq = query.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty)
-            val allHeadersMatched =
-              sr.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty).map(t => headersSeq.contains(t)).forall(a => a)
-            val rootMatched = sr.matchingRoot match {
-              case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-              case None               => true
-            }
-            allHeadersMatched && rootMatched
-          })
+          .map(services => sortServices(services, query))
       }
       case false => {
         logger.debug("Full scan of services, should not pass here anymore ...")
         findAll().fast.map { descriptors =>
           val validDescriptors = descriptors.filter { sr =>
-            if (env.redirectToDev) { // TODO : prefer preprod
-              // query.domain == sr.domain && query.subdomain == sr.subdomain && sr.enabled
-              // query.domain == sr.domain && query.subdomain == sr.subdomain
+            if (env.redirectToDev) {
               utils.RegexPool(sr.toDevHost).matches(query.toDevHost)
             } else {
-              // query.domain == sr.domain && query.subdomain == sr.subdomain && query.env == sr.env && sr.enabled
-              // query.domain == sr.domain && query.subdomain == sr.subdomain && query.env == sr.env
               utils.RegexPool(sr.toHost).matches(query.toHost)
             }
           }
           query.addServices(validDescriptors)
-          validDescriptors
-            .sortWith {
-              case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
-                a.matchingRoot.get.size > b.matchingRoot.get.size
-              case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined => true
-              case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined => true
-              case _                                                               => false
-            }
-            .filter { sr =>
-              val headersSeq = query.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty)
-              val allHeadersMatched =
-                sr.matchingHeaders.toSeq.filterNot(_._1.trim.isEmpty).map(t => headersSeq.contains(t)).forall(a => a)
-              val rootMatched = sr.matchingRoot match {
-                case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-                case None               => true
-              }
-              allHeadersMatched && rootMatched
-            }
+          sortServices(validDescriptors, query)
         }
       }
     } map { filteredDescriptors =>
