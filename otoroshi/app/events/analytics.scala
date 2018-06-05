@@ -26,7 +26,7 @@ object AnalyticsActor {
 
 class AnalyticsActor(implicit env: Env) extends Actor {
 
-  implicit lazy val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(5))
+  implicit lazy val ec = env.masterEc // ExecutionContext.fromExecutor(Executors.newFixedThreadPool(5))
 
   lazy val logger = Logger("otoroshi-analytics-actor")
 

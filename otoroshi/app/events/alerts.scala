@@ -613,7 +613,7 @@ class AlertsActor(implicit env: Env) extends Actor {
   import org.joda.time.DateTime
   import events.KafkaWrapper
 
-  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(5))
+  implicit val ec = env.masterEc // ExecutionContext.fromExecutor(Executors.newFixedThreadPool(5))
 
   lazy val logger = Logger("otoroshi-alert-actor")
 
