@@ -131,6 +131,10 @@ h2 {
 	height:100%;
 }
 
+.youtube_player .tac_activate {
+    background: #2E3031;
+}
+
 .more-details .pictoPaysage {
   margin-top: 20px;
   width: 70px
