@@ -106,7 +106,7 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
 
 class StatsdActor(env: Env) extends Actor {
 
-  import env.statsdActorSytem.dispatcher
+  implicit val ec = env.otoroshiExecutionContext
 
   var config: Option[StatsdConfig]           = None
   var statsdclient: Option[StatsDClient]     = None

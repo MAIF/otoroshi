@@ -18,7 +18,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   import Implicits._
 
-  implicit lazy val ec = env.apiExecutionContext
+  implicit lazy val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-swagger-controller")
 

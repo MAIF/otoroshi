@@ -26,12 +26,12 @@ object AnalyticsActor {
 
 class AnalyticsActor(implicit env: Env) extends Actor {
 
-  implicit lazy val ec = env.masterEc
+  implicit lazy val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-analytics-actor")
 
-  lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.kafkaActorSytem, env, _.analyticsTopic)
-  lazy val kafkaWrapperAudit     = new KafkaWrapper(env.kafkaActorSytem, env, _.auditTopic)
+  lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.otoroshiActorSystem, env, _.analyticsTopic)
+  lazy val kafkaWrapperAudit     = new KafkaWrapper(env.otoroshiActorSystem, env, _.auditTopic)
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
@@ -88,7 +88,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
       }
     }
 
-  lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.materializer)
+  lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.otoroshiMaterializer)
 
   override def receive: Receive = {
     case ge: AnalyticEvent => {

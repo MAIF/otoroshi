@@ -35,8 +35,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     implicit env: Env
 ) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.backOfficeExecutionContext
-  implicit lazy val lat = env.materializer
+  implicit lazy val ec  = env.otoroshiExecutionContext
+  implicit lazy val lat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-backoffice-api")
 

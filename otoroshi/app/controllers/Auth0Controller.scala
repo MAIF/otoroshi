@@ -23,7 +23,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
                       cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.auth0ExecutionContext
+  implicit lazy val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-auth0")
 

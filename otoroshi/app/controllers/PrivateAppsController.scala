@@ -7,7 +7,7 @@ import play.api.mvc._
 class PrivateAppsController(env: Env, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.privateAppsExecutionContext
+  implicit lazy val ec = env.otoroshiExecutionContext
 
   def home = PrivateAppsAction { ctx =>
     Ok(views.html.privateapps.home(ctx.user, env))

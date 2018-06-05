@@ -30,8 +30,8 @@ import scala.util.{Failure, Success}
 class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.apiExecutionContext
-  implicit lazy val mat = env.materializer
+  implicit lazy val ec  = env.otoroshiExecutionContext
+  implicit lazy val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-admin-api")
 

@@ -29,7 +29,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                     cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.backOfficeExecutionContext
+  implicit lazy val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-u2f-controller")
 

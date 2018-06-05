@@ -37,7 +37,7 @@ trait RedisStore[T] extends BasicStore[T] {
   def fromJsonSafe(value: JsValue): JsResult[T] = reader.reads(value)
 
   private def findKeysWithScan(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]] = {
-    implicit val mat = env.materializer
+    implicit val mat = env.otoroshiMaterializer
     Source
       .unfoldAsync(0) { cursor =>
         _redis

@@ -1,9 +1,8 @@
 package env
 
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import java.util.concurrent.{Executors, ThreadFactory, TimeUnit}
+import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.{ActorSystem, PoisonPill}
+import akka.actor.{ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
@@ -37,37 +36,35 @@ class Env(val configuration: Configuration,
           wsClient: WSClient,
           val circuitBeakersHolder: CircuitBreakersHolder) {
 
-  val masterSystem = ActorSystem(
-    "otoroshi-master-system",
+  val logger = Logger("otoroshi-env")
+
+  val otoroshiActorSystem: ActorSystem = ActorSystem(
+    "otoroshi-actor-system",
     configuration
-      .getOptional[Configuration]("app.actorsystems.master")
+      .getOptional[Configuration]("app.actorsystems.otoroshi")
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
   )
-  val masterEc = masterSystem.dispatcher
-  val masterMat = ActorMaterializer.create(masterSystem)
-
-  lazy val logger = Logger("otoroshi-env")
+  val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
+  val otoroshiScheduler: Scheduler = otoroshiActorSystem.scheduler
+  val otoroshiMaterializer: ActorMaterializer = ActorMaterializer.create(otoroshiActorSystem)
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
     val promise = Promise[Unit]
-    masterSystem.scheduler.scheduleOnce(duration) {
+    otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
-    }(masterEc)
+    }(otoroshiExecutionContext)
     promise.future
   }
 
-  val (internalActorSystem, analyticsActor, alertsActor, healthCheckerActor) = {
-    implicit val ec  = masterEc
-    val aa           = masterSystem.actorOf(AnalyticsActorSupervizer.props(this))
-    val ala          = masterSystem.actorOf(AlertsActorSupervizer.props(this))
-    val ha           = masterSystem.actorOf(HealthCheckerActor.props(this))
+  val (analyticsActor, alertsActor, healthCheckerActor) = {
+    implicit val ec  = otoroshiExecutionContext
+    val aa           = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
+    val ala          = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
+    val ha           = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
     timeout(FiniteDuration(5, SECONDS)).andThen { case _ if isProd => ha ! StartHealthCheck() }
-    (masterSystem, aa, ala, ha)
+    (aa, ala, ha)
   }
-
-  lazy val materializer = masterMat
-  lazy val websocketHandlerActorSystem = masterSystem
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
@@ -121,32 +118,6 @@ class Env(val configuration: Configuration,
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
-  lazy val auth0ExecutionContext: ExecutionContext = masterEc
-  lazy val auditExecutionContext: ExecutionContext = masterEc
-  lazy val apiExecutionContext: ExecutionContext = masterEc
-  lazy val backOfficeExecutionContext: ExecutionContext = masterEc
-  lazy val privateAppsExecutionContext: ExecutionContext = masterEc
-
-  lazy val pressureActorSystem: ActorSystem = masterSystem
-  //   "otoroshi-pressure-system",
-  //   configuration
-  //     .getOptional[Configuration]("app.actorsystems.pressure")
-  //     .map(_.underlying)
-  //     .getOrElse(ConfigFactory.empty)
-  // )
-  lazy val pressureExecutionContext: ExecutionContext = masterEc
-
-  lazy val gatewayActorSystem = masterSystem
-  //   "otoroshi-gateway-system",
-  //   configuration
-  //     .getOptional[Configuration]("app.actorsystems.gateway")
-  //     .map(_.underlying)
-  //     .getOrElse(ConfigFactory.empty)
-  // )
-
-  lazy val gatewayExecutor     = masterEc
-  lazy val gatewayMaterializer = masterMat
-
   lazy val gatewayClient = {
     val parser  = new WSConfigParser(configuration.underlying, environment.classLoader)
     val config  = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(keepAlive = true)
@@ -159,14 +130,11 @@ class Env(val configuration: Configuration,
       .setHttpClientCodecMaxChunkSize(1024 * 100)
       .build()
     AhcWSClient(config.copy(wsClientConfig = config.wsClientConfig.copy(compressionEnabled = false)))(
-      gatewayMaterializer
+      otoroshiMaterializer
     )
   }
 
-  lazy val kafkaActorSytem = masterSystem
-  lazy val statsdActorSytem = masterSystem
-
-  lazy val statsd = new StatsdWrapper(statsdActorSytem, this)
+  lazy val statsd = new StatsdWrapper(otoroshiActorSystem, this)
 
   lazy val mode   = environment.mode
   lazy val isDev  = mode == Mode.Dev
@@ -236,12 +204,12 @@ class Env(val configuration: Configuration,
 
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
+
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
-    masterSystem.terminate()
-    // gatewayActorSystem.terminate()
-    // pressureActorSystem.terminate()
+    
+    otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
     FastFuture.successful(())
   })
@@ -300,7 +268,7 @@ class Env(val configuration: Configuration,
 
   timeout(300.millis).andThen {
     case _ =>
-      implicit val ec = masterEc // internalActorSystem.dispatcher
+      implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
       datastores.globalConfigDataStore
         .isOtoroshiEmpty()
@@ -361,9 +329,9 @@ class Env(val configuration: Configuration,
         }
 
       if (isProd && checkForUpdates) {
-        internalActorSystem.scheduler.schedule(5.second, 24.hours) {
+        otoroshiActorSystem.scheduler.schedule(5.second, 24.hours) {
           datastores.globalConfigDataStore
-            .singleton()(masterEc, this)
+            .singleton()(otoroshiExecutionContext, this)
             .map { globalConfig =>
               var cleanVersion: Double = otoroshiVersion.toLowerCase() match {
                 case v if v.contains("-snapshot") =>
@@ -405,7 +373,7 @@ class Env(val configuration: Configuration,
         }
       }
       ()
-  }(masterEc) //internalActorSystem.dispatcher)
+  }(otoroshiExecutionContext) //internalActorSystem.dispatcher)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

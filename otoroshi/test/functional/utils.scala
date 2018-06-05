@@ -58,12 +58,12 @@ trait OneServerPerSuiteWithMyComponents
 
 trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
-  lazy implicit val ec = otoroshiComponents.env.internalActorSystem.dispatcher
+  lazy implicit val ec = otoroshiComponents.env.otoroshiExecutionContext
   lazy val logger      = Logger("otoroshi-spec-helper")
 
   def await(duration: FiniteDuration): Unit = {
     val p = Promise[Unit]
-    otoroshiComponents.env.internalActorSystem.scheduler.scheduleOnce(duration) {
+    otoroshiComponents.env.otoroshiScheduler.scheduleOnce(duration) {
       p.trySuccess(())
     }
     Await.result(p.future, duration + 1.second)

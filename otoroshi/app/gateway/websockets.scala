@@ -40,14 +40,14 @@ class WebSocketHandler()(implicit env: Env) {
 
   type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
 
-  implicit lazy val currentEc           = env.gatewayExecutor
-  implicit lazy val currentScheduler    = env.gatewayActorSystem.scheduler
-  implicit lazy val currentSystem       = env.gatewayActorSystem
-  implicit lazy val currentMaterializer = env.gatewayMaterializer
+  implicit lazy val currentEc           = env.otoroshiExecutionContext
+  implicit lazy val currentScheduler    = env.otoroshiScheduler
+  implicit lazy val currentSystem       = env.otoroshiActorSystem
+  implicit lazy val currentMaterializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-websocket-handler")
 
-  lazy val http = akka.http.scaladsl.Http.get(env.gatewayActorSystem)
+  lazy val http = akka.http.scaladsl.Http.get(env.otoroshiActorSystem)
 
   val reqCounter = new AtomicInteger(0)
 
@@ -422,7 +422,7 @@ class WebSocketHandler()(implicit env: Env) {
                     FastFuture.successful(
                       Right(
                         ActorFlow.actorRef(
-                          out => WebSocketProxyActor.props(url, env.gatewayMaterializer, out, env, http, headersIn)
+                          out => WebSocketProxyActor.props(url, env.otoroshiMaterializer, out, env, http, headersIn)
                         )
                       )
                     )
@@ -857,8 +857,8 @@ class WebSocketProxyActor(url: String,
       queueRef.set(materialized._2)
       connected.andThen {
         case Success(r) => {
-          implicit val ec  = env.gatewayActorSystem.dispatcher
-          implicit val mat = env.gatewayMaterializer
+          implicit val ec  = env.otoroshiExecutionContext
+          implicit val mat = env.otoroshiMaterializer
           logger.info(
             s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
           )

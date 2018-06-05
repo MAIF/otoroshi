@@ -37,7 +37,7 @@ case class ProxyDone(status: Int, upstreamLatency: Long)
 
 class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
-  import env.gatewayActorSystem.dispatcher
+  implicit val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-error-handler")
 
@@ -93,13 +93,13 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                             actionBuilder: ActionBuilder[Request, AnyContent])(implicit env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(router, errorHandler, configuration, filters) {
 
-  implicit lazy val ec        = env.gatewayExecutor
-  implicit lazy val scheduler = env.gatewayActorSystem.scheduler
+  implicit lazy val ec        = env.otoroshiExecutionContext
+  implicit lazy val scheduler = env.otoroshiScheduler
 
   lazy val logger      = Logger("otoroshi-http-handler")
   lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
-  lazy val analyticsQueue = env.pressureActorSystem.actorOf(AnalyticsQueue.props(env))
+  lazy val analyticsQueue = env.otoroshiActorSystem.actorOf(AnalyticsQueue.props(env))
 
   val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -660,9 +660,9 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                 viz = Some(viz)
                               ).toAnalytics()
                             }
-                          }(env.pressureExecutionContext)
+                          }(env.otoroshiExecutionContext) // pressure EC
                         }
-                      }(env.pressureExecutionContext)
+                      }(env.otoroshiExecutionContext) // pressure EC
                       //.andThen {
                       //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
                       //}
@@ -1218,7 +1218,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
         //    config =>
         env.statsd.meter(s"${env.snowflakeSeed}.concurrent-requests", requests.toDouble)(globalConfig.statsdConfig)
       //  )
-    }(env.pressureExecutionContext)
+    }(env.otoroshiExecutionContext)
   }
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)

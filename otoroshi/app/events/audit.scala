@@ -151,7 +151,7 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
 
 object Audit {
   def send[A <: AuditEvent](audit: A)(implicit env: Env): Unit = {
-    implicit val ec = env.auditExecutionContext
+    implicit val ec = env.otoroshiExecutionContext
     audit.toAnalytics()
     env.datastores.auditDataStore.push(audit)
   }

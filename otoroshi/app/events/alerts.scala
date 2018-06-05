@@ -613,11 +613,11 @@ class AlertsActor(implicit env: Env) extends Actor {
   import org.joda.time.DateTime
   import events.KafkaWrapper
 
-  implicit val ec = env.masterEc
+  implicit val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-alert-actor")
 
-  lazy val kafkaWrapper = new KafkaWrapper(env.kafkaActorSytem, env, _.alertsTopic)
+  lazy val kafkaWrapper = new KafkaWrapper(env.otoroshiActorSystem, env, _.alertsTopic)
 
   lazy val emailStream = Source
     .queue[AlertEvent](5000, OverflowStrategy.dropHead)
@@ -700,8 +700,8 @@ class AlertsActor(implicit env: Env) extends Actor {
     } yield r
   }
 
-  lazy val (alertQueue, alertDone) = stream.toMat(Sink.ignore)(Keep.both).run()(env.materializer)
-  lazy val (emailQueue, emailDone) = emailStream.toMat(Sink.ignore)(Keep.both).run()(env.materializer)
+  lazy val (alertQueue, alertDone) = stream.toMat(Sink.ignore)(Keep.both).run()(env.otoroshiMaterializer)
+  lazy val (emailQueue, emailDone) = emailStream.toMat(Sink.ignore)(Keep.both).run()(env.otoroshiMaterializer)
 
   override def receive: Receive = {
     case ge: AlertEvent => {
