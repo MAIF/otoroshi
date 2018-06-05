@@ -168,16 +168,16 @@ class Env(val configuration: Configuration,
   )
   lazy val pressureExecutionContext: ExecutionContext = pressureActorSystem.dispatcher
 
-  lazy val gatewayActorSystem = masterSystem /*ActorSystem(
+  lazy val gatewayActorSystem = ActorSystem(
     "otoroshi-gateway-system",
     configuration
       .getOptional[Configuration]("app.actorsystems.gateway")
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
-  )*/
+  )
 
-  lazy val gatewayExecutor     = masterEc // gatewayActorSystem.dispatcher
-  lazy val gatewayMaterializer = masterMat // ActorMaterializer.create(gatewayActorSystem)
+  lazy val gatewayExecutor     = gatewayActorSystem.dispatcher
+  lazy val gatewayMaterializer = ActorMaterializer.create(gatewayActorSystem)
 
   lazy val gatewayClient = {
     val parser  = new WSConfigParser(configuration.underlying, environment.classLoader)
@@ -284,8 +284,8 @@ class Env(val configuration: Configuration,
     alertsActor ! PoisonPill
     masterSystem.terminate()
     // internalActorSystem.terminate()
-    // gatewayActorSystem.terminate()
-    // pressureActorSystem.terminate()
+    gatewayActorSystem.terminate()
+    pressureActorSystem.terminate()
     // kafkaActorSytem.terminate()
     // statsdActorSytem.terminate()
     datastores.after(configuration, environment, lifecycle)
