@@ -37,8 +37,6 @@ class Env(val configuration: Configuration,
           wsClient: WSClient,
           val circuitBeakersHolder: CircuitBreakersHolder) {
 
-  private lazy val scheduler = Executors.newScheduledThreadPool(procNbr * 2)
-
   val masterSystem = ActorSystem(
     "otoroshi-master-system",
     configuration
@@ -49,27 +47,18 @@ class Env(val configuration: Configuration,
   val masterEc = masterSystem.dispatcher
   val masterMat = ActorMaterializer.create(masterSystem)
 
-
   lazy val logger = Logger("otoroshi-env")
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
     val promise = Promise[Unit]
-    scheduler.schedule(new Runnable {
-      override def run(): Unit = promise.trySuccess(())
-    }, duration.toMillis, TimeUnit.MILLISECONDS)
+    masterSystem.scheduler.scheduleOnce(duration) {
+      promise.trySuccess(())
+    }(masterEc)
     promise.future
   }
 
   val (internalActorSystem, analyticsActor, alertsActor, healthCheckerActor) = {
-    // implicit val as = ActorSystem(
-    //   "otoroshi-internal-system",
-    //   configuration
-    //     .getOptional[Configuration]("app.actorsystems.internal")
-    //     .map(_.underlying)
-    //     .getOrElse(ConfigFactory.empty)
-    // )
-    // implicit val mat = ActorMaterializer.create(as)
-    implicit val ec  = masterEc // as.dispatcher
+    implicit val ec  = masterEc
     val aa           = masterSystem.actorOf(AnalyticsActorSupervizer.props(this))
     val ala          = masterSystem.actorOf(AlertsActorSupervizer.props(this))
     val ha           = masterSystem.actorOf(HealthCheckerActor.props(this))
@@ -77,20 +66,10 @@ class Env(val configuration: Configuration,
     (masterSystem, aa, ala, ha)
   }
 
-  lazy val materializer = masterMat // ActorMaterializer.create(internalActorSystem)
-
-  lazy val websocketHandlerActorSystem = masterSystem /*ActorSystem(
-    "otoroshi-websockets-system",
-    configuration
-      .getOptional[Configuration]("app.actorsystems.websockets")
-      .map(_.underlying)
-      .getOrElse(ConfigFactory.empty)
-  )*/
+  lazy val materializer = masterMat
+  lazy val websocketHandlerActorSystem = masterSystem
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
-
-  //lazy val middleFingers: Boolean = configuration.getOptional[Boolean]]("app.middleFingers").getOrElse(false)
-  //lazy val maxLocalLogsSize: Int = configuration.getOptional[Int]("app.events.maxSize").getOrElse(1000)
 
   lazy val healthLimit: Double           = configuration.getOptional[Double]("app.healthLimit").getOrElse(1000.0)
   lazy val throttlingWindow: Int         = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
@@ -143,41 +122,30 @@ class Env(val configuration: Configuration,
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
   lazy val auth0ExecutionContext: ExecutionContext = masterEc
-    // ExecutionContext.fromExecutorService(
-    //   Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-auth0-requests"))
-    // )
   lazy val auditExecutionContext: ExecutionContext = masterEc
-    // ExecutionContext.fromExecutorService(
-    //   Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-audit-requests"))
-    // )
-  lazy val apiExecutionContext: ExecutionContext = masterEc /*ExecutionContext.fromExecutorService(
-    Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-admin-api-requests"))
-  )*/
-  lazy val backOfficeExecutionContext: ExecutionContext = masterEc /*ExecutionContext.fromExecutorService(
-    Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-backoffice-requests"))
-  )*/
-  lazy val privateAppsExecutionContext: ExecutionContext = masterEc /*ExecutionContext.fromExecutorService(
-    Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-private-apps-requests"))
-  )*/
-  lazy val pressureActorSystem: ActorSystem = ActorSystem(
-    "otoroshi-pressure-system",
-    configuration
-      .getOptional[Configuration]("app.actorsystems.pressure")
-      .map(_.underlying)
-      .getOrElse(ConfigFactory.empty)
-  )
-  lazy val pressureExecutionContext: ExecutionContext = pressureActorSystem.dispatcher
+  lazy val apiExecutionContext: ExecutionContext = masterEc
+  lazy val backOfficeExecutionContext: ExecutionContext = masterEc
+  lazy val privateAppsExecutionContext: ExecutionContext = masterEc
 
-  lazy val gatewayActorSystem = ActorSystem(
-    "otoroshi-gateway-system",
-    configuration
-      .getOptional[Configuration]("app.actorsystems.gateway")
-      .map(_.underlying)
-      .getOrElse(ConfigFactory.empty)
-  )
+  lazy val pressureActorSystem: ActorSystem = masterSystem
+  //   "otoroshi-pressure-system",
+  //   configuration
+  //     .getOptional[Configuration]("app.actorsystems.pressure")
+  //     .map(_.underlying)
+  //     .getOrElse(ConfigFactory.empty)
+  // )
+  lazy val pressureExecutionContext: ExecutionContext = masterEc
 
-  lazy val gatewayExecutor     = gatewayActorSystem.dispatcher
-  lazy val gatewayMaterializer = ActorMaterializer.create(gatewayActorSystem)
+  lazy val gatewayActorSystem = masterSystem
+  //   "otoroshi-gateway-system",
+  //   configuration
+  //     .getOptional[Configuration]("app.actorsystems.gateway")
+  //     .map(_.underlying)
+  //     .getOrElse(ConfigFactory.empty)
+  // )
+
+  lazy val gatewayExecutor     = masterEc
+  lazy val gatewayMaterializer = masterMat
 
   lazy val gatewayClient = {
     val parser  = new WSConfigParser(configuration.underlying, environment.classLoader)
@@ -195,14 +163,8 @@ class Env(val configuration: Configuration,
     )
   }
 
-  lazy val kafkaActorSytem = masterSystem /*ActorSystem(
-    "otoroshi-kafka-system",
-    configuration.getOptional[Configuration]("app.actorsystems.kafka").map(_.underlying).getOrElse(ConfigFactory.empty)
-  )*/
-  lazy val statsdActorSytem = masterSystem /*ActorSystem(
-    "otoroshi-statsd-system",
-    configuration.getOptional[Configuration]("app.actorsystems.statsd").map(_.underlying).getOrElse(ConfigFactory.empty)
-  )*/
+  lazy val kafkaActorSytem = masterSystem
+  lazy val statsdActorSytem = masterSystem
 
   lazy val statsd = new StatsdWrapper(statsdActorSytem, this)
 
@@ -258,11 +220,6 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiTrackerId = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
   }
 
-  private def factory(of: String) = new ThreadFactory {
-    val counter                                 = new AtomicInteger(0)
-    override def newThread(r: Runnable): Thread = new Thread(r, s"$of-${counter.incrementAndGet()}")
-  }
-
   logger.warn(s"Listening commands on $adminApiExposedHost ($port) for env ${env}")
 
   lazy val datastores: DataStores = {
@@ -283,11 +240,8 @@ class Env(val configuration: Configuration,
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
     masterSystem.terminate()
-    // internalActorSystem.terminate()
-    gatewayActorSystem.terminate()
-    pressureActorSystem.terminate()
-    // kafkaActorSytem.terminate()
-    // statsdActorSytem.terminate()
+    // gatewayActorSystem.terminate()
+    // pressureActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
     FastFuture.successful(())
   })
