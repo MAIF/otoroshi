@@ -32,11 +32,11 @@ export class ReloadNewVersion extends Component {
             window.location.reload();
           }, 20000);
         } else {
-          const {versionClosed, version, display} = this.state;
+          const { versionClosed, version, display } = this.state;
           if (version && !versionClosed && version !== data.version) {
-            this.setState({display: true, version: data.version});
+            this.setState({ display: true, version: data.version });
           } else {
-            this.setState({version: data.version});
+            this.setState({ version: data.version });
           }
         }
       },
@@ -46,7 +46,8 @@ export class ReloadNewVersion extends Component {
         setTimeout(() => {
           window.location.reload();
         }, 20000);
-    });
+      }
+    );
   };
 
   render() {
@@ -57,7 +58,8 @@ export class ReloadNewVersion extends Component {
       return (
         <div className="loggedOutVeil">
           <div className="newVersionPopup">
-            Your session has expired and you're now logged out. You will be asked to login in 20 seconds.
+            Your session has expired and you're now logged out. You will be asked to login in 20
+            seconds.
             <button
               type="button"
               className="btn btn-danger btn-sm"

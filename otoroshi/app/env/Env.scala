@@ -46,8 +46,8 @@ class Env(val configuration: Configuration,
       .getOrElse(ConfigFactory.empty)
   )
   val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
-  val otoroshiScheduler: Scheduler = otoroshiActorSystem.scheduler
-  val otoroshiMaterializer: ActorMaterializer = ActorMaterializer.create(otoroshiActorSystem)
+  val otoroshiScheduler: Scheduler               = otoroshiActorSystem.scheduler
+  val otoroshiMaterializer: ActorMaterializer    = ActorMaterializer.create(otoroshiActorSystem)
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
     val promise = Promise[Unit]
@@ -58,10 +58,10 @@ class Env(val configuration: Configuration,
   }
 
   val (analyticsActor, alertsActor, healthCheckerActor) = {
-    implicit val ec  = otoroshiExecutionContext
-    val aa           = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
-    val ala          = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
-    val ha           = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
+    implicit val ec = otoroshiExecutionContext
+    val aa          = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
+    val ala         = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
+    val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
     timeout(FiniteDuration(5, SECONDS)).andThen { case _ if isProd => ha ! StartHealthCheck() }
     (aa, ala, ha)
   }
@@ -208,7 +208,7 @@ class Env(val configuration: Configuration,
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
-    
+
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
     FastFuture.successful(())

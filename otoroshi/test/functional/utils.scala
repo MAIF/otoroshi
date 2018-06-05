@@ -154,16 +154,17 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
   def getOtoroshiServices(customPort: Option[Int] = None,
                           ws: WSClient = suite.otoroshiComponents.wsClient): Future[Seq[ServiceDescriptor]] = {
-    def fetch() = ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
-      .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
-        "Accept" -> "application/json"
-      )
-      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-      .get()
+    def fetch() =
+      ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
+        .withHttpHeaders(
+          "Host"   -> "otoroshi-api.foo.bar",
+          "Accept" -> "application/json"
+        )
+        .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+        .get()
 
     for {
-      _ <- fetch().recoverWith { case _ => FastFuture.successful(()) }
+      _        <- fetch().recoverWith { case _ => FastFuture.successful(()) }
       response <- fetch()
     } yield {
       // if (response.status != 200) {

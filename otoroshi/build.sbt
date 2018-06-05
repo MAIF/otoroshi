@@ -25,11 +25,11 @@ libraryDependencies ++= Seq(
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
   "com.propensive"           %% "kaleidoscope"             % "0.1.0",
   // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
-  "javax.xml.bind" % "jaxb-api" % "2.3.0",
-  "com.sun.xml.bind" % "jaxb-core" % "2.3.0",
-  "com.sun.xml.bind" % "jaxb-impl" % "2.3.0",
-  "org.scalatestplus.play"   %% "scalatestplus-play"       % "3.1.2" % Test,
-  "com.datastax.cassandra"   % "cassandra-driver-core"     % "3.4.0" classifier "shaded" excludeAll (
+  "javax.xml.bind"         % "jaxb-api"              % "2.3.0",
+  "com.sun.xml.bind"       % "jaxb-core"             % "2.3.0",
+  "com.sun.xml.bind"       % "jaxb-impl"             % "2.3.0",
+  "org.scalatestplus.play" %% "scalatestplus-play"   % "3.1.2" % Test,
+  "com.datastax.cassandra" % "cassandra-driver-core" % "3.4.0" classifier "shaded" excludeAll (
     ExclusionRule(organization = "io.netty"),
     ExclusionRule(organization = "com.typesafe.akka")
   )

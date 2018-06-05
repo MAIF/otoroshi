@@ -373,7 +373,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"  -> "match.foo.bar",
+          "Host"      -> "match.foo.bar",
           "X-Session" -> "user=mathieu"
         )
         .get()
@@ -381,7 +381,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp3 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"  -> "match.foo.bar",
+          "Host"      -> "match.foo.bar",
           "X-Session" -> "user=jason"
         )
         .get()
