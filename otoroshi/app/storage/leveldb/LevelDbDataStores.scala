@@ -30,7 +30,7 @@ class LevelDbDataStores(configuration: Configuration,
     ActorSystem(
       "otoroshi-leveldb-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.leveldb")
+        .getOptional[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

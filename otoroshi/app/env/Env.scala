@@ -159,14 +159,14 @@ class Env(val configuration: Configuration,
   lazy val privateAppsExecutionContext: ExecutionContext = masterEc /*ExecutionContext.fromExecutorService(
     Executors.newFixedThreadPool(procNbr + 1, factory("otoroshi-private-apps-requests"))
   )*/
-  lazy val pressureActorSystem: ActorSystem = masterSystem /*ActorSystem(
+  lazy val pressureActorSystem: ActorSystem = ActorSystem(
     "otoroshi-pressure-system",
     configuration
       .getOptional[Configuration]("app.actorsystems.pressure")
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
-  )*/
-  lazy val pressureExecutionContext: ExecutionContext = masterEc // pressureActorSystem.dispatcher
+  )
+  lazy val pressureExecutionContext: ExecutionContext = pressureActorSystem.dispatcher
 
   lazy val gatewayActorSystem = masterSystem /*ActorSystem(
     "otoroshi-gateway-system",

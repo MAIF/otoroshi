@@ -41,7 +41,7 @@ class CassandraDataStores(configuration: Configuration,
     ActorSystem(
       "otoroshi-cassandra-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.cassandra")
+        .getOptional[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

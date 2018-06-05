@@ -24,7 +24,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
     ActorSystem(
       "otoroshi-redis-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.redis")
+        .getOptional[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

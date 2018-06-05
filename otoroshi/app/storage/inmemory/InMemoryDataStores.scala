@@ -27,7 +27,7 @@ class InMemoryDataStores(configuration: Configuration,
     ActorSystem(
       "otoroshi-inmemory-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.inmemory")
+        .getOptional[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
