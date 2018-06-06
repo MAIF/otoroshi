@@ -2,11 +2,11 @@ package utils
 
 import java.util.concurrent.ConcurrentHashMap
 
-object Cache {
+object SimplCache {
   def apply[K, V](initialValue:Map[K, (Long, V)] = Map.empty) = new Cache[K, V](initialValue)
 }
 
-class Cache[K, V](initialValue: Map[K, (Long, V)] = Map.empty) {
+class SimplCache[K, V](initialValue: Map[K, (Long, V)] = Map.empty) {
 
   import collection.JavaConverters._
   import scala.concurrent.duration._
