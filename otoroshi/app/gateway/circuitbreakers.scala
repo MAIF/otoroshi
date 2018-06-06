@@ -1,8 +1,7 @@
 package gateway
 
 import akka.http.scaladsl.util.FastFuture._
-
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import akka.Done
@@ -17,8 +16,9 @@ import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.Result
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise, duration}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -91,21 +91,22 @@ case object AllCircuitBreakersOpenException
 class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
   val reqCounter = new AtomicInteger(0)
-  val breakers   = new ConcurrentHashMap[String, AkkaCircuitBreaker]()
+  val breakers   = new TrieMap[String, AkkaCircuitBreaker]()
 
   lazy val logger = Logger("otoroshi-circuit-breaker")
 
   def clear(): Unit = breakers.clear()
 
   def chooseTarget(descriptor: ServiceDescriptor): Option[(Target, AkkaCircuitBreaker)] = {
-    val targets = descriptor.targets.filterNot(t => Option(breakers.get(t.host)).map(_.isOpen).getOrElse(false))
+    val targets = descriptor.targets
+      .filterNot(t => breakers.get(t.host).exists(_.isOpen))
     val index   = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     // Round robin loadbalancing is happening here !!!!!
     if (targets.isEmpty) {
       None
     } else {
       val target = targets.apply(index.toInt)
-      if (!breakers.containsKey(target.host)) {
+      if (!breakers.contains(target.host)) {
         val cb = new AkkaCircuitBreaker(
           scheduler = scheduler,
           maxFailures = descriptor.clientConfig.maxErrors,
@@ -156,7 +157,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         }
         breakers.putIfAbsent(target.host, cb)
       }
-      val breaker = breakers.get(target.host)
+      val breaker = breakers.apply(target.host)
       Some((target, breaker))
     }
   }
