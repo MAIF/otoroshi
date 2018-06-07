@@ -28,8 +28,8 @@ class SnowMonkey(implicit env: Env) {
   private def applyChaosConfig(reqNumber: Long, config: ChaosConfig)(f: SnowMonkeyContext => Future[Result])(implicit ec: ExecutionContext): Future[Result] = {
     config.latencyInjectionFaultConfig.filter(c => inRatio(c.ratio, reqNumber)).map { conf =>
       val latency = (conf.from.toMillis + random.nextInt(conf.to.toMillis.toInt - conf.from.toMillis.toInt)).millis
-      env.timeout(latency)
-    }.getOrElse(FastFuture.successful(())).flatMap { _ =>
+      env.timeout(latency).map(_ => latency.toMillis)
+    }.getOrElse(FastFuture.successful(0)).flatMap { latency =>
       val requestTrailingBody = config.largeRequestFaultConfig.map(c => Source.repeat(spaces).limit(c.additionalRequestSize)).getOrElse(Source.empty[ByteString])
       val responseTrailingBody = config.largeResponseFaultConfig.map(c => Source.repeat(spaces).limit(c.additionalResponseSize)).getOrElse(Source.empty[ByteString])
       val context = SnowMonkeyContext(requestTrailingBody, responseTrailingBody)
@@ -39,11 +39,11 @@ class SnowMonkey(implicit env: Env) {
         // error
         FastFuture.successful(Results.Status(response.status)
           .apply(response.body)
-          .withHeaders(response.headers.toSeq: _*)
+          .withHeaders((response.headers.toSeq :+ ("SnowMonkey-Latency" -> latency.toString)): _*)
           .as(response.headers.getOrElse("Content-Type", "text/plain")))
       }.getOrElse {
         // pass here
-        f(context)
+        f(context).map(_.withHeaders("SnowMonkey-Latency" -> latency.toString))
       }
     }
   }
@@ -103,7 +103,12 @@ class SnowMonkey(implicit env: Env) {
   }
 
   def introduceChaos(reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor)(f: SnowMonkeyContext => Future[Result])(implicit ec: ExecutionContext): Future[Result] = {
-    if (config.snowMonkeyConfig.enabled && betweenDates(config.snowMonkeyConfig)) {
+    if (desc.id == env.backOfficeServiceId) {
+      f(SnowMonkeyContext(
+        Source.empty[ByteString],
+        Source.empty[ByteString]
+      ))
+    } else if (config.snowMonkeyConfig.enabled && betweenDates(config.snowMonkeyConfig)) {
       introduceSnowMonkeyDefinedChaos(reqNumber, config.snowMonkeyConfig, desc)(f)
     } else {
       if (desc.chaosConfig.enabled) {

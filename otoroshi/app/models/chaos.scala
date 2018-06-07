@@ -172,7 +172,7 @@ case object OneServicePerGroup extends OutageStrategy
 case object AllServicesPerGroup extends OutageStrategy
 
 case class SnowMonkeyConfig(
-  enabled: Boolean = true,
+  enabled: Boolean = false,
   outageStrategy: OutageStrategy = OneServicePerGroup,
   includeFrontends: Boolean = false,
   timesPerDay: Int = 1,
@@ -248,7 +248,20 @@ object SnowMonkeyConfig {
           outageDurationFrom = (json \ "outageDurationFrom").asOpt[FiniteDuration](durationFmt).getOrElse(FiniteDuration(1, TimeUnit.HOURS)),
           outageDurationTo = (json \ "outageDurationTo").asOpt[FiniteDuration](durationFmt).getOrElse(FiniteDuration(10, TimeUnit.MINUTES)),
           targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty),
-          chaosConfig = (json \ "chaosConfig").asOpt[ChaosConfig](ChaosConfig._fmt).getOrElse(ChaosConfig(true, None, None, None, None))
+          chaosConfig = // (json \ "chaosConfig").asOpt[ChaosConfig](ChaosConfig._fmt).getOrElse(ChaosConfig(true, None, None, None, None))
+          ChaosConfig(
+            true,
+            None,
+            None,
+            Some(LatencyInjectionFaultConfig(0.7, 500.millis, 5000.millis)),
+            Some(BadResponsesFaultConfig(0.5, Seq(
+              BadResponse(
+                502,
+                """{"error":"Nihonzaru everywhere ..."}""",
+                headers = Map("Content-Type" -> "application/json")
+              )
+            )))
+          )
         )
       } map {
         case sd => JsSuccess(sd)
@@ -276,6 +289,6 @@ object SnowMonkeyConfig {
 trait ChaosDataStore {
   def serviceAlreadyOutage(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def serviceOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
-  def groupOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
+  def groupOutages(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
   def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
 }
