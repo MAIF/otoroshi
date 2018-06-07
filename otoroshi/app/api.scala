@@ -7,7 +7,7 @@ import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import env._
-import gateway.{CircuitBreakersHolder, ErrorHandler, GatewayRequestHandler, WebSocketHandler}
+import gateway._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
@@ -76,6 +76,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
   override lazy val serverConfig                           = _serverConfig
 
+  lazy val snowMonkey           = wire[SnowMonkey]
   lazy val unAuthApiAction      = wire[UnAuthApiAction]
   lazy val apiAction            = wire[ApiAction]
   lazy val backOfficeAction     = wire[BackOfficeAction]

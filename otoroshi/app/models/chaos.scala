@@ -2,15 +2,15 @@ package models
 
 import java.util.concurrent.TimeUnit
 
+import env.Env
 import models.SnowMonkeyConfig.logger
 import org.joda.time.LocalTime
 import play.api.Logger
 import play.api.libs.json._
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-
-import scala.concurrent.duration._
 
 case class BadResponse(status: Int, body: String, headers: Map[String, String]) {
   def asJson: JsValue = BadResponse.fmt.writes(this)
@@ -271,4 +271,11 @@ object SnowMonkeyConfig {
       }
     }
   def fromJsonSafe(value: JsValue): JsResult[SnowMonkeyConfig] = _fmt.reads(value)
+}
+
+trait ChaosDataStore {
+  def serviceAlreadyOutage(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def serviceOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
+  def groupOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
+  def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
 }

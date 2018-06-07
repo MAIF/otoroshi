@@ -82,6 +82,7 @@ class CassandraDataStores(configuration: Configuration,
   private lazy val _errorTemplateDataStore     = new InMemoryErrorTemplateDataStore(redis, env)
   private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
   private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis, env)
+  private lazy val _chaosDataStore             = new InMemoryChaosDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -98,4 +99,5 @@ class CassandraDataStores(configuration: Configuration,
   override def requestsDataStore: RequestsDataStore                             = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
+  override def chaosDataStore: ChaosDataStore = _chaosDataStore
 }
