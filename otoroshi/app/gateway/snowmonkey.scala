@@ -91,9 +91,9 @@ class SnowMonkey(implicit env: Env) {
 
   private def introduceSnowMonkeyDefinedChaos(reqNumber: Long, config: SnowMonkeyConfig, desc: ServiceDescriptor)(f: SnowMonkeyContext => Future[Result])(implicit ec: ExecutionContext): Future[Result] = {
     isOutage(desc, config).flatMap {
-      case true if config.includeFrontends && notFrontend(desc) =>
+      case true if config.includeFrontends =>
         applyChaosConfig(reqNumber, config.chaosConfig)(f)
-      case true if !config.includeFrontends && !notFrontend(desc) =>
+      case true if !config.includeFrontends && notFrontend(desc) =>
         applyChaosConfig(reqNumber, config.chaosConfig)(f)
       case _ => f(SnowMonkeyContext(
         Source.empty[ByteString],

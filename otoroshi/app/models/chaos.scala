@@ -172,7 +172,7 @@ case object OneServicePerGroup extends OutageStrategy
 case object AllServicesPerGroup extends OutageStrategy
 
 case class SnowMonkeyConfig(
-  enabled: Boolean = false,
+  enabled: Boolean = true,
   outageStrategy: OutageStrategy = OneServicePerGroup,
   includeFrontends: Boolean = false,
   timesPerDay: Int = 1,
