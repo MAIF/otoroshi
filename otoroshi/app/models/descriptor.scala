@@ -295,7 +295,8 @@ case class ServiceDescriptor(
     healthCheck: HealthCheck = HealthCheck(false, "/"),
     clientConfig: ClientConfig = ClientConfig(),
     canary: Canary = Canary(),
-    metadata: Map[String, String] = Map.empty[String, String]
+    metadata: Map[String, String] = Map.empty[String, String],
+    chaosConfig: ChaosConfig = ChaosConfig()
 ) {
 
   def toHost: String = subdomain match {
@@ -393,7 +394,8 @@ object ServiceDescriptor {
           healthCheck = (json \ "healthCheck").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
           clientConfig = (json \ "clientConfig").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
           canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          chaosConfig = (json \ "chaosConfig").asOpt(ChaosConfig._fmt).getOrElse(ChaosConfig())
         )
       } map {
         case sd => JsSuccess(sd)
@@ -433,7 +435,8 @@ object ServiceDescriptor {
       "healthCheck"                -> sd.healthCheck.toJson,
       "clientConfig"               -> sd.clientConfig.toJson,
       "canary"                     -> sd.canary.toJson,
-      "metadata"                   -> JsObject(sd.metadata.mapValues(JsString.apply))
+      "metadata"                   -> JsObject(sd.metadata.mapValues(JsString.apply)),
+      "chaosConfig"                -> sd.chaosConfig.asJson
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)
