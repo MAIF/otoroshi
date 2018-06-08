@@ -195,9 +195,9 @@ case class SnowMonkeyConfig(
       enabled = true,
       largeRequestFaultConfig = None,
       largeResponseFaultConfig = None,
-      latencyInjectionFaultConfig = Some(LatencyInjectionFaultConfig(0.5, 500.millis, 5000.millis)),
+      latencyInjectionFaultConfig = Some(LatencyInjectionFaultConfig(0.2, 500.millis, 5000.millis)),
       badResponsesFaultConfig = Some(
-        BadResponsesFaultConfig(0.5,
+        BadResponsesFaultConfig(0.2,
                                 Seq(
                                   BadResponse(
                                     502,
