@@ -123,6 +123,12 @@ export class TopBar extends Component {
           label: 'Top 10 services',
           value: 'Top-10-services',
         });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
+          env: <span className="glyphicon glyphicon-piggy-bank" />,
+          label: 'SnowMonkey',
+          value: 'SnowMonkey',
+        });
         return { options };
       });
   };
@@ -295,6 +301,12 @@ export class TopBar extends Component {
                   <li>
                     <a href="/bo/dashboard/sessions/private">
                       <span className="glyphicon glyphicon-lock" /> Priv. apps sessions
+                    </a>
+                  </li>
+                  <li role="separator" className="divider" />
+                  <li>
+                    <a href="/bo/dashboard/snowmonkey">
+                      <span className="glyphicon glyphicon-piggy-bank" /> SnowMonkey
                     </a>
                   </li>
                   <li role="separator" className="divider" />

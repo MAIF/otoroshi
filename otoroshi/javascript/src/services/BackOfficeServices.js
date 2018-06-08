@@ -54,6 +54,36 @@ export function version() {
   }).then(r => r.json());
 }
 
+export function fetchSnowMonkeyConfig() {
+  return fetch(`/bo/api/proxy/api/snowmonkey/config`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function startSnowMonkey() {
+  return fetch(`/bo/api/proxy/api/snowmonkey/_start`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function stopSnowMonkey() {
+  return fetch(`/bo/api/proxy/api/snowmonkey/_stop`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
 export function fetchCanaryCampaign(serviceId) {
   return fetch(`/bo/api/proxy/api/services/${serviceId}/canary`, {
     method: 'GET',

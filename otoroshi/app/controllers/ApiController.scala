@@ -2712,6 +2712,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     }
   }
 
+  def getSnowMonkeyConfig() = ApiAction.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton().map { c =>
+      Ok(c.snowMonkeyConfig.asJson)
+    }
+  }
+
   def updateSnowMonkey() = ApiAction.async(parse.json) { ctx =>
     SnowMonkeyConfig.fromJsonSafe(ctx.request.body) match {
       case JsError(e) => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).asFuture
