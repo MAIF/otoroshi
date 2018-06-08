@@ -22,16 +22,22 @@ class RedisChaosDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends 
     redisCli.get(s"${env.storageRoot}:outage:bygroup:counter:$groupId").map(_.map(_.utf8String.toInt).getOrElse(0))
   }
 
-  override def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
-    val dayEnd     = System.currentTimeMillis() - DateTime.now().millisOfDay().withMaximumValue().getMillis
-    val outageDuration = (conf.outageDurationFrom.toMillis + new scala.util.Random().nextInt(conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)).millis
-    val serviceUntilKey = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}" // until end of duration
-    val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}" // until end of day
-    val groupCounterKey = s"${env.storageRoot}:outage:bygroup:counter:${descriptor.groupId}" // until end of day
+  override def registerOutage(
+      descriptor: ServiceDescriptor,
+      conf: SnowMonkeyConfig
+  )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
+    val dayEnd = System.currentTimeMillis() - DateTime.now().millisOfDay().withMaximumValue().getMillis
+    val outageDuration = (conf.outageDurationFrom.toMillis + new scala.util.Random()
+      .nextInt(conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)).millis
+    val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}"         // until end of duration
+    val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}"       // until end of day
+    val groupCounterKey   = s"${env.storageRoot}:outage:bygroup:counter:${descriptor.groupId}" // until end of day
     for {
       _ <- redisCli.incr(groupCounterKey)
       _ <- redisCli.incr(serviceCounterKey)
-      _ <- redisCli.set(serviceUntilKey, DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString, pxMilliseconds = Some(outageDuration.toMillis))
+      _ <- redisCli.set(serviceUntilKey,
+                        DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
+                        pxMilliseconds = Some(outageDuration.toMillis))
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
@@ -43,7 +49,7 @@ class RedisChaosDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends 
       uKeys <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
       sKeys <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:counter:*")
       gKeys <- redisCli.keys(s"${env.storageRoot}:outage:bygroup:counter:*")
-      _ <- redisCli.del((Seq.empty ++ uKeys ++ sKeys ++ gKeys): _*)
+      _     <- redisCli.del((Seq.empty ++ uKeys ++ sKeys ++ gKeys): _*)
     } yield ()
   }
 

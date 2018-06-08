@@ -18,7 +18,7 @@ import play.api.mvc.Result
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise, duration}
+import scala.concurrent.{duration, ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -100,7 +100,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   def chooseTarget(descriptor: ServiceDescriptor): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = descriptor.targets
       .filterNot(t => breakers.get(t.host).exists(_.isOpen))
-    val index   = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+    val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     // Round robin loadbalancing is happening here !!!!!
     if (targets.isEmpty) {
       None

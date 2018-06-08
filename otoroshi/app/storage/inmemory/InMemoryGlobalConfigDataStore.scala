@@ -161,6 +161,13 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
+  override def set(value: GlobalConfig, pxMilliseconds: Option[Duration] = None)(implicit ec: ExecutionContext,
+                                                                                 env: Env): Future[Boolean] = {
+    super.set(value, pxMilliseconds)(ec, env).andThen {
+      case Success(_) => configCache.set(value)
+    }
+  }
+
   override def fullImport(export: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     val config             = GlobalConfig.fromJsons((export \ "config").as[JsObject])
     val admins             = (export \ "admins").as[JsArray]

@@ -64,6 +64,18 @@ export function fetchSnowMonkeyConfig() {
   }).then(r => r.json());
 }
 
+export function updateSnowMonkeyConfig(config) {
+  return fetch(`/bo/api/proxy/api/snowmonkey/config`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(config),
+  }).then(r => r.json());
+}
+
 export function startSnowMonkey() {
   return fetch(`/bo/api/proxy/api/snowmonkey/_start`, {
     method: 'POST',

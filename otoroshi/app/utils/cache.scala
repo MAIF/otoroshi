@@ -3,7 +3,7 @@ package utils
 import java.util.concurrent.ConcurrentHashMap
 
 object SimpleCache {
-  def apply[K, V](initialValue:Map[K, (Long, V)] = Map.empty) = new SimpleCache[K, V](initialValue)
+  def apply[K, V](initialValue: Map[K, (Long, V)] = Map.empty) = new SimpleCache[K, V](initialValue)
 }
 
 class SimpleCache[K, V](initialValue: Map[K, (Long, V)] = Map.empty) {
@@ -38,14 +38,14 @@ class SimpleCache[K, V](initialValue: Map[K, (Long, V)] = Map.empty) {
   def put(key: K, value: V, ttl: Duration = Duration.Inf): Unit = cleanup { time =>
     ttl match {
       case Duration.Inf => cache.put(key, (-1, value))
-      case _ => cache.put(key, (time + ttl.toMillis, value))
+      case _            => cache.put(key, (time + ttl.toMillis, value))
     }
   }
 
   def putIfAbsent(key: K, value: V, ttl: Duration = Duration.Inf): Unit = cleanup { time =>
     ttl match {
       case Duration.Inf => cache.putIfAbsent(key, (-1, value))
-      case _ => cache.putIfAbsent(key, (time + ttl.toMillis, value))
+      case _            => cache.putIfAbsent(key, (time + ttl.toMillis, value))
     }
   }
 

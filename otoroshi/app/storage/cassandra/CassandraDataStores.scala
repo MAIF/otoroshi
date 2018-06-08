@@ -99,5 +99,5 @@ class CassandraDataStores(configuration: Configuration,
   override def requestsDataStore: RequestsDataStore                             = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
-  override def chaosDataStore: ChaosDataStore = _chaosDataStore
+  override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
 }

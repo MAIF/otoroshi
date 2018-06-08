@@ -2679,10 +2679,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       Audit.send(event)
       Alerts.send(
         SnowMonkeyStartedAlert(env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user.getOrElse(ctx.apiKey.toJson),
-          event
-        )
+                               env.env,
+                               ctx.user.getOrElse(ctx.apiKey.toJson),
+                               event)
       )
       Ok(Json.obj("done" -> true))
     }
@@ -2703,10 +2702,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       Audit.send(event)
       Alerts.send(
         SnowMonkeyStoppedAlert(env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user.getOrElse(ctx.apiKey.toJson),
-          event
-        )
+                               env.env,
+                               ctx.user.getOrElse(ctx.apiKey.toJson),
+                               event)
       )
       Ok(Json.obj("done" -> true))
     }
@@ -2736,10 +2734,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Audit.send(event)
           Alerts.send(
             SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              ctx.user.getOrElse(ctx.apiKey.toJson),
-              event
-            )
+                                         env.env,
+                                         ctx.user.getOrElse(ctx.apiKey.toJson),
+                                         event)
           )
           Ok(config.asJson)
         }
@@ -2750,7 +2747,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def patchSnowMonkey() = ApiAction.async(parse.json) { ctx =>
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       val currentSnowMonkeyConfigJson = globalConfig.snowMonkeyConfig.asJson
-      val patch             = JsonPatch(ctx.request.body)
+      val patch                       = JsonPatch(ctx.request.body)
       val newSnowMonkeyConfigJson     = patch(currentSnowMonkeyConfigJson)
       SnowMonkeyConfig.fromJsonSafe(newSnowMonkeyConfigJson) match {
         case JsError(e) => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).asFuture
@@ -2768,10 +2765,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Audit.send(event)
           Alerts.send(
             SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              ctx.user.getOrElse(ctx.apiKey.toJson),
-              event
-            )
+                                         env.env,
+                                         ctx.user.getOrElse(ctx.apiKey.toJson),
+                                         event)
           )
           newSnowMonkeyConfig.save().map(_ => Ok(newSnowMonkeyConfig.asJson))
         }
@@ -2793,11 +2789,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       )
       Audit.send(event)
       Alerts.send(
-        SnowMonkeyResetAlert(env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user.getOrElse(ctx.apiKey.toJson),
-          event
-        )
+        SnowMonkeyResetAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
       )
       Ok(Json.obj("done" -> true))
     }

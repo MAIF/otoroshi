@@ -107,7 +107,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/sessions/admin'),
-          env: <span className="glyphicon glyphicon-bishop" />,
+          env: <span className="glyphicon glyphicon-user" />,
           label: 'Admin. sessions',
           value: 'Admin-sessions',
         });
@@ -125,7 +125,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
-          env: <span className="glyphicon glyphicon-piggy-bank" />,
+          env: <span className="glyphicon glyphicon-bishop" />,
           label: 'SnowMonkey',
           value: 'SnowMonkey',
         });
@@ -295,7 +295,7 @@ export class TopBar extends Component {
                   </li>
                   <li>
                     <a href="/bo/dashboard/sessions/admin">
-                      <span className="glyphicon glyphicon-bishop" /> Admins sessions
+                      <span className="glyphicon glyphicon-user" /> Admins sessions
                     </a>
                   </li>
                   <li>
@@ -306,7 +306,7 @@ export class TopBar extends Component {
                   <li role="separator" className="divider" />
                   <li>
                     <a href="/bo/dashboard/snowmonkey">
-                      <span className="glyphicon glyphicon-piggy-bank" /> SnowMonkey
+                      <span className="glyphicon glyphicon-bishop" /> SnowMonkey
                     </a>
                   </li>
                   <li role="separator" className="divider" />

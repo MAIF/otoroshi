@@ -24,6 +24,9 @@ export class NumberInput extends Component {
               {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
               <input
                 type="number"
+                step={this.props.step}
+                min={this.props.min}
+                max={this.props.max}
                 disabled={this.props.disabled}
                 className="form-control"
                 id={`input-${this.props.label}`}
@@ -37,6 +40,9 @@ export class NumberInput extends Component {
           {!(this.props.prefix || this.props.suffix) && (
             <input
               type="number"
+              step={this.props.step}
+              min={this.props.min}
+              max={this.props.max}
               disabled={this.props.disabled}
               className="form-control"
               id={`input-${this.props.label}`}

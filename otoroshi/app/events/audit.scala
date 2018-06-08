@@ -2,7 +2,7 @@ package events
 
 import akka.util.ByteString
 import env.Env
-import models.{ApiKey, BackOfficeUser, ServiceDescriptor, Target}
+import models._
 import org.joda.time.DateTime
 import play.api.libs.json._
 
@@ -74,6 +74,37 @@ case class AdminApiEvent(`@id`: String,
     "from"       -> from,
     "message"    -> message,
     "metadata"   -> metadata
+  )
+}
+
+case class SnowMonkeyOutageRegisteredEvent(`@id`: String,
+                                           `@env`: String,
+                                           action: String,
+                                           message: String,
+                                           config: SnowMonkeyConfig,
+                                           desc: ServiceDescriptor,
+                                           `@timestamp`: DateTime = DateTime.now())
+    extends AuditEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "audit"      -> "SnowMonkeyOutageRegisteredEvent",
+    "user"       -> "--",
+    "apiKey"     -> "--",
+    "action"     -> action,
+    "from"       -> "--",
+    "message"    -> message,
+    "config"     -> config.asJson,
+    "service"    -> desc.toJson
   )
 }
 
