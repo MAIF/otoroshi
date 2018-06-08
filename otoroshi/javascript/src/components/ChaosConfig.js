@@ -125,7 +125,10 @@ export class ChaosConfig extends Component {
   render() {
     if (!this.state.config) return null;
     return [
-      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Large Request Fault">
+      <Collapse
+        collapsed={this.props.collapsed}
+        initCollapsed={this.props.initCollapsed}
+        label="Large Request Fault">
         <NumberInput
           label="Ratio"
           help="..."
@@ -143,7 +146,10 @@ export class ChaosConfig extends Component {
           onChange={v => this.changeTheValue('largeRequestFaultConfig.additionalRequestSize', v)}
         />
       </Collapse>,
-      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Large Response Fault">
+      <Collapse
+        collapsed={this.props.collapsed}
+        initCollapsed={this.props.initCollapsed}
+        label="Large Response Fault">
         <NumberInput
           label="Ratio"
           help="..."
@@ -161,7 +167,10 @@ export class ChaosConfig extends Component {
           onChange={v => this.changeTheValue('largeResponseFaultConfig.additionalResponseSize', v)}
         />
       </Collapse>,
-      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Latency injection Fault">
+      <Collapse
+        collapsed={this.props.collapsed}
+        initCollapsed={this.props.initCollapsed}
+        label="Latency injection Fault">
         <NumberInput
           label="Ratio"
           help="..."
@@ -186,7 +195,10 @@ export class ChaosConfig extends Component {
           onChange={v => this.changeTheValue('latencyInjectionFaultConfig.to', v)}
         />
       </Collapse>,
-      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Bad response Fault">
+      <Collapse
+        collapsed={this.props.collapsed}
+        initCollapsed={this.props.initCollapsed}
+        label="Bad response Fault">
         <NumberInput
           label="Ratio"
           help="..."
