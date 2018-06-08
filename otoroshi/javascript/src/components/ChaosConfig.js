@@ -127,7 +127,7 @@ export class ChaosConfig extends Component {
     return [
       <Collapse
         collapsed={this.props.collapsed}
-        initCollapsed={this.props.initCollapsed}
+        initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
         label="Large Request Fault">
         <NumberInput
           label="Ratio"
@@ -148,7 +148,7 @@ export class ChaosConfig extends Component {
       </Collapse>,
       <Collapse
         collapsed={this.props.collapsed}
-        initCollapsed={this.props.initCollapsed}
+        initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
         label="Large Response Fault">
         <NumberInput
           label="Ratio"

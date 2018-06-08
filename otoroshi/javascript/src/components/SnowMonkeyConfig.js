@@ -93,6 +93,7 @@ export class SnowMonkeyConfig extends Component {
           onChange={e => this.changeTheValue('targetGroups', e)}
         />
         <ChaosConfig
+          hideLargeStuff={true}
           config={this.state.config.chaosConfig}
           onChange={c => {
             this.setState({ config: { ...this.state.config, chaosConfig: c } }, () => {
