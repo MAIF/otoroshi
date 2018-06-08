@@ -22,15 +22,53 @@ function getOrElse(value, f, def) {
   }
 }
 
+function enrichConfig(config) {
+  const c = config || { enabled: false };
+  if (!c.largeRequestFaultConfig) {
+    c.largeRequestFaultConfig = {
+      ratio: 0.2,
+      additionalRequestSize: 0,
+    };
+  }
+  if (!c.largeResponseFaultConfig) {
+    c.largeResponseFaultConfig = {
+      ratio: 0.2,
+      additionalResponseSize: 0,
+    };
+  }
+  if (!c.latencyInjectionFaultConfig) {
+    c.latencyInjectionFaultConfig = {
+      ratio: 0.2,
+      from: 500,
+      to: 1000,
+    };
+  }
+  if (!c.badResponsesFaultConfig) {
+    c.badResponsesFaultConfig = {
+      ratio: 0.2,
+      responses: [
+        {
+          status: 502,
+          body: '{"error":true}',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      ],
+    };
+  }
+  return c;
+}
+
 export class ChaosConfig extends Component {
   state = {
-    config: { ...this.props.config },
+    config: enrichConfig({ ...this.props.config }),
   };
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.config !== this.props.config) {
       const c = { ...nextProps.config };
-      this.setState({ config: c });
+      this.setState({ config: enrichConfig(c) });
     }
   }
 
@@ -87,7 +125,7 @@ export class ChaosConfig extends Component {
   render() {
     if (!this.state.config) return null;
     return [
-      <Collapse initCollapsed={false} label="Large Request Fault">
+      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Large Request Fault">
         <NumberInput
           label="Ratio"
           help="..."
@@ -105,7 +143,7 @@ export class ChaosConfig extends Component {
           onChange={v => this.changeTheValue('largeRequestFaultConfig.additionalRequestSize', v)}
         />
       </Collapse>,
-      <Collapse initCollapsed={false} label="Large Response Fault">
+      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Large Response Fault">
         <NumberInput
           label="Ratio"
           help="..."
@@ -123,7 +161,7 @@ export class ChaosConfig extends Component {
           onChange={v => this.changeTheValue('largeResponseFaultConfig.additionalResponseSize', v)}
         />
       </Collapse>,
-      <Collapse initCollapsed={false} label="Latency injection Fault">
+      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Latency injection Fault">
         <NumberInput
           label="Ratio"
           help="..."
@@ -148,7 +186,7 @@ export class ChaosConfig extends Component {
           onChange={v => this.changeTheValue('latencyInjectionFaultConfig.to', v)}
         />
       </Collapse>,
-      <Collapse initCollapsed={false} label="Bad response Fault">
+      <Collapse collapsed={this.props.collapsed} initCollapsed={this.props.initCollapsed} label="Bad response Fault">
         <NumberInput
           label="Ratio"
           help="..."
