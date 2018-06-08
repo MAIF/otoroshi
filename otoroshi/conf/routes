@@ -145,6 +145,12 @@ GET     /api/otoroshi.json                                    controllers.ApiCon
 POST    /api/otoroshi.json                                    controllers.ApiController.fullImport()
 POST    /api/import                                           controllers.ApiController.fullImportFromFile()
 
+POST    /api/snowmonkey/_start                                controllers.ApiController.startSnowMonkey()
+POST    /api/snowmonkey/_stop                                 controllers.ApiController.stopSnowMonkey()
+DELETE  /api/snowmonkey/outages                               controllers.ApiController.resetSnowMonkey()
+PUT     /api/snowmonkey/config                                controllers.ApiController.updateSnowMonkey()
+PATCH   /api/snowmonkey/config                                controllers.ApiController.patchSnowMonkey()
+
 GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 

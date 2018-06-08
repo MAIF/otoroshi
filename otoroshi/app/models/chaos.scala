@@ -196,6 +196,9 @@ case class SnowMonkeyConfig(
   )
 ) {
   def asJson: JsValue = SnowMonkeyConfig._fmt.writes(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalConfigDataStore.singleton().flatMap { conf =>
+    conf.copy(snowMonkeyConfig = this).save()
+  }
 }
 
 object SnowMonkeyConfig {

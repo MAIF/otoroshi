@@ -99,14 +99,18 @@ class SnowMonkey(implicit env: Env) {
         case OneServicePerGroup => env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
           case count if count < conf.timesPerDay =>
             env.datastores.chaosDataStore.registerOutage(descriptor, conf).andThen {
-              case Success(duration) => logger.warn(s"Registering outage on ${descriptor.name} for ${durationToHumanReadable(duration)}")
+              case Success(duration) =>
+                // emit event
+                logger.warn(s"Registering outage on ${descriptor.name} for ${durationToHumanReadable(duration)} from ${DateTime.now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}")
             }.map(_ => true)
           case _ => FastFuture.successful(false)
         }
         case AllServicesPerGroup => env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
           case count if count < conf.timesPerDay =>
             env.datastores.chaosDataStore.registerOutage(descriptor, conf).andThen {
-              case Success(duration) => logger.warn(s"Registering outage on ${descriptor.name} for ${durationToHumanReadable(duration)}")
+              case Success(duration) =>
+                // emit event
+                logger.warn(s"Registering outage on ${descriptor.name} for ${durationToHumanReadable(duration)} from ${DateTime.now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}")
             }.map(_ => true)
           case _ => FastFuture.successful(false)
         }

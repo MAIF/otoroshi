@@ -2664,6 +2664,141 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  def startSnowMonkey() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.startSnowMonkey().map { _ =>
+      val event = AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "STARTED_SNOWMONKEY",
+        s"User started snowmonkey",
+        ctx.from,
+        Json.obj()
+      )
+      Audit.send(event)
+      Alerts.send(
+        SnowMonkeyStartedAlert(env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          ctx.user.getOrElse(ctx.apiKey.toJson),
+          event
+        )
+      )
+      Ok(Json.obj("done" -> true))
+    }
+  }
+
+  def stopSnowMonkey() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.stopSnowMonkey().map { _ =>
+      val event = AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "STOPPED_SNOWMONKEY",
+        s"User stopped snowmonkey",
+        ctx.from,
+        Json.obj()
+      )
+      Audit.send(event)
+      Alerts.send(
+        SnowMonkeyStoppedAlert(env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          ctx.user.getOrElse(ctx.apiKey.toJson),
+          event
+        )
+      )
+      Ok(Json.obj("done" -> true))
+    }
+  }
+
+  def updateSnowMonkey() = ApiAction.async(parse.json) { ctx =>
+    SnowMonkeyConfig.fromJsonSafe(ctx.request.body) match {
+      case JsError(e) => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).asFuture
+      case JsSuccess(config, _) => {
+        config.save().map { _ =>
+          val event = AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "UPDATED_SNOWMONKEY_CONFIG",
+            s"User updated snowmonkey config",
+            ctx.from,
+            config.asJson
+          )
+          Audit.send(event)
+          Alerts.send(
+            SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              ctx.user.getOrElse(ctx.apiKey.toJson),
+              event
+            )
+          )
+          Ok(config.asJson)
+        }
+      }
+    }
+  }
+
+  def patchSnowMonkey() = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val currentSnowMonkeyConfigJson = globalConfig.snowMonkeyConfig.asJson
+      val patch             = JsonPatch(ctx.request.body)
+      val newSnowMonkeyConfigJson     = patch(currentSnowMonkeyConfigJson)
+      SnowMonkeyConfig.fromJsonSafe(newSnowMonkeyConfigJson) match {
+        case JsError(e) => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).asFuture
+        case JsSuccess(newSnowMonkeyConfig, _) => {
+          val event: AdminApiEvent = AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "PATCH_SNOWMONKEY_CONFIG",
+            s"User patched snowmonkey config",
+            ctx.from,
+            newSnowMonkeyConfigJson
+          )
+          Audit.send(event)
+          Alerts.send(
+            SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              ctx.user.getOrElse(ctx.apiKey.toJson),
+              event
+            )
+          )
+          newSnowMonkeyConfig.save().map(_ => Ok(newSnowMonkeyConfig.asJson))
+        }
+      }
+    }
+  }
+
+  def resetSnowMonkey() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.resetOutages().map { _ =>
+      val event: AdminApiEvent = AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "RESET_SNOWMONKEY_OUTAGES",
+        s"User reset snowmonkey outages for the day",
+        ctx.from,
+        Json.obj()
+      )
+      Audit.send(event)
+      Alerts.send(
+        SnowMonkeyResetAlert(env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          ctx.user.getOrElse(ctx.apiKey.toJson),
+          event
+        )
+      )
+      Ok(Json.obj("done" -> true))
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   // def registerSimpleAdmin() = ApiAction.async(parse.json) { ctx =>
   //   val usernameOpt = (ctx.request.body \ "username").asOpt[String]
   //   val passwordOpt = (ctx.request.body \ "password").asOpt[String]
