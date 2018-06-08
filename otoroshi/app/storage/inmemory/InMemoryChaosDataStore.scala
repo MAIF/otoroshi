@@ -22,7 +22,7 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
     redisCli.get(s"${env.storageRoot}:outage:bygroup:counter:$groupId").map(_.map(_.utf8String.toInt).getOrElse(0))
   }
 
-  override def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
     val dayEnd     = System.currentTimeMillis() - DateTime.now().millisOfDay().withMaximumValue().getMillis
     val outageDuration = (conf.outageDurationFrom.toMillis + new scala.util.Random().nextInt(conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)).millis
     val serviceUntilKey = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}" // until end of duration
@@ -35,6 +35,31 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
+    } yield outageDuration
+  }
+
+  override def resetOutages()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    for {
+      uKeys <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
+      sKeys <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:counter:*")
+      gKeys <- redisCli.keys(s"${env.storageRoot}:outage:bygroup:counter:*")
+      _ <- redisCli.del((Seq.empty ++ uKeys ++ sKeys ++ gKeys): _*)
+    } yield ()
+  }
+
+  override def startSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    for {
+      _ <- env.datastores.chaosDataStore.resetOutages()
+      c <- env.datastores.globalConfigDataStore.singleton()
+      _ <- c.copy(snowMonkeyConfig = c.snowMonkeyConfig.copy(enabled = true)).save()
+    } yield ()
+  }
+
+  override def stopSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    for {
+      _ <- env.datastores.chaosDataStore.resetOutages()
+      c <- env.datastores.globalConfigDataStore.singleton()
+      _ <- c.copy(snowMonkeyConfig = c.snowMonkeyConfig.copy(enabled = false)).save()
     } yield ()
   }
 }

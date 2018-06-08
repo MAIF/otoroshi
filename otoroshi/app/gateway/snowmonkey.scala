@@ -7,17 +7,56 @@ import akka.util.ByteString
 import env.Env
 import models._
 import org.joda.time.DateTime
+import play.api.Logger
+import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 case class SnowMonkeyContext(trailingRequestBodyStream: Source[ByteString, NotUsed], trailingResponseBodyStream: Source[ByteString, NotUsed])
 
 class SnowMonkey(implicit env: Env) {
 
+  private val logger = Logger("otoroshi-snowmonkey")
   private val random = new scala.util.Random
   private val spaces = ByteString.fromString("        ")
+
+  private def durationToHumanReadable(fdur: FiniteDuration):String = {
+    val duration = fdur.toMillis
+    val milliseconds  =  duration % 1000L
+    val seconds       = (duration / 1000L) % 60L
+    val minutes       = (duration / (1000L*60L)) % 60L
+    val hours         = (duration / (1000L*3600L)) % 24L
+    val days          = (duration / (1000L*86400L)) % 7L
+    val weeks         = (duration / (1000L*604800L)) % 4L
+    val months        = (duration / (1000L*2592000L)) % 52L
+    val years         = (duration / (1000L*31556952L)) % 10L
+    val decades       = (duration / (1000L*31556952L*10L)) % 10L
+    val centuries     = (duration / (1000L*31556952L*100L)) % 100L
+    val millenniums   = (duration / (1000L*31556952L*1000L)) % 1000L
+    val megaannums    =  duration / (1000L*31556952L*1000000L)
+
+    val sb = new scala.collection.mutable.StringBuilder()
+
+    if (megaannums > 0) sb.append(megaannums + " megaannums ")
+    if (millenniums > 0) sb.append(millenniums + " millenniums ")
+    if (centuries > 0) sb.append(centuries + " centuries ")
+    if (decades > 0) sb.append(decades + " decades ")
+    if (years > 0) sb.append(years + " years ")
+    if (months > 0) sb.append(months + " months ")
+    if (weeks > 0) sb.append(weeks + " weeks ")
+    if (days > 0) sb.append(days + "days ")
+    if (hours > 0) sb.append(hours + "hours ")
+    if (minutes > 0) sb.append(minutes + "minutes ")
+    if (seconds > 0) sb.append(seconds + "seconds ")
+    if (minutes < 1 && hours < 1 && days < 1) {
+      if (sb.nonEmpty) sb.append(" ")
+      sb.append(milliseconds + "milliseconds")
+    }
+    sb.toString().trim
+  }
 
   private def inRatio(ratio: Double, counter: Long): Boolean = {
     val left = Math.abs(counter) % 10
@@ -52,23 +91,33 @@ class SnowMonkey(implicit env: Env) {
     env.datastores.chaosDataStore.serviceAlreadyOutage(descriptor.id)
   }
 
-  private def needMoreOutageForToday(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext): Future[Boolean] = {
-    conf.outageStrategy match {
-      case OneServicePerGroup => env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
-        case count if count < conf.timesPerDay => env.datastores.chaosDataStore.registerOutage(descriptor, conf).map(_ => true)
-        case _ => FastFuture.successful(false)
-      }
-      case AllServicesPerGroup => env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
-        case count if count < conf.timesPerDay => env.datastores.chaosDataStore.registerOutage(descriptor, conf).map(_ => true)
-        case _ => FastFuture.successful(false)
+  private def needMoreOutageForToday(isCurrentOutage: Boolean, descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext): Future[Boolean] = {
+    if (isCurrentOutage) {
+      FastFuture.successful(true)
+    } else {
+      conf.outageStrategy match {
+        case OneServicePerGroup => env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
+          case count if count < conf.timesPerDay =>
+            env.datastores.chaosDataStore.registerOutage(descriptor, conf).andThen {
+              case Success(duration) => logger.warn(s"Registering outage on ${descriptor.name} for ${durationToHumanReadable(duration)}")
+            }.map(_ => true)
+          case _ => FastFuture.successful(false)
+        }
+        case AllServicesPerGroup => env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
+          case count if count < conf.timesPerDay =>
+            env.datastores.chaosDataStore.registerOutage(descriptor, conf).andThen {
+              case Success(duration) => logger.warn(s"Registering outage on ${descriptor.name} for ${durationToHumanReadable(duration)}")
+            }.map(_ => true)
+          case _ => FastFuture.successful(false)
+        }
       }
     }
   }
 
   private def isOutage(descriptor: ServiceDescriptor, config: SnowMonkeyConfig)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
-      needMoreOutageForToday <- needMoreOutageForToday(descriptor, config)
       isCurrentOutage <- isCurrentOutage(descriptor, config)
+      needMoreOutageForToday <- needMoreOutageForToday(isCurrentOutage, descriptor, config)
     } yield {
       if ((config.targetGroups.isEmpty || config.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId) {
         isCurrentOutage || needMoreOutageForToday
@@ -109,6 +158,7 @@ class SnowMonkey(implicit env: Env) {
         Source.empty[ByteString]
       ))
     } else if (config.snowMonkeyConfig.enabled && betweenDates(config.snowMonkeyConfig)) {
+      logger.warn(Json.prettyPrint(config.snowMonkeyConfig.asJson))
       introduceSnowMonkeyDefinedChaos(reqNumber, config.snowMonkeyConfig, desc)(f)
     } else {
       if (desc.chaosConfig.enabled) {

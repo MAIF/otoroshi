@@ -253,7 +253,7 @@ object SnowMonkeyConfig {
             true,
             None,
             None,
-            Some(LatencyInjectionFaultConfig(0.7, 500.millis, 5000.millis)),
+            Some(LatencyInjectionFaultConfig(0.7, 200.millis, 600.millis)),
             Some(BadResponsesFaultConfig(0.5, Seq(
               BadResponse(
                 502,
@@ -290,5 +290,8 @@ trait ChaosDataStore {
   def serviceAlreadyOutage(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def serviceOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
   def groupOutages(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
-  def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration]
+  def resetOutages()(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def startSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def stopSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]
 }
