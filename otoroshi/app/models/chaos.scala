@@ -51,7 +51,7 @@ object LargeRequestFaultConfig {
       Try {
         JsSuccess(
           LargeRequestFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.3),
+            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
             additionalRequestSize = (json \ "additionalRequestSize").asOpt[Int].getOrElse(0)
           )
         )
@@ -73,7 +73,7 @@ object LargeResponseFaultConfig {
       Try {
         JsSuccess(
           LargeResponseFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.3),
+            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
             additionalResponseSize = (json \ "additionalResponseSize").asOpt[Int].getOrElse(0)
           )
         )
@@ -95,7 +95,7 @@ object LatencyInjectionFaultConfig {
       Try {
         JsSuccess(
           LatencyInjectionFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.3),
+            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
             from =
               (json \ "from").asOpt(SnowMonkeyConfig.durationFmt).getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS)),
             to = (json \ "to").asOpt(SnowMonkeyConfig.durationFmt).getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS))
@@ -120,7 +120,7 @@ object BadResponsesFaultConfig {
       Try {
         JsSuccess(
           BadResponsesFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.3),
+            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
             responses = (json \ "responses").asOpt(Reads.seq(BadResponse.fmt)).getOrElse(Seq.empty)
           )
         )

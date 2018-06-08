@@ -431,7 +431,6 @@ class AlertServer(counter: AtomicInteger) {
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
       val body = bodyByteString.utf8String
-      //println(Json.prettyPrint(Json.parse(body)))
       counter.incrementAndGet()
       HttpResponse(
         200,
@@ -469,6 +468,7 @@ class AnalyticsServer(counter: AtomicInteger) {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
       val body   = bodyByteString.utf8String
       val events = Json.parse(body).as[JsArray].value
+      // println(Json.parse(body).as[JsArray].value.filter(a => (a \ "@type").as[String] == "AlertEvent").map(a => (a \ "alert").as[String]))
       counter.addAndGet(events.size)
       HttpResponse(
         200,

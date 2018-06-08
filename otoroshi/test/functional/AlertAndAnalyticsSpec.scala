@@ -114,7 +114,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
 
       await(2.seconds)
 
-      counter.get() mustBe 16
+      counter.get() mustBe 21
 
       updateOtoroshiConfig(config).futureValue
 
