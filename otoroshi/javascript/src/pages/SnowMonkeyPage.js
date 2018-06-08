@@ -64,7 +64,7 @@ export class SnowMonkeyPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle(`Snow Monkey (Nihonzaru, Lord of Chaos)`);
+    this.props.setTitle(`Nihonzaru, Snow Monkey and Lord of Chaos 🐒`);
     this.updateStateConfig(true);
     this.mountShortcuts();
   }

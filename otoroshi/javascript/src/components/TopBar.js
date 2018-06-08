@@ -125,8 +125,8 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
-          env: <span className="glyphicon glyphicon-bishop" />,
-          label: 'SnowMonkey',
+          env: <span>🐒</span>,
+          label: 'Snow Monkey',
           value: 'SnowMonkey',
         });
         return { options };
@@ -306,7 +306,7 @@ export class TopBar extends Component {
                   <li role="separator" className="divider" />
                   <li>
                     <a href="/bo/dashboard/snowmonkey">
-                      <span className="glyphicon glyphicon-bishop" /> SnowMonkey
+                      🐒 Snow Monkey
                     </a>
                   </li>
                   <li role="separator" className="divider" />

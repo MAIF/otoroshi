@@ -104,7 +104,7 @@ class SnowMonkey(implicit env: Env) {
               Results
                 .Status(response.status)
                 .apply(response.body)
-                .withHeaders((response.headers.toSeq :+ ("SnowMonkey-Latency" -> latency.toString)): _*)
+                .withHeaders((response.headers.toSeq :+ ("SnowMonkey-Latency" -> latency.toString)).filterNot(_._1.toLowerCase() == "content-type"): _*)
                 .as(response.headers.getOrElse("Content-Type", "text/plain"))
             )
           }
