@@ -305,9 +305,7 @@ export class TopBar extends Component {
                   </li>
                   <li role="separator" className="divider" />
                   <li>
-                    <a href="/bo/dashboard/snowmonkey">
-                      🐒 Snow Monkey
-                    </a>
+                    <a href="/bo/dashboard/snowmonkey">🐒 Snow Monkey</a>
                   </li>
                   <li role="separator" className="divider" />
                   <li>

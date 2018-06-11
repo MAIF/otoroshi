@@ -3,8 +3,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SnowMonkeyConfig } from '../components/SnowMonkeyConfig';
 import _ from 'lodash';
 import { Table } from '../components/inputs';
-import moment from "moment/moment";
-
+import moment from 'moment/moment';
 
 function shallowDiffers(a, b) {
   return !_.isEqual(a, b);
@@ -64,7 +63,7 @@ export class SnowMonkeyPage extends Component {
     config: null,
     started: false,
     changed: false,
-    outages: []
+    outages: [],
   };
 
   columns = [
@@ -82,7 +81,9 @@ export class SnowMonkeyPage extends Component {
           <button
             type="button"
             className="btn btn-success btn-xs"
-            onClick={e => window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`}>
+            onClick={e =>
+              (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
+            }>
             <i className="glyphicon glyphicon-link" /> Go to service descriptor
           </button>
         );

@@ -104,7 +104,10 @@ class SnowMonkey(implicit env: Env) {
               Results
                 .Status(response.status)
                 .apply(response.body)
-                .withHeaders((response.headers.toSeq :+ ("SnowMonkey-Latency" -> latency.toString)).filterNot(_._1.toLowerCase() == "content-type"): _*)
+                .withHeaders(
+                  (response.headers.toSeq :+ ("SnowMonkey-Latency" -> latency.toString))
+                    .filterNot(_._1.toLowerCase() == "content-type"): _*
+                )
                 .as(response.headers.getOrElse("Content-Type", "text/plain"))
             )
           }
@@ -226,7 +229,8 @@ class SnowMonkey(implicit env: Env) {
     applyChaosConfig(reqNumber, desc.chaosConfig, hasBody)(f)
   }
 
-  private def notUserFacing(descriptor: ServiceDescriptor): Boolean = !descriptor.userFacing && !descriptor.publicPatterns.contains("/.*")
+  private def notUserFacing(descriptor: ServiceDescriptor): Boolean =
+    !descriptor.userFacing && !descriptor.publicPatterns.contains("/.*")
 
   private def introduceSnowMonkeyDefinedChaos(reqNumber: Long,
                                               config: SnowMonkeyConfig,

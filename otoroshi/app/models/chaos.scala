@@ -248,16 +248,16 @@ object SnowMonkeyConfig {
 
     override def writes(o: SnowMonkeyConfig): JsValue = {
       Json.obj(
-        "enabled"            -> o.enabled,
-        "outageStrategy"     -> outageStrategyFmt.writes(o.outageStrategy),
-        "includeUserFacingDescriptors"   -> o.includeUserFacingDescriptors,
-        "timesPerDay"        -> o.timesPerDay,
-        "startTime"          -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.startTime),
-        "stopTime"           -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.stopTime),
-        "outageDurationFrom" -> durationFmt.writes(o.outageDurationFrom),
-        "outageDurationTo"   -> durationFmt.writes(o.outageDurationTo),
-        "targetGroups"       -> JsArray(o.targetGroups.map(JsString.apply)),
-        "chaosConfig"        -> ChaosConfig._fmt.writes(o.chaosConfig)
+        "enabled"                      -> o.enabled,
+        "outageStrategy"               -> outageStrategyFmt.writes(o.outageStrategy),
+        "includeUserFacingDescriptors" -> o.includeUserFacingDescriptors,
+        "timesPerDay"                  -> o.timesPerDay,
+        "startTime"                    -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.startTime),
+        "stopTime"                     -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.stopTime),
+        "outageDurationFrom"           -> durationFmt.writes(o.outageDurationFrom),
+        "outageDurationTo"             -> durationFmt.writes(o.outageDurationTo),
+        "targetGroups"                 -> JsArray(o.targetGroups.map(JsString.apply)),
+        "chaosConfig"                  -> ChaosConfig._fmt.writes(o.chaosConfig)
       )
     }
 
@@ -322,34 +322,31 @@ object SnowMonkeyConfig {
   def fromJsonSafe(value: JsValue): JsResult[SnowMonkeyConfig] = _fmt.reads(value)
 }
 
-case class Outage(
-                   descriptorId: String,
-                   descriptorName: String,
-                   until: LocalTime,
-                   duration: FiniteDuration) {
+case class Outage(descriptorId: String, descriptorName: String, until: LocalTime, duration: FiniteDuration) {
   def asJson: JsValue = Outage.fmt.writes(this)
 }
 
 object Outage {
   val fmt = new Format[Outage] {
     override def writes(o: Outage) = Json.obj(
-      "descriptorId" -> o.descriptorId,
+      "descriptorId"   -> o.descriptorId,
       "descriptorName" -> o.descriptorName,
-      "until" -> o.until.toString(),
-      "duration" -> o.duration.toMillis,
+      "until"          -> o.until.toString(),
+      "duration"       -> o.duration.toMillis,
     )
-    override def reads(json: JsValue) = Try {
-      JsSuccess(
-        Outage(
-          descriptorId = (json \ "descriptorId").asOpt[String].getOrElse("--"),
-          descriptorName = (json \ "descriptorName").asOpt[String].getOrElse("--"),
-          until = (json \ "until").asOpt[String].map(v => LocalTime.parse(v)).getOrElse(DateTime.now().toLocalTime),
-          duration = (json \ "duration").asOpt[Long].map(v => v.millis).getOrElse(0.millis)
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          Outage(
+            descriptorId = (json \ "descriptorId").asOpt[String].getOrElse("--"),
+            descriptorName = (json \ "descriptorName").asOpt[String].getOrElse("--"),
+            until = (json \ "until").asOpt[String].map(v => LocalTime.parse(v)).getOrElse(DateTime.now().toLocalTime),
+            duration = (json \ "duration").asOpt[Long].map(v => v.millis).getOrElse(0.millis)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 

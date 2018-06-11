@@ -37,15 +37,18 @@ class RedisChaosDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends 
     for {
       _ <- redisCli.incr(groupCounterKey)
       _ <- redisCli.incr(serviceCounterKey)
-      _ <- redisCli.set(serviceUntilKey,Json.stringify(
-                          Json.obj(
-                            "descriptorName" -> descriptor.name,
-                            "descriptorId" -> descriptor.id,
-                            "until" -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
-                            "duration" -> outageDuration.toMillis
-                          )
-                        ),
-                        pxMilliseconds = Some(outageDuration.toMillis))
+      _ <- redisCli.set(
+            serviceUntilKey,
+            Json.stringify(
+              Json.obj(
+                "descriptorName" -> descriptor.name,
+                "descriptorId"   -> descriptor.id,
+                "until"          -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
+                "duration"       -> outageDuration.toMillis
+              )
+            ),
+            pxMilliseconds = Some(outageDuration.toMillis)
+          )
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
@@ -79,9 +82,9 @@ class RedisChaosDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends 
 
   override def getOutages()(implicit ec: ExecutionContext, env: Env): Future[Seq[Outage]] = {
     for {
-      keys <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
-      outagesBS <- if (keys.isEmpty) FastFuture.successful(Seq.empty) else redisCli.mget(keys: _*)
-      outagesJson =  outagesBS.filter(_.isDefined).map(_.get).map(v => v.utf8String)
+      keys        <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
+      outagesBS   <- if (keys.isEmpty) FastFuture.successful(Seq.empty) else redisCli.mget(keys: _*)
+      outagesJson = outagesBS.filter(_.isDefined).map(_.get).map(v => v.utf8String)
       outages = outagesJson.map(v => Outage.fmt.reads(Json.parse(v))).collect {
         case JsSuccess(i, _) => i
       }

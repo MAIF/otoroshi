@@ -116,7 +116,18 @@ class BackOfficeAppContainer extends Component {
             return [
               <UpdateOtoroshiVersion env={env} />,
               <TopBar {...this.props} changePassword={env.changePassword} />,
-              <span style={{ position: 'fixed', bottom: 10, right: 10, fontSize: 30 }} className="snowMonkeyRunning">{env.snowMonkeyRunning ? '🐒' : null}</span>
+              <span
+                onClick={e => (window.location = '/bo/dashboard/snowmonkey')}
+                style={{
+                  position: 'fixed',
+                  bottom: 10,
+                  right: 10,
+                  fontSize: 30,
+                  cursor: 'pointer',
+                }}
+                className="snowMonkeyRunning">
+                {env.snowMonkeyRunning ? '🐒' : null}
+              </span>,
             ];
           }}
         </WithEnv>
