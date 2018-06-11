@@ -122,13 +122,20 @@ export class ChaosConfig extends Component {
     );
   };
 
+  displayLabel = label => {
+    if (this.props.inServiceDescriptor) {
+      return `► ${label}`;
+    }
+    return label
+  };
+
   render() {
     if (!this.state.config) return null;
     return [
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
-        label="Large Request Fault">
+        label={this.displayLabel("Large Request Fault")}>
         <NumberInput
           label="Ratio"
           help="..."
@@ -149,7 +156,7 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
-        label="Large Response Fault">
+        label={this.displayLabel("Large Response Fault")}>
         <NumberInput
           label="Ratio"
           help="..."
@@ -170,7 +177,7 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
-        label="Latency injection Fault">
+        label={this.displayLabel("Latency injection Fault")}>
         <NumberInput
           label="Ratio"
           help="..."
@@ -198,7 +205,7 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
-        label="Bad response Fault">
+        label={this.displayLabel("Bad response Fault")}>
         <NumberInput
           label="Ratio"
           help="..."

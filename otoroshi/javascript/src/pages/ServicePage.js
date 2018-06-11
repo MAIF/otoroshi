@@ -941,6 +941,7 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('chaosConfig.enabled', v)}
             />
             <ChaosConfig
+              inServiceDescriptor
               initCollapsed={true}
               collapsed={this.state.allCollapsed}
               config={this.state.service.chaosConfig}
