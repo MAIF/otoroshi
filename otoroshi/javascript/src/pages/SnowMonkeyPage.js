@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SnowMonkeyConfig } from '../components/SnowMonkeyConfig';
 import _ from 'lodash';
+import { Table } from '../components/inputs';
+import moment from "moment/moment";
+
 
 function shallowDiffers(a, b) {
   return !_.isEqual(a, b);
@@ -61,7 +64,31 @@ export class SnowMonkeyPage extends Component {
     config: null,
     started: false,
     changed: false,
+    outages: []
   };
+
+  columns = [
+    { title: 'Service Name', content: item => item.descriptorName },
+    { title: 'Outage duration', content: item => moment.duration(item.duration, 'ms').humanize() },
+    { title: 'Outage until', content: item => item.until + ' today' },
+    {
+      title: 'Action',
+      style: { textAlign: 'center', width: 200 },
+      notSortable: true,
+      notFilterable: true,
+      content: item => item,
+      cell: (v, item, table) => {
+        return (
+          <button
+            type="button"
+            className="btn btn-success btn-xs"
+            onClick={e => window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`}>
+            <i className="glyphicon glyphicon-link" /> Go to service descriptor
+          </button>
+        );
+      },
+    },
+  ];
 
   componentDidMount() {
     this.props.setTitle(`Nihonzaru, Snow Monkey and Lord of Chaos 🐒`);
@@ -160,6 +187,20 @@ export class SnowMonkeyPage extends Component {
             }}
           />
         </div>
+        <hr />
+        <h3>Current outages</h3>
+        <Table
+          parentProps={this.props}
+          selfUrl="snowmonkey"
+          defaultTitle="Current outages"
+          defaultValue={() => ({})}
+          itemName="outage"
+          columns={this.columns}
+          fetchItems={BackOfficeServices.fetchSnowMonkeyOutages}
+          showActions={false}
+          showLink={false}
+          extractKey={item => item.descriptorId}
+        />
       </div>
     );
   }

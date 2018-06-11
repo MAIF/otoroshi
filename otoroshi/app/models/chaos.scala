@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import env.Env
 import models.SnowMonkeyConfig.logger
-import org.joda.time.LocalTime
+import org.joda.time.{DateTime, LocalTime}
 import play.api.Logger
 import play.api.libs.json._
 
@@ -184,7 +184,7 @@ case object AllServicesPerGroup extends OutageStrategy
 case class SnowMonkeyConfig(
     enabled: Boolean = false,
     outageStrategy: OutageStrategy = OneServicePerGroup,
-    includeFrontends: Boolean = false,
+    includeUserFacingDescriptors: Boolean = false,
     timesPerDay: Int = 1,
     startTime: LocalTime = LocalTime.parse("09:00:00"),
     stopTime: LocalTime = LocalTime.parse("23:59:59"),
@@ -250,7 +250,7 @@ object SnowMonkeyConfig {
       Json.obj(
         "enabled"            -> o.enabled,
         "outageStrategy"     -> outageStrategyFmt.writes(o.outageStrategy),
-        "includeFrontends"   -> o.includeFrontends,
+        "includeUserFacingDescriptors"   -> o.includeUserFacingDescriptors,
         "timesPerDay"        -> o.timesPerDay,
         "startTime"          -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.startTime),
         "stopTime"           -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.stopTime),
@@ -267,7 +267,7 @@ object SnowMonkeyConfig {
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           outageStrategy =
             (json \ "outageStrategy").asOpt[OutageStrategy](outageStrategyFmt).getOrElse(OneServicePerGroup),
-          includeFrontends = (json \ "includeFrontends").asOpt[Boolean].getOrElse(false),
+          includeUserFacingDescriptors = (json \ "includeUserFacingDescriptors").asOpt[Boolean].getOrElse(false),
           timesPerDay = (json \ "timesPerDay").asOpt[Int].getOrElse(1),
           startTime = (json \ "startTime")
             .asOpt[LocalTime](play.api.libs.json.JodaReads.DefaultJodaLocalTimeReads)
@@ -322,6 +322,37 @@ object SnowMonkeyConfig {
   def fromJsonSafe(value: JsValue): JsResult[SnowMonkeyConfig] = _fmt.reads(value)
 }
 
+case class Outage(
+                   descriptorId: String,
+                   descriptorName: String,
+                   until: LocalTime,
+                   duration: FiniteDuration) {
+  def asJson: JsValue = Outage.fmt.writes(this)
+}
+
+object Outage {
+  val fmt = new Format[Outage] {
+    override def writes(o: Outage) = Json.obj(
+      "descriptorId" -> o.descriptorId,
+      "descriptorName" -> o.descriptorName,
+      "until" -> o.until.toString(),
+      "duration" -> o.duration.toMillis,
+    )
+    override def reads(json: JsValue) = Try {
+      JsSuccess(
+        Outage(
+          descriptorId = (json \ "descriptorId").asOpt[String].getOrElse("--"),
+          descriptorName = (json \ "descriptorName").asOpt[String].getOrElse("--"),
+          until = (json \ "until").asOpt[String].map(v => LocalTime.parse(v)).getOrElse(DateTime.now().toLocalTime),
+          duration = (json \ "duration").asOpt[Long].map(v => v.millis).getOrElse(0.millis)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+
 trait ChaosDataStore {
   def serviceAlreadyOutage(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def serviceOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
@@ -331,4 +362,5 @@ trait ChaosDataStore {
   def resetOutages()(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def startSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def stopSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def getOutages()(implicit ec: ExecutionContext, env: Env): Future[Seq[Outage]]
 }

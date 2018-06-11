@@ -929,6 +929,12 @@ export class ServicePage extends Component {
           </Collapse>
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Chaos">
             <BooleanInput
+              label="User facing app."
+              value={this.state.service.userFacing}
+              help="If service is set as user facing, Snow Monkey can be configured to not being allowed to create outage on them."
+              onChange={v => this.changeTheValue('userFacing', v)}
+            />
+            <BooleanInput
               label="Chaos enabled"
               value={this.state.service.chaosConfig.enabled}
               help="Activate or deactivate chaos setting on this service descriptor."

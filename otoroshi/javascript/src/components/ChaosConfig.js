@@ -169,7 +169,7 @@ export class ChaosConfig extends Component {
       </Collapse>,
       <Collapse
         collapsed={this.props.collapsed}
-        initCollapsed={this.props.initCollapsed}
+        initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
         label="Latency injection Fault">
         <NumberInput
           label="Ratio"
@@ -197,7 +197,7 @@ export class ChaosConfig extends Component {
       </Collapse>,
       <Collapse
         collapsed={this.props.collapsed}
-        initCollapsed={this.props.initCollapsed}
+        initCollapsed={this.props.hideLargeStuff || this.props.initCollapsed}
         label="Bad response Fault">
         <NumberInput
           label="Ratio"

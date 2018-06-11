@@ -63,8 +63,8 @@ class SnowMonkey(implicit env: Env) {
   }
 
   private def inRatio(ratio: Double, counter: Long): Boolean = {
-    val left       = Math.abs(counter) % 10
-    val percentage = ((ratio - 0.1) * 10).toInt + 1
+    val left       = Math.abs(counter) % 100
+    val percentage = ((ratio - 0.1) * 100).toInt + 1
     left <= percentage
   }
 
@@ -226,7 +226,7 @@ class SnowMonkey(implicit env: Env) {
     applyChaosConfig(reqNumber, desc.chaosConfig, hasBody)(f)
   }
 
-  private def notFrontend(descriptor: ServiceDescriptor): Boolean = !descriptor.publicPatterns.contains("/.*")
+  private def notUserFacing(descriptor: ServiceDescriptor): Boolean = !descriptor.userFacing && !descriptor.publicPatterns.contains("/.*")
 
   private def introduceSnowMonkeyDefinedChaos(reqNumber: Long,
                                               config: SnowMonkeyConfig,
@@ -235,9 +235,9 @@ class SnowMonkey(implicit env: Env) {
       f: SnowMonkeyContext => Future[Result]
   )(implicit ec: ExecutionContext): Future[Result] = {
     isOutage(desc, config).flatMap {
-      case true if config.includeFrontends =>
+      case true if config.includeUserFacingDescriptors =>
         applyChaosConfig(reqNumber, config.chaosConfig, hasBody)(f)
-      case true if !config.includeFrontends && notFrontend(desc) =>
+      case true if !config.includeUserFacingDescriptors && notUserFacing(desc) =>
         applyChaosConfig(reqNumber, config.chaosConfig, hasBody)(f)
       case _ =>
         f(

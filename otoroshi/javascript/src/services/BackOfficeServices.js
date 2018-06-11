@@ -54,6 +54,16 @@ export function version() {
   }).then(r => r.json());
 }
 
+export function fetchSnowMonkeyOutages() {
+  return fetch(`/bo/api/proxy/api/snowmonkey/outages`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
 export function fetchSnowMonkeyConfig() {
   return fetch(`/bo/api/proxy/api/snowmonkey/config`, {
     method: 'GET',

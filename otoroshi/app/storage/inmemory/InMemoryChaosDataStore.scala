@@ -1,8 +1,10 @@
 package storage.inmemory
 
+import akka.http.scaladsl.util.FastFuture
 import env.Env
-import models.{ChaosDataStore, ServiceDescriptor, SnowMonkeyConfig}
+import models.{ChaosDataStore, Outage, ServiceDescriptor, SnowMonkeyConfig}
 import org.joda.time.DateTime
+import play.api.libs.json.{JsSuccess, Json}
 import storage.RedisLike
 
 import scala.concurrent.duration._
@@ -35,8 +37,14 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
     for {
       _ <- redisCli.incr(groupCounterKey)
       _ <- redisCli.incr(serviceCounterKey)
-      _ <- redisCli.set(serviceUntilKey,
-                        DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
+      _ <- redisCli.set(serviceUntilKey, Json.stringify(
+                          Json.obj(
+                            "descriptorName" -> descriptor.name,
+                            "descriptorId" -> descriptor.id,
+                            "until" -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
+                            "duration" -> outageDuration.toMillis
+                          )
+                        ),
                         pxMilliseconds = Some(outageDuration.toMillis))
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
@@ -67,5 +75,16 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
       c <- env.datastores.globalConfigDataStore.singleton()
       _ <- c.copy(snowMonkeyConfig = c.snowMonkeyConfig.copy(enabled = false)).save()
     } yield ()
+  }
+
+  override def getOutages()(implicit ec: ExecutionContext, env: Env): Future[Seq[Outage]] = {
+    for {
+      keys <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
+      outagesBS <- if (keys.isEmpty) FastFuture.successful(Seq.empty) else redisCli.mget(keys: _*)
+      outagesJson =  outagesBS.filter(_.isDefined).map(_.get).map(v => v.utf8String)
+      outages = outagesJson.map(v => Outage.fmt.reads(Json.parse(v))).collect {
+        case JsSuccess(i, _) => i
+      }
+    } yield outages
   }
 }

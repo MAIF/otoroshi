@@ -2710,6 +2710,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     }
   }
 
+  def getSnowMonkeyOutages() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.getOutages().map { outages =>
+      Ok(JsArray(outages.map(_.asJson)))
+    }
+  }
+
   def getSnowMonkeyConfig() = ApiAction.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().map { c =>
       Ok(c.snowMonkeyConfig.asJson)

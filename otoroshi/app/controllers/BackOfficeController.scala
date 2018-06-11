@@ -127,6 +127,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         }.nonEmpty
         Ok(
           Json.obj(
+            "snowMonkeyRunning"  -> config.snowMonkeyConfig.enabled,
             "changePassword"     -> changePassword,
             "mailgun"            -> config.mailGunSettings.isDefined,
             "clevercloud"        -> config.cleverSettings.isDefined,

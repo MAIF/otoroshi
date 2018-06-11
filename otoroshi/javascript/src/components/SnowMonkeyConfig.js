@@ -39,10 +39,10 @@ export class SnowMonkeyConfig extends Component {
           onChange={v => this.changeTheValue('timesPerDay', v)}
         />
         <BooleanInput
-          label="Include frontend"
-          value={this.state.config.includeFrontends}
+          label="Include user facing apps."
+          value={this.state.config.includeUserFacingDescriptors}
           help="..."
-          onChange={v => this.changeTheValue('includeFrontends', v)}
+          onChange={v => this.changeTheValue('includeUserFacingDescriptors', v)}
         />
         <SelectInput
           label="Outage strategy"

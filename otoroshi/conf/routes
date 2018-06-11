@@ -148,6 +148,7 @@ POST    /api/import                                           controllers.ApiCon
 POST    /api/snowmonkey/_start                                controllers.ApiController.startSnowMonkey()
 POST    /api/snowmonkey/_stop                                 controllers.ApiController.stopSnowMonkey()
 DELETE  /api/snowmonkey/outages                               controllers.ApiController.resetSnowMonkey()
+GET     /api/snowmonkey/outages                               controllers.ApiController.getSnowMonkeyOutages()
 GET     /api/snowmonkey/config                                controllers.ApiController.getSnowMonkeyConfig()
 PUT     /api/snowmonkey/config                                controllers.ApiController.updateSnowMonkey()
 PATCH   /api/snowmonkey/config                                controllers.ApiController.patchSnowMonkey()
