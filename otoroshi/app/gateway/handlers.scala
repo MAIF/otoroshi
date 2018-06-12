@@ -363,8 +363,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   Errors
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
                 case Some(desc) => {
-
-                  snowMonkey.introduceChaos(reqNumber, globalConfig, desc, false) { snowMonkeyContext =>
+                  val firstOverhead = System.currentTimeMillis() - start
+                  snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) { snowMonkeyContext =>
+                    val secondStart               = System.currentTimeMillis()
                     val maybeTrackingId = req.cookies
                       .get("otoroshi-canary")
                       .map(_.value)
@@ -578,7 +579,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                           s"curl -X ${req.method
                             .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
                         )
-                        val overhead = System.currentTimeMillis() - start
+                        logger.warn(s"first: $firstOverhead, second: ${System.currentTimeMillis() - secondStart}")
+                        val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                         val quotas: Future[RemainingQuotas] =
                           apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))
                         promise.future.andThen {

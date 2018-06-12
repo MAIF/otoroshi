@@ -22,7 +22,7 @@ object BadResponse {
       Try {
         JsSuccess(
           BadResponse(
-            status = (json \ "status").asOpt[Int].getOrElse(500),
+            status = (json \ "status").asOpt[Int].orElse((json \ "status").asOpt[String].map(_.toInt)).getOrElse(500),
             body = (json \ "body").asOpt[String].getOrElse("""{"error":"..."}"""),
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
           )
