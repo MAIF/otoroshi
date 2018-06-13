@@ -24,6 +24,7 @@ In the Otoroshi admin dashboard, we chose to access `API keys` from `service des
 * `Authorization: Basic $base64(client_id:client_secret)` header, in that case, the `Authorization` header **will** be sent to the target
 * `Otoroshi-Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret, in that case, the `Otoroshi-Authorization` header will **not** be sent to the target
 * `Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret, in that case, the `Authorization` header **will** be sent to the target
+* `Cookie: access_token=$jwt_token;` where the JWT token has been signed with the `API key` client secret, in that case, the cookie named `access_token` **will** be sent to the target
 * `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers, in that case the `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers will not be sent to the target.
 
 ## List API keys for a service descriptor
@@ -102,7 +103,7 @@ and confirm the command
 ## Use a JWT token to pass an API key
 
 You can use a JWT token to pass an API key to Otoroshi. 
-You can use `Otoroshi-Authorization: Bearer $jwt_token` and `Authorization: Bearer $jwt_token` header to pass the JWT token.
+You can use `Otoroshi-Authorization: Bearer $jwt_token`, `Authorization: Bearer $jwt_token` header and `Cookie: access_token=$jwt_token;` to pass the JWT token.
 You have to create a JWT token with a signing algorythm that can be `HS256` or `HS512`. Then you have to provide an `iss` claim with the value of your API key `clientId` and sign the JWT token with your API key `clientSecret`.
 
 For example, with an API key like `clientId=abcdef` and `clientSecret=1234456789`, your JWT token should look like
