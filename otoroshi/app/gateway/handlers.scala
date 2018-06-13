@@ -875,6 +875,11 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                         .filter(_.startsWith("Bearer "))
                         .map(_.replace("Bearer ", ""))
                         .orElse(req.queryString.get("bearer_auth").flatMap(_.lastOption))
+                        .orElse(req.headers.get("Cookie")
+                          .filter(_.startsWith("access_token="))
+                          .map(_.replace("access_token=", ""))
+                          .map(v => v.substring(0,v.indexOf(";")))
+                        )
                       val authBasic = req.headers
                         .get(env.Headers.OtoroshiAuthorization)
                         .orElse(req.headers.get("Authorization"))

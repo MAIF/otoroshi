@@ -80,7 +80,8 @@ object OtoroshiTests {
         new CircuitBreakerSpec(name, config),
         new CanarySpec(name, config),
         new QuotasSpec(name, config),
-        new AlertAndAnalyticsSpec(name, config)
+        new AlertAndAnalyticsSpec(name, config),
+        new ApiKeysSpec(name, config)
         // new WebsocketSpec(name, config)
       )
     }
