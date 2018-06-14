@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { ChaosConfig } from './ChaosConfig';
+import { ChaosConfig, ChaosConfigWithSkin } from './ChaosConfig';
 
 import { ArrayInput, BooleanInput, NumberInput, SelectInput, TextInput } from './inputs';
 
@@ -92,8 +92,8 @@ export class SnowMonkeyConfig extends Component {
           help="..."
           onChange={e => this.changeTheValue('targetGroups', e)}
         />
-        <ChaosConfig
-          hideLargeStuff={true}
+        <ChaosConfigWithSkin
+          initCollapsed={false}
           config={this.state.config.chaosConfig}
           onChange={c => {
             this.setState({ config: { ...this.state.config, chaosConfig: c } }, () => {

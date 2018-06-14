@@ -19,7 +19,7 @@ import { Collapse } from '../components/inputs/Collapse';
 import { createTooltip } from '../tooltips';
 import { WithEnv } from '../components/WithEnv';
 import Select from 'react-select';
-import { ChaosConfig } from '../components/ChaosConfig';
+import {ChaosConfigWithSkin} from '../components/ChaosConfig';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -927,7 +927,7 @@ export class ServicePage extends Component {
               onChange={arr => this.changeTheValue('ipFiltering.blacklist', arr)}
             />
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Chaos">
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Faults injection">
             <BooleanInput
               label="User facing app."
               value={this.state.service.userFacing}
@@ -940,9 +940,9 @@ export class ServicePage extends Component {
               help="Activate or deactivate chaos setting on this service descriptor."
               onChange={v => this.changeTheValue('chaosConfig.enabled', v)}
             />
-            <ChaosConfig
+            <ChaosConfigWithSkin
               inServiceDescriptor
-              initCollapsed={true}
+              initCollapsed={false}
               collapsed={this.state.allCollapsed}
               config={this.state.service.chaosConfig}
               onChange={v => this.changeTheValue('chaosConfig', v)}

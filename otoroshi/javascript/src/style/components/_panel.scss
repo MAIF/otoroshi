@@ -1,10 +1,19 @@
-.panel-heading {
-    text-align: right;
-  }
+// .panel-heading {
+//   text-align: right;
+// }
 
-  .panel, .panel-heading {
-    background-color: $fondBody;
-    h4 {
-      color: #fff;
-    }
+.panel, .panel-heading {
+  background-color: $fondBody;
+  h4 {
+    color: #fff;
   }
+}
+
+.panel-primary {
+  border-color:$colorBleue;
+  > .panel-heading {
+    background-color:$colorBleue;
+    border-color:$colorBleue;
+    background-image:linear-gradient(to bottom, $colorBleue 0, darken($colorBleue, 5%) 100%);
+  }
+}
