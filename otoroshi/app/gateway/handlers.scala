@@ -1190,7 +1190,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                        Some("errors.service.under.construction"))
                           } else if (isUp) {
                             if (descriptor.isPrivate) {
-                              if (descriptor.isUriPublic(req.relativeUri)) {
+                              if (descriptor.isUriPublic(req.path)) {
                                 passWithAuth0(globalConfig)
                               } else {
                                 isPrivateAppsSessionValid(req).fast.flatMap {
@@ -1199,7 +1199,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 }
                               }
                             } else {
-                              if (descriptor.isUriPublic(req.relativeUri)) {
+                              if (descriptor.isUriPublic(req.path)) {
                                 callDownstream(globalConfig)
                               } else {
                                 passWithApiKey(globalConfig)
@@ -1212,6 +1212,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                        req,
                                                        Some(descriptor),
                                                        Some("errors.service.down"))
+
                           }
                         }
                       }

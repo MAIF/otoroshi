@@ -768,13 +768,13 @@ class WebSocketHandler()(implicit env: Env) {
                             .asLeft[WSFlow]
                         } else if (isUp) {
                           if (descriptor.isPrivate) {
-                            if (descriptor.isUriPublic(req.relativeUri)) {
+                            if (descriptor.isUriPublic(req.path)) {
                               passWithAuth0(globalConfig)
                             } else {
                               passWithApiKey(globalConfig)
                             }
                           } else {
-                            if (descriptor.isUriPublic(req.relativeUri)) {
+                            if (descriptor.isUriPublic(req.path)) {
                               callDownstream(globalConfig)
                             } else {
                               passWithApiKey(globalConfig)
