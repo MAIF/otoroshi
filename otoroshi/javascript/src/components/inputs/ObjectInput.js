@@ -225,7 +225,7 @@ export class VerticalObjectInput extends Component {
                   <button
                     disabled={this.props.disabled}
                     type="button"
-                    className="btn btn-sm btn-primary"
+                    className="btn btn-sm btn-block btn-primary"
                     onClick={this.addNext}>
                     <i className="glyphicon glyphicon-plus-sign" />{' '}
                   </button>
