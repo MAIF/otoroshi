@@ -39,7 +39,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def health() = UnAuthApiAction.async {
+  def health() = UnAuthApiAction.async { ctx =>
     
     def fetchHealth() = for {
       _health  <- env.datastores.health()
