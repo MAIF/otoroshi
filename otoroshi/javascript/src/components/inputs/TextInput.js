@@ -46,7 +46,6 @@ export class TextInput extends Component {
   }
 }
 
-
 export class VerticalTextInput extends Component {
   onChange = e => {
     if (e && e.preventDefault) e.preventDefault();

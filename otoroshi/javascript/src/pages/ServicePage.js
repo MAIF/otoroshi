@@ -19,7 +19,7 @@ import { Collapse } from '../components/inputs/Collapse';
 import { createTooltip } from '../tooltips';
 import { WithEnv } from '../components/WithEnv';
 import Select from 'react-select';
-import {ChaosConfigWithSkin} from '../components/ChaosConfig';
+import { ChaosConfigWithSkin } from '../components/ChaosConfig';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -927,7 +927,10 @@ export class ServicePage extends Component {
               onChange={arr => this.changeTheValue('ipFiltering.blacklist', arr)}
             />
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Faults injection">
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Faults injection">
             <BooleanInput
               label="User facing app."
               value={this.state.service.userFacing}

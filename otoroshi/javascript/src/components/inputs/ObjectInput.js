@@ -159,9 +159,7 @@ export class VerticalObjectInput extends Component {
         {values.length === 0 && (
           <div className="form-group">
             <div className="col-xs-12">
-              <label
-                htmlFor={`input-${this.props.label}`}
-                className="control-label">
+              <label htmlFor={`input-${this.props.label}`} className="control-label">
                 {this.props.label} <Help text={this.props.help} />
               </label>
               <div>
@@ -216,7 +214,14 @@ export class VerticalObjectInput extends Component {
                 </span>
               </div>
               {idx === values.length - 1 && (
-                <div style={{ display: 'flex', width: '100%', justifyContent: 'center', alignItems: 'center', marginTop: 5 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginTop: 5,
+                  }}>
                   <button
                     disabled={this.props.disabled}
                     type="button"

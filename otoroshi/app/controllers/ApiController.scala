@@ -40,32 +40,32 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def health() = UnAuthApiAction.async { ctx =>
-    
-    def fetchHealth() = for {
-      _health  <- env.datastores.health()
-      overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
-    } yield {
-      Ok(
-        Json.obj(
-          "otoroshi" -> JsString(_health match {
-            case Healthy if overhead <= env.healthLimit => "healthy"
-            case Healthy if overhead > env.healthLimit  => "unhealthy"
-            case Unhealthy                              => "unhealthy"
-            case Unreachable                            => "down"
-          }),
-          "datastore" -> JsString(_health match {
-            case Healthy     => "healthy"
-            case Unhealthy   => "unhealthy"
-            case Unreachable => "unreachable"
-          })
+    def fetchHealth() =
+      for {
+        _health  <- env.datastores.health()
+        overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
+      } yield {
+        Ok(
+          Json.obj(
+            "otoroshi" -> JsString(_health match {
+              case Healthy if overhead <= env.healthLimit => "healthy"
+              case Healthy if overhead > env.healthLimit  => "unhealthy"
+              case Unhealthy                              => "unhealthy"
+              case Unreachable                            => "down"
+            }),
+            "datastore" -> JsString(_health match {
+              case Healthy     => "healthy"
+              case Unhealthy   => "unhealthy"
+              case Unreachable => "unreachable"
+            })
+          )
         )
-      )
-    }
+      }
 
     (ctx.req.getQueryString("access_key"), env.healthAccessKey) match {
-      case (_, None) => fetchHealth()
+      case (_, None)                                  => fetchHealth()
       case (Some(header), Some(key)) if header == key => fetchHealth()
-      case _ => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
+      case _                                          => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
     }
   }
 

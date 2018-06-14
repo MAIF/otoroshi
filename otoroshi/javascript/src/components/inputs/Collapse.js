@@ -65,7 +65,6 @@ export class Collapse extends Component {
 }
 
 export class Panel extends Component {
-
   state = {
     collapsed: this.props.initCollapsed || this.props.collapsed,
   };
@@ -85,10 +84,10 @@ export class Panel extends Component {
     return (
       <div className="col-xs-12 col-sm-3">
         <div className="panel panel-primary" style={{ marginBottom: 0 }}>
-          <div className="panel-heading" style={{ cursor: 'pointer' }} onClick={this.toggle}>{this.props.title}</div>
-          {!this.state.collapsed && (
-            <div className="panel-body">{this.props.children}</div>
-          )}
+          <div className="panel-heading" style={{ cursor: 'pointer' }} onClick={this.toggle}>
+            {this.props.title}
+          </div>
+          {!this.state.collapsed && <div className="panel-body">{this.props.children}</div>}
         </div>
       </div>
     );

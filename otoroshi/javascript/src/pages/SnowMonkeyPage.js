@@ -69,10 +69,13 @@ export class SnowMonkeyPage extends Component {
   columns = [
     { title: 'Service Name', content: item => item.descriptorName },
     { title: 'Outage duration', content: item => moment.duration(item.duration, 'ms').humanize() },
-    { title: 'Outage until', content: item => {
-      const parts = item.until.split('.')[0].split(':');
-      return  `${parts[0]}:${parts[1]}:${parts[2]} today`;
-    }},
+    {
+      title: 'Outage until',
+      content: item => {
+        const parts = item.until.split('.')[0].split(':');
+        return `${parts[0]}:${parts[1]}:${parts[2]} today`;
+      },
+    },
     {
       title: 'Action',
       style: { textAlign: 'center', width: 200 },

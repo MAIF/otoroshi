@@ -6,7 +6,7 @@ import {
   TextInput,
   VerticalTextInput,
   NumberInput,
-  VerticalNumberInput
+  VerticalNumberInput,
 } from './inputs';
 import { Collapse, Panel } from './inputs/Collapse';
 
@@ -122,7 +122,7 @@ export class ChaosConfig extends Component {
     if (this.props.inServiceDescriptor) {
       return `► ${label}`;
     }
-    return label
+    return label;
   };
 
   render() {
@@ -131,7 +131,7 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel("Large Request Fault")}>
+        label={this.displayLabel('Large Request Fault')}>
         <NumberInput
           label="Ratio"
           help="..."
@@ -152,7 +152,7 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel("Large Response Fault")}>
+        label={this.displayLabel('Large Response Fault')}>
         <NumberInput
           label="Ratio"
           help="..."
@@ -173,7 +173,7 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel("Latency injection Fault")}>
+        label={this.displayLabel('Latency injection Fault')}>
         <NumberInput
           label="Ratio"
           help="..."
@@ -201,7 +201,7 @@ export class ChaosConfig extends Component {
       <Collapse
         collapsed={this.props.collapsed}
         initCollapsed={this.props.initCollapsed}
-        label={this.displayLabel("Bad response Fault")}>
+        label={this.displayLabel('Bad response Fault')}>
         <NumberInput
           label="Ratio"
           help="..."
@@ -247,7 +247,6 @@ export class ChaosConfig extends Component {
 }
 
 export class ChaosConfigWithSkin extends Component {
-
   state = {
     config: enrichConfig({ ...this.props.config }),
   };
@@ -313,15 +312,17 @@ export class ChaosConfigWithSkin extends Component {
     if (this.props.inServiceDescriptor) {
       return `► ${label}`;
     }
-    return label
+    return label;
   };
 
   render() {
     if (!this.state.config) return null;
     return (
       <div className="row">
-        <Panel title="Large request fault" collapsed={this.props.collapsed}
-               initCollapsed={this.props.initCollapsed}>
+        <Panel
+          title="Large request fault"
+          collapsed={this.props.collapsed}
+          initCollapsed={this.props.initCollapsed}>
           <VerticalNumberInput
             label="Ratio"
             step="0.1"
@@ -337,8 +338,10 @@ export class ChaosConfigWithSkin extends Component {
             onChange={v => this.changeTheValue('largeRequestFaultConfig.additionalRequestSize', v)}
           />
         </Panel>
-        <Panel title="Large response fault" collapsed={this.props.collapsed}
-               initCollapsed={this.props.initCollapsed}>
+        <Panel
+          title="Large response fault"
+          collapsed={this.props.collapsed}
+          initCollapsed={this.props.initCollapsed}>
           <VerticalNumberInput
             label="Ratio"
             step="0.1"
@@ -351,11 +354,15 @@ export class ChaosConfigWithSkin extends Component {
             suffix="bytes"
             label="Additional size"
             value={this.state.config.largeResponseFaultConfig.additionalResponseSize}
-            onChange={v => this.changeTheValue('largeResponseFaultConfig.additionalResponseSize', v)}
+            onChange={v =>
+              this.changeTheValue('largeResponseFaultConfig.additionalResponseSize', v)
+            }
           />
         </Panel>
-        <Panel title="Latency injection fault" collapsed={this.props.collapsed}
-               initCollapsed={this.props.initCollapsed}>
+        <Panel
+          title="Latency injection fault"
+          collapsed={this.props.collapsed}
+          initCollapsed={this.props.initCollapsed}>
           <VerticalNumberInput
             label="Ratio"
             step="0.1"
@@ -377,8 +384,10 @@ export class ChaosConfigWithSkin extends Component {
             onChange={v => this.changeTheValue('latencyInjectionFaultConfig.to', v)}
           />
         </Panel>
-        <Panel title="Bad response fault" collapsed={this.props.collapsed}
-               initCollapsed={this.props.initCollapsed}>
+        <Panel
+          title="Bad response fault"
+          collapsed={this.props.collapsed}
+          initCollapsed={this.props.initCollapsed}>
           <VerticalNumberInput
             label="Ratio"
             step="0.1"
@@ -409,9 +418,13 @@ export class ChaosConfigWithSkin extends Component {
             label="Headers"
             placeholderKey="Header name (ie.Access-Control-Allow-Origin)"
             placeholderValue="Header value (ie. *)"
-            value={getOrElse(this.state.config.badResponsesFaultConfig.responses[0], i => i.headers, {
-              'Content-Type': 'application/json',
-            })}
+            value={getOrElse(
+              this.state.config.badResponsesFaultConfig.responses[0],
+              i => i.headers,
+              {
+                'Content-Type': 'application/json',
+              }
+            )}
             onChange={v => this.changeFirstResponse('headers', v)}
           />
         </Panel>

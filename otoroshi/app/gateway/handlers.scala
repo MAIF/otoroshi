@@ -365,7 +365,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 case Some(desc) => {
                   val firstOverhead = System.currentTimeMillis() - start
                   snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) { snowMonkeyContext =>
-                    val secondStart               = System.currentTimeMillis()
+                    val secondStart = System.currentTimeMillis()
                     val maybeTrackingId = req.cookies
                       .get("otoroshi-canary")
                       .map(_.value)
