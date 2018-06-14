@@ -68,7 +68,8 @@ class Env(val configuration: Configuration,
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
-  lazy val healthLimit: Double           = configuration.getOptional[Double]("app.healthLimit").getOrElse(1000.0)
+  lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
+  lazy val healthLimit: Double           = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)
   lazy val throttlingWindow: Int         = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
   lazy val analyticsWindow: Int          = configuration.getOptional[Int]("app.analyticsWindow").getOrElse(30)
   lazy val auth0UserMeta: String         = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")

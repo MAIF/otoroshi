@@ -69,7 +69,8 @@ object OtoroshiTests {
         new CircuitBreakerSpec(name, Configurations.LevelDBConfiguration),
         new CanarySpec(name, Configurations.LevelDBConfiguration),
         new QuotasSpec(name, Configurations.LevelDBConfiguration),
-        new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration)
+        new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration),
+        new ApiKeysSpec(name, Configurations.LevelDBConfiguration)
         // new WebsocketSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
@@ -80,7 +81,8 @@ object OtoroshiTests {
         new CircuitBreakerSpec(name, config),
         new CanarySpec(name, config),
         new QuotasSpec(name, config),
-        new AlertAndAnalyticsSpec(name, config)
+        new AlertAndAnalyticsSpec(name, config),
+        new ApiKeysSpec(name, config)
         // new WebsocketSpec(name, config)
       )
     }

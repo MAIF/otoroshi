@@ -437,6 +437,7 @@ class WebSocketHandler()(implicit env: Env) {
                       .filter(_.startsWith("Bearer "))
                       .map(_.replace("Bearer ", ""))
                       .orElse(req.queryString.get("bearer_auth").flatMap(_.lastOption))
+                      .orElse(req.cookies.get("access_token").map(_.value))
                     val authBasic = req.headers
                       .get(env.Headers.OtoroshiAuthorization)
                       .orElse(req.headers.get("Authorization"))

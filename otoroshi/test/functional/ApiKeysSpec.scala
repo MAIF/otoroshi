@@ -266,6 +266,24 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service).futureValue
     }
 
+    "Allow access with access_token in cookie" in {
+      createOtoroshiService(service).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host"          -> serviceHost,
+          "Cookie" -> s"access_token=$bearerAuth;secure"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+      resp.body == basicTestExpectedBody mustBe true
+
+      deleteOtoroshiService(service).futureValue
+    }
+
     "Allow access with bearer otoroshi header (Otoroshi-Authorization)" in {
       createOtoroshiService(service).futureValue
 
