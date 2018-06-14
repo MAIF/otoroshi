@@ -40,7 +40,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def health() = UnAuthApiAction.async {
-    for {
+    
+    def fetchHealth() = for {
       _health  <- env.datastores.health()
       overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
     } yield {
@@ -59,6 +60,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           })
         )
       )
+    }
+
+    (ctx.req.getQueryString("access_key"), env.healthAccessKey) match {
+      case (_, None) => fetchHealth()
+      case (Some(header), Some(key)) if header == key => fetchHealth()
+      case _ => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
     }
   }
 
