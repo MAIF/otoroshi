@@ -579,7 +579,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                           s"curl -X ${req.method
                             .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
                         )
-                        logger.warn(s"first: $firstOverhead, second: ${System.currentTimeMillis() - secondStart}")
                         val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                         val quotas: Future[RemainingQuotas] =
                           apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))
