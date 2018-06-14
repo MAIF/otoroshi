@@ -778,7 +778,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               // meterOut.mark(responseHeader.length)
                               // counterOut.addAndGet(responseHeader.length)
 
-                              val finalStream = resp.bodyAsSource
+                              val finalStream = resp.bodyAsSource.concat(snowMonkeyContext.trailingResponseBodyStream)
                                 .alsoTo(Sink.onComplete {
                                   case Success(_) =>
                                     // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
@@ -796,7 +796,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   counterOut.addAndGet(bs.length)
                                   bs
                                 }
-                                .concat(snowMonkeyContext.trailingResponseBodyStream)
+
 
                               if (req.version == "HTTP/1.0") {
                                 logger.warn(
@@ -818,10 +818,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 // stream out
                                 val entity =
                                   if (resp.headers
-                                        .get("Transfer-Encoding")
-                                        .flatMap(_.lastOption)
-                                        .filter(_ == "chunked")
-                                        .isDefined) {
+                                    .get("Transfer-Encoding")
+                                    .flatMap(_.lastOption).contains("chunked")) {
                                     HttpEntity.Chunked(
                                       finalStream
                                         .map(i => play.api.http.HttpChunk.Chunk(i))
@@ -836,7 +834,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       resp.headers
                                         .get("Content-Length")
                                         .flatMap(_.lastOption)
-                                        .map(_.toLong + snowMonkeyContext.trailingRequestBodySize),
+                                        .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
                                       Some(contentType) // contentTypeOpt
                                     )
                                   }
@@ -1170,7 +1168,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   HttpEntity.Streamed(
                                     Source
                                       .repeat(characters)
-                                      .limit(expected), // 128 Go of zeros or middle fingers
+                                      .take(expected), // 128 Go of zeros or middle fingers
                                     None,
                                     Some("application/octet-stream")
                                   )

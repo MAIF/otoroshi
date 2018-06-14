@@ -1,6 +1,5 @@
 package gateway
 
-import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -14,10 +13,10 @@ import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.Success
 
-case class SnowMonkeyContext(trailingRequestBodyStream: Source[ByteString, NotUsed],
-                             trailingResponseBodyStream: Source[ByteString, NotUsed],
+case class SnowMonkeyContext(trailingRequestBodyStream: Source[ByteString, _],
+                             trailingResponseBodyStream: Source[ByteString, _],
                              trailingRequestBodySize: Int = 0,
                              trailingResponseBodySize: Int = 0)
 
@@ -84,11 +83,11 @@ class SnowMonkey(implicit env: Env) {
         val (requestTrailingBodySize, requestTrailingBody) = config.largeRequestFaultConfig
           .filter(c => c.additionalRequestSize > 8)
           .filter(_ => hasBody)
-          .map(c => (c.additionalRequestSize / 8, Source.repeat(spaces).limit(c.additionalRequestSize / 8)))
+          .map(c => (c.additionalRequestSize / 8, Source.repeat(spaces).take(c.additionalRequestSize / 8)))
           .getOrElse((0, Source.empty[ByteString]))
         val (responseTrailingBodySize, responseTrailingBody) = config.largeResponseFaultConfig
           .filter(c => c.additionalResponseSize > 8)
-          .map(c => (c.additionalResponseSize / 8, Source.repeat(spaces).limit(c.additionalResponseSize / 8)))
+          .map(c => (c.additionalResponseSize / 8, Source.repeat(spaces).take(c.additionalResponseSize / 8)))
           .getOrElse((0, Source.empty[ByteString]))
         val context = SnowMonkeyContext(requestTrailingBody,
                                         responseTrailingBody,
