@@ -1176,7 +1176,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                                                      Some("errors.service.under.construction"))
                         } else if (isUp) {
                           if (descriptor.isPrivate) {
-                            if (descriptor.isUriPublic(req.relativeUri)) {
+                            if (descriptor.isUriPublic(req.path)) {
                               passWithAuth0(globalConfig)
                             } else {
                               isPrivateAppsSessionValid(req).fast.flatMap {
@@ -1185,7 +1185,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                               }
                             }
                           } else {
-                            if (descriptor.isUriPublic(req.relativeUri)) {
+                            if (descriptor.isUriPublic(req.path)) {
                               callDownstream(globalConfig)
                             } else {
                               passWithApiKey(globalConfig)
