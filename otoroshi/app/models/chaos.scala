@@ -252,7 +252,7 @@ object SnowMonkeyConfig {
         "enabled"                      -> o.enabled,
         "outageStrategy"               -> outageStrategyFmt.writes(o.outageStrategy),
         "includeUserFacingDescriptors" -> o.includeUserFacingDescriptors,
-        "dryRun" -> o.dryRun,
+        "dryRun"                       -> o.dryRun,
         "timesPerDay"                  -> o.timesPerDay,
         "startTime"                    -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.startTime),
         "stopTime"                     -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.stopTime),

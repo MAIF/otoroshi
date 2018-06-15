@@ -116,7 +116,6 @@ export class VerticalNumberInput extends Component {
 }
 
 export class NumberRangeInput extends Component {
-
   onChangeFrom = e => {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
@@ -146,7 +145,9 @@ export class NumberRangeInput extends Component {
         <div className="col-sm-10">
           {(this.props.prefixFrom || this.props.suffixFrom) && (
             <div className="input-group col-sm-6" style={{ float: 'inherit' }}>
-              {this.props.prefixFrom && <div className="input-group-addon">{this.props.prefixFrom}</div>}
+              {this.props.prefixFrom && (
+                <div className="input-group-addon">{this.props.prefixFrom}</div>
+              )}
               <input
                 type="number"
                 step={this.props.stepFrom}
@@ -159,13 +160,17 @@ export class NumberRangeInput extends Component {
                 value={this.props.valueFrom}
                 onChange={this.onChangeFrom}
               />
-              {this.props.suffixFrom && <div className="input-group-addon">{this.props.suffixFrom}</div>}
+              {this.props.suffixFrom && (
+                <div className="input-group-addon">{this.props.suffixFrom}</div>
+              )}
             </div>
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
             <div className="input-group col-sm-6" style={{ float: 'inherit' }}>
-              {this.props.prefixTo && <div className="input-group-addon">{this.props.prefixTo}</div>}
-                <input
+              {this.props.prefixTo && (
+                <div className="input-group-addon">{this.props.prefixTo}</div>
+              )}
+              <input
                 type="number"
                 step={this.props.stepTo}
                 min={this.props.minTo}
@@ -176,8 +181,10 @@ export class NumberRangeInput extends Component {
                 placeholder={this.props.placeholderTo}
                 value={this.props.valueTo}
                 onChange={this.onChangeTo}
-                />
-              {this.props.suffixTo && <div className="input-group-addon">{this.props.suffixTo}</div>}
+              />
+              {this.props.suffixTo && (
+                <div className="input-group-addon">{this.props.suffixTo}</div>
+              )}
             </div>
           )}
           {!(this.props.prefixFrom || this.props.suffixFrom) && (

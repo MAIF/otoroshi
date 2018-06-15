@@ -2,7 +2,15 @@ import React, { Component } from 'react';
 
 import { ChaosConfigWithSkin } from './ChaosConfig';
 
-import { ArrayInput, BooleanInput, NumberInput, SelectInput, TextInput, NumberRangeInput, RangeTextInput } from './inputs';
+import {
+  ArrayInput,
+  BooleanInput,
+  NumberInput,
+  SelectInput,
+  TextInput,
+  NumberRangeInput,
+  RangeTextInput,
+} from './inputs';
 
 export class SnowMonkeyConfig extends Component {
   state = {
@@ -67,7 +75,8 @@ export class SnowMonkeyConfig extends Component {
           onChangeFrom={e => this.changeTheValue('startTime', e)}
           placeholderTo="Outage period stop in the work day"
           valueTo={this.state.config.stopTime}
-          onChangeTo={e => this.changeTheValue('stopTime', e)} />
+          onChangeTo={e => this.changeTheValue('stopTime', e)}
+        />
         <NumberRangeInput
           label="Outage duration"
           help="The range value for the duration of the outages"

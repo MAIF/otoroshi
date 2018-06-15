@@ -558,7 +558,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                         val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
                           bodyAlreadyConsumed.compareAndSet(false, true)
-                          req.body.concat(snowMonkeyContext.trailingRequestBodyStream)
+                          req.body
+                            .concat(snowMonkeyContext.trailingRequestBodyStream)
                             .map(bs => {
                               // meterIn.mark(bs.length)
                               counterIn.addAndGet(bs.length)
@@ -777,7 +778,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               // meterOut.mark(responseHeader.length)
                               // counterOut.addAndGet(responseHeader.length)
 
-                              val finalStream = resp.bodyAsSource.concat(snowMonkeyContext.trailingResponseBodyStream)
+                              val finalStream = resp.bodyAsSource
+                                .concat(snowMonkeyContext.trailingResponseBodyStream)
                                 .alsoTo(Sink.onComplete {
                                   case Success(_) =>
                                     // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
@@ -795,7 +797,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   counterOut.addAndGet(bs.length)
                                   bs
                                 }
-
 
                               if (req.version == "HTTP/1.0") {
                                 logger.warn(
@@ -817,8 +818,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 // stream out
                                 val entity =
                                   if (resp.headers
-                                    .get("Transfer-Encoding")
-                                    .flatMap(_.lastOption).contains("chunked")) {
+                                        .get("Transfer-Encoding")
+                                        .flatMap(_.lastOption)
+                                        .contains("chunked")) {
                                     HttpEntity.Chunked(
                                       finalStream
                                         .map(i => play.api.http.HttpChunk.Chunk(i))

@@ -65,7 +65,9 @@ export class RangeTextInput extends Component {
         <div className="col-sm-10" style={{ display: 'flex' }}>
           {(this.props.prefixFrom || this.props.suffixFrom) && (
             <div className="input-group col-sm-6">
-              {this.props.prefixFrom && <div className="input-group-addon">{this.props.prefixFrom}</div>}
+              {this.props.prefixFrom && (
+                <div className="input-group-addon">{this.props.prefixFrom}</div>
+              )}
               <input
                 type={this.props.typeFrom || 'text'}
                 className="form-control"
@@ -75,12 +77,16 @@ export class RangeTextInput extends Component {
                 value={this.props.valueFrom || ''}
                 onChange={this.onChangeFrom}
               />
-              {this.props.suffixFrom && <div className="input-group-addon">{this.props.suffixFrom}</div>}
+              {this.props.suffixFrom && (
+                <div className="input-group-addon">{this.props.suffixFrom}</div>
+              )}
             </div>
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
             <div className="input-group col-sm-6">
-              {this.props.prefixTo && <div className="input-group-addon">{this.props.prefixTo}</div>}
+              {this.props.prefixTo && (
+                <div className="input-group-addon">{this.props.prefixTo}</div>
+              )}
               <input
                 type={this.props.typeTo || 'text'}
                 className="form-control"
@@ -90,7 +96,9 @@ export class RangeTextInput extends Component {
                 value={this.props.valueTo || ''}
                 onChange={this.onChangeTo}
               />
-              {this.props.suffixTo && <div className="input-group-addon">{this.props.suffixTo}</div>}
+              {this.props.suffixTo && (
+                <div className="input-group-addon">{this.props.suffixTo}</div>
+              )}
             </div>
           )}
           {!(this.props.prefixFrom || this.props.suffixFrom) && (
