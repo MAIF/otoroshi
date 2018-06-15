@@ -842,7 +842,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   Status(resp.status)
                                     .sendEntity(entity)
                                     .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                    .as(contentType) //
+                                    .as(contentType)
                                     .withCookies(withTrackingCookies: _*)
                                 )
                               } else {

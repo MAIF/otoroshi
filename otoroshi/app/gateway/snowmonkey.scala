@@ -83,11 +83,11 @@ class SnowMonkey(implicit env: Env) {
         val (requestTrailingBodySize, requestTrailingBody) = config.largeRequestFaultConfig
           .filter(c => c.additionalRequestSize > 8)
           .filter(_ => hasBody)
-          .map(c => (c.additionalRequestSize / 8, Source.repeat(spaces).take(c.additionalRequestSize / 8)))
+          .map(c => (c.additionalRequestSize, Source.repeat(spaces).take(c.additionalRequestSize / 8)))
           .getOrElse((0, Source.empty[ByteString]))
         val (responseTrailingBodySize, responseTrailingBody) = config.largeResponseFaultConfig
           .filter(c => c.additionalResponseSize > 8)
-          .map(c => (c.additionalResponseSize / 8, Source.repeat(spaces).take(c.additionalResponseSize / 8)))
+          .map(c => (c.additionalResponseSize, Source.repeat(spaces).take(c.additionalResponseSize / 8)))
           .getOrElse((0, Source.empty[ByteString]))
         val context = SnowMonkeyContext(requestTrailingBody,
                                         responseTrailingBody,
