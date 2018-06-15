@@ -29,10 +29,13 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
       conf: SnowMonkeyConfig
   )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
     val dayEnd = System.currentTimeMillis() - DateTime.now().millisOfDay().withMaximumValue().getMillis
-    val bound = if (conf.outageDurationTo.toMillis.toInt == conf.outageDurationFrom.toMillis.toInt) conf.outageDurationFrom.toMillis.toInt else (conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)
-    val outageDuration = (conf.outageDurationFrom.toMillis + new scala.util.Random().nextInt(bound)).millis
-    val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}"         // until end of duration
-    val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}"       // until end of day
+    val bound =
+      if (conf.outageDurationTo.toMillis.toInt == conf.outageDurationFrom.toMillis.toInt)
+        conf.outageDurationFrom.toMillis.toInt
+      else (conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)
+    val outageDuration    = (conf.outageDurationFrom.toMillis + new scala.util.Random().nextInt(bound)).millis
+    val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}" // until end of duration
+    val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}" // until end of day
     val groupCounterKey   = s"${env.storageRoot}:outage:bygroup:counter:${descriptor.groupId}" // until end of day
     for {
       _ <- redisCli.incr(groupCounterKey)

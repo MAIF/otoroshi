@@ -202,7 +202,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 
-  def updateSnowMonkey(f: SnowMonkeyConfig => SnowMonkeyConfig, customPort: Option[Int] = None): Future[SnowMonkeyConfig] = {
+  def updateSnowMonkey(f: SnowMonkeyConfig => SnowMonkeyConfig,
+                       customPort: Option[Int] = None): Future[SnowMonkeyConfig] = {
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
       .withHttpHeaders(
@@ -212,13 +213,13 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .flatMap { response =>
-        val config = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+        val config    = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
         val newConfig = f(config)
         suite.otoroshiComponents.wsClient
           .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
           .withHttpHeaders(
-            "Host"   -> "otoroshi-api.foo.bar",
-            "Accept" -> "application/json",
+            "Host"         -> "otoroshi-api.foo.bar",
+            "Accept"       -> "application/json",
             "Content-Type" -> "application/json"
           )
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -433,7 +434,7 @@ class TargetService(host: Option[String], path: String, contentType: String, res
           HttpResponse(
             200,
             entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
-              ByteString(result(request)))
+                                ByteString(result(request)))
           )
         )
       }

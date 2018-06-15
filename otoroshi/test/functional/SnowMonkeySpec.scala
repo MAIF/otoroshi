@@ -14,7 +14,7 @@ import play.api.libs.json.Json
 import scala.concurrent.duration._
 
 class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
@@ -40,12 +40,14 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
       getOtoroshiServices().futureValue // WARM UP
     }
 
-    val ref = new AtomicInteger(0)
+    val ref                   = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
     val basicTestServer = TargetService(Some(serviceHost), "/api", "application/json", { r =>
-      r.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map(b => {
-        ref.set(b.size)
-      })
+      r.entity.dataBytes
+        .runFold(ByteString.empty)(_ ++ _)
+        .map(b => {
+          ref.set(b.size)
+        })
       basicTestExpectedBody
     }).await()
     val initialDescriptor = ServiceDescriptor(
@@ -69,27 +71,29 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
     "Setup the monkey" in {
       (for {
         _ <- createOtoroshiService(initialDescriptor)
-        _ <- updateSnowMonkey(c => SnowMonkeyConfig(
-          enabled = true,
-          dryRun = false,
-          includeUserFacingDescriptors = true,
-          outageDurationFrom = 3600000.millis,
-          outageDurationTo = 3600000.millis,
-          startTime = LocalTime.parse("00:00:00.000"),
-          stopTime = LocalTime.parse("23:59:59.999"),
-          targetGroups = Seq("default"),
-          chaosConfig = ChaosConfig(
-            enabled = true,
-            badResponsesFaultConfig = None,
-            largeRequestFaultConfig = None,
-            largeResponseFaultConfig = None,
-            latencyInjectionFaultConfig = None
-          )
-        ))
+        _ <- updateSnowMonkey(
+              c =>
+                SnowMonkeyConfig(
+                  enabled = true,
+                  dryRun = false,
+                  includeUserFacingDescriptors = true,
+                  outageDurationFrom = 3600000.millis,
+                  outageDurationTo = 3600000.millis,
+                  startTime = LocalTime.parse("00:00:00.000"),
+                  stopTime = LocalTime.parse("23:59:59.999"),
+                  targetGroups = Seq("default"),
+                  chaosConfig = ChaosConfig(
+                    enabled = true,
+                    badResponsesFaultConfig = None,
+                    largeRequestFaultConfig = None,
+                    largeResponseFaultConfig = None,
+                    latencyInjectionFaultConfig = None
+                  )
+              )
+            )
         _ <- startSnowMonkey()
       } yield ()).futureValue
-      ws
-        .url(s"http://127.0.0.1:$port/api")
+      ws.url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> serviceHost
         )
@@ -100,15 +104,20 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
     }
 
     "Inject latency" in {
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          latencyInjectionFaultConfig = Some(LatencyInjectionFaultConfig(
-            ratio = 1.0,
-            from = 500.millis,
-            to = 500.millis
-          ))
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              latencyInjectionFaultConfig = Some(
+                LatencyInjectionFaultConfig(
+                  ratio = 1.0,
+                  from = 500.millis,
+                  to = 500.millis
+                )
+              )
+            )
         )
-      )).futureValue
+      ).futureValue
       val start = System.currentTimeMillis()
       ws.url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
@@ -118,27 +127,38 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
         .futureValue
       val stop = System.currentTimeMillis()
       (stop - start) >= 500 mustBe true
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          latencyInjectionFaultConfig = None
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              latencyInjectionFaultConfig = None
+            )
         )
-      )).futureValue
+      ).futureValue
     }
 
     "Inject bad responses" in {
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          badResponsesFaultConfig = Some(BadResponsesFaultConfig(
-            ratio = 1.0,
-            responses = Seq(BadResponse(
-              status = 502,
-              body = """{"error":"yes"}""",
-              headers = Map("Content-Type" -> "application/json")
-            ))
-          ))
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              badResponsesFaultConfig = Some(
+                BadResponsesFaultConfig(
+                  ratio = 1.0,
+                  responses = Seq(
+                    BadResponse(
+                      status = 502,
+                      body = """{"error":"yes"}""",
+                      headers = Map("Content-Type" -> "application/json")
+                    )
+                  )
+                )
+              )
+            )
         )
-      )).futureValue
-      val res = ws.url(s"http://127.0.0.1:$port/api")
+      ).futureValue
+      val res = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> serviceHost
         )
@@ -146,58 +166,81 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
         .futureValue
       res.status mustBe 502
       res.json mustBe Json.parse("""{"error":"yes"}""")
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          badResponsesFaultConfig = None
-      ))).futureValue
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              badResponsesFaultConfig = None
+            )
+        )
+      ).futureValue
     }
 
     "Inject big response body" in {
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          largeResponseFaultConfig = Some(LargeResponseFaultConfig(
-            ratio = 1.0,
-            additionalResponseSize = 1024
-          ))
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              largeResponseFaultConfig = Some(
+                LargeResponseFaultConfig(
+                  ratio = 1.0,
+                  additionalResponseSize = 1024
+                )
+              )
+            )
         )
-      )).futureValue
-      val res = ws.url(s"http://127.0.0.1:$port/api")
+      ).futureValue
+      val res = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> serviceHost
         )
         .get()
         .futureValue
       res.bodyAsBytes.size > 1024 mustBe true
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          largeResponseFaultConfig = None
-        ))).futureValue
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              largeResponseFaultConfig = None
+            )
+        )
+      ).futureValue
     }
 
     "Inject big request body" in {
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          largeRequestFaultConfig = Some(LargeRequestFaultConfig(
-            ratio = 1.0,
-            additionalRequestSize = 1024
-          ))
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              largeRequestFaultConfig = Some(
+                LargeRequestFaultConfig(
+                  ratio = 1.0,
+                  additionalRequestSize = 1024
+                )
+              )
+            )
         )
-      )).futureValue
+      ).futureValue
       ref.get() mustBe 0
       ws.url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
-          "Content-Type" -> "text/plain",
+          "Host"           -> serviceHost,
+          "Content-Type"   -> "text/plain",
           "Content-Length" -> "5"
         )
         .post("hello")
         .futureValue
       await(10.millis)
       // ref.get() > 1024 mustBe true
-      updateSnowMonkey(c => c.copy(
-        chaosConfig = c.chaosConfig.copy(
-          largeRequestFaultConfig = None
-        ))).futureValue
+      updateSnowMonkey(
+        c =>
+          c.copy(
+            chaosConfig = c.chaosConfig.copy(
+              largeRequestFaultConfig = None
+            )
+        )
+      ).futureValue
     }
   }
 }

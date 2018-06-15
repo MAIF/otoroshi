@@ -73,7 +73,9 @@ class SnowMonkey(implicit env: Env) {
     config.latencyInjectionFaultConfig
       .filter(c => inRatio(c.ratio, reqNumber))
       .map { conf =>
-        val bound = if (conf.to.toMillis.toInt == conf.from.toMillis.toInt) conf.to.toMillis.toInt else conf.to.toMillis.toInt - conf.from.toMillis.toInt
+        val bound =
+          if (conf.to.toMillis.toInt == conf.from.toMillis.toInt) conf.to.toMillis.toInt
+          else conf.to.toMillis.toInt - conf.from.toMillis.toInt
         val latency =
           if (conf.to.toMillis.toInt == 0) 0.millis
           else (conf.from.toMillis + random.nextInt(bound)).millis
@@ -154,7 +156,8 @@ class SnowMonkey(implicit env: Env) {
                       "SNOWMONKEY_OUTAGE_REGISTERED",
                       s"Snow monkey outage registered",
                       conf,
-                      descriptor
+                      descriptor,
+                      conf.dryRun
                     )
                     Audit.send(event)
                     Alerts.send(
@@ -185,7 +188,8 @@ class SnowMonkey(implicit env: Env) {
                       "SNOWMONKEY_OUTAGE_REGISTERED",
                       s"User started snowmonkey",
                       conf,
-                      descriptor
+                      descriptor,
+                      conf.dryRun
                     )
                     Audit.send(event)
                     Alerts.send(

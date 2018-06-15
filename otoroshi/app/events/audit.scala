@@ -83,6 +83,7 @@ case class SnowMonkeyOutageRegisteredEvent(`@id`: String,
                                            message: String,
                                            config: SnowMonkeyConfig,
                                            desc: ServiceDescriptor,
+                                           dryRun: Boolean,
                                            `@timestamp`: DateTime = DateTime.now())
     extends AuditEvent {
 
@@ -104,7 +105,8 @@ case class SnowMonkeyOutageRegisteredEvent(`@id`: String,
     "from"       -> "--",
     "message"    -> message,
     "config"     -> config.asJson,
-    "service"    -> desc.toJson
+    "service"    -> desc.toJson,
+    "dryRun"     -> dryRun
   )
 }
 
