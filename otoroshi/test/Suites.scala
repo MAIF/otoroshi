@@ -70,7 +70,8 @@ object OtoroshiTests {
         new CanarySpec(name, Configurations.LevelDBConfiguration),
         new QuotasSpec(name, Configurations.LevelDBConfiguration),
         new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration),
-        new ApiKeysSpec(name, Configurations.LevelDBConfiguration)
+        new ApiKeysSpec(name, Configurations.LevelDBConfiguration),
+        new SnowMonkeySpec(name, Configurations.LevelDBConfiguration)
         // new WebsocketSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
@@ -82,7 +83,8 @@ object OtoroshiTests {
         new CanarySpec(name, config),
         new QuotasSpec(name, config),
         new AlertAndAnalyticsSpec(name, config),
-        new ApiKeysSpec(name, config)
+        new ApiKeysSpec(name, config),
+        new SnowMonkeySpec(name, config)
         // new WebsocketSpec(name, config)
       )
     }
@@ -100,4 +102,4 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
-// class DevOtoroshiTests extends Suites(new BasicSpec("DEV", Configurations.InMemoryConfiguration))
+// class DevOtoroshiTests extends Suites(new SnowMonkeySpec("DEV", Configurations.InMemoryConfiguration))

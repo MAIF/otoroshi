@@ -73,16 +73,20 @@ class SnowMonkey(implicit env: Env) {
     config.latencyInjectionFaultConfig
       .filter(c => inRatio(c.ratio, reqNumber))
       .map { conf =>
+        val bound = if (conf.to.toMillis.toInt == conf.from.toMillis.toInt) conf.to.toMillis.toInt else conf.to.toMillis.toInt - conf.from.toMillis.toInt
         val latency =
           if (conf.to.toMillis.toInt == 0) 0.millis
-          else (conf.from.toMillis + random.nextInt(conf.to.toMillis.toInt - conf.from.toMillis.toInt)).millis
+          else (conf.from.toMillis + random.nextInt(bound)).millis
         env.timeout(latency).map(_ => latency.toMillis)
       }
       .getOrElse(FastFuture.successful(0))
       .flatMap { latency =>
         val (requestTrailingBodySize, requestTrailingBody) = config.largeRequestFaultConfig
           .filter(c => c.additionalRequestSize > 8)
-          .filter(_ => hasBody)
+          .filter(_ => {
+            println("hasBody " + hasBody)
+            hasBody
+          })
           .map(c => (c.additionalRequestSize, Source.repeat(spaces).take(c.additionalRequestSize / 8)))
           .getOrElse((0, Source.empty[ByteString]))
         val (responseTrailingBodySize, responseTrailingBody) = config.largeResponseFaultConfig
