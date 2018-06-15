@@ -238,9 +238,9 @@ class SnowMonkey(implicit env: Env) {
       f: SnowMonkeyContext => Future[Result]
   )(implicit ec: ExecutionContext): Future[Result] = {
     isOutage(desc, config).flatMap {
-      case true if config.includeUserFacingDescriptors =>
+      case true if !config.dryRun && config.includeUserFacingDescriptors =>
         applyChaosConfig(reqNumber, config.chaosConfig, hasBody)(f)
-      case true if !config.includeUserFacingDescriptors && notUserFacing(desc) =>
+      case true if !config.dryRun && !config.includeUserFacingDescriptors && notUserFacing(desc) =>
         applyChaosConfig(reqNumber, config.chaosConfig, hasBody)(f)
       case _ =>
         f(
