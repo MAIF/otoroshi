@@ -114,3 +114,102 @@ export class VerticalNumberInput extends Component {
     );
   }
 }
+
+export class NumberRangeInput extends Component {
+
+  onChangeFrom = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    const value = e.target.value;
+    if (value.indexOf('.') > -1) {
+      this.props.onChangeFrom(parseFloat(value));
+    } else {
+      this.props.onChangeFrom(parseInt(value, 10));
+    }
+  };
+
+  onChangeTo = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    const value = e.target.value;
+    if (value.indexOf('.') > -1) {
+      this.props.onChangeTo(parseFloat(value));
+    } else {
+      this.props.onChangeTo(parseInt(value, 10));
+    }
+  };
+
+  render() {
+    return (
+      <div className="form-group">
+        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+          {this.props.label} <Help text={this.props.help} />
+        </label>
+        <div className="col-sm-10">
+          {(this.props.prefixFrom || this.props.suffixFrom) && (
+            <div className="input-group col-sm-6" style={{ float: 'inherit' }}>
+              {this.props.prefixFrom && <div className="input-group-addon">{this.props.prefixFrom}</div>}
+              <input
+                type="number"
+                step={this.props.stepFrom}
+                min={this.props.minFrom}
+                max={this.props.maxFrom}
+                disabled={this.props.disabled}
+                className="form-control"
+                id={`input-${this.props.labelFrom}`}
+                placeholder={this.props.placeholderFrom}
+                value={this.props.valueFrom}
+                onChange={this.onChangeFrom}
+              />
+              {this.props.suffixFrom && <div className="input-group-addon">{this.props.suffixFrom}</div>}
+            </div>
+          )}
+          {(this.props.prefixTo || this.props.suffixTo) && (
+            <div className="input-group col-sm-6" style={{ float: 'inherit' }}>
+              {this.props.prefixTo && <div className="input-group-addon">{this.props.prefixTo}</div>}
+                <input
+                type="number"
+                step={this.props.stepTo}
+                min={this.props.minTo}
+                max={this.props.maxTo}
+                disabled={this.props.disabled}
+                className="form-control"
+                id={`input-${this.props.labelTo}`}
+                placeholder={this.props.placeholderTo}
+                value={this.props.valueTo}
+                onChange={this.onChangeTo}
+                />
+              {this.props.suffixTo && <div className="input-group-addon">{this.props.suffixTo}</div>}
+            </div>
+          )}
+          {!(this.props.prefixFrom || this.props.suffixFrom) && (
+            <input
+              type="number"
+              step={this.props.stepFrom}
+              min={this.props.minFrom}
+              max={this.props.maxFrom}
+              disabled={this.props.disabledFrom}
+              className="form-control"
+              id={`input-${this.props.labelFrom}`}
+              placeholder={this.props.placeholderFrom}
+              value={this.props.valueFrom}
+              onChange={this.onChangeFrom}
+            />
+          )}
+          {!(this.props.prefixTo || this.props.suffixTo) && (
+            <input
+              type="number"
+              step={this.props.stepTo}
+              min={this.props.minTo}
+              max={this.props.maxTo}
+              disabled={this.props.disabledTo}
+              className="form-control"
+              id={`input-${this.props.labelTo}`}
+              placeholder={this.props.placeholderTo}
+              value={this.props.valueTo}
+              onChange={this.onChangeTo}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+}

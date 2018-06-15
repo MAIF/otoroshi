@@ -185,6 +185,7 @@ case class SnowMonkeyConfig(
     enabled: Boolean = false,
     outageStrategy: OutageStrategy = OneServicePerGroup,
     includeUserFacingDescriptors: Boolean = false,
+    dryRun: Boolean = false,
     timesPerDay: Int = 1,
     startTime: LocalTime = LocalTime.parse("09:00:00"),
     stopTime: LocalTime = LocalTime.parse("23:59:59"),
@@ -251,6 +252,7 @@ object SnowMonkeyConfig {
         "enabled"                      -> o.enabled,
         "outageStrategy"               -> outageStrategyFmt.writes(o.outageStrategy),
         "includeUserFacingDescriptors" -> o.includeUserFacingDescriptors,
+        "dryRun" -> o.dryRun,
         "timesPerDay"                  -> o.timesPerDay,
         "startTime"                    -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.startTime),
         "stopTime"                     -> play.api.libs.json.JodaWrites.DefaultJodaLocalTimeWrites.writes(o.stopTime),
@@ -268,6 +270,7 @@ object SnowMonkeyConfig {
           outageStrategy =
             (json \ "outageStrategy").asOpt[OutageStrategy](outageStrategyFmt).getOrElse(OneServicePerGroup),
           includeUserFacingDescriptors = (json \ "includeUserFacingDescriptors").asOpt[Boolean].getOrElse(false),
+          dryRun = (json \ "dryRun").asOpt[Boolean].getOrElse(false),
           timesPerDay = (json \ "timesPerDay").asOpt[Int].getOrElse(1),
           startTime = (json \ "startTime")
             .asOpt[LocalTime](play.api.libs.json.JodaReads.DefaultJodaLocalTimeReads)
@@ -285,19 +288,6 @@ object SnowMonkeyConfig {
           chaosConfig = (json \ "chaosConfig")
             .asOpt[ChaosConfig](ChaosConfig._fmt)
             .getOrElse(ChaosConfig(true, None, None, None, None))
-          // ChaosConfig(
-          //   true,
-          //   None,
-          //   None,
-          //   Some(LatencyInjectionFaultConfig(0.7, 200.millis, 600.millis)),
-          //   Some(BadResponsesFaultConfig(0.5, Seq(
-          //     BadResponse(
-          //       502,
-          //       """{"error":"Nihonzaru everywhere ..."}""",
-          //       headers = Map("Content-Type" -> "application/json")
-          //     )
-          //   )))
-          // )
         )
       } map {
         case sd => JsSuccess(sd)
