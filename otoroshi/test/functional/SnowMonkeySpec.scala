@@ -40,16 +40,17 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
       getOtoroshiServices().futureValue // WARM UP
     }
 
-    val ref                   = new AtomicInteger(0)
-    val basicTestExpectedBody = """{"message":"hello world"}"""
-    val basicTestServer = TargetService(Some(serviceHost), "/api", "application/json", { r =>
-      r.entity.dataBytes
-        .runFold(ByteString.empty)(_ ++ _)
-        .map(b => {
-          ref.set(b.size)
-        })
-      basicTestExpectedBody
-    }).await()
+    // val ref                   = new AtomicInteger(0)
+    // val basicTestExpectedBody = """{"message":"hello world"}"""
+    // val basicTestServer = TargetService(Some(serviceHost), "/api", "application/json", { r =>
+    //   r.entity.dataBytes
+    //     .runFold(ByteString.empty)(_ ++ _)
+    //     .map(b => {
+    //       ref.set(b.size)
+    //     })
+    //   basicTestExpectedBody
+    // }).await()
+    val basicTestServer = new BodySizeService()
     val initialDescriptor = ServiceDescriptor(
       id = "basic-sm-test",
       name = "basic-sm-test",
@@ -222,17 +223,18 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
             )
         )
       ).futureValue
-      ref.get() mustBe 0
-      ws.url(s"http://127.0.0.1:$port/api")
+      //ref.get() mustBe 0
+      val res = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host"           -> serviceHost,
           "Content-Type"   -> "text/plain",
-          "Content-Length" -> "5"
+          "Content-Length" -> "25"
         )
-        .post("hello")
+        .post(Json.stringify(Json.obj("error" -> "one big error")))
         .futureValue
       await(10.millis)
-      // ref.get() > 1024 mustBe true
+      (res.json \ "bodySize").as[Int] > 1024 mustBe true
       updateSnowMonkey(
         c =>
           c.copy(

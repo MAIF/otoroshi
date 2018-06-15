@@ -85,14 +85,13 @@ class SnowMonkey(implicit env: Env) {
       .flatMap { latency =>
         val (requestTrailingBodySize, requestTrailingBody) = config.largeRequestFaultConfig
           .filter(c => c.additionalRequestSize > 8)
-          .filter(_ => {
-            println("hasBody " + hasBody)
-            hasBody
-          })
+          .filter(_ => hasBody)
+          .filter(c => inRatio(c.ratio, reqNumber))
           .map(c => (c.additionalRequestSize, Source.repeat(spaces).take(c.additionalRequestSize / 8)))
           .getOrElse((0, Source.empty[ByteString]))
         val (responseTrailingBodySize, responseTrailingBody) = config.largeResponseFaultConfig
           .filter(c => c.additionalResponseSize > 8)
+          .filter(c => inRatio(c.ratio, reqNumber))
           .map(c => (c.additionalResponseSize, Source.repeat(spaces).take(c.additionalResponseSize / 8)))
           .getOrElse((0, Source.empty[ByteString]))
         val context = SnowMonkeyContext(requestTrailingBody,

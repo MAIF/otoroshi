@@ -633,3 +633,38 @@ object TargetService {
   def extractHost(request: HttpRequest): String =
     request.getHeader("Otoroshi-Proxied-Host").asOption.map(_.value()).getOrElse("--")
 }
+
+class BodySizeService() {
+
+  val port = TargetService.freePort
+
+  implicit val system = ActorSystem()
+  implicit val ec     = system.dispatcher
+  implicit val mat    = ActorMaterializer.create(system)
+  implicit val http   = Http(system)
+
+  val logger = LoggerFactory.getLogger("otoroshi-test")
+
+  def handler(request: HttpRequest): Future[HttpResponse] = {
+    request.entity.withoutSizeLimit().dataBytes.runFold(ByteString.empty)(_ ++ _) map { body =>
+      HttpResponse(
+        200,
+        entity = HttpEntity(ContentTypes.`application/json`,
+                            ByteString(Json.stringify(Json.obj("bodySize" -> body.size, "body" -> body.utf8String))))
+      )
+    }
+  }
+
+  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+
+  def await(): BodySizeService = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}

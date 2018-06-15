@@ -538,6 +538,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             .filterNot(
                               t =>
                                 if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
+                                else if (t._1.toLowerCase == "content-length") true
                                 else false
                             )
                             .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
@@ -552,7 +553,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   )
                                 } else {
                                   Map.empty[String, String]
-                                }) ++ descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
+                                }) ++
+                          req.headers
+                            .get("Content-Length")
+                            .map(l => {
+                              Map("Content-Length" -> (l.toInt + snowMonkeyContext.trailingRequestBodySize).toString)
+                            })
+                            .getOrElse(Map.empty[String, String]) ++
+                          descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
                             .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                             .getOrElse(Map.empty[String, String])).toSeq
 
