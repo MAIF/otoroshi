@@ -558,13 +558,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                         val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
                           bodyAlreadyConsumed.compareAndSet(false, true)
-                          req.body
+                          req.body.concat(snowMonkeyContext.trailingRequestBodyStream)
                             .map(bs => {
                               // meterIn.mark(bs.length)
                               counterIn.addAndGet(bs.length)
                               bs
                             })
-                            .concat(snowMonkeyContext.trailingRequestBodyStream)
                         }
                         val body = if (currentReqHasBody) SourceBody(lazySource) else EmptyBody // Stream IN
                         // val requestHeader = ByteString(
