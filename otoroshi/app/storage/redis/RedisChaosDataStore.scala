@@ -25,30 +25,33 @@ class RedisChaosDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends 
   }
 
   override def registerOutage(
-      descriptor: ServiceDescriptor,
-      conf: SnowMonkeyConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
+                               descriptor: ServiceDescriptor,
+                               conf: SnowMonkeyConfig
+                             )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
     val dayEnd = System.currentTimeMillis() - DateTime.now().millisOfDay().withMaximumValue().getMillis
-    val outageDuration = (conf.outageDurationFrom.toMillis + new scala.util.Random()
-      .nextInt(conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)).millis
-    val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}"         // until end of duration
-    val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}"       // until end of day
+    val bound =
+      if (conf.outageDurationTo.toMillis.toInt == conf.outageDurationFrom.toMillis.toInt)
+        conf.outageDurationFrom.toMillis.toInt
+      else (conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)
+    val outageDuration    = (conf.outageDurationFrom.toMillis + new scala.util.Random().nextInt(bound)).millis
+    val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}" // until end of duration
+    val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}" // until end of day
     val groupCounterKey   = s"${env.storageRoot}:outage:bygroup:counter:${descriptor.groupId}" // until end of day
     for {
       _ <- redisCli.incr(groupCounterKey)
       _ <- redisCli.incr(serviceCounterKey)
       _ <- redisCli.set(
-            serviceUntilKey,
-            Json.stringify(
-              Json.obj(
-                "descriptorName" -> descriptor.name,
-                "descriptorId"   -> descriptor.id,
-                "until"          -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
-                "duration"       -> outageDuration.toMillis
-              )
-            ),
-            pxMilliseconds = Some(outageDuration.toMillis)
+        serviceUntilKey,
+        Json.stringify(
+          Json.obj(
+            "descriptorName" -> descriptor.name,
+            "descriptorId"   -> descriptor.id,
+            "until"          -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
+            "duration"       -> outageDuration.toMillis
           )
+        ),
+        pxMilliseconds = Some(outageDuration.toMillis)
+      )
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
