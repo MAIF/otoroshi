@@ -706,7 +706,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                             // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
                             if (env.notDev && descriptor.enforceSecureCommunication
-                                && !descriptor.isUriExcludedFromSecuredCommunication(uri)
+                                && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
                                 && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                               if (resp.status == 404 && headers
                                     .get("X-CleverCloudUpgrade")
