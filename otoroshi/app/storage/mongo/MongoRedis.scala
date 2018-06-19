@@ -36,7 +36,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     }
   }
 
-  Await.result(initIndexes(), 5.second)
+  // Await.result(initIndexes(), 5.second)
 
   def database: Future[DefaultDB] = {
     connection.database(dbName)
@@ -104,23 +104,24 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def incr(key: String): Future[Long] = withValuesCollection { coll =>
-    coll.findAndUpdate(
-      BSONDocument("key" -> key),
-      BSONDocument("type" -> "counter", "$inc" -> BSONDocument("value" -> 1)),
-      upsert = true
-    ).map { r =>
-      r.value.flatMap(_.getAs[Long]("value")).getOrElse(0L)
-    }
-  }
+  override def incr(key: String): Future[Long] = incrby(key, 1)
+  // withValuesCollection { coll =>
+  //   coll.update(
+  //     BSONDocument("key" -> key),
+  //     BSONDocument("type" -> "counter", "$inc" -> BSONDocument("value" -> 1)),
+  //     upsert = true
+  //   ).flatMap { _ =>
+  //     coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[Long]("value")).getOrElse(0L))
+  //   }
+  // }
 
   override def incrby(key: String, increment: Long): Future[Long] = withValuesCollection { coll =>
-    coll.findAndUpdate(
+    coll.update(
       BSONDocument("key" -> key),
-      BSONDocument("type" -> "counter", "$inc" -> BSONDocument("value" -> increment)),
+      BSONDocument("$inc" -> BSONDocument("value" -> increment)),
       upsert = true
-    ).map { r =>
-      r.value.flatMap(_.getAs[Long]("value")).getOrElse(0L)
+    ).flatMap { _ =>
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[Long]("value")).getOrElse(0L))
     }
   }
 
