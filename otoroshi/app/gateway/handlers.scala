@@ -688,7 +688,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                         env.gatewayClient
                           .url(url)
                           //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
-                          .withRequestTimeout(1.hour) // we should monitor leaks
+                          .withRequestTimeout(6.hour) // we should monitor leaks
                           .withMethod(req.method)
                           // .withQueryString(queryString: _*)
                           .withHttpHeaders(headersIn: _*)
