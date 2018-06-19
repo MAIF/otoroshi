@@ -48,6 +48,7 @@ export class Table extends Component {
     rowNavigation: false,
     stayAfterSave: false,
     pageSize: 15,
+    mobileSize: 767
   };
 
   state = {
@@ -59,6 +60,7 @@ export class Table extends Component {
   };
 
   componentDidMount() {
+    this.registerSizeChanges();
     this.update().then(() => {
       if (this.props.search) {
         console.log('Todo: default search');
@@ -70,7 +72,15 @@ export class Table extends Component {
     this.readRoute();
   }
 
+  registerSizeChanges = () => {
+    this.sizeListener = _.debounce((e) => {
+      this.forceUpdate();
+    }, 400);
+    window.addEventListener('resize', this.sizeListener);
+  };
+
   componentWillUnmount() {
+    window.removeEventListener('resize', this.sizeListener);
     this.unmountShortcuts();
   }
 
@@ -222,7 +232,14 @@ export class Table extends Component {
     if (this.state.hasError) {
       return <h3>Something went wrong !!!</h3>;
     }
-    const columns = this.props.columns.map(c => {
+    const windowWidth = window.innerWidth;
+    const columns = this.props.columns.filter(c => {
+      if (windowWidth > this.props.mobileSize) {
+        return true;
+      } else {
+        return !c.noMobile;
+      }
+    }).map(c => {
       return {
         Header: c.title,
         id: c.title,
