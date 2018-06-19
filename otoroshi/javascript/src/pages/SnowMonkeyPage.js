@@ -163,25 +163,28 @@ export class SnowMonkeyPage extends Component {
     return (
       <div>
         <div className="row">
-          <div className="col-md-8">
-            <button
-              type="button"
-              className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
-              onClick={this.toggle}>
-              <i className={`glyphicon glyphicon-${this.state.started ? 'stop' : 'play'}`} />
-              {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
-            </button>
-            <button
-              type="button"
-              className={`btn btn-success`}
-              {...moreProps}
-              onClick={this.saveChanges}>
-              <i className={`glyphicon glyphicon-hdd`} /> Save
-            </button>
+          <div class="form-group btnsService">
+            <div class="col-xs-12 col-sm-10 displayGroupBtn" >
+              <button
+                type="button"
+                className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
+                onClick={this.toggle}>
+                <i className={`glyphicon glyphicon-${this.state.started ? 'stop' : 'play'}`} />
+                {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-success`}
+                {...moreProps}
+                onClick={this.saveChanges}>
+                <i className={`glyphicon glyphicon-hdd`} /> Save
+              </button>
+            </div>
           </div>
-          <div className="col-md-4">
+          <div className="col-md-12" style={{ marginTop: 50 }}>
             <img className="pull-right" src="/assets/images/snowmonkey-2.png" width={200} />
           </div>
+
         </div>
         <div className="row" style={{ marginTop: 20 }}>
           <SnowMonkeyConfig
