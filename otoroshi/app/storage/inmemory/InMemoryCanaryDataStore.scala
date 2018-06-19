@@ -28,6 +28,14 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
 
   override def isCanary(serviceId: String, trackingId: String, traffic: Double)(implicit ec: ExecutionContext,
                                                                                 env: Env): Future[Boolean] = {
+
+    // val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+    // if (hash % 100 < (traffic * 100)) {
+    //   FastFuture.successful(true)
+    // } else {
+    //   FastFuture.successful(false)
+    // }
+
     for {
       _              <- FastFuture.successful(())
       fcanarycount   = redisCli.get(canaryCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))

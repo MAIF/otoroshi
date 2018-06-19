@@ -102,4 +102,4 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
-// class DevOtoroshiTests extends Suites(new SnowMonkeySpec("DEV", Configurations.InMemoryConfiguration))
+// class DevOtoroshiTests extends Suites(new CanarySpec("DEV", Configurations.InMemoryConfiguration))

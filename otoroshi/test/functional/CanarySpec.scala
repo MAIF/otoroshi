@@ -89,14 +89,14 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
         (r.status, r.body, r.header("Otoroshi-Canary-Id").getOrElse("--"))
       }
 
-      (0 to 24).foreach { _ =>
+      (0 until 100).foreach { _ =>
         val (status, _, id) = callServer()
         status mustBe 200
         id == "--" mustBe false
       }
 
-      callCounter2.get() mustBe 5
-      callCounter1.get() mustBe 20
+      callCounter2.get() mustBe 20
+      callCounter1.get() mustBe 80
 
       deleteOtoroshiService(service).futureValue
 
@@ -174,14 +174,21 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
 
       val (_, _, firstId) = firstCallServer()
 
-      (0 to 24).foreach { _ =>
+      (0 until 100).foreach { _ =>
         val (status, _, id) = callServer(firstId)
         status mustBe 200
         id == "--" mustBe false
       }
 
-      callCounter2.get() mustBe 26
-      callCounter1.get() mustBe 0
+      println(callCounter1.get() + " - " + callCounter2.get())
+
+      if (callCounter1.get() > 0) {
+        callCounter1.get() mustBe 101
+        callCounter2.get() mustBe 0
+      } else {
+        callCounter2.get() mustBe 101
+        callCounter1.get() mustBe 0
+      }
 
       deleteOtoroshiService(service).futureValue
 
