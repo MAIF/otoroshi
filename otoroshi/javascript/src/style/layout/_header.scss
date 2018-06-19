@@ -119,6 +119,11 @@
     position: absolute;
     right: 15px;
     z-index: 1;
+    @media screen and (max-width: 767px) {
+      .userManagement a {
+          text-align: right;
+      }
+    }
   }
 
   .navbar-form {
