@@ -381,6 +381,7 @@ class WebSocketHandler()(implicit env: Env) {
                               duration = duration,
                               overhead = overhead,
                               url = url,
+                              method = req.method,
                               from = from,
                               env = descriptor.env,
                               data = DataInOut(

@@ -61,6 +61,7 @@ object Errors {
         duration = 0,
         overhead = 0,
         url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.relativeUri}",
+        method = req.method,
         from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),
         env = descriptor.env,
         data = DataInOut(

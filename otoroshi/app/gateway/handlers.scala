@@ -643,6 +643,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   duration = duration,
                                   overhead = overhead,
                                   url = url,
+                                  method = req.method,
                                   from = from,
                                   env = descriptor.env,
                                   data = DataInOut(
