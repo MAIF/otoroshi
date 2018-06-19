@@ -23,6 +23,7 @@ import storage.DataStores
 import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores
 import storage.leveldb.LevelDbDataStores
+import storage.mongo.MongoDataStores
 import storage.redis.RedisDataStores
 
 import scala.concurrent.duration._
@@ -197,6 +198,7 @@ class Env(val configuration: Configuration,
       case "inmemory"  => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "cassandra" => new CassandraDataStores(configuration, environment, lifecycle, this)
+      case "mongo"     => new MongoDataStores(configuration, environment, lifecycle, this)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }

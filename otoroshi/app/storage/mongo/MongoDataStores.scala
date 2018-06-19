@@ -53,6 +53,9 @@ class MongoDataStores(configuration: Configuration,
   }
 
   override def after(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle) = {
+
+    import actorSystem.dispatcher
+
     Await.ready(connection.askClose()(10.seconds).map { _ =>
       logger.info("Mongo connections are stopped")
     }.andThen {

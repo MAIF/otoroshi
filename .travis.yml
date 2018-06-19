@@ -29,6 +29,7 @@ before_install:
   - rustup default stable 
   - docker run -d -p 9042:9042 -p 7000:7000 --env CASSANDRA_LISTEN_ADDRESS=127.0.0.1 cassandra:3.11
   - docker run -d -p 6379:6379 redis:4.0.8 redis-server --appendonly yes
+  - docker run -p 27017:27017 mongo:3.7.2
 
 script:
   - sh ./scripts/build.sh all
