@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import org.joda.time.DateTime
 import play.api.Logger
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -25,18 +26,21 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   private def initIndexes(): Future[Unit] = {
     database.flatMap(_.collectionNames).flatMap { names =>
       if (!names.contains("values")) {
-        database.map(_.collection[BSONCollection]("values")).flatMap { coll =>
-          coll.create(autoIndexId = false).flatMap { _ =>
-            coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true)).map(_ => ())
-          }
-        }
+        for {
+          coll <- database.map(_.collection[BSONCollection]("values"))
+          _ <- coll.create(autoIndexId = false)
+          _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true))
+          _ <- coll.indexesManager.ensure(Index(Seq("ttl" -> IndexType.Ascending), options = BSONDocument(
+            "expireAfterSeconds" -> 0
+          )))
+        } yield ()
       } else {
         FastFuture.successful(())
       }
     }
   }
 
-  // Await.result(initIndexes(), 5.second)
+  Await.result(initIndexes(), 5.second)
 
   def database: Future[DefaultDB] = {
     connection.database(dbName)
@@ -77,7 +81,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
       "type" -> "string",
       "key" -> key,
       "value" -> value.utf8String,
-      "ttl" -> exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(BSONLong.apply).getOrElse(BSONNull)
+      "ttl" -> exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(BSONDateTime.apply).getOrElse(BSONNull)
     )
     coll.update(
       BSONDocument("key" -> key),
@@ -105,17 +109,8 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def incr(key: String): Future[Long] = incrby(key, 1)
-  // withValuesCollection { coll =>
-  //   coll.update(
-  //     BSONDocument("key" -> key),
-  //     BSONDocument("type" -> "counter", "$inc" -> BSONDocument("value" -> 1)),
-  //     upsert = true
-  //   ).flatMap { _ =>
-  //     coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[Long]("value")).getOrElse(0L))
-  //   }
-  // }
 
-  override def incrby(key: String, increment: Long): Future[Long] = withValuesCollection { coll =>
+  override def incrby(key: String, increment: Long): Future[Long] = withValuesCollection { coll => // OUTCH
     coll.update(
       BSONDocument("key" -> key),
       BSONDocument("$inc" -> BSONDocument("value" -> increment)),
@@ -222,22 +217,14 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
 
   override def ttl(key: String): Future[Long] = pttl(key).map(t => scala.concurrent.duration.Duration(t, TimeUnit.MILLISECONDS).toSeconds)
 
-  override def expire(key: String, seconds: Int): Future[Boolean] = {
-    val ttl = System.currentTimeMillis() + (seconds * 1000)
-    withValuesCollection { coll =>
-      coll.update(
-        BSONDocument("key" -> key),
-        BSONDocument("ttl" -> ttl)
-      ).map(_.ok)
-    }
-  }
+  override def expire(key: String, seconds: Int): Future[Boolean] = pexpire(key, seconds * 1000)
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
     val ttl = System.currentTimeMillis() + milliseconds
     withValuesCollection { coll =>
       coll.update(
         BSONDocument("key" -> key),
-        BSONDocument("ttl" -> ttl)
+        BSONDocument("ttl" -> BSONDateTime(ttl))
       ).map(_.ok)
     }
   }
