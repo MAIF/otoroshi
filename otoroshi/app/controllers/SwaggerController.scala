@@ -47,6 +47,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   def SimpleBooleanType  = Json.obj("type" -> "boolean", "example" -> true)
   def SimpleDateType     = Json.obj("type" -> "string", "format"   -> "date", "example" -> "2017-07-21")
   def SimpleDateTimeType = Json.obj("type" -> "string", "format"   -> "date-time", "example" -> "2017-07-21T17:32:28Z")
+  def SimpleTimeType     = Json.obj("type" -> "string", "format"   -> "time", "example" -> "17:32:28.000")
   def SimpleLongType     = Json.obj("type" -> "integer", "format"  -> "int64", "example" -> 123)
   def SimpleIntType      = Json.obj("type" -> "integer", "format"  -> "int32", "example" -> 123123)
   def SimpleHostType     = Json.obj("type" -> "string", "format"   -> "hostname", "example" -> "www.google.com")
@@ -177,6 +178,113 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   // Models definition
 
+  def LargeRequestFaultConfig = Json.obj(
+    "description" -> "Config for large request injection fault",
+    "type"        -> "object",
+    "required"    -> Json.arr("ratio", "additionalRequestSize"),
+    "properties" -> Json.obj(
+      "ratio"                 -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+      "additionalRequestSize" -> SimpleIntType ~~> "The size added to the request body in bytes. Added payload will be spaces only."
+    )
+  )
+
+  def BadResponse = Json.obj(
+    "description" -> "An HTTP response that is not supposed to be returned by a service",
+    "type"        -> "object",
+    "required"    -> Json.arr("status", "body", "headers"),
+    "properties" -> Json.obj(
+      "status"  -> SimpleIntType ~~> "The HTTP status for the response",
+      "body"    -> SimpleStringType ~~> "The body of the HTTP response",
+      "headers" -> SimpleObjectType ~~> "The HTTP headers of the response"
+    )
+  )
+  def LargeResponseFaultConfig = Json.obj(
+    "description" -> "Config for large response injection fault",
+    "type"        -> "object",
+    "required"    -> Json.arr("ratio", "additionalResponseSize"),
+    "properties" -> Json.obj(
+      "ratio"                 -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+      "additionalRequestSize" -> SimpleIntType ~~> "The size added to the response body in bytes. Added payload will be spaces only."
+    )
+  )
+  def LatencyInjectionFaultConfig = Json.obj(
+    "description" -> "Config for large latency injection fault",
+    "type"        -> "object",
+    "required"    -> Json.arr("ratio", "from", "to"),
+    "properties" -> Json.obj(
+      "ratio" -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+      "from"  -> SimpleIntType ~~> "The start range of latency added to the request",
+      "to"    -> SimpleIntType ~~> "The end range of latency added to the request"
+    )
+  )
+  def BadResponsesFaultConfig = Json.obj(
+    "description" -> "Config for bad requests injection fault",
+    "type"        -> "object",
+    "required"    -> Json.arr("ratio", "responses"),
+    "properties" -> Json.obj(
+      "ratio"     -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+      "responses" -> ArrayOf(Ref("BadResponse")) ~~> "The possibles responses"
+    )
+  )
+  def ChaosConfig = Json.obj(
+    "description" -> "Configuration for the faults that can be injected in requests",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "enabled"
+    ),
+    "properties" -> Json.obj(
+      "enabled"                     -> SimpleBooleanType ~~> "Whether or not this config is enabled",
+      "largeRequestFaultConfig"     -> Ref("LargeRequestFaultConfig"),
+      "largeResponseFaultConfig"    -> Ref("LargeResponseFaultConfig"),
+      "latencyInjectionFaultConfig" -> Ref("LatencyInjectionFaultConfig"),
+      "badResponsesFaultConfig"     -> Ref("BadResponsesFaultConfig")
+    )
+  )
+  def OutageStrategy = Json.obj(
+    "type" -> "string",
+    "enum" -> Json.arr("OneServicePerGroup", "AllServicesPerGroup")
+  )
+  def SnowMonkeyConfig = Json.obj(
+    "description" -> """Configuration for the faults that can be injected in requests. The name Snow Monkey is an hommage to Netflix's Chaos Monkey 😉""",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "enabled",
+      "outageStrategy",
+      "includeUserFacingDescriptors",
+      "dryRun",
+      "timesPerDay",
+      "startTime",
+      "stopTime",
+      "outageDurationFrom",
+      "outageDurationTo",
+      "targetGroups",
+      "chaosConfig"
+    ),
+    "properties" -> Json.obj(
+      "enabled"                      -> SimpleBooleanType ~~> "Whether or not this config is enabled",
+      "outageStrategy"               -> Ref("OutageStrategy") ~~> "",
+      "includeUserFacingDescriptors" -> SimpleBooleanType ~~> "Whether or not user facing apps. will be impacted by Snow Monkey",
+      "dryRun"                       -> SimpleBooleanType ~~> "Whether or not outages will actualy impact requests",
+      "timesPerDay"                  -> SimpleIntType ~~> "Number of time per day each service will be outage",
+      "startTime"                    -> SimpleTimeType ~~> "Start time of Snow Monkey each day",
+      "stopTime"                     -> SimpleTimeType ~~> "Stop time of Snow Monkey each day",
+      "outageDurationFrom"           -> SimpleIntType ~~> "Start of outage duration range",
+      "outageDurationTo"             -> SimpleIntType ~~> "End of outage duration range",
+      "targetGroups"                 -> ArrayOf(SimpleStringType) ~~> "Groups impacted by Snow Monkey. If empty, all groups will be impacted",
+      "chaosConfig"                  -> Ref("ChaosConfig")
+    )
+  )
+  def Outage = Json.obj(
+    "description" -> "An outage by the Snow Monkey on a service",
+    "type"        -> "object",
+    "required"    -> Json.arr("descriptorId", "descriptorName", "until", "duration"),
+    "properties" -> Json.obj(
+      "descriptorId"   -> SimpleStringType ~~> "The service impacted by outage",
+      "descriptorName" -> SimpleStringType ~~> "The name of service impacted by outage",
+      "until"          -> SimpleTimeType ~~> "The end of the outage",
+      "duration"       -> SimpleIntType ~~> "The duration of the outage"
+    )
+  )
   def Target = Json.obj(
     "description" -> "A Target is where an HTTP call will be forwarded in the end from a service domain",
     "type"        -> "object",
@@ -296,6 +404,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "localScheme"                -> SimpleStringType ~~> "The scheme used localy, mainly http",
       "redirectToLocal"            -> SimpleBooleanType ~~> "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests",
       "enabled"                    -> SimpleBooleanType ~~> "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist",
+      "userFacing"                 -> SimpleBooleanType ~~> "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey",
       "privateApp"                 -> SimpleBooleanType ~~> "When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain",
       "forceHttps"                 -> SimpleBooleanType ~~> "Will force redirection to https:// if not present",
       "maintenanceMode"            -> SimpleBooleanType ~~> "Display a maintainance page when a user try to use the service",
@@ -311,6 +420,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "clientConfig"               -> Ref("ClientConfig"),
       "Canary"                     -> Ref("Canary"),
       "statsdConfig"               -> Ref("StatsdConfig"),
+      "chaosConfig"                -> Ref("ChaosConfig"),
       "metadata"                   -> SimpleObjectType ~~> "Just a bunch of random properties",
       "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
       "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication"
@@ -966,7 +1076,69 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       goodResponse = GoodResponse(Ref("Group"))
     )
   )
-
+  def SnowMonkeyConfigApi = Json.obj(
+    "get" -> Operation(
+      tag = "snowmonkey",
+      summary = "Get current Snow Monkey config",
+      description = "Get current Snow Monkey config",
+      operationId = "getSnowMonkeyConfig",
+      goodResponse = GoodResponse(Ref("SnowMonkeyConfig"))
+    ),
+    "put" -> Operation(
+      tag = "snowmonkey",
+      summary = "Update current Snow Monkey config",
+      description = "Update current Snow Monkey config",
+      operationId = "updateSnowMonkey",
+      parameters = Json.arr(
+        BodyParam("The service group to create", Ref("Group"))
+      ),
+      goodResponse = GoodResponse(Ref("SnowMonkeyConfig"))
+    ),
+    "patch" -> Operation(
+      tag = "snowmonkey",
+      summary = "Update current Snow Monkey config",
+      description = "Update current Snow Monkey config",
+      operationId = "patchSnowMonkey",
+      parameters = Json.arr(
+        BodyParam("The service group to create", Ref("Group"))
+      ),
+      goodResponse = GoodResponse(Ref("SnowMonkeyConfig"))
+    )
+  )
+  def SnowMonkeyOutageApi = Json.obj(
+    "get" -> Operation(
+      tag = "snowmonkey",
+      summary = "Get all current Snow Monkey ourages",
+      description = "Get all current Snow Monkey ourages",
+      operationId = "getSnowMonkeyOutages",
+      goodResponse = GoodResponse(ArrayOf(Ref("Outage")))
+    ),
+    "delete" -> Operation(
+      tag = "snowmonkey",
+      summary = "Reset Snow Monkey Outages for the day",
+      description = "Reset Snow Monkey Outages for the day",
+      operationId = "resetSnowMonkey",
+      goodResponse = GoodResponse(Ref("Done"))
+    )
+  )
+  def SnowMonkeyStartApi = Json.obj(
+    "post" -> Operation(
+      tag = "snowmonkey",
+      summary = "Start the Snow Monkey",
+      description = "Start the Snow Monkey",
+      operationId = "startSnowMonkey",
+      goodResponse = GoodResponse(Ref("Done"))
+    )
+  )
+  def SnowMonkeyStopApi = Json.obj(
+    "post" -> Operation(
+      tag = "snowmonkey",
+      summary = "Stop the Snow Monkey",
+      description = "Stop the Snow Monkey",
+      operationId = "stopSnowMonkey",
+      goodResponse = GoodResponse(Ref("Done"))
+    )
+  )
   def ServicesManagement = Json.obj(
     "get" -> Operation(
       tag = "services",
@@ -1238,7 +1410,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("groups", "Everything about Otoroshi service groups"),
         Tag("apikeys", "Everything about Otoroshi api keys"),
         Tag("services", "Everything about Otoroshi service descriptors"),
-        Tag("stats", "Everything about Otoroshi stats")
+        Tag("stats", "Everything about Otoroshi stats"),
+        Tag("snowmonkey", "Everything about Otoroshi Snow Monkey"),
+        Tag("health", "Everything about Otoroshi health status")
       ),
       "externalDocs" -> Json.obj(
         "description" -> "Find out more about Otoroshi",
@@ -1268,6 +1442,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "/api/groups/{serviceGroupId}/services"               -> ServicesForGroup,
         "/api/groups/{serviceGroupId}"                        -> GroupManagement,
         "/api/groups"                                         -> GroupsManagement,
+        "/api/snowmonkey/config"                              -> SnowMonkeyConfigApi,
+        "/api/snowmonkey/outages"                             -> SnowMonkeyOutageApi,
+        "/api/snowmonkey/_start"                              -> SnowMonkeyStartApi,
+        "/api/snowmonkey/_stop"                               -> SnowMonkeyStopApi,
         "/api/live/{id}" -> Json.obj(
           "get" -> Operation(
             tag = "stats",
@@ -1316,25 +1494,35 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
           "example"     -> "prod",
           "description" -> "The name of the environment for service descriptors"
         ),
-        "ErrorTemplate"     -> ErrorTemplate,
-        "ExposedApi"        -> ExposedApi,
-        "GlobalConfig"      -> GlobalConfig,
-        "Group"             -> Group,
-        "HealthCheck"       -> HealthCheck,
-        "OtoroshiHealth"    -> OtoroshiHealth,
-        "ImportExport"      -> ImportExport,
-        "ImportExportStats" -> ImportExportStats,
-        "IpFiltering"       -> IpFiltering,
-        "MailgunSettings"   -> MailgunSettings,
-        "Patch"             -> Patch,
-        "Quotas"            -> Quotas,
-        "Service"           -> Service,
-        "SimpleAdmin"       -> SimpleAdmin,
-        "Stats"             -> Stats,
-        "StatsdConfig"      -> StatsdConfig,
-        "Target"            -> Target,
-        "U2FAdmin"          -> U2FAdmin,
-        "Webhook"           -> Webhook
+        "ErrorTemplate"               -> ErrorTemplate,
+        "ExposedApi"                  -> ExposedApi,
+        "GlobalConfig"                -> GlobalConfig,
+        "Group"                       -> Group,
+        "HealthCheck"                 -> HealthCheck,
+        "OtoroshiHealth"              -> OtoroshiHealth,
+        "ImportExport"                -> ImportExport,
+        "ImportExportStats"           -> ImportExportStats,
+        "IpFiltering"                 -> IpFiltering,
+        "MailgunSettings"             -> MailgunSettings,
+        "Patch"                       -> Patch,
+        "Quotas"                      -> Quotas,
+        "Service"                     -> Service,
+        "SimpleAdmin"                 -> SimpleAdmin,
+        "Stats"                       -> Stats,
+        "StatsdConfig"                -> StatsdConfig,
+        "Target"                      -> Target,
+        "U2FAdmin"                    -> U2FAdmin,
+        "Webhook"                     -> Webhook,
+        "BadResponse"                 -> BadResponse,
+        "LargeRequestFaultConfig"     -> LargeRequestFaultConfig,
+        "LargeResponseFaultConfig"    -> LargeResponseFaultConfig,
+        "LatencyInjectionFaultConfig" -> LatencyInjectionFaultConfig,
+        "BadResponsesFaultConfig"     -> BadResponsesFaultConfig,
+        "ChaosConfig"                 -> ChaosConfig,
+        "OutageStrategy"              -> OutageStrategy,
+        "SnowMonkeyConfig"            -> SnowMonkeyConfig,
+        "OutageStrategy"              -> OutageStrategy,
+        "Outage"                      -> Outage
       )
     )
   }

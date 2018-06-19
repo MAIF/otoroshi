@@ -24,6 +24,7 @@ import { AlertPage } from '../pages/AlertPage';
 import { ServicesMapPage } from '../pages/ServicesMapPage';
 import { PrivateAppsSessionsPage } from '../pages/PrivateAppsSessionsPage';
 import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
+import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -115,6 +116,18 @@ class BackOfficeAppContainer extends Component {
             return [
               <UpdateOtoroshiVersion env={env} />,
               <TopBar {...this.props} changePassword={env.changePassword} />,
+              <span
+                onClick={e => (window.location = '/bo/dashboard/snowmonkey')}
+                style={{
+                  position: 'fixed',
+                  bottom: 10,
+                  right: 10,
+                  fontSize: 30,
+                  cursor: 'pointer',
+                }}
+                className="snowMonkeyRunning">
+                {env.snowMonkeyRunning ? '🐒' : null}
+              </span>,
             ];
           }}
         </WithEnv>
@@ -246,6 +259,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/stats"
                           component={props => this.decorate(GlobalAnalyticsPage, props)}
+                        />
+                        <Route
+                          path="/snowmonkey"
+                          component={props => this.decorate(SnowMonkeyPage, props)}
                         />
                         <Route
                           path="/admins"

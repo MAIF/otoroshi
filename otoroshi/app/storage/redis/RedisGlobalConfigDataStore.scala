@@ -137,7 +137,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
     val ref = configCache.get()
     if (ref == null) {
-      Await.result(singleton(), 1.second) // WARN: await here should never be executed
+      Await.result(singleton(), 1.second) // WARN: await here should never be executed or only once per otoroshi instance
     } else {
       ref
     }
@@ -169,6 +169,13 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       } else {
         FastFuture.successful(ref)
       }
+    }
+  }
+
+  override def set(value: GlobalConfig, pxMilliseconds: Option[Duration] = None)(implicit ec: ExecutionContext,
+                                                                                 env: Env): Future[Boolean] = {
+    super.set(value, pxMilliseconds)(ec, env).andThen {
+      case Success(_) => configCache.set(value)
     }
   }
 

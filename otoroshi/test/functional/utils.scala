@@ -12,7 +12,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
-import models.{ApiKey, GlobalConfig, ServiceDescriptor, ServiceGroup}
+import models._
 import modules.OtoroshiComponentsInstances
 import org.scalatest.TestSuite
 import org.scalatest.concurrent.ScalaFutures
@@ -172,6 +172,77 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       // }
       response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
     }
+  }
+
+  def startSnowMonkey(customPort: Option[Int] = None): Future[Unit] = {
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/_start")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post("")
+      .map { response =>
+        ()
+      }
+  }
+
+  def stopSnowMonkey(customPort: Option[Int] = None): Future[Unit] = {
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/_start")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post("")
+      .map { response =>
+        ()
+      }
+  }
+
+  def updateSnowMonkey(f: SnowMonkeyConfig => SnowMonkeyConfig,
+                       customPort: Option[Int] = None): Future[SnowMonkeyConfig] = {
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .flatMap { response =>
+        val config    = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+        val newConfig = f(config)
+        suite.otoroshiComponents.wsClient
+          .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
+          .withHttpHeaders(
+            "Host"         -> "otoroshi-api.foo.bar",
+            "Accept"       -> "application/json",
+            "Content-Type" -> "application/json"
+          )
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .put(Json.stringify(newConfig.asJson))
+          .flatMap { response =>
+            val r = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+            awaitF(100.millis)(otoroshiComponents.actorSystem).map(_ => r)
+          }
+      }
+  }
+
+  def getSnowMonkeyOutages(customPort: Option[Int] = None): Future[Seq[Outage]] = {
+    suite.otoroshiComponents.wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/outages")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.foo.bar",
+        "Accept" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { response =>
+        response.json.as[JsArray].value.map(e => Outage.fmt.reads(e).get)
+      }
   }
 
   def getOtoroshiServiceGroups(customPort: Option[Int] = None): Future[Seq[ServiceGroup]] = {
@@ -358,6 +429,15 @@ class TargetService(host: Option[String], path: String, contentType: String, res
           )
         )
       }
+      case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get => {
+        FastFuture.successful(
+          HttpResponse(
+            200,
+            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
+                                ByteString(result(request)))
+          )
+        )
+      }
       case (_, p) => {
         FastFuture.successful(HttpResponses.NotFound(p.toString()))
       }
@@ -431,7 +511,6 @@ class AlertServer(counter: AtomicInteger) {
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
       val body = bodyByteString.utf8String
-      //println(Json.prettyPrint(Json.parse(body)))
       counter.incrementAndGet()
       HttpResponse(
         200,
@@ -469,6 +548,7 @@ class AnalyticsServer(counter: AtomicInteger) {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
       val body   = bodyByteString.utf8String
       val events = Json.parse(body).as[JsArray].value
+      // println(Json.parse(body).as[JsArray].value.filter(a => (a \ "@type").as[String] == "AlertEvent").map(a => (a \ "alert").as[String]))
       counter.addAndGet(events.size)
       HttpResponse(
         200,
@@ -552,4 +632,39 @@ object TargetService {
 
   def extractHost(request: HttpRequest): String =
     request.getHeader("Otoroshi-Proxied-Host").asOption.map(_.value()).getOrElse("--")
+}
+
+class BodySizeService() {
+
+  val port = TargetService.freePort
+
+  implicit val system = ActorSystem()
+  implicit val ec     = system.dispatcher
+  implicit val mat    = ActorMaterializer.create(system)
+  implicit val http   = Http(system)
+
+  val logger = LoggerFactory.getLogger("otoroshi-test")
+
+  def handler(request: HttpRequest): Future[HttpResponse] = {
+    request.entity.withoutSizeLimit().dataBytes.runFold(ByteString.empty)(_ ++ _) map { body =>
+      HttpResponse(
+        200,
+        entity = HttpEntity(ContentTypes.`application/json`,
+                            ByteString(Json.stringify(Json.obj("bodySize" -> body.size, "body" -> body.utf8String))))
+      )
+    }
+  }
+
+  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+
+  def await(): BodySizeService = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
 }

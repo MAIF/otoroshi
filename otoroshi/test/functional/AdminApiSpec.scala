@@ -1,7 +1,7 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceDescriptor, ServiceGroup, Target}
+import models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -70,7 +70,27 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         Target(host = "127.0.0.1:9999", scheme = "http")
       ),
       enabled = true,
-      metadata = Map.empty
+      metadata = Map.empty,
+      chaosConfig = ChaosConfig._fmt.reads(Json.parse("""{
+          |  "enabled" : false,
+          |  "largeRequestFaultConfig" : {
+          |    "ratio" : 0.2,
+          |    "additionalRequestSize" : 0
+          |  },
+          |  "largeResponseFaultConfig" : {
+          |    "ratio" : 0.2,
+          |    "additionalResponseSize" : 0
+          |  },
+          |  "latencyInjectionFaultConfig" : {
+          |    "ratio" : 0.2,
+          |    "from" : 0,
+          |    "to" : 0
+          |  },
+          |  "badResponsesFaultConfig" : {
+          |    "ratio" : 0.2,
+          |    "responses" : [ ]
+          |  }
+          |}""".stripMargin)).get
     )
 
     "warm up" in {

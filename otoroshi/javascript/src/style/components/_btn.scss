@@ -94,6 +94,7 @@
 .switch-button {
   background-color: #fff;
   border-radius: 20px;
+  cursor: pointer;
   &-on {
     @extend .switch-button;
     width: 20px;

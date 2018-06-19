@@ -40,6 +40,7 @@ trait DataStores {
   def errorTemplateDataStore: ErrorTemplateDataStore
   def requestsDataStore: RequestsDataStore
   def canaryDataStore: CanaryDataStore
+  def chaosDataStore: ChaosDataStore
 }
 
 trait BasicStore[T] {

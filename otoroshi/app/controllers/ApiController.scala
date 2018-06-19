@@ -40,32 +40,32 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def health() = UnAuthApiAction.async { ctx =>
-    
-    def fetchHealth() = for {
-      _health  <- env.datastores.health()
-      overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
-    } yield {
-      Ok(
-        Json.obj(
-          "otoroshi" -> JsString(_health match {
-            case Healthy if overhead <= env.healthLimit => "healthy"
-            case Healthy if overhead > env.healthLimit  => "unhealthy"
-            case Unhealthy                              => "unhealthy"
-            case Unreachable                            => "down"
-          }),
-          "datastore" -> JsString(_health match {
-            case Healthy     => "healthy"
-            case Unhealthy   => "unhealthy"
-            case Unreachable => "unreachable"
-          })
+    def fetchHealth() =
+      for {
+        _health  <- env.datastores.health()
+        overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
+      } yield {
+        Ok(
+          Json.obj(
+            "otoroshi" -> JsString(_health match {
+              case Healthy if overhead <= env.healthLimit => "healthy"
+              case Healthy if overhead > env.healthLimit  => "unhealthy"
+              case Unhealthy                              => "unhealthy"
+              case Unreachable                            => "down"
+            }),
+            "datastore" -> JsString(_health match {
+              case Healthy     => "healthy"
+              case Unhealthy   => "unhealthy"
+              case Unreachable => "unreachable"
+            })
+          )
         )
-      )
-    }
+      }
 
     (ctx.req.getQueryString("access_key"), env.healthAccessKey) match {
-      case (_, None) => fetchHealth()
+      case (_, None)                                  => fetchHealth()
       case (Some(header), Some(key)) if header == key => fetchHealth()
-      case _ => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
+      case _                                          => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
     }
   }
 
@@ -2666,6 +2666,145 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         .map(_ => Ok(Json.obj("done" -> true)))
     } recover {
       case e => InternalServerError(Json.obj("error" -> e.getMessage))
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  def startSnowMonkey() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.startSnowMonkey().map { _ =>
+      val event = AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "STARTED_SNOWMONKEY",
+        s"User started snowmonkey",
+        ctx.from,
+        Json.obj()
+      )
+      Audit.send(event)
+      Alerts.send(
+        SnowMonkeyStartedAlert(env.snowflakeGenerator.nextIdStr(),
+                               env.env,
+                               ctx.user.getOrElse(ctx.apiKey.toJson),
+                               event)
+      )
+      Ok(Json.obj("done" -> true))
+    }
+  }
+
+  def stopSnowMonkey() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.stopSnowMonkey().map { _ =>
+      val event = AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "STOPPED_SNOWMONKEY",
+        s"User stopped snowmonkey",
+        ctx.from,
+        Json.obj()
+      )
+      Audit.send(event)
+      Alerts.send(
+        SnowMonkeyStoppedAlert(env.snowflakeGenerator.nextIdStr(),
+                               env.env,
+                               ctx.user.getOrElse(ctx.apiKey.toJson),
+                               event)
+      )
+      Ok(Json.obj("done" -> true))
+    }
+  }
+
+  def getSnowMonkeyOutages() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.getOutages().map { outages =>
+      Ok(JsArray(outages.map(_.asJson)))
+    }
+  }
+
+  def getSnowMonkeyConfig() = ApiAction.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton().map { c =>
+      Ok(c.snowMonkeyConfig.asJson)
+    }
+  }
+
+  def updateSnowMonkey() = ApiAction.async(parse.json) { ctx =>
+    SnowMonkeyConfig.fromJsonSafe(ctx.request.body) match {
+      case JsError(e) => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).asFuture
+      case JsSuccess(config, _) => {
+        config.save().map { _ =>
+          val event = AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "UPDATED_SNOWMONKEY_CONFIG",
+            s"User updated snowmonkey config",
+            ctx.from,
+            config.asJson
+          )
+          Audit.send(event)
+          Alerts.send(
+            SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
+                                         env.env,
+                                         ctx.user.getOrElse(ctx.apiKey.toJson),
+                                         event)
+          )
+          Ok(config.asJson)
+        }
+      }
+    }
+  }
+
+  def patchSnowMonkey() = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val currentSnowMonkeyConfigJson = globalConfig.snowMonkeyConfig.asJson
+      val patch                       = JsonPatch(ctx.request.body)
+      val newSnowMonkeyConfigJson     = patch(currentSnowMonkeyConfigJson)
+      SnowMonkeyConfig.fromJsonSafe(newSnowMonkeyConfigJson) match {
+        case JsError(e) => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).asFuture
+        case JsSuccess(newSnowMonkeyConfig, _) => {
+          val event: AdminApiEvent = AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "PATCH_SNOWMONKEY_CONFIG",
+            s"User patched snowmonkey config",
+            ctx.from,
+            newSnowMonkeyConfigJson
+          )
+          Audit.send(event)
+          Alerts.send(
+            SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
+                                         env.env,
+                                         ctx.user.getOrElse(ctx.apiKey.toJson),
+                                         event)
+          )
+          newSnowMonkeyConfig.save().map(_ => Ok(newSnowMonkeyConfig.asJson))
+        }
+      }
+    }
+  }
+
+  def resetSnowMonkey() = ApiAction.async { ctx =>
+    env.datastores.chaosDataStore.resetOutages().map { _ =>
+      val event: AdminApiEvent = AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "RESET_SNOWMONKEY_OUTAGES",
+        s"User reset snowmonkey outages for the day",
+        ctx.from,
+        Json.obj()
+      )
+      Audit.send(event)
+      Alerts.send(
+        SnowMonkeyResetAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
+      )
+      Ok(Json.obj("done" -> true))
     }
   }
 

@@ -63,7 +63,8 @@ case class GlobalConfig(
     maxWebhookSize: Int = 100,
     middleFingers: Boolean = false,
     maxLogsSize: Int = 10000,
-    otoroshiId: String = IdGenerator.uuid
+    otoroshiId: String = IdGenerator.uuid,
+    snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig()
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -182,7 +183,8 @@ object GlobalConfig {
         "maxWebhookSize"          -> o.maxWebhookSize,
         "middleFingers"           -> o.middleFingers,
         "maxLogsSize"             -> o.maxLogsSize,
-        "otoroshiId"              -> o.otoroshiId
+        "otoroshiId"              -> o.otoroshiId,
+        "snowMonkeyConfig"        -> o.snowMonkeyConfig.asJson
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -293,7 +295,8 @@ object GlobalConfig {
                 Some(CleverCloudSettings(consumerKey, consumerSecret, token, secret, orgaId))
               case _ => None
             }
-          }
+          },
+          snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig())
         )
       } map {
         case sd => JsSuccess(sd)

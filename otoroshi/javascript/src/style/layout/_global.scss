@@ -132,3 +132,34 @@ h4 {
     margin-top: 60px;
     margin-bottom: 0;
 }
+
+.snowMonkeyRunning {
+  animation-name: snowMonkeyRunning;
+  animation-duration: 5.82s;
+  animation-timing-function: cubic-bezier(.36,.07,.19,.97);
+  animation-iteration-count: infinite;
+  z-index: 10000;
+}
+
+@keyframes snowMonkeyRunning {
+  1%, 9% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  2%, 8% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  3%, 5%, 7% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  4%, 6% {
+    transform: translate3d(4px, 0, 0);
+  }
+  10% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+

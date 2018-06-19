@@ -6,7 +6,7 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.{Concat, Merge, Sink, Source}
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -85,7 +85,8 @@ class AnalyticsQueue(env: Env) extends Actor {
   }
 }
 
-class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
+class GatewayRequestHandler(snowMonkey: SnowMonkey,
+                            webSocketHandler: WebSocketHandler,
                             router: Router,
                             errorHandler: HttpErrorHandler,
                             configuration: HttpConfiguration,
@@ -286,6 +287,7 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
     // TODO : add metrics + JMX
     // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
     // val meterOut            = Metrics.metrics.meter("GatewayDataOut")
+    val reqNumber           = reqCounter.incrementAndGet()
     val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured           = req.headers.get("X-Forwarded-Protocol").map(_ == "https").orElse(Some(req.secure)).getOrElse(false)
     val from                = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
@@ -361,843 +363,864 @@ class GatewayRequestHandler(webSocketHandler: WebSocketHandler,
                   Errors
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
                 case Some(desc) => {
-
-                  val maybeTrackingId = req.cookies
-                    .get("otoroshi-canary")
-                    .map(_.value)
-                    .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
-                    .filter { value =>
-                      if (value.contains("::")) {
-                        value.split("::").toList match {
-                          case signed :: id :: Nil if env.sign(id) == signed => true
-                          case _                                             => false
+                  val firstOverhead = System.currentTimeMillis() - start
+                  snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) { snowMonkeyContext =>
+                    val secondStart = System.currentTimeMillis()
+                    val maybeTrackingId = req.cookies
+                      .get("otoroshi-canary")
+                      .map(_.value)
+                      .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
+                      .filter { value =>
+                        if (value.contains("::")) {
+                          value.split("::").toList match {
+                            case signed :: id :: Nil if env.sign(id) == signed => true
+                            case _                                             => false
+                          }
+                        } else {
+                          false
                         }
-                      } else {
-                        false
-                      }
-                    } map (value => value.split("::")(1))
-                  val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid)
+                      } map (value => value.split("::")(1))
+                    val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid)
 
-                  if (maybeTrackingId.isDefined) {
-                    logger.debug(s"request already has tracking id : $trackingId")
-                  } else {
-                    logger.debug(s"request has a new tracking id : $trackingId")
-                  }
+                    if (maybeTrackingId.isDefined) {
+                      logger.debug(s"request already has tracking id : $trackingId")
+                    } else {
+                      logger.debug(s"request has a new tracking id : $trackingId")
+                    }
 
-                  val withTrackingCookies =
-                    if (!desc.canary.enabled) Seq.empty[play.api.mvc.Cookie]
-                    else if (maybeTrackingId.isDefined) Seq.empty[play.api.mvc.Cookie]
-                    else
-                      Seq(
-                        play.api.mvc.Cookie(
-                          name = "otoroshi-canary",
-                          value = s"${env.sign(trackingId)}::$trackingId",
-                          maxAge = Some(2592000),
-                          path = "/",
-                          domain = Some(req.host),
-                          httpOnly = false
+                    val withTrackingCookies =
+                      if (!desc.canary.enabled) Seq.empty[play.api.mvc.Cookie]
+                      else if (maybeTrackingId.isDefined) Seq.empty[play.api.mvc.Cookie]
+                      else
+                        Seq(
+                          play.api.mvc.Cookie(
+                            name = "otoroshi-canary",
+                            value = s"${env.sign(trackingId)}::$trackingId",
+                            maxAge = Some(2592000),
+                            path = "/",
+                            domain = Some(req.host),
+                            httpOnly = false
+                          )
                         )
-                      )
 
-                  //desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).fast.map(d => (iu, d))).fast.flatMap {
-                  splitToCanary(desc, trackingId).fast.flatMap { _desc =>
-                    val isUp = true
+                    //desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).fast.map(d => (iu, d))).fast.flatMap {
+                    splitToCanary(desc, trackingId).fast.flatMap { _desc =>
+                      val isUp = true
 
-                    val descriptor = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
+                      val descriptor = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
 
-                    def callDownstream(config: GlobalConfig,
-                                       apiKey: Option[ApiKey] = None,
-                                       paUsr: Option[PrivateAppsUser] = None): Future[Result] =
-                      if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
-                        env.circuitBeakersHolder
-                          .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                          .call(descriptor,
-                                bodyAlreadyConsumed,
-                                s"${req.method} ${req.relativeUri}",
-                                (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
-                          case BodyAlreadyConsumedException =>
-                            Errors.craftResponseResult(
-                              s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
-                              BadGateway,
-                              req,
-                              Some(descriptor),
-                              Some("errors.request.timeout")
-                            )
-                          case RequestTimeoutException =>
-                            Errors.craftResponseResult(
-                              s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                              BadGateway,
-                              req,
-                              Some(descriptor),
-                              Some("errors.request.timeout")
-                            )
-                          case _: scala.concurrent.TimeoutException =>
-                            Errors.craftResponseResult(
-                              s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                              BadGateway,
-                              req,
-                              Some(descriptor),
-                              Some("errors.request.timeout")
-                            )
-                          case AllCircuitBreakersOpenException =>
-                            Errors.craftResponseResult(
-                              s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
-                              BadGateway,
-                              req,
-                              Some(descriptor),
-                              Some("errors.circuit.breaker.open")
-                            )
-                          case error
-                              if error != null && error.getMessage != null && error.getMessage
-                                .toLowerCase()
-                                .contains("connection refused") =>
-                            Errors.craftResponseResult(
-                              s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
-                              BadGateway,
-                              req,
-                              Some(descriptor),
-                              Some("errors.connection.refused")
-                            )
-                          case error if error != null && error.getMessage != null =>
-                            logger.error(s"Something went wrong, you should try later", error)
-                            Errors.craftResponseResult(
-                              s"Something went wrong, you should try later. Thanks for your understanding.",
-                              BadGateway,
-                              req,
-                              Some(descriptor),
-                              Some("errors.proxy.error")
-                            )
-                          case error =>
-                            Errors.craftResponseResult(
-                              s"Something went wrong, you should try later. Thanks for your understanding",
-                              BadGateway,
-                              req,
-                              Some(descriptor),
-                              Some("errors.proxy.error")
-                            )
-                        }
-                      } else {
-                        val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty)
-                                                                      descriptor.targets.size
-                                                                    else 1)
-                        // Round robin loadbalancing is happening here !!!!!
-                        val target = descriptor.targets.apply(index.toInt)
-                        actuallyCallDownstream(target, apiKey, paUsr)
-                      }
-
-                    def actuallyCallDownstream(target: Target,
-                                               apiKey: Option[ApiKey] = None,
-                                               paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                      val snowflake        = env.snowflakeGenerator.nextIdStr()
-                      val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-                      val state            = IdGenerator.extendedToken(128)
-                      val rawUri           = req.relativeUri.substring(1)
-                      val uriParts         = rawUri.split("/").toSeq
-                      val uri: String =
-                        descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
-                      val scheme                 = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                      val host                   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
-                      val root                   = descriptor.root
-                      val url                    = s"$scheme://$host$root$uri"
-                      lazy val currentReqHasBody = hasBody(req)
-                      // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
-                      val fromOtoroshi = req.headers
-                        .get(env.Headers.OtoroshiRequestId)
-                        .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
-                      val promise = Promise[ProxyDone]
-
-                      val claim = OtoroshiClaim(
-                        iss = env.Headers.OtoroshiIssuer,
-                        sub = paUsr
-                          .filter(_ => descriptor.privateApp)
-                          .map(k => s"pa:${k.email}")
-                          .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
-                          .getOrElse("--"),
-                        aud = descriptor.name,
-                        exp = DateTime.now().plusSeconds(30).toDate.getTime,
-                        iat = DateTime.now().toDate.getTime,
-                        jti = IdGenerator.uuid
-                      ).withClaim("email", paUsr.map(_.email))
-                        .withClaim("name", paUsr.map(_.name).orElse(apiKey.map(_.clientName)))
-                        .withClaim("picture", paUsr.flatMap(_.picture))
-                        .withClaim("user_id", paUsr.flatMap(_.userId).orElse(apiKey.map(_.clientId)))
-                        .withClaim("given_name", paUsr.flatMap(_.field("given_name")))
-                        .withClaim("family_name", paUsr.flatMap(_.field("family_name")))
-                        .withClaim("gender", paUsr.flatMap(_.field("gender")))
-                        .withClaim("locale", paUsr.flatMap(_.field("locale")))
-                        .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
-                        .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
-                        .serialize(env)
-                      logger.trace(s"Claim is : $claim")
-                      val headersIn: Seq[(String, String)] =
-                        (req.headers.toSimpleMap
-                          .filterNot(t => if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true else false)
-                          .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                          env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
-                          "Host"                               -> host,
-                          env.Headers.OtoroshiRequestId        -> snowflake,
-                          env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                        ) ++ (if (descriptor.enforceSecureCommunication) {
-                                Map(
-                                  env.Headers.OtoroshiState -> state,
-                                  env.Headers.OtoroshiClaim -> claim
-                                )
-                              } else {
-                                Map.empty[String, String]
-                              }) ++ descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
-                          .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
-                          .getOrElse(Map.empty[String, String])).toSeq
-
-                      val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
-                        bodyAlreadyConsumed.compareAndSet(false, true)
-                        req.body.map(bs => {
-                          // meterIn.mark(bs.length)
-                          counterIn.addAndGet(bs.length)
-                          bs
-                        })
-                      }
-                      val body = if (currentReqHasBody) SourceBody(lazySource) else EmptyBody // Stream IN
-                      // val requestHeader = ByteString(
-                      //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
-                      //     .map(h => s"${h._1}: ${h._2}")
-                      //     .mkString("\n") + "\n"
-                      // )
-                      // meterIn.mark(requestHeader.length)
-                      // counterIn.addAndGet(requestHeader.length)
-                      // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
-                      debugLogger.trace(
-                        s"curl -X ${req.method
-                          .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
-                      )
-                      val overhead = System.currentTimeMillis() - start
-                      val quotas: Future[RemainingQuotas] =
-                        apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))
-                      promise.future.andThen {
-                        case Success(resp) => {
-
-                          val actualDuration: Long = System.currentTimeMillis() - start
-                          val duration: Long =
-                            if (descriptor.id == env.backOfficeServiceId && actualDuration > 300L) 300L
-                            else actualDuration
-
-                          analyticsQueue ! AnalyticsQueueEvent(descriptor,
-                                                               duration,
-                                                               overhead,
-                                                               counterIn.get(),
-                                                               counterOut.get(),
-                                                               resp.upstreamLatency,
-                                                               globalConfig)
-
-                          quotas.andThen {
-                            case Success(q) => {
-                              val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
-                              val viz: OtoroshiViz = OtoroshiViz(
-                                to = descriptor.id,
-                                toLbl = descriptor.name,
-                                from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
-                                fromLbl = fromLbl,
-                                fromTo = s"$fromLbl###${descriptor.name}"
-                              )
-                              GatewayEvent(
-                                `@id` = env.snowflakeGenerator.nextIdStr(),
-                                reqId = snowflake,
-                                parentReqId = fromOtoroshi,
-                                `@timestamp` = DateTime.now(),
-                                protocol = req.version,
-                                to = Location(
-                                  scheme = req.headers
-                                    .get("X-Forwarded-Protocol")
-                                    .map(_ == "https")
-                                    .orElse(Some(req.secure))
-                                    .map {
-                                      case true  => "https"
-                                      case false => "http"
-                                    }
-                                    .getOrElse("http"),
-                                  host = req.host,
-                                  uri = req.relativeUri
-                                ),
-                                target = Location(
-                                  scheme = scheme,
-                                  host = host,
-                                  uri = req.relativeUri
-                                ),
-                                duration = duration,
-                                overhead = overhead,
-                                url = url,
-                                from = from,
-                                env = descriptor.env,
-                                data = DataInOut(
-                                  dataIn = counterIn.get(),
-                                  dataOut = counterOut.get()
-                                ),
-                                status = resp.status,
-                                headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
-                                identity = apiKey
-                                  .map(
-                                    k =>
-                                      Identity(
-                                        identityType = "APIKEY",
-                                        identity = k.clientId,
-                                        label = k.clientName
-                                    )
-                                  )
-                                  .orElse(
-                                    paUsr.map(
-                                      k =>
-                                        Identity(
-                                          identityType = "PRIVATEAPP",
-                                          identity = k.email,
-                                          label = k.name
-                                      )
-                                    )
-                                  ),
-                                `@serviceId` = descriptor.id,
-                                `@service` = descriptor.name,
-                                descriptor = descriptor,
-                                `@product` = descriptor.metadata.getOrElse("product", "--"),
-                                remainingQuotas = q,
-                                viz = Some(viz)
-                              ).toAnalytics()
-                            }
-                          }(env.otoroshiExecutionContext) // pressure EC
-                        }
-                      }(env.otoroshiExecutionContext) // pressure EC
-                      //.andThen {
-                      //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
-                      //}
-                      val upstreamStart = System.currentTimeMillis()
-                      env.gatewayClient
-                        .url(url)
-                        //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
-                        .withRequestTimeout(1.hour) // we should monitor leaks
-                        .withMethod(req.method)
-                        // .withQueryString(queryString: _*)
-                        .withHttpHeaders(headersIn: _*)
-                        .withBody(body)
-                        .withFollowRedirects(false)
-                        .stream()
-                        .fast
-                        .flatMap(resp => quotas.fast.map(q => (resp, q)))
-                        .flatMap { tuple =>
-                          val (resp, remainingQuotas) = tuple
-                          // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-                          val headers = resp.headers.mapValues(_.head)
-                          // logger.warn(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
-                          // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
-                          // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
-                          if (env.notDev && descriptor.enforceSecureCommunication
-                              && !descriptor.isUriExcludedFromSecuredCommunication(uri)
-                              && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
-                            if (resp.status == 404 && headers
-                                  .get("X-CleverCloudUpgrade")
-                                  .contains("true")) {
+                      def callDownstream(config: GlobalConfig,
+                                         apiKey: Option[ApiKey] = None,
+                                         paUsr: Option[PrivateAppsUser] = None): Future[Result] =
+                        if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
+                          env.circuitBeakersHolder
+                            .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
+                            .call(descriptor,
+                                  bodyAlreadyConsumed,
+                                  s"${req.method} ${req.relativeUri}",
+                                  (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                            case BodyAlreadyConsumedException =>
                               Errors.craftResponseResult(
-                                "No service found for the specified target host, the service descriptor should be verified !",
-                                NotFound,
-                                req,
-                                Some(descriptor),
-                                Some("errors.no.service.found")
-                              )
-                            } else if (isUp) {
-                              // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
-                              val exchange = Json.prettyPrint(
-                                Json.obj(
-                                  "uri"   -> req.relativeUri,
-                                  "url"   -> url,
-                                  "state" -> state,
-                                  "reveivedState" -> JsString(
-                                    headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
-                                  ),
-                                  "claim"  -> claim,
-                                  "method" -> req.method,
-                                  "query"  -> req.rawQueryString,
-                                  "status" -> resp.status,
-                                  "headersIn" -> JsArray(
-                                    req.headers.toSimpleMap
-                                      .map(t => Json.obj("name" -> t._1, "value" -> t._2))
-                                      .toSeq
-                                  ),
-                                  "headersOut" -> JsArray(
-                                    headers.map(t => Json.obj("name" -> t._1, "values" -> t._2)).toSeq
-                                  )
-                                )
-                              )
-                              logger.error(s"\n\nError while talking with downstream service :(\n\n$exchange\n\n")
-                              Errors.craftResponseResult(
-                                "Downstream microservice does not seems to be secured. Cancelling request !",
+                                s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
                                 BadGateway,
                                 req,
                                 Some(descriptor),
-                                Some("errors.service.not.secured")
+                                Some("errors.request.timeout")
                               )
-                            } else {
-                              Errors.craftResponseResult("The service seems to be down :( come back later",
-                                                         Forbidden,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.service.down"))
-                            }
-                          } else {
-                            val upstreamLatency = System.currentTimeMillis() - upstreamStart
-                            val headersOut = headers.toSeq
-                              .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
-                              if (descriptor.sendOtoroshiHeadersBack) {
-                                Seq(
-                                  env.Headers.OtoroshiRequestId        -> snowflake,
-                                  env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-                                  env.Headers.OtoroshiProxyLatency     -> s"$overhead",
-                                  env.Headers.OtoroshiUpstreamLatency  -> s"$upstreamLatency" //,
-                                  //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
-                                )
-                              } else {
-                                Seq.empty[(String, String)]
-                              }
-                            ) ++ Some(trackingId)
-                              .filter(_ => desc.canary.enabled)
-                              .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                                                                                                                        Seq(
-                                                                                                                          env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
-                                                                                                                          env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                                                                                                                        )
-                                                                                                                      } else {
-                                                                                                                        Seq.empty[(String, String)]
-                                                                                                                      })
-                            val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
-                            val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
-                            // meterOut.mark(responseHeader.length)
-                            // counterOut.addAndGet(responseHeader.length)
-
-                            val finalStream = resp.bodyAsSource
-                              .alsoTo(Sink.onComplete {
-                                case Success(_) =>
-                                  // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
-                                  promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
-                                case Failure(e) =>
-                                  logger.error(
-                                    s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
-                                    e
-                                  )
-                                  promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
-                              })
-                              .map { bs =>
-                                // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
-                                // meterOut.mark(bs.length)
-                                counterOut.addAndGet(bs.length)
-                                bs
-                              }
-
-                            if (req.version == "HTTP/1.0") {
-                              logger.warn(
-                                s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
+                            case RequestTimeoutException =>
+                              Errors.craftResponseResult(
+                                s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                BadGateway,
+                                req,
+                                Some(descriptor),
+                                Some("errors.request.timeout")
                               )
-                              finalStream
-                                .via(
-                                  MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt, str => logger.warn(str))
-                                )
-                                .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
-                                .fast
-                                .map { body =>
-                                  Status(resp.status)(body)
-                                    .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                    .as(contentType)
-                                    .withCookies(withTrackingCookies: _*)
-                                }
-                            } else if (globalConfig.streamEntityOnly) { // only temporary
-                              // stream out
-                              val entity =
-                                if (resp.headers
-                                      .get("Transfer-Encoding")
-                                      .flatMap(_.lastOption)
-                                      .filter(_ == "chunked")
-                                      .isDefined) {
-                                  HttpEntity.Chunked(
-                                    finalStream
-                                      .map(i => play.api.http.HttpChunk.Chunk(i))
-                                      .concat(
-                                        Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
-                                      ),
-                                    Some(contentType) // contentTypeOpt
+                            case _: scala.concurrent.TimeoutException =>
+                              Errors.craftResponseResult(
+                                s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                BadGateway,
+                                req,
+                                Some(descriptor),
+                                Some("errors.request.timeout")
+                              )
+                            case AllCircuitBreakersOpenException =>
+                              Errors.craftResponseResult(
+                                s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                                BadGateway,
+                                req,
+                                Some(descriptor),
+                                Some("errors.circuit.breaker.open")
+                              )
+                            case error
+                                if error != null && error.getMessage != null && error.getMessage
+                                  .toLowerCase()
+                                  .contains("connection refused") =>
+                              Errors.craftResponseResult(
+                                s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
+                                BadGateway,
+                                req,
+                                Some(descriptor),
+                                Some("errors.connection.refused")
+                              )
+                            case error if error != null && error.getMessage != null =>
+                              logger.error(s"Something went wrong, you should try later", error)
+                              Errors.craftResponseResult(
+                                s"Something went wrong, you should try later. Thanks for your understanding.",
+                                BadGateway,
+                                req,
+                                Some(descriptor),
+                                Some("errors.proxy.error")
+                              )
+                            case error =>
+                              Errors.craftResponseResult(
+                                s"Something went wrong, you should try later. Thanks for your understanding",
+                                BadGateway,
+                                req,
+                                Some(descriptor),
+                                Some("errors.proxy.error")
+                              )
+                          }
+                        } else {
+                          val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
+                                                            descriptor.targets.size
+                                                          else 1)
+                          // Round robin loadbalancing is happening here !!!!!
+                          val target = descriptor.targets.apply(index.toInt)
+                          actuallyCallDownstream(target, apiKey, paUsr)
+                        }
+
+                      def actuallyCallDownstream(target: Target,
+                                                 apiKey: Option[ApiKey] = None,
+                                                 paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
+                        val snowflake        = env.snowflakeGenerator.nextIdStr()
+                        val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+                        val state            = IdGenerator.extendedToken(128)
+                        val rawUri           = req.relativeUri.substring(1)
+                        val uriParts         = rawUri.split("/").toSeq
+                        val uri: String =
+                          descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
+                        val scheme                 = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
+                        val host                   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
+                        val root                   = descriptor.root
+                        val url                    = s"$scheme://$host$root$uri"
+                        lazy val currentReqHasBody = hasBody(req)
+                        // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
+                        val fromOtoroshi = req.headers
+                          .get(env.Headers.OtoroshiRequestId)
+                          .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
+                        val promise = Promise[ProxyDone]
+
+                        val claim = OtoroshiClaim(
+                          iss = env.Headers.OtoroshiIssuer,
+                          sub = paUsr
+                            .filter(_ => descriptor.privateApp)
+                            .map(k => s"pa:${k.email}")
+                            .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
+                            .getOrElse("--"),
+                          aud = descriptor.name,
+                          exp = DateTime.now().plusSeconds(30).toDate.getTime,
+                          iat = DateTime.now().toDate.getTime,
+                          jti = IdGenerator.uuid
+                        ).withClaim("email", paUsr.map(_.email))
+                          .withClaim("name", paUsr.map(_.name).orElse(apiKey.map(_.clientName)))
+                          .withClaim("picture", paUsr.flatMap(_.picture))
+                          .withClaim("user_id", paUsr.flatMap(_.userId).orElse(apiKey.map(_.clientId)))
+                          .withClaim("given_name", paUsr.flatMap(_.field("given_name")))
+                          .withClaim("family_name", paUsr.flatMap(_.field("family_name")))
+                          .withClaim("gender", paUsr.flatMap(_.field("gender")))
+                          .withClaim("locale", paUsr.flatMap(_.field("locale")))
+                          .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
+                          .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
+                          .serialize(env)
+                        logger.trace(s"Claim is : $claim")
+                        val headersIn: Seq[(String, String)] =
+                          (req.headers.toSimpleMap
+                            .filterNot(
+                              t =>
+                                if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
+                                else if (t._1.toLowerCase == "content-length") true
+                                else false
+                            )
+                            .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
+                            env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
+                            "Host"                               -> host,
+                            env.Headers.OtoroshiRequestId        -> snowflake,
+                            env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
+                          ) ++ (if (descriptor.enforceSecureCommunication) {
+                                  Map(
+                                    env.Headers.OtoroshiState -> state,
+                                    env.Headers.OtoroshiClaim -> claim
                                   )
                                 } else {
-                                  HttpEntity.Streamed(
-                                    finalStream,
-                                    resp.headers.get("Content-Length").flatMap(_.lastOption).map(_.toLong),
-                                    Some(contentType) // contentTypeOpt
+                                  Map.empty[String, String]
+                                }) ++
+                          req.headers
+                            .get("Content-Length")
+                            .map(l => {
+                              Map("Content-Length" -> (l.toInt + snowMonkeyContext.trailingRequestBodySize).toString)
+                            })
+                            .getOrElse(Map.empty[String, String]) ++
+                          descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
+                            .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
+                            .getOrElse(Map.empty[String, String])).toSeq
+
+                        val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
+                          bodyAlreadyConsumed.compareAndSet(false, true)
+                          req.body
+                            .concat(snowMonkeyContext.trailingRequestBodyStream)
+                            .map(bs => {
+                              // meterIn.mark(bs.length)
+                              counterIn.addAndGet(bs.length)
+                              bs
+                            })
+                        }
+                        val body = if (currentReqHasBody) SourceBody(lazySource) else EmptyBody // Stream IN
+                        // val requestHeader = ByteString(
+                        //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
+                        //     .map(h => s"${h._1}: ${h._2}")
+                        //     .mkString("\n") + "\n"
+                        // )
+                        // meterIn.mark(requestHeader.length)
+                        // counterIn.addAndGet(requestHeader.length)
+                        // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
+                        debugLogger.trace(
+                          s"curl -X ${req.method
+                            .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
+                        )
+                        val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                        val quotas: Future[RemainingQuotas] =
+                          apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))
+                        promise.future.andThen {
+                          case Success(resp) => {
+
+                            val actualDuration: Long = System.currentTimeMillis() - start
+                            val duration: Long =
+                              if (descriptor.id == env.backOfficeServiceId && actualDuration > 300L) 300L
+                              else actualDuration
+
+                            analyticsQueue ! AnalyticsQueueEvent(descriptor,
+                                                                 duration,
+                                                                 overhead,
+                                                                 counterIn.get(),
+                                                                 counterOut.get(),
+                                                                 resp.upstreamLatency,
+                                                                 globalConfig)
+
+                            quotas.andThen {
+                              case Success(q) => {
+                                val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
+                                val viz: OtoroshiViz = OtoroshiViz(
+                                  to = descriptor.id,
+                                  toLbl = descriptor.name,
+                                  from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
+                                  fromLbl = fromLbl,
+                                  fromTo = s"$fromLbl###${descriptor.name}"
+                                )
+                                GatewayEvent(
+                                  `@id` = env.snowflakeGenerator.nextIdStr(),
+                                  reqId = snowflake,
+                                  parentReqId = fromOtoroshi,
+                                  `@timestamp` = DateTime.now(),
+                                  protocol = req.version,
+                                  to = Location(
+                                    scheme = req.headers
+                                      .get("X-Forwarded-Protocol")
+                                      .map(_ == "https")
+                                      .orElse(Some(req.secure))
+                                      .map {
+                                        case true  => "https"
+                                        case false => "http"
+                                      }
+                                      .getOrElse("http"),
+                                    host = req.host,
+                                    uri = req.relativeUri
+                                  ),
+                                  target = Location(
+                                    scheme = scheme,
+                                    host = host,
+                                    uri = req.relativeUri
+                                  ),
+                                  duration = duration,
+                                  overhead = overhead,
+                                  url = url,
+                                  from = from,
+                                  env = descriptor.env,
+                                  data = DataInOut(
+                                    dataIn = counterIn.get(),
+                                    dataOut = counterOut.get()
+                                  ),
+                                  status = resp.status,
+                                  headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
+                                  identity = apiKey
+                                    .map(
+                                      k =>
+                                        Identity(
+                                          identityType = "APIKEY",
+                                          identity = k.clientId,
+                                          label = k.clientName
+                                      )
+                                    )
+                                    .orElse(
+                                      paUsr.map(
+                                        k =>
+                                          Identity(
+                                            identityType = "PRIVATEAPP",
+                                            identity = k.email,
+                                            label = k.name
+                                        )
+                                      )
+                                    ),
+                                  `@serviceId` = descriptor.id,
+                                  `@service` = descriptor.name,
+                                  descriptor = descriptor,
+                                  `@product` = descriptor.metadata.getOrElse("product", "--"),
+                                  remainingQuotas = q,
+                                  viz = Some(viz)
+                                ).toAnalytics()
+                              }
+                            }(env.otoroshiExecutionContext) // pressure EC
+                          }
+                        }(env.otoroshiExecutionContext) // pressure EC
+                        //.andThen {
+                        //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
+                        //}
+                        val upstreamStart = System.currentTimeMillis()
+                        env.gatewayClient
+                          .url(url)
+                          //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
+                          .withRequestTimeout(1.hour) // we should monitor leaks
+                          .withMethod(req.method)
+                          // .withQueryString(queryString: _*)
+                          .withHttpHeaders(headersIn: _*)
+                          .withBody(body)
+                          .withFollowRedirects(false)
+                          .stream()
+                          .fast
+                          .flatMap(resp => quotas.fast.map(q => (resp, q)))
+                          .flatMap { tuple =>
+                            val (resp, remainingQuotas) = tuple
+                            // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
+                            val headers = resp.headers.mapValues(_.head)
+                            // logger.warn(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
+                            // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                            // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
+                            if (env.notDev && descriptor.enforceSecureCommunication
+                                && !descriptor.isUriExcludedFromSecuredCommunication(uri)
+                                && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                              if (resp.status == 404 && headers
+                                    .get("X-CleverCloudUpgrade")
+                                    .contains("true")) {
+                                Errors.craftResponseResult(
+                                  "No service found for the specified target host, the service descriptor should be verified !",
+                                  NotFound,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.no.service.found")
+                                )
+                              } else if (isUp) {
+                                // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
+                                val exchange = Json.prettyPrint(
+                                  Json.obj(
+                                    "uri"   -> req.relativeUri,
+                                    "url"   -> url,
+                                    "state" -> state,
+                                    "reveivedState" -> JsString(
+                                      headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
+                                    ),
+                                    "claim"  -> claim,
+                                    "method" -> req.method,
+                                    "query"  -> req.rawQueryString,
+                                    "status" -> resp.status,
+                                    "headersIn" -> JsArray(
+                                      req.headers.toSimpleMap
+                                        .map(t => Json.obj("name" -> t._1, "value" -> t._2))
+                                        .toSeq
+                                    ),
+                                    "headersOut" -> JsArray(
+                                      headers.map(t => Json.obj("name" -> t._1, "values" -> t._2)).toSeq
+                                    )
                                   )
-                                }
-                              FastFuture.successful(
-                                Status(resp.status)
-                                  .sendEntity(entity)
-                                  .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                  .as(contentType) //
-                                  .withCookies(withTrackingCookies: _*)
-                              )
+                                )
+                                logger.error(s"\n\nError while talking with downstream service :(\n\n$exchange\n\n")
+                                Errors.craftResponseResult(
+                                  "Downstream microservice does not seems to be secured. Cancelling request !",
+                                  BadGateway,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.service.not.secured")
+                                )
+                              } else {
+                                Errors.craftResponseResult("The service seems to be down :( come back later",
+                                                           Forbidden,
+                                                           req,
+                                                           Some(descriptor),
+                                                           Some("errors.service.down"))
+                              }
                             } else {
-                              val response = resp.headers
-                                .get("Transfer-Encoding")
-                                .flatMap(_.lastOption)
-                                .filter(_ == "chunked")
-                                .map { _ =>
-                                  // stream out
-                                  Status(resp.status)
-                                    .chunked(finalStream)
-                                    .withHeaders(headersOut: _*)
-                                    .withCookies(withTrackingCookies: _*)
-                                  // .as(contentType)
-                                } getOrElse {
+                              val upstreamLatency = System.currentTimeMillis() - upstreamStart
+                              val headersOut = headers.toSeq
+                                .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
+                                if (descriptor.sendOtoroshiHeadersBack) {
+                                  Seq(
+                                    env.Headers.OtoroshiRequestId        -> snowflake,
+                                    env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
+                                    env.Headers.OtoroshiProxyLatency     -> s"$overhead",
+                                    env.Headers.OtoroshiUpstreamLatency  -> s"$upstreamLatency" //,
+                                    //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
+                                  )
+                                } else {
+                                  Seq.empty[(String, String)]
+                                }
+                              ) ++ Some(trackingId)
+                                .filter(_ => desc.canary.enabled)
+                                .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
+                                                                                                                          Seq(
+                                                                                                                            env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                                                                                                            env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                                                                                                          )
+                                                                                                                        } else {
+                                                                                                                          Seq.empty[(String, String)]
+                                                                                                                        })
+                              val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                              val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
+                              // meterOut.mark(responseHeader.length)
+                              // counterOut.addAndGet(responseHeader.length)
+
+                              val finalStream = resp.bodyAsSource
+                                .concat(snowMonkeyContext.trailingResponseBodyStream)
+                                .alsoTo(Sink.onComplete {
+                                  case Success(_) =>
+                                    // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
+                                    promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
+                                  case Failure(e) =>
+                                    logger.error(
+                                      s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
+                                      e
+                                    )
+                                    promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
+                                })
+                                .map { bs =>
+                                  // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
+                                  // meterOut.mark(bs.length)
+                                  counterOut.addAndGet(bs.length)
+                                  bs
+                                }
+
+                              if (req.version == "HTTP/1.0") {
+                                logger.warn(
+                                  s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
+                                )
+                                finalStream
+                                  .via(
+                                    MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt, str => logger.warn(str))
+                                  )
+                                  .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
+                                  .fast
+                                  .map { body =>
+                                    Status(resp.status)(body)
+                                      .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                      .as(contentType)
+                                      .withCookies(withTrackingCookies: _*)
+                                  }
+                              } else if (globalConfig.streamEntityOnly) { // only temporary
                                 // stream out
-                                Status(resp.status)
-                                  .sendEntity(
+                                val entity =
+                                  if (resp.headers
+                                        .get("Transfer-Encoding")
+                                        .flatMap(_.lastOption)
+                                        .contains("chunked")) {
+                                    HttpEntity.Chunked(
+                                      finalStream
+                                        .map(i => play.api.http.HttpChunk.Chunk(i))
+                                        .concat(
+                                          Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
+                                        ),
+                                      Some(contentType) // contentTypeOpt
+                                    )
+                                  } else {
                                     HttpEntity.Streamed(
                                       finalStream,
                                       resp.headers
                                         .get("Content-Length")
                                         .flatMap(_.lastOption)
-                                        .map(_.toLong),
-                                      resp.headers.get("Content-Type").flatMap(_.lastOption)
+                                        .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
+                                      Some(contentType) // contentTypeOpt
                                     )
-                                  )
-                                  .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                  .withCookies(withTrackingCookies: _*)
-                                  .as(contentType)
-                              }
-                              FastFuture.successful(response)
-                            }
-                          }
-                        }
-                    }
-
-                    def passWithApiKey(config: GlobalConfig): Future[Result] = {
-                      val authByJwtToken = req.headers
-                        .get(env.Headers.OtoroshiAuthorization)
-                        .orElse(req.headers.get("Authorization"))
-                        .filter(_.startsWith("Bearer "))
-                        .map(_.replace("Bearer ", ""))
-                        .orElse(req.queryString.get("bearer_auth").flatMap(_.lastOption))
-                        .orElse(req.cookies.get("access_token").map(_.value))
-                      val authBasic = req.headers
-                        .get(env.Headers.OtoroshiAuthorization)
-                        .orElse(req.headers.get("Authorization"))
-                        .filter(_.startsWith("Basic "))
-                        .map(_.replace("Basic ", ""))
-                        .flatMap(e => Try(decodeBase64(e)).toOption)
-                        .orElse(
-                          req.queryString
-                            .get("basic_auth")
-                            .flatMap(_.lastOption)
-                            .flatMap(e => Try(decodeBase64(e)).toOption)
-                        )
-                      val authByCustomHeaders = req.headers
-                        .get(env.Headers.OtoroshiClientId)
-                        .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
-                      if (authByCustomHeaders.isDefined) {
-                        val (clientId, clientSecret) = authByCustomHeaders.get
-                        env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
-                          case None =>
-                            Errors.craftResponseResult("Invalid API key",
-                                                       BadGateway,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.invalid.api.key"))
-                          case Some(key) if key.isInvalid(clientSecret) => {
-                            Alerts.send(
-                              RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                      DateTime.now(),
-                                                      env.env,
-                                                      req,
-                                                      key,
-                                                      descriptor)
-                            )
-                            Errors.craftResponseResult("Bad API key",
-                                                       BadGateway,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.bad.api.key"))
-                          }
-                          case Some(key) if key.isValid(clientSecret) =>
-                            key.withingQuotas().flatMap {
-                              case true => callDownstream(config, Some(key))
-                              case false =>
-                                Errors.craftResponseResult("You performed too much requests",
-                                                           TooManyRequests,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.too.much.requests"))
-                            }
-                        }
-                      } else if (authByJwtToken.isDefined) {
-                        val jwtTokenValue = authByJwtToken.get
-                        Try {
-                          JWT.decode(jwtTokenValue)
-                        } map { jwt =>
-                          Option(jwt.getClaim("iss")).map(_.asString()) match {
-                            case Some(clientId) =>
-                              env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
-                                case Some(apiKey) => {
-                                  val algorithm = Option(jwt.getAlgorithm).map {
-                                    case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
-                                    case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
-                                  } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
-                                  val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
-                                  Try(verifier.verify(jwtTokenValue)) match {
-                                    case Success(_) =>
-                                      apiKey.withingQuotas().flatMap {
-                                        case true => callDownstream(config, Some(apiKey))
-                                        case false =>
-                                          Errors.craftResponseResult("You performed too much requests",
-                                                                     TooManyRequests,
-                                                                     req,
-                                                                     Some(descriptor),
-                                                                     Some("errors.too.much.requests"))
-                                      }
-                                    case Failure(e) => {
-                                      Alerts.send(
-                                        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                DateTime.now(),
-                                                                env.env,
-                                                                req,
-                                                                apiKey,
-                                                                descriptor)
-                                      )
-                                      Errors.craftResponseResult("Bad API key",
-                                                                 BadGateway,
-                                                                 req,
-                                                                 Some(descriptor),
-                                                                 Some("errors.bad.api.key"))
-                                    }
                                   }
+                                FastFuture.successful(
+                                  Status(resp.status)
+                                    .sendEntity(entity)
+                                    .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                    .as(contentType)
+                                    .withCookies(withTrackingCookies: _*)
+                                )
+                              } else {
+                                val response = resp.headers
+                                  .get("Transfer-Encoding")
+                                  .flatMap(_.lastOption)
+                                  .filter(_ == "chunked")
+                                  .map { _ =>
+                                    // stream out
+                                    Status(resp.status)
+                                      .chunked(finalStream)
+                                      .withHeaders(headersOut: _*)
+                                      .withCookies(withTrackingCookies: _*)
+                                    // .as(contentType)
+                                  } getOrElse {
+                                  // stream out
+                                  Status(resp.status)
+                                    .sendEntity(
+                                      HttpEntity.Streamed(
+                                        finalStream,
+                                        resp.headers
+                                          .get("Content-Length")
+                                          .flatMap(_.lastOption)
+                                          .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
+                                        resp.headers.get("Content-Type").flatMap(_.lastOption)
+                                      )
+                                    )
+                                    .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                    .withCookies(withTrackingCookies: _*)
+                                    .as(contentType)
                                 }
-                                case None =>
-                                  Errors.craftResponseResult("Invalid ApiKey provided",
-                                                             BadRequest,
-                                                             req,
-                                                             Some(descriptor),
-                                                             Some("errors.invalid.api.key"))
+                                FastFuture.successful(response)
                               }
+                            }
+                          }
+                      }
+
+                      def passWithApiKey(config: GlobalConfig): Future[Result] = {
+                        val authByJwtToken = req.headers
+                          .get(env.Headers.OtoroshiAuthorization)
+                          .orElse(req.headers.get("Authorization"))
+                          .filter(_.startsWith("Bearer "))
+                          .map(_.replace("Bearer ", ""))
+                          .orElse(req.queryString.get("bearer_auth").flatMap(_.lastOption))
+                          .orElse(req.cookies.get("access_token").map(_.value))
+                        val authBasic = req.headers
+                          .get(env.Headers.OtoroshiAuthorization)
+                          .orElse(req.headers.get("Authorization"))
+                          .filter(_.startsWith("Basic "))
+                          .map(_.replace("Basic ", ""))
+                          .flatMap(e => Try(decodeBase64(e)).toOption)
+                          .orElse(
+                            req.queryString
+                              .get("basic_auth")
+                              .flatMap(_.lastOption)
+                              .flatMap(e => Try(decodeBase64(e)).toOption)
+                          )
+                        val authByCustomHeaders = req.headers
+                          .get(env.Headers.OtoroshiClientId)
+                          .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
+                        if (authByCustomHeaders.isDefined) {
+                          val (clientId, clientSecret) = authByCustomHeaders.get
+                          env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
                             case None =>
-                              Errors.craftResponseResult("Invalid ApiKey provided",
-                                                         BadRequest,
+                              Errors.craftResponseResult("Invalid API key",
+                                                         BadGateway,
                                                          req,
                                                          Some(descriptor),
                                                          Some("errors.invalid.api.key"))
+                            case Some(key) if key.isInvalid(clientSecret) => {
+                              Alerts.send(
+                                RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                        DateTime.now(),
+                                                        env.env,
+                                                        req,
+                                                        key,
+                                                        descriptor)
+                              )
+                              Errors.craftResponseResult("Bad API key",
+                                                         BadGateway,
+                                                         req,
+                                                         Some(descriptor),
+                                                         Some("errors.bad.api.key"))
+                            }
+                            case Some(key) if key.isValid(clientSecret) =>
+                              key.withingQuotas().flatMap {
+                                case true => callDownstream(config, Some(key))
+                                case false =>
+                                  Errors.craftResponseResult("You performed too much requests",
+                                                             TooManyRequests,
+                                                             req,
+                                                             Some(descriptor),
+                                                             Some("errors.too.much.requests"))
+                              }
                           }
-                        } getOrElse Errors.craftResponseResult("Invalid ApiKey provided",
+                        } else if (authByJwtToken.isDefined) {
+                          val jwtTokenValue = authByJwtToken.get
+                          Try {
+                            JWT.decode(jwtTokenValue)
+                          } map { jwt =>
+                            Option(jwt.getClaim("iss")).map(_.asString()) match {
+                              case Some(clientId) =>
+                                env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
+                                  case Some(apiKey) => {
+                                    val algorithm = Option(jwt.getAlgorithm).map {
+                                      case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
+                                      case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
+                                    } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
+                                    val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
+                                    Try(verifier.verify(jwtTokenValue)) match {
+                                      case Success(_) =>
+                                        apiKey.withingQuotas().flatMap {
+                                          case true => callDownstream(config, Some(apiKey))
+                                          case false =>
+                                            Errors.craftResponseResult("You performed too much requests",
+                                                                       TooManyRequests,
+                                                                       req,
+                                                                       Some(descriptor),
+                                                                       Some("errors.too.much.requests"))
+                                        }
+                                      case Failure(e) => {
+                                        Alerts.send(
+                                          RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                                  DateTime.now(),
+                                                                  env.env,
+                                                                  req,
+                                                                  apiKey,
+                                                                  descriptor)
+                                        )
+                                        Errors.craftResponseResult("Bad API key",
+                                                                   BadGateway,
+                                                                   req,
+                                                                   Some(descriptor),
+                                                                   Some("errors.bad.api.key"))
+                                      }
+                                    }
+                                  }
+                                  case None =>
+                                    Errors.craftResponseResult("Invalid ApiKey provided",
                                                                BadRequest,
                                                                req,
                                                                Some(descriptor),
                                                                Some("errors.invalid.api.key"))
-                      } else if (authBasic.isDefined) {
-                        val auth   = authBasic.get
-                        val id     = auth.split(":").headOption.map(_.trim)
-                        val secret = auth.split(":").lastOption.map(_.trim)
-                        (id, secret) match {
-                          case (Some(apiKeyClientId), Some(apiKeySecret)) => {
-                            env.datastores.apiKeyDataStore
-                              .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
-                              .flatMap {
-                                case None =>
-                                  Errors.craftResponseResult("Invalid API key",
-                                                             BadGateway,
-                                                             req,
-                                                             Some(descriptor),
-                                                             Some("errors.invalid.api.key"))
-                                case Some(key) if key.isInvalid(apiKeySecret) => {
-                                  Alerts.send(
-                                    RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                            DateTime.now(),
-                                                            env.env,
-                                                            req,
-                                                            key,
-                                                            descriptor)
-                                  )
-                                  Errors.craftResponseResult("Bad API key",
-                                                             BadGateway,
-                                                             req,
-                                                             Some(descriptor),
-                                                             Some("errors.bad.api.key"))
                                 }
-                                case Some(key) if key.isValid(apiKeySecret) =>
-                                  key.withingQuotas().flatMap {
-                                    case true => callDownstream(config, Some(key))
-                                    case false =>
-                                      Errors.craftResponseResult("You performed too much requests",
-                                                                 TooManyRequests,
+                              case None =>
+                                Errors.craftResponseResult("Invalid ApiKey provided",
+                                                           BadRequest,
+                                                           req,
+                                                           Some(descriptor),
+                                                           Some("errors.invalid.api.key"))
+                            }
+                          } getOrElse Errors.craftResponseResult("Invalid ApiKey provided",
+                                                                 BadRequest,
                                                                  req,
                                                                  Some(descriptor),
-                                                                 Some("errors.too.much.requests"))
+                                                                 Some("errors.invalid.api.key"))
+                        } else if (authBasic.isDefined) {
+                          val auth   = authBasic.get
+                          val id     = auth.split(":").headOption.map(_.trim)
+                          val secret = auth.split(":").lastOption.map(_.trim)
+                          (id, secret) match {
+                            case (Some(apiKeyClientId), Some(apiKeySecret)) => {
+                              env.datastores.apiKeyDataStore
+                                .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
+                                .flatMap {
+                                  case None =>
+                                    Errors.craftResponseResult("Invalid API key",
+                                                               BadGateway,
+                                                               req,
+                                                               Some(descriptor),
+                                                               Some("errors.invalid.api.key"))
+                                  case Some(key) if key.isInvalid(apiKeySecret) => {
+                                    Alerts.send(
+                                      RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                              DateTime.now(),
+                                                              env.env,
+                                                              req,
+                                                              key,
+                                                              descriptor)
+                                    )
+                                    Errors.craftResponseResult("Bad API key",
+                                                               BadGateway,
+                                                               req,
+                                                               Some(descriptor),
+                                                               Some("errors.bad.api.key"))
                                   }
-                              }
-                          }
-                          case _ =>
-                            Errors.craftResponseResult("No ApiKey provided",
-                                                       BadRequest,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.no.api.key"))
-                        }
-                      } else {
-                        Errors.craftResponseResult("No ApiKey provided",
-                                                   BadRequest,
-                                                   req,
-                                                   Some(descriptor),
-                                                   Some("errors.no.api.key"))
-                      }
-                    }
-
-                    def passWithAuth0(config: GlobalConfig): Future[Result] =
-                      isPrivateAppsSessionValid(req).flatMap {
-                        case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
-                        case None => {
-                          val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
-                            .privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
-                            .url
-                          logger.trace("should redirect to " + redirectTo)
-                          FastFuture.successful(
-                            Results
-                              .Redirect(redirectTo)
-                              .discardingCookies(
-                                env.removePrivateSessionCookies(
-                                  ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost
-                                ): _*
-                              )
-                          )
-                        }
-                      }
-
-                    // Algo is :
-                    // if (app.private) {
-                    //   if (uri.isPublic) {
-                    //      AUTH0
-                    //   } else {
-                    //      APIKEY
-                    //   }
-                    // } else {
-                    //   if (uri.isPublic) {
-                    //     PASSTHROUGH without gateway auth
-                    //   } else {
-                    //     APIKEY
-                    //   }
-                    // }
-
-                    env.datastores.globalConfigDataStore.quotasValidationFor(from).flatMap { r =>
-                      val (within, secCalls, maybeQuota) = r
-                      val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
-                      if (secCalls > (quota * 10L)) {
-                        Errors.craftResponseResult("[IP] You performed too much requests",
-                                                   TooManyRequests,
-                                                   req,
-                                                   Some(descriptor),
-                                                   Some("errors.too.much.requests"))
-                      } else {
-                        if (env.isProd && !isSecured && desc.forceHttps) {
-                          val theDomain = req.domain
-                          val protocol = req.headers
-                            .get("X-Forwarded-Protocol")
-                            .map(_ == "https")
-                            .orElse(Some(req.secure))
-                            .map {
-                              case true  => "https"
-                              case false => "http"
+                                  case Some(key) if key.isValid(apiKeySecret) =>
+                                    key.withingQuotas().flatMap {
+                                      case true => callDownstream(config, Some(key))
+                                      case false =>
+                                        Errors.craftResponseResult("You performed too much requests",
+                                                                   TooManyRequests,
+                                                                   req,
+                                                                   Some(descriptor),
+                                                                   Some("errors.too.much.requests"))
+                                    }
+                                }
                             }
-                            .getOrElse("http")
-                          logger.info(
-                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
-                          )
-                          //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
-                          FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
-                        } else if (!within) {
-                          // TODO : count as served req here !!!
-                          Errors.craftResponseResult("[GLOBAL] You performed too much requests",
+                            case _ =>
+                              Errors.craftResponseResult("No ApiKey provided",
+                                                         BadRequest,
+                                                         req,
+                                                         Some(descriptor),
+                                                         Some("errors.no.api.key"))
+                          }
+                        } else {
+                          Errors.craftResponseResult("No ApiKey provided",
+                                                     BadRequest,
+                                                     req,
+                                                     Some(descriptor),
+                                                     Some("errors.no.api.key"))
+                        }
+                      }
+
+                      def passWithAuth0(config: GlobalConfig): Future[Result] =
+                        isPrivateAppsSessionValid(req).flatMap {
+                          case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
+                          case None => {
+                            val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
+                              .privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
+                              .url
+                            logger.trace("should redirect to " + redirectTo)
+                            FastFuture.successful(
+                              Results
+                                .Redirect(redirectTo)
+                                .discardingCookies(
+                                  env.removePrivateSessionCookies(
+                                    ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost
+                                  ): _*
+                                )
+                            )
+                          }
+                        }
+
+                      // Algo is :
+                      // if (app.private) {
+                      //   if (uri.isPublic) {
+                      //      AUTH0
+                      //   } else {
+                      //      APIKEY
+                      //   }
+                      // } else {
+                      //   if (uri.isPublic) {
+                      //     PASSTHROUGH without gateway auth
+                      //   } else {
+                      //     APIKEY
+                      //   }
+                      // }
+
+                      env.datastores.globalConfigDataStore.quotasValidationFor(from).flatMap { r =>
+                        val (within, secCalls, maybeQuota) = r
+                        val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+                        if (secCalls > (quota * 10L)) {
+                          Errors.craftResponseResult("[IP] You performed too much requests",
                                                      TooManyRequests,
                                                      req,
                                                      Some(descriptor),
                                                      Some("errors.too.much.requests"))
-                        } else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
-                                     .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                          Errors.craftResponseResult("Your IP address is not allowed",
-                                                     Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed")) // global whitelist
-                        } else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
-                                     .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                          Errors.craftResponseResult("Your IP address is not allowed",
-                                                     Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed")) // global blacklist
-                        } else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
-                                     .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                          Errors.craftResponseResult("Your IP address is not allowed",
-                                                     Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed")) // service whitelist
-                        } else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
-                                     .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                          Errors.craftResponseResult("Your IP address is not allowed",
-                                                     Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed")) // service blacklist
-                        } else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
-                                     .exists(ip => RegexPool(ip).matches(remoteAddress))) {
-                          val gigas: Long = 128L * 1024L * 1024L * 1024L
-                          val middleFingers = ByteString.fromString(
-                            "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
-                          )
-                          val zeros                  = ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-                          val characters: ByteString = if (!globalConfig.middleFingers) middleFingers else zeros
-                          val expected: Long         = (gigas / characters.size) + 1L
-                          FastFuture.successful(
-                            Status(200)
-                              .sendEntity(
-                                HttpEntity.Streamed(
-                                  Source
-                                    .repeat(characters)
-                                    .limit(expected), // 128 Go of zeros or middle fingers
-                                  None,
-                                  Some("application/octet-stream")
+                        } else {
+                          if (env.isProd && !isSecured && desc.forceHttps) {
+                            val theDomain = req.domain
+                            val protocol = req.headers
+                              .get("X-Forwarded-Protocol")
+                              .map(_ == "https")
+                              .orElse(Some(req.secure))
+                              .map {
+                                case true  => "https"
+                                case false => "http"
+                              }
+                              .getOrElse("http")
+                            logger.info(
+                              s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
+                            )
+                            //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
+                            FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
+                          } else if (!within) {
+                            // TODO : count as served req here !!!
+                            Errors.craftResponseResult("[GLOBAL] You performed too much requests",
+                                                       TooManyRequests,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.too.much.requests"))
+                          } else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
+                                       .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                            Errors.craftResponseResult("Your IP address is not allowed",
+                                                       Forbidden,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.ip.address.not.allowed")) // global whitelist
+                          } else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
+                                       .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                            Errors.craftResponseResult("Your IP address is not allowed",
+                                                       Forbidden,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.ip.address.not.allowed")) // global blacklist
+                          } else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
+                                       .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                            Errors.craftResponseResult("Your IP address is not allowed",
+                                                       Forbidden,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.ip.address.not.allowed")) // service whitelist
+                          } else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
+                                       .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                            Errors.craftResponseResult("Your IP address is not allowed",
+                                                       Forbidden,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.ip.address.not.allowed")) // service blacklist
+                          } else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
+                                       .exists(ip => RegexPool(ip).matches(remoteAddress))) {
+                            val gigas: Long = 128L * 1024L * 1024L * 1024L
+                            val middleFingers = ByteString.fromString(
+                              "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
+                            )
+                            val zeros                  = ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                            val characters: ByteString = if (!globalConfig.middleFingers) middleFingers else zeros
+                            val expected: Long         = (gigas / characters.size) + 1L
+                            FastFuture.successful(
+                              Status(200)
+                                .sendEntity(
+                                  HttpEntity.Streamed(
+                                    Source
+                                      .repeat(characters)
+                                      .take(expected), // 128 Go of zeros or middle fingers
+                                    None,
+                                    Some("application/octet-stream")
+                                  )
                                 )
-                              )
-                          )
-                        } else if (descriptor.maintenanceMode) {
-                          Errors.craftResponseResult("Service in maintenance mode",
-                                                     ServiceUnavailable,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.service.in.maintenance"))
-                        } else if (descriptor.buildMode) {
-                          Errors.craftResponseResult("Service under construction",
-                                                     ServiceUnavailable,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.service.under.construction"))
-                        } else if (isUp) {
-                          if (descriptor.isPrivate) {
-                            if (descriptor.isUriPublic(req.path)) {
-                              passWithAuth0(globalConfig)
+                            )
+                          } else if (descriptor.maintenanceMode) {
+                            Errors.craftResponseResult("Service in maintenance mode",
+                                                       ServiceUnavailable,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.service.in.maintenance"))
+                          } else if (descriptor.buildMode) {
+                            Errors.craftResponseResult("Service under construction",
+                                                       ServiceUnavailable,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.service.under.construction"))
+                          } else if (isUp) {
+                            if (descriptor.isPrivate) {
+                              if (descriptor.isUriPublic(req.path)) {
+                                passWithAuth0(globalConfig)
+                              } else {
+                                isPrivateAppsSessionValid(req).fast.flatMap {
+                                  case Some(user) => passWithAuth0(globalConfig)
+                                  case None       => passWithApiKey(globalConfig)
+                                }
+                              }
                             } else {
-                              isPrivateAppsSessionValid(req).fast.flatMap {
-                                case Some(user) => passWithAuth0(globalConfig)
-                                case None       => passWithApiKey(globalConfig)
+                              if (descriptor.isUriPublic(req.path)) {
+                                callDownstream(globalConfig)
+                              } else {
+                                passWithApiKey(globalConfig)
                               }
                             }
                           } else {
-                            if (descriptor.isUriPublic(req.path)) {
-                              callDownstream(globalConfig)
-                            } else {
-                              passWithApiKey(globalConfig)
-                            }
+                            // fail fast
+                            Errors.craftResponseResult("The service seems to be down :( come back later",
+                                                       Forbidden,
+                                                       req,
+                                                       Some(descriptor),
+                                                       Some("errors.service.down"))
+
                           }
-                        } else {
-                          // fail fast
-                          Errors.craftResponseResult("The service seems to be down :( come back later",
-                                                     Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.service.down"))
                         }
                       }
                     }

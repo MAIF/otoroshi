@@ -6,7 +6,7 @@ import play.api.ApplicationLoader.Context
 import play.api.routing.Router
 import com.softwaremill.macwire._
 import env.Env
-import gateway.{CircuitBreakersHolder, ErrorHandler, GatewayRequestHandler, WebSocketHandler}
+import gateway._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
@@ -45,6 +45,7 @@ package object modules {
     override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
     override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
 
+    lazy val snowMonkey           = wire[SnowMonkey]
     lazy val unAuthApiAction      = wire[UnAuthApiAction]
     lazy val apiAction            = wire[ApiAction]
     lazy val backOfficeAction     = wire[BackOfficeAction]

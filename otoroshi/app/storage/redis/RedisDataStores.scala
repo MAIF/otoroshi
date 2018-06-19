@@ -83,6 +83,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _errorTemplateDataStore     = new RedisErrorTemplateDataStore(redis, env)
   private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
   private lazy val _canaryDataStore            = new RedisCanaryDataStore(redis, env)
+  private lazy val _chaosDataStore             = new RedisChaosDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
@@ -98,6 +99,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def errorTemplateDataStore: ErrorTemplateDataStore         = _errorTemplateDataStore
   override def requestsDataStore: RequestsDataStore                   = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
+  override def chaosDataStore: ChaosDataStore                         = _chaosDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover {
       case _ => Unreachable

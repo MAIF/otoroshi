@@ -19,6 +19,7 @@ import { Collapse } from '../components/inputs/Collapse';
 import { createTooltip } from '../tooltips';
 import { WithEnv } from '../components/WithEnv';
 import Select from 'react-select';
+import { ChaosConfigWithSkin } from '../components/ChaosConfig';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -924,6 +925,30 @@ export class ServicePage extends Component {
               value={this.state.service.ipFiltering.blacklist}
               help="List of blacklisted IP addresses"
               onChange={arr => this.changeTheValue('ipFiltering.blacklist', arr)}
+            />
+          </Collapse>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Faults injection">
+            <BooleanInput
+              label="User facing app."
+              value={this.state.service.userFacing}
+              help="If service is set as user facing, Snow Monkey can be configured to not being allowed to create outage on them."
+              onChange={v => this.changeTheValue('userFacing', v)}
+            />
+            <BooleanInput
+              label="Chaos enabled"
+              value={this.state.service.chaosConfig.enabled}
+              help="Activate or deactivate chaos setting on this service descriptor."
+              onChange={v => this.changeTheValue('chaosConfig.enabled', v)}
+            />
+            <ChaosConfigWithSkin
+              inServiceDescriptor
+              initCollapsed={false}
+              collapsed={this.state.allCollapsed}
+              config={this.state.service.chaosConfig}
+              onChange={v => this.changeTheValue('chaosConfig', v)}
             />
           </Collapse>
           <Collapse
