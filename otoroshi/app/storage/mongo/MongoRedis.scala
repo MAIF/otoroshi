@@ -16,11 +16,8 @@ import reactivemongo.bson._
 import storage.{DataStoreHealth, Healthy, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
-
-object MongoRedis {
-  val indexDone = new AtomicBoolean(false)
-}
+import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: String) extends RedisLike {
 
@@ -29,27 +26,17 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   lazy val logger = Logger("otoroshi-mongo-redis")
 
   def initIndexes(): Future[Unit] = {
-    if (MongoRedis.indexDone.compareAndSet(false, true)) {
-      database.flatMap(_.collectionNames).flatMap { names =>
-        if (!names.contains("values")) {
-          logger.warn("Creating mongo indexes ...")
-          for {
-            coll <- database.map(_.collection[BSONCollection]("values"))
-            _ <- coll.create()
-            _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true))
-            // _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending)))
-            _ <- coll.indexesManager.ensure(Index(Seq("ttl" -> IndexType.Ascending), options = BSONDocument(
-              "expireAfterSeconds" -> 0
-            )))
-            _ = Logger.warn("Mongo indexes created !")
-          } yield ()
-        } else {
-          FastFuture.successful(())
-        }
-      }
-    } else {
-      FastFuture.successful(())
-    }
+    logger.warn("Creating mongo indexes if needed ...")
+    for {
+      coll <- database.map(_.collection[BSONCollection]("values"))
+      _ <- coll.create().recover { case _ => () }
+      _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true))
+      // _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending)))
+      _ <- coll.indexesManager.ensure(Index(Seq("ttl" -> IndexType.Ascending), options = BSONDocument(
+        "expireAfterSeconds" -> 0
+      )))
+      _ = Logger.warn("Mongo indexes created !")
+    } yield ()
   }
 
   def database: Future[DefaultDB] = {
@@ -62,9 +49,28 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     })
   }
 
+  def deleteExpiredItems(): Future[Unit] = {
+    withValuesCollection { coll =>
+      coll.remove(
+        BSONDocument("ttl" -> BSONDocument(
+          "$lte" -> BSONDateTime(DateTime.now(DateTimeZone.UTC).getMillis)
+        )),
+        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+      ).map { wr =>
+        logger.debug(s"Delete ${wr.n} items ...")
+      }
+    }
+  }
+
+  val cancel = actorSystem.scheduler.schedule(0.millis, 1000.millis) {
+    deleteExpiredItems()
+  }
+
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 
-  override def stop(): Unit = ()
+  override def stop(): Unit = {
+    cancel.cancel()
+  }
 
   override def flushall(): Future[Boolean] = withValuesCollection(_.drop(false)).map(_ => true)
 
@@ -130,16 +136,19 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         ),
         writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
       ).map { _ =>
-          increment
-        }
+        increment
+      }
       case Some(_) => coll.update(
           BSONDocument("key" -> key),
           BSONDocument("$inc" -> BSONDocument("value" -> increment)),
           upsert = true,
           writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
       ).flatMap { _ =>
-          coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[Long]("value")).getOrElse(0L))
-        }
+        coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[Long]("valu" +
+          "e")).getOrElse(0L))/*.andThen {
+          case Success(counter) => println(s"counter at $key incremented by $increment is at $counter")
+        }*/
+      }
     }
   }
 
@@ -263,7 +272,11 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   override def pttl(key: String): Future[Long] = withValuesCollection { coll =>
     coll.find(BSONDocument("key" -> key))
       .one[BSONDocument]
-      .map(_.flatMap(d => d.getAs[Long]("ttl")).map(t => new DateTime(t, DateTimeZone.UTC).getMillis - DateTime.now(DateTimeZone.UTC).getMillis).filter(_ > -1).getOrElse(-1))
+      .map(_.flatMap(d => d.getAs[Long]("ttl"))
+        .map(t => new DateTime(t, DateTimeZone.UTC).getMillis - DateTime.now(DateTimeZone.UTC).getMillis)
+        .filter(_ > -1)
+        .getOrElse(-1)
+      )
   }
 
   override def ttl(key: String): Future[Long] = pttl(key).map(t => scala.concurrent.duration.Duration(t, TimeUnit.MILLISECONDS).toSeconds)
