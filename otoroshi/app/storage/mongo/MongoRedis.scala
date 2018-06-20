@@ -52,23 +52,23 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     withValuesCollection { coll =>
       coll.remove(
         BSONDocument("ttl" -> BSONDocument(
-          "$lte" -> BSONDateTime(DateTime.now(DateTimeZone.UTC).getMillis)
+          "$lte" -> BSONDateTime(System.currentTimeMillis()) //DateTime.now(DateTimeZone.UTC).getMillis)
         )),
         writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
       ).map { wr =>
-        logger.warn(s"Delete ${wr.n} items ...")
+        logger.debug(s"Delete ${wr.n} items ...")
       }
     }
   }
 
-  // val cancel = actorSystem.scheduler.schedule(0.millis, 1000.millis) {
-  //   deleteExpiredItems()
-  // }
+  val cancel = actorSystem.scheduler.schedule(0.millis, 1000.millis) {
+    deleteExpiredItems()
+  }
 
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 
   override def stop(): Unit = {
-    // cancel.cancel()
+    cancel.cancel()
   }
 
   override def flushall(): Future[Boolean] = withValuesCollection(_.drop(false)).map(_ => true)
@@ -97,7 +97,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
           "type" -> "string",
           "key" -> key,
           "value" -> value.utf8String,
-          "ttl" -> exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(BSONDateTime.apply).getOrElse(BSONNull)
+          "ttl" -> exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(_ + System.currentTimeMillis()).map(BSONDateTime.apply).getOrElse(BSONNull)
         )
       ),
       upsert = true,
@@ -269,7 +269,8 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     coll.find(BSONDocument("key" -> key))
       .one[BSONDocument]
       .map(_.flatMap(d => d.getAs[Long]("ttl"))
-        .map(t => new DateTime(t, DateTimeZone.UTC).getMillis - DateTime.now(DateTimeZone.UTC).getMillis)
+        //.map(t => new DateTime(t, DateTimeZone.UTC).getMillis - DateTime.now(DateTimeZone.UTC).getMillis)
+        .map(t => new DateTime(t).getMillis - DateTime.now().getMillis)
         .filter(_ > -1)
         .getOrElse(-1)
       )
@@ -280,7 +281,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   override def expire(key: String, seconds: Int): Future[Boolean] = pexpire(key, seconds * 1000)
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
-    val ttl = DateTime.now(DateTimeZone.UTC).plusMillis(milliseconds.toInt).getMillis
+    val ttl = /*DateTime.now(DateTimeZone.UTC)*/DateTime.now().plusMillis(milliseconds.toInt).getMillis
     withValuesCollection { coll =>
       coll.findAndUpdate(
         BSONDocument("key" -> key),
