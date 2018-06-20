@@ -57,19 +57,19 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         )),
         writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
       ).map { wr =>
-        logger.debug(s"Delete ${wr.n} items ...")
+        logger.warn(s"Delete ${wr.n} items ...")
       }
     }
   }
 
-  val cancel = actorSystem.scheduler.schedule(0.millis, 1000.millis) {
-    deleteExpiredItems()
-  }
+  // val cancel = actorSystem.scheduler.schedule(0.millis, 1000.millis) {
+  //   deleteExpiredItems()
+  // }
 
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 
   override def stop(): Unit = {
-    cancel.cancel()
+    // cancel.cancel()
   }
 
   override def flushall(): Future[Boolean] = withValuesCollection(_.drop(false)).map(_ => true)
@@ -131,21 +131,20 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
       case None => coll.insert(BSONDocument(
           "key" -> key,
           "type" -> "counter",
-          "value" -> increment,
-          "ttl" -> BSONNull
+          "value" -> (increment + "")
         ),
         writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
       ).map { _ =>
         increment
       }
-      case Some(_) => coll.update(
+      case Some(doc) => coll.update(
           BSONDocument("key" -> key),
-          BSONDocument("$inc" -> BSONDocument("value" -> increment)),
+          BSONDocument("$set" -> BSONDocument("value" -> doc.getAs[String]("value").map(a => (a.toLong + increment).toString).get)),
           upsert = true,
           writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
       ).flatMap { _ =>
-        coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[Long]("valu" +
-          "e")).getOrElse(0L))/*.andThen {
+        coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[String]("valu" +
+          "e").map(_.toLong)).getOrElse(0L))/*.andThen {
           case Success(counter) => println(s"counter at $key incremented by $increment is at $counter")
         }*/
       }
@@ -183,7 +182,6 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         BSONDocument(
           "key" -> key,
           "type" -> "hash",
-          "ttl" -> BSONNull,
           "value" -> BSONDocument(
             field -> value.utf8String
           )
@@ -224,7 +222,6 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         BSONDocument(
           "key" -> key,
           "type" -> "list",
-          "ttl" -> BSONNull,
           "value" -> BSONArray(values.map(s => BSONString.apply(s.utf8String)))
         ),
         writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
@@ -305,7 +302,6 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         BSONDocument(
           "key" -> key,
           "type" -> "set",
-          "ttl" -> BSONNull,
           "value" -> BSONArray(members.map(s => BSONString.apply(s.utf8String)))
         ),
         writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
