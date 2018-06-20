@@ -61,11 +61,6 @@ class MongoDataStores(configuration: Configuration,
 
     import actorSystem.dispatcher
 
-    if (configuration.getOptional[Boolean]("app.mongo.testMode").getOrElse(false)) {
-      logger.warn("Flushing DB as in test mode")
-      Await.result(redis.flushall(), 5.second)
-    }
-
     Await.ready(connection.askClose()(10.seconds).map { _ =>
       logger.info("Mongo connections are stopped")
     }.andThen {

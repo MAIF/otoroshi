@@ -31,7 +31,6 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
       coll <- database.map(_.collection[BSONCollection]("values"))
       _ <- coll.create().recover { case _ => () }
       _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true))
-      // _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending)))
       _ <- coll.indexesManager.ensure(Index(Seq("ttl" -> IndexType.Ascending), options = BSONDocument(
         "expireAfterSeconds" -> 0
       )))
