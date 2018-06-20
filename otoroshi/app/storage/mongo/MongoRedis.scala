@@ -16,7 +16,7 @@ import reactivemongo.bson._
 import storage.{DataStoreHealth, Healthy, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 object MongoRedis {
   val indexDone = new AtomicBoolean(false)
@@ -36,8 +36,8 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
           for {
             coll <- database.map(_.collection[BSONCollection]("values"))
             _ <- coll.create()
-            // _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true))
-            _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending)))
+            _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true))
+            // _ <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending)))
             _ <- coll.indexesManager.ensure(Index(Seq("ttl" -> IndexType.Ascending), options = BSONDocument(
               "expireAfterSeconds" -> 0
             )))
@@ -88,12 +88,15 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     coll.update(
       BSONDocument("key" -> key),
       BSONDocument(
-        "type" -> "string",
-        "key" -> key,
-        "value" -> value.utf8String,
-        "ttl" -> exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(BSONDateTime.apply).getOrElse(BSONNull)
+        "$set" -> BSONDocument(
+          "type" -> "string",
+          "key" -> key,
+          "value" -> value.utf8String,
+          "ttl" -> exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(BSONDateTime.apply).getOrElse(BSONNull)
+        )
       ),
-      upsert = true
+      upsert = true,
+      writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
     ).map(_.ok)
   }
 
@@ -124,14 +127,17 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
           "type" -> "counter",
           "value" -> increment,
           "ttl" -> BSONNull
-        )).map { _ =>
+        ),
+        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+      ).map { _ =>
           increment
         }
       case Some(_) => coll.update(
           BSONDocument("key" -> key),
           BSONDocument("$inc" -> BSONDocument("value" -> increment)),
-          upsert = true
-        ).flatMap { _ =>
+          upsert = true,
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+      ).flatMap { _ =>
           coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.flatMap(_.getAs[Long]("value")).getOrElse(0L))
         }
     }
@@ -147,7 +153,8 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
           fields.map(field => s"value.$field" -> "")
         )
       ),
-      upsert = true
+      upsert = true,
+      writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
     ).map(_.n)
   }
 
@@ -163,23 +170,29 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
 
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = withValuesCollection { coll =>
     coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
-      case None => coll.insert(BSONDocument(
+      case None => coll.insert(
+        BSONDocument(
           "key" -> key,
           "type" -> "hash",
           "ttl" -> BSONNull,
           "value" -> BSONDocument(
-              field -> value.utf8String
-            )
-          )).map(_.ok)
+            field -> value.utf8String
+          )
+        ),
+        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+      ).map(_.ok)
       case Some(_) =>
         coll.update(
           BSONDocument("key" -> key),
           BSONDocument(
-            "type" -> "hash",
-            "key" -> key,
-            s"value.$field" -> value.utf8String
+            "$set" -> BSONDocument(
+              "type" -> "hash",
+              "key" -> key,
+              s"value.$field" -> value.utf8String
+            )
           ),
-          upsert = true
+          upsert = true,
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
         ).map(_.ok)
     }
   }
@@ -198,25 +211,32 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] = withValuesCollection { coll =>
     coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
-      case None => coll.insert(BSONDocument(
-        "key" -> key,
-        "type" -> "list",
-        "ttl" -> BSONNull,
-        "value" -> BSONArray(values.map(s => BSONString.apply(s.utf8String)))
-      )).map(_.n)
+      case None => coll.insert(
+        BSONDocument(
+          "key" -> key,
+          "type" -> "list",
+          "ttl" -> BSONNull,
+          "value" -> BSONArray(values.map(s => BSONString.apply(s.utf8String)))
+        ),
+        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+      ).map(_.n)
       case Some(_) => coll.update(
         BSONDocument("key" -> key),
         BSONDocument(
-          "$push" -> BSONDocument("value" -> BSONArray(values.map(s => BSONString.apply(s.utf8String))))
+          "$push" -> BSONDocument("value" -> BSONDocument("$each" -> BSONArray(values.map(s => BSONString.apply(s.utf8String)))))
         ),
-        upsert = true
+        upsert = true,
+        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
       ).map(_.n)
     }
   }
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = withValuesCollection { coll =>
     coll.find(BSONDocument("key" -> key)).one[BSONDocument].map { opt =>
-      opt.flatMap(doc => doc.getAs[BSONArray]("value")).map(arr => arr.elements.map(_.value.asInstanceOf[BSONString].value).map(ByteString.apply))
+      opt.flatMap(doc => doc.getAs[BSONArray]("value"))
+        .map(arr => arr.elements.map { el =>
+          el.value.asInstanceOf[BSONString].value
+        }.map(ByteString.apply))
         .map(seq => seq.slice(start.toInt, stop.toInt - start.toInt))
         .getOrElse(Seq.empty)
     }
@@ -233,7 +253,8 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
             "$slice" -> (0 - stop)
           )
         )
-      )
+      ),
+      writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
     ).map(_.ok)
   }
 
@@ -254,7 +275,9 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     withValuesCollection { coll =>
       coll.findAndUpdate(
         BSONDocument("key" -> key),
-        BSONDocument("ttl" -> BSONDateTime(ttl))
+        BSONDocument(
+          "$set" -> BSONDocument("ttl" -> BSONDateTime(ttl))
+        )
       ).map(_.lastError.isEmpty)
     }
   }
@@ -265,18 +288,22 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = withValuesCollection { coll =>
     coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
-      case None => coll.insert(BSONDocument(
-        "key" -> key,
-        "type" -> "set",
-        "ttl" -> BSONNull,
-        "value" -> BSONArray(members.map(s => BSONString.apply(s.utf8String)))
-      )).map(_.n)
+      case None => coll.insert(
+        BSONDocument(
+          "key" -> key,
+          "type" -> "set",
+          "ttl" -> BSONNull,
+          "value" -> BSONArray(members.map(s => BSONString.apply(s.utf8String)))
+        ),
+        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+      ).map(_.n)
       case Some(_) => {
         coll.update(
           BSONDocument("key" -> key),
           BSONDocument(
-            "$addToSet" -> BSONDocument("value" -> BSONArray(members.map(s => BSONString.apply(s.utf8String))))),
-          upsert = true
+            "$addToSet" -> BSONDocument("value" -> BSONDocument("$each" -> BSONArray(members.map(s => BSONString.apply(s.utf8String)))))),
+          upsert = true,
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
         ).map(_.n)
       }
     }
@@ -299,7 +326,8 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   override def sremBS(key: String, members: ByteString*): Future[Long] = withValuesCollection { coll =>
     coll.update(
       BSONDocument("key" -> key),
-      BSONDocument("$pull" -> BSONDocument("value" -> BSONArray(members.map(_.utf8String).map(BSONString.apply))))
+      BSONDocument("$pull" -> BSONDocument("value" -> BSONArray(members.map(_.utf8String).map(BSONString.apply)))),
+      writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
     ).map(_.n)
   }
 

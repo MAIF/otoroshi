@@ -238,11 +238,14 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
       updateSnowMonkey(
         c =>
           c.copy(
+            enabled = false,
             chaosConfig = c.chaosConfig.copy(
               largeRequestFaultConfig = None
             )
         )
       ).futureValue
+      stopSnowMonkey().futureValue
+      deleteOtoroshiService(initialDescriptor).futureValue
     }
   }
 }

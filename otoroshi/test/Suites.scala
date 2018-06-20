@@ -3,7 +3,7 @@ import java.io.File
 import com.typesafe.config.ConfigFactory
 import functional._
 import org.apache.commons.io.FileUtils
-import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
+import org.scalatest.{BeforeAndAfterAll, Sequential, Suite, Suites}
 import play.api.Configuration
 
 import scala.util.Try
@@ -64,8 +64,9 @@ object Configurations {
 }
 
 object OtoroshiTests {
-  def getSuites(): Seq[Suite] = {
-    val (name, config) = Try(Option(System.getenv("TEST_STORE"))).toOption.flatten.getOrElse("inmemory") match {
+
+  def getNameAndConfig(): (String, Configuration) = {
+    Try(Option(System.getenv("TEST_STORE"))).toOption.flatten.getOrElse("inmemory") match {
       case "redis"     => ("Redis", Configurations.RedisConfiguration)
       case "inmemory"  => ("InMemory", Configurations.InMemoryConfiguration)
       case "leveldb"   => ("LevelDB", Configurations.LevelDBConfiguration)
@@ -73,14 +74,18 @@ object OtoroshiTests {
       case "mongo"     => ("Mongo", Configurations.MongoConfiguration)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
+  }
+
+  def getSuites(): Seq[Suite] = {
+    val (name, config) = getNameAndConfig()
     if (name == "LevelDB") {
       Seq(
         new BasicSpec(name, Configurations.LevelDBConfiguration),
         new AdminApiSpec(name, Configurations.LevelDBConfiguration),
         new ProgrammaticApiSpec(name, Configurations.LevelDBConfiguration),
         new CircuitBreakerSpec(name, Configurations.LevelDBConfiguration),
-        new CanarySpec(name, Configurations.LevelDBConfiguration),
         new QuotasSpec(name, Configurations.LevelDBConfiguration),
+        new CanarySpec(name, Configurations.LevelDBConfiguration),
         new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration),
         new ApiKeysSpec(name, Configurations.LevelDBConfiguration),
         new SnowMonkeySpec(name, Configurations.LevelDBConfiguration)
@@ -92,10 +97,10 @@ object OtoroshiTests {
         new AdminApiSpec(name, config),
         new ProgrammaticApiSpec(name, config),
         new CircuitBreakerSpec(name, config),
-        new CanarySpec(name, config),
-        new QuotasSpec(name, config),
         new AlertAndAnalyticsSpec(name, config),
         new ApiKeysSpec(name, config),
+        new CanarySpec(name, config),
+        new QuotasSpec(name, config),
         new SnowMonkeySpec(name, config)
         // new WebsocketSpec(name, config)
       )
@@ -114,4 +119,6 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
-// class DevOtoroshiTests extends Suites(new CanarySpec("DEV", Configurations.InMemoryConfiguration))
+// class DevOtoroshiTests extends Suites(
+//   new QuotasSpec("DEV", Configurations.InMemoryConfiguration),
+// )

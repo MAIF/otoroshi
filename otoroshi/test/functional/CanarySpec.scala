@@ -183,8 +183,6 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
         id == "--" mustBe false
       }
 
-      println(callCounter1.get() + " - " + callCounter2.get())
-
       if (callCounter1.get() > 0) {
         callCounter1.get() mustBe 101
         callCounter2.get() mustBe 0

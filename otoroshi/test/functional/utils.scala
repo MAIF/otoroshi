@@ -50,11 +50,17 @@ trait OneServerPerSuiteWithMyComponents
   override def components: BuiltInComponents = otoroshiComponents
 }
 
-//trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents with ScalaFutures with AddConfiguration {
-//  this: TestSuite =>
-//  val otoroshiComponents = new OtoroshiTestComponentsInstances(context, getConfiguration)
-//  override def components: BuiltInComponents = otoroshiComponents
-//}
+trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents with ScalaFutures with AddConfiguration {
+  this: TestSuite =>
+
+  val otoroshiComponents = {
+    val components = new OtoroshiTestComponentsInstances(context, getConfiguration)
+    println(s"Using env ${components.env}") // WARNING: important to keep, needed to switch env between suites
+    components
+  }
+
+  override def components: BuiltInComponents = otoroshiComponents
+}
 
 trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
