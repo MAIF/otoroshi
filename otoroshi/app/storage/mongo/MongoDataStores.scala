@@ -49,6 +49,11 @@ class MongoDataStores(configuration: Configuration,
   override def before(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle) = {
     logger.warn(s"Now using Mongo DataStores dbName:$dbName, uri:$parsedUri")
     redis.start()
+    if (configuration.getOptional[Boolean]("app.mongo.testMode").getOrElse(false)) {
+      logger.warn("Flushing DB as in test mode")
+      Await.result(redis.flushall(), 5.second)
+    }
+    Await.result(redis.initIndexes(), 5.second)
     FastFuture.successful(())
   }
 

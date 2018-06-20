@@ -54,10 +54,11 @@ object Configurations {
   val MongoConfiguration = Configuration(
     ConfigFactory
       .parseString("""
-                     |{
-                     |  app.storage = "mongo"
-                     |}
-                   """.stripMargin)
+         |{
+         |  app.storage = "mongo"
+         |  app.mongo.testMode = true
+         |}
+       """.stripMargin)
       .resolve()
   )
 }
@@ -69,7 +70,7 @@ object OtoroshiTests {
       case "inmemory"  => ("InMemory", Configurations.InMemoryConfiguration)
       case "leveldb"   => ("LevelDB", Configurations.LevelDBConfiguration)
       case "cassandra" => ("Cassandra", Configurations.CassandraConfiguration)
-      case "mongo"     => ("mongo", Configurations.MongoConfiguration)
+      case "mongo"     => ("Mongo", Configurations.MongoConfiguration)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
     if (name == "LevelDB") {

@@ -102,7 +102,7 @@ class SnowMonkey(implicit env: Env) {
           .filter(c => inRatio(c.ratio, reqNumber))
           .map { conf =>
             val index    = reqNumber % (if (conf.responses.nonEmpty) conf.responses.size else 1)
-            val response = conf.responses.apply(index.toInt)
+            val response = conf.responses.applyOrElse(index.toInt, (i: Int) => BadResponse(status = 500, body = "error", Map("Content-Type" -> "text/plain")))
             // error
             FastFuture.successful(
               Results

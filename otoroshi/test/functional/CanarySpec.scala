@@ -90,7 +90,10 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
       }
 
       (0 until 100).foreach { _ =>
-        val (status, _, id) = callServer()
+        val (status, body, id) = callServer()
+        if (status != 200) {
+          println(body)
+        }
         status mustBe 200
         id == "--" mustBe false
       }
