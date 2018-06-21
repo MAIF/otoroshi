@@ -148,8 +148,7 @@ class BackOfficeAppContainer extends Component {
                           style={{
                             cursor: 'pointer',
                           }}>
-                          {env.snowMonkeyRunning ? (<div className="snowMonkeyAnim"><img
-                           src="/assets/images/nihonzaru.svg"/><h3 className="text-center">Snow monkey is running...</h3></div>) : null}
+                          {env.snowMonkeyRunning ? (<div className="screen"><p>Snow monkey is running...</p></div>) : null}
                         </span>,
                       ];
                     }}
