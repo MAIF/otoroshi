@@ -98,7 +98,7 @@ export class SnowMonkeyPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Nihonzaru, Snow Monkey and Lord of Chaos 🐒`);
+    this.props.setTitle(`Nihonzaru, the Snow Monkey`);
     this.updateStateConfig(true);
     this.mountShortcuts();
   }
@@ -182,7 +182,7 @@ export class SnowMonkeyPage extends Component {
             </div>
           </div>
           <div className="col-md-12 text-center" style={{ marginTop: 50 }}>
-            <img className="" src="/assets/images/nihonzaru.svg" width={200} />
+            <img className={this.state.started ? 'snowMonkeyAnim' : ''} title={this.state.started ? 'The Snow Monkey is running' : 'The Snow Monkey is not running'} src="/assets/images/nihonzaru.svg" width={200} />
           </div>
 
         </div>
