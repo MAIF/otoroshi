@@ -305,7 +305,8 @@ export class TopBar extends Component {
                   </li>
                   <li role="separator" className="divider" />
                   <li>
-                    <a href="/bo/dashboard/snowmonkey">🐒 Snow Monkey</a>
+                    <a href="/bo/dashboard/snowmonkey">
+                      <img className="monkeyMenu" src="/__otoroshi_assets/images/nihonzaru.svg"/> Snow Monkey</a>
                   </li>
                   <li role="separator" className="divider" />
                   <li>

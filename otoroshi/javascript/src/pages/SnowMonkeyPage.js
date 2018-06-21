@@ -181,8 +181,8 @@ export class SnowMonkeyPage extends Component {
               </button>
             </div>
           </div>
-          <div className="col-md-12" style={{ marginTop: 50 }}>
-            <img className="pull-right" src="/assets/images/snowmonkey-2.png" width={200} />
+          <div className="col-md-12 text-center" style={{ marginTop: 50 }}>
+            <img className="" src="/assets/images/nihonzaru.svg" width={200} />
           </div>
 
         </div>

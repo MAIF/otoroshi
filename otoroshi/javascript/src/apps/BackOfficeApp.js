@@ -116,18 +116,6 @@ class BackOfficeAppContainer extends Component {
             return [
               <UpdateOtoroshiVersion env={env} />,
               <TopBar {...this.props} changePassword={env.changePassword} />,
-              <span
-                onClick={e => (window.location = '/bo/dashboard/snowmonkey')}
-                style={{
-                  position: 'fixed',
-                  bottom: 10,
-                  right: 10,
-                  fontSize: 30,
-                  cursor: 'pointer',
-                }}
-                className="snowMonkeyRunning">
-                {env.snowMonkeyRunning ? '🐒' : null}
-              </span>,
             ];
           }}
         </WithEnv>
@@ -152,6 +140,20 @@ class BackOfficeAppContainer extends Component {
                   </ul>
                   <DynamicSidebar />
                   <DefaultSidebar lines={this.state.lines} addService={this.addService} />
+                  <WithEnv>
+                    {env => {
+                      return [
+                        <span
+                          onClick={e => (window.location = '/bo/dashboard/snowmonkey')}
+                          style={{
+                            cursor: 'pointer',
+                          }}>
+                          {env.snowMonkeyRunning ? (<div className="snowMonkeyAnim"><img
+                           src="/assets/images/nihonzaru.svg"/><h3 className="text-center">Snow monkey is running...</h3></div>) : null}
+                        </span>,
+                      ];
+                    }}
+                  </WithEnv>
                 </div>
               </div>
             </div>
