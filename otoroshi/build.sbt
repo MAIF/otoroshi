@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.macwire" %% "macros"                   % "2.3.0" % "provided",
   "com.typesafe.play"        %% "play-json"                % "2.6.8",
   "com.typesafe.play"        %% "play-json-joda"           % "2.6.8",
-  "com.typesafe.akka"        %% "akka-stream-kafka"        % "0.18",
+  "com.typesafe.akka"        %% "akka-stream-kafka"        % "0.21",
   "com.github.etaty"         %% "rediscala"                % "1.8.0",
   "com.github.gphat"         %% "censorinus"               % "2.1.8",
   "io.dropwizard.metrics"    % "metrics-core"              % "3.1.2",
@@ -28,6 +28,7 @@ libraryDependencies ++= Seq(
   "javax.xml.bind"         % "jaxb-api"              % "2.3.0",
   "com.sun.xml.bind"       % "jaxb-core"             % "2.3.0",
   "com.sun.xml.bind"       % "jaxb-impl"             % "2.3.0",
+  "org.reactivemongo"        %% "reactivemongo"                 % "0.13.0",
   "org.scalatestplus.play" %% "scalatestplus-play"   % "3.1.2" % Test,
   "com.datastax.cassandra" % "cassandra-driver-core" % "3.4.0" classifier "shaded" excludeAll (
     ExclusionRule(organization = "io.netty"),

@@ -43,7 +43,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       body
     }).await()
     val service = ServiceDescriptor(
-      id = "quotas-test",
+      id = "1-quotas-test",
       name = "quotas-test",
       env = "prod",
       subdomain = "quotas",
@@ -58,7 +58,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       enforceSecureCommunication = false
     )
     val apiKeyLowThrottlingQuota = ApiKey(
-      clientId = "apikey-throttling",
+      clientId = "1-apikey-throttling",
       clientSecret = "1234",
       clientName = "apikey-test",
       authorizedGroup = "default",
@@ -67,7 +67,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       // monthlyQuota = 3
     )
     val apiKeyLowDailyQuota = ApiKey(
-      clientId = "apikey-daily",
+      clientId = "1-apikey-daily",
       clientSecret = "1234",
       clientName = "apikey-test",
       authorizedGroup = "default",
@@ -76,7 +76,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       // monthlyQuota = 3
     )
     val apiKeyLowDMonthlyQuota = ApiKey(
-      clientId = "apikey-monthly",
+      clientId = "1-apikey-monthly",
       clientSecret = "1234",
       clientName = "apikey-test",
       authorizedGroup = "default",
@@ -84,9 +84,9 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       // dailyQuota = 3
       monthlyQuota = 3
     )
-    val basicAuthThrottling = Base64.getUrlEncoder.encodeToString(s"apikey-throttling:1234".getBytes)
-    val basicAuthDaily      = Base64.getUrlEncoder.encodeToString(s"apikey-daily:1234".getBytes)
-    val basicAuthMonthly    = Base64.getUrlEncoder.encodeToString(s"apikey-monthly:1234".getBytes)
+    val basicAuthThrottling = Base64.getUrlEncoder.encodeToString(s"1-apikey-throttling:1234".getBytes)
+    val basicAuthDaily      = Base64.getUrlEncoder.encodeToString(s"1-apikey-daily:1234".getBytes)
+    val basicAuthMonthly    = Base64.getUrlEncoder.encodeToString(s"1-apikey-monthly:1234".getBytes)
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP

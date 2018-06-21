@@ -3,3 +3,4 @@ wrk_test
 release-*
 *.swp
 cassandra-data
+mongo-data

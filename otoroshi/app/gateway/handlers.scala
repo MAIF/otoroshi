@@ -52,6 +52,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
   }
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
+    // exception.printStackTrace()
     logger.error(s"Server Error ${exception.getMessage} on ${request.relativeUri}", exception)
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }
