@@ -26,6 +26,7 @@ export class ServiceEventsPage extends Component {
     { title: 'duration', content: item => `${item.duration} ms.` },
     { title: 'overhead', content: item => `${item.overhead} ms.` },
     { title: 'status', content: item => item.status },
+    { title: 'method', content: item => item.method },
     { title: 'Access By', content: item => (item.identity ? item.identity.identityType : '--') },
     {
       title: 'Accessed By',
