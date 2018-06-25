@@ -10,3 +10,11 @@ docker-compose down
 ```
 
 Right now a service is used to create custom ad hoc configuration for the sidecar otoroshi instance. In the future, Otoroshi will support SIDECAR configuration (https://github.com/MAIF/otoroshi/issues/138)
+
+## Logical calls graph
+
+<img src ="https://github.com/MAIF/otoroshi/raw/master/demo/service-mesh/calls.svg">
+
+## Actual calls graph
+
+<img src ="https://github.com/MAIF/otoroshi/raw/master/demo/service-mesh/mesh.svg">

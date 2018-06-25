@@ -5,6 +5,10 @@ const port = process.env.PORT || 5432;
 
 app.get('/front', (req, res) => {
   // should be localhost when containers run on the same pod
+  let service1CallDuration = 0;
+  let Service2CallDuration = 0;
+  let globalDuration = 0;
+  const start = Date.now();
   fetch('http://otoroshi-service-frontend:8080/api', {
     method: 'GET',
     headers: {
@@ -13,6 +17,8 @@ app.get('/front', (req, res) => {
     }
   }).then(r => r.json()).then(res1 => {
     // should be localhost when containers run on the same pod
+    service1CallDuration = Date.now() - start;
+    const start2 = Date.now();
     return fetch('http://otoroshi-service-frontend:8080/api', {
       method: 'GET',
       headers: {
@@ -20,10 +26,12 @@ app.get('/front', (req, res) => {
         'Accept': 'application/json'
       }
     }).then(r => r.json()).then(res2 => {
+      Service2CallDuration = Date.now() - start2;
       return [res1, res2];
     })
   }).then(resp => {
-    res.status(200).send({ msg: 'hello', from: resp });
+    const globalDuration = Date.now() - start;
+    res.status(200).send({ msg: 'hello', from: resp, service1CallDuration, Service2CallDuration, globalDuration });
   });
 });
 

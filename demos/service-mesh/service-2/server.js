@@ -5,6 +5,7 @@ const port = process.env.PORT || 5432;
 
 app.get('/api', (req, res) => {
   // should be localhost if on the same pod
+  const start = Date.now();
   fetch('http://otoroshi-service-2:8080/api', {
     method: 'GET',
     headers: {
@@ -12,7 +13,7 @@ app.get('/api', (req, res) => {
       'Accept': 'application/json'
     }
   }).then(r => r.json()).then(res1 => {
-    res.status(200).send({ emitter: 'service-2', other: res1 });
+    res.status(200).send({ emitter: 'service-2', other: res1, service3CallDuration: Date.now() - start });
   })
 });
 

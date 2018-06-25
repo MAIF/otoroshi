@@ -1,0 +1,121 @@
+<svg width="738pt" height="260pt" viewBox="0.00 0.00 738.00 260.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph1" class="graph" transform="scale(1 1) rotate(0) translate(4 256)">
+<title>mesh</title>
+<polygon fill="white" stroke="white" points="-4,5 -4,-256 735,-256 735,5 -4,5"></polygon>
+<!-- browser -->
+<g id="node1" class="node"><title>browser</title>
+<ellipse fill="#219939" stroke="#219939" cx="42" cy="-180" rx="42.2738" ry="18"></ellipse>
+<text text-anchor="middle" x="42" y="-175.8" font-family="Times,serif" font-size="14.00">browser</text>
+</g>
+<!-- otoroshi&#45;gateway -->
+<g id="node3" class="node"><title>otoroshi-gateway</title>
+<ellipse fill="#ff6500" stroke="#ff6500" cx="198" cy="-180" rx="78.1501" ry="18"></ellipse>
+<text text-anchor="middle" x="198" y="-175.8" font-family="Times,serif" font-size="14.00">otoroshi-gateway</text>
+</g>
+<!-- browser&#45;&gt;otoroshi&#45;gateway -->
+<g id="edge2" class="edge"><title>browser-&gt;otoroshi-gateway</title>
+<path fill="none" stroke="black" d="M84.2692,-180C92.1457,-180 100.663,-180 109.365,-180"></path>
+<polygon fill="black" stroke="black" points="109.639,-183.5 119.639,-180 109.639,-176.5 109.639,-183.5"></polygon>
+</g>
+<!-- otoroshi&#45;service&#45;frontend -->
+<g id="node5" class="node"><title>otoroshi-service-frontend</title>
+<ellipse fill="#f9b000" stroke="#f9b000" cx="421" cy="-180" rx="109.349" ry="18"></ellipse>
+<text text-anchor="middle" x="421" y="-175.8" font-family="Times,serif" font-size="14.00">otoroshi-service-frontend</text>
+</g>
+<!-- otoroshi&#45;gateway&#45;&gt;otoroshi&#45;service&#45;frontend -->
+<g id="edge4" class="edge"><title>otoroshi-gateway-&gt;otoroshi-service-frontend</title>
+<path fill="none" stroke="black" d="M276.295,-180C284.526,-180 293.028,-180 301.593,-180"></path>
+<polygon fill="black" stroke="black" points="301.665,-183.5 311.665,-180 301.665,-176.5 301.665,-183.5"></polygon>
+</g>
+<!-- otoroshi&#45;service&#45;1 -->
+<g id="node8" class="node"><title>otoroshi-service-1</title>
+<ellipse fill="#f9b000" stroke="#f9b000" cx="648" cy="-180" rx="81.0782" ry="18"></ellipse>
+<text text-anchor="middle" x="648" y="-175.8" font-family="Times,serif" font-size="14.00">otoroshi-service-1</text>
+</g>
+<!-- otoroshi&#45;service&#45;frontend&#45;&gt;otoroshi&#45;service&#45;1 -->
+<g id="edge18" class="edge"><title>otoroshi-service-frontend-&gt;otoroshi-service-1</title>
+<path fill="none" stroke="black" d="M530.216,-180C539.036,-180 547.891,-180 556.564,-180"></path>
+<polygon fill="black" stroke="black" points="556.649,-183.5 566.649,-180 556.649,-176.5 556.649,-183.5"></polygon>
+</g>
+<!-- otoroshi&#45;service&#45;2 -->
+<g id="node11" class="node"><title>otoroshi-service-2</title>
+<ellipse fill="#f9b000" stroke="#f9b000" cx="421" cy="-72" rx="81.0782" ry="18"></ellipse>
+<text text-anchor="middle" x="421" y="-67.8" font-family="Times,serif" font-size="14.00">otoroshi-service-2</text>
+</g>
+<!-- otoroshi&#45;service&#45;frontend&#45;&gt;otoroshi&#45;service&#45;2 -->
+<g id="edge20" class="edge"><title>otoroshi-service-frontend-&gt;otoroshi-service-2</title>
+<path fill="none" stroke="black" d="M421,-161.747C421,-141.235 421,-120.723 421,-100.21"></path>
+<polygon fill="black" stroke="black" points="424.5,-100.141 421,-90.1406 417.5,-100.141 424.5,-100.141"></polygon>
+</g>
+<!-- service&#45;frontend -->
+<g id="node15" class="node"><title>service-frontend</title>
+<ellipse fill="lightgrey" stroke="black" cx="421" cy="-234" rx="74.1162" ry="18"></ellipse>
+<text text-anchor="middle" x="421" y="-229.8" font-family="Times,serif" font-size="14.00">service-frontend</text>
+</g>
+<!-- otoroshi&#45;service&#45;frontend&#45;&gt;service&#45;frontend -->
+<g id="edge14" class="edge"><title>otoroshi-service-frontend-&gt;service-frontend</title>
+<path fill="none" stroke="black" d="M485.484,-194.555C508.275,-202.707 508.673,-210.859 486.677,-219.011"></path>
+<polygon fill="black" stroke="black" points="485.561,-215.693 477.15,-222.136 487.743,-222.345 485.561,-215.693"></polygon>
+</g>
+<!-- service&#45;1 -->
+<g id="node6" class="node"><title>service-1</title>
+<ellipse fill="lightgrey" stroke="black" cx="648" cy="-234" rx="46.345" ry="18"></ellipse>
+<text text-anchor="middle" x="648" y="-229.8" font-family="Times,serif" font-size="14.00">service-1</text>
+</g>
+<!-- service&#45;1&#45;&gt;otoroshi&#45;service&#45;1 -->
+<g id="edge6" class="edge"><title>service-1-&gt;otoroshi-service-1</title>
+<path fill="none" stroke="black" d="M686.137,-223.522C708.026,-215.601 714.175,-207.681 704.583,-199.76"></path>
+<polygon fill="black" stroke="black" points="706.377,-196.755 696.013,-194.555 702.743,-202.738 706.377,-196.755"></polygon>
+</g>
+<!-- otoroshi&#45;service&#45;1&#45;&gt;service&#45;1 -->
+<g id="edge10" class="edge"><title>otoroshi-service-1-&gt;service-1</title>
+<path fill="none" stroke="black" d="M599.987,-194.555C582.556,-202.928 582.717,-211.302 600.469,-219.675"></path>
+<polygon fill="black" stroke="black" points="599.283,-222.971 609.863,-223.522 601.936,-216.494 599.283,-222.971"></polygon>
+</g>
+<!-- service&#45;2 -->
+<g id="node9" class="node"><title>service-2</title>
+<ellipse fill="lightgrey" stroke="black" cx="421" cy="-18" rx="46.345" ry="18"></ellipse>
+<text text-anchor="middle" x="421" y="-13.8" font-family="Times,serif" font-size="14.00">service-2</text>
+</g>
+<!-- service&#45;2&#45;&gt;otoroshi&#45;service&#45;2 -->
+<g id="edge8" class="edge"><title>service-2-&gt;otoroshi-service-2</title>
+<path fill="none" stroke="black" d="M448.42,-32.5547C453.712,-37.0071 456.165,-41.4594 455.777,-45.9118"></path>
+<polygon fill="black" stroke="black" points="452.53,-44.5682 450.992,-55.0508 458.731,-47.8151 452.53,-44.5682"></polygon>
+</g>
+<!-- otoroshi&#45;service&#45;2&#45;&gt;service&#45;2 -->
+<g id="edge12" class="edge"><title>otoroshi-service-2-&gt;service-2</title>
+<path fill="none" stroke="black" d="M391.008,-55.0508C386.396,-50.247 385.09,-45.4431 387.091,-40.6392"></path>
+<polygon fill="black" stroke="black" points="390.05,-42.5442 393.58,-32.5547 384.591,-38.1624 390.05,-42.5442"></polygon>
+</g>
+<!-- otoroshi&#45;service&#45;3 -->
+<g id="node20" class="node"><title>otoroshi-service-3</title>
+<ellipse fill="#f9b000" stroke="#f9b000" cx="648" cy="-72" rx="81.0782" ry="18"></ellipse>
+<text text-anchor="middle" x="648" y="-67.8" font-family="Times,serif" font-size="14.00">otoroshi-service-3</text>
+</g>
+<!-- otoroshi&#45;service&#45;2&#45;&gt;otoroshi&#45;service&#45;3 -->
+<g id="edge22" class="edge"><title>otoroshi-service-2-&gt;otoroshi-service-3</title>
+<path fill="none" stroke="black" d="M502.595,-72C519.987,-72 538.489,-72 556.239,-72"></path>
+<polygon fill="black" stroke="black" points="556.59,-75.5001 566.59,-72 556.59,-68.5001 556.59,-75.5001"></polygon>
+</g>
+<!-- service&#45;frontend&#45;&gt;otoroshi&#45;service&#45;frontend -->
+<g id="edge16" class="edge"><title>service-frontend-&gt;otoroshi-service-frontend</title>
+<path fill="none" stroke="black" d="M364.85,-222.136C338.231,-214.307 332.266,-206.478 346.953,-198.649"></path>
+<polygon fill="black" stroke="black" points="348.7,-201.708 356.516,-194.555 345.945,-195.273 348.7,-201.708"></polygon>
+</g>
+<!-- service&#45;3 -->
+<g id="node21" class="node"><title>service-3</title>
+<ellipse fill="lightgrey" stroke="black" cx="648" cy="-126" rx="46.345" ry="18"></ellipse>
+<text text-anchor="middle" x="648" y="-121.8" font-family="Times,serif" font-size="14.00">service-3</text>
+</g>
+<!-- otoroshi&#45;service&#45;3&#45;&gt;service&#45;3 -->
+<g id="edge26" class="edge"><title>otoroshi-service-3-&gt;service-3</title>
+<path fill="none" stroke="black" d="M599.987,-86.5547C582.556,-94.9281 582.717,-103.302 600.469,-111.675"></path>
+<polygon fill="black" stroke="black" points="599.283,-114.971 609.863,-115.522 601.936,-108.494 599.283,-114.971"></polygon>
+</g>
+<!-- service&#45;3&#45;&gt;otoroshi&#45;service&#45;3 -->
+<g id="edge24" class="edge"><title>service-3-&gt;otoroshi-service-3</title>
+<path fill="none" stroke="black" d="M686.137,-115.522C708.026,-107.601 714.175,-99.6807 704.583,-91.7598"></path>
+<polygon fill="black" stroke="black" points="706.377,-88.7549 696.013,-86.5547 702.743,-94.7376 706.377,-88.7549"></polygon>
+</g>
+</g>
+</svg>

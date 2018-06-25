@@ -1,0 +1,11 @@
+digraph calls {
+  ratio = fill;
+  node [style=filled];
+  concentrate=true;
+  "browser" -> "service-frontend"
+  "service-frontend" -> "service-1"
+  "service-frontend" -> "service-2"
+  "service-2" -> "service-3"
+
+  "browser"[color="#219939"];
+}

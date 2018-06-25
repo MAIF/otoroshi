@@ -1,0 +1,51 @@
+<svg width="211pt" height="260pt" viewBox="0.00 0.00 211.00 260.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph1" class="graph" transform="scale(1 1) rotate(0) translate(4 256)">
+<title>calls</title>
+<polygon fill="white" stroke="white" points="-4,5 -4,-256 208,-256 208,5 -4,5"></polygon>
+<!-- browser -->
+<g id="node1" class="node"><title>browser</title>
+<ellipse fill="#219939" stroke="#219939" cx="101" cy="-234" rx="42.2053" ry="18"></ellipse>
+<text text-anchor="middle" x="101" y="-229.8" font-family="Times,serif" font-size="14.00">browser</text>
+</g>
+<!-- service&#45;frontend -->
+<g id="node3" class="node"><title>service-frontend</title>
+<ellipse fill="lightgrey" stroke="black" cx="101" cy="-162" rx="73.9627" ry="18"></ellipse>
+<text text-anchor="middle" x="101" y="-157.8" font-family="Times,serif" font-size="14.00">service-frontend</text>
+</g>
+<!-- browser&#45;&gt;service&#45;frontend -->
+<g id="edge2" class="edge"><title>browser-&gt;service-frontend</title>
+<path fill="none" stroke="black" d="M101,-215.697C101,-207.983 101,-198.712 101,-190.112"></path>
+<polygon fill="black" stroke="black" points="104.5,-190.104 101,-180.104 97.5001,-190.104 104.5,-190.104"></polygon>
+</g>
+<!-- service&#45;1 -->
+<g id="node5" class="node"><title>service-1</title>
+<ellipse fill="lightgrey" stroke="black" cx="46" cy="-90" rx="46.1342" ry="18"></ellipse>
+<text text-anchor="middle" x="46" y="-85.8" font-family="Times,serif" font-size="14.00">service-1</text>
+</g>
+<!-- service&#45;frontend&#45;&gt;service&#45;1 -->
+<g id="edge4" class="edge"><title>service-frontend-&gt;service-1</title>
+<path fill="none" stroke="black" d="M87.686,-144.055C80.8995,-135.418 72.5256,-124.76 65.0678,-115.268"></path>
+<polygon fill="black" stroke="black" points="67.743,-113.008 58.8126,-107.307 62.2388,-117.333 67.743,-113.008"></polygon>
+</g>
+<!-- service&#45;2 -->
+<g id="node7" class="node"><title>service-2</title>
+<ellipse fill="lightgrey" stroke="black" cx="157" cy="-90" rx="46.1342" ry="18"></ellipse>
+<text text-anchor="middle" x="157" y="-85.8" font-family="Times,serif" font-size="14.00">service-2</text>
+</g>
+<!-- service&#45;frontend&#45;&gt;service&#45;2 -->
+<g id="edge6" class="edge"><title>service-frontend-&gt;service-2</title>
+<path fill="none" stroke="black" d="M114.556,-144.055C121.466,-135.418 129.992,-124.76 137.586,-115.268"></path>
+<polygon fill="black" stroke="black" points="140.44,-117.302 143.954,-107.307 134.974,-112.929 140.44,-117.302"></polygon>
+</g>
+<!-- service&#45;3 -->
+<g id="node9" class="node"><title>service-3</title>
+<ellipse fill="lightgrey" stroke="black" cx="157" cy="-18" rx="46.1342" ry="18"></ellipse>
+<text text-anchor="middle" x="157" y="-13.8" font-family="Times,serif" font-size="14.00">service-3</text>
+</g>
+<!-- service&#45;2&#45;&gt;service&#45;3 -->
+<g id="edge8" class="edge"><title>service-2-&gt;service-3</title>
+<path fill="none" stroke="black" d="M157,-71.6966C157,-63.9827 157,-54.7125 157,-46.1124"></path>
+<polygon fill="black" stroke="black" points="160.5,-46.1043 157,-36.1043 153.5,-46.1044 160.5,-46.1043"></polygon>
+</g>
+</g>
+</svg>

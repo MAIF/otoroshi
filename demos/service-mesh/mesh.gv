@@ -1,0 +1,32 @@
+digraph mesh {
+  ratio = fill;
+  node [style=filled];
+  concentrate=true;
+  "browser" -> "otoroshi-gateway";
+  "otoroshi-gateway" -> "otoroshi-service-frontend"
+  "service-1" -> "otoroshi-service-1"
+  "service-2" -> "otoroshi-service-2"
+  "otoroshi-service-1" -> "service-1"
+  "otoroshi-service-2" -> "service-2"
+  "otoroshi-service-frontend" -> "service-frontend"
+  "service-frontend" -> "otoroshi-service-frontend"
+  "otoroshi-service-frontend" -> "otoroshi-service-1"
+  "otoroshi-service-frontend" -> "otoroshi-service-2"
+  "otoroshi-service-2" -> "otoroshi-service-3"
+
+  "service-3" -> "otoroshi-service-3"
+  "otoroshi-service-3" -> "service-3"
+
+  "otoroshi-service-1"[color="#f9b000"];
+  "otoroshi-service-2"[color="#f9b000"];
+  "otoroshi-service-3"[color="#f9b000"];
+  "otoroshi-service-frontend"[color="#f9b000"];
+  "otoroshi-gateway"[color="#ff6500"];
+  "browser"[color="#219939"];
+
+
+  rankdir="LR";
+
+  { rank="same"; "service-1"; "otoroshi-service-1"; "otoroshi-service-3"; "service-3"}
+  { rank="same"; "service-frontend"; "otoroshi-service-frontend"; "otoroshi-service-2"; "service-2"}
+}
