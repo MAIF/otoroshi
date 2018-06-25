@@ -13,8 +13,8 @@ Right now a service is used to create custom ad hoc configuration for the sideca
 
 ## Logical calls graph
 
-<img src ="https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/service-mesh/calls.svg">
+<img src ="https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/service-mesh/calls.png">
 
 ## Actual calls graph
 
-<img src ="https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/service-mesh/mesh.svg">
+<img src ="https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/service-mesh/mesh.png">
