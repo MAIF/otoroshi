@@ -12,18 +12,13 @@ import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
-import env.Env
+import env.{Env, SidecarConfig}
 import events._
 import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, ServiceUnavailable, Status}
 import play.api.mvc._
@@ -33,7 +28,6 @@ import utils.future.Implicits._
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
-
 import utils.RequestImplicits._
 
 class WebSocketHandler()(implicit env: Env) {
@@ -97,6 +91,37 @@ class WebSocketHandler()(implicit env: Env) {
       FastFuture.successful(desc)
     }
 
+  def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader)(f: ServiceDescriptor => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    env.sidecarConfig match {
+      // when local service wants to access protected services from other containers
+      case Some(config@SidecarConfig(_, _, _, Some(akid))) if config.serviceId == service.id && remoteAddress == config.from=> {
+        env.datastores.apiKeyDataStore.findById(akid) flatMap {
+          case Some(ak) => f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty, additionalHeaders = service.additionalHeaders ++ Map(
+            env.Headers.OtoroshiClientId -> ak.clientId,
+            env.Headers.OtoroshiClientSecret -> ak.clientSecret
+          )))
+          case None => Errors.craftResponseResult(
+            "sidecar.bad.apikey.clientid",
+            Results.InternalServerError,
+            req,
+            Some(service),
+            None
+          ).asLeft[WSFlow]
+        }
+      }
+      // when local service wants to access unprotected services from other containers
+      case Some(config@SidecarConfig(_, _, _, None)) if config.serviceId == service.id && remoteAddress == config.from =>
+        f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty))
+      // when local service wants to access himself through otoroshi
+      case Some(config) if config.serviceId == service.id && remoteAddress == config.from =>
+        f(service.copy(targets = Seq(config.target)))
+      // when service from other containers wants to access local service through otoroshi
+      case Some(config) if config.serviceId == service.id && remoteAddress != config.from =>
+        f(service.copy(targets = Seq(config.target)))
+      case _ => f(service)
+    }
+  }
+
   def proxyWebSocket() = WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
     logger.info("[WEBSOCKET] proxy ws call !!!")
 
@@ -149,7 +174,7 @@ class WebSocketHandler()(implicit env: Env) {
                                        None,
                                        Some("errors.service.not.found"))
                   .asLeft[WSFlow]
-              case Some(desc) => {
+              case Some(rawDesc) => applySidecar(rawDesc, remoteAddress, req) { desc =>
 
                 val maybeTrackingId = req.cookies
                   .get("oto-client")

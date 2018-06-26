@@ -11,7 +11,7 @@ import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
-import env.Env
+import env.{Env, SidecarConfig}
 import events._
 import models._
 import utils.MaxLengthLimiter
@@ -284,6 +284,39 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
+  def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader)(f: ServiceDescriptor => Future[Result])(implicit env: Env): Future[Result] = {
+    env.sidecarConfig match {
+      // when local service wants to access protected services from other containers
+      case Some(config@SidecarConfig(_, _, _, Some(akid))) if config.serviceId == service.id && remoteAddress == config.from=> {
+        env.datastores.apiKeyDataStore.findById(akid) flatMap {
+          case Some(ak) =>
+            f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty, additionalHeaders = service.additionalHeaders ++ Map(
+              env.Headers.OtoroshiClientId -> ak.clientId,
+              env.Headers.OtoroshiClientSecret -> ak.clientSecret
+            )))
+          case None => Errors.craftResponseResult(
+            "sidecar.bad.apikey.clientid",
+            Results.InternalServerError,
+            req,
+            Some(service),
+            None
+          )
+        }
+      }
+      // when local service wants to access unprotected services from other containers
+      case Some(config@SidecarConfig(_, _, _, None)) if config.serviceId == service.id && remoteAddress == config.from =>
+        f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty))
+      // when local service wants to access himself through otoroshi
+      case Some(config) if config.serviceId == service.id && remoteAddress == config.from =>
+        f(service.copy(targets = Seq(config.target)))
+      // when service from other containers wants to access local service through otoroshi
+      case Some(config) if config.serviceId == service.id && remoteAddress != config.from =>
+        f(service.copy(targets = Seq(config.target)))
+      case _ =>
+        f(service)
+    }
+  }
+
   def forwardCall() = actionBuilder.async(sourceBodyParser) { req =>
     // TODO : add metrics + JMX
     // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
@@ -363,7 +396,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 case Some(desc) if !desc.enabled =>
                   Errors
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
-                case Some(desc) => {
+                case Some(rawDesc) => applySidecar(rawDesc, remoteAddress, req) { desc =>
                   val firstOverhead = System.currentTimeMillis() - start
                   snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) { snowMonkeyContext =>
                     val secondStart = System.currentTimeMillis()

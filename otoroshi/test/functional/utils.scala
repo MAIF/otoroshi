@@ -404,9 +404,7 @@ object HttpResponses {
   )
 }
 
-class TargetService(host: Option[String], path: String, contentType: String, result: HttpRequest => String) {
-
-  val port = TargetService.freePort
+class TargetService(val port: Int, host: Option[String], path: String, contentType: String, result: HttpRequest => String) {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
@@ -622,7 +620,11 @@ object TargetService {
   import Implicits._
 
   def apply(host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
-    new TargetService(host, path, contentType, result)
+    new TargetService(TargetService.freePort, host, path, contentType, result)
+  }
+
+  def withPort(port: Int, host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
+    new TargetService(port, host, path, contentType, result)
   }
 
   def freePort: Int = {

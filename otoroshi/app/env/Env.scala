@@ -31,6 +31,13 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
 
+case class SidecarConfig(
+  serviceId: String,
+  target: Target,
+  from: String = "127.0.0.1",
+  apiKeyClientId: Option[String] = None
+)
+
 class Env(val configuration: Configuration,
           environment: Environment,
           lifecycle: ApplicationLifecycle,
@@ -65,6 +72,21 @@ class Env(val configuration: Configuration,
     val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
     timeout(FiniteDuration(5, SECONDS)).andThen { case _ if isProd => ha ! StartHealthCheck() }
     (aa, ala, ha)
+  }
+
+  lazy val sidecarConfig: Option[SidecarConfig] = (
+    configuration.getOptional[String]("app.sidecar.serviceId"),
+    configuration.getOptional[String]("app.sidecar.target"),
+    configuration.getOptional[String]("app.sidecar.from"),
+    configuration.getOptional[String]("app.sidecar.apikey.clientId")
+  ) match {
+    case (Some(serviceId), Some(target), from, clientId) => Some(SidecarConfig(
+      serviceId = serviceId,
+      target = Target(target.split("://")(1), target.split("://")(0)),
+      from = from.getOrElse("127.0.0.1"),
+      apiKeyClientId = clientId
+    ))
+    case a => None
   }
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
