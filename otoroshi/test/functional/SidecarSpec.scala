@@ -103,6 +103,25 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service1).futureValue
     }
 
+    "Not allow access to local service from outside" in {
+      createOtoroshiService(service1).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost,
+          "X-Forwarded-For" -> "99.99.99.99"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 400
+      resp.body.contains("No ApiKey provided") mustBe true
+      callCounter1.get() mustBe 1
+
+      deleteOtoroshiService(service1).futureValue
+    }
+
     "Allow access to outside service from inside without apikey" in {
       createOtoroshiService(service1).futureValue
 
@@ -117,7 +136,26 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
 
       resp.status mustBe 200
       resp.body mustBe basicTestExpectedBody2
-      callCounter1.get() mustBe 1
+      callCounter2.get() mustBe 1
+
+      deleteOtoroshiService(service1).futureValue
+    }
+
+    "Not allow access to outside service from outside without apikey" in {
+      createOtoroshiService(service1).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost,
+          "X-Forwarded-For" -> "127.0.0.2"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 400
+      resp.body.contains("No ApiKey provided") mustBe true
+      callCounter2.get() mustBe 1
 
       deleteOtoroshiService(service1).futureValue
     }
