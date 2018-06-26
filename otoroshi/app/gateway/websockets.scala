@@ -92,14 +92,16 @@ class WebSocketHandler()(implicit env: Env) {
     }
 
   def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader)(f: ServiceDescriptor => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    def chooseRemoteAddress(config: SidecarConfig) = if (config.strict) req.headers.get("Remote-Address").map(add => add.split(":")(0)).getOrElse(remoteAddress) else remoteAddress
     env.sidecarConfig match {
       // when local service wants to access protected services from other containers
-      case Some(config@SidecarConfig(_, _, _, Some(akid))) if config.serviceId == service.id && remoteAddress == config.from=> {
+      case Some(config@SidecarConfig(_, _, _, Some(akid), strict)) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from => {
         env.datastores.apiKeyDataStore.findById(akid) flatMap {
-          case Some(ak) => f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty, additionalHeaders = service.additionalHeaders ++ Map(
-            env.Headers.OtoroshiClientId -> ak.clientId,
-            env.Headers.OtoroshiClientSecret -> ak.clientSecret
-          )))
+          case Some(ak) =>
+            f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty, additionalHeaders = service.additionalHeaders ++ Map(
+              env.Headers.OtoroshiClientId -> ak.clientId,
+              env.Headers.OtoroshiClientSecret -> ak.clientSecret
+            )))
           case None => Errors.craftResponseResult(
             "sidecar.bad.apikey.clientid",
             Results.InternalServerError,
@@ -110,15 +112,16 @@ class WebSocketHandler()(implicit env: Env) {
         }
       }
       // when local service wants to access unprotected services from other containers
-      case Some(config@SidecarConfig(_, _, _, None)) if config.serviceId == service.id && remoteAddress == config.from =>
+      case Some(config@SidecarConfig(_, _, _, None, strict)) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
         f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty))
       // when local service wants to access himself through otoroshi
-      case Some(config) if config.serviceId == service.id && remoteAddress == config.from =>
+      case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
         f(service.copy(targets = Seq(config.target)))
       // when service from other containers wants to access local service through otoroshi
-      case Some(config) if config.serviceId == service.id && remoteAddress != config.from =>
+      case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) != config.from =>
         f(service.copy(targets = Seq(config.target)))
-      case _ => f(service)
+      case _ =>
+        f(service)
     }
   }
 

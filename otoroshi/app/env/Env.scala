@@ -35,7 +35,8 @@ case class SidecarConfig(
   serviceId: String,
   target: Target,
   from: String = "127.0.0.1",
-  apiKeyClientId: Option[String] = None
+  apiKeyClientId: Option[String] = None,
+  strict: Boolean = true
 )
 
 class Env(val configuration: Configuration,
@@ -78,13 +79,15 @@ class Env(val configuration: Configuration,
     configuration.getOptional[String]("app.sidecar.serviceId"),
     configuration.getOptional[String]("app.sidecar.target"),
     configuration.getOptional[String]("app.sidecar.from"),
-    configuration.getOptional[String]("app.sidecar.apikey.clientId")
+    configuration.getOptional[String]("app.sidecar.apikey.clientId"),
+    configuration.getOptional[Boolean]("app.sidecar.strict")
   ) match {
-    case (Some(serviceId), Some(target), from, clientId) => Some(SidecarConfig(
+    case (Some(serviceId), Some(target), from, clientId, strict) => Some(SidecarConfig(
       serviceId = serviceId,
       target = Target(target.split("://")(1), target.split("://")(0)),
       from = from.getOrElse("127.0.0.1"),
-      apiKeyClientId = clientId
+      apiKeyClientId = clientId,
+      strict = strict.getOrElse(true)
     ))
     case a => None
   }

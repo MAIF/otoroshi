@@ -40,6 +40,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
                       |  app.sidecar.serviceId = "sidecar-service1-test"
                       |  app.sidecar.target = "http://127.0.0.1:$fakePort"
                       |  app.sidecar.from = "127.0.0.1"
+                      |  app.sidecar.strict = false
                       |  app.sidecar.apikey.clientId = "sidecar-apikey-test"
                       |}
        """.stripMargin)
@@ -104,14 +105,14 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      debugResponse(resp).status mustBe 200
+      resp.status mustBe 200
       resp.body mustBe basicTestExpectedBody
       callCounter1.get() mustBe 1
 
       deleteOtoroshiService(service1).futureValue
     }
 
-    "Not allow access to local service from outside" in {
+    "Not allow access to local service from outside without apikey" in {
       createOtoroshiService(service1).futureValue
 
       val resp = ws
@@ -123,7 +124,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      debugResponse(resp).status mustBe 400
+      resp.status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
       callCounter1.get() mustBe 1
 
@@ -142,7 +143,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      debugResponse(resp).status mustBe 200
+      resp.status mustBe 200
       resp.body mustBe basicTestExpectedBody2
       callCounter2.get() mustBe 1
 
@@ -161,7 +162,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      debugResponse(resp).status mustBe 400
+      resp.status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
       callCounter2.get() mustBe 1
 

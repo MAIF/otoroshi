@@ -3,6 +3,7 @@ package gateway
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 
 import akka.actor.{Actor, Props}
+import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
@@ -285,9 +286,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader)(f: ServiceDescriptor => Future[Result])(implicit env: Env): Future[Result] = {
+    def chooseRemoteAddress(config: SidecarConfig) = if (config.strict) req.headers.get("Remote-Address").map(add => add.split(":")(0)).getOrElse(remoteAddress) else remoteAddress
     env.sidecarConfig match {
       // when local service wants to access protected services from other containers
-      case Some(config@SidecarConfig(_, _, _, Some(akid))) if config.serviceId == service.id && remoteAddress == config.from=> {
+      case Some(config@SidecarConfig(_, _, _, Some(akid), strict)) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from => {
         env.datastores.apiKeyDataStore.findById(akid) flatMap {
           case Some(ak) =>
             f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty, additionalHeaders = service.additionalHeaders ++ Map(
@@ -304,13 +306,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
       }
       // when local service wants to access unprotected services from other containers
-      case Some(config@SidecarConfig(_, _, _, None)) if config.serviceId == service.id && remoteAddress == config.from =>
+      case Some(config@SidecarConfig(_, _, _, None, strict)) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
         f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty))
       // when local service wants to access himself through otoroshi
-      case Some(config) if config.serviceId == service.id && remoteAddress == config.from =>
+      case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
         f(service.copy(targets = Seq(config.target)))
       // when service from other containers wants to access local service through otoroshi
-      case Some(config) if config.serviceId == service.id && remoteAddress != config.from =>
+      case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) != config.from =>
         f(service.copy(targets = Seq(config.target)))
       case _ =>
         f(service)
