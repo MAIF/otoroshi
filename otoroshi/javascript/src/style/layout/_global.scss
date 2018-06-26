@@ -153,13 +153,13 @@ h4 {
 
 @keyframes colorPulse {
   0%, 100% {
-    color:#0c0;
+    color:$colorRouge;
     }
     48%, 52% {
-      color:#090;
+      color:lighten($colorRouge,5%);
     }
     50% {
-      color:#060;
+      color:darken($colorRouge,5%);
   }
 }
 
@@ -169,37 +169,40 @@ h4 {
   }
 }
 
-.snowMonkeyAnim {
-  animation-name: bounce;
-  animation-duration: 1s;
-  animation-iteration-count: infinite;
-    animation-direction: alternate;
-    animation-fill-mode: both;
-    margin-top: 30px;
+.monkey{
+  width: 200px;
+  .st0{fill:#343736;}
+  .st1{fill:#FFFFFF;}
 }
 
-@keyframes bounce {
+.snowMonkeyAnim {
+  animation-name: shake;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  margin-top: 30px;
+}
+
+@keyframes shake {
   from,
-  5%,
-  14%,
-  20%,
-  25% {
-    -webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
-    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  50% {
     -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
   }
 
-  10%,
-  12% {
-    -webkit-animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
-    animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
-    -webkit-transform: translate3d(0, -30px, 0);
-    transform: translate3d(0, -30px, 0);
+  5%,
+  15%,
+  25%,
+  35%,
+  45% {
+    -webkit-transform: translate3d(-10px, 0, 0);
+    transform: translate3d(-10px, 0, 0);
   }
 
-  22% {
-    -webkit-transform: translate3d(0, -4px, 0);
-    transform: translate3d(0, -4px, 0);
+  10%,
+  20%,
+  30%,
+  40% {
+    -webkit-transform: translate3d(10px, 0, 0);
+    transform: translate3d(10px, 0, 0);
   }
 }
