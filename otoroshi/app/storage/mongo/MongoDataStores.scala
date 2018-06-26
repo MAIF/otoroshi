@@ -17,18 +17,16 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Failure
 
-class MongoDataStores(configuration: Configuration,
-                      environment: Environment,
-                      lifecycle: ApplicationLifecycle,
-                      env: Env) extends DataStores {
+class MongoDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env)
+    extends DataStores {
 
   lazy val logger = Logger("otoroshi-mongo-datastores")
 
-  lazy val uri: String = configuration.getOptional[String]("app.mongo.uri").get
-  lazy val database: String = configuration.getOptional[String]("app.mongo.database").getOrElse("default")
+  lazy val uri: String         = configuration.getOptional[String]("app.mongo.uri").get
+  lazy val database: String    = configuration.getOptional[String]("app.mongo.database").getOrElse("default")
   lazy val strictMode: Boolean = configuration.getOptional[Boolean]("app.mongo.strict").getOrElse(false)
 
-  lazy val parsedUri = MongoConnection.parseURI(uri).get
+  lazy val parsedUri      = MongoConnection.parseURI(uri).get
   lazy val dbName: String = parsedUri.db.getOrElse(database)
 
   lazy val statsItems: Int = configuration.getOptional[Int]("app.mongo.windowSize").getOrElse(99)
@@ -41,7 +39,7 @@ class MongoDataStores(configuration: Configuration,
       .getOrElse(ConfigFactory.empty)
   )
 
-  lazy val driver = new MongoDriver(Some(configuration.underlying), None)
+  lazy val driver                      = new MongoDriver(Some(configuration.underlying), None)
   lazy val connection: MongoConnection = driver.connection(parsedUri, strictMode).get
 
   lazy val redis = new MongoRedis(actorSystem, connection, dbName)
@@ -61,14 +59,20 @@ class MongoDataStores(configuration: Configuration,
 
     import actorSystem.dispatcher
 
-    Await.ready(connection.askClose()(10.seconds).map { _ =>
-      logger.info("Mongo connections are stopped")
-    }.andThen {
-      case Failure(reason) =>
-        reason.printStackTrace()
-        driver.close() // Close anyway
-      case _ => driver.close()
-    }, 12.seconds)
+    Await.ready(
+      connection
+        .askClose()(10.seconds)
+        .map { _ =>
+          logger.info("Mongo connections are stopped")
+        }
+        .andThen {
+          case Failure(reason) =>
+            reason.printStackTrace()
+            driver.close() // Close anyway
+          case _ => driver.close()
+        },
+      12.seconds
+    )
     redis.stop()
     actorSystem.terminate()
     FastFuture.successful(())

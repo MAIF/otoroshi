@@ -404,7 +404,11 @@ object HttpResponses {
   )
 }
 
-class TargetService(val port: Int, host: Option[String], path: String, contentType: String, result: HttpRequest => String) {
+class TargetService(val port: Int,
+                    host: Option[String],
+                    path: String,
+                    contentType: String,
+                    result: HttpRequest => String) {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
@@ -623,7 +627,11 @@ object TargetService {
     new TargetService(TargetService.freePort, host, path, contentType, result)
   }
 
-  def withPort(port: Int, host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
+  def withPort(port: Int,
+               host: Option[String],
+               path: String,
+               contentType: String,
+               result: HttpRequest => String): TargetService = {
     new TargetService(port, host, path, contentType, result)
   }
 

@@ -205,7 +205,7 @@ case class GatewayEvent(
     to: Location,
     target: Location,
     url: String,
-    method: String, 
+    method: String,
     from: String,
     env: String,
     duration: Long,

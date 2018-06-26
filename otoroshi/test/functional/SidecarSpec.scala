@@ -14,7 +14,7 @@ import play.api.Configuration
 import play.api.libs.ws.WSResponse
 
 class SidecarSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
@@ -22,7 +22,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
   lazy val serviceHost = "sidecar.foo.bar"
   lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
-  lazy val fakePort = TargetService.freePort
+  lazy val fakePort    = TargetService.freePort
 
   def debugResponse(resp: WSResponse): WSResponse = {
     if (resp.status != 200) {
@@ -51,12 +51,14 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
 
     val callCounter1          = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
-    val basicTestServer1 = TargetService.withPort(fakePort, Some(serviceHost), "/api", "application/json", { _ =>
-      callCounter1.incrementAndGet()
-      basicTestExpectedBody
-    }).await()
+    val basicTestServer1 = TargetService
+      .withPort(fakePort, Some(serviceHost), "/api", "application/json", { _ =>
+        callCounter1.incrementAndGet()
+        basicTestExpectedBody
+      })
+      .await()
 
-    val callCounter2          = new AtomicInteger(0)
+    val callCounter2           = new AtomicInteger(0)
     val basicTestExpectedBody2 = """{"message":"bye world"}"""
     val basicTestServer2 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
       callCounter2.incrementAndGet()
@@ -97,10 +99,10 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
-          "Otoroshi-Client-Id" -> apiKey.clientId,
+          "Host"                   -> serviceHost,
+          "Otoroshi-Client-Id"     -> apiKey.clientId,
           "Otoroshi-Client-Secret" -> apiKey.clientSecret,
-          "X-Forwarded-For" -> "99.99.99.99"
+          "X-Forwarded-For"        -> "99.99.99.99"
         )
         .get()
         .futureValue
@@ -118,7 +120,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"            -> serviceHost,
           "X-Forwarded-For" -> "99.99.99.99"
         )
         .get()
@@ -137,7 +139,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"            -> serviceHost,
           "X-Forwarded-For" -> "127.0.0.1"
         )
         .get()
@@ -156,7 +158,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"            -> serviceHost,
           "X-Forwarded-For" -> "127.0.0.2"
         )
         .get()

@@ -25,9 +25,9 @@ class RedisChaosDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends 
   }
 
   override def registerOutage(
-                               descriptor: ServiceDescriptor,
-                               conf: SnowMonkeyConfig
-                             )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
+      descriptor: ServiceDescriptor,
+      conf: SnowMonkeyConfig
+  )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
     val dayEnd = System.currentTimeMillis() - DateTime.now().millisOfDay().withMaximumValue().getMillis
     val bound =
       if (conf.outageDurationTo.toMillis.toInt == conf.outageDurationFrom.toMillis.toInt)
@@ -41,17 +41,17 @@ class RedisChaosDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends 
       _ <- redisCli.incr(groupCounterKey)
       _ <- redisCli.incr(serviceCounterKey)
       _ <- redisCli.set(
-        serviceUntilKey,
-        Json.stringify(
-          Json.obj(
-            "descriptorName" -> descriptor.name,
-            "descriptorId"   -> descriptor.id,
-            "until"          -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
-            "duration"       -> outageDuration.toMillis
+            serviceUntilKey,
+            Json.stringify(
+              Json.obj(
+                "descriptorName" -> descriptor.name,
+                "descriptorId"   -> descriptor.id,
+                "until"          -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
+                "duration"       -> outageDuration.toMillis
+              )
+            ),
+            pxMilliseconds = Some(outageDuration.toMillis)
           )
-        ),
-        pxMilliseconds = Some(outageDuration.toMillis)
-      )
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)

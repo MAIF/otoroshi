@@ -48,7 +48,7 @@ export class Table extends Component {
     rowNavigation: false,
     stayAfterSave: false,
     pageSize: 15,
-    mobileSize: 767
+    mobileSize: 767,
   };
 
   state = {
@@ -73,7 +73,7 @@ export class Table extends Component {
   }
 
   registerSizeChanges = () => {
-    this.sizeListener = _.debounce((e) => {
+    this.sizeListener = _.debounce(e => {
       this.forceUpdate();
     }, 400);
     window.addEventListener('resize', this.sizeListener);
@@ -233,59 +233,61 @@ export class Table extends Component {
       return <h3>Something went wrong !!!</h3>;
     }
     const windowWidth = window.innerWidth;
-    const columns = this.props.columns.filter(c => {
-      if (windowWidth > this.props.mobileSize) {
-        return true;
-      } else {
-        return !c.noMobile;
-      }
-    }).map(c => {
-      return {
-        Header: c.title,
-        id: c.title,
-        headerStyle: c.style,
-        width: c.style && c.style.width ? c.style.width : undefined,
-        style: { ...c.style, height: 30 },
-        sortable: !c.notSortable,
-        filterable: !c.notFilterable,
-        accessor: d => (c.content ? c.content(d) : d),
-        Filter: d => (
-          <input
-            type="text"
-            className="form-control input-sm"
-            value={d.filter ? d.filter.value : ''}
-            onChange={e => d.onChange(e.target.value)}
-            placeholder="Search ..."
-          />
-        ),
-        Cell: r => {
-          const value = r.value;
-          const original = r.original;
-          return c.cell ? (
-            c.cell(value, original, this)
-          ) : (
-            <div
-              onClick={e => {
-                if (this.props.rowNavigation) {
-                  if (e.metaKey) {
-                    if (this.props.itemUrl) {
-                      const a = document.createElement('a');
-                      a.setAttribute('target', '_blank');
-                      a.setAttribute('href', this.props.itemUrl(original));
-                      a.click();
+    const columns = this.props.columns
+      .filter(c => {
+        if (windowWidth > this.props.mobileSize) {
+          return true;
+        } else {
+          return !c.noMobile;
+        }
+      })
+      .map(c => {
+        return {
+          Header: c.title,
+          id: c.title,
+          headerStyle: c.style,
+          width: c.style && c.style.width ? c.style.width : undefined,
+          style: { ...c.style, height: 30 },
+          sortable: !c.notSortable,
+          filterable: !c.notFilterable,
+          accessor: d => (c.content ? c.content(d) : d),
+          Filter: d => (
+            <input
+              type="text"
+              className="form-control input-sm"
+              value={d.filter ? d.filter.value : ''}
+              onChange={e => d.onChange(e.target.value)}
+              placeholder="Search ..."
+            />
+          ),
+          Cell: r => {
+            const value = r.value;
+            const original = r.original;
+            return c.cell ? (
+              c.cell(value, original, this)
+            ) : (
+              <div
+                onClick={e => {
+                  if (this.props.rowNavigation) {
+                    if (e.metaKey) {
+                      if (this.props.itemUrl) {
+                        const a = document.createElement('a');
+                        a.setAttribute('target', '_blank');
+                        a.setAttribute('href', this.props.itemUrl(original));
+                        a.click();
+                      }
+                    } else {
+                      this.gotoItem(e, original);
                     }
-                  } else {
-                    this.gotoItem(e, original);
                   }
-                }
-              }}
-              style={{ cursor: 'pointer', width: '100%' }}>
-              {value}
-            </div>
-          );
-        },
-      };
-    });
+                }}
+                style={{ cursor: 'pointer', width: '100%' }}>
+                {value}
+              </div>
+            );
+          },
+        };
+      });
     if (this.props.showActions) {
       columns.push({
         Header: 'Actions',

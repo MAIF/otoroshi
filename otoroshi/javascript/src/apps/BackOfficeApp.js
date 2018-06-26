@@ -148,9 +148,12 @@ class BackOfficeAppContainer extends Component {
                           style={{
                             cursor: 'pointer',
                           }}>
-                          {env.snowMonkeyRunning && window.location.pathname !== '/bo/dashboard/snowmonkey' && (
-                            <div className="screen"><p>Snow monkey is running...</p></div>
-                          )}
+                          {env.snowMonkeyRunning &&
+                            window.location.pathname !== '/bo/dashboard/snowmonkey' && (
+                              <div className="screen">
+                                <p>Snow monkey is running...</p>
+                              </div>
+                            )}
                         </span>,
                       ];
                     }}

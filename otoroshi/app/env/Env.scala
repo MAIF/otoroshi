@@ -32,11 +32,11 @@ import scala.io.Source
 import scala.util.{Failure, Success}
 
 case class SidecarConfig(
-  serviceId: String,
-  target: Target,
-  from: String = "127.0.0.1",
-  apiKeyClientId: Option[String] = None,
-  strict: Boolean = true
+    serviceId: String,
+    target: Target,
+    from: String = "127.0.0.1",
+    apiKeyClientId: Option[String] = None,
+    strict: Boolean = true
 )
 
 class Env(val configuration: Configuration,
@@ -82,13 +82,16 @@ class Env(val configuration: Configuration,
     configuration.getOptional[String]("app.sidecar.apikey.clientId"),
     configuration.getOptional[Boolean]("app.sidecar.strict")
   ) match {
-    case (Some(serviceId), Some(target), from, clientId, strict) => Some(SidecarConfig(
-      serviceId = serviceId,
-      target = Target(target.split("://")(1), target.split("://")(0)),
-      from = from.getOrElse("127.0.0.1"),
-      apiKeyClientId = clientId,
-      strict = strict.getOrElse(true)
-    ))
+    case (Some(serviceId), Some(target), from, clientId, strict) =>
+      Some(
+        SidecarConfig(
+          serviceId = serviceId,
+          target = Target(target.split("://")(1), target.split("://")(0)),
+          from = from.getOrElse("127.0.0.1"),
+          apiKeyClientId = clientId,
+          strict = strict.getOrElse(true)
+        )
+      )
     case a => None
   }
 
