@@ -88,8 +88,8 @@ object OtoroshiTests {
         new CanarySpec(name, Configurations.LevelDBConfiguration),
         new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration),
         new ApiKeysSpec(name, Configurations.LevelDBConfiguration),
-        new SnowMonkeySpec(name, Configurations.LevelDBConfiguration),
-        new SidecarSpec(name, Configurations.LevelDBConfiguration)
+        new SidecarSpec(name, Configurations.LevelDBConfiguration),
+        new SnowMonkeySpec(name, Configurations.LevelDBConfiguration)
         // new WebsocketSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
@@ -102,8 +102,8 @@ object OtoroshiTests {
         new ApiKeysSpec(name, config),
         new CanarySpec(name, config),
         new QuotasSpec(name, config),
-        new SnowMonkeySpec(name, config),
-        new SidecarSpec(name, config)
+        new SidecarSpec(name, config),
+        new SnowMonkeySpec(name, config)
         // new WebsocketSpec(name, config)
       )
     }
