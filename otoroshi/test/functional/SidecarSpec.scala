@@ -11,6 +11,7 @@ import models.{ApiKey, ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
+import play.api.libs.ws.WSResponse
 
 class SidecarSpec(name: String, configurationSpec: => Configuration)
   extends PlaySpec
@@ -22,6 +23,13 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
   lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   lazy val fakePort = TargetService.freePort
+
+  def debugResponse(resp: WSResponse): WSResponse = {
+    if (resp.status != 200) {
+      println(resp.status + " => " + resp.body)
+    }
+    resp
+  }
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -96,7 +104,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      resp.status mustBe 200
+      debugResponse(resp).status mustBe 200
       resp.body mustBe basicTestExpectedBody
       callCounter1.get() mustBe 1
 
@@ -115,7 +123,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      resp.status mustBe 400
+      debugResponse(resp).status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
       callCounter1.get() mustBe 1
 
@@ -134,7 +142,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      resp.status mustBe 200
+      debugResponse(resp).status mustBe 200
       resp.body mustBe basicTestExpectedBody2
       callCounter2.get() mustBe 1
 
@@ -153,7 +161,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      resp.status mustBe 400
+      debugResponse(resp).status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
       callCounter2.get() mustBe 1
 
