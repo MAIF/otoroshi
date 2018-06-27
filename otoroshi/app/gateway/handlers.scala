@@ -274,9 +274,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     Redirect(s"$protocol://$domain${req.relativeUri}")
   }
 
-  def splitToCanary(desc: ServiceDescriptor, trackingId: String)(implicit env: Env): Future[ServiceDescriptor] = {
+  def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(implicit env: Env): Future[ServiceDescriptor] = {
     if (desc.canary.enabled) {
-      env.datastores.canaryDataStore.isCanary(desc.id, trackingId, desc.canary.traffic).fast.map {
+      env.datastores.canaryDataStore.isCanary(desc.id, trackingId, desc.canary.traffic, reqNumber, config).fast.map {
         case false => desc
         case true  => desc.copy(targets = desc.canary.targets, root = desc.canary.root)
       }
@@ -446,7 +446,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             false
                           }
                         } map (value => value.split("::")(1))
-                      val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid)
+                      val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
 
                       if (maybeTrackingId.isDefined) {
                         logger.debug(s"request already has tracking id : $trackingId")
@@ -470,7 +470,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                           )
 
                       //desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).fast.map(d => (iu, d))).fast.flatMap {
-                      splitToCanary(desc, trackingId).fast.flatMap { _desc =>
+                      splitToCanary(desc, trackingId, reqNumber, globalConfig).fast.flatMap { _desc =>
                         val isUp = true
 
                         val descriptor = if (env.redirectToDev) _desc.copy(env = "dev") else _desc

@@ -86,9 +86,9 @@ class WebSocketHandler()(implicit env: Env) {
       FastFuture.successful(None)
     }
 
-  def splitToCanary(desc: ServiceDescriptor, trackingId: String)(implicit env: Env): Future[ServiceDescriptor] =
+  def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(implicit env: Env): Future[ServiceDescriptor] =
     if (desc.canary.enabled) {
-      env.datastores.canaryDataStore.isCanary(desc.id, trackingId, desc.canary.traffic).map {
+      env.datastores.canaryDataStore.isCanary(desc.id, trackingId, desc.canary.traffic, reqNumber, config).map {
         case false => desc
         case true  => desc.copy(targets = desc.canary.targets, root = desc.canary.root)
       }
@@ -163,6 +163,7 @@ class WebSocketHandler()(implicit env: Env) {
     logger.info("[WEBSOCKET] proxy ws call !!!")
 
     // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
+    val reqNumber     = reqCounter.incrementAndGet()
     val remoteAddress = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured     = req.headers.get("X-Forwarded-Protocol").map(_ == "https").orElse(Some(req.secure)).getOrElse(false)
     val protocol = req.headers
@@ -227,7 +228,7 @@ class WebSocketHandler()(implicit env: Env) {
                         false
                       }
                     } map (value => value.split("::")(1))
-                  val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid)
+                  val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
 
                   if (maybeTrackingId.isDefined) {
                     logger.debug(s"request already has tracking id : $trackingId")
@@ -249,7 +250,7 @@ class WebSocketHandler()(implicit env: Env) {
                         )
                       )
 
-                  desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).map(d => (iu, d))).flatMap { tuple =>
+                  desc.isUp.flatMap(iu => splitToCanary(desc, trackingId, reqNumber, globalConfig).map(d => (iu, d))).flatMap { tuple =>
                     val (isUp, _desc) = tuple
                     val descriptor    = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
 
@@ -316,7 +317,7 @@ class WebSocketHandler()(implicit env: Env) {
                               .asLeft[WSFlow]
                         }
                       } else {
-                        val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty)
+                        val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
                                                                       descriptor.targets.size
                                                                     else 1)
                         // Round robin loadbalancing is happening here !!!!!

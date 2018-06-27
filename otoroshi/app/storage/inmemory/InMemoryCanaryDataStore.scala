@@ -15,83 +15,36 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
 
   def canaryCountKey(id: String): Key      = Key.Empty / _env.storageRoot / "canary" / id / "count" / "canary"
   def standardCountKey(id: String): Key    = Key.Empty / _env.storageRoot / "canary" / id / "count" / "standard"
-  def canarySessionsKey(id: String): Key   = Key.Empty / _env.storageRoot / "canary" / id / "sessions" / "canary"
-  def standardSessionsKey(id: String): Key = Key.Empty / _env.storageRoot / "canary" / id / "sessions" / "standard"
 
-  override def destroyCanarySession(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def destroyCanarySession(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     for {
       _ <- redisCli.del(canaryCountKey(serviceId).key)
       _ <- redisCli.del(standardCountKey(serviceId).key)
-      _ <- redisCli.del(canarySessionsKey(serviceId).key)
-      _ <- redisCli.del(standardSessionsKey(serviceId).key)
     } yield true
+  }
 
-  override def isCanary(serviceId: String, trackingId: String, traffic: Double)(implicit ec: ExecutionContext,
+  override def isCanary(serviceId: String, trackingId: String, traffic: Double, reqNumber: Int, config: GlobalConfig)(implicit ec: ExecutionContext,
                                                                                 env: Env): Future[Boolean] = {
-
-    // val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
-    // if (hash % 100 < (traffic * 100)) {
-    //   FastFuture.successful(true)
-    // } else {
-    //   FastFuture.successful(false)
-    // }
-
-    for {
-      _              <- FastFuture.successful(())
-      fcanarycount   = redisCli.get(canaryCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
-      fstandardCount = redisCli.get(standardCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
-      falreadyCanary = redisCli.sismember(canarySessionsKey(serviceId).key, trackingId)
-      falreadyStd    = redisCli.sismember(standardSessionsKey(serviceId).key, trackingId)
-      canaryCount    <- fcanarycount
-      standardCount  <- fstandardCount
-      alreadyCanary  <- falreadyCanary
-      alreadyStd     <- falreadyStd
-      currentPercent <- FastFuture.successful(
-                         canaryCount.toDouble / (canaryCount.toDouble + standardCount.toDouble + 1.0)
-                       )
-      isNowCanary <- if (!alreadyCanary && !alreadyStd && currentPercent < traffic) {
-                      redisCli.sadd(canarySessionsKey(serviceId).key, trackingId).flatMap { nbr =>
-                        redisCli.incr(canaryCountKey(serviceId).key).map { count =>
-                          env.datastores.globalConfigDataStore.singleton().map { config =>
-                            env.statsd
-                              .counter(s"services.${serviceId}.users.canary", count.toDouble)(config.statsdConfig)
-                          }
-                          true
-                        }
-                      }
-                    } else if (alreadyCanary) {
-                      FastFuture.successful(true)
-                    } else if (alreadyStd) {
-                      FastFuture.successful(false)
-                    } else {
-                      redisCli.sadd(standardSessionsKey(serviceId).key, trackingId).flatMap { nbr =>
-                        redisCli.incr(standardCountKey(serviceId).key).map { count =>
-                          env.datastores.globalConfigDataStore.singleton().map { config =>
-                            env.statsd
-                              .counter(s"services.${serviceId}.users.default", count.toDouble)(config.statsdConfig)
-                          }
-                          false
-                        }
-                      }
-                    }
-    } yield {
-      logger.warn(
-        s"current canary req: $canaryCount, current standard req: $standardCount, current percentage: $currentPercent"
-      )
-      logger.warn(s"user already canary: $alreadyCanary, user became canary: $isNowCanary")
-      if (alreadyCanary) true else isNowCanary
+    val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+    if (hash % 100 < (traffic * 100)) {
+      redisCli.incr(canaryCountKey(serviceId).key).map { c =>
+        env.statsd.counter(s"services.$serviceId.users.canary", c)(config.statsdConfig)
+      }
+      FastFuture.successful(true)
+    } else {
+      redisCli.incr(standardCountKey(serviceId).key).map { c =>
+        env.statsd.counter(s"services.$serviceId.users.default", c)(config.statsdConfig)
+      }
+      FastFuture.successful(false)
     }
   }
 
-  def canaryCampaign(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[ServiceCanaryCampaign] =
+  def canaryCampaign(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[ServiceCanaryCampaign] = {
     for {
-      canary   <- redisCli.get(canaryCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
+      canary <- redisCli.get(canaryCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
       standard <- redisCli.get(standardCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
-      _ <- env.datastores.globalConfigDataStore.singleton().map { config =>
-            env.statsd.counter(s"services.${serviceId}.users.canary", 0.0)(config.statsdConfig)
-            env.statsd.counter(s"services.${serviceId}.users.default", 0.0)(config.statsdConfig)
-          }
     } yield {
       ServiceCanaryCampaign(canary, standard)
     }
+  }
 }
