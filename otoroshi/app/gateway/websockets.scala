@@ -103,9 +103,21 @@ class WebSocketHandler()(implicit env: Env) {
       if (config.strict) req.headers.get("Remote-Address").map(add => add.split(":")(0)).getOrElse(remoteAddress)
       else remoteAddress
     env.sidecarConfig match {
+      case _ if service.id == env.backOfficeDescriptor.id => f(service)
+      // when outside container wants to access oustide services through otoroshi
+      case Some(config) if chooseRemoteAddress(config) != config.from && config.serviceId != service.id =>
+        logger.debug(s"Outside container (${chooseRemoteAddress(config)}) wants to access oustide service (${service.id}) through otoroshi")
+        Errors.craftResponseResult(
+          "sidecar.bad.request.origin",
+          Results.BadGateway,
+          req,
+          Some(service),
+          None
+        ).asLeft[WSFlow]
       // when local service wants to access protected services from other containers
       case Some(config @ SidecarConfig(_, _, _, Some(akid), strict))
-          if config.serviceId == service.id && chooseRemoteAddress(config) == config.from => {
+          if chooseRemoteAddress(config) == config.from && config.serviceId != service.id => {
+        logger.debug(s"Local service (${config.from}) wants to access protected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) with apikey ${akid}")
         env.datastores.apiKeyDataStore.findById(akid) flatMap {
           case Some(ak) =>
             f(
@@ -113,32 +125,34 @@ class WebSocketHandler()(implicit env: Env) {
                 publicPatterns = Seq("/.*"),
                 privatePatterns = Seq.empty,
                 additionalHeaders = service.additionalHeaders ++ Map(
+                  "Host" -> req.headers.get("Host").get,
                   env.Headers.OtoroshiClientId     -> ak.clientId,
                   env.Headers.OtoroshiClientSecret -> ak.clientSecret
                 )
               )
             )
           case None =>
-            Errors
-              .craftResponseResult(
-                "sidecar.bad.apikey.clientid",
-                Results.InternalServerError,
-                req,
-                Some(service),
-                None
-              )
-              .asLeft[WSFlow]
+            Errors.craftResponseResult(
+              "sidecar.bad.apikey.clientid",
+              Results.InternalServerError,
+              req,
+              Some(service),
+              None
+            ).asLeft[WSFlow]
         }
       }
       // when local service wants to access unprotected services from other containers
       case Some(config @ SidecarConfig(_, _, _, None, strict))
-          if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
+          if chooseRemoteAddress(config) == config.from && config.serviceId != service.id =>
+        logger.debug(s"Local service (${config.from}) wants to access unprotected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) without apikey")
         f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty))
       // when local service wants to access himself through otoroshi
       case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
+        logger.debug(s"Local service (${config.from}) wants to access himself through Otoroshi")
         f(service.copy(targets = Seq(config.target)))
       // when service from other containers wants to access local service through otoroshi
       case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) != config.from =>
+        logger.debug(s"External service (${chooseRemoteAddress(config)}) wants to access local service (${service.id}) through Otoroshi")
         f(service.copy(targets = Seq(config.target)))
       case _ =>
         f(service)

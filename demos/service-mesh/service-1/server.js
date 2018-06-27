@@ -4,6 +4,7 @@ const app = express();
 const port = process.env.PORT || 5432;
 
 app.get('/api', (req, res) => {
+  console.log('request on service-1')
   res.status(200).send({ emitter: 'service-1' });
 });
 

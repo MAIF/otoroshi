@@ -1,0 +1,132 @@
+version: '3'
+services:
+
+  service-1:
+    build: ./service-1
+    networks:
+      - mesh
+    environment: 
+      - PORT=5432
+    expose:
+      - 5432
+    depends_on:
+      - config-server
+
+  service-2:
+    build: ./service-2
+    networks:
+      - mesh
+    environment: 
+      - PORT=5432
+    expose:
+      - 5432
+    depends_on:
+      - config-server
+
+  service-3:
+    build: ./service-3
+    networks:
+      - mesh
+    environment: 
+      - PORT=5432
+    expose:
+      - 5432
+    depends_on:
+      - config-server
+
+  service-frontend:
+    build: ./service-frontend
+    networks:
+      - mesh
+    environment: 
+      - PORT=5432
+    expose:
+      - 5432
+    depends_on:
+      - config-server
+
+  otoroshi-service-1:
+    image: maif/otoroshi:1.1.2
+    networks:
+      - mesh
+    environment:
+      - PORT=8080
+      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-1
+    expose:
+      - 8080
+    depends_on:
+      - service-1
+      - config-server
+
+  otoroshi-service-2:
+    image: maif/otoroshi:1.1.2
+    networks:
+      - mesh
+    environment:
+      - PORT=8080
+      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-2
+    expose:
+      - 8080
+    depends_on:
+      - service-2
+      - config-server
+
+  otoroshi-service-3:
+    image: maif/otoroshi:1.1.2
+    networks:
+      - mesh
+    environment:
+      - PORT=8080
+      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-3
+    expose:
+      - 8080
+    depends_on:
+      - service-3
+      - config-server
+
+  otoroshi-service-frontend:
+    image: maif/otoroshi:1.1.2
+    networks:
+      - mesh
+    ports:
+      - 8081:8080
+    environment:
+      - PORT=8080
+      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-frontend
+    expose:
+      - 8080
+    depends_on:
+      - service-frontend
+
+  otoroshi-gateway:
+    image: maif/otoroshi:1.1.2
+    networks:
+      - mesh
+    ports:
+      - 8080:8080
+    environment:
+      - PORT=8080
+      - APP_IMPORT_FROM=http://config-server:5432/config?from=otoroshi-gateway
+    expose:
+      - 8080
+    depends_on:
+      - config-server
+
+  config-server:
+    build: ./config-server
+    environment:
+      - PORT=5432
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    networks:
+      - mesh
+
+networks:
+  mesh:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.239.0/24

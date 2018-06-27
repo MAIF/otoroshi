@@ -4,8 +4,10 @@ const app = express();
 const port = process.env.PORT || 5432;
 
 app.get('/api', (req, res) => {
+  console.log('request on service-2')
   // should be localhost if on the same pod
   const start = Date.now();
+  console.log('Calling service-3 from service-2 ...')
   fetch('http://otoroshi-service-2:8080/api', {
     method: 'GET',
     headers: {

@@ -9,8 +9,9 @@ services:
       - PORT=5432
     expose:
       - 5432
-    depends_on:
-      - config-server
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.41
 
   service-2:
     build: ./service-2
@@ -20,8 +21,9 @@ services:
       - PORT=5432
     expose:
       - 5432
-    depends_on:
-      - config-server
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.42
 
   service-3:
     build: ./service-3
@@ -31,8 +33,9 @@ services:
       - PORT=5432
     expose:
       - 5432
-    depends_on:
-      - config-server
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.43
 
   service-frontend:
     build: ./service-frontend
@@ -42,113 +45,155 @@ services:
       - PORT=5432
     expose:
       - 5432
-    depends_on:
-      - config-server
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.44
 
   otoroshi-service-1:
-    image: maif/otoroshi:1.1.2
+    image: maif/otoroshi:1.2.0-dev
     networks:
       - mesh
     environment:
+      - APP_STORAGE=redis
+      - REDIS_HOST=internal-redis
       - PORT=8080
-      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-1
+      - SIDECAR_STRICT=true
+      - SIDECAR_SERVICE_ID=descriptor-service-1
+      - SIDECAR_TARGET=http://service-1:5432
+      - SIDECAR_FROM=172.16.239.41
+      - SIDECAR_APIKEY_CLIENT_ID=service-1-apikey
+      - APP_IMPORT_FROM=/usr/app/otoroshi/imports/mesh.json
+    volumes:
+      - "./configs:/usr/app/otoroshi/imports"
     expose:
       - 8080
     depends_on:
       - service-1
-      - config-server
-    #  - internal-redis
+      - internal-redis
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.31
 
   otoroshi-service-2:
-    image: maif/otoroshi:1.1.2
+    image: maif/otoroshi:1.2.0-dev
     networks:
       - mesh
     environment:
+      - APP_STORAGE=redis
+      - REDIS_HOST=internal-redis
       - PORT=8080
-      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-2
+      - SIDECAR_STRICT=true
+      - SIDECAR_SERVICE_ID=descriptor-service-2
+      - SIDECAR_TARGET=http://service-2:5432
+      - SIDECAR_FROM=172.16.239.42
+      - SIDECAR_APIKEY_CLIENT_ID=service-2-apikey
+      - APP_IMPORT_FROM=/usr/app/otoroshi/imports/mesh.json
+    volumes:
+      - "./configs:/usr/app/otoroshi/imports"
     expose:
       - 8080
     depends_on:
       - service-2
-      - config-server
-    #  - internal-redis
+      - internal-redis
+      - otoroshi-service-1
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.32
 
   otoroshi-service-3:
-    image: maif/otoroshi:1.1.2
+    image: maif/otoroshi:1.2.0-dev
     networks:
       - mesh
     environment:
+      - APP_STORAGE=redis
+      - REDIS_HOST=internal-redis
       - PORT=8080
-      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-3
+      - SIDECAR_STRICT=true
+      - SIDECAR_SERVICE_ID=descriptor-service-3
+      - SIDECAR_TARGET=http://service-3:5432
+      - SIDECAR_FROM=172.16.239.43
+      - SIDECAR_APIKEY_CLIENT_ID=service-3-apikey
+      - APP_IMPORT_FROM=/usr/app/otoroshi/imports/mesh.json
+    volumes:
+      - "./configs:/usr/app/otoroshi/imports"
     expose:
       - 8080
     depends_on:
       - service-3
-      - config-server
-    #  - internal-redis
+      - internal-redis
+      - otoroshi-service-1
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.33
 
   otoroshi-service-frontend:
-    image: maif/otoroshi:1.1.2
+    image: maif/otoroshi:1.2.0-dev
     networks:
       - mesh
     ports:
       - 8081:8080
     environment:
+      - APP_STORAGE=redis
+      - REDIS_HOST=internal-redis
       - PORT=8080
-      - APP_IMPORT_FROM=http://config-server:5432/config?from=service-frontend
+      - SIDECAR_STRICT=true
+      - SIDECAR_SERVICE_ID=descriptor-service-frontend
+      - SIDECAR_TARGET=http://service-frontend:5432
+      - SIDECAR_FROM=172.16.239.44
+      - SIDECAR_APIKEY_CLIENT_ID=service-frontend-apikey
+      - APP_IMPORT_FROM=/usr/app/otoroshi/imports/mesh.json
+    volumes:
+      - "./configs:/usr/app/otoroshi/imports"
     expose:
       - 8080
     depends_on:
       - service-frontend
-    #  - internal-redis
+      - internal-redis
+      - otoroshi-service-1
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.34
 
   otoroshi-gateway:
-    image: maif/otoroshi:1.1.2
+    image: maif/otoroshi:1.2.0-dev
     networks:
       - mesh
     ports:
       - 8080:8080
     environment:
+      - APP_STORAGE=redis
+      - REDIS_HOST=gateway-redis
       - PORT=8080
-      - APP_IMPORT_FROM=http://config-server:5432/config?from=otoroshi-gateway
+      - APP_IMPORT_FROM=/usr/app/otoroshi/imports/gateway.json
+    volumes:
+      - "./configs:/usr/app/otoroshi/imports"
     expose:
       - 8080
     depends_on:
-      - config-server
-    #  - gateway-redis
+      - gateway-redis
+    networks:
+      mesh:
+        ipv4_address: 172.16.239.20
 
-  config-server:
-    build: ./config-server
-    environment:
-      - PORT=5432
+  internal-redis:
+    image: redis:4.0.8
     expose:
-      - 5432
-    ports:
-      - 5432:5432
+      - 6379
     networks:
       - mesh
-      
-  # will be plugged to internal otoroshi instance once MAIF/otoroshi/issues/138 is done
-  # internal-redis:
-  #   image: redis:4.0.8
-  #   expose:
-  #     - 6379
-  #   networks:
-  #     - mesh
-  #   command: redis-server --appendonly yes
-  #   volumes:
-  #     - ./internal-redis-data:/data
-  # 
-  # will be plugged to gateway otoroshi instance once MAIF/otoroshi/issues/138 is done
-  # gateway-redis:
-  #   image: redis:4.0.8
-  #   expose:
-  #     - 6379
-  #   networks:
-  #     - mesh
-  #   command: redis-server --appendonly yes
-  #   volumes:
-  #     - ./gateway-redis-data:/data
+    command: redis-server --appendonly yes
+    volumes:
+      - ./internal-redis-data:/data
+  
+  gateway-redis:
+    image: redis:4.0.8
+    expose:
+      - 6379
+    networks:
+      - mesh
+    command: redis-server --appendonly yes
+    volumes:
+      - ./gateway-redis-data:/data
 
 networks:
   mesh:
@@ -156,4 +201,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.16.239.0/24
+        - subnet: 172.16.239.40/24

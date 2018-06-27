@@ -49,20 +49,21 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
 
   s"[$name] Otoroshi Sidecar" should {
 
-    val callCounter1          = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
     val basicTestServer1 = TargetService
       .withPort(fakePort, Some(serviceHost), "/api", "application/json", { _ =>
-        callCounter1.incrementAndGet()
         basicTestExpectedBody
       })
       .await()
 
-    val callCounter2           = new AtomicInteger(0)
     val basicTestExpectedBody2 = """{"message":"bye world"}"""
     val basicTestServer2 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-      callCounter2.incrementAndGet()
       basicTestExpectedBody2
+    }).await()
+
+    val basicTestExpectedBody3 = """{"message":"yeah world"}"""
+    val basicTestServer3 = TargetService(Some("sidecar2.foo.bar"), "/api", "application/json", { _ =>
+      basicTestExpectedBody3
     }).await()
 
     val service1 = ServiceDescriptor(
@@ -74,6 +75,22 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer2.port}",
+          scheme = "http"
+        )
+      ),
+      forceHttps = false,
+      enforceSecureCommunication = false
+    )
+
+    val service2 = ServiceDescriptor(
+      id = "sidecar-service2-test",
+      name = "sidecar-service2-test",
+      env = "prod",
+      subdomain = "sidecar2",
+      domain = "foo.bar",
+      targets = Seq(
+        Target(
+          host = s"127.0.0.1:${basicTestServer3.port}",
           scheme = "http"
         )
       ),
@@ -109,7 +126,6 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
 
       resp.status mustBe 200
       resp.body mustBe basicTestExpectedBody
-      callCounter1.get() mustBe 1
 
       deleteOtoroshiService(service1).futureValue
     }
@@ -128,47 +144,48 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
 
       resp.status mustBe 400
       resp.body.contains("No ApiKey provided") mustBe true
-      callCounter1.get() mustBe 1
 
       deleteOtoroshiService(service1).futureValue
     }
 
     "Allow access to outside service from inside without apikey" in {
       createOtoroshiService(service1).futureValue
+      createOtoroshiService(service2).futureValue
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"            -> serviceHost,
+          "Host"            -> "sidecar2.foo.bar",
           "X-Forwarded-For" -> "127.0.0.1"
         )
         .get()
         .futureValue
 
       resp.status mustBe 200
-      resp.body mustBe basicTestExpectedBody2
-      callCounter2.get() mustBe 1
+      resp.body mustBe basicTestExpectedBody3
 
       deleteOtoroshiService(service1).futureValue
+      deleteOtoroshiService(service2).futureValue
     }
 
     "Not allow access to outside service from outside without apikey" in {
       createOtoroshiService(service1).futureValue
+      createOtoroshiService(service2).futureValue
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"            -> serviceHost,
+          "Host"            -> "sidecar2.foo.bar",
           "X-Forwarded-For" -> "127.0.0.2"
         )
         .get()
         .futureValue
 
-      resp.status mustBe 400
-      resp.body.contains("No ApiKey provided") mustBe true
-      callCounter2.get() mustBe 1
+      resp.status mustBe 502
+      resp.body.contains("sidecar.bad.request.origin") mustBe true
 
       deleteOtoroshiService(service1).futureValue
+      deleteOtoroshiService(service2).futureValue
     }
 
     "stop servers" in {
