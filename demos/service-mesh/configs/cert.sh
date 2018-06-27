@@ -16,10 +16,10 @@ keytool -genkeypair -v \
   -ext BasicConstraints:critical="ca:true" \
   -validity 9999
 
-# Export the foobar public certificate as foobar.crt so that it can be used in trust stores.
+# Export the foobar public certificate as foobar.cert so that it can be used in trust stores.
 keytool -export -v \
   -alias foobar \
-  -file foobar.crt \
+  -file foobar.cert \
   -keypass:env PW \
   -storepass:env PW \
   -keystore foobar.jks \
@@ -28,7 +28,7 @@ keytool -export -v \
 # Create a server certificate, tied to foo.bar
 keytool -genkeypair -v \
   -alias foo.bar \
-  -dname "CN=foo.bar, OU=FooBar Org, O=FooBar Company, L=Poitiers, ST=Vienne, C=FR" \
+  -dname "CN=*.foo.bar, OU=FooBar Org, O=FooBar Company, L=Poitiers, ST=Vienne, C=FR" \
   -keystore foo.bar.jks \
   -keypass:env PW \
   -storepass:env PW \
@@ -53,7 +53,7 @@ keytool -gencert -v \
   -storepass:env PW \
   -keystore foobar.jks \
   -infile foo.bar.csr \
-  -outfile foo.bar.crt \
+  -outfile foo.bar.cert \
   -ext KeyUsage:critical="digitalSignature,keyEncipherment" \
   -ext EKU="serverAuth" \
   -ext SAN="DNS:foo.bar" \
@@ -74,7 +74,7 @@ keytool -gencert -v \
 # Tell foo.bar.jks it can trust foobar as a signer.
 keytool -import -v \
   -alias foobar \
-  -file foobar.crt \
+  -file foobar.cert \
   -keystore foo.bar.jks \
   -storetype JKS \
   -storepass:env PW << EOF
@@ -84,7 +84,7 @@ EOF
 # Import the signed certificate back into foo.bar.jks
 keytool -import -v \
   -alias foo.bar \
-  -file foo.bar.crt \
+  -file foo.bar.cert \
   -keystore foo.bar.jks \
   -storetype JKS \
   -storepass:env PW
@@ -97,7 +97,7 @@ keytool -list -v \
 
 keytool -export -v \
   -alias foo.bar \
-  -file foo.bar.crt \
+  -file foo.bar.cert \
   -keypass:env PW \
   -storepass:env PW \
   -keystore foo.bar.jks \
