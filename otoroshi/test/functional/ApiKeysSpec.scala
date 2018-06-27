@@ -118,6 +118,13 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       .withClaim("name", "John Doe")
       .withClaim("admin", true)
       .sign(algorithm)
+    val bearerAuthXsrf = JWT
+      .create()
+      .withIssuer("apikey-test")
+      .withClaim("name", "John Doe")
+      .withClaim("admin", true)
+      .withClaim("xsrfToken", "123456")
+      .sign(algorithm)
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
@@ -266,7 +273,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service).futureValue
     }
 
-    "Allow access with access_token in cookie" in {
+    "Allow access with access_token in cookie (access_token)" in {
       createOtoroshiService(service).futureValue
 
       val resp = ws
@@ -280,6 +287,43 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
+
+      deleteOtoroshiService(service).futureValue
+    }
+
+    "Allow access with access_token in cookie and xsrf token (access_token)" in {
+      createOtoroshiService(service).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host"   -> serviceHost,
+          "Cookie" -> s"access_token=$bearerAuthXsrf;secure",
+          "X-XSRF-TOKEN" -> "123456"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+      resp.body == basicTestExpectedBody mustBe true
+
+      deleteOtoroshiService(service).futureValue
+    }
+
+    "Not allow access with access_token in cookie and without xsrf token (access_token)" in {
+      createOtoroshiService(service).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host"   -> serviceHost,
+          "Cookie" -> s"access_token=$bearerAuthXsrf;secure"
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 400
+      resp.body.contains("Bad API key") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }

@@ -500,8 +500,8 @@ class WebSocketHandler()(implicit env: Env) {
                         .orElse(req.headers.get("Authorization"))
                         .filter(_.startsWith("Bearer "))
                         .map(_.replace("Bearer ", ""))
-                        .orElse(req.queryString.get("bearer_auth").flatMap(_.lastOption))
-                        .orElse(req.cookies.get("access_token").map(_.value))
+                        .orElse(req.queryString.get(env.Headers.OtoroshiBearerAuthorization).flatMap(_.lastOption))
+                        .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
                       val authBasic = req.headers
                         .get(env.Headers.OtoroshiAuthorization)
                         .orElse(req.headers.get("Authorization"))
@@ -510,7 +510,7 @@ class WebSocketHandler()(implicit env: Env) {
                         .flatMap(e => Try(decodeBase64(e)).toOption)
                         .orElse(
                           req.queryString
-                            .get("basic_auth")
+                            .get(env.Headers.OtoroshiBasicAuthorization)
                             .flatMap(_.lastOption)
                             .flatMap(e => Try(decodeBase64(e)).toOption)
                         )
@@ -572,7 +572,17 @@ class WebSocketHandler()(implicit env: Env) {
                                     case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
                                   } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
                                   val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
-                                  Try(verifier.verify(jwtTokenValue)) match {
+                                  Try(verifier.verify(jwtTokenValue)).filter { token =>
+                                    val xsrfToken = token.getClaim("xsrfToken")
+                                    val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                                    if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                                      xsrfToken.asString() == xsrfTokenHeader.get
+                                    } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                                      false
+                                    } else {
+                                      true
+                                    }
+                                  }  match {
                                     case Success(_) =>
                                       apiKey.withingQuotas().flatMap {
                                         case true => callDownstream(config, Some(apiKey))
