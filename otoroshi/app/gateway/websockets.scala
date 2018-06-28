@@ -470,6 +470,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   ),
                                   status = resp.status,
                                   headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
+                                  headersOut = resp.headersOut,
                                   identity = apiKey
                                     .map(
                                       k =>

@@ -34,7 +34,7 @@ import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 
-case class ProxyDone(status: Int, upstreamLatency: Long)
+case class ProxyDone(status: Int, upstreamLatency: Long, headersOut: Seq[Header])
 
 class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
@@ -749,6 +749,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     ),
                                     status = resp.status,
                                     headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
+                                    headersOut = resp.headersOut,
                                     identity = apiKey
                                       .map(
                                         k =>
@@ -889,13 +890,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   .alsoTo(Sink.onComplete {
                                     case Success(_) =>
                                       // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
-                                      promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
+                                      promise.trySuccess(ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply)))
                                     case Failure(e) =>
                                       logger.error(
                                         s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
                                         e
                                       )
-                                      promise.trySuccess(ProxyDone(resp.status, upstreamLatency))
+                                      promise.trySuccess(ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply)))
                                   })
                                   .map { bs =>
                                     // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
