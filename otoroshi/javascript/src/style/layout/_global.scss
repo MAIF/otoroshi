@@ -101,12 +101,12 @@ h4 {
 
 .fa-question-circle-o{
   font-size: 13px;
-  padding-bottom: 10px;
   position: absolute;
   margin-left: 5px;
-  margin-top: -5px;
-  padding-top: 8px;
+  margin-top: 4px;
   color: $colorBleue;
+  cursor: pointer;
+  z-index: 100;
 }
 
 
