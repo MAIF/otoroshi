@@ -297,8 +297,8 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"   -> serviceHost,
-          "Cookie" -> s"access_token=$bearerAuthXsrf;secure",
+          "Host"         -> serviceHost,
+          "Cookie"       -> s"access_token=$bearerAuthXsrf;secure",
           "X-XSRF-TOKEN" -> "123456"
         )
         .get()

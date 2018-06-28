@@ -13,8 +13,8 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
 
   lazy val logger = Logger("otoroshi-in-memory-canary-datastore")
 
-  def canaryCountKey(id: String): Key      = Key.Empty / _env.storageRoot / "canary" / id / "count" / "canary"
-  def standardCountKey(id: String): Key    = Key.Empty / _env.storageRoot / "canary" / id / "count" / "standard"
+  def canaryCountKey(id: String): Key   = Key.Empty / _env.storageRoot / "canary" / id / "count" / "canary"
+  def standardCountKey(id: String): Key = Key.Empty / _env.storageRoot / "canary" / id / "count" / "standard"
 
   override def destroyCanarySession(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     for {
@@ -23,8 +23,10 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
     } yield true
   }
 
-  override def isCanary(serviceId: String, trackingId: String, traffic: Double, reqNumber: Int, config: GlobalConfig)(implicit ec: ExecutionContext,
-                                                                                env: Env): Future[Boolean] = {
+  override def isCanary(serviceId: String, trackingId: String, traffic: Double, reqNumber: Int, config: GlobalConfig)(
+      implicit ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
     val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     if (hash % 100 < (traffic * 100)) {
       redisCli.incr(canaryCountKey(serviceId).key).map { c =>
@@ -41,7 +43,7 @@ class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryData
 
   def canaryCampaign(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[ServiceCanaryCampaign] = {
     for {
-      canary <- redisCli.get(canaryCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
+      canary   <- redisCli.get(canaryCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
       standard <- redisCli.get(standardCountKey(serviceId).key).map(_.map(_.utf8String.toLong).getOrElse(0L))
     } yield {
       ServiceCanaryCampaign(canary, standard)

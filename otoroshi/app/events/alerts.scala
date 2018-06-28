@@ -52,11 +52,11 @@ case class MaxConcurrentRequestReachedAlert(`@id`: String,
 }
 
 case class HighOverheadAlert(`@id`: String,
-                            limitOverhead: Double,
-                            currentOverhead: Long,
-                            serviceDescriptor: ServiceDescriptor,
-                            target: Location,
-                            `@timestamp`: DateTime = DateTime.now())
+                             limitOverhead: Double,
+                             currentOverhead: Long,
+                             serviceDescriptor: ServiceDescriptor,
+                             target: Location,
+                             `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
 
   override def `@service`: String   = serviceDescriptor.name

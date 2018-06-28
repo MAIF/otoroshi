@@ -8,7 +8,9 @@ fmt_cli () {
 }
 
 fmt_demo () {
-  cd $LOCATION/clients/demo
+  cd $LOCATION/demos/loadbalancing
+  yarn prettier
+  cd $LOCATION/demos/snowmonkey
   yarn prettier
 }
 

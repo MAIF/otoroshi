@@ -106,7 +106,7 @@ function callApi() {
         }
         r.text().then(t => {
           const json = JSON.parse(t);
-          (respSize = [t.length, ...respSize])
+          respSize = [t.length, ...respSize];
         });
       },
       e => {

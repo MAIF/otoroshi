@@ -274,7 +274,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     Redirect(s"$protocol://$domain${req.relativeUri}")
   }
 
-  def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(implicit env: Env): Future[ServiceDescriptor] = {
+  def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(
+      implicit env: Env
+  ): Future[ServiceDescriptor] = {
     if (desc.canary.enabled) {
       env.datastores.canaryDataStore.isCanary(desc.id, trackingId, desc.canary.traffic, reqNumber, config).fast.map {
         case false => desc
@@ -295,7 +297,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       case _ if service.id == env.backOfficeDescriptor.id => f(service)
       // when outside container wants to access oustide services through otoroshi
       case Some(config) if chooseRemoteAddress(config) != config.from && config.serviceId != service.id =>
-        logger.debug(s"Outside container (${chooseRemoteAddress(config)}) wants to access oustide service (${service.id}) through otoroshi")
+        logger.debug(
+          s"Outside container (${chooseRemoteAddress(config)}) wants to access oustide service (${service.id}) through otoroshi"
+        )
         Errors.craftResponseResult(
           "sidecar.bad.request.origin",
           Results.BadGateway,
@@ -306,7 +310,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       // when local service wants to access protected services from other containers
       case Some(config @ SidecarConfig(_, _, _, Some(akid), strict))
           if chooseRemoteAddress(config) == config.from && config.serviceId != service.id => {
-        logger.debug(s"Local service (${config.from}) wants to access protected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) with apikey ${akid}")
+        logger.debug(
+          s"Local service (${config.from}) wants to access protected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) with apikey ${akid}"
+        )
         env.datastores.apiKeyDataStore.findById(akid) flatMap {
           case Some(ak) =>
             f(
@@ -314,7 +320,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 publicPatterns = Seq("/.*"),
                 privatePatterns = Seq.empty,
                 additionalHeaders = service.additionalHeaders ++ Map(
-                  "Host" -> req.headers.get("Host").get,
+                  "Host"                           -> req.headers.get("Host").get,
                   env.Headers.OtoroshiClientId     -> ak.clientId,
                   env.Headers.OtoroshiClientSecret -> ak.clientSecret
                 )
@@ -333,7 +339,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       // when local service wants to access unprotected services from other containers
       case Some(config @ SidecarConfig(_, _, _, None, strict))
           if chooseRemoteAddress(config) == config.from && config.serviceId != service.id =>
-        logger.debug(s"Local service (${config.from}) wants to access unprotected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) without apikey")
+        logger.debug(
+          s"Local service (${config.from}) wants to access unprotected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) without apikey"
+        )
         f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty))
       // when local service wants to access himself through otoroshi
       case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
@@ -341,7 +349,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         f(service.copy(targets = Seq(config.target)))
       // when service from other containers wants to access local service through otoroshi
       case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) != config.from =>
-        logger.debug(s"External service (${chooseRemoteAddress(config)}) wants to access local service (${service.id}) through Otoroshi")
+        logger.debug(
+          s"External service (${chooseRemoteAddress(config)}) wants to access local service (${service.id}) through Otoroshi"
+        )
         f(service.copy(targets = Seq(config.target)))
       case _ =>
         f(service)
@@ -1051,7 +1061,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
                                       val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
                                       Try(verifier.verify(jwtTokenValue)).filter { token =>
-                                        val xsrfToken = token.getClaim("xsrfToken")
+                                        val xsrfToken       = token.getClaim("xsrfToken")
                                         val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
                                         if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
                                           xsrfToken.asString() == xsrfTokenHeader.get
