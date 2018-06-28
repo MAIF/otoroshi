@@ -78,7 +78,6 @@ export class SnowMonkeyPage extends Component {
     },
     {
       title: 'Action',
-      style: { textAlign: 'center', width: 200 },
       notSortable: true,
       notFilterable: true,
       content: item => item,
@@ -181,7 +180,7 @@ export class SnowMonkeyPage extends Component {
               </button>
             </div>
           </div>
-          <div className="col-md-12 text-center" style={{ marginTop: 50 }}>
+          <div className="col-md-12 text-center">
             <svg
               version="1.1"
               className={this.state.started ? 'monkey snowMonkeyAnim' : 'monkey'}
@@ -340,7 +339,7 @@ export class SnowMonkeyPage extends Component {
             </svg>
           </div>
         </div>
-        <div className="row" style={{ marginTop: 20 }}>
+        <div className="row">
           <SnowMonkeyConfig
             config={this.state.config}
             onChange={config => {
