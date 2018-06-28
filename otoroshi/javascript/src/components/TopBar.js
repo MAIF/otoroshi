@@ -125,7 +125,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
-          env: <span>🐒</span>,
+          env: <span><img className="monkeyMenu" src="/__otoroshi_assets/images/nihonzaru.svg" /></span>,
           label: 'Snow Monkey',
           value: 'SnowMonkey',
         });
