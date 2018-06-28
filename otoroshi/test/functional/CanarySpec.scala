@@ -98,8 +98,9 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
         id == "--" mustBe false
       }
 
-      callCounter2.get() > 14 mustBe true
-      callCounter1.get() > 74 mustBe true
+      println(s"${callCounter1.get()} - ${callCounter2.get()}")
+      callCounter2.get() >= 10 mustBe true
+      callCounter1.get() >= 70 mustBe true
 
       deleteOtoroshiService(service).futureValue
 
