@@ -348,16 +348,8 @@ export class TopBar extends Component {
                   onChange={i => i.action()}
                   arrowRenderer={a => {
                     return (
-                      <span
-                        className="Select-arrow-zone"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 19,
-                        }}>
                         <span
-                          style={{ width: 19, height: 20 }}
+                          style={{ display: 'flex',height: 20 }}
                           title="You can jump directly into the search bar from anywhere just by typing '/'">
                           <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
                             <defs>
@@ -369,7 +361,6 @@ export class TopBar extends Component {
                             </g>
                           </svg>
                         </span>
-                      </span>
                     );
                   }}
                   filterOptions={(opts, value, excluded, conf) => {
