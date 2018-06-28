@@ -654,6 +654,27 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
                           )
                           val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                          if (overhead > env.overheadThreshold) {
+                            HighOverheadAlert(
+                              `@id` = env.snowflakeGenerator.nextIdStr(),
+                              limitOverhead = env.overheadThreshold,
+                              currentOverhead = overhead,
+                              serviceDescriptor = descriptor,
+                              target = Location(
+                                scheme = req.headers
+                                  .get("X-Forwarded-Protocol")
+                                  .map(_ == "https")
+                                  .orElse(Some(req.secure))
+                                  .map {
+                                    case true  => "https"
+                                    case false => "http"
+                                  }
+                                  .getOrElse("http"),
+                                host = req.host,
+                                uri = req.relativeUri
+                              )
+                            ).toAnalytics()
+                          }
                           val quotas: Future[RemainingQuotas] =
                             apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))
                           promise.future.andThen {

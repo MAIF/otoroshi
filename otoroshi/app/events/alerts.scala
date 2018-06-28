@@ -51,6 +51,32 @@ case class MaxConcurrentRequestReachedAlert(`@id`: String,
   )
 }
 
+case class HighOverheadAlert(`@id`: String,
+                            limitOverhead: Double,
+                            currentOverhead: Long,
+                            serviceDescriptor: ServiceDescriptor,
+                            target: Location,
+                            `@timestamp`: DateTime = DateTime.now())
+    extends AlertEvent {
+
+  override def `@service`: String   = serviceDescriptor.name
+  override def `@serviceId`: String = serviceDescriptor.id
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> serviceDescriptor.id,
+    "@service"   -> serviceDescriptor.name,
+    "alert"      -> "HighOverheadAlert",
+    "limit"      -> limitOverhead,
+    "overhead"   -> currentOverhead,
+    "target"     -> Location.format.writes(target),
+    "service"    -> serviceDescriptor.toJson
+  )
+}
+
 case class CircuitBreakerOpenedAlert(`@id`: String,
                                      `@env`: String,
                                      target: Target,
