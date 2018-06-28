@@ -98,9 +98,16 @@
 .nav > li > a {
   padding: 15px;
 }
+
 .monkeyMenu{
   width: 24px;
   margin-left: -8px;
+}
+
+@media screen and (min-width:767px) {
+  .navbar>.container-fluid .navbar-brand {
+    margin-left: 0px;
+  }
 }
 
 @media screen and (max-width:767px) {
@@ -124,10 +131,8 @@
     position: absolute;
     right: 15px;
     z-index: 1;
-    @media screen and (max-width: 767px) {
-      .userManagement a {
-          text-align: right;
-      }
+    .userManagement a {
+        text-align: right;
     }
   }
 
