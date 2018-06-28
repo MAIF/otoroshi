@@ -144,10 +144,7 @@ class BackOfficeAppContainer extends Component {
                     {env => {
                       return [
                         <span
-                          onClick={e => (window.location = '/bo/dashboard/snowmonkey')}
-                          style={{
-                            cursor: 'pointer',
-                          }}>
+                          onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
                           {env.snowMonkeyRunning &&
                             window.location.pathname !== '/bo/dashboard/snowmonkey' && (
                               <div className="screen">
