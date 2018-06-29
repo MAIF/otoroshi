@@ -19,7 +19,7 @@ libraryDependencies ++= Seq(
   "com.github.etaty"         %% "rediscala"                % "1.8.0",
   "com.github.gphat"         %% "censorinus"               % "2.1.8",
   "io.dropwizard.metrics"    % "metrics-core"              % "3.1.2",
-  "com.auth0"                % "java-jwt"                  % "3.3.0",
+  "com.auth0"                % "java-jwt"                  % "3.4.0",
   "com.yubico"               % "u2flib-server-core"        % "0.16.0",
   "com.yubico"               % "u2flib-server-attestation" % "0.16.0",
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
