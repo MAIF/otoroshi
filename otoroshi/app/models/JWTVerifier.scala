@@ -1,35 +1,50 @@
 package models
 
+import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-import java.security.spec.X509EncodedKeySpec
-import java.util.Base64
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.Verification
 import env.Env
 import gateway.Errors
+import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import play.api.Logger
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class JWTInjection()
+case class JwtInjection(
+  additionalHeaders: Seq[(String, String)] = Seq.empty,
+  removeHeaders: Seq[String] = Seq.empty,
+  additionalCookies: Seq[(String, String)] = Seq.empty,
+  removeCookies: Seq[String] = Seq.empty,
+)
 
-sealed trait JWTTokenLocation {
+sealed trait JwtTokenLocation {
   def token(request: RequestHeader): Option[String]
-  def asJWTInjection(newToken: String): JWTInjection
+  def asJWTInjection(newToken: String): JwtInjection
 }
-case class InQueryParam(name: String) extends JWTTokenLocation {
+case class InQueryParam(name: String) extends JwtTokenLocation {
   def token(request: RequestHeader): Option[String] = request.getQueryString(name)
+  def asJWTInjection(newToken: String): JwtInjection = JwtInjection()
 }
-case class InHeader(name: String, remove: String = "") extends JWTTokenLocation {
-  def token(request: RequestHeader): Option[String] = request.headers.get(name).map(_.replaceAll(remove, ""))
+case class InHeader(name: String, remove: String = "") extends JwtTokenLocation {
+  def token(request: RequestHeader): Option[String] = {
+    request.headers.get(name).map { h =>
+      h.replaceAll(remove, "")
+    }
+  }
+  def asJWTInjection(newToken: String): JwtInjection = JwtInjection(additionalHeaders = Seq(name -> newToken))
+
 }
-case class InCookie(name: String) extends JWTTokenLocation {
+case class InCookie(name: String) extends JwtTokenLocation {
   def token(request: RequestHeader): Option[String] = request.cookies.get(name).map(_.value)
+  def asJWTInjection(newToken: String): JwtInjection = JwtInjection(additionalCookies = Seq(name -> newToken))
 }
 
 sealed trait AlgoSettings {
@@ -46,15 +61,15 @@ case class HSAlgoSettings(size: Int, secret: String) extends AlgoSettings {
 case class RSAlgoSettings(size: Int, publicKey: String, privateRsaKey: String) extends AlgoSettings {
 
   def getPublicKey(value: String): RSAPublicKey = {
-    val publicBytes = Base64.getDecoder.decode(value)
+    val publicBytes = ApacheBase64.decodeBase64(value)
     val keySpec = new X509EncodedKeySpec(publicBytes)
     val keyFactory = KeyFactory.getInstance("RSA")
     keyFactory.generatePublic(keySpec).asInstanceOf[RSAPublicKey]
   }
 
   def getPrivateKey(value: String): RSAPrivateKey = {
-    val publicBytes = Base64.getDecoder.decode(value)
-    val keySpec = new X509EncodedKeySpec(publicBytes)
+    val publicBytes = ApacheBase64.decodeBase64(value)
+    val keySpec = new PKCS8EncodedKeySpec(publicBytes)
     val keyFactory = KeyFactory.getInstance("RSA")
     keyFactory.generatePrivate(keySpec).asInstanceOf[RSAPrivateKey]
   }
@@ -69,16 +84,16 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateRsaKey: String) e
 case class ESAlgoSettings(size: Int, publicKey: String, privateRsaKey: String) extends AlgoSettings {
 
   def getPublicKey(value: String): ECPublicKey = {
-    val publicBytes = Base64.getDecoder.decode(value)
+    val publicBytes = ApacheBase64.decodeBase64(value)
     val keySpec = new X509EncodedKeySpec(publicBytes)
-    val keyFactory = KeyFactory.getInstance("ECDH")
+    val keyFactory = KeyFactory.getInstance("EC")
     keyFactory.generatePublic(keySpec).asInstanceOf[ECPublicKey]
   }
 
   def getPrivateKey(value: String): ECPrivateKey = {
-    val publicBytes = Base64.getDecoder.decode(value)
-    val keySpec = new X509EncodedKeySpec(publicBytes)
-    val keyFactory = KeyFactory.getInstance("ECDH")
+    val publicBytes = ApacheBase64.decodeBase64(value)
+    val keySpec = new PKCS8EncodedKeySpec(publicBytes)
+    val keyFactory = KeyFactory.getInstance("EC")
     keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
   }
 
@@ -90,8 +105,8 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateRsaKey: String) e
   }
 }
 
-case class MappingSettings(map: Map[String, String] = Map.empty, values: Map[String, AnyRef] = Map.empty)
-case class TransformSettings(location: JWTTokenLocation, mappingSettings: MappingSettings)
+case class MappingSettings(map: Map[String, String] = Map.empty, values: JsObject = Json.obj())
+case class TransformSettings(location: JwtTokenLocation, mappingSettings: MappingSettings)
 
 case class VerificationSettings(fields: Map[String, String] = Map.empty) {
   def asVerification(algorithm: Algorithm): Verification = {
@@ -105,15 +120,25 @@ sealed trait VerifierStrategy {
   def verificationSettings: VerificationSettings
 }
 case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy
-case class Sign(verificationSettings: VerificationSettings, algorithm: AlgoSettings) extends VerifierStrategy
+case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy
 case class Transform(verificationSettings: VerificationSettings, transformSettings: TransformSettings, algoSettings: AlgoSettings) extends VerifierStrategy
-case class AddToOtoroshiToken(verificationSettings: VerificationSettings, settings: MappingSettings) extends VerifierStrategy
+// case class AddToOtoroshiToken(verificationSettings: VerificationSettings, settings: MappingSettings) extends VerifierStrategy
 
-case class JWTVerifier(id: String, name: String, strict: Boolean = true, source: JWTTokenLocation, algoSettings: AlgoSettings, strategy: VerifierStrategy) {
+case class JwtVerifier(id: String, name: String, strict: Boolean = true, source: JwtTokenLocation, algoSettings: AlgoSettings, strategy: VerifierStrategy) {
 
   lazy val logger = Logger("otoroshi-jwt-verifier")
 
-  def verify(request: RequestHeader, desc: ServiceDescriptor)(f: JWTInjection => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def sign(token: JsObject, algorithm: Algorithm): String = {
+    val headerJson = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT")
+    val header = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+    val payload = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
+    val content = String.format("%s.%s", header, payload)
+    val signatureBytes = algorithm.sign(content.getBytes(StandardCharsets.UTF_8))
+    val signature = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
+    s"$content.$signature"
+  }
+
+  def verify(request: RequestHeader, desc: ServiceDescriptor)(f: JwtInjection => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     source.token(request) match {
       case None if strict => Errors.craftResponseResult(
         "error.expected.token.not.found",
@@ -122,7 +147,7 @@ case class JWTVerifier(id: String, name: String, strict: Boolean = true, source:
         Some(desc),
         None
       )
-      case None if !strict => f(JWTInjection())
+      case None if !strict => f(JwtInjection())
       case Some(token) => algoSettings.asAlgorithm match {
         case None => Errors.craftResponseResult(
           "error.bad.input.algorithm.name",
@@ -144,7 +169,7 @@ case class JWTVerifier(id: String, name: String, strict: Boolean = true, source:
                 None
               )
             case Success(decodedToken) => strategy match {
-              case s @ PassThrough(_) => f(JWTInjection())
+              case s @ PassThrough(_) => f(JwtInjection())
               case s @ Sign(_, aSettings) => aSettings.asAlgorithm match {
                 case None => Errors.craftResponseResult(
                   "error.bad.output.algorithm.name",
@@ -154,17 +179,110 @@ case class JWTVerifier(id: String, name: String, strict: Boolean = true, source:
                   None
                 )
                 case Some(outputAlgorithm) => {
-                  import collection.JavaConverters._
-                  val newToken = decodedToken.getClaims.asScala.foldLeft(JWT.create())((a, b) => a.withClaim(b._1, b._2)).sign(outputAlgorithm)
+                  val newToken = sign(Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject], outputAlgorithm)
                   f(source.asJWTInjection(newToken))
                 }
               }
-              case s @ Transform(_, tSettings, aSettings) => ???
-              case s @ AddToOtoroshiToken(_, mSettings) => ???
+              case s @ Transform(_, tSettings, aSettings) => aSettings.asAlgorithm match {
+                case None => Errors.craftResponseResult(
+                  "error.bad.output.algorithm.name",
+                  Results.BadRequest,
+                  request,
+                  Some(desc),
+                  None
+                )
+                case Some(outputAlgorithm) => {
+                  val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                  val newJsonToken: JsObject = tSettings.mappingSettings.map.foldLeft(jsonToken)((a, b) => a.+(b._2, (a \ b._1).as[JsValue]).-(b._1)) ++ tSettings.mappingSettings.values
+                  val newToken = sign(newJsonToken, outputAlgorithm)
+                  source match {
+                    case _: InQueryParam => f(tSettings.location.asJWTInjection(newToken))
+                    case InHeader(n, _) => f(tSettings.location.asJWTInjection(newToken).copy(removeHeaders = Seq(n)))
+                    case InCookie(n) => f(tSettings.location.asJWTInjection(newToken).copy(removeCookies = Seq(n)))
+                  }
+                }
+              }
+              // case s @ AddToOtoroshiToken(_, mSettings) => ???
             }
           }
         }
       }
     }
   }
+}
+
+object JwtVerifier {
+  def mock1: JwtVerifier = JwtVerifier(
+    id = "9lK2oSSC7qgtIG8qsdK0mV0IHI94l9krvegrhq1Y9X5GhePIEwYJ00ABeHGIiaKw",
+    name = "test-jwt-verifier",
+    strict = true,
+    source = InHeader("Authorization", "Bearer "),
+    algoSettings = HSAlgoSettings(256, "secret"),
+    strategy = Transform(
+      transformSettings = TransformSettings(
+        location = InHeader("X-Fuuuuu"),
+        mappingSettings = MappingSettings(
+          map = Map("name" -> "MyNameIs"),
+          values = Json.obj(
+            "fuuu" -> 123
+          )
+        )
+      ),
+      verificationSettings = VerificationSettings(Map(
+        "iss" -> "Billy"
+      )),
+      //algoSettings = RSAlgoSettings(
+      //  512,
+      //  """MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuGbXWiK3dQTyCbX5xdE4
+      //    |yCuYp0AF2d15Qq1JSXT/lx8CEcXb9RbDddl8jGDv+spi5qPa8qEHiK7FwV2KpRE9
+      //    |83wGPnYsAm9BxLFb4YrLYcDFOIGULuk2FtrPS512Qea1bXASuvYXEpQNpGbnTGVs
+      //    |WXI9C+yjHztqyL2h8P6mlThPY9E9ue2fCqdgixfTFIF9Dm4SLHbphUS2iw7w1JgT
+      //    |69s7of9+I9l5lsJ9cozf1rxrXX4V1u/SotUuNB3Fp8oB4C1fLBEhSlMcUJirz1E8
+      //    |AziMCxS+VrRPDM+zfvpIJg3JljAh3PJHDiLu902v9w+Iplu1WyoB2aPfitxEhRN0
+      //    |YwIDAQAB""".stripMargin,
+      //  """MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC4ZtdaIrd1BPIJ
+      //    |tfnF0TjIK5inQAXZ3XlCrUlJdP+XHwIRxdv1FsN12XyMYO/6ymLmo9ryoQeIrsXB
+      //    |XYqlET3zfAY+diwCb0HEsVvhisthwMU4gZQu6TYW2s9LnXZB5rVtcBK69hcSlA2k
+      //    |ZudMZWxZcj0L7KMfO2rIvaHw/qaVOE9j0T257Z8Kp2CLF9MUgX0ObhIsdumFRLaL
+      //    |DvDUmBPr2zuh/34j2XmWwn1yjN/WvGtdfhXW79Ki1S40HcWnygHgLV8sESFKUxxQ
+      //    |mKvPUTwDOIwLFL5WtE8Mz7N++kgmDcmWMCHc8kcOIu73Ta/3D4imW7VbKgHZo9+K
+      //    |3ESFE3RjAgMBAAECggEBAJTEIyjMqUT24G2FKiS1TiHvShBkTlQdoR5xvpZMlYbN
+      //    |tVWxUmrAGqCQ/TIjYnfpnzCDMLhdwT48Ab6mQJw69MfiXwc1PvwX1e9hRscGul36
+      //    |ryGPKIVQEBsQG/zc4/L2tZe8ut+qeaK7XuYrPp8bk/X1e9qK5m7j+JpKosNSLgJj
+      //    |NIbYsBkG2Mlq671irKYj2hVZeaBQmWmZxK4fw0Istz2WfN5nUKUeJhTwpR+JLUg4
+      //    |ELYYoB7EO0Cej9UBG30hbgu4RyXA+VbptJ+H042K5QJROUbtnLWuuWosZ5ATldwO
+      //    |u03dIXL0SH0ao5NcWBzxU4F2sBXZRGP2x/jiSLHcqoECgYEA4qD7mXQpu1b8XO8U
+      //    |6abpKloJCatSAHzjgdR2eRDRx5PMvloipfwqA77pnbjTUFajqWQgOXsDTCjcdQui
+      //    |wf5XAaWu+TeAVTytLQbSiTsBhrnoqVrr3RoyDQmdnwHT8aCMouOgcC5thP9vQ8Us
+      //    |rVdjvRRbnJpg3BeSNimH+u9AHgsCgYEA0EzcbOltCWPHRAY7B3Ge/AKBjBQr86Kv
+      //    |TdpTlxePBDVIlH+BM6oct2gaSZZoHbqPjbq5v7yf0fKVcXE4bSVgqfDJ/sZQu9Lp
+      //    |PTeV7wkk0OsAMKk7QukEpPno5q6tOTNnFecpUhVLLlqbfqkB2baYYwLJR3IRzboJ
+      //    |FQbLY93E8gkCgYB+zlC5VlQbbNqcLXJoImqItgQkkuW5PCgYdwcrSov2ve5r/Acz
+      //    |FNt1aRdSlx4176R3nXyibQA1Vw+ztiUFowiP9WLoM3PtPZwwe4bGHmwGNHPIfwVG
+      //    |m+exf9XgKKespYbLhc45tuC08DATnXoYK7O1EnUINSFJRS8cezSI5eHcbQKBgQDC
+      //    |PgqHXZ2aVftqCc1eAaxaIRQhRmY+CgUjumaczRFGwVFveP9I6Gdi+Kca3DE3F9Pq
+      //    |PKgejo0SwP5vDT+rOGHN14bmGJUMsX9i4MTmZUZ5s8s3lXh3ysfT+GAhTd6nKrIE
+      //    |kM3Nh6HWFhROptfc6BNusRh1kX/cspDplK5x8EpJ0QKBgQDWFg6S2je0KtbV5PYe
+      //    |RultUEe2C0jYMDQx+JYxbPmtcopvZQrFEur3WKVuLy5UAy7EBvwMnZwIG7OOohJb
+      //    |vkSpADK6VPn9lbqq7O8cTedEHttm6otmLt8ZyEl3hZMaL3hbuRj6ysjmoFKx6CrX
+      //    |rK0/Ikt5ybqUzKCMJZg2VKGTxg==""".stripMargin
+      //)
+      algoSettings = ESAlgoSettings(
+        512,
+        """MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
+          |MMB/9ZENy8KZ+us26i/6PiBBc7XaiEi6Q8Icz2tiazwSpyLPeBrFVPFkPgIADyLa
+          |T0fp7D2JKHWpdrWQvGLLMwGqYCaaDi79KugPo6V4bnpLBlVtbH4ogg0Hqv89BVyI
+          |ZfwWPCBH+Zssei1VlgM=""".stripMargin,
+        """MIHtAgEAMBAGByqGSM49AgEGBSuBBAAjBIHVMIHSAgEBBEHzl1DpZSQJ8YhCbN/u
+          |vo5SOu0BjDDX9Gub6zsBW6B2TxRzb5sBeQaWVscDUZha4Xr1HEWpVtua9+nEQU/9
+          |Aq9Pl6GBiQOBhgAEAJhvCa6S89ePqlLO6MRV9KQqHvdAITDAf/WRDcvCmfrrNuov
+          |+j4gQXO12ohIukPCHM9rYms8Eqciz3gaxVTxZD4CAA8i2k9H6ew9iSh1qXa1kLxi
+          |yzMBqmAmmg4u/SroD6OleG56SwZVbWx+KIINB6r/PQVciGX8FjwgR/mbLHotVZYD""".stripMargin
+      )
+      //algoSettings = HSAlgoSettings(
+      //  512,
+      //  "secret"
+      //)
+    )
+  )
 }
