@@ -116,7 +116,7 @@ if you want to configure https on your Otoroshi server, just read [PlayFramework
 ## Example of configuration file
 
 ```conf
-include "base.conf"
+include "application.conf"
 
 http.port = 8080
 
