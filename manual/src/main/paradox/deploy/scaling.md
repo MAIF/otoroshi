@@ -20,6 +20,9 @@ You can use [IPVS](https://en.wikipedia.org/wiki/IP_Virtual_Server) to load bala
 
 You can use [DNS round robin technique](https://en.wikipedia.org/wiki/Round-robin_DNS) to declare multiple A records under the domain names handled by Otoroshi.
 
-## Using software L4 load balancers
+## Using software L4/L7 load balancers
 
 You can use software L4 load balancers like NGINX or HAProxy to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.
+
+NGINX config.
+:   @@snip [nginx.conf](../snippets/nginx.conf) 
