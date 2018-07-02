@@ -13,3 +13,9 @@ Of course, you have to change the values according to the setting you put in Oto
 * `app.privateapps.subdomain` => `privateapps`
 * `app.adminapi.exposedSubdomain` => `otoroshi-api`
 * `app.adminapi.targetSubdomain` => `otoroshi-admin-internal-api`
+
+for instance if you want to change the default domain and use something like `otoroshi.mydomain.org`, then start otoroshi like 
+
+```sh
+java -Dapp.domain=mydomain.org -jar otoroshi.jar
+```
