@@ -210,6 +210,9 @@ case class GatewayEvent(
     env: String,
     duration: Long,
     overhead: Long,
+    cbDuration: Long,
+    overheadWoCb: Long,
+    callAttempts: Int,
     data: DataInOut,
     status: Int,
     headers: Seq[Header],
@@ -253,7 +256,10 @@ object GatewayEvent {
     "descriptor"      -> ServiceDescriptor.toJson(o.descriptor),
     "@product"        -> o.`@product`,
     "remainingQuotas" -> o.remainingQuotas,
-    "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue]
+    "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
+    "cbDuration"      -> o.cbDuration,
+    "overheadWoCb"    -> o.overheadWoCb,
+    "callAttempts"    -> o.callAttempts
   )
 }
 

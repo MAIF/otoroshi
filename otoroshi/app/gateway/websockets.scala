@@ -276,11 +276,14 @@ class WebSocketHandler()(implicit env: Env) {
                           paUsr: Option[PrivateAppsUser] = None
                       ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
                         if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
+                          val cbStart = System.currentTimeMillis()
+                          val counter = new AtomicInteger(0)
                           env.circuitBeakersHolder
                             .get(descriptor.id, () => new ServiceDescriptorCircuitBreaker())
                             .callWS(descriptor,
                                     s"WS ${req.method} ${req.relativeUri}",
-                                    (t) => actuallyCallDownstream(t, apiKey, paUsr)) recoverWith {
+                                    counter,
+                                    (t, attempts) => actuallyCallDownstream(t, apiKey, paUsr, System.currentTimeMillis - cbStart, attempts)) recoverWith {
                             case _: scala.concurrent.TimeoutException =>
                               Errors
                                 .craftResponseResult(
@@ -291,7 +294,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   Some("errors.request.timeout")
                                 )
                                 .asLeft[WSFlow]
-                            case RequestTimeoutException =>
+                            case RequestTimeoutException(_) =>
                               Errors
                                 .craftResponseResult(
                                   s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
@@ -301,7 +304,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   Some("errors.request.timeout")
                                 )
                                 .asLeft[WSFlow]
-                            case AllCircuitBreakersOpenException =>
+                            case AllCircuitBreakersOpenException(_) =>
                               Errors
                                 .craftResponseResult(
                                   s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
@@ -338,13 +341,15 @@ class WebSocketHandler()(implicit env: Env) {
                                                           else 1)
                           // Round robin loadbalancing is happening here !!!!!
                           val target = descriptor.targets.apply(index.toInt)
-                          actuallyCallDownstream(target, apiKey, paUsr)
+                          actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                         }
 
                       def actuallyCallDownstream(
                           target: Target,
                           apiKey: Option[ApiKey] = None,
-                          paUsr: Option[PrivateAppsUser] = None
+                          paUsr: Option[PrivateAppsUser] = None,
+                          cbDuration: Long,
+                          callAttempts: Int
                       ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                         logger.info("[WEBSOCKET] Call downstream !!!")
                         val snowflake = env.snowflakeGenerator.nextIdStr()
@@ -460,6 +465,9 @@ class WebSocketHandler()(implicit env: Env) {
                                   ),
                                   duration = duration,
                                   overhead = overhead,
+                                  cbDuration = cbDuration,
+                                  overheadWoCb = overhead - cbDuration,
+                                  callAttempts = callAttempts,
                                   url = url,
                                   method = req.method,
                                   from = from,
