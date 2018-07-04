@@ -30,7 +30,7 @@ object Errors {
                           callAttempts: Int = 0)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
-    
+
     def sendAnalytics(headers: Seq[Header]) = {
       maybeDescriptor.foreach { descriptor =>
         val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")

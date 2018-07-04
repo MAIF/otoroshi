@@ -280,10 +280,13 @@ class WebSocketHandler()(implicit env: Env) {
                           val counter = new AtomicInteger(0)
                           env.circuitBeakersHolder
                             .get(descriptor.id, () => new ServiceDescriptorCircuitBreaker())
-                            .callWS(descriptor,
-                                    s"WS ${req.method} ${req.relativeUri}",
-                                    counter,
-                                    (t, attempts) => actuallyCallDownstream(t, apiKey, paUsr, System.currentTimeMillis - cbStart, attempts)) recoverWith {
+                            .callWS(
+                              descriptor,
+                              s"WS ${req.method} ${req.relativeUri}",
+                              counter,
+                              (t, attempts) =>
+                                actuallyCallDownstream(t, apiKey, paUsr, System.currentTimeMillis - cbStart, attempts)
+                            ) recoverWith {
                             case _: scala.concurrent.TimeoutException =>
                               Errors
                                 .craftResponseResult(

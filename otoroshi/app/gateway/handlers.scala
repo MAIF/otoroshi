@@ -493,11 +493,18 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             val counter = new AtomicInteger(0)
                             env.circuitBeakersHolder
                               .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                              .call(descriptor,
-                                    bodyAlreadyConsumed,
-                                    s"${req.method} ${req.relativeUri}",
-                                    counter,
-                                    (t, attempts) => actuallyCallDownstream(t, apiKey, paUsr, System.currentTimeMillis - cbStart, counter.get())) recoverWith {
+                              .call(
+                                descriptor,
+                                bodyAlreadyConsumed,
+                                s"${req.method} ${req.relativeUri}",
+                                counter,
+                                (t, attempts) =>
+                                  actuallyCallDownstream(t,
+                                                         apiKey,
+                                                         paUsr,
+                                                         System.currentTimeMillis - cbStart,
+                                                         counter.get())
+                              ) recoverWith {
                               case BodyAlreadyConsumedException(_) =>
                                 Errors.craftResponseResult(
                                   s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
@@ -941,13 +948,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   .alsoTo(Sink.onComplete {
                                     case Success(_) =>
                                       // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
-                                      promise.trySuccess(ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply)))
+                                      promise.trySuccess(
+                                        ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply))
+                                      )
                                     case Failure(e) =>
                                       logger.error(
                                         s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
                                         e
                                       )
-                                      promise.trySuccess(ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply)))
+                                      promise.trySuccess(
+                                        ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply))
+                                      )
                                   })
                                   .map { bs =>
                                     // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
@@ -1085,25 +1096,29 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           key,
                                                           descriptor)
                                 )
-                                Errors.craftResponseResult("Bad API key",
-                                                           BadGateway,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.bad.api.key"),
-                                                           duration = System.currentTimeMillis - start,
-                                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                Errors.craftResponseResult(
+                                  "Bad API key",
+                                  BadGateway,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.bad.api.key"),
+                                  duration = System.currentTimeMillis - start,
+                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                )
                               }
                               case Some(key) if key.isValid(clientSecret) =>
                                 key.withingQuotas().flatMap {
                                   case true => callDownstream(config, Some(key))
                                   case false =>
-                                    Errors.craftResponseResult("You performed too much requests",
-                                                               TooManyRequests,
-                                                               req,
-                                                               Some(descriptor),
-                                                               Some("errors.too.much.requests"),
-                                                               duration = System.currentTimeMillis - start,
-                                                               overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                    Errors.craftResponseResult(
+                                      "You performed too much requests",
+                                      TooManyRequests,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.too.much.requests"),
+                                      duration = System.currentTimeMillis - start,
+                                      overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                    )
                                 }
                             }
                           } else if (authByJwtToken.isDefined) {
@@ -1135,13 +1150,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           apiKey.withingQuotas().flatMap {
                                             case true => callDownstream(config, Some(apiKey))
                                             case false =>
-                                              Errors.craftResponseResult("You performed too much requests",
-                                                                         TooManyRequests,
-                                                                         req,
-                                                                         Some(descriptor),
-                                                                         Some("errors.too.much.requests"),
+                                              Errors.craftResponseResult(
+                                                "You performed too much requests",
+                                                TooManyRequests,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.too.much.requests"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
                                           }
                                         case Failure(e) => {
                                           Alerts.send(
@@ -1152,41 +1169,49 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                     apiKey,
                                                                     descriptor)
                                           )
-                                          Errors.craftResponseResult("Bad API key",
-                                                                     BadRequest,
-                                                                     req,
-                                                                     Some(descriptor),
-                                                                     Some("errors.bad.api.key"),
+                                          Errors.craftResponseResult(
+                                            "Bad API key",
+                                            BadRequest,
+                                            req,
+                                            Some(descriptor),
+                                            Some("errors.bad.api.key"),
                                             duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          )
                                         }
                                       }
                                     }
                                     case None =>
-                                      Errors.craftResponseResult("Invalid ApiKey provided",
-                                                                 BadRequest,
-                                                                 req,
-                                                                 Some(descriptor),
-                                                                 Some("errors.invalid.api.key"),
+                                      Errors.craftResponseResult(
+                                        "Invalid ApiKey provided",
+                                        BadRequest,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.invalid.api.key"),
                                         duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                      )
                                   }
                                 case None =>
-                                  Errors.craftResponseResult("Invalid ApiKey provided",
-                                                             BadRequest,
-                                                             req,
-                                                             Some(descriptor),
-                                                             Some("errors.invalid.api.key"),
+                                  Errors.craftResponseResult(
+                                    "Invalid ApiKey provided",
+                                    BadRequest,
+                                    req,
+                                    Some(descriptor),
+                                    Some("errors.invalid.api.key"),
                                     duration = System.currentTimeMillis - start,
-                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                  )
                               }
-                            } getOrElse Errors.craftResponseResult("Invalid ApiKey provided",
-                                                                   BadRequest,
-                                                                   req,
-                                                                   Some(descriptor),
-                                                                   Some("errors.invalid.api.key"),
+                            } getOrElse Errors.craftResponseResult(
+                              "Invalid ApiKey provided",
+                              BadRequest,
+                              req,
+                              Some(descriptor),
+                              Some("errors.invalid.api.key"),
                               duration = System.currentTimeMillis - start,
-                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                            )
                           } else if (authBasic.isDefined) {
                             val auth   = authBasic.get
                             val id     = auth.split(":").headOption.map(_.trim)
@@ -1197,13 +1222,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
                                   .flatMap {
                                     case None =>
-                                      Errors.craftResponseResult("Invalid API key",
-                                                                 BadGateway,
-                                                                 req,
-                                                                 Some(descriptor),
-                                                                 Some("errors.invalid.api.key"),
+                                      Errors.craftResponseResult(
+                                        "Invalid API key",
+                                        BadGateway,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.invalid.api.key"),
                                         duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                      )
                                     case Some(key) if key.isInvalid(apiKeySecret) => {
                                       Alerts.send(
                                         RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
@@ -1213,45 +1240,53 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                 key,
                                                                 descriptor)
                                       )
-                                      Errors.craftResponseResult("Bad API key",
-                                                                 BadGateway,
-                                                                 req,
-                                                                 Some(descriptor),
-                                                                 Some("errors.bad.api.key"),
+                                      Errors.craftResponseResult(
+                                        "Bad API key",
+                                        BadGateway,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.bad.api.key"),
                                         duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                      )
                                     }
                                     case Some(key) if key.isValid(apiKeySecret) =>
                                       key.withingQuotas().flatMap {
                                         case true => callDownstream(config, Some(key))
                                         case false =>
-                                          Errors.craftResponseResult("You performed too much requests",
-                                                                     TooManyRequests,
-                                                                     req,
-                                                                     Some(descriptor),
-                                                                     Some("errors.too.much.requests"),
+                                          Errors.craftResponseResult(
+                                            "You performed too much requests",
+                                            TooManyRequests,
+                                            req,
+                                            Some(descriptor),
+                                            Some("errors.too.much.requests"),
                                             duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          )
                                       }
                                   }
                               }
                               case _ =>
-                                Errors.craftResponseResult("No ApiKey provided",
-                                                           BadRequest,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.no.api.key"),
+                                Errors.craftResponseResult(
+                                  "No ApiKey provided",
+                                  BadRequest,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.no.api.key"),
                                   duration = System.currentTimeMillis - start,
-                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                )
                             }
                           } else {
-                            Errors.craftResponseResult("No ApiKey provided",
-                                                       BadRequest,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.no.api.key"),
+                            Errors.craftResponseResult(
+                              "No ApiKey provided",
+                              BadRequest,
+                              req,
+                              Some(descriptor),
+                              Some("errors.no.api.key"),
                               duration = System.currentTimeMillis - start,
-                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                            )
                           }
                         }
 
@@ -1294,13 +1329,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                           val (within, secCalls, maybeQuota) = r
                           val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
                           if (secCalls > (quota * 10L)) {
-                            Errors.craftResponseResult("[IP] You performed too much requests",
-                                                       TooManyRequests,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.too.much.requests"),
+                            Errors.craftResponseResult(
+                              "[IP] You performed too much requests",
+                              TooManyRequests,
+                              req,
+                              Some(descriptor),
+                              Some("errors.too.much.requests"),
                               duration = System.currentTimeMillis - start,
-                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                            )
                           } else {
                             if (env.isProd && !isSecured && desc.forceHttps) {
                               val theDomain = req.domain
@@ -1320,49 +1357,59 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
                             } else if (!within) {
                               // TODO : count as served req here !!!
-                              Errors.craftResponseResult("[GLOBAL] You performed too much requests",
-                                                         TooManyRequests,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.too.much.requests"),
+                              Errors.craftResponseResult(
+                                "[GLOBAL] You performed too much requests",
+                                TooManyRequests,
+                                req,
+                                Some(descriptor),
+                                Some("errors.too.much.requests"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              )
                             } else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
                                          .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                              Errors.craftResponseResult("Your IP address is not allowed",
-                                                         Forbidden,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.ip.address.not.allowed"),
+                              Errors.craftResponseResult(
+                                "Your IP address is not allowed",
+                                Forbidden,
+                                req,
+                                Some(descriptor),
+                                Some("errors.ip.address.not.allowed"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead) // global whitelist
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              ) // global whitelist
                             } else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
                                          .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                              Errors.craftResponseResult("Your IP address is not allowed",
-                                                         Forbidden,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.ip.address.not.allowed"),
+                              Errors.craftResponseResult(
+                                "Your IP address is not allowed",
+                                Forbidden,
+                                req,
+                                Some(descriptor),
+                                Some("errors.ip.address.not.allowed"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead) // global blacklist
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              ) // global blacklist
                             } else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
                                          .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                              Errors.craftResponseResult("Your IP address is not allowed",
-                                                         Forbidden,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.ip.address.not.allowed"),
+                              Errors.craftResponseResult(
+                                "Your IP address is not allowed",
+                                Forbidden,
+                                req,
+                                Some(descriptor),
+                                Some("errors.ip.address.not.allowed"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead) // service whitelist
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              ) // service whitelist
                             } else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
                                          .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
-                              Errors.craftResponseResult("Your IP address is not allowed",
-                                                         Forbidden,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.ip.address.not.allowed"),
+                              Errors.craftResponseResult(
+                                "Your IP address is not allowed",
+                                Forbidden,
+                                req,
+                                Some(descriptor),
+                                Some("errors.ip.address.not.allowed"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead) // service blacklist
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              ) // service blacklist
                             } else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
                                          .exists(ip => RegexPool(ip).matches(remoteAddress))) {
                               val gigas: Long = 128L * 1024L * 1024L * 1024L
@@ -1385,21 +1432,25 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   )
                               )
                             } else if (descriptor.maintenanceMode) {
-                              Errors.craftResponseResult("Service in maintenance mode",
-                                                         ServiceUnavailable,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.service.in.maintenance"),
+                              Errors.craftResponseResult(
+                                "Service in maintenance mode",
+                                ServiceUnavailable,
+                                req,
+                                Some(descriptor),
+                                Some("errors.service.in.maintenance"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              )
                             } else if (descriptor.buildMode) {
-                              Errors.craftResponseResult("Service under construction",
-                                                         ServiceUnavailable,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.service.under.construction"),
+                              Errors.craftResponseResult(
+                                "Service under construction",
+                                ServiceUnavailable,
+                                req,
+                                Some(descriptor),
+                                Some("errors.service.under.construction"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              )
                             } else if (isUp) {
                               if (descriptor.isPrivate) {
                                 if (descriptor.isUriPublic(req.path)) {
@@ -1419,13 +1470,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               }
                             } else {
                               // fail fast
-                              Errors.craftResponseResult("The service seems to be down :( come back later",
-                                                         Forbidden,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.service.down"),
+                              Errors.craftResponseResult(
+                                "The service seems to be down :( come back later",
+                                Forbidden,
+                                req,
+                                Some(descriptor),
+                                Some("errors.service.down"),
                                 duration = System.currentTimeMillis - start,
-                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead)
+                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                              )
 
                             }
                           }

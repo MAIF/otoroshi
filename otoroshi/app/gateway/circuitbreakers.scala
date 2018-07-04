@@ -84,8 +84,10 @@ object Retry {
   }
 }
 
-case class BodyAlreadyConsumedException(attempts: Int) extends RuntimeException("Request body already consumed") with NoStackTrace
-case class RequestTimeoutException(attempts: Int)      extends RuntimeException("Global request timeout") with NoStackTrace
+case class BodyAlreadyConsumedException(attempts: Int)
+    extends RuntimeException("Request body already consumed")
+    with NoStackTrace
+case class RequestTimeoutException(attempts: Int) extends RuntimeException("Global request timeout") with NoStackTrace
 case class AllCircuitBreakersOpenException(attempts: Int)
     extends RuntimeException("All targets circuit breakers are open")
     with NoStackTrace
@@ -164,7 +166,11 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     }
   }
 
-  def call(descriptor: ServiceDescriptor, bodyAlreadyConsumed: AtomicBoolean, ctx: String, counter: AtomicInteger, f: (Target, Int) => Future[Result])(
+  def call(descriptor: ServiceDescriptor,
+           bodyAlreadyConsumed: AtomicBoolean,
+           ctx: String,
+           counter: AtomicInteger,
+           f: (Target, Int) => Future[Result])(
       implicit env: Env
   ): Future[Result] = {
     val failure = Timeout
@@ -203,7 +209,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
                                    descriptor.clientConfig.retryInitialDelay,
                                    descriptor.clientConfig.backoffFactor,
-                                   descriptor.name + " : " + ctx, counter) { attempts =>
+                                   descriptor.name + " : " + ctx,
+                                   counter) { attempts =>
       chooseTarget(descriptor) match {
         case Some((target, breaker)) =>
           logger.debug(s"Try to call WS target : $target")
