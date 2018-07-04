@@ -297,7 +297,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   Some("errors.request.timeout")
                                 )
                                 .asLeft[WSFlow]
-                            case RequestTimeoutException(_) =>
+                            case RequestTimeoutException =>
                               Errors
                                 .craftResponseResult(
                                   s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
@@ -307,7 +307,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   Some("errors.request.timeout")
                                 )
                                 .asLeft[WSFlow]
-                            case AllCircuitBreakersOpenException(_) =>
+                            case AllCircuitBreakersOpenException =>
                               Errors
                                 .craftResponseResult(
                                   s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",

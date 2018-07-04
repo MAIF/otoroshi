@@ -505,7 +505,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                          System.currentTimeMillis - cbStart,
                                                          counter.get())
                               ) recoverWith {
-                              case BodyAlreadyConsumedException(_) =>
+                              case BodyAlreadyConsumedException =>
                                 Errors.craftResponseResult(
                                   s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
                                   BadGateway,
@@ -517,7 +517,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   cbDuration = System.currentTimeMillis - cbStart,
                                   callAttempts = counter.get()
                                 )
-                              case RequestTimeoutException(_) =>
+                              case RequestTimeoutException =>
                                 Errors.craftResponseResult(
                                   s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
                                   BadGateway,
@@ -541,7 +541,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   cbDuration = System.currentTimeMillis - cbStart,
                                   callAttempts = counter.get()
                                 )
-                              case AllCircuitBreakersOpenException(attempts) =>
+                              case AllCircuitBreakersOpenException =>
                                 Errors.craftResponseResult(
                                   s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
                                   BadGateway,
