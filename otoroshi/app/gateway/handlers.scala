@@ -288,9 +288,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def applyJwtVerifier(service: ServiceDescriptor, req: RequestHeader)(f: JwtInjection => Future[Result])(implicit env: Env): Future[Result] = {
-    if (env.isDev && service.id == JwtVerifier.mock1.id) {
-      logger.warn("Applying JWT verification")
-      JwtVerifier.mock1.verify(req, service)(f)
+    if (service.jwtVerifier.enabled) {
+      logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
+      service.jwtVerifier.verify(req, service)(f)
     } else {
       f(JwtInjection())
     }
@@ -476,9 +476,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                         logger.debug(s"request has a new tracking id : $trackingId")
                       }
 
-                      val withTrackingCookies =
-                        if (!desc.canary.enabled) jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) //Seq.empty[play.api.mvc.Cookie]
-                        else if (maybeTrackingId.isDefined) jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) //Seq.empty[play.api.mvc.Cookie]
+                      val withTrackingCookies: Seq[Cookie] =
+                        if (!desc.canary.enabled) jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)).toSeq //Seq.empty[play.api.mvc.Cookie]
+                        else if (maybeTrackingId.isDefined) jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)).toSeq //Seq.empty[play.api.mvc.Cookie]
                         else
                           Seq(
                             play.api.mvc.Cookie(

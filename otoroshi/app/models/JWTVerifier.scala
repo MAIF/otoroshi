@@ -12,26 +12,80 @@ import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class JwtInjection(
-  additionalHeaders: Seq[(String, String)] = Seq.empty,
-  removeHeaders: Seq[String] = Seq.empty,
-  additionalCookies: Seq[(String, String)] = Seq.empty,
-  removeCookies: Seq[String] = Seq.empty,
-)
+sealed trait AsJson {
+  def asJson: JsValue
+}
 
-sealed trait JwtTokenLocation {
+sealed trait FromJson[A] {
+  def fromJson(json: JsValue): Either[Throwable, A]
+}
+
+case class JwtInjection(
+  additionalHeaders: Map[String, String] = Map.empty,
+  removeHeaders: Seq[String] = Seq.empty,
+  additionalCookies: Map[String, String] = Map.empty,
+  removeCookies: Seq[String] = Seq.empty,
+) extends AsJson {
+  def asJson: JsValue = Json.obj(
+    "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
+    "removeHeaders" -> JsArray(this.removeHeaders.map(JsString.apply)),
+    "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
+    "removeCookies" -> JsArray(this.removeCookies.map(JsString.apply))
+  )
+}
+
+object JwtInjection extends FromJson[JwtInjection] {
+  override def fromJson(json: JsValue) = ???
+}
+
+sealed trait JwtTokenLocation extends AsJson {
   def token(request: RequestHeader): Option[String]
   def asJWTInjection(newToken: String): JwtInjection
+}
+object JwtTokenLocation extends FromJson[JwtTokenLocation] {
+  override def fromJson(json: JsValue): Either[Throwable, JwtTokenLocation] = Try {
+    (json \ "type").as[String] match {
+      case "InQueryParam" => InQueryParam.fromJson(json)
+      case "InHeader" => InHeader.fromJson(json)
+      case "InCookie" => InCookie.fromJson(json)
+    }
+  } recover {
+    case e => Left(e)
+  } get
+}
+object InQueryParam extends FromJson[InQueryParam] {
+  override def fromJson(json: JsValue): Either[Throwable, InQueryParam] = Try {
+    Right(
+      InQueryParam(
+        (json \ "name").as[String]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
 }
 case class InQueryParam(name: String) extends JwtTokenLocation {
   def token(request: RequestHeader): Option[String] = request.getQueryString(name)
   def asJWTInjection(newToken: String): JwtInjection = JwtInjection()
+  override def asJson = Json.obj("type" -> "InQueryParam", "name" -> this.name)
+}
+object InHeader extends FromJson[InHeader] {
+  override def fromJson(json: JsValue): Either[Throwable, InHeader] = Try {
+    Right(
+      InHeader(
+        (json \ "name").as[String],
+        (json \ "remove").as[String]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
 }
 case class InHeader(name: String, remove: String = "") extends JwtTokenLocation {
   def token(request: RequestHeader): Option[String] = {
@@ -39,16 +93,51 @@ case class InHeader(name: String, remove: String = "") extends JwtTokenLocation 
       h.replaceAll(remove, "")
     }
   }
-  def asJWTInjection(newToken: String): JwtInjection = JwtInjection(additionalHeaders = Seq(name -> newToken))
-
+  def asJWTInjection(newToken: String): JwtInjection = JwtInjection(additionalHeaders = Map(name -> newToken))
+  override def asJson = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
+}
+object InCookie extends FromJson[InCookie] {
+  override def fromJson(json: JsValue): Either[Throwable, InCookie] = Try {
+    Right(
+      InCookie(
+        (json \ "name").as[String]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
 }
 case class InCookie(name: String) extends JwtTokenLocation {
   def token(request: RequestHeader): Option[String] = request.cookies.get(name).map(_.value)
-  def asJWTInjection(newToken: String): JwtInjection = JwtInjection(additionalCookies = Seq(name -> newToken))
+  def asJWTInjection(newToken: String): JwtInjection = JwtInjection(additionalCookies = Map(name -> newToken))
+  override def asJson = Json.obj("type" -> "InCookie", "name" -> this.name)
 }
 
-sealed trait AlgoSettings {
+sealed trait AlgoSettings extends AsJson {
   def asAlgorithm: Option[Algorithm]
+}
+object AlgoSettings extends FromJson[AlgoSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, AlgoSettings] = Try {
+    (json \ "type").as[String] match {
+      case "HSAlgoSettings" => HSAlgoSettings.fromJson(json)
+      case "RSAlgoSettings" => RSAlgoSettings.fromJson(json)
+      case "ESAlgoSettings" => ESAlgoSettings.fromJson(json)
+    }
+  } recover {
+    case e => Left(e)
+  } get
+}
+object HSAlgoSettings extends FromJson[HSAlgoSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, HSAlgoSettings] = Try {
+    Right(
+      HSAlgoSettings(
+        (json \ "size").as[Int],
+        (json \ "secret").as[String]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
 }
 case class HSAlgoSettings(size: Int, secret: String) extends AlgoSettings {
   override def asAlgorithm: Option[Algorithm] = size match {
@@ -57,76 +146,252 @@ case class HSAlgoSettings(size: Int, secret: String) extends AlgoSettings {
     case 512 => Some(Algorithm.HMAC512(secret))
     case _ => None
   }
+  override def asJson = Json.obj(
+    "type" -> "HSAlgoSettings",
+    "size" -> this.size,
+    "secret" -> this.secret
+  )
 }
-case class RSAlgoSettings(size: Int, publicKey: String, privateRsaKey: String) extends AlgoSettings {
+object RSAlgoSettings extends FromJson[RSAlgoSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, RSAlgoSettings] = Try {
+    Right(
+      RSAlgoSettings(
+        (json \ "size").as[Int],
+        (json \ "publicKey").as[String],
+        (json \ "privateKey").as[String]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
+}
+case class RSAlgoSettings(size: Int, publicKey: String, privateKey: String) extends AlgoSettings {
 
   def getPublicKey(value: String): RSAPublicKey = {
-    val publicBytes = ApacheBase64.decodeBase64(value)
+    val publicBytes = ApacheBase64.decodeBase64(value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim())
     val keySpec = new X509EncodedKeySpec(publicBytes)
     val keyFactory = KeyFactory.getInstance("RSA")
     keyFactory.generatePublic(keySpec).asInstanceOf[RSAPublicKey]
   }
 
   def getPrivateKey(value: String): RSAPrivateKey = {
-    val publicBytes = ApacheBase64.decodeBase64(value)
+    val publicBytes = ApacheBase64.decodeBase64(value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim())
     val keySpec = new PKCS8EncodedKeySpec(publicBytes)
     val keyFactory = KeyFactory.getInstance("RSA")
     keyFactory.generatePrivate(keySpec).asInstanceOf[RSAPrivateKey]
   }
 
   override def asAlgorithm: Option[Algorithm] = size match {
-    case 256 => Some(Algorithm.RSA256(getPublicKey(publicKey), getPrivateKey(privateRsaKey)))
-    case 384 => Some(Algorithm.RSA384(getPublicKey(publicKey), getPrivateKey(privateRsaKey)))
-    case 512 => Some(Algorithm.RSA512(getPublicKey(publicKey), getPrivateKey(privateRsaKey)))
+    case 256 => Some(Algorithm.RSA256(getPublicKey(publicKey), getPrivateKey(privateKey)))
+    case 384 => Some(Algorithm.RSA384(getPublicKey(publicKey), getPrivateKey(privateKey)))
+    case 512 => Some(Algorithm.RSA512(getPublicKey(publicKey), getPrivateKey(privateKey)))
     case _ => None
   }
+
+  override def asJson = Json.obj(
+    "type" -> "RSAlgoSettings",
+    "size" -> this.size,
+    "publicKey" -> this.publicKey,
+    "privateKey" -> this.privateKey,
+  )
 }
-case class ESAlgoSettings(size: Int, publicKey: String, privateRsaKey: String) extends AlgoSettings {
+object ESAlgoSettings extends FromJson[ESAlgoSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, ESAlgoSettings] = Try {
+    Right(
+      ESAlgoSettings(
+        (json \ "size").as[Int],
+        (json \ "publicKey").as[String],
+        (json \ "privateKey").as[String]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
+}
+case class ESAlgoSettings(size: Int, publicKey: String, privateKey: String) extends AlgoSettings {
 
   def getPublicKey(value: String): ECPublicKey = {
-    val publicBytes = ApacheBase64.decodeBase64(value)
+    val publicBytes = ApacheBase64.decodeBase64(value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim())
     val keySpec = new X509EncodedKeySpec(publicBytes)
     val keyFactory = KeyFactory.getInstance("EC")
     keyFactory.generatePublic(keySpec).asInstanceOf[ECPublicKey]
   }
 
   def getPrivateKey(value: String): ECPrivateKey = {
-    val publicBytes = ApacheBase64.decodeBase64(value)
+    val publicBytes = ApacheBase64.decodeBase64(value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim())
     val keySpec = new PKCS8EncodedKeySpec(publicBytes)
     val keyFactory = KeyFactory.getInstance("EC")
     keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
   }
 
   override def asAlgorithm: Option[Algorithm] = size match {
-    case 256 => Some(Algorithm.ECDSA256(getPublicKey(publicKey), getPrivateKey(privateRsaKey)))
-    case 384 => Some(Algorithm.ECDSA384(getPublicKey(publicKey), getPrivateKey(privateRsaKey)))
-    case 512 => Some(Algorithm.ECDSA512(getPublicKey(publicKey), getPrivateKey(privateRsaKey)))
+    case 256 => Some(Algorithm.ECDSA256(getPublicKey(publicKey), getPrivateKey(privateKey)))
+    case 384 => Some(Algorithm.ECDSA384(getPublicKey(publicKey), getPrivateKey(privateKey)))
+    case 512 => Some(Algorithm.ECDSA512(getPublicKey(publicKey), getPrivateKey(privateKey)))
     case _ => None
   }
+
+  override def asJson = Json.obj(
+    "type" -> "ESAlgoSettings",
+    "size" -> this.size,
+    "publicKey" -> this.publicKey,
+    "privateKey" -> this.privateKey,
+  )
 }
 
-case class MappingSettings(map: Map[String, String] = Map.empty, values: JsObject = Json.obj())
-case class TransformSettings(location: JwtTokenLocation, mappingSettings: MappingSettings)
+object MappingSettings extends FromJson[MappingSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, MappingSettings] = Try {
+    Right(
+      MappingSettings(
+        (json \ "map").as[Map[String, String]],
+        (json \ "values").as[JsObject]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
+}
+case class MappingSettings(map: Map[String, String] = Map.empty, values: JsObject = Json.obj()) extends AsJson {
+  override def asJson = Json.obj(
+    "map" -> JsObject(map.mapValues(JsString.apply)),
+    "values" -> values
+  )
+}
+object TransformSettings extends FromJson[TransformSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, TransformSettings] = Try {
+    for {
+      location <- JwtTokenLocation.fromJson((json \ "location").as[JsValue])
+      mappingSettings <- MappingSettings.fromJson((json \ "mappingSettings").as[JsValue])
+    } yield TransformSettings(location, mappingSettings)
+  } recover {
+    case e => Left(e)
+  } get
+}
+case class TransformSettings(location: JwtTokenLocation, mappingSettings: MappingSettings) extends AsJson {
+  override def asJson = Json.obj(
+    "location" -> location.asJson,
+    "mappingSettings" -> mappingSettings.asJson
+  )
+}
 
-case class VerificationSettings(fields: Map[String, String] = Map.empty) {
+object VerificationSettings extends FromJson[VerificationSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, VerificationSettings] = Try {
+    Right(
+      VerificationSettings(
+        (json \ "fields").as[Map[String, String]]
+      )
+    )
+  } recover {
+    case e => Left(e)
+  } get
+}
+
+case class VerificationSettings(fields: Map[String, String] = Map.empty) extends AsJson {
   def asVerification(algorithm: Algorithm): Verification = {
     fields.foldLeft(JWT
       .require(algorithm)
       .acceptLeeway(10000))((a, b) => a.withClaim(b._1, b._2))
   }
+
+  override def asJson = Json.obj(
+    "fields" -> JsObject(this.fields.mapValues(JsString.apply))
+  )
 }
 
-sealed trait VerifierStrategy {
+object VerifierStrategy extends FromJson[VerifierStrategy] {
+  override def fromJson(json: JsValue): Either[Throwable, VerifierStrategy] = Try {
+    (json \ "type").as[String] match {
+      case "PassThrough" => PassThrough.fromJson(json)
+      case "Sign" => Sign.fromJson(json)
+      case "Transform" => Transform.fromJson(json)
+    }
+  } recover {
+    case e => Left(e)
+  } get
+}
+
+sealed trait VerifierStrategy extends AsJson {
   def verificationSettings: VerificationSettings
 }
-case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy
-case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy
-case class Transform(verificationSettings: VerificationSettings, transformSettings: TransformSettings, algoSettings: AlgoSettings) extends VerifierStrategy
-// case class AddToOtoroshiToken(verificationSettings: VerificationSettings, settings: MappingSettings) extends VerifierStrategy
 
-case class JwtVerifier(id: String, name: String, strict: Boolean = true, source: JwtTokenLocation, algoSettings: AlgoSettings, strategy: VerifierStrategy) {
+object PassThrough extends FromJson[VerifierStrategy] {
+  override def fromJson(json: JsValue): Either[Throwable, VerifierStrategy] = Try {
+    for {
+      verificationSettings <- VerificationSettings.fromJson((json \ "verificationSettings").as[JsValue])
+    } yield PassThrough(verificationSettings)
+  } recover {
+    case e => Left(e)
+  } get
+}
+
+case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy {
+  override def asJson = Json.obj(
+    "type" -> "PassThrough",
+    "verificationSettings" -> verificationSettings.asJson
+  )
+}
+
+object Sign extends FromJson[VerifierStrategy] {
+  override def fromJson(json: JsValue): Either[Throwable, VerifierStrategy] = Try {
+    for {
+      verificationSettings <- VerificationSettings.fromJson((json \ "verificationSettings").as[JsValue])
+      algoSettings <- AlgoSettings.fromJson((json \ "algoSettings").as[JsValue])
+    } yield Sign(verificationSettings, algoSettings)
+  } recover {
+    case e => Left(e)
+  } get
+}
+
+case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy {
+  override def asJson = Json.obj(
+    "type" -> "Sign",
+    "verificationSettings" -> verificationSettings.asJson,
+    "algoSettings" -> algoSettings.asJson
+  )
+}
+
+object Transform extends FromJson[VerifierStrategy] {
+  override def fromJson(json: JsValue): Either[Throwable, VerifierStrategy] = Try {
+    for {
+      verificationSettings <- VerificationSettings.fromJson((json \ "verificationSettings").as[JsValue])
+      transformSettings <- TransformSettings.fromJson((json \ "transformSettings").as[JsValue])
+      algoSettings <- AlgoSettings.fromJson((json \ "algoSettings").as[JsValue])
+    } yield Transform(verificationSettings, transformSettings, algoSettings)
+  } recover {
+    case e => Left(e)
+  } get
+}
+
+case class Transform(verificationSettings: VerificationSettings, transformSettings: TransformSettings, algoSettings: AlgoSettings) extends VerifierStrategy {
+  override def asJson = Json.obj(
+    "type" -> "Transform",
+    "verificationSettings" -> verificationSettings.asJson,
+    "transformSettings" -> transformSettings.asJson,
+    "algoSettings" -> algoSettings.asJson
+  )
+}
+
+case class JwtVerifier(
+  enabled: Boolean = false,
+  id: String,
+  name: String,
+  strict: Boolean = true,
+  source: JwtTokenLocation = InHeader("X-JWT-Token"),
+  algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+  strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
+) extends AsJson {
 
   lazy val logger = Logger("otoroshi-jwt-verifier")
+
+  def asJson: JsValue = Json.obj(
+    "enabled" -> this.enabled,
+    "id" -> this.id,
+    "name" -> this.name,
+    "strict" -> this.strict,
+    "source" -> this.source.asJson,
+    "algoSettings" -> this.algoSettings.asJson,
+    "strategy" -> this.strategy.asJson
+  )
 
   def sign(token: JsObject, algorithm: Algorithm): String = {
     val headerJson = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT")
@@ -202,7 +467,6 @@ case class JwtVerifier(id: String, name: String, strict: Boolean = true, source:
                   }
                 }
               }
-              // case s @ AddToOtoroshiToken(_, mSettings) => ???
             }
           }
         }
@@ -211,7 +475,28 @@ case class JwtVerifier(id: String, name: String, strict: Boolean = true, source:
   }
 }
 
-object JwtVerifier {
+object JwtVerifier extends FromJson[JwtVerifier] {
+
+  override def fromJson(json: JsValue): Either[Throwable, JwtVerifier] = Try {
+    for {
+      source <- JwtTokenLocation.fromJson((json \ "source").as[JsValue])
+      algoSettings <- AlgoSettings.fromJson((json \ "algoSettings").as[JsValue])
+      strategy <- VerifierStrategy.fromJson((json \ "strategy").as[JsValue])
+    } yield {
+      JwtVerifier(
+        enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+        id = (json \ "id").as[String],
+        name = (json \ "name").as[String],
+        strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
+        source = source,
+        algoSettings = algoSettings,
+        strategy = strategy
+      )
+    }
+  } recover {
+    case e => Left.apply[Throwable, JwtVerifier](e)
+  } get
+
   def mock1: JwtVerifier = JwtVerifier(
     id = "9lK2oSSC7qgtIG8qsdK0mV0IHI94l9krvegrhq1Y9X5GhePIEwYJ00ABeHGIiaKw",
     name = "test-jwt-verifier",

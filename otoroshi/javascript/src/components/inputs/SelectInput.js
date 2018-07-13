@@ -4,9 +4,10 @@ import { Help } from './Help';
 
 export class SelectInput extends Component {
   state = {
+    error: null,
     loading: false,
     value: this.props.value || null,
-    values: (this.props.possibleValues || []).map(a => ({ label: a, value: a })),
+    values: (this.props.possibleValues || []).map(a => ({ label: a.label || a, value: a.value || a })),
   };
 
   componentDidMount() {
@@ -23,12 +24,17 @@ export class SelectInput extends Component {
     }
     if (nextProps.possibleValues !== this.props.possibleValues) {
       this.setState({
-        values: (nextProps.possibleValues || []).map(a => ({ label: a, value: a })),
+        values: (nextProps.possibleValues || []).map(a => ({ label: a.label || a, value: a.value || a })),
       });
     }
     if (!nextProps.valuesFrom && nextProps.value !== this.props.value) {
       this.setState({ value: nextProps.value });
     }
+  }
+
+  componentDidCatch(error) {
+    console.log('SelectInput catches error', error, this.state);
+    this.setState({ error });
   }
 
   reloadValues = () => {
@@ -50,7 +56,44 @@ export class SelectInput extends Component {
     this.props.onChange(e.value);
   };
 
+  onChangeClassic = e => {
+    this.setState({ value: e.target.value });
+    this.props.onChange(e.target.value);
+  };
+
   render() {
+    if (this.state.error) {
+      return (
+        <div className="form-group">
+          <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+            {this.props.label} <Help text={this.props.help} />
+          </label>
+          <div className="col-sm-10">
+            <div style={{ width: '100%' }}>
+              <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (this.props.classic && !this.props.disabled) {
+      return (
+        <div className="form-group">
+          <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+            {this.props.label} <Help text={this.props.help} />
+          </label>
+          <div className="col-sm-10">
+            <div style={{ width: '100%' }}>
+              <select className="form-control classic-select" value={this.state.value} onChange={this.onChangeClassic}>
+                {this.state.values.map(value => (
+                  <option value={value.value}>{value.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="form-group">
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">

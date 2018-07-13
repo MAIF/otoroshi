@@ -41,6 +41,7 @@
     "redux": "3.7.2",
     "redux-router": "2.1.2",
     "redux-thunk": "2.2.0",
+    "set-value": "^3.0.0",
     "showdown": "1.8.6",
     "uuid": "3.2.1",
     "whatwg-fetch": "2.0.3"
