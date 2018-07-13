@@ -15,7 +15,7 @@ class Metric extends Component {
   size = 30;
 
   state = {
-    values: [] || init(this.size),
+    values: init(this.size),
   };
 
   restrict(what, size) {
@@ -82,7 +82,7 @@ export class LiveStatTiles extends Component {
 
   componentDidMount() {
     this.evtSource = new EventSource(this.props.url);
-    this.evtSource.onmessage = e => requestAnimationFrame(() => this.onMessage(e));
+    this.evtSource.onmessage = e => this.onMessage(e);
   }
 
   componentWillUnmount() {

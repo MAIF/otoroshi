@@ -297,7 +297,8 @@ case class ServiceDescriptor(
     clientConfig: ClientConfig = ClientConfig(),
     canary: Canary = Canary(),
     metadata: Map[String, String] = Map.empty[String, String],
-    chaosConfig: ChaosConfig = ChaosConfig()
+    chaosConfig: ChaosConfig = ChaosConfig(),
+    jwtVerifier: JwtVerifier = JwtVerifier(id = "jwt-verifier", name = "jwt-verifier")
 ) {
 
   def toHost: String = subdomain match {
@@ -397,7 +398,10 @@ object ServiceDescriptor {
           clientConfig = (json \ "clientConfig").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
           canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-          chaosConfig = (json \ "chaosConfig").asOpt(ChaosConfig._fmt).getOrElse(ChaosConfig())
+          chaosConfig = (json \ "chaosConfig").asOpt(ChaosConfig._fmt).getOrElse(ChaosConfig()),
+          jwtVerifier = JwtVerifier
+            .fromJson((json \ "jwtVerifier").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(JwtVerifier(id = "jwt-verifier", name = "jwt-verifier"))
         )
       } map {
         case sd => JsSuccess(sd)
@@ -439,7 +443,8 @@ object ServiceDescriptor {
       "clientConfig"               -> sd.clientConfig.toJson,
       "canary"                     -> sd.canary.toJson,
       "metadata"                   -> JsObject(sd.metadata.mapValues(JsString.apply)),
-      "chaosConfig"                -> sd.chaosConfig.asJson
+      "chaosConfig"                -> sd.chaosConfig.asJson,
+      "jwtVerifier"                -> sd.jwtVerifier.asJson
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

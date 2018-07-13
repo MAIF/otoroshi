@@ -46,6 +46,34 @@ export class TextInput extends Component {
   }
 }
 
+export class TextareaInput extends Component {
+  onChange = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    this.props.onChange(e.target.value);
+  };
+
+  render() {
+    return (
+      <div className="form-group">
+        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+          {this.props.label} <Help text={this.props.help} />
+        </label>
+        <div className="col-sm-10">
+          <textarea
+            className="form-control"
+            disabled={this.props.disabled}
+            id={`input-${this.props.label}`}
+            placeholder={this.props.placeholder}
+            value={this.props.value || ''}
+            onChange={this.onChange}
+            rows={this.props.rows || 3}
+          />
+        </div>
+      </div>
+    );
+  }
+}
+
 export class RangeTextInput extends Component {
   onChangeFrom = e => {
     if (e && e.preventDefault) e.preventDefault();
