@@ -23,10 +23,14 @@ object Errors {
                           status: Status,
                           req: RequestHeader,
                           maybeDescriptor: Option[ServiceDescriptor] = None,
-                          maybeCauseId: Option[String])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+                          maybeCauseId: Option[String],
+                          duration: Long = 0L,
+                          overhead: Long = 0L,
+                          cbDuration: Long = 0L,
+                          callAttempts: Int = 0)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
-    
+
     def sendAnalytics(headers: Seq[Header]) = {
       maybeDescriptor.foreach { descriptor =>
         val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
@@ -62,8 +66,11 @@ object Errors {
             host = descriptor.target.host,
             uri = req.relativeUri
           ),
-          duration = 0,
-          overhead = 0,
+          duration = duration,
+          overhead = overhead,
+          cbDuration = cbDuration,
+          overheadWoCb = overhead - cbDuration,
+          callAttempts = callAttempts,
           url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.relativeUri}",
           method = req.method,
           from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),

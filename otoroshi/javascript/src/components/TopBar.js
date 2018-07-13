@@ -125,7 +125,11 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
-          env: <span><img className="monkeyMenu" src="/__otoroshi_assets/images/nihonzaru.svg" /></span>,
+          env: (
+            <span>
+              <img className="monkeyMenu" src="/__otoroshi_assets/images/nihonzaru.svg" />
+            </span>
+          ),
           label: 'Snow Monkey',
           value: 'SnowMonkey',
         });
@@ -348,19 +352,19 @@ export class TopBar extends Component {
                   onChange={i => i.action()}
                   arrowRenderer={a => {
                     return (
-                        <span
-                          style={{ display: 'flex',height: 20 }}
-                          title="You can jump directly into the search bar from anywhere just by typing '/'">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
-                            <defs>
-                              <rect id="a" width="19" height="20" rx="3" />
-                            </defs>
-                            <g fill="none" fillRule="evenodd">
-                              <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3" />
-                              <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
-                            </g>
-                          </svg>
-                        </span>
+                      <span
+                        style={{ display: 'flex', height: 20 }}
+                        title="You can jump directly into the search bar from anywhere just by typing '/'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                          <defs>
+                            <rect id="a" width="19" height="20" rx="3" />
+                          </defs>
+                          <g fill="none" fillRule="evenodd">
+                            <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3" />
+                            <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
+                          </g>
+                        </svg>
+                      </span>
                     );
                   }}
                   filterOptions={(opts, value, excluded, conf) => {

@@ -45,7 +45,8 @@ object Retry {
                                     promise: Promise[T],
                                     failure: Option[Throwable],
                                     ctx: String,
-                                    f: () => Future[T])(implicit ec: ExecutionContext, scheduler: Scheduler): Unit =
+                                    f: Int => Future[T],
+                                    counter: AtomicInteger)(implicit ec: ExecutionContext, scheduler: Scheduler): Unit =
     (times, failure) match {
       case (0, Some(e)) =>
         logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => ${e.getMessage}")
@@ -57,27 +58,28 @@ object Retry {
         if (totalCalls > 1 && (times < totalCalls)) {
           logger.warn(s"Retrying call for $ctx ($times/$totalCalls attemps)")
         }
-        f().onComplete {
+        counter.incrementAndGet()
+        f((totalCalls - times) + 1).onComplete {
           case Success(t) =>
             promise.trySuccess(t)
           case Failure(e) =>
             logger.warn(s"Error calling $ctx ($times/$totalCalls attemps) : ${e.getMessage}")
             if (delay == 0L) {
-              retryPromise[T](totalCalls, times - 1, 0L, factor, promise, Some(e), ctx, f)
+              retryPromise[T](totalCalls, times - 1, 0L, factor, promise, Some(e), ctx, f, counter)
             } else {
               val newDelay: Long = delay * factor
               Timeout.timeout(Done, delay.millis).fast.map { _ =>
-                retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f)
+                retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f, counter)
               }
             }
         }(ec)
     }
 
-  def retry[T](times: Int, delay: Long = 0, factor: Long = 2L, ctx: String)(
-      f: () => Future[T]
+  def retry[T](times: Int, delay: Long = 0, factor: Long = 2L, ctx: String, counter: AtomicInteger)(
+      f: Int => Future[T]
   )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
     val promise = Promise[T]()
-    retryPromise[T](times, times, delay, factor, promise, None, ctx, f)
+    retryPromise[T](times, times, delay, factor, promise, None, ctx, f, counter)
     promise.future
   }
 }
@@ -162,7 +164,11 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     }
   }
 
-  def call(descriptor: ServiceDescriptor, bodyAlreadyConsumed: AtomicBoolean, ctx: String, f: Target => Future[Result])(
+  def call(descriptor: ServiceDescriptor,
+           bodyAlreadyConsumed: AtomicBoolean,
+           ctx: String,
+           counter: AtomicInteger,
+           f: (Target, Int) => Future[Result])(
       implicit env: Env
   ): Future[Result] = {
     val failure = Timeout
@@ -171,7 +177,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
                                    descriptor.clientConfig.retryInitialDelay,
                                    descriptor.clientConfig.backoffFactor,
-                                   descriptor.name + " : " + ctx) { () =>
+                                   descriptor.name + " : " + ctx,
+                                   counter) { attempts =>
       if (bodyAlreadyConsumed.get) {
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
@@ -179,7 +186,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
           case Some((target, breaker)) =>
             breaker.withCircuitBreaker {
               logger.debug(s"Try to call target : $target")
-              f(target)
+              f(target, attempts)
             }
           case None => FastFuture.failed(AllCircuitBreakersOpenException)
         }
@@ -190,7 +197,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
 
   def callWS(descriptor: ServiceDescriptor,
              ctx: String,
-             f: Target => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
+             counter: AtomicInteger,
+             f: (Target, Int) => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
       implicit env: Env
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val failure = Timeout
@@ -199,12 +207,13 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
                                    descriptor.clientConfig.retryInitialDelay,
                                    descriptor.clientConfig.backoffFactor,
-                                   descriptor.name + " : " + ctx) { () =>
+                                   descriptor.name + " : " + ctx,
+                                   counter) { attempts =>
       chooseTarget(descriptor) match {
         case Some((target, breaker)) =>
           logger.debug(s"Try to call WS target : $target")
-          breaker.withCircuitBreaker(f(target))
-        case None => FastFuture.failed(new RuntimeException(AllCircuitBreakersOpenException))
+          breaker.withCircuitBreaker(f(target, attempts))
+        case None => FastFuture.failed(AllCircuitBreakersOpenException)
       }
 
     }
