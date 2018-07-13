@@ -7,7 +7,10 @@ export class SelectInput extends Component {
     error: null,
     loading: false,
     value: this.props.value || null,
-    values: (this.props.possibleValues || []).map(a => ({ label: a.label || a, value: a.value || a })),
+    values: (this.props.possibleValues || []).map(a => ({
+      label: a.label || a,
+      value: a.value || a,
+    })),
   };
 
   componentDidMount() {
@@ -24,7 +27,10 @@ export class SelectInput extends Component {
     }
     if (nextProps.possibleValues !== this.props.possibleValues) {
       this.setState({
-        values: (nextProps.possibleValues || []).map(a => ({ label: a.label || a, value: a.value || a })),
+        values: (nextProps.possibleValues || []).map(a => ({
+          label: a.label || a,
+          value: a.value || a,
+        })),
       });
     }
     if (!nextProps.valuesFrom && nextProps.value !== this.props.value) {
@@ -84,10 +90,11 @@ export class SelectInput extends Component {
           </label>
           <div className="col-sm-10">
             <div style={{ width: '100%' }}>
-              <select className="form-control classic-select" value={this.state.value} onChange={this.onChangeClassic}>
-                {this.state.values.map(value => (
-                  <option value={value.value}>{value.label}</option>
-                ))}
+              <select
+                className="form-control classic-select"
+                value={this.state.value}
+                onChange={this.onChangeClassic}>
+                {this.state.values.map(value => <option value={value.value}>{value.label}</option>)}
               </select>
             </div>
           </div>

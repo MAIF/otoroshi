@@ -399,7 +399,9 @@ object ServiceDescriptor {
           canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           chaosConfig = (json \ "chaosConfig").asOpt(ChaosConfig._fmt).getOrElse(ChaosConfig()),
-          jwtVerifier = JwtVerifier.fromJson((json \ "jwtVerifier").asOpt[JsValue].getOrElse(JsNull)).getOrElse(JwtVerifier(id = "jwt-verifier", name = "jwt-verifier"))
+          jwtVerifier = JwtVerifier
+            .fromJson((json \ "jwtVerifier").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(JwtVerifier(id = "jwt-verifier", name = "jwt-verifier"))
         )
       } map {
         case sd => JsSuccess(sd)
