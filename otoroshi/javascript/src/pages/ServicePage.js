@@ -959,6 +959,26 @@ export class ServicePage extends Component {
                 onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
               />
             )}
+            {this.state.service.privateApp && [
+              <BooleanInput
+                label="Strictly private mode"
+                value={this.state.service.strictlyPrivate}
+                help="Strictly private mode enabled"
+                onChange={v => this.changeTheValue('strictlyPrivate', v)}
+              />,
+              <div className="form-group">
+                <label className="col-xs-12 col-sm-2 control-label" />
+                <div className="col-sm-10">
+                  <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948', width: '100%' }}>
+                    When an app. enforces user login (privateApp), it can be nice to allow logged users to access apps API
+                    without using an apikey (because the user is logged in, the app is exposing UI and API and we don't want
+                    to leak apikeys). By default Otoroshi allow this for historical reasons, but it means that you have
+                    anticipate that sometimes your api will be called whitout an apikey. If you don't want this behavior,
+                    juste enable the 'stricly private' mode.
+                  </p>
+                </div>
+              </div>
+            ]}
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}

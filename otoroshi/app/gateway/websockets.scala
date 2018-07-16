@@ -907,7 +907,11 @@ class WebSocketHandler()(implicit env: Env) {
                                 if (descriptor.isUriPublic(req.path)) {
                                   passWithAuth0(globalConfig)
                                 } else {
-                                  passWithApiKey(globalConfig)
+                                  isPrivateAppsSessionValid(req).flatMap {
+                                    case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
+                                    case Some(user)                            => passWithAuth0(globalConfig)
+                                    case None                                  => passWithApiKey(globalConfig)
+                                  }
                                 }
                               } else {
                                 if (descriptor.isUriPublic(req.path)) {

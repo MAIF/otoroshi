@@ -1483,8 +1483,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     passWithAuth0(globalConfig)
                                   } else {
                                     isPrivateAppsSessionValid(req).fast.flatMap {
-                                      case Some(user) => passWithAuth0(globalConfig)
-                                      case None       => passWithApiKey(globalConfig)
+                                      case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
+                                      case Some(user)                            => passWithAuth0(globalConfig)
+                                      case None                                  => passWithApiKey(globalConfig)
                                     }
                                   }
                                 } else {
