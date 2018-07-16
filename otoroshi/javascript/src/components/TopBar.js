@@ -125,7 +125,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/jwt-verifiers'),
-          env: <span className="glyphicon glyphicon-token" />,
+          env: <span className="glyphicon glyphicon-certificate" />,
           label: 'Global Jwt Verifiers',
           value: 'Jwt-Verifiers',
         });
@@ -260,7 +260,7 @@ export class TopBar extends Component {
                       <span className="glyphicon glyphicon-folder-open" /> All service groups
                     </a>
                     <a href="/bo/dashboard/jwt-verifiers">
-                      <span className="glyphicon glyphicon-token" /> Global Jwt Verifiers
+                      <span className="glyphicon glyphicon-certificate" /> Global Jwt Verifiers
                     </a>
                   </li>
                   <li>
