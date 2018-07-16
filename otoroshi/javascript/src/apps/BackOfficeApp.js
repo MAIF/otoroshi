@@ -25,7 +25,6 @@ import { ServicesMapPage } from '../pages/ServicesMapPage';
 import { PrivateAppsSessionsPage } from '../pages/PrivateAppsSessionsPage';
 import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
 import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
-import { JwtVerifierPage } from '../pages/JwtVerifierPage';
 import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
 
 import { TopBar } from '../components/TopBar';
