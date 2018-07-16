@@ -437,29 +437,18 @@ case class Transform(verificationSettings: VerificationSettings,
   )
 }
 
-case class JwtVerifier(
-    enabled: Boolean = false,
-    id: String,
-    name: String,
-    strict: Boolean = true,
-    source: JwtTokenLocation = InHeader("X-JWT-Token"),
-    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
-    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
-) extends AsJson {
+sealed trait JwtVerifier extends AsJson {
 
   lazy val logger = Logger("otoroshi-jwt-verifier")
 
-  def asJson: JsValue = Json.obj(
-    "enabled"      -> this.enabled,
-    "id"           -> this.id,
-    "name"         -> this.name,
-    "strict"       -> this.strict,
-    "source"       -> this.source.asJson,
-    "algoSettings" -> this.algoSettings.asJson,
-    "strategy"     -> this.strategy.asJson
-  )
+  def isRef: Boolean
+  def enabled: Boolean
+  def strict: Boolean
+  def source: JwtTokenLocation
+  def algoSettings: AlgoSettings
+  def strategy: VerifierStrategy
 
-  def sign(token: JsObject, algorithm: Algorithm): String = {
+  private def sign(token: JsObject, algorithm: Algorithm): String = {
     val headerJson     = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT")
     val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
     val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
@@ -479,7 +468,7 @@ case class JwtVerifier(
   }
 
   def verify(request: RequestHeader, desc: ServiceDescriptor)(
-      f: JwtInjection => Future[Result]
+    f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     internalVerify(request, desc)(f).map {
       case Left(badResult) => badResult
@@ -540,7 +529,7 @@ case class JwtVerifier(
                         ).left[A]
                       case Some(outputAlgorithm) => {
                         val newToken = sign(Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject],
-                                            outputAlgorithm)
+                          outputAlgorithm)
                         f(source.asJwtInjection(newToken)).right[Result]
                       }
                     }
@@ -577,19 +566,63 @@ case class JwtVerifier(
   }
 }
 
-object JwtVerifier extends FromJson[JwtVerifier] {
+case class LocalJwtVerifier(
+    enabled: Boolean = false,
+    strict: Boolean = true,
+    source: JwtTokenLocation = InHeader("X-JWT-Token"),
+    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
+) extends JwtVerifier with AsJson {
 
-  override def fromJson(json: JsValue): Either[Throwable, JwtVerifier] =
+  def asJson: JsValue = Json.obj(
+    "type" -> "local",
+    "enabled"      -> this.enabled,
+    "strict"       -> this.strict,
+    "source"       -> this.source.asJson,
+    "algoSettings" -> this.algoSettings.asJson,
+    "strategy"     -> this.strategy.asJson
+  )
+
+  override def isRef = false
+}
+
+case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with AsJson {
+
+  def asJson: JsValue = Json.obj(
+    "type" -> "ref",
+    "id"      -> this.id,
+    "enabled" -> this.enabled
+  )
+
+  override def isRef = true
+  override def strict = throw new RuntimeException("Should never be called ...")
+  override def source = throw new RuntimeException("Should never be called ...")
+  override def algoSettings = throw new RuntimeException("Should never be called ...")
+  override def strategy = throw new RuntimeException("Should never be called ...")
+}
+
+object RefJwtVerifier extends FromJson[RefJwtVerifier] {
+  override def fromJson(json: JsValue): Either[Throwable, RefJwtVerifier] =
+    Try {
+        Right[Throwable, RefJwtVerifier](RefJwtVerifier(
+          id = (json \ "id").as[String],
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false)
+        ))
+    } recover {
+      case e => Left[Throwable, RefJwtVerifier](e)
+    } get
+}
+
+object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
+  override def fromJson(json: JsValue): Either[Throwable, LocalJwtVerifier] =
     Try {
       for {
         source       <- JwtTokenLocation.fromJson((json \ "source").as[JsValue])
         algoSettings <- AlgoSettings.fromJson((json \ "algoSettings").as[JsValue])
         strategy     <- VerifierStrategy.fromJson((json \ "strategy").as[JsValue])
       } yield {
-        JwtVerifier(
+        LocalJwtVerifier(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          id = (json \ "id").as[String],
-          name = (json \ "name").as[String],
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
           source = source,
           algoSettings = algoSettings,
@@ -597,12 +630,75 @@ object JwtVerifier extends FromJson[JwtVerifier] {
         )
       }
     } recover {
-      case e => Left.apply[Throwable, JwtVerifier](e)
+      case e => Left.apply[Throwable, LocalJwtVerifier](e)
     } get
+}
 
-  def mock1: JwtVerifier = JwtVerifier(
-    id = "9lK2oSSC7qgtIG8qsdK0mV0IHI94l9krvegrhq1Y9X5GhePIEwYJ00ABeHGIiaKw",
-    name = "test-jwt-verifier",
+case class GlobalJwtVerifier(
+  enabled: Boolean = false,
+  id: String,
+  name: String,
+  desc: String,
+  strict: Boolean = true,
+  source: JwtTokenLocation = InHeader("X-JWT-Token"),
+  algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+  strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
+) extends JwtVerifier with AsJson {
+
+  def asJson: JsValue = Json.obj(
+    "type" -> "global",
+    "enabled"      -> this.enabled,
+    "id"           -> this.id,
+    "name"         -> this.name,
+    "desc"         -> this.desc,
+    "strict"       -> this.strict,
+    "source"       -> this.source.asJson,
+    "algoSettings" -> this.algoSettings.asJson,
+    "strategy"     -> this.strategy.asJson
+  )
+
+  override def isRef = false
+}
+
+object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
+  override def fromJson(json: JsValue): Either[Throwable, GlobalJwtVerifier] =
+    Try {
+      for {
+        source       <- JwtTokenLocation.fromJson((json \ "source").as[JsValue])
+        algoSettings <- AlgoSettings.fromJson((json \ "algoSettings").as[JsValue])
+        strategy     <- VerifierStrategy.fromJson((json \ "strategy").as[JsValue])
+      } yield {
+        GlobalJwtVerifier(
+          id = (json \ "id").as[String],
+          name = (json \ "name").as[String],
+          desc = (json \ "desc").asOpt[String].getOrElse("--"),
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
+          source = source,
+          algoSettings = algoSettings,
+          strategy = strategy
+        )
+      }
+    } recover {
+      case e => Left.apply[Throwable, GlobalJwtVerifier](e)
+    } get
+}
+
+object JwtVerifier extends FromJson[JwtVerifier] {
+
+  override def fromJson(json: JsValue): Either[Throwable, JwtVerifier] = {
+    Try {
+      (json \ "type").as[String] match {
+        case "global"  => GlobalJwtVerifier.fromJson(json)
+        case "local" => LocalJwtVerifier.fromJson(json)
+        case "ref" => RefJwtVerifier.fromJson(json)
+      }
+    } recover {
+      case e => Left(e)
+    } get
+  }
+
+  def mock1: JwtVerifier = LocalJwtVerifier(
     strict = true,
     source = InHeader("Authorization", "Bearer "),
     algoSettings = HSAlgoSettings(256, "secret"),

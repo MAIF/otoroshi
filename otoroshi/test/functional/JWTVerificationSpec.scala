@@ -136,10 +136,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = JwtVerifier(
+        jwtVerifier = LocalJwtVerifier(
           enabled = true,
-          id = "test",
-          name = "test",
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
@@ -272,10 +270,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = JwtVerifier(
+        jwtVerifier = LocalJwtVerifier(
           enabled = true,
-          id = "test",
-          name = "test",
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
@@ -408,10 +404,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        jwtVerifier = JwtVerifier(
+        jwtVerifier = LocalJwtVerifier(
           enabled = true,
-          id = "test",
-          name = "test",
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
