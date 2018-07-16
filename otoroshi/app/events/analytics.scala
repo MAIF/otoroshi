@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
-import models.{RemainingQuotas, ServiceDescriptor}
+import models.{HSAlgoSettings, RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -59,7 +59,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             exp = DateTime.now().plusSeconds(30).toDate.getTime,
             iat = DateTime.now().toDate.getTime,
             jti = IdGenerator.uuid
-          ).serialize(env)
+          ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}"))(env) // TODO : maybe we need some config here ?
           val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
             env.Headers.OtoroshiState -> state,
             env.Headers.OtoroshiClaim -> claim

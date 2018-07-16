@@ -195,7 +195,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           exp = DateTime.now().plusSeconds(30).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
-        ).serialize(env)
+        ).serialize(service.secComSettings)(env)
         val url = service.api.openApiDescriptorUrl.get match {
           case uri if uri.startsWith("/") => s"${service.target.scheme}://${service.target.host}${uri}"
           case url                        => url

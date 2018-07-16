@@ -15,11 +15,9 @@ import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.http.websocket.{Message => PlayWSMessage}
 
-import play.api.http.websocket.{
-  Message => PlayWSMessage,
-}
-
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -123,7 +121,22 @@ case class InCookie(name: String) extends JwtTokenLocation {
 }
 
 sealed trait AlgoSettings extends AsJson {
-  def asAlgorithm: Option[Algorithm]
+
+  def asAlgorithm(implicit env: Env): Option[Algorithm]
+
+  def transformValue(secret: String)(implicit env: Env): String = {
+    AlgoSettings.fromCacheOrNot(secret, secret match {
+      case s if s.startsWith("${config.") => {
+        val path = s.replace("}", "").replace("${config.", "")
+        env.configuration.get[String](path)
+      }
+      case s if s.startsWith("${env.") => {
+        val envName = s.replace("}", "").replace("${env.", "")
+        System.getenv(envName)
+      }
+      case s => s
+    })
+  }
 }
 object AlgoSettings extends FromJson[AlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, AlgoSettings] =
@@ -136,6 +149,15 @@ object AlgoSettings extends FromJson[AlgoSettings] {
     } recover {
       case e => Left(e)
     } get
+
+  private val cache = new TrieMap[String, String]()
+
+  def fromCacheOrNot(key: String, orElse: => String): String = {
+    key match {
+      case k if k.startsWith("${") => cache.getOrElseUpdate(key, orElse)
+      case k => key
+    }
+  }
 }
 object HSAlgoSettings extends FromJson[HSAlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, HSAlgoSettings] =
@@ -151,10 +173,11 @@ object HSAlgoSettings extends FromJson[HSAlgoSettings] {
     } get
 }
 case class HSAlgoSettings(size: Int, secret: String) extends AlgoSettings {
-  override def asAlgorithm: Option[Algorithm] = size match {
-    case 256 => Some(Algorithm.HMAC256(secret))
-    case 384 => Some(Algorithm.HMAC384(secret))
-    case 512 => Some(Algorithm.HMAC512(secret))
+
+  override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
+    case 256 => Some(Algorithm.HMAC256(transformValue(secret)))
+    case 384 => Some(Algorithm.HMAC384(transformValue(secret)))
+    case 512 => Some(Algorithm.HMAC512(transformValue(secret)))
     case _   => None
   }
   override def asJson = Json.obj(
@@ -201,10 +224,10 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm: Option[Algorithm] = size match {
-    case 256 => Some(Algorithm.RSA256(getPublicKey(publicKey), privateKey.map(pk => getPrivateKey(pk)).orNull))
-    case 384 => Some(Algorithm.RSA384(getPublicKey(publicKey), privateKey.map(pk => getPrivateKey(pk)).orNull))
-    case 512 => Some(Algorithm.RSA512(getPublicKey(publicKey), privateKey.map(pk => getPrivateKey(pk)).orNull))
+  override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
+    case 256 => Some(Algorithm.RSA256(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
+    case 384 => Some(Algorithm.RSA384(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
+    case 512 => Some(Algorithm.RSA512(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
     case _   => None
   }
 
@@ -253,10 +276,10 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm: Option[Algorithm] = size match {
-    case 256 => Some(Algorithm.ECDSA256(getPublicKey(publicKey), privateKey.map(pk => getPrivateKey(pk)).orNull))
-    case 384 => Some(Algorithm.ECDSA384(getPublicKey(publicKey), privateKey.map(pk => getPrivateKey(pk)).orNull))
-    case 512 => Some(Algorithm.ECDSA512(getPublicKey(publicKey), privateKey.map(pk => getPrivateKey(pk)).orNull))
+  override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
+    case 256 => Some(Algorithm.ECDSA256(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
+    case 384 => Some(Algorithm.ECDSA384(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
+    case 512 => Some(Algorithm.ECDSA512(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
     case _   => None
   }
 

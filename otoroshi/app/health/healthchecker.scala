@@ -41,7 +41,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
           exp = DateTime.now().plusSeconds(30).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
-        ).serialize(env)
+        ).serialize(desc.secComSettings)(env)
         env.Ws
           .url(url)
           .withRequestTimeout(Duration(30, TimeUnit.SECONDS))

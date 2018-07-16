@@ -980,6 +980,18 @@ export class ServicePage extends Component {
               </div>
             ]}
           </Collapse>
+          {this.state.service.enforceSecureCommunication && (
+            <Collapse
+              collapsed={this.state.allCollapsed}
+              initCollapsed={true}
+              label="Otoroshi exchange protocol">
+              <AlgoSettings
+                algo={this.state.service.secComSettings}
+                path="secComSettings"
+                changeTheValue={this.changeTheValue}
+              />
+            </Collapse>
+          )}
           <Collapse
             collapsed={this.state.allCollapsed}
             initCollapsed={true}

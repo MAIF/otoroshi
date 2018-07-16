@@ -416,7 +416,7 @@ class WebSocketHandler()(implicit env: Env) {
                           .withClaim("locale", paUsr.flatMap(_.field("locale")))
                           .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
                           .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
-                          .serialize(env)
+                          .serialize(desc.secComSettings)(env)
                         logger.trace(s"Claim is : $claim")
                         val headersIn: Seq[(String, String)] =
                           (req.headers.toSimpleMap

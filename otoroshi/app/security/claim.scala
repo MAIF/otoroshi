@@ -5,6 +5,7 @@ import java.util.{Base64, Date}
 import com.auth0.jwt.{JWT, JWTCreator}
 import com.auth0.jwt.algorithms.Algorithm
 import env.Env
+import models.AlgoSettings
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
@@ -21,8 +22,7 @@ case class OtoroshiClaim(
     metadata: Map[String, String] = Map.empty[String, String] // private claim
 ) {
   def toJson: JsValue                                = OtoroshiClaim.format.writes(this)
-  def serialize(implicit env: Env): String           = OtoroshiClaim.serialize(this)(env)
-  def serializeWithCrypto(implicit env: Env): String = OtoroshiClaim.serializeWithCrypto(this)(env)
+  def serialize(jwtSettings: AlgoSettings)(implicit env: Env): String           = OtoroshiClaim.serialize(this, jwtSettings)(env)
   def withClaims(claims: Option[Map[String, String]]): OtoroshiClaim = claims match {
     case Some(c) => withClaims(c)
     case None    => this
@@ -43,8 +43,8 @@ object OtoroshiClaim {
 
   lazy val logger = Logger("otoroshi-claim")
 
-  def serializeWithCrypto(claim: OtoroshiClaim)(implicit env: Env): String = {
-    val algorithm = Algorithm.HMAC512(env.crypto.sharedKey)
+  def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(implicit env: Env): String = {
+    val algorithm = jwtSettings.asAlgorithm.get
     val builder: JWTCreator.Builder = JWT
       .create()
       .withIssuer(env.Headers.OtoroshiIssuer)
@@ -55,16 +55,14 @@ object OtoroshiClaim {
       .withJWTId(claim.jti)
     val signed = claim.metadata.toSeq
       .foldLeft[JWTCreator.Builder](builder) {
-        case (build, (key, value)) => build.withClaim(key, value)
-      }
+      case (build, (key, value)) => build.withClaim(key, value)
+    }
       .sign(algorithm)
-    logger.trace(s"JWT: $signed")
+    // logger.trace(s"JWT: $signed")
     signed
   }
 
-  def serialize(claim: OtoroshiClaim)(implicit env: Env): String = serializeWithCrypto(claim)(env)
-
-  def validate(claim: String)(implicit env: Env): Boolean =
+  private def validate(claim: String)(implicit env: Env): Boolean =
     Try {
       val algorithm = Algorithm.HMAC512(env.crypto.sharedKey)
       val verifier = JWT
