@@ -123,8 +123,8 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
-// class DevOtoroshiTests
-//     extends Suites(
-//       new JWTVerificationSpec("DEV", Configurations.InMemoryConfiguration),
-//     )
+class DevOtoroshiTests
+    extends Suites(
+      new JWTVerificationSpec("DEV", Configurations.InMemoryConfiguration),
+    )
 
