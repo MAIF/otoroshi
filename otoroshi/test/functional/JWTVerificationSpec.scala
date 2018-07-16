@@ -1,13 +1,75 @@
 package functional
 
+import java.security.KeyFactory
+import java.security.interfaces.{ECPrivateKey, ECPublicKey}
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
 import models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
+
+import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+
+class JWTVerification2Spec(name: String, configurationSpec: => Configuration) extends PlaySpec {
+  "blah" should {
+    "very blah" in {
+      def getPublicKey(value: String): ECPublicKey = {
+        val publicBytes = ApacheBase64.decodeBase64(
+          value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
+        )
+        val keySpec = new X509EncodedKeySpec(publicBytes)
+        val keyFactory = KeyFactory.getInstance("EC")
+        keyFactory.generatePublic(keySpec).asInstanceOf[ECPublicKey]
+      }
+
+      def getPrivateKey(value: String): ECPrivateKey = {
+        val publicBytes = ApacheBase64.decodeBase64(
+          value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
+        )
+        val keySpec = new PKCS8EncodedKeySpec(publicBytes)
+        val keyFactory = KeyFactory.getInstance("EC")
+        keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
+      }
+
+      val algo1 = Algorithm.ECDSA512(getPublicKey(
+        """MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
+          |MMB/9ZENy8KZ+us26i/6PiBBc7XaiEi6Q8Icz2tiazwSpyLPeBrFVPFkPgIADyLa
+          |T0fp7D2JKHWpdrWQvGLLMwGqYCaaDi79KugPo6V4bnpLBlVtbH4ogg0Hqv89BVyI
+          |ZfwWPCBH+Zssei1VlgM=""".stripMargin), getPrivateKey(
+        """MIHtAgEAMBAGByqGSM49AgEGBSuBBAAjBIHVMIHSAgEBBEHzl1DpZSQJ8YhCbN/u
+          |vo5SOu0BjDDX9Gub6zsBW6B2TxRzb5sBeQaWVscDUZha4Xr1HEWpVtua9+nEQU/9
+          |Aq9Pl6GBiQOBhgAEAJhvCa6S89ePqlLO6MRV9KQqHvdAITDAf/WRDcvCmfrrNuov
+          |+j4gQXO12ohIukPCHM9rYms8Eqciz3gaxVTxZD4CAA8i2k9H6ew9iSh1qXa1kLxi
+          |yzMBqmAmmg4u/SroD6OleG56SwZVbWx+KIINB6r/PQVciGX8FjwgR/mbLHotVZYD""".stripMargin))
+      val algo2 = Algorithm.ECDSA512(getPublicKey(
+        """MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
+          |MMB/9ZENy8KZ+us26i/6PiBBc7XaiEi6Q8Icz2tiazwSpyLPeBrFVPFkPgIADyLa
+          |T0fp7D2JKHWpdrWQvGLLMwGqYCaaDi79KugPo6V4bnpLBlVtbH4ogg0Hqv89BVyI
+          |ZfwWPCBH+Zssei1VlgM=""".stripMargin), null)
+
+
+      import com.auth0.jwt.JWT
+
+      val token1 = JWT.create.withIssuer("auth0").sign(algo1)
+
+      val verifier1 = JWT.require(algo1)
+        .withIssuer("auth0")
+        .build()
+
+      val verifier2 = JWT.require(algo2)
+        .withIssuer("auth0")
+        .build()
+
+      println(verifier1.verify(token1))
+      println(verifier2.verify(token1))
+    }
+  }
+}
 
 class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
   extends PlaySpec

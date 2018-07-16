@@ -84,15 +84,20 @@ export class ArrayInput extends Component {
             <div className="col-sm-10">
               <div className="input-group">
                 {!this.props.valuesFrom && (
-                  <input
-                    disabled={this.props.disabled}
-                    type="text"
-                    className="form-control"
-                    id={`input-${this.props.label}`}
-                    placeholder={this.props.placeholder}
-                    value={value}
-                    onChange={e => this.changeValue(e, idx)}
-                  />
+                  <div className="input-group" style={{ width: '100%' }}>
+                    {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
+                    <input
+                      disabled={this.props.disabled}
+                      type="text"
+                      className="form-control"
+                      id={`input-${this.props.label}`}
+                      placeholder={this.props.placeholder}
+                      value={value}
+                      onChange={e => this.changeValue(e, idx)}
+                      style={{ width: '100%' }}
+                    />
+                    {this.props.suffix && <div className="input-group-addon">{this.props.suffix}</div>}
+                  </div>
                 )}
                 {this.props.valuesFrom && (
                   <Select

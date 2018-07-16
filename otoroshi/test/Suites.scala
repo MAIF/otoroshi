@@ -3,7 +3,7 @@ import java.io.File
 import com.typesafe.config.ConfigFactory
 import functional._
 import org.apache.commons.io.FileUtils
-import org.scalatest.{BeforeAndAfterAll, Sequential, Suite, Suites}
+import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
 import play.api.Configuration
 
 import scala.util.Try
@@ -127,3 +127,4 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 //     extends Suites(
 //       new JWTVerificationSpec("DEV", Configurations.InMemoryConfiguration),
 //     )
+

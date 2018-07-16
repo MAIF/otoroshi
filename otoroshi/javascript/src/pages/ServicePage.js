@@ -212,7 +212,7 @@ class AlgoSettings extends Component {
           <TextareaInput
             label="Private key"
             value={algo.publicKey}
-            help="The RSA private key"
+            help="The RSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,
         ]}
@@ -237,7 +237,7 @@ class AlgoSettings extends Component {
           <TextareaInput
             label="Private key"
             value={algo.publicKey}
-            help="The ECDSA private key"
+            help="The ECDSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,
         ]}
@@ -728,7 +728,7 @@ export class ServicePage extends Component {
             />
             <WithEnv predicate={env => env.displayPrivateApps}>
               <BooleanInput
-                label="Private service"
+                label="Enforce user login to access the app"
                 value={this.state.service.privateApp}
                 help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
                 onChange={v => this.changeTheValue('privateApp', v)}
@@ -741,7 +741,7 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
             />
             <BooleanInput
-              label="Secured service"
+              label="Use Otoroshi exchange protocol"
               value={this.state.service.enforceSecureCommunication}
               help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
               onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
@@ -936,6 +936,7 @@ export class ServicePage extends Component {
             <ArrayInput
               label="Public patterns"
               placeholder="URI pattern"
+              suffix="regex"
               value={this.state.service.publicPatterns}
               help="By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'"
               onChange={arr => this.changeTheValue('publicPatterns', arr)}
@@ -943,6 +944,7 @@ export class ServicePage extends Component {
             <ArrayInput
               label="Private patterns"
               placeholder="URI pattern"
+              suffix="regex"
               value={this.state.service.privatePatterns}
               help="If you define a public pattern that is a little bit too much, you can make some of public URL private again"
               onChange={arr => this.changeTheValue('privatePatterns', arr)}
@@ -951,6 +953,7 @@ export class ServicePage extends Component {
               <ArrayInput
                 label="Secured exclusions"
                 placeholder="URI pattern"
+                suffix="regex"
                 value={this.state.service.secComExcludedPatterns}
                 help="URI patterns excluded from secured communications"
                 onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}

@@ -79,24 +79,36 @@ class WebSocketHandler()(implicit env: Env) {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  def isPrivateAppsSessionValid(req: RequestHeader): Future[Option[PrivateAppsUser]] =
+  def isPrivateAppsSessionValid(req: RequestHeader): Future[Option[PrivateAppsUser]] = {
     req.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
       env.datastores.privateAppsUserDataStore.findById(id)
     } getOrElse {
       FastFuture.successful(None)
     }
+  }
 
   def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(
       implicit env: Env
-  ): Future[ServiceDescriptor] =
+  ): Future[ServiceDescriptor] = {
     if (desc.canary.enabled) {
       env.datastores.canaryDataStore.isCanary(desc.id, trackingId, desc.canary.traffic, reqNumber, config).map {
         case false => desc
-        case true  => desc.copy(targets = desc.canary.targets, root = desc.canary.root)
+        case true => desc.copy(targets = desc.canary.targets, root = desc.canary.root)
       }
     } else {
       FastFuture.successful(desc)
     }
+  }
+
+  def applyJwtVerifier(service: ServiceDescriptor,
+                       req: RequestHeader)(f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    if (service.jwtVerifier.enabled) {
+      logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
+      service.jwtVerifier.verifyWs(req, service)(f)
+    } else {
+      f(JwtInjection())
+    }
+  }
 
   def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader)(
       f: ServiceDescriptor => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
@@ -177,6 +189,7 @@ class WebSocketHandler()(implicit env: Env) {
     logger.info("[WEBSOCKET] proxy ws call !!!")
 
     // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
+    val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber     = reqCounter.incrementAndGet()
     val remoteAddress = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured     = req.headers.get("X-Forwarded-Protocol").map(_ == "https").orElse(Some(req.secure)).getOrElse(false)
@@ -213,20 +226,21 @@ class WebSocketHandler()(implicit env: Env) {
               case None =>
                 Errors
                   .craftResponseResult(s"Downstream service not found",
-                                       Results.NotFound,
-                                       req,
-                                       None,
-                                       Some("errors.service.not.found"))
+                    Results.NotFound,
+                    req,
+                    None,
+                    Some("errors.service.not.found"))
                   .asLeft[WSFlow]
               case Some(desc) if !desc.enabled =>
                 Errors
                   .craftResponseResult(s"Service not found",
-                                       Results.NotFound,
-                                       req,
-                                       None,
-                                       Some("errors.service.not.found"))
+                    Results.NotFound,
+                    req,
+                    None,
+                    Some("errors.service.not.found"))
                   .asLeft[WSFlow]
               case Some(rawDesc) =>
+                applyJwtVerifier(rawDesc, req) { jwtInjection =>
                 applySidecar(rawDesc, remoteAddress, req) { desc =>
                   val maybeTrackingId = req.cookies
                     .get("oto-client")
@@ -236,7 +250,7 @@ class WebSocketHandler()(implicit env: Env) {
                       if (value.contains("::")) {
                         value.split("::").toList match {
                           case signed :: id :: Nil if env.sign(id) == signed => true
-                          case _                                             => false
+                          case _ => false
                         }
                       } else {
                         false
@@ -250,31 +264,38 @@ class WebSocketHandler()(implicit env: Env) {
                     logger.debug(s"request has a new tracking id : $trackingId")
                   }
 
-                  val withTrackingCookies =
-                    if (maybeTrackingId.isDefined) Seq.empty[play.api.mvc.Cookie]
+                  val withTrackingCookies: Seq[Cookie] =
+                    if (!desc.canary.enabled)
+                      jwtInjection.additionalCookies
+                        .map(t => Cookie(t._1, t._2))
+                        .toSeq //Seq.empty[play.api.mvc.Cookie]
+                    else if (maybeTrackingId.isDefined)
+                      jwtInjection.additionalCookies
+                        .map(t => Cookie(t._1, t._2))
+                        .toSeq //Seq.empty[play.api.mvc.Cookie]
                     else
                       Seq(
                         play.api.mvc.Cookie(
-                          name = "oto-client",
-                          value = env.sign(trackingId) + "::" + trackingId,
+                          name = "otoroshi-canary",
+                          value = s"${env.sign(trackingId)}::$trackingId",
                           maxAge = Some(2592000),
                           path = "/",
                           domain = Some(req.host),
                           httpOnly = false
                         )
-                      )
+                      ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
 
                   desc.isUp
                     .flatMap(iu => splitToCanary(desc, trackingId, reqNumber, globalConfig).map(d => (iu, d)))
                     .flatMap { tuple =>
                       val (isUp, _desc) = tuple
-                      val descriptor    = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
+                      val descriptor = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
 
                       def callDownstream(
-                          config: GlobalConfig,
-                          apiKey: Option[ApiKey] = None,
-                          paUsr: Option[PrivateAppsUser] = None
-                      ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+                                          config: GlobalConfig,
+                                          apiKey: Option[ApiKey] = None,
+                                          paUsr: Option[PrivateAppsUser] = None
+                                        ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
                         if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                           val cbStart = System.currentTimeMillis()
                           val counter = new AtomicInteger(0)
@@ -340,34 +361,34 @@ class WebSocketHandler()(implicit env: Env) {
                           }
                         } else {
                           val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
-                                                            descriptor.targets.size
-                                                          else 1)
+                            descriptor.targets.size
+                          else 1)
                           // Round robin loadbalancing is happening here !!!!!
                           val target = descriptor.targets.apply(index.toInt)
                           actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                         }
 
                       def actuallyCallDownstream(
-                          target: Target,
-                          apiKey: Option[ApiKey] = None,
-                          paUsr: Option[PrivateAppsUser] = None,
-                          cbDuration: Long,
-                          callAttempts: Int
-                      ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                                                  target: Target,
+                                                  apiKey: Option[ApiKey] = None,
+                                                  paUsr: Option[PrivateAppsUser] = None,
+                                                  cbDuration: Long,
+                                                  callAttempts: Int
+                                                ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                         logger.info("[WEBSOCKET] Call downstream !!!")
                         val snowflake = env.snowflakeGenerator.nextIdStr()
-                        val state     = IdGenerator.extendedToken(128)
-                        val rawUri    = req.relativeUri.substring(1)
-                        val uriParts  = rawUri.split("/").toSeq
+                        val state = IdGenerator.extendedToken(128)
+                        val rawUri = req.relativeUri.substring(1)
+                        val uriParts = rawUri.split("/").toSeq
                         val uri: String =
                           descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
                         // val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty) descriptor.targets.size else 1)
                         // // Round robin loadbalancing is happening here !!!!!
                         // val target = descriptor.targets.apply(index.toInt)
                         val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                        val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
-                        val root   = descriptor.root
-                        val url    = s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri"
+                        val host = if (descriptor.redirectToLocal) descriptor.localHost else target.host
+                        val root = descriptor.root
+                        val url = s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri"
                         // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                         val fromOtoroshi = req.headers
                           .get(env.Headers.OtoroshiRequestId)
@@ -397,16 +418,25 @@ class WebSocketHandler()(implicit env: Env) {
                           .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
                           .serialize(env)
                         logger.trace(s"Claim is : $claim")
-                        val headersIn: Seq[(String, String)] = (req.headers.toSimpleMap.toSeq
-                          .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                          env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
-                          "Host"                          -> host,
-                          env.Headers.OtoroshiRequestId   -> snowflake,
-                          env.Headers.OtoroshiState       -> state,
-                          env.Headers.OtoroshiClaim       -> claim
-                        ) ++ descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
-                          .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
-                          .getOrElse(Map.empty[String, String])).toSeq
+                        val headersIn: Seq[(String, String)] =
+                          (req.headers.toSimpleMap
+                            .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
+                            env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
+                            "Host"                               -> host,
+                            env.Headers.OtoroshiRequestId        -> snowflake,
+                            env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
+                          ) ++ (if (descriptor.enforceSecureCommunication) {
+                            Map(
+                              env.Headers.OtoroshiState -> state,
+                              env.Headers.OtoroshiClaim -> claim
+                            )
+                          } else {
+                            Map.empty[String, String]
+                          }) ++
+                            descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
+                            .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
+                            .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
+                            .filterNot(t => jwtInjection.removeHeaders.contains(t._1))
 
                         // val requestHeader = ByteString(
                         //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
@@ -454,7 +484,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       .map(_ == "https")
                                       .orElse(Some(req.secure))
                                       .map {
-                                        case true  => "https"
+                                        case true => "https"
                                         case false => "http"
                                       }
                                       .getOrElse("http"),
@@ -489,7 +519,7 @@ class WebSocketHandler()(implicit env: Env) {
                                           identityType = "APIKEY",
                                           identity = k.clientId,
                                           label = k.clientName
-                                      )
+                                        )
                                     )
                                     .orElse(
                                       paUsr.map(
@@ -498,7 +528,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             identityType = "PRIVATEAPP",
                                             identity = k.email,
                                             label = k.name
-                                        )
+                                          )
                                       )
                                     ),
                                   `@serviceId` = descriptor.id,
@@ -522,8 +552,8 @@ class WebSocketHandler()(implicit env: Env) {
                       }
 
                       def passWithApiKey(
-                          config: GlobalConfig
-                      ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                                          config: GlobalConfig
+                                        ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                         val authByJwtToken = req.headers
                           .get(env.Headers.OtoroshiAuthorization)
                           .orElse(req.headers.get("Authorization"))
@@ -552,26 +582,26 @@ class WebSocketHandler()(implicit env: Env) {
                             case None =>
                               Errors
                                 .craftResponseResult("Invalid API key",
-                                                     Results.BadGateway,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.invalid.api.key"))
+                                  Results.BadGateway,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.invalid.api.key"))
                                 .asLeft[WSFlow]
                             case Some(key) if key.isInvalid(clientSecret) => {
                               Alerts.send(
                                 RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                        DateTime.now(),
-                                                        env.env,
-                                                        req,
-                                                        key,
-                                                        descriptor)
+                                  DateTime.now(),
+                                  env.env,
+                                  req,
+                                  key,
+                                  descriptor)
                               )
                               Errors
                                 .craftResponseResult("Bad API key",
-                                                     Results.BadGateway,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.bad.api.key"))
+                                  Results.BadGateway,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.bad.api.key"))
                                 .asLeft[WSFlow]
                             }
                             case Some(key) if key.isValid(clientSecret) =>
@@ -580,10 +610,10 @@ class WebSocketHandler()(implicit env: Env) {
                                 case false =>
                                   Errors
                                     .craftResponseResult("You performed too much requests",
-                                                         Results.TooManyRequests,
-                                                         req,
-                                                         Some(descriptor),
-                                                         Some("errors.too.much.requests"))
+                                      Results.TooManyRequests,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.too.much.requests"))
                                     .asLeft[WSFlow]
                               }
                           }
@@ -602,7 +632,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
                                     val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
                                     Try(verifier.verify(jwtTokenValue)).filter { token =>
-                                      val xsrfToken       = token.getClaim("xsrfToken")
+                                      val xsrfToken = token.getClaim("xsrfToken")
                                       val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
                                       if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
                                         xsrfToken.asString() == xsrfTokenHeader.get
@@ -618,27 +648,27 @@ class WebSocketHandler()(implicit env: Env) {
                                           case false =>
                                             Errors
                                               .craftResponseResult("You performed too much requests",
-                                                                   Results.TooManyRequests,
-                                                                   req,
-                                                                   Some(descriptor),
-                                                                   Some("errors.too.much.requests"))
+                                                Results.TooManyRequests,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.too.much.requests"))
                                               .asLeft[WSFlow]
                                         }
                                       case Failure(e) => {
                                         Alerts.send(
                                           RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                  DateTime.now(),
-                                                                  env.env,
-                                                                  req,
-                                                                  apiKey,
-                                                                  descriptor)
+                                            DateTime.now(),
+                                            env.env,
+                                            req,
+                                            apiKey,
+                                            descriptor)
                                         )
                                         Errors
                                           .craftResponseResult("Bad API key",
-                                                               Results.BadGateway,
-                                                               req,
-                                                               Some(descriptor),
-                                                               Some("errors.bad.api.key"))
+                                            Results.BadGateway,
+                                            req,
+                                            Some(descriptor),
+                                            Some("errors.bad.api.key"))
                                           .asLeft[WSFlow]
                                       }
                                     }
@@ -646,31 +676,31 @@ class WebSocketHandler()(implicit env: Env) {
                                   case None =>
                                     Errors
                                       .craftResponseResult("Invalid ApiKey provided",
-                                                           Results.BadRequest,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.invalid.api.key"))
+                                        Results.BadRequest,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.invalid.api.key"))
                                       .asLeft[WSFlow]
                                 }
                               case None =>
                                 Errors
                                   .craftResponseResult("Invalid ApiKey provided",
-                                                       Results.BadRequest,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.invalid.api.key"))
+                                    Results.BadRequest,
+                                    req,
+                                    Some(descriptor),
+                                    Some("errors.invalid.api.key"))
                                   .asLeft[WSFlow]
                             }
                           } getOrElse Errors
                             .craftResponseResult("Invalid ApiKey provided",
-                                                 Results.BadRequest,
-                                                 req,
-                                                 Some(descriptor),
-                                                 Some("errors.invalid.api.key"))
+                              Results.BadRequest,
+                              req,
+                              Some(descriptor),
+                              Some("errors.invalid.api.key"))
                             .asLeft[WSFlow]
                         } else if (authBasic.isDefined) {
-                          val auth   = authBasic.get
-                          val id     = auth.split(":").headOption.map(_.trim)
+                          val auth = authBasic.get
+                          val id = auth.split(":").headOption.map(_.trim)
                           val secret = auth.split(":").lastOption.map(_.trim)
                           (id, secret) match {
                             case (Some(apiKeyClientId), Some(apiKeySecret)) => {
@@ -680,26 +710,26 @@ class WebSocketHandler()(implicit env: Env) {
                                   case None =>
                                     Errors
                                       .craftResponseResult("Invalid API key",
-                                                           Results.BadGateway,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.invalid.api.key"))
+                                        Results.BadGateway,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.invalid.api.key"))
                                       .asLeft[WSFlow]
                                   case Some(key) if key.isInvalid(apiKeySecret) => {
                                     Alerts.send(
                                       RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                              DateTime.now(),
-                                                              env.env,
-                                                              req,
-                                                              key,
-                                                              descriptor)
+                                        DateTime.now(),
+                                        env.env,
+                                        req,
+                                        key,
+                                        descriptor)
                                     )
                                     Errors
                                       .craftResponseResult("Bad API key",
-                                                           Results.BadGateway,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.bad.api.key"))
+                                        Results.BadGateway,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.bad.api.key"))
                                       .asLeft[WSFlow]
                                   }
                                   case Some(key) if key.isValid(apiKeySecret) =>
@@ -708,10 +738,10 @@ class WebSocketHandler()(implicit env: Env) {
                                       case false =>
                                         Errors
                                           .craftResponseResult("You performed too much requests",
-                                                               Results.TooManyRequests,
-                                                               req,
-                                                               Some(descriptor),
-                                                               Some("errors.too.much.requests"))
+                                            Results.TooManyRequests,
+                                            req,
+                                            Some(descriptor),
+                                            Some("errors.too.much.requests"))
                                           .asLeft[WSFlow]
                                     }
                                 }
@@ -719,26 +749,26 @@ class WebSocketHandler()(implicit env: Env) {
                             case _ =>
                               Errors
                                 .craftResponseResult("No ApiKey provided",
-                                                     Results.BadRequest,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.bad.api.key"))
+                                  Results.BadRequest,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.bad.api.key"))
                                 .asLeft[WSFlow]
                           }
                         } else {
                           Errors
                             .craftResponseResult("No ApiKey provided",
-                                                 Results.BadRequest,
-                                                 req,
-                                                 Some(descriptor),
-                                                 Some("errors.bad.api.key"))
+                              Results.BadRequest,
+                              req,
+                              Some(descriptor),
+                              Some("errors.bad.api.key"))
                             .asLeft[WSFlow]
                         }
                       }
 
                       def passWithAuth0(
-                          config: GlobalConfig
-                      ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+                                         config: GlobalConfig
+                                       ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
                         isPrivateAppsSessionValid(req).flatMap {
                           case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                           case None => {
@@ -759,14 +789,14 @@ class WebSocketHandler()(implicit env: Env) {
                             }
                         } flatMap { r =>
                           val (secCalls, maybeQuota) = r
-                          val quota                  = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+                          val quota = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
                           if (secCalls > (quota * 10L)) {
                             Errors
                               .craftResponseResult("[IP] You performed too much requests",
-                                                   Results.TooManyRequests,
-                                                   req,
-                                                   Some(descriptor),
-                                                   Some("errors.too.much.requests"))
+                                Results.TooManyRequests,
+                                req,
+                                Some(descriptor),
+                                Some("errors.too.much.requests"))
                               .asLeft[WSFlow]
                           } else {
                             if (env.isProd && !isSecured && desc.forceHttps) {
@@ -776,7 +806,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 .map(_ == "wss")
                                 .orElse(Some(req.secure))
                                 .map {
-                                  case true  => "wss"
+                                  case true => "wss"
                                   case false => "ws"
                                 }
                                 .getOrElse("ws")
@@ -794,56 +824,56 @@ class WebSocketHandler()(implicit env: Env) {
                               // TODO : count as served req here !!!
                               Errors
                                 .craftResponseResult("[GLOBAL] You performed too much requests",
-                                                     Results.TooManyRequests,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.too.much.requests"))
+                                  Results.TooManyRequests,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.too.much.requests"))
                                 .asLeft[WSFlow]
                             } else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
-                                         .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                              .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                               Errors
                                 .craftResponseResult("Your IP address is not allowed",
-                                                     Results.Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed"))
+                                  Results.Forbidden,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.ip.address.not.allowed"))
                                 .asLeft[WSFlow] // global whitelist
                             } else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
-                                         .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                              .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                               Errors
                                 .craftResponseResult("Your IP address is not allowed",
-                                                     Results.Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed"))
+                                  Results.Forbidden,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.ip.address.not.allowed"))
                                 .asLeft[WSFlow] // global blacklist
                             } else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
-                                         .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                              .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                               Errors
                                 .craftResponseResult("Your IP address is not allowed",
-                                                     Results.Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed"))
+                                  Results.Forbidden,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.ip.address.not.allowed"))
                                 .asLeft[WSFlow] // service whitelist
                             } else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
-                                         .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                              .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                               Errors
                                 .craftResponseResult("Your IP address is not allowed",
-                                                     Results.Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.ip.address.not.allowed"))
+                                  Results.Forbidden,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.ip.address.not.allowed"))
                                 .asLeft[WSFlow] // service blacklist
                             } else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
-                                         .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                              .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                               val gigas: Long = 128L * 1024L * 1024L * 1024L
                               val middleFingers = ByteString.fromString(
                                 "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
                               )
-                              val zeros                  = ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                              val zeros = ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
                               val characters: ByteString = if (!globalConfig.middleFingers) middleFingers else zeros
-                              val expected: Long         = (gigas / characters.size) + 1L
+                              val expected: Long = (gigas / characters.size) + 1L
                               FastFuture.successful(
                                 Left(
                                   Status(200)
@@ -859,18 +889,18 @@ class WebSocketHandler()(implicit env: Env) {
                             } else if (descriptor.maintenanceMode) {
                               Errors
                                 .craftResponseResult("Service in maintenance mode",
-                                                     ServiceUnavailable,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.service.in.maintenance"))
+                                  ServiceUnavailable,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.service.in.maintenance"))
                                 .asLeft[WSFlow]
                             } else if (descriptor.buildMode) {
                               Errors
                                 .craftResponseResult("Service under construction",
-                                                     ServiceUnavailable,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.service.under.construction"))
+                                  ServiceUnavailable,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.service.under.construction"))
                                 .asLeft[WSFlow]
                             } else if (isUp) {
                               if (descriptor.isPrivate) {
@@ -890,16 +920,17 @@ class WebSocketHandler()(implicit env: Env) {
                               // fail fast
                               Errors
                                 .craftResponseResult("The service seems to be down :( come back later",
-                                                     Results.Forbidden,
-                                                     req,
-                                                     Some(descriptor),
-                                                     Some("errors.service.down"))
+                                  Results.Forbidden,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.service.down"))
                                 .asLeft[WSFlow]
                             }
                           }
                         }
                       }
                     }
+                }
                 }
             }
         }
