@@ -2817,6 +2817,67 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  def findAllGlobalJwtVerifiers() = ApiAction.async { ctx =>
+    env.datastores.globalJwtVerifierDataStore.findAll().map(all => Ok(JsArray(all.map(_.asJson))))
+  }
+
+  def findGlobalJwtVerifiersById(id: String) = ApiAction.async { ctx =>
+    env.datastores.globalJwtVerifierDataStore.findById(id).map {
+      case Some(verifier) => Ok(verifier.asJson)
+      case None =>  NotFound(
+        Json.obj("error" -> s"GlobalJwtVerifier with id $id not found")
+      )
+    }
+  }
+
+  def createGlobalJwtVerifier() = ApiAction.async(parse.json) { ctx =>
+    GlobalJwtVerifier.fromJson(ctx.request.body) match {
+      case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalJwtVerifier format")).asFuture
+      case Right(newVerifier) => env.datastores.globalJwtVerifierDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
+    }
+  }
+
+  def updateGlobalJwtVerifier(id: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
+      case None =>  NotFound(
+        Json.obj("error" -> s"GlobalJwtVerifier with id $id not found")
+      ).asFuture
+      case Some(verifier) => {
+        GlobalJwtVerifier.fromJson(ctx.request.body) match {
+          case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalJwtVerifier format")).asFuture
+          case Right(newVerifier) => {
+            env.datastores.globalJwtVerifierDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
+          }
+        }
+      }
+    }
+  }
+
+  def patchGlobalJwtVerifier(id: String)  = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
+      case None =>  NotFound(
+        Json.obj("error" -> s"GlobalJwtVerifier with id $id not found")
+      ).asFuture
+      case Some(verifier) => {
+        val currentJson = verifier.asJson
+        val patch       = JsonPatch(ctx.request.body)
+        val newVerifier = patch(currentJson)
+        GlobalJwtVerifier.fromJson(newVerifier) match {
+          case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalJwtVerifier format")).asFuture
+          case Right(newVerifier) => {
+            env.datastores.globalJwtVerifierDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
+          }
+        }
+      }
+    }
+  }
+
+  def deleteGlobalJwtVerifier(id: String) = ApiAction.async { ctx =>
+    env.datastores.globalJwtVerifierDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   // def registerSimpleAdmin() = ApiAction.async(parse.json) { ctx =>
   //   val usernameOpt = (ctx.request.body \ "username").asOpt[String]
   //   val passwordOpt = (ctx.request.body \ "password").asOpt[String]

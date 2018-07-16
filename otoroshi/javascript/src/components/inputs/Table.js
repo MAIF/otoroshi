@@ -389,12 +389,25 @@ export class Table extends Component {
           )}
         {this.state.showAddForm && (
           <div className="" role="dialog">
-            <Form
-              value={this.state.currentItem}
-              onChange={currentItem => this.setState({ currentItem })}
-              flow={this.props.formFlow}
-              schema={this.props.formSchema}
-            />
+            {this.props.formComponent && (
+              <form className="form-horizontal" style={this.props.style}>
+                {
+                  React.createElement(this.props.formComponent, {
+                    onChange: currentItem => this.setState({ currentItem }),
+                    value: this.state.currentItem,
+                    ...(this.props.formPassProps || {})
+                  })
+                }
+              </form>
+            )}
+            {!this.props.formComponent && (
+              <Form
+                value={this.state.currentItem}
+                onChange={currentItem => this.setState({ currentItem })}
+                flow={this.props.formFlow}
+                schema={this.props.formSchema}
+              />
+            )}
             <hr />
             <div className="form-buttons pull-right">
               <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
@@ -414,12 +427,25 @@ export class Table extends Component {
         )}
         {this.state.showEditForm && (
           <div className="" role="dialog">
-            <Form
-              value={this.state.currentItem}
-              onChange={currentItem => this.setState({ currentItem })}
-              flow={this.props.formFlow}
-              schema={this.props.formSchema}
-            />
+            {this.props.formComponent && (
+              <form className="form-horizontal" style={this.props.style}>
+                {
+                  React.createElement(this.props.formComponent, {
+                    onChange: currentItem => this.setState({ currentItem }),
+                    value: this.state.currentItem,
+                    ...(this.props.formPassProps || {})
+                  })
+                }
+              </form>
+            )}
+            {!this.props.formComponent && (
+              <Form
+                value={this.state.currentItem}
+                onChange={currentItem => this.setState({ currentItem })}
+                flow={this.props.formFlow}
+                schema={this.props.formSchema}
+              />
+            )}
             <hr />
             <div className="form-buttons pull-right">
               <button

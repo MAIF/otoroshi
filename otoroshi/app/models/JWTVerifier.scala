@@ -16,6 +16,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.http.websocket.{Message => PlayWSMessage}
+import storage.BasicStore
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -599,6 +600,32 @@ case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with
   override def source = throw new RuntimeException("Should never be called ...")
   override def algoSettings = throw new RuntimeException("Should never be called ...")
   override def strategy = throw new RuntimeException("Should never be called ...")
+
+  override def verify(request: RequestHeader, desc: ServiceDescriptor)(f: JwtInjection => Future[Result])(implicit ec: ExecutionContext, env: Env) = {
+    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
+      case Some(verifier) => verifier.verify(request, desc)(f)
+      case None => Errors.craftResponseResult(
+        "error.bad.globaljwtverifier.id",
+        Results.InternalServerError,
+        request,
+        Some(desc),
+        None
+      )
+    }
+  }
+
+  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env) = {
+    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
+      case Some(verifier) => verifier.verifyWs(request, desc)(f)
+      case None => Errors.craftResponseResult(
+        "error.bad.globaljwtverifier.id",
+        Results.InternalServerError,
+        request,
+        Some(desc),
+        None
+      ).map(a => Left(a))
+    }
+  }
 }
 
 object RefJwtVerifier extends FromJson[RefJwtVerifier] {
@@ -661,6 +688,17 @@ case class GlobalJwtVerifier(
 }
 
 object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
+
+  val _fmt = new Format[GlobalJwtVerifier] {
+
+    override def reads(json: JsValue) = fromJson(json) match {
+      case Left(e) => JsError(e.getMessage)
+      case Right(v) => JsSuccess(v)
+    }
+
+    override def writes(o: GlobalJwtVerifier) = o.asJson
+  }
+
   override def fromJson(json: JsValue): Either[Throwable, GlobalJwtVerifier] =
     Try {
       for {
@@ -780,3 +818,4 @@ object Implicits {
   }
 }
 
+trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier]

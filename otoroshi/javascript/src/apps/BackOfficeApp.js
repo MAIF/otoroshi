@@ -25,6 +25,8 @@ import { ServicesMapPage } from '../pages/ServicesMapPage';
 import { PrivateAppsSessionsPage } from '../pages/PrivateAppsSessionsPage';
 import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
 import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
+import { JwtVerifierPage } from '../pages/JwtVerifierPage';
+import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -265,6 +267,18 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/snowmonkey"
                           component={props => this.decorate(SnowMonkeyPage, props)}
+                        />
+                        <Route
+                          path="/jwt-verifiers/:taction/:titem"
+                          component={props => this.decorate(JwtVerifiersPage, props)}
+                        />
+                        <Route
+                          path="/jwt-verifiers/:taction"
+                          component={props => this.decorate(JwtVerifiersPage, props)}
+                        />
+                        <Route
+                          path="/jwt-verifiers"
+                          component={props => this.decorate(JwtVerifiersPage, props)}
                         />
                         <Route
                           path="/admins"

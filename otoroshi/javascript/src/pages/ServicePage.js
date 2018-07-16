@@ -22,228 +22,13 @@ import { createTooltip } from '../tooltips';
 import { WithEnv } from '../components/WithEnv';
 import Select from 'react-select';
 import { ChaosConfigWithSkin } from '../components/ChaosConfig';
+import {JwtVerifier, LocationSettings} from '../components/JwtVerifier';
+import { AlgoSettings } from '../components/JwtVerifier';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
   for (let i in b) if (a[i] !== b[i]) return true;
   return false;
-}
-
-class LocationSettings extends Component {
-  state = {
-    error: null,
-  };
-
-  componentDidCatch(error) {
-    const location = this.props.location;
-    const path = this.props.path;
-    console.log('AlgoSettings did catch', error, path, location);
-    this.setState({ error });
-  }
-
-  render() {
-    const location = this.props.location;
-    const path = this.props.path;
-    const changeTheValue = this.props.changeTheValue;
-    if (this.state.error) {
-      return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
-    }
-    return (
-      <div>
-        <SelectInput
-          label={this.props.locationTitle || 'Source'}
-          value={location.type}
-          onChange={e => {
-            switch (e) {
-              case 'InQueryParam':
-                changeTheValue(path + '', { type: 'InQueryParam', name: 'jwt-token' });
-                break;
-              case 'InHeader':
-                changeTheValue(path + '', { type: 'InHeader', name: 'X-JWT-Token', remove: '' });
-                break;
-              case 'InCookie':
-                changeTheValue(path + '', { type: 'InCookie', name: 'jwt-token' });
-                break;
-            }
-          }}
-          possibleValues={[
-            { label: 'JWT token location in query string', value: 'InQueryParam' },
-            { label: 'JWT token location in a header', value: 'InHeader' },
-            { label: 'JWT token location in a cookie', value: 'InCookie' },
-          ]}
-          help="The location where to find/set the JWT token"
-        />
-        {location.type === 'InQueryParam' && (
-          <TextInput
-            label="Query param name"
-            placeholder="jwt-token"
-            value={location.name}
-            help="The name of the query param where JWT is located"
-            onChange={e => changeTheValue(path + '.name', e)}
-          />
-        )}
-        {location.type === 'InHeader' && [
-          <TextInput
-            label="Header name"
-            placeholder="jwt-token"
-            value={location.name}
-            help="The name of the header where JWT is located"
-            onChange={e => changeTheValue(path + '.name', e)}
-          />,
-          <TextInput
-            label="Remove value"
-            placeholder="Bearer "
-            value={location.remove}
-            help="Remove a value (regexp) inside the header value"
-            onChange={e => changeTheValue(path + '.remove', e)}
-          />,
-        ]}
-        {location.type === 'InCookie' && (
-          <TextInput
-            label="Cookie name"
-            placeholder="jwt-token"
-            value={location.name}
-            help="The name of the cookie where JWT is located"
-            onChange={e => changeTheValue(path + '.name', e)}
-          />
-        )}
-      </div>
-    );
-  }
-}
-
-class AlgoSettings extends Component {
-  state = {
-    error: null,
-  };
-
-  componentDidCatch(error) {
-    const algo = this.props.algo;
-    const path = this.props.path;
-    console.log('AlgoSettings did catch', error, path, algo);
-    this.setState({ error });
-  }
-
-  render() {
-    const algo = this.props.algo;
-    const path = this.props.path;
-    const changeTheValue = this.props.changeTheValue;
-    if (this.state.error) {
-      return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
-    }
-    return (
-      <div>
-        <SelectInput
-          label={this.props.algoTitle || 'Algo.'}
-          value={algo.type}
-          onChange={e => {
-            switch (e) {
-              case 'HSAlgoSettings':
-                changeTheValue(path + '', {
-                  type: 'HSAlgoSettings',
-                  size: 512,
-                  secret: 'secret',
-                });
-                break;
-              case 'RSAlgoSettings':
-                changeTheValue(path + '', {
-                  type: 'RSAlgoSettings',
-                  size: 512,
-                  publicKey: '-----BEGIN PUBLIC KEY-----\nxxxxxxxx\n-----END PUBLIC KEY-----',
-                  privateKey: '-----BEGIN PRIVATE KEY-----\nxxxxxxxx\n-----END PRIVATE KEY-----',
-                });
-                break;
-              case 'ESAlgoSettings':
-                changeTheValue(path + '', {
-                  type: 'ESAlgoSettings',
-                  size: 512,
-                  publicKey: '-----BEGIN PUBLIC KEY-----\nxxxxxxxx\n-----END PUBLIC KEY-----',
-                  privateKey: '-----BEGIN PRIVATE KEY-----\nxxxxxxxx\n-----END PRIVATE KEY-----',
-                });
-                break;
-            }
-            // changeTheValue(path + '', e)
-          }}
-          possibleValues={[
-            { label: 'Hmac + SHA', value: 'HSAlgoSettings' },
-            { label: 'RSASSA-PKCS1 + SHA', value: 'RSAlgoSettings' },
-            { label: 'ECDSA + SHA', value: 'ESAlgoSettings' },
-          ]}
-          help="What kind of algorithm you want to use to verify/sign your JWT token with"
-        />
-        {algo.type === 'HSAlgoSettings' && [
-          <SelectInput
-            label="SHA Size"
-            help="Word size for the SHA-2 hash function used"
-            value={algo.size}
-            onChange={v => changeTheValue(path + '.size', v)}
-            possibleValues={[
-              { label: '256', value: 256 },
-              { label: '384', value: 384 },
-              { label: '512', value: 512 },
-            ]}
-          />,
-          <TextInput
-            label="Hmac secret"
-            placeholder="secret"
-            value={algo.secret}
-            help="The Hmac secret"
-            onChange={e => changeTheValue(path + '.secret', e)}
-          />,
-        ]}
-        {algo.type === 'RSAlgoSettings' && [
-          <SelectInput
-            label="SHA Size"
-            help="Word size for the SHA-2 hash function used"
-            value={algo.size}
-            onChange={v => changeTheValue(path + '.size', v)}
-            possibleValues={[
-              { label: '256', value: 256 },
-              { label: '384', value: 384 },
-              { label: '512', value: 512 },
-            ]}
-          />,
-          <TextareaInput
-            label="Public key"
-            value={algo.publicKey}
-            help="The RSA public key"
-            onChange={e => changeTheValue(path + '.publicKey', e)}
-          />,
-          <TextareaInput
-            label="Private key"
-            value={algo.publicKey}
-            help="The RSA private key, private key can be empty if not used for JWT token signing"
-            onChange={e => changeTheValue(path + '.privateKey', e)}
-          />,
-        ]}
-        {algo.type === 'ESAlgoSettings' && [
-          <SelectInput
-            label="SHA Size"
-            help="Word size for the SHA-2 hash function used"
-            value={algo.size}
-            onChange={v => changeTheValue(path + '.size', v)}
-            possibleValues={[
-              { label: '256', value: 256 },
-              { label: '384', value: 384 },
-              { label: '512', value: 512 },
-            ]}
-          />,
-          <TextareaInput
-            label="Public key"
-            value={algo.publicKey}
-            help="The ECDSA public key"
-            onChange={e => changeTheValue(path + '.publicKey', e)}
-          />,
-          <TextareaInput
-            label="Private key"
-            value={algo.publicKey}
-            help="The ECDSA private key, private key can be empty if not used for JWT token signing"
-            onChange={e => changeTheValue(path + '.privateKey', e)}
-          />,
-        ]}
-      </div>
-    );
-  }
 }
 
 class CanaryCampaign extends Component {
@@ -1179,14 +964,7 @@ export class ServicePage extends Component {
               value={this.state.service.jwtVerifier.type}
               onChange={e => {
                 switch (e) {
-                  case 'local': this.changeTheValue('jwtVerifier', {
-                    "type":"local",
-                    "enabled":false,
-                    "strict":true,
-                    "source":{"type":"InHeader","name":"X-JWT-Token","remove":""},
-                    "algoSettings":{"type":"HSAlgoSettings","size":512,"secret":"secret"},
-                    "strategy":{"type":"PassThrough","verificationSettings":{"fields":{"iss":"The Issuer"}}}
-                  }); break;
+                  case 'local': this.changeTheValue('jwtVerifier', JwtVerifier.defaultVerifier ); break;
                   case 'ref': this.changeTheValue('jwtVerifier', {
                     type: 'ref',
                     enabled: this.state.service.jwtVerifier.enabled,
@@ -1196,7 +974,7 @@ export class ServicePage extends Component {
               }}
               possibleValues={[
                 { label: 'Local to service descriptor', value: 'local' },
-                { label: 'Ref to global definition', value: 'ref' },
+                { label: 'Reference to global definition', value: 'ref' },
               ]}
               help="..."
             />
@@ -1207,196 +985,31 @@ export class ServicePage extends Component {
                   value={this.state.service.jwtVerifier.id}
                   onChange={e => this.changeTheValue('jwtVerifier.id', e)}
                   valuesFrom="/bo/api/proxy/api/verifiers"
+                  transformer={a => ({ value: a.id, label: a.name })}
                   help="..."
                 />
-                {!this.state.service.jwtVerifier.id && <button type="button">Create a global config</button>}
-                {this.state.service.jwtVerifier.id && <button type="button">Edit the config</button>}
-              </div>
-            )}
-            {this.state.service.jwtVerifier.type === "local" && (
-              <div>
                 <BooleanInput
                   label="Enabled"
                   value={this.state.service.jwtVerifier.enabled}
                   help="Is JWT verification enabled for this service"
                   onChange={v => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
-                <BooleanInput
-                  label="Strict"
-                  value={this.state.service.jwtVerifier.strict}
-                  help="If not strict, request without JWT token will be allowed to pass"
-                  onChange={v => this.changeTheValue('jwtVerifier.strict', v)}
-                />
-                <br />
-                {/* **************************************************************************************************** */}
-                <LocationSettings
-                  path="jwtVerifier.source"
-                  changeTheValue={this.changeTheValue}
-                  location={this.state.service.jwtVerifier.source}
-                />
-                <br />
-                {/* **************************************************************************************************** */}
-                <AlgoSettings
-                  path="jwtVerifier.algoSettings"
-                  changeTheValue={this.changeTheValue}
-                  algo={this.state.service.jwtVerifier.algoSettings}
-                />
-                <br />
-                {/* **************************************************************************************************** */}
-                <SelectInput
-                  label="Verif. strategy"
-                  value={this.state.service.jwtVerifier.strategy.type}
-                  onChange={e => {
-                    switch (e) {
-                      case 'PassThrough':
-                        this.changeTheValue('jwtVerifier.strategy', {
-                          type: 'PassThrough',
-                          verificationSettings: {
-                            fields: {
-                              iss: 'The issuer',
-                            },
-                          },
-                        });
-                        break;
-                      case 'Sign':
-                        this.changeTheValue('jwtVerifier.strategy', {
-                          type: 'Sign',
-                          verificationSettings: {
-                            fields: {
-                              iss: 'The issuer',
-                            },
-                          },
-                          algoSettings: {
-                            type: 'HSAlgoSettings',
-                            size: 512,
-                            secret: 'secret',
-                          },
-                        });
-                        break;
-                      case 'Transform':
-                        this.changeTheValue('jwtVerifier.strategy', {
-                          type: 'Transform',
-                          verificationSettings: {
-                            fields: {
-                              iss: 'The issuer',
-                            },
-                          },
-                          algoSettings: {
-                            type: 'HSAlgoSettings',
-                            size: 512,
-                            secret: 'secret',
-                          },
-                          transformSettings: {
-                            location: {
-                              type: 'InHeader',
-                              name: 'X-JWT-Token',
-                              remove: '',
-                            },
-                            mappingSettings: {
-                              map: {
-                                foo: 'bar',
-                              },
-                              values: {
-                                newValue: 'foobar',
-                              },
-                            },
-                          },
-                        });
-                        break;
-                    }
-                  }}
-                  possibleValues={[
-                    { label: 'Verify JWT token', value: 'PassThrough' },
-                    { label: 'Verify and re-sign JWT token', value: 'Sign' },
-                    { label: 'Verify, re-sign and transform JWT token', value: 'Transform' },
-                  ]}
-                  help="What kind of strategy is used for JWT token verification. PassThrough will only verifiy token signing and fields values if provided. Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings. Transform will do the same as Sign plus will be able to transform the token."
-                />
-                {this.state.service.jwtVerifier.strategy.type === 'PassThrough' && [
-                  <ObjectInput
-                    label="Verify token fields"
-                    placeholderKey="Field name"
-                    placeholderValue="Field value"
-                    value={this.state.service.jwtVerifier.strategy.verificationSettings.fields}
-                    help="When the JWT token is checked, each field specified here will be verified with the provided value"
-                    onChange={v =>
-                      this.changeTheValue('jwtVerifier.strategy.verificationSettings.fields', v)
-                    }
-                  />,
-                ]}
-                {this.state.service.jwtVerifier.strategy.type === 'Sign' && [
-                  <ObjectInput
-                    label="Verify token fields"
-                    placeholderKey="Field name"
-                    placeholderValue="Field value"
-                    value={this.state.service.jwtVerifier.strategy.verificationSettings.fields}
-                    help="When the JWT token is checked, each field specified here will be verified with the provided value"
-                    onChange={v =>
-                      this.changeTheValue('jwtVerifier.strategy.verificationSettings.fields', v)
-                    }
-                  />,
-                  <AlgoSettings
-                    algoTitle="Re-sign algo."
-                    path="jwtVerifier.strategy.algoSettings"
-                    changeTheValue={this.changeTheValue}
-                    algo={this.state.service.jwtVerifier.strategy.algoSettings}
-                  />,
-                ]}
-                {this.state.service.jwtVerifier.strategy.type === 'Transform' && [
-                  <ObjectInput
-                    label="Verify token fields"
-                    placeholderKey="Field name"
-                    placeholderValue="Field value"
-                    value={this.state.service.jwtVerifier.strategy.verificationSettings.fields}
-                    help="When the JWT token is checked, each field specified here will be verified with the provided value"
-                    onChange={v =>
-                      this.changeTheValue('jwtVerifier.strategy.verificationSettings.fields', v)
-                    }
-                  />,
-                  <AlgoSettings
-                    algoTitle="Re-sign algo."
-                    path="jwtVerifier.strategy.algoSettings"
-                    changeTheValue={this.changeTheValue}
-                    algo={this.state.service.jwtVerifier.strategy.algoSettings}
-                  />,
-                  <LocationSettings
-                    locationTitle="Token location"
-                    path="jwtVerifier.strategy.transformSettings.location"
-                    changeTheValue={this.changeTheValue}
-                    location={this.state.service.jwtVerifier.strategy.transformSettings.location}
-                  />,
-                  <ObjectInput
-                    label="Rename token fields"
-                    placeholderKey="Field name"
-                    placeholderValue="Field value"
-                    value={
-                      this.state.service.jwtVerifier.strategy.transformSettings.mappingSettings.map
-                    }
-                    help="When the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name"
-                    onChange={v =>
-                      this.changeTheValue(
-                        'jwtVerifier.strategy.transformSettings.mappingSettings.map',
-                        v
-                      )
-                    }
-                  />,
-                  <ObjectInput
-                    label="Set token fields"
-                    placeholderKey="Field name"
-                    placeholderValue="Field value"
-                    value={
-                      this.state.service.jwtVerifier.strategy.transformSettings.mappingSettings.values
-                    }
-                    help="When the JWT token is transformed, it is possible to add new field with static values, just specify field name and value"
-                    onChange={v =>
-                      this.changeTheValue(
-                        'jwtVerifier.strategy.transformSettings.mappingSettings.values',
-                        v
-                      )
-                    }
-                  />,
-                ]}
+                <div className="form-group">
+                  <label className="col-xs-12 col-sm-2 control-label">
+                  </label>
+                  <div className="col-sm-10">
+                    {!this.state.service.jwtVerifier.id && <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
+                      <i className="glyphicon glyphicon-plus"/> Create a new Jwt Verifier config
+                    </a>}
+                    {this.state.service.jwtVerifier.id && <a href={`/bo/dashboard/jwt-verifiers/edit/${this.state.service.jwtVerifier.id}`} className="btn btn-success">
+                      <i className="glyphicon glyphicon-edit"/> Edit the global Jwt Verifier
+                    </a>}
+                  </div>
+                </div>
               </div>
+            )}
+            {this.state.service.jwtVerifier.type === "local" && (
+              <JwtVerifier path="jwtVerifier" changeTheValue={this.changeTheValue} verifier={this.state.service.jwtVerifier} />
             )}
           </Collapse>
           <Collapse

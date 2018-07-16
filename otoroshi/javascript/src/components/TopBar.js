@@ -124,6 +124,12 @@ export class TopBar extends Component {
           value: 'Top-10-services',
         });
         options.push({
+          action: () => (window.location.href = '/bo/dashboard/jwt-verifiers'),
+          env: <span className="glyphicon glyphicon-token" />,
+          label: 'Global Jwt Verifiers',
+          value: 'Jwt-Verifiers',
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
           env: (
             <span>
@@ -252,6 +258,9 @@ export class TopBar extends Component {
                   <li>
                     <a href="/bo/dashboard/groups">
                       <span className="glyphicon glyphicon-folder-open" /> All service groups
+                    </a>
+                    <a href="/bo/dashboard/jwt-verifiers">
+                      <span className="glyphicon glyphicon-token" /> Global Jwt Verifiers
                     </a>
                   </li>
                   <li>

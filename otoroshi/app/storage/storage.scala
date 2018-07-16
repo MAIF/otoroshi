@@ -41,6 +41,7 @@ trait DataStores {
   def requestsDataStore: RequestsDataStore
   def canaryDataStore: CanaryDataStore
   def chaosDataStore: ChaosDataStore
+  def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore
 }
 
 trait BasicStore[T] {

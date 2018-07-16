@@ -67,6 +67,7 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
   private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis, env)
   private lazy val _chaosDataStore             = new InMemoryChaosDataStore(redis, env)
+  private lazy val _jwtVerifDataStore          = new InMemoryGlobalJwtVerifierDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -84,4 +85,5 @@ class LevelDbDataStores(configuration: Configuration,
   override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
+  override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
 }

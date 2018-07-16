@@ -711,3 +711,58 @@ export function updateTemplate(ak) {
     body: JSON.stringify(ak),
   }).then(r => r.json());
 }
+
+
+export function findAllJwtVerifiers() {
+  return fetch('/bo/api/proxy/api/verifiers', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findJwtVerifierById(id) {
+  return fetch(`/bo/api/proxy/api/verifiers/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteJwtVerifier(ak) {
+  return fetch(`/bo/api/proxy/api/verifiers/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createJwtVerifier(ak) {
+  return fetch(`/bo/api/proxy/api/verifiers`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateJwtVerifier(ak) {
+  return fetch(`/bo/api/proxy/api/verifiers/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}

@@ -153,6 +153,13 @@ GET     /api/snowmonkey/config                                controllers.ApiCon
 PUT     /api/snowmonkey/config                                controllers.ApiController.updateSnowMonkey()
 PATCH   /api/snowmonkey/config                                controllers.ApiController.patchSnowMonkey()
 
+GET     /api/verifiers/:id                                    controllers.ApiController.findGlobalJwtVerifiersById(id)
+DELETE  /api/verifiers/:id                                    controllers.ApiController.deleteGlobalJwtVerifier(id)
+PUT     /api/verifiers/:id                                    controllers.ApiController.updateGlobalJwtVerifier(id)
+PATCH   /api/verifiers/:id                                    controllers.ApiController.patchGlobalJwtVerifier(id)
+GET     /api/verifiers                                        controllers.ApiController.findAllGlobalJwtVerifiers()
+POST    /api/verifiers                                        controllers.ApiController.createGlobalJwtVerifier()
+
 GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 
