@@ -470,6 +470,20 @@ export class JwtVerifier extends Component {
               )
             }
           />,
+          <ArrayInput 
+            label="Remove token fields"
+            placeholder="Field name"
+            value={
+              verifier.strategy.transformSettings.mappingSettings.remove
+            }
+            help="When the JWT token is transformed, it is possible to remove fields"
+            onChange={v =>
+              changeTheValue(
+                path + '.strategy.transformSettings.mappingSettings.remove',
+                v
+              )
+            }
+          />
         ]}
       </div>
     );
