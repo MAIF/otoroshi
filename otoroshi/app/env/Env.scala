@@ -281,7 +281,7 @@ class Env(val configuration: Configuration,
     id = backOfficeServiceId,
     groupId = backOfficeGroupId,
     name = "otoroshi-admin-api",
-    env = "prod",
+    env = if (isDev) "dev" else "prod",
     subdomain = adminApiExposedSubDomain,
     domain = domain,
     targets = Seq(
