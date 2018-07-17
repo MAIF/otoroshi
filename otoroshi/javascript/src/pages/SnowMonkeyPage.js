@@ -68,6 +68,7 @@ export class SnowMonkeyPage extends Component {
 
   columns = [
     { title: 'Service Name', content: item => item.descriptorName },
+    { title: 'Outage started at', content: item => moment(item.startedAt).format('YYYY-MM-DD HH:mm:ss.SSS') },
     { title: 'Outage duration', content: item => moment.duration(item.duration, 'ms').humanize() },
     {
       title: 'Outage until',

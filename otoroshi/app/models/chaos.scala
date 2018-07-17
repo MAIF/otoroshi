@@ -312,7 +312,7 @@ object SnowMonkeyConfig {
   def fromJsonSafe(value: JsValue): JsResult[SnowMonkeyConfig] = _fmt.reads(value)
 }
 
-case class Outage(descriptorId: String, descriptorName: String, until: LocalTime, duration: FiniteDuration) {
+case class Outage(descriptorId: String, descriptorName: String, startedAt: DateTime, until: LocalTime, duration: FiniteDuration) {
   def asJson: JsValue = Outage.fmt.writes(this)
 }
 
@@ -323,6 +323,7 @@ object Outage {
       "descriptorName" -> o.descriptorName,
       "until"          -> o.until.toString(),
       "duration"       -> o.duration.toMillis,
+      "startedAt"      -> o.startedAt.toString
     )
     override def reads(json: JsValue) =
       Try {
@@ -331,7 +332,8 @@ object Outage {
             descriptorId = (json \ "descriptorId").asOpt[String].getOrElse("--"),
             descriptorName = (json \ "descriptorName").asOpt[String].getOrElse("--"),
             until = (json \ "until").asOpt[String].map(v => LocalTime.parse(v)).getOrElse(DateTime.now().toLocalTime),
-            duration = (json \ "duration").asOpt[Long].map(v => v.millis).getOrElse(0.millis)
+            duration = (json \ "duration").asOpt[Long].map(v => v.millis).getOrElse(0.millis),
+            startedAt = (json \ "startedAt").asOpt[String].map(v => DateTime.parse(v)).getOrElse(DateTime.now())
           )
         )
       } recover {
