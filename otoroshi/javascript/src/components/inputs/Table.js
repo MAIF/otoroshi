@@ -431,7 +431,9 @@ export class Table extends Component {
               <form className="form-horizontal" style={this.props.style}>
                 {
                   React.createElement(this.props.formComponent, {
-                    onChange: currentItem => this.setState({ currentItem }),
+                    onChange: currentItem => {
+                      this.setState({ currentItem })
+                    },
                     value: this.state.currentItem,
                     ...(this.props.formPassProps || {})
                   })

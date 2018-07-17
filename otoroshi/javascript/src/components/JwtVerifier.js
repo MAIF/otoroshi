@@ -246,6 +246,7 @@ export class JwtVerifier extends Component {
   };
 
   changeTheValue = (name, value) => {
+    console.log('changeTheValue', name, value)
     if (this.props.onChange) {
       const clone = _.cloneDeep(this.props.value || this.props.verifier);
       const path = name.startsWith('.') ? name.substr(1) : name;
@@ -305,14 +306,14 @@ export class JwtVerifier extends Component {
         <br />
         {/* **************************************************************************************************** */}
         <LocationSettings
-          path="jwtVerifier.source"
+          path={`${path}.source`}
           changeTheValue={this.changeTheValue}
           location={verifier.source}
         />
         <br />
         {/* **************************************************************************************************** */}
         <AlgoSettings
-          path="jwtVerifier.algoSettings"
+          path={`${path}.algoSettings`}
           changeTheValue={this.changeTheValue}
           algo={verifier.algoSettings}
         />
@@ -412,7 +413,7 @@ export class JwtVerifier extends Component {
           />,
           <AlgoSettings
             algoTitle="Re-sign algo."
-            path="jwtVerifier.strategy.algoSettings"
+            path={`${path}.strategy.algoSettings`}
             changeTheValue={this.changeTheValue}
             algo={verifier.strategy.algoSettings}
           />,
@@ -430,13 +431,13 @@ export class JwtVerifier extends Component {
           />,
           <AlgoSettings
             algoTitle="Re-sign algo."
-            path="jwtVerifier.strategy.algoSettings"
+            path={`${path}.strategy.algoSettings`}
             changeTheValue={this.changeTheValue}
             algo={verifier.strategy.algoSettings}
           />,
           <LocationSettings
             locationTitle="Token location"
-            path="jwtVerifier.strategy.transformSettings.location"
+            path={`${path}.strategy.transformSettings.location`}
             changeTheValue={this.changeTheValue}
             location={verifier.strategy.transformSettings.location}
           />,
