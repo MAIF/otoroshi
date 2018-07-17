@@ -1,6 +1,6 @@
 # Chaos engineering with the Snow Monkey
 
-Nihonzaru (the Snow Monkey) is the chaos engineering tool provided by Otoroshi. You can access it at `Settings / Snow Monkey`.
+Nihonzaru (the Snow Monkey) is the chaos engineering tool provided by Otoroshi. You can access it at `Settings (cog icon) / Snow Monkey`.
 
 @@@ div { .centered-img }
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/nihonzaru-logo.png" />
