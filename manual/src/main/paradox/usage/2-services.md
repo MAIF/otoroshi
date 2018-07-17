@@ -25,8 +25,9 @@ You will have a serie of toggle buttons to
 * activate / deactivate a service
 * display maintenance page for a service
 * display contruction page for a service
+* enforce user login to access the app (renamed from `private app`)
 * enable otoroshi custom response headers containing request id, latency, etc 
-* enforce secure exchange between services
+* enforce Otoroshi exchange protocol between services (renamed from `secured service`)
 * force https usage on the exposed service
 
 Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.
@@ -45,7 +46,7 @@ In the URL patterns section, you will be able to choose, URL by URL which is pri
 <img src="../img/new-service-patterns.png" />
 @@@
 
-### Secure exchange
+### Otoroshi exchange protocol
 
 If you enable secure communication for a given service, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`. Otoroshi is also sending a `JWT token`in a header named `Otoroshi-Claim` that the target app can validate.
 
@@ -53,7 +54,23 @@ If you enable secure communication for a given service, you will have to add a f
 <img src="../img/exchange.png" />
 @@@
 
-The `Otoroshi-Claim` is a JWT containing some informations about the service that is called and the client if available. The claim is signed with the `app.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. In a near future, you will be able to define dedicated keys for specific services and use whatever signing algorythm you want. For example, for a service named `my-service` with a signing key `secret`, the basic JWT token that will be sent should look like the following
+The `Otoroshi-Claim` is a JWT token containing some informations about the service that is called and the client if available. 
+
+By default, the otoroshi jwt token is signed with the `app.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the `Otoroshi exchange protocol` section. 
+
+@@@ div { .centered-img }
+<img src="../img/sec-com-signing.png" />
+@@@
+
+using another signing algo.
+
+@@@ div { .centered-img }
+<img src="../img/sec-com-signing-2.png" />
+@@@
+
+here you can choose the signing algorithm and the secret/keys used. You can use syntax like `${env.MY_ENV_VAR}` or `${config.my.config.path}` to provide secret/keys values. 
+
+For example, for a service named `my-service` with a signing key `secret` with `HMAC512` signing algorythm, the basic JWT token that will be sent should look like the following
 
 ```
 eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiItLSIsImF1ZCI6Im15LXNlcnZpY2UiLCJpc3MiOiJPdG9yb3NoaSIsImV4cCI6MTUyMTQ0OTkwNiwiaWF0IjoxNTIxNDQ5ODc2LCJqdGkiOiI3MTAyNWNjMTktMmFjNy00Yjk3LTljYzctMWM0ODEzYmM1OTI0In0.mRcfuFVFPLUV1FWHyL6rLHIJIu0KEpBkKQCk5xh-_cBt9cb6uD6enynDU0H1X2VpW5-bFxWCy4U4V78CbAQv4g

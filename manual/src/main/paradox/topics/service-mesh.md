@@ -1,6 +1,6 @@
 # Service mesh with Otoroshi
 
-[Service mesh](http://philcalcado.com/2017/08/03/pattern_service_mesh.html) is a pattern that gained a lot of traction lately with tools like [Kubernetes](https://kubernetes.io/) and [Istio]() using patterns like [sidecar](). It has the advantages to move the complexity of calling other services outside the application. For the application, it's just a local call and the proxy handles apikeys, throttling, quotas, resilience, tracing, etc ...
+[Service mesh](http://philcalcado.com/2017/08/03/pattern_service_mesh.html) is a pattern that gained a lot of traction lately with tools like [Kubernetes](https://kubernetes.io/) and [Istio](https://istio.io/) using patterns like [sidecar container](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/#example-1-sidecar-containers). It has the advantages to move the complexity of calling other services outside the application. For the application, it's just a local call and the proxy handles apikeys, throttling, quotas, resilience, tracing, etc ...
 
 ## Architecture
 
