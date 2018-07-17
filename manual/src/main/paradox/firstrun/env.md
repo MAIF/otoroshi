@@ -38,6 +38,7 @@ app.cassandra.windowSize = ${?CASSANDRA_WINDOW_SIZE}
 app.cassandra.hosts = ${?CASSANDRA_HOSTS}
 app.cassandra.host = ${?CASSANDRA_HOST}
 app.cassandra.port = ${?CASSANDRA_PORT}
+app.mongo.uri = ${?MONGO_URI}
 http.port = ${?PORT}
 https.port = ${?HTTPS_PORT}
 http2.enabled = ${?HTTP2_ENABLED}

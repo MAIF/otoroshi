@@ -9,6 +9,7 @@ Available datastores are the following :
 * in memory
 * redis
 * cassandra
+* mongodb
 * levelDB (not suitable for production usage)
 
 The **levelDB** datastore is pretty handy for testing purposes, but is not supposed to be used in production mode.
@@ -17,7 +18,7 @@ The **in-memory** datastore is kind of interesting... It can be used for testing
 
 The **redis** datastore is quite nice when you want to easily deploy several Otoroshi instances.
 
-If you need a datastore more scalable than redis, then you can use the **cassandra** datastore.
+If you need a datastore more scalable than redis, then you can use the **cassandra** datastore or the **mongodb** datastore.
 
 We plan to add more datastores support in the future :)
 

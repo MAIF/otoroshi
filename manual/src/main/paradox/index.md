@@ -97,6 +97,7 @@ Otoroshi is Open Source and available under the [Apache 2 License](https://opens
 * [Setup](setup/index.md)
 * [Using Otoroshi](usage/index.md)
 * [Integrations](integrations/index.md)
+* [Detailed topics](topics/index.md)
 * [Admin REST API](api.md)
 * [Embedding Otoroshi](./embedding.md)
 * [Official Rust CLI](cli.md)
