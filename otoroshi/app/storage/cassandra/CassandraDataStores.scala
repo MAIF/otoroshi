@@ -37,6 +37,9 @@ class CassandraDataStores(configuration: Configuration,
     configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
   lazy val cassandraPort: Int   = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
   lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
+  lazy val username: Option[String] = configuration.getOptional[String]("app.cassandra.username")
+  lazy val password: Option[String] = configuration.getOptional[String]("app.cassandra.password")
+
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-cassandra-system",
@@ -50,7 +53,9 @@ class CassandraDataStores(configuration: Configuration,
                                       cassandraReplicationFactor,
                                       cassandraReplicationOptions,
                                       cassandraContactPoints,
-                                      cassandraPort)
+                                      cassandraPort,
+                                      username,
+                                      password)
 
   override def before(configuration: Configuration,
                       environment: Environment,

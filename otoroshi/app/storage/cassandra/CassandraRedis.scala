@@ -51,7 +51,9 @@ class CassandraRedis(actorSystem: ActorSystem,
                      cassandraReplicationFactor: Int,
                      cassandraNetworkTopologyOptions: String,
                      contactPoints: Seq[String],
-                     contactPort: Int)
+                     contactPort: Int,
+                     mayBeUsername: Option[String] = None,
+                     mayBePassword: Option[String] = None)
     extends RedisLike {
 
   import Implicits._
@@ -72,13 +74,20 @@ class CassandraRedis(actorSystem: ActorSystem,
     .setConnectionsPerHost(HostDistance.REMOTE, 128, 256)
     .setInitializationExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() * 2 + 1))
 
-  val cluster = Cluster
+  val clusterBuilder = Cluster
     .builder()
     .withClusterName("otoroshi-cluster")
     .addContactPoints(contactPoints: _*)
     .withPort(contactPort)
     .withPoolingOptions(poolingOptions)
-    .build()
+
+  val cluster: Cluster = (for {
+    username <- mayBeUsername
+    password <- mayBePassword
+  } yield {
+    clusterBuilder.withCredentials(username, password)
+  }).getOrElse(clusterBuilder).build()
+
 
   val session = cluster.connect()
 
