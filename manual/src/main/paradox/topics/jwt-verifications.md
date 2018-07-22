@@ -93,7 +93,7 @@ You can  create global jwt verifiers and reference them in your services (from t
 <img src="../img/jwt-verif-global-ref.png" />
 @@@
 
-To create a global verifier, go to `Settings / Global Jwt Verifiers` and it will display the list of global verifiers.
+To create a global verifier, go to `Settings (cog icon) / Global Jwt Verifiers` and it will display the list of global verifiers.
 
 @@@ div { .centered-img }
 <img src="../img/jwt-verif-global-verifiers.png" />

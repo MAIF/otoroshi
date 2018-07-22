@@ -47,7 +47,8 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
                 "descriptorName" -> descriptor.name,
                 "descriptorId"   -> descriptor.id,
                 "until"          -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
-                "duration"       -> outageDuration.toMillis
+                "duration"       -> outageDuration.toMillis,
+                "startedAt"      -> DateTime.now().toString()
               )
             ),
             pxMilliseconds = Some(outageDuration.toMillis)
