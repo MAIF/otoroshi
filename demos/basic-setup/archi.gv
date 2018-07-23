@@ -1,0 +1,42 @@
+digraph basicsetup {
+  ratio = fill;
+  node [style=filled];
+  concentrate=true;
+  rankdir="LR";
+
+  "basicsetup-prod-1" -> "pg-prod"
+  "basicsetup-prod-2" -> "pg-prod"
+
+  "nginx-otoroshi" -> "otoroshi-1"
+  "nginx-otoroshi" -> "otoroshi-2"
+
+  "otoroshi-1" -> "elastic"
+  "otoroshi-1" -> "kibana"
+  "otoroshi-1" -> "basicsetup-prod-1"
+  "otoroshi-1" -> "basicsetup-prod-2"
+  "otoroshi-1" -> "kibana"
+
+  "otoroshi-2" -> "elastic"
+  "otoroshi-2" -> "kibana"
+  "otoroshi-2" -> "basicsetup-prod-1"
+  "otoroshi-2" -> "basicsetup-prod-1"
+  "otoroshi-2" -> "kibana"
+
+  "kibana" -> "elastic"
+
+  "otoroshi-1" -> "redis-master"
+  "otoroshi-2" -> "redis-master"
+  "redis-master" -> "redis-slave"
+
+  "browser" -> "nginx-otoroshi"
+
+  "otoroshi-1"[color="#f9b000"];
+  "otoroshi-2"[color="#f9b000"];
+
+  "nginx-otoroshi"[color="#c45858", fontcolor="#ffffff"];
+  "browser"[color="#57bf57"];
+  "pg-prod"[color="#008bb9", fontcolor="#ffffff"];
+  "redis-master"[color="#ff0000", fontcolor="#ffffff"];
+  "redis-slave"[color="#ff0000", fontcolor="#ffffff"];
+   
+}

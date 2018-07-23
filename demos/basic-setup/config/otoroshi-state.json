@@ -1,0 +1,422 @@
+{
+  "config": {
+    "lines": [
+      "prod"
+    ],
+    "streamEntityOnly": true,
+    "autoLinkToDefaultGroup": true,
+    "limitConcurrentRequests": false,
+    "maxConcurrentRequests": 100000,
+    "maxHttp10ResponseSize": 4194304,
+    "useCircuitBreakers": true,
+    "apiReadOnly": false,
+    "u2fLoginOnly": false,
+    "ipFiltering": {
+      "whitelist": [],
+      "blacklist": []
+    },
+    "throttlingQuota": 100000,
+    "perIpThrottlingQuota": 100000,
+    "analyticsEventsUrl": null,
+    "analyticsWebhooks": [
+      {
+        "url": "http://es-ingester:8080/api/v1/events",
+        "headers": {}
+      }
+    ],
+    "alertsWebhooks": [],
+    "alertsEmails": [],
+    "endlessIpAddresses": [],
+    "statsdConfig": null,
+    "kafkaConfig": null,
+    "backofficeAuth0Config": null,
+    "privateAppsAuth0Config": null,
+    "mailGunSettings": null,
+    "cleverSettings": null,
+    "maxWebhookSize": 100,
+    "middleFingers": false,
+    "maxLogsSize": 10000,
+    "otoroshiId": "otoroshi"
+  },
+  "admins": [],
+  "simpleAdmins": [
+    {
+      "username": "admin@otoroshi.io",
+      "password": "$2a$10$eWVP6A6Jsz0DNMF7Q6Kf5.R2KvCLaT7W6e0rOCOxawORiI0KLUQdS",
+      "label": "Otoroshi Admin",
+      "authorizedGroup": null,
+      "createdAt": 1527155236862
+    }
+  ],
+  "serviceGroups": [
+    {
+      "id": "admin-api-group",
+      "name": "Otoroshi Admin Api group",
+      "description": "No description"
+    },
+    {
+      "id": "default",
+      "name": "default-group",
+      "description": "The default service group"
+    },
+    {
+      "id": "basicsetup-prod-tenant1",
+      "name": "basicsetup-prod-tenant1",
+      "description": "basicsetup-prod-tenant1"
+    },
+    {
+      "id": "basicsetup-es",
+      "name": "basicsetup-es",
+      "description": "basicsetup-es"
+    }
+  ],
+  "apiKeys": [
+    {
+      "clientId": "admin-api-apikey-id",
+      "clientSecret": "admin-api-apikey-secret",
+      "clientName": "Otoroshi Backoffice ApiKey",
+      "authorizedGroup": "admin-api-group",
+      "enabled": true,
+      "throttlingQuota": 10000000,
+      "dailyQuota": 10000000,
+      "monthlyQuota": 10000000,
+      "metadata": {}
+    },
+    {
+      "clientId": "basicsetup-prod-tenant1-apikey",
+      "clientSecret": "basicsetup-prod-tenant1-apikey",
+      "clientName": "basicsetup-prod-tenant1-apikey",
+      "authorizedGroup": "basicsetup-prod-tenant1",
+      "enabled": true,
+      "throttlingQuota": 10000000,
+      "dailyQuota": 10000000,
+      "monthlyQuota": 10000000,
+      "metadata": {}
+    },
+    {
+      "clientId": "basicsetup-es-apikey",
+      "clientSecret": "basicsetup-es-apikey",
+      "clientName": "basicsetup-es-apikey",
+      "authorizedGroup": "basicsetup-es",
+      "enabled": true,
+      "throttlingQuota": 10000000,
+      "dailyQuota": 10000000,
+      "monthlyQuota": 10000000,
+      "metadata": {}
+    }
+  ],
+  "serviceDescriptors": [
+    {
+      "id": "admin-api-service",
+      "groupId": "admin-api-group",
+      "name": "otoroshi-admin-api",
+      "env": "prod",
+      "domain": "foo.bar",
+      "subdomain": "otoroshi-api",
+      "targets": [
+        {
+          "host": "127.0.0.1:8080",
+          "scheme": "http"
+        }
+      ],
+      "root": "/",
+      "matchingRoot": null,
+      "localHost": "127.0.0.1:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "privateApp": false,
+      "forceHttps": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "enforceSecureCommunication": true,
+      "sendOtoroshiHeadersBack": true,
+      "secComExcludedPatterns": [],
+      "publicPatterns": [],
+      "privatePatterns": [],
+      "additionalHeaders": {
+        "Host": "otoroshi-admin-internal-api.foo.bar"
+      },
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 1,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "metadata": {}
+    },
+    {
+      "id": "basicsetup-prod-tenant1-app",
+      "groupId": "basicsetup-prod-tenant1",
+      "name": "basicsetup-prod-tenant1-app",
+      "env": "prod",
+      "domain": "foo.bar",
+      "subdomain": "tenant1",
+      "targets": [
+        {
+          "host": "basicsetup-prod-instance-1:8080",
+          "scheme": "http"
+        },
+        {
+          "host": "basicsetup-prod-instance-2:8080",
+          "scheme": "http"
+        }
+      ],
+      "root": "/",
+      "matchingRoot": null,
+      "localHost": "localhost:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "privateApp": false,
+      "forceHttps": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "enforceSecureCommunication": false,
+      "sendOtoroshiHeadersBack": true,
+      "secComExcludedPatterns": [],
+      "publicPatterns": ["/.*"],
+      "privatePatterns": [],
+      "additionalHeaders": {
+        "BasicSetup-Tenant": "tenant1"
+      },
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 3,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "metadata": {}
+    },
+    {
+      "id": "basicsetup-prod-tenant1-api",
+      "groupId": "basicsetup-prod-tenant1",
+      "name": "basicsetup-prod-tenant1-api",
+      "env": "prod",
+      "domain": "foo.bar",
+      "subdomain": "api-tenant1",
+      "targets": [
+        {
+          "host": "basicsetup-prod-instance-1:8080",
+          "scheme": "http"
+        },
+        {
+          "host": "basicsetup-prod-instance-2:8080",
+          "scheme": "http"
+        }
+      ],
+      "root": "/api/",
+      "matchingRoot": null,
+      "localHost": "localhost:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "privateApp": false,
+      "forceHttps": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "enforceSecureCommunication": false,
+      "sendOtoroshiHeadersBack": true,
+      "secComExcludedPatterns": [],
+      "publicPatterns": [],
+      "privatePatterns": [],
+      "additionalHeaders": {
+        "BasicSetup-Tenant": "tenant1"
+      },
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 3,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "metadata": {}
+    },
+    {
+      "id": "kibana",
+      "groupId": "basicsetup-es",
+      "name": "kibana",
+      "env": "prod",
+      "domain": "foo.bar",
+      "subdomain": "kibana",
+      "targets": [
+        {
+          "host": "kibana:5601",
+          "scheme": "http"
+        }
+      ],
+      "root": "/",
+      "matchingRoot": null,
+      "localHost": "localhost:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "privateApp": false,
+      "forceHttps": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "enforceSecureCommunication": false,
+      "sendOtoroshiHeadersBack": true,
+      "secComExcludedPatterns": [],
+      "publicPatterns": ["/.*"],
+      "privatePatterns": [],
+      "additionalHeaders": {
+      },
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 3,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "metadata": {}
+    },
+    {
+      "id": "elastic",
+      "groupId": "basicsetup-es",
+      "name": "elastic",
+      "env": "prod",
+      "domain": "foo.bar",
+      "subdomain": "elastic",
+      "targets": [
+        {
+          "host": "elastic:9200",
+          "scheme": "http"
+        }
+      ],
+      "root": "/",
+      "matchingRoot": null,
+      "localHost": "localhost:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "privateApp": false,
+      "forceHttps": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "enforceSecureCommunication": false,
+      "sendOtoroshiHeadersBack": true,
+      "secComExcludedPatterns": [],
+      "publicPatterns": [],
+      "privatePatterns": [],
+      "additionalHeaders": {
+      },
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 3,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "metadata": {}
+    }
+  ],
+  "errorTemplates": []
+}
