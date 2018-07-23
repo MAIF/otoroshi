@@ -157,17 +157,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     env.redirections.nonEmpty && env.redirections.exists(it => host.contains(it))
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
-    val isSecured =
-      request.headers.get("X-Forwarded-Protocol").map(_ == "https").orElse(Some(request.secure)).getOrElse(false)
-    val protocol = request.headers
-      .get("X-Forwarded-Protocol")
-      .map(_ == "https")
-      .orElse(Some(request.secure))
-      .map {
-        case true  => "https"
-        case false => "http"
-      }
-      .getOrElse("http")
+    val isSecured = getSecuredFor(request)
+    val protocol = getProtocolFor(request)
     val url     = ByteString(s"$protocol://${request.host}${request.relativeUri}")
     val cookies = request.cookies.map(_.value).map(ByteString.apply)
     val headers = request.headers.toSimpleMap.values.map(ByteString.apply)
@@ -242,15 +233,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def redirectToHttps() = actionBuilder { req =>
     val domain = req.domain
-    val protocol = req.headers
-      .get("X-Forwarded-Protocol")
-      .map(_ == "https")
-      .orElse(Some(req.secure))
-      .map {
-        case true  => "https"
-        case false => "http"
-      }
-      .getOrElse("http")
+    val protocol = getProtocolFor(req)
     logger.info(
       s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
     )
@@ -259,15 +242,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def redirectToMainDomain() = actionBuilder { req =>
     val domain: String = env.redirections.foldLeft(req.domain)((domain, item) => domain.replace(item, env.domain))
-    val protocol = req.headers
-      .get("X-Forwarded-Protocol")
-      .map(_ == "https")
-      .orElse(Some(req.secure))
-      .map {
-        case true  => "https"
-        case false => "http"
-      }
-      .getOrElse("http")
+    val protocol = getProtocolFor(req)
     logger.warn(
       s"redirectToMainDomain from $protocol://${req.domain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
     )
@@ -368,20 +343,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def forwardCall() = actionBuilder.async(sourceBodyParser) { req =>
-    // TODO : add metrics + JMX
-    // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
-    // val meterOut            = Metrics.metrics.meter("GatewayDataOut")
-    val reqNumber           = reqCounter.incrementAndGet()
-    val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
-    val isSecured           = req.headers.get("X-Forwarded-Protocol").map(_ == "https").orElse(Some(req.secure)).getOrElse(false)
-    val from                = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
-    val counterIn           = new AtomicLong(0L)
-    val counterOut          = new AtomicLong(0L)
-    val start               = System.currentTimeMillis()
-    val bodyAlreadyConsumed = new AtomicBoolean(false)
-    val protocol = req.headers
-      .get("X-Forwarded-Protocol")
+  @inline
+  def getProtocolFor(req: RequestHeader): String = {
+    req.headers
+      .get("X-Forwarded-Proto")
+      .orElse(req.headers.get("X-Forwarded-Protocol"))
       .map(_ == "https")
       .orElse(Some(req.secure))
       .map {
@@ -389,6 +355,29 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         case false => "http"
       }
       .getOrElse("http")
+  }
+
+  @inline
+  def getSecuredFor(req: RequestHeader): Boolean = {
+    getProtocolFor(req) match {
+      case "http" => false
+      case "https" => true
+    }
+  }
+
+  def forwardCall() = actionBuilder.async(sourceBodyParser) { req =>
+    // TODO : add metrics + JMX
+    // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
+    // val meterOut            = Metrics.metrics.meter("GatewayDataOut")
+    val reqNumber           = reqCounter.incrementAndGet()
+    val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
+    val isSecured           = getSecuredFor(req)
+    val from                = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
+    val counterIn           = new AtomicLong(0L)
+    val counterOut          = new AtomicLong(0L)
+    val start               = System.currentTimeMillis()
+    val bodyAlreadyConsumed = new AtomicBoolean(false)
+    val protocol = getProtocolFor(req)
 
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
     // val currentProcessedRequests = env.datastores.requestsDataStore.incrementProcessedRequests()
@@ -732,15 +721,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 currentOverhead = overhead,
                                 serviceDescriptor = descriptor,
                                 target = Location(
-                                  scheme = req.headers
-                                    .get("X-Forwarded-Protocol")
-                                    .map(_ == "https")
-                                    .orElse(Some(req.secure))
-                                    .map {
-                                      case true  => "https"
-                                      case false => "http"
-                                    }
-                                    .getOrElse("http"),
+                                  scheme = getProtocolFor(req),
                                   host = req.host,
                                   uri = req.relativeUri
                                 )
@@ -782,15 +763,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       `@timestamp` = DateTime.now(),
                                       protocol = req.version,
                                       to = Location(
-                                        scheme = req.headers
-                                          .get("X-Forwarded-Protocol")
-                                          .map(_ == "https")
-                                          .orElse(Some(req.secure))
-                                          .map {
-                                            case true  => "https"
-                                            case false => "http"
-                                          }
-                                          .getOrElse("http"),
+                                        scheme = getProtocolFor(req),
                                         host = req.host,
                                         uri = req.relativeUri
                                       ),
@@ -1367,15 +1340,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             } else {
                               if (env.isProd && !isSecured && desc.forceHttps) {
                                 val theDomain = req.domain
-                                val protocol = req.headers
-                                  .get("X-Forwarded-Protocol")
-                                  .map(_ == "https")
-                                  .orElse(Some(req.secure))
-                                  .map {
-                                    case true  => "https"
-                                    case false => "http"
-                                  }
-                                  .getOrElse("http")
+                                val protocol = getProtocolFor(req)
                                 logger.info(
                                   s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                                 )

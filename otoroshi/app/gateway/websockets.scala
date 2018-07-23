@@ -185,16 +185,11 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def proxyWebSocket() = WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
-    logger.info("[WEBSOCKET] proxy ws call !!!")
-
-    // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
-    val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-    val reqNumber     = reqCounter.incrementAndGet()
-    val remoteAddress = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
-    val isSecured     = req.headers.get("X-Forwarded-Protocol").map(_ == "https").orElse(Some(req.secure)).getOrElse(false)
-    val protocol = req.headers
-      .get("X-Forwarded-Protocol")
+  @inline
+  def getWsProtocolFor(req: RequestHeader): String = {
+    req.headers
+      .get("X-Forwarded-Proto")
+      .orElse(req.headers.get("X-Forwarded-Protocol"))
       .map(_ == "https")
       .orElse(Some(req.secure))
       .map {
@@ -202,6 +197,25 @@ class WebSocketHandler()(implicit env: Env) {
         case false => "ws"
       }
       .getOrElse("ws")
+  }
+
+  @inline
+  def getSecuredFor(req: RequestHeader): Boolean = {
+    getWsProtocolFor(req) match {
+      case "ws" => false
+      case "wss" => true
+    }
+  }
+
+  def proxyWebSocket() = WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
+    logger.info("[WEBSOCKET] proxy ws call !!!")
+
+    // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
+    val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val reqNumber     = reqCounter.incrementAndGet()
+    val remoteAddress = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
+    val isSecured     = getSecuredFor(req)
+    val protocol   = getWsProtocolFor(req)
     val from       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val counterIn  = new AtomicLong(0L)
     val counterOut = new AtomicLong(0L)
@@ -479,15 +493,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   `@timestamp` = DateTime.now(),
                                   protocol = req.version,
                                   to = Location(
-                                    scheme = req.headers
-                                      .get("X-Forwarded-Protocol")
-                                      .map(_ == "https")
-                                      .orElse(Some(req.secure))
-                                      .map {
-                                        case true => "https"
-                                        case false => "http"
-                                      }
-                                      .getOrElse("http"),
+                                    scheme = getWsProtocolFor(req),
                                     host = req.host,
                                     uri = req.relativeUri
                                   ),
@@ -801,15 +807,7 @@ class WebSocketHandler()(implicit env: Env) {
                           } else {
                             if (env.isProd && !isSecured && desc.forceHttps) {
                               val theDomain = req.domain
-                              val protocol = req.headers
-                                .get("X-Forwarded-Protocol")
-                                .map(_ == "wss")
-                                .orElse(Some(req.secure))
-                                .map {
-                                  case true => "wss"
-                                  case false => "ws"
-                                }
-                                .getOrElse("ws")
+                              val protocol = getWsProtocolFor(req)
                               logger.info(
                                 s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to wss://$theDomain${req.relativeUri}"
                               )
