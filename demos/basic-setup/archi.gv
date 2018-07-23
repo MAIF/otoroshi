@@ -4,22 +4,22 @@ digraph basicsetup {
   concentrate=true;
   rankdir="LR";
 
-  "basicsetup-prod-1" -> "pg-prod"
-  "basicsetup-prod-2" -> "pg-prod"
+  "app-instance-1" -> "pg-prod"
+  "app-instance-2" -> "pg-prod"
 
   "nginx-otoroshi" -> "otoroshi-1"
   "nginx-otoroshi" -> "otoroshi-2"
 
   "otoroshi-1" -> "elastic"
   "otoroshi-1" -> "kibana"
-  "otoroshi-1" -> "basicsetup-prod-1"
-  "otoroshi-1" -> "basicsetup-prod-2"
+  "otoroshi-1" -> "app-instance-1"
+  "otoroshi-1" -> "app-instance-2"
   "otoroshi-1" -> "kibana"
 
   "otoroshi-2" -> "elastic"
   "otoroshi-2" -> "kibana"
-  "otoroshi-2" -> "basicsetup-prod-1"
-  "otoroshi-2" -> "basicsetup-prod-1"
+  "otoroshi-2" -> "app-instance-1"
+  "otoroshi-2" -> "app-instance-2"
   "otoroshi-2" -> "kibana"
 
   "kibana" -> "elastic"
