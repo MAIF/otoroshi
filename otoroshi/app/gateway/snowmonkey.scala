@@ -144,10 +144,14 @@ class SnowMonkey(implicit env: Env) {
     if (isCurrentOutage) {
       FastFuture.successful(true)
     } else {
+      val shouldAwait = (conf.stopTime.getMillisOfDay - conf.startTime.getMillisOfDay) / conf.timesPerDay
       conf.outageStrategy match {
         case OneServicePerGroup =>
           env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
-            case count if count < conf.timesPerDay && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId =>
+            case count if count < conf.timesPerDay
+                && (count + 1) * shouldAwait < DateTime.now().getMillisOfDay
+                && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
+                && descriptor.id != env.backOfficeServiceId =>
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
                 .andThen {
@@ -179,8 +183,10 @@ class SnowMonkey(implicit env: Env) {
           }
         case AllServicesPerGroup =>
           env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
-            case count if count < conf.timesPerDay && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId =>
-              println(s"outages for current workday: ${count}")
+            case count if count < conf.timesPerDay 
+                && (count + 1) * shouldAwait < DateTime.now().getMillisOfDay
+                && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId)) 
+                && descriptor.id != env.backOfficeServiceId =>
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
                 .andThen {
