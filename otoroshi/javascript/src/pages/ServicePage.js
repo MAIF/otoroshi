@@ -759,24 +759,22 @@ export class ServicePage extends Component {
               </div>
             ]}
           </Collapse>
-          {this.state.service.enforceSecureCommunication && (
-            <Collapse
-              collapsed={this.state.allCollapsed}
-              initCollapsed={true}
-              label="Otoroshi exchange protocol">
-              <BooleanInput
-                label="Enabled"
-                value={this.state.service.enforceSecureCommunication}
-                help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
-                onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
-              />
-              <AlgoSettings
-                algo={this.state.service.secComSettings}
-                path="secComSettings"
-                changeTheValue={this.changeTheValue}
-              />
-            </Collapse>
-          )}
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Otoroshi exchange protocol">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.enforceSecureCommunication}
+              help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
+              onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
+            />
+            <AlgoSettings
+              algo={this.state.service.secComSettings}
+              path="secComSettings"
+              changeTheValue={this.changeTheValue}
+            />
+          </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
