@@ -38,7 +38,7 @@ const client = new elasticsearch.Client({
   log: LOG_LEVEL,
 });
 
-client.putTemplate(
+client.indices.putTemplate(
   {
     id: 'analytics-tpl',
     body: TEMPLATE,
