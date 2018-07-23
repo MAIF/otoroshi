@@ -28,7 +28,7 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
       descriptor: ServiceDescriptor,
       conf: SnowMonkeyConfig
   )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
-    val dayEnd = System.currentTimeMillis() - DateTime.now().millisOfDay().withMaximumValue().getMillis
+    val dayEnd = DateTime.now().millisOfDay().withMaximumValue().getMillis
     val bound =
       if (conf.outageDurationTo.toMillis.toInt == conf.outageDurationFrom.toMillis.toInt)
         conf.outageDurationFrom.toMillis.toInt
@@ -54,7 +54,6 @@ class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataSt
             pxMilliseconds = Some(outageDuration.toMillis)
           )
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
-      _ <- redisCli.pexpire(groupCounterKey, dayEnd)
       _ <- redisCli.pexpire(groupCounterKey, dayEnd)
     } yield outageDuration
   }

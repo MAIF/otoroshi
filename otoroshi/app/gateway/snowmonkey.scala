@@ -147,7 +147,7 @@ class SnowMonkey(implicit env: Env) {
       conf.outageStrategy match {
         case OneServicePerGroup =>
           env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
-            case count if count < conf.timesPerDay =>
+            case count if count < conf.timesPerDay && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId =>
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
                 .andThen {
@@ -179,7 +179,8 @@ class SnowMonkey(implicit env: Env) {
           }
         case AllServicesPerGroup =>
           env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
-            case count if count < conf.timesPerDay =>
+            case count if count < conf.timesPerDay && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId =>
+              println(s"outages for current workday: ${count}")
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
                 .andThen {
@@ -218,13 +219,13 @@ class SnowMonkey(implicit env: Env) {
     for {
       isCurrentOutage        <- isCurrentOutage(descriptor, config)
       needMoreOutageForToday <- needMoreOutageForToday(isCurrentOutage, descriptor, config)
-    } yield {
-      if ((config.targetGroups.isEmpty || config.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId) {
-        isCurrentOutage || needMoreOutageForToday
-      } else {
-        false
-      }
-    }
+    } yield isCurrentOutage || needMoreOutageForToday
+      //if ((config.targetGroups.isEmpty || config.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId) {
+      //  isCurrentOutage || needMoreOutageForToday  
+      //} else {
+      //  false
+      //}
+    //}
   }
 
   private def betweenDates(config: SnowMonkeyConfig): Boolean = {
