@@ -520,16 +520,10 @@ export class ServicePage extends Component {
               />
             </WithEnv>
             <BooleanInput
-              label="Send headers back"
+              label="Send Otoroshi headers back"
               value={this.state.service.sendOtoroshiHeadersBack}
               help="When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
               onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
-            />
-            <BooleanInput
-              label="Use Otoroshi exchange protocol"
-              value={this.state.service.enforceSecureCommunication}
-              help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
-              onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
             />
             <BooleanInput
               label="Force HTTPS"
@@ -770,6 +764,12 @@ export class ServicePage extends Component {
               collapsed={this.state.allCollapsed}
               initCollapsed={true}
               label="Otoroshi exchange protocol">
+              <BooleanInput
+                label="Enabled"
+                value={this.state.service.enforceSecureCommunication}
+                help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
+                onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
+              />
               <AlgoSettings
                 algo={this.state.service.secComSettings}
                 path="secComSettings"

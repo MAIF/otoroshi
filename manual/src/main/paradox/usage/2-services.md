@@ -27,13 +27,12 @@ You will have a serie of toggle buttons to
 * display contruction page for a service
 * enforce user login to access the app (renamed from `private app`)
 * enable otoroshi custom response headers containing request id, latency, etc 
-* enforce Otoroshi exchange protocol between services (renamed from `secured service`)
 * force https usage on the exposed service
 
 Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.
 
 @@@ div { .centered-img #service-flags }
-<img src="../img/new-service-flags2.png" />
+<img src="../img/service-flags-2.png" />
 @@@
 
 In the `service targets` section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets.
