@@ -1,6 +1,8 @@
-const { resolve } = require('path');
+const path = require('path');
 const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+
+const resolve = path.resolve;
 
 const isProd = process.env.NODE_ENV === 'production';
 const sourcePath = resolve(__dirname, 'src');
@@ -68,7 +70,11 @@ const config = {
       {
         test: /\.js$/,
         loaders: ['babel-loader'],
-        exclude: /node_modules/
+        include: [
+          path.resolve(__dirname, "src"),
+          path.resolve(__dirname, "node_modules/set-value")
+        ]
+        //exclude: /node_modules/
       },
       {
         test: /\.css|\.scss$/,
