@@ -58,13 +58,13 @@ The `Otoroshi-Claim` is a JWT token containing some informations about the servi
 By default, the otoroshi jwt token is signed with the `app.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the `Otoroshi exchange protocol` section. 
 
 @@@ div { .centered-img }
-<img src="../img/sec-com-signing.png" />
+<img src="../img/sec-com-signing-bis.png" />
 @@@
 
 using another signing algo.
 
 @@@ div { .centered-img }
-<img src="../img/sec-com-signing-2.png" />
+<img src="../img/sec-com-signing-2-bis.png" />
 @@@
 
 here you can choose the signing algorithm and the secret/keys used. You can use syntax like `${env.MY_ENV_VAR}` or `${config.my.config.path}` to provide secret/keys values. 
