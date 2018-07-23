@@ -149,7 +149,7 @@ class SnowMonkey(implicit env: Env) {
         case OneServicePerGroup =>
           env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
             case count if count < conf.timesPerDay
-                && (count + 1) * shouldAwait < DateTime.now().getMillisOfDay
+                && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
                 && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
                 && descriptor.id != env.backOfficeServiceId =>
               env.datastores.chaosDataStore
@@ -181,12 +181,16 @@ class SnowMonkey(implicit env: Env) {
                 .map(_ => true)
             case _ => FastFuture.successful(false)
           }
-        case AllServicesPerGroup =>
+        case AllServicesPerGroup => {
+          // val start = conf.startTime.toDateTimeToday
+          // (1 to conf.timesPerDay).foreach { idx =>
+          //   println(s"[$idx] should outage at " + start.plusMillis(idx * shouldAwait))
+          // }
           env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
-            case count if count < conf.timesPerDay 
-                && (count + 1) * shouldAwait < DateTime.now().getMillisOfDay
-                && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId)) 
-                && descriptor.id != env.backOfficeServiceId =>
+            case count if count < conf.timesPerDay
+              && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
+              && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
+              && descriptor.id != env.backOfficeServiceId =>
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
                 .andThen {
@@ -209,13 +213,16 @@ class SnowMonkey(implicit env: Env) {
                       )
                     )
                     logger.warn(
-                      s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
-                        .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
+                      s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${
+                        DateTime
+                          .now()
+                      } to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
                     )
                 }
                 .map(_ => true)
             case _ => FastFuture.successful(false)
           }
+        }
       }
     }
   }
