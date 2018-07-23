@@ -15,6 +15,7 @@ All the features supported by **Otoroshi** are listed below
     * LevelDB
     * In memory
     * Cassandra
+    * Mongo
 * @ref:[Service is private (Api key access) by default with exclusions](./usage/2-services.md)
 * @ref:[Support wildcard domain names per service](./usage/2-services.md)
 * @ref:[Support routing headers for a service (ie. for service versioning)](./usage/2-services.md#service-meta)
@@ -32,7 +33,7 @@ All the features supported by **Otoroshi** are listed below
 * @ref:[Support configurable daily quota per Api key](./usage/3-apikeys.md#quotas)
 * @ref:[Support configurable monthly quota per Api key](./usage/3-apikeys.md#quotas)
 * @ref:[Api keys are authorized for a group of services](./usage/3-apikeys.md)
-* @ref:[Api keys can be passed with custom headers, `Authorization: Basic ` headers or `Authorization: Bearer ](./usage/3-apikeys.md)
+* @ref:[Api keys can be passed with custom headers, `Authorization: Basic ` headers, `Authorization: Bearer` or Cookies](./usage/3-apikeys.md)
 * @ref:[Add current Api key quotas usage in response headers](./usage/3-apikeys.md#quotas)
 * @ref:[Add current latencies in response headers](./usage/3-apikeys.md#quotas)
 * @ref:[Support service duplication through web UI](./usage/2-services.md#service-flags)
@@ -64,6 +65,9 @@ All the features supported by **Otoroshi** are listed below
 * Enforce request URL max size
 * Enforce request headers max size
 * Enforce request cookies max size
+* @ref:[Enforce incoming JWT token verification and transformation](./topics/jwt-verification.md)
+* @ref:[Introduce HTTP level chaos engineering pratices with the Snow Monkey](./topics/snow-monkey.md)
+* @ref:[Native support for service mesh architectures](./topics/service-mesh.md)
 * @ref:[Global live metrics](./setup/index.md#first-login)
 * @ref:[Send metrics to a StatsD/Datadog agent](./integrations/statsd.md)
 * @ref:[Advanced CleverCloud integration (create services from CleverCloud apps)](./integrations/clevercloud.md)
