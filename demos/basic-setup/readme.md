@@ -2,7 +2,6 @@
 
 this docker-compose file simulates a basic otoroshi powered infrastructure.
 
-<img src ="./archi.png">
 <img src ="./archi.svg">
 
 ## Build and run
