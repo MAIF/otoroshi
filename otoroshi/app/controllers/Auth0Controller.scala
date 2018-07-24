@@ -37,12 +37,21 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     implicit val request = ctx.request
     ctx.globalConfig.privateAppsAuth0Config match {
       case None => NotFound(views.html.otoroshi.error("Private apps are not configured", env))
-      case Some(config) =>
-        Ok(views.html.privateapps.login(env, config)).addingToSession(
-          "pa-redirect-after-login" -> redirect.getOrElse(
-            routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+      case Some(config) => {
+        if (env.useUniversalLogin) {
+          Redirect(s"https://${config.domain}/authorize?response_type=code&client_id=${config.clientId}&scope=openid+profile+email+name&redirect_uri=${config.callbackURL}").addingToSession(
+            "pa-redirect-after-login" -> redirect.getOrElse(
+              routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+            )
           )
-        )
+        } else {
+          Ok(views.html.privateapps.login(env, config)).addingToSession(
+            "pa-redirect-after-login" -> redirect.getOrElse(
+              routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+            )
+          )
+        }
+      }
     }
   }
 
@@ -52,14 +61,23 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
       case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
         config.backofficeAuth0Config match {
           case None => Redirect(controllers.routes.BackOfficeController.index())
-          case Some(aconf) =>
-            Ok(views.html.backoffice.login(env, aconf)).addingToSession(
-              "bo-redirect-after-login" -> redirect
-                .orElse(ctx.request.session.get("bo-redirect-after-login"))
-                .getOrElse(
-                  routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+          case Some(aconf) => {
+            if (env.useUniversalLogin) {
+              Redirect(s"https://${aconf.domain}/authorize?response_type=code&client_id=${aconf.clientId}&scope=openid+profile+email+name&redirect_uri=${aconf.callbackURL}").addingToSession(
+                "pa-redirect-after-login" -> redirect.getOrElse(
+                  routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
                 )
-            )
+              )
+            } else {
+              Ok(views.html.backoffice.login(env, aconf)).addingToSession(
+                "bo-redirect-after-login" -> redirect
+                  .orElse(ctx.request.session.get("bo-redirect-after-login"))
+                  .getOrElse(
+                    routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                  )
+              )
+            }
+          }
         }
       }
       case config if (config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) =>
