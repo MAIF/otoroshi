@@ -277,14 +277,23 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
 
   @inline
   def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery): Seq[ServiceDescriptor] = {
-    services
-      .sortWith {
-        case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
-          a.matchingRoot.get.size > b.matchingRoot.get.size
-        case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined => true
-        case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined => true
-        case _                                                               => false
-      }
+    // val sers = services
+    //   .sortWith {
+    //     case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
+    //       a.matchingRoot.get.size > b.matchingRoot.get.size
+    //     case (a, b) if a.matchingRoot.isDefined && !b.matchingRoot.isDefined => true
+    //     case (a, b) if b.matchingRoot.isDefined && !a.matchingRoot.isDefined => true
+    //     case _                                                               => false
+    //   }
+    //   .filter { sr =>
+    //     val allHeadersMatched = matchAllHeaders(sr, query)
+    //     val rootMatched = sr.matchingRoot match {
+    //       case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+    //       case None               => true
+    //     }
+    //     allHeadersMatched && rootMatched
+    //   }
+    val allSers = services
       .filter { sr =>
         val allHeadersMatched = matchAllHeaders(sr, query)
         val rootMatched = sr.matchingRoot match {
@@ -293,6 +302,14 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
         }
         allHeadersMatched && rootMatched
       }
+    val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
+    val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
+      case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+    }
+    sersWithMatchingRoot ++ sersWithoutMatchingRoot
+    // val sers = (sersWithMatchingRoot ++ sersWithoutMatchingRoot)
+    // logger.warn(s"for query $query, services are :\n\n${sers.map(a => "  * " + a.name).mkString("\n")}\n\n")
+    // sers
   }
 
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
