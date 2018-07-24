@@ -2,6 +2,18 @@
 
 There is a lot of things you can configure in Otoroshi. By default, Otoroshi provides a configuration that should be enough for testing purpose. But you'll likely need to update this configuration when you'll need to move into production.
 
+In this page, any configuration property can be set at runtime using a `-D` flag when launching Otoroshi like
+
+```sh
+java -Dapp.domain=foo.bar -Dhttp.port=8080 -jar otoroshi.jar
+```
+
+or
+
+```sh
+./bin/otoroshi -Dhttp.port=8080 -Dapp.domain=foo.bar 
+```
+
 ## Common configuration
 
 | name | type | default value  | description |
