@@ -91,11 +91,12 @@ create_release () {
 cd $LOCATION/docker/build
 cp ../../otoroshi/target/universal/otoroshi-$VERSION.zip ./otoroshi-dist.zip
 # build docker image
-docker build --no-cache -t otoroshi .
-rm ./otoroshi-dist.zip
+# docker build --no-cache -t otoroshi .
+# rm ./otoroshi-dist.zip
 # push docker image on dockerhub
-docker tag otoroshi "maif/otoroshi:$VERSION"
-docker push "maif/otoroshi:$VERSION"
+# docker tag otoroshi "maif/otoroshi:$VERSION"
+# docker push "maif/otoroshi:$VERSION"
+sh ./build.sh push-all $VERSION
 
 cd $LOCATION/docker/otoroshicli
 cp ../../clients/cli/target/release/otoroshicli ./otoroshicli
