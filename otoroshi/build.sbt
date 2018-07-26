@@ -11,7 +11,7 @@ libraryDependencies ++= Seq(
   ws,
   filters,
   "org.gnieh"                %% "diffson-play-json"        % "2.2.5" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
-  "org.iq80.leveldb"         % "leveldb"                   % "0.9",
+  "org.iq80.leveldb"         % "leveldb"                   % "0.10",
   "com.softwaremill.macwire" %% "macros"                   % "2.3.0" % "provided",
   "com.typesafe.play"        %% "play-json"                % "2.6.8",
   "com.typesafe.play"        %% "play-json-joda"           % "2.6.8",
