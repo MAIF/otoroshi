@@ -49,6 +49,8 @@ build_jdk11 () {
 }
 
 # sh ./build.sh build-all 1.2.0-dev-$(date +%s)
+echo "Docker images for otoroshi version $2"
+
 case "${1}" in
   prepare-build)
     prepare_build
@@ -79,6 +81,7 @@ case "${1}" in
     ;;
   *)
     echo "Build otoroshi docker images"
+    ;;
 esac
 
 exit ${?}
