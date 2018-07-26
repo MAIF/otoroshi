@@ -48,6 +48,7 @@ build_jdk11 () {
   docker tag otoroshi-jdk9 "maif/otoroshi:jdk11-$1"
 }
 
+# sh ./build.sh build-all 1.2.0-dev-$(date +%s)
 case "${1}" in
   prepare-build)
     prepare_build
