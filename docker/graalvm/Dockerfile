@@ -18,8 +18,7 @@ RUN apt-get update -y \
   && mv graalvm-ce-1.0.0-rc4 graalvm \
   && mkdir /otoroshi/leveldb \
   && mkdir /otoroshi/imports \
-  && chown -R otoroshi:otoroshi /otoroshi \
-  && chown -R otoroshi:otoroshi /graalvm 
+  && chown -R otoroshi:otoroshi /otoroshi 
 
 VOLUME /otoroshi/imports
 VOLUME /otoroshi/leveldb
