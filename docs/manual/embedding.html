@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -78,6 +78,12 @@
     <li><a href="integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
   <li><a href="embedding.html" class="active page">Embedding Otoroshi</a></li>
@@ -128,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -177,6 +183,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
   </ul></li>
+  <li><a href="topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+  </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
   <li><a href="embedding.html" class="active page">Embedding Otoroshi</a></li>
   <li><a href="cli.html" class="page">Rust CLI</a></li>
@@ -224,8 +236,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <dd>
   <pre class="prettyprint"><code class="language-sbt">resolvers += Resolver.bintrayRepo(&quot;maif&quot;, &quot;maven&quot;)
 
-libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &quot;1.1.2&quot;
-libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &quot;1.1.2&quot; classifier &quot;assets&quot;</code></pre></dd>
+libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &quot;1.2.0&quot;
+libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &quot;1.2.0&quot; classifier &quot;assets&quot;</code></pre></dd>
   <dt>Gradle</dt>
   <dd>
   <pre class="prettyprint"><code class="language-gradle">repositories {
@@ -233,8 +245,8 @@ libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &q
 }
 
 dependencies {
-  compile group: &#39;fr.maif.otoroshi&#39;, name: &#39;otoroshi_2.12&#39;, version: &#39;1.1.2&#39;
-  compile group: &#39;fr.maif.otoroshi&#39;, name: &#39;otoroshi_2.12&#39;, version: &#39;1.1.2&#39;, classifier &#39;assets&#39;
+  compile group: &#39;fr.maif.otoroshi&#39;, name: &#39;otoroshi_2.12&#39;, version: &#39;1.2.0&#39;
+  compile group: &#39;fr.maif.otoroshi&#39;, name: &#39;otoroshi_2.12&#39;, version: &#39;1.2.0&#39;, classifier &#39;assets&#39;
 }</code></pre></dd>
 </dl>
 <h2><a href="#starting-otoroshi" name="starting-otoroshi" class="anchor"><span class="anchor-link"></span></a>Starting Otoroshi</h2>

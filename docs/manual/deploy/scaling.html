@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -78,6 +78,12 @@
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -128,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -176,6 +182,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -226,8 +238,51 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>You can use <a href="https://en.wikipedia.org/wiki/IP_Virtual_Server">IPVS</a> to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.</p>
 <h2><a href="#using-dns-round-robin" name="using-dns-round-robin" class="anchor"><span class="anchor-link"></span></a>Using DNS Round Robin</h2>
 <p>You can use <a href="https://en.wikipedia.org/wiki/Round-robin_DNS">DNS round robin technique</a> to declare multiple A records under the domain names handled by Otoroshi.</p>
-<h2><a href="#using-software-l4-load-balancers" name="using-software-l4-load-balancers" class="anchor"><span class="anchor-link"></span></a>Using software L4 load balancers</h2>
+<h2><a href="#using-software-l4-l7-load-balancers" name="using-software-l4-l7-load-balancers" class="anchor"><span class="anchor-link"></span></a>Using software L4/L7 load balancers</h2>
 <p>You can use software L4 load balancers like NGINX or HAProxy to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.</p>
+<dl>
+  <dt>NGINX config.
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">upstream otoroshi {
+  server 192.168.1.40:8080 max_fails=1;
+  server 192.168.1.41:8080 max_fails=1;
+  server 192.168.1.42:8080 max_fails=1;
+}
+
+server {
+  listen 443 ssl;
+  # http://nginx.org/en/docs/http/server_names.html
+  server_name otoroshi.foo.bar otoroshi-api.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar *-api.foo.bar;
+  ssl_certificate           /etc/letsencrypt/wildcard.foo.bar/fullchain.pem;
+  ssl_certificate_key       /etc/letsencrypt/wildcard.foo.bar/privkey.pem;
+  ssl_session_cache         shared:SSL:10m;
+  ssl_session_timeout       5m;
+  ssl_prefer_server_ciphers on;
+  ssl_ciphers               ECDH+AESGCM:ECDH+AES256:ECDH+AES128:DH+3DES:!ADH:!AECDH:!MD5;
+  ssl_protocols             TLSv1 TLSv1.1 TLSv1.2;
+  location / {
+    # SSE config
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_set_header Connection &#39;&#39;;
+    proxy_http_version 1.1;
+    chunked_transfer_encoding off;
+  
+    # websockets config
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection &quot;upgrade&quot;;
+  
+    # other config
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Protocol $scheme;
+    proxy_pass http://otoroshi;
+  }
+}</code></pre></dd>
+</dl>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../connectors/index.html">Connectors</a></p>
 </div>
@@ -244,7 +299,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html#using-master-workers-mode-of-otoroshi" class="header">Using master / workers mode of Otoroshi</a></li>
     <li><a href="../deploy/scaling.html#using-ipvs" class="header">Using IPVS</a></li>
     <li><a href="../deploy/scaling.html#using-dns-round-robin" class="header">Using DNS Round Robin</a></li>
-    <li><a href="../deploy/scaling.html#using-software-l4-load-balancers" class="header">Using software L4 load balancers</a></li>
+    <li><a href="../deploy/scaling.html#using-software-l4-l7-load-balancers" class="header">Using software L4/L7 load balancers</a></li>
   </ul></li>
 </ul>
 </div>

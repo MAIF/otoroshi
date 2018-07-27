@@ -65,7 +65,7 @@ All the features supported by **Otoroshi** are listed below
 * Enforce request URL max size
 * Enforce request headers max size
 * Enforce request cookies max size
-* @ref:[Enforce incoming JWT token verification and transformation](./topics/jwt-verification.md)
+* @ref:[Enforce incoming JWT token verification and transformation](./topics/jwt-verifications.md)
 * @ref:[Introduce HTTP level chaos engineering pratices with the Snow Monkey](./topics/snow-monkey.md)
 * @ref:[Native support for service mesh architectures](./topics/service-mesh.md)
 * @ref:[Global live metrics](./setup/index.md#first-login)

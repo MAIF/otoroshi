@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -78,6 +78,12 @@
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -128,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -176,6 +182,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -234,20 +246,26 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>activate / deactivate a service</li>
   <li>display maintenance page for a service</li>
   <li>display contruction page for a service</li>
+  <li>enforce user login to access the app (renamed from <code>private app</code>)</li>
   <li>enable otoroshi custom response headers containing request id, latency, etc</li>
-  <li>enforce secure exchange between services</li>
   <li>force https usage on the exposed service</li>
 </ul>
 <p>Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.</p><div id="service-flags" class="centered-img">
-<img src="../img/new-service-flags2.png" /></div>
+<img src="../img/service-flags-2.png" /></div>
 <p>In the <code>service targets</code> section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets.</p>
 <p>You can also specify a target root, if you say that the target root is <code>/foo/</code>, then any call to <code>https://my.api.foo</code> will call <code>http://192.168.0.42/foo/</code> and nay call to <code>https://my.api.foo/bar</code> will call <code>http://192.168.0.42/foo/bar</code>.</p>
 <p>In the URL patterns section, you will be able to choose, URL by URL which is private and which is public. By default, all services are private and each call must provide an <code>api key</code>. But sometimes, you need to access a service publicly. In that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern <code>/.*</code>). You also have a <code>private pattern</code> field to restrict public patterns.</p><div id="targets" class="centered-img">
 <img src="../img/new-service-patterns.png" /></div>
-<h3><a href="#secure-exchange" name="secure-exchange" class="anchor"><span class="anchor-link"></span></a>Secure exchange</h3>
+<h3><a href="#otoroshi-exchange-protocol" name="otoroshi-exchange-protocol" class="anchor"><span class="anchor-link"></span></a>Otoroshi exchange protocol</h3>
 <p>If you enable secure communication for a given service, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. Otoroshi is also sending a <code>JWT token</code>in a header named <code>Otoroshi-Claim</code> that the target app can validate.</p><div class="centered-img">
 <img src="../img/exchange.png" /></div>
-<p>The <code>Otoroshi-Claim</code> is a JWT containing some informations about the service that is called and the client if available. The claim is signed with the <code>app.claim.sharedKey</code> config property (or using the <code>$CLAIM_SHAREDKEY</code> env. variable) and uses the <code>HMAC512</code> signing algorythm. In a near future, you will be able to define dedicated keys for specific services and use whatever signing algorythm you want. For example, for a service named <code>my-service</code> with a signing key <code>secret</code>, the basic JWT token that will be sent should look like the following</p>
+<p>The <code>Otoroshi-Claim</code> is a JWT token containing some informations about the service that is called and the client if available. </p>
+<p>By default, the otoroshi jwt token is signed with the <code>app.claim.sharedKey</code> config property (or using the <code>$CLAIM_SHAREDKEY</code> env. variable) and uses the <code>HMAC512</code> signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the <code>Otoroshi exchange protocol</code> section. </p><div class="centered-img">
+<img src="../img/sec-com-signing-bis.png" /></div>
+<p>using another signing algo.</p><div class="centered-img">
+<img src="../img/sec-com-signing-2-bis.png" /></div>
+<p>here you can choose the signing algorithm and the secret/keys used. You can use syntax like <code>${env.MY_ENV_VAR}</code> or <code>${config.my.config.path}</code> to provide secret/keys values. </p>
+<p>For example, for a service named <code>my-service</code> with a signing key <code>secret</code> with <code>HMAC512</code> signing algorythm, the basic JWT token that will be sent should look like the following</p>
 <pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiItLSIsImF1ZCI6Im15LXNlcnZpY2UiLCJpc3MiOiJPdG9yb3NoaSIsImV4cCI6MTUyMTQ0OTkwNiwiaWF0IjoxNTIxNDQ5ODc2LCJqdGkiOiI3MTAyNWNjMTktMmFjNy00Yjk3LTljYzctMWM0ODEzYmM1OTI0In0.mRcfuFVFPLUV1FWHyL6rLHIJIu0KEpBkKQCk5xh-_cBt9cb6uD6enynDU0H1X2VpW5-bFxWCy4U4V78CbAQv4g
 </code></pre>
 <p>if you decode it, the payload will look something like</p>

@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -78,6 +78,12 @@
     <li><a href="integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
   <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -128,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -176,6 +182,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
   <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -232,6 +244,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>LevelDB</li>
       <li>In memory</li>
       <li>Cassandra</li>
+      <li>Mongo</li>
     </ul>
   </li>
   <li><a href="usage/2-services.html">Service is private (Api key access) by default with exclusions</a></li>
@@ -251,7 +264,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="usage/3-apikeys.html#quotas">Support configurable daily quota per Api key</a></li>
   <li><a href="usage/3-apikeys.html#quotas">Support configurable monthly quota per Api key</a></li>
   <li><a href="usage/3-apikeys.html">Api keys are authorized for a group of services</a></li>
-  <li><a href="usage/3-apikeys.html">Api keys can be passed with custom headers, <code>Authorization: Basic</code> headers or `Authorization: Bearer </a></li>
+  <li><a href="usage/3-apikeys.html">Api keys can be passed with custom headers, <code>Authorization: Basic</code> headers, <code>Authorization: Bearer</code> or Cookies</a></li>
   <li><a href="usage/3-apikeys.html#quotas">Add current Api key quotas usage in response headers</a></li>
   <li><a href="usage/3-apikeys.html#quotas">Add current latencies in response headers</a></li>
   <li><a href="usage/2-services.html#service-flags">Support service duplication through web UI</a></li>
@@ -283,6 +296,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Enforce request URL max size</li>
   <li>Enforce request headers max size</li>
   <li>Enforce request cookies max size</li>
+  <li><a href="topics/jwt-verifications.html">Enforce incoming JWT token verification and transformation</a></li>
+  <li><a href="topics/snow-monkey.html">Introduce HTTP level chaos engineering pratices with the Snow Monkey</a></li>
+  <li><a href="topics/service-mesh.html">Native support for service mesh architectures</a></li>
   <li><a href="setup/index.html#first-login">Global live metrics</a></li>
   <li><a href="integrations/statsd.html">Send metrics to a StatsD/Datadog agent</a></li>
   <li><a href="integrations/clevercloud.html">Advanced CleverCloud integration (create services from CleverCloud apps)</a></li>

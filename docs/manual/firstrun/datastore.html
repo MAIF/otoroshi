@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -78,6 +78,12 @@
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -128,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.1.2
+1.2.0
 </div>
 </div>
 <div class="nav-toc">
@@ -177,6 +183,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
   </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+  </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
   <li><a href="../cli.html" class="page">Rust CLI</a></li>
@@ -224,12 +236,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>in memory</li>
   <li>redis</li>
   <li>cassandra</li>
+  <li>mongodb</li>
   <li>levelDB (not suitable for production usage)</li>
 </ul>
 <p>The <strong>levelDB</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode.</p>
 <p>The <strong>in-memory</strong> datastore is kind of interesting&hellip; It can be used for testing purposes, but it is also a good candidate for production because of its fastness. But in that case, you need to provide a way to feed the deployed in-memory instances after the initial boot. In a future release (i.e. not yet :D), we will provide a master/workers slave based on Otoroshi in memory instances and kafka (see <a href="https://github.com/MAIF/otoroshi/issues/8">https://github.com/MAIF/otoroshi/issues/8</a> for more details about the feature).</p>
 <p>The <strong>redis</strong> datastore is quite nice when you want to easily deploy several Otoroshi instances.</p>
-<p>If you need a datastore more scalable than redis, then you can use the <strong>cassandra</strong> datastore.</p>
+<p>If you need a datastore more scalable than redis, then you can use the <strong>cassandra</strong> datastore or the <strong>mongodb</strong> datastore.</p>
 <p>We plan to add more datastores support in the future :)</p><div class="centered-img">
 <img src="../img/datastores.png" /></div>
 <div class="nav-next">
