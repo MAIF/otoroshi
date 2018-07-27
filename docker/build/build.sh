@@ -17,11 +17,11 @@ prepare_build () {
     sbt dist
     sbt assembly
     cd $LOCATION
-    cp ../../otoroshi/target/universal/otoroshi-1.2.0.zip ./otoroshi-dist.zip
+    cp ../../otoroshi/target/universal/otoroshi-1.2.1-dev.zip ./otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
   fi
   unzip otoroshi-dist.zip
-  mv otoroshi-1.2.0 otoroshi
+  mv otoroshi-1.2.1-dev otoroshi
   chmod +x ./otoroshi/bin/otoroshi
   mkdir -p ./otoroshi/imports
   mkdir -p ./otoroshi/leveldb
@@ -55,7 +55,7 @@ build_graal () {
   docker tag otoroshi-graal "maif/otoroshi:graal-$1"
 }
 
-# sh ./build.sh build-all 1.2.0-$(date +%s)
+# sh ./build.sh build-all 1.2.1-dev-$(date +%s)
 echo "Docker images for otoroshi version $2"
 
 case "${1}" in
