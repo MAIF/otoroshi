@@ -42,17 +42,17 @@ build_jdk9 () {
 
 build_jdk10 () {
   docker build --no-cache -f ./Dockerfile-jdk10 -t otoroshi-jdk10 .
-  docker tag otoroshi-jdk9 "maif/otoroshi:jdk10-$1"
+  docker tag otoroshi-jdk10 "maif/otoroshi:jdk10-$1"
 }
 
 build_jdk11 () {
   docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11 .
-  docker tag otoroshi-jdk9 "maif/otoroshi:jdk11-$1"
+  docker tag otoroshi-jdk11 "maif/otoroshi:jdk11-$1"
 }
 
 build_graal () {
   docker build --no-cache -f ./Dockerfile-graal -t otoroshi-graal .
-  docker tag otoroshi-jdk9 "maif/otoroshi:graal-$1"
+  docker tag otoroshi-graal "maif/otoroshi:graal-$1"
 }
 
 # sh ./build.sh build-all 1.2.0-$(date +%s)
