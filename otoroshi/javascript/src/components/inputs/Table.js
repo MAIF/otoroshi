@@ -391,13 +391,11 @@ export class Table extends Component {
           <div className="" role="dialog">
             {this.props.formComponent && (
               <form className="form-horizontal" style={this.props.style}>
-                {
-                  React.createElement(this.props.formComponent, {
-                    onChange: currentItem => this.setState({ currentItem }),
-                    value: this.state.currentItem,
-                    ...(this.props.formPassProps || {})
-                  })
-                }
+                {React.createElement(this.props.formComponent, {
+                  onChange: currentItem => this.setState({ currentItem }),
+                  value: this.state.currentItem,
+                  ...(this.props.formPassProps || {}),
+                })}
               </form>
             )}
             {!this.props.formComponent && (
@@ -429,15 +427,13 @@ export class Table extends Component {
           <div className="" role="dialog">
             {this.props.formComponent && (
               <form className="form-horizontal" style={this.props.style}>
-                {
-                  React.createElement(this.props.formComponent, {
-                    onChange: currentItem => {
-                      this.setState({ currentItem })
-                    },
-                    value: this.state.currentItem,
-                    ...(this.props.formPassProps || {})
-                  })
-                }
+                {React.createElement(this.props.formComponent, {
+                  onChange: currentItem => {
+                    this.setState({ currentItem });
+                  },
+                  value: this.state.currentItem,
+                  ...(this.props.formPassProps || {}),
+                })}
               </form>
             )}
             {!this.props.formComponent && (

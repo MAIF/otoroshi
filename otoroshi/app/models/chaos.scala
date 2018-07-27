@@ -312,7 +312,11 @@ object SnowMonkeyConfig {
   def fromJsonSafe(value: JsValue): JsResult[SnowMonkeyConfig] = _fmt.reads(value)
 }
 
-case class Outage(descriptorId: String, descriptorName: String, startedAt: DateTime, until: LocalTime, duration: FiniteDuration) {
+case class Outage(descriptorId: String,
+                  descriptorName: String,
+                  startedAt: DateTime,
+                  until: LocalTime,
+                  duration: FiniteDuration) {
   def asJson: JsValue = Outage.fmt.writes(this)
 }
 

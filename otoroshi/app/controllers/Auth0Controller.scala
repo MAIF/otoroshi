@@ -39,7 +39,9 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
       case None => NotFound(views.html.otoroshi.error("Private apps are not configured", env))
       case Some(config) => {
         if (env.useUniversalLogin) {
-          Redirect(s"https://${config.domain}/authorize?response_type=code&client_id=${config.clientId}&scope=openid+profile+email+name&redirect_uri=${config.callbackURL}").addingToSession(
+          Redirect(
+            s"https://${config.domain}/authorize?response_type=code&client_id=${config.clientId}&scope=openid+profile+email+name&redirect_uri=${config.callbackURL}"
+          ).addingToSession(
             "pa-redirect-after-login" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
             )
@@ -63,7 +65,9 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           case None => Redirect(controllers.routes.BackOfficeController.index())
           case Some(aconf) => {
             if (env.useUniversalLogin) {
-              Redirect(s"https://${aconf.domain}/authorize?response_type=code&client_id=${aconf.clientId}&scope=openid+profile+email+name&redirect_uri=${aconf.callbackURL}").addingToSession(
+              Redirect(
+                s"https://${aconf.domain}/authorize?response_type=code&client_id=${aconf.clientId}&scope=openid+profile+email+name&redirect_uri=${aconf.callbackURL}"
+              ).addingToSession(
                 "pa-redirect-after-login" -> redirect.getOrElse(
                   routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
                 )

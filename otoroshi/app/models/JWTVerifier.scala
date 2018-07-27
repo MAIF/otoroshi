@@ -126,17 +126,20 @@ sealed trait AlgoSettings extends AsJson {
   def asAlgorithm(implicit env: Env): Option[Algorithm]
 
   def transformValue(secret: String)(implicit env: Env): String = {
-    AlgoSettings.fromCacheOrNot(secret, secret match {
-      case s if s.startsWith("${config.") => {
-        val path = s.replace("}", "").replace("${config.", "")
-        env.configuration.get[String](path)
+    AlgoSettings.fromCacheOrNot(
+      secret,
+      secret match {
+        case s if s.startsWith("${config.") => {
+          val path = s.replace("}", "").replace("${config.", "")
+          env.configuration.get[String](path)
+        }
+        case s if s.startsWith("${env.") => {
+          val envName = s.replace("}", "").replace("${env.", "")
+          System.getenv(envName)
+        }
+        case s => s
       }
-      case s if s.startsWith("${env.") => {
-        val envName = s.replace("}", "").replace("${env.", "")
-        System.getenv(envName)
-      }
-      case s => s
-    })
+    )
   }
 }
 object AlgoSettings extends FromJson[AlgoSettings] {
@@ -156,7 +159,7 @@ object AlgoSettings extends FromJson[AlgoSettings] {
   def fromCacheOrNot(key: String, orElse: => String): String = {
     key match {
       case k if k.startsWith("${") => cache.getOrElseUpdate(key, orElse)
-      case k => key
+      case k                       => key
     }
   }
 }
@@ -219,17 +222,29 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
       val privateBytes = ApacheBase64.decodeBase64(
         value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
       )
-      val keySpec = new PKCS8EncodedKeySpec(privateBytes)
+      val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
       val keyFactory = KeyFactory.getInstance("RSA")
       keyFactory.generatePrivate(keySpec).asInstanceOf[RSAPrivateKey]
     }
   }
 
   override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
-    case 256 => Some(Algorithm.RSA256(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
-    case 384 => Some(Algorithm.RSA384(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
-    case 512 => Some(Algorithm.RSA512(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
-    case _   => None
+    case 256 =>
+      Some(
+        Algorithm.RSA256(getPublicKey(transformValue(publicKey)),
+                         privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+      )
+    case 384 =>
+      Some(
+        Algorithm.RSA384(getPublicKey(transformValue(publicKey)),
+                         privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+      )
+    case 512 =>
+      Some(
+        Algorithm.RSA512(getPublicKey(transformValue(publicKey)),
+                         privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+      )
+    case _ => None
   }
 
   override def asJson = Json.obj(
@@ -278,10 +293,22 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
   }
 
   override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
-    case 256 => Some(Algorithm.ECDSA256(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
-    case 384 => Some(Algorithm.ECDSA384(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
-    case 512 => Some(Algorithm.ECDSA512(getPublicKey(transformValue(publicKey)), privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull))
-    case _   => None
+    case 256 =>
+      Some(
+        Algorithm.ECDSA256(getPublicKey(transformValue(publicKey)),
+                           privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+      )
+    case 384 =>
+      Some(
+        Algorithm.ECDSA384(getPublicKey(transformValue(publicKey)),
+                           privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+      )
+    case 512 =>
+      Some(
+        Algorithm.ECDSA512(getPublicKey(transformValue(publicKey)),
+                           privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+      )
+    case _ => None
   }
 
   override def asJson = Json.obj(
@@ -306,7 +333,10 @@ object MappingSettings extends FromJson[MappingSettings] {
       case e => Left(e)
     } get
 }
-case class MappingSettings(map: Map[String, String] = Map.empty, values: JsObject = Json.obj(), remove: Seq[String] = Seq.empty[String]) extends AsJson {
+case class MappingSettings(map: Map[String, String] = Map.empty,
+                           values: JsObject = Json.obj(),
+                           remove: Seq[String] = Seq.empty[String])
+    extends AsJson {
   override def asJson = Json.obj(
     "map"    -> JsObject(map.mapValues(JsString.apply)),
     "values" -> values,
@@ -460,95 +490,109 @@ sealed trait JwtVerifier extends AsJson {
   }
 
   def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(
-    f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     internalVerify(request, desc)(f).map {
-      case Left(badResult) => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
   }
 
   def verify(request: RequestHeader, desc: ServiceDescriptor)(
-    f: JwtInjection => Future[Result]
+      f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     internalVerify(request, desc)(f).map {
-      case Left(badResult) => badResult
+      case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
   }
 
   private def internalVerify[A](request: RequestHeader, desc: ServiceDescriptor)(
-    f: JwtInjection => Future[A]
+      f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
     import Implicits._
 
     source.token(request) match {
       case None if strict =>
-        Errors.craftResponseResult(
-          "error.expected.token.not.found",
-          Results.BadRequest,
-          request,
-          Some(desc),
-          None
-        ).left[A]
+        Errors
+          .craftResponseResult(
+            "error.expected.token.not.found",
+            Results.BadRequest,
+            request,
+            Some(desc),
+            None
+          )
+          .left[A]
       case None if !strict => f(JwtInjection()).right[Result]
       case Some(token) =>
         algoSettings.asAlgorithm match {
           case None =>
-            Errors.craftResponseResult(
-              "error.bad.input.algorithm.name",
-              Results.BadRequest,
-              request,
-              Some(desc),
-              None
-            ).left[A]
+            Errors
+              .craftResponseResult(
+                "error.bad.input.algorithm.name",
+                Results.BadRequest,
+                request,
+                Some(desc),
+                None
+              )
+              .left[A]
           case Some(algorithm) => {
             val verification = strategy.verificationSettings.asVerification(algorithm)
             Try(verification.build().verify(token)) match {
               case Failure(e) =>
                 logger.error("Bad JWT token", e)
-                Errors.craftResponseResult(
-                  "error.bad.token",
-                  Results.BadRequest,
-                  request,
-                  Some(desc),
-                  None
-                ).left[A]
+                Errors
+                  .craftResponseResult(
+                    "error.bad.token",
+                    Results.BadRequest,
+                    request,
+                    Some(desc),
+                    None
+                  )
+                  .left[A]
               case Success(decodedToken) =>
                 strategy match {
                   case s @ PassThrough(_) => f(JwtInjection()).right[Result]
                   case s @ Sign(_, aSettings) =>
                     aSettings.asAlgorithm match {
                       case None =>
-                        Errors.craftResponseResult(
-                          "error.bad.output.algorithm.name",
-                          Results.BadRequest,
-                          request,
-                          Some(desc),
-                          None
-                        ).left[A]
+                        Errors
+                          .craftResponseResult(
+                            "error.bad.output.algorithm.name",
+                            Results.BadRequest,
+                            request,
+                            Some(desc),
+                            None
+                          )
+                          .left[A]
                       case Some(outputAlgorithm) => {
                         val newToken = sign(Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject],
-                          outputAlgorithm)
+                                            outputAlgorithm)
                         f(source.asJwtInjection(newToken)).right[Result]
                       }
                     }
                   case s @ Transform(_, tSettings, aSettings) =>
                     aSettings.asAlgorithm match {
                       case None =>
-                        Errors.craftResponseResult(
-                          "error.bad.output.algorithm.name",
-                          Results.BadRequest,
-                          request,
-                          Some(desc),
-                          None
-                        ).left[A]
+                        Errors
+                          .craftResponseResult(
+                            "error.bad.output.algorithm.name",
+                            Results.BadRequest,
+                            request,
+                            Some(desc),
+                            None
+                          )
+                          .left[A]
                       case Some(outputAlgorithm) => {
                         val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
-                        val newJsonToken: JsObject = JsObject((tSettings.mappingSettings.map.foldLeft(jsonToken)(
-                          (a, b) => a.+(b._2, (a \ b._1).as[JsValue]).-(b._1)
-                        ) ++ tSettings.mappingSettings.values).fields.filterNot(f => tSettings.mappingSettings.remove.contains(f._1)).toMap)
+                        val newJsonToken: JsObject = JsObject(
+                          (tSettings.mappingSettings.map.foldLeft(jsonToken)(
+                            (a, b) => a.+(b._2, (a \ b._1).as[JsValue]).-(b._1)
+                          ) ++ tSettings.mappingSettings.values).fields
+                            .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
+                            .toMap
+                        )
                         val newToken = sign(newJsonToken, outputAlgorithm)
                         source match {
                           case _: InQueryParam => f(tSettings.location.asJwtInjection(newToken)).right[Result]
@@ -573,10 +617,11 @@ case class LocalJwtVerifier(
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
-) extends JwtVerifier with AsJson {
+) extends JwtVerifier
+    with AsJson {
 
   def asJson: JsValue = Json.obj(
-    "type" -> "local",
+    "type"         -> "local",
     "enabled"      -> this.enabled,
     "strict"       -> this.strict,
     "source"       -> this.source.asJson,
@@ -590,40 +635,48 @@ case class LocalJwtVerifier(
 case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with AsJson {
 
   def asJson: JsValue = Json.obj(
-    "type" -> "ref",
+    "type"    -> "ref",
     "id"      -> this.id,
     "enabled" -> this.enabled
   )
 
-  override def isRef = true
-  override def strict = throw new RuntimeException("Should never be called ...")
-  override def source = throw new RuntimeException("Should never be called ...")
+  override def isRef        = true
+  override def strict       = throw new RuntimeException("Should never be called ...")
+  override def source       = throw new RuntimeException("Should never be called ...")
   override def algoSettings = throw new RuntimeException("Should never be called ...")
-  override def strategy = throw new RuntimeException("Should never be called ...")
+  override def strategy     = throw new RuntimeException("Should never be called ...")
 
-  override def verify(request: RequestHeader, desc: ServiceDescriptor)(f: JwtInjection => Future[Result])(implicit ec: ExecutionContext, env: Env) = {
+  override def verify(request: RequestHeader, desc: ServiceDescriptor)(
+      f: JwtInjection => Future[Result]
+  )(implicit ec: ExecutionContext, env: Env) = {
     env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
       case Some(verifier) => verifier.verify(request, desc)(f)
-      case None => Errors.craftResponseResult(
-        "error.bad.globaljwtverifier.id",
-        Results.InternalServerError,
-        request,
-        Some(desc),
-        None
-      )
+      case None =>
+        Errors.craftResponseResult(
+          "error.bad.globaljwtverifier.id",
+          Results.InternalServerError,
+          request,
+          Some(desc),
+          None
+        )
     }
   }
 
-  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env) = {
+  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env) = {
     env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
       case Some(verifier) => verifier.verifyWs(request, desc)(f)
-      case None => Errors.craftResponseResult(
-        "error.bad.globaljwtverifier.id",
-        Results.InternalServerError,
-        request,
-        Some(desc),
-        None
-      ).map(a => Left(a))
+      case None =>
+        Errors
+          .craftResponseResult(
+            "error.bad.globaljwtverifier.id",
+            Results.InternalServerError,
+            request,
+            Some(desc),
+            None
+          )
+          .map(a => Left(a))
     }
   }
 }
@@ -631,10 +684,12 @@ case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with
 object RefJwtVerifier extends FromJson[RefJwtVerifier] {
   override def fromJson(json: JsValue): Either[Throwable, RefJwtVerifier] =
     Try {
-        Right[Throwable, RefJwtVerifier](RefJwtVerifier(
+      Right[Throwable, RefJwtVerifier](
+        RefJwtVerifier(
           id = (json \ "id").as[String],
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false)
-        ))
+        )
+      )
     } recover {
       case e => Left[Throwable, RefJwtVerifier](e)
     } get
@@ -662,18 +717,19 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
 }
 
 case class GlobalJwtVerifier(
-  enabled: Boolean = false,
-  id: String,
-  name: String,
-  desc: String,
-  strict: Boolean = true,
-  source: JwtTokenLocation = InHeader("X-JWT-Token"),
-  algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
-  strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
-) extends JwtVerifier with AsJson {
+    enabled: Boolean = false,
+    id: String,
+    name: String,
+    desc: String,
+    strict: Boolean = true,
+    source: JwtTokenLocation = InHeader("X-JWT-Token"),
+    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
+) extends JwtVerifier
+    with AsJson {
 
   def asJson: JsValue = Json.obj(
-    "type" -> "global",
+    "type"         -> "global",
     "enabled"      -> this.enabled,
     "id"           -> this.id,
     "name"         -> this.name,
@@ -692,7 +748,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
   val _fmt = new Format[GlobalJwtVerifier] {
 
     override def reads(json: JsValue) = fromJson(json) match {
-      case Left(e) => JsError(e.getMessage)
+      case Left(e)  => JsError(e.getMessage)
       case Right(v) => JsSuccess(v)
     }
 
@@ -727,9 +783,9 @@ object JwtVerifier extends FromJson[JwtVerifier] {
   override def fromJson(json: JsValue): Either[Throwable, JwtVerifier] = {
     Try {
       (json \ "type").as[String] match {
-        case "global"  => GlobalJwtVerifier.fromJson(json)
-        case "local" => LocalJwtVerifier.fromJson(json)
-        case "ref" => RefJwtVerifier.fromJson(json)
+        case "global" => GlobalJwtVerifier.fromJson(json)
+        case "local"  => LocalJwtVerifier.fromJson(json)
+        case "ref"    => RefJwtVerifier.fromJson(json)
       }
     } recover {
       case e => Left(e)
@@ -813,7 +869,7 @@ object JwtVerifier extends FromJson[JwtVerifier] {
 
 object Implicits {
   implicit class EnhancedFuture[A](val fu: Future[A]) extends AnyVal {
-    def left[B](implicit ec: ExecutionContext): Future[Either[A, B]] = fu.map(a => Left[A, B](a))
+    def left[B](implicit ec: ExecutionContext): Future[Either[A, B]]  = fu.map(a => Left[A, B](a))
     def right[B](implicit ec: ExecutionContext): Future[Either[B, A]] = fu.map(a => Right[B, A](a))
   }
 }

@@ -765,12 +765,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"
     ),
     "properties" -> Json.obj(
-      "type"    -> SimpleStringType ~~> "A string with value 'local'",
-      "enabled" -> SimpleBooleanType ~~> "Is it enabled",
-      "strict" -> SimpleBooleanType ~~> "Does it fail if JWT not found",
-      "source" -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "type"         -> SimpleStringType ~~> "A string with value 'local'",
+      "enabled"      -> SimpleBooleanType ~~> "Is it enabled",
+      "strict"       -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source"       -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
       "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
-      "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
+      "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
   def GlobalJwtVerifier = Json.obj(
@@ -788,14 +788,14 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"
     ),
     "properties" -> Json.obj(
-      "id" -> SimpleStringType ~~> "Verifier id",
-      "name" -> SimpleStringType ~~> "Verifier name",
-      "desc" -> SimpleStringType ~~> "Verifier description",
-      "enabled" -> SimpleBooleanType ~~> "Is it enabled",
-      "strict" -> SimpleBooleanType ~~> "Does it fail if JWT not found",
-      "source" -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "id"           -> SimpleStringType ~~> "Verifier id",
+      "name"         -> SimpleStringType ~~> "Verifier name",
+      "desc"         -> SimpleStringType ~~> "Verifier description",
+      "enabled"      -> SimpleBooleanType ~~> "Is it enabled",
+      "strict"       -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source"       -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
       "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
-      "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
+      "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
   def InQueryParam = Json.obj(
@@ -807,7 +807,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     ),
     "properties" -> Json.obj(
       "type" -> SimpleStringType ~~> "String with value InQueryParam",
-      "name"    -> SimpleStringType ~~> "Name of the query param"
+      "name" -> SimpleStringType ~~> "Name of the query param"
     )
   )
   def InHeader = Json.obj(
@@ -819,9 +819,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "remove"
     ),
     "properties" -> Json.obj(
-      "type" -> SimpleStringType ~~> "String with value InHeader",
-      "name"    -> SimpleStringType ~~> "Name of the header",
-      "remove"    -> SimpleStringType ~~> "Remove regex inside the value, like 'Bearer '"
+      "type"   -> SimpleStringType ~~> "String with value InHeader",
+      "name"   -> SimpleStringType ~~> "Name of the header",
+      "remove" -> SimpleStringType ~~> "Remove regex inside the value, like 'Bearer '"
     )
   )
   def InCookie = Json.obj(
@@ -833,7 +833,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     ),
     "properties" -> Json.obj(
       "type" -> SimpleStringType ~~> "String with value InCookie",
-      "name"    -> SimpleStringType ~~> "Name of the cookie"
+      "name" -> SimpleStringType ~~> "Name of the cookie"
     )
   )
   def HSAlgoSettings = Json.obj(
@@ -845,9 +845,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "secret",
     ),
     "properties" -> Json.obj(
-      "type" -> SimpleStringType ~~> "String with value HSAlgoSettings",
-      "size"    -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
-      "secret"    -> SimpleStringType ~~> "The secret value for the HMAC function"
+      "type"   -> SimpleStringType ~~> "String with value HSAlgoSettings",
+      "size"   -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "secret" -> SimpleStringType ~~> "The secret value for the HMAC function"
     )
   )
   def RSAlgoSettings = Json.obj(
@@ -859,10 +859,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "publicKey",
     ),
     "properties" -> Json.obj(
-      "type" -> SimpleStringType ~~> "String with value RSAlgoSettings",
-      "size"    -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
-      "publicKey"    -> SimpleStringType ~~> "The public key for the RSA function",
-      "privateKey"    -> SimpleStringType ~~> "The private key for the RSA function"
+      "type"       -> SimpleStringType ~~> "String with value RSAlgoSettings",
+      "size"       -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "publicKey"  -> SimpleStringType ~~> "The public key for the RSA function",
+      "privateKey" -> SimpleStringType ~~> "The private key for the RSA function"
     )
   )
   def ESAlgoSettings = Json.obj(
@@ -874,10 +874,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "publicKey",
     ),
     "properties" -> Json.obj(
-      "type" -> SimpleStringType ~~> "String with value ESAlgoSettings",
-      "size"    -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
-      "publicKey"    -> SimpleStringType ~~> "The public key for the RSA function",
-      "privateKey"    -> SimpleStringType ~~> "The private key for the RSA function"
+      "type"       -> SimpleStringType ~~> "String with value ESAlgoSettings",
+      "size"       -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "publicKey"  -> SimpleStringType ~~> "The public key for the RSA function",
+      "privateKey" -> SimpleStringType ~~> "The private key for the RSA function"
     )
   )
   def MappingSettings = Json.obj(
@@ -890,7 +890,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     ),
     "properties" -> Json.obj(
       "map"    -> SimpleObjectType ~~> "Fields to rename",
-      "values"      -> SimpleObjectType ~~> "Fields to set",
+      "values" -> SimpleObjectType ~~> "Fields to set",
       "remove" -> ArrayOf(SimpleStringType) ~~> "Fields to remove"
     )
   )
@@ -902,8 +902,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "mappingSettings"
     ),
     "properties" -> Json.obj(
-      "location"    -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
-      "mappingSettings"      -> Ref("MappingSettings")
+      "location"        -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "mappingSettings" -> Ref("MappingSettings")
     )
   )
   def VerificationSettings = Json.obj(
@@ -913,8 +913,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "fields"
     ),
     "properties" -> Json.obj(
-      "fields"    -> SimpleObjectType ~~> "Fields to verify with their values",
-      "mappingSettings"      -> Ref("MappingSettings")
+      "fields"          -> SimpleObjectType ~~> "Fields to verify with their values",
+      "mappingSettings" -> Ref("MappingSettings")
     )
   )
   def PassThrough = Json.obj(
@@ -925,8 +925,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "verificationSettings"
     ),
     "properties" -> Json.obj(
-      "type" -> SimpleStringType ~~> "String with value PassThrough",
-      "verificationSettings"      -> Ref("VerificationSettings")
+      "type"                 -> SimpleStringType ~~> "String with value PassThrough",
+      "verificationSettings" -> Ref("VerificationSettings")
     )
   )
   def Sign = Json.obj(
@@ -938,9 +938,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "algoSettings"
     ),
     "properties" -> Json.obj(
-      "type" -> SimpleStringType ~~> "String with value Sign",
-      "verificationSettings"      -> Ref("VerificationSettings"),
-      "algoSettings"      -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
+      "type"                 -> SimpleStringType ~~> "String with value Sign",
+      "verificationSettings" -> Ref("VerificationSettings"),
+      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
     )
   )
   def Transform = Json.obj(
@@ -952,10 +952,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "algoSettings"
     ),
     "properties" -> Json.obj(
-      "type" -> SimpleStringType ~~> "String with value Transform",
-      "verificationSettings"      -> Ref("VerificationSettings"),
-      "transformSettings"      -> Ref("TransformSettings"),
-      "algoSettings"      -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
+      "type"                 -> SimpleStringType ~~> "String with value Transform",
+      "verificationSettings" -> Ref("VerificationSettings"),
+      "transformSettings"    -> Ref("TransformSettings"),
+      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
     )
   )
 

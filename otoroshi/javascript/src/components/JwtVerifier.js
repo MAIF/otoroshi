@@ -235,18 +235,17 @@ export class AlgoSettings extends Component {
 }
 
 export class JwtVerifier extends Component {
-
   static defaultVerifier = {
-    "type":"local",
-    "enabled":false,
-    "strict":true,
-    "source":{"type":"InHeader","name":"X-JWT-Token","remove":""},
-    "algoSettings":{"type":"HSAlgoSettings","size":512,"secret":"secret"},
-    "strategy":{"type":"PassThrough","verificationSettings":{"fields":{"iss":"The Issuer"}}}
+    type: 'local',
+    enabled: false,
+    strict: true,
+    source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
+    algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
+    strategy: { type: 'PassThrough', verificationSettings: { fields: { iss: 'The Issuer' } } },
   };
 
   changeTheValue = (name, value) => {
-    console.log('changeTheValue', name, value)
+    console.log('changeTheValue', name, value);
     if (this.props.onChange) {
       const clone = _.cloneDeep(this.props.value || this.props.verifier);
       const path = name.startsWith('.') ? name.substr(1) : name;
@@ -395,9 +394,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
-            onChange={v =>
-              changeTheValue(path + '.strategy.verificationSettings.fields', v)
-            }
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
         ]}
         {verifier.strategy.type === 'Sign' && [
@@ -407,9 +404,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
-            onChange={v =>
-              changeTheValue(path + '.strategy.verificationSettings.fields', v)
-            }
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
           <AlgoSettings
             algoTitle="Re-sign algo."
@@ -425,9 +420,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
-            onChange={v =>
-              changeTheValue(path + '.strategy.verificationSettings.fields', v)
-            }
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
           <AlgoSettings
             algoTitle="Re-sign algo."
@@ -445,46 +438,31 @@ export class JwtVerifier extends Component {
             label="Rename token fields"
             placeholderKey="Field name"
             placeholderValue="Field value"
-            value={
-              verifier.strategy.transformSettings.mappingSettings.map
-            }
+            value={verifier.strategy.transformSettings.mappingSettings.map}
             help="When the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name"
             onChange={v =>
-              changeTheValue(
-                path + '.strategy.transformSettings.mappingSettings.map',
-                v
-              )
+              changeTheValue(path + '.strategy.transformSettings.mappingSettings.map', v)
             }
           />,
           <ObjectInput
             label="Set token fields"
             placeholderKey="Field name"
             placeholderValue="Field value"
-            value={
-              verifier.strategy.transformSettings.mappingSettings.values
-            }
+            value={verifier.strategy.transformSettings.mappingSettings.values}
             help="When the JWT token is transformed, it is possible to add new field with static values, just specify field name and value"
             onChange={v =>
-              changeTheValue(
-                path + '.strategy.transformSettings.mappingSettings.values',
-                v
-              )
+              changeTheValue(path + '.strategy.transformSettings.mappingSettings.values', v)
             }
           />,
-          <ArrayInput 
+          <ArrayInput
             label="Remove token fields"
             placeholder="Field name"
-            value={
-              verifier.strategy.transformSettings.mappingSettings.remove
-            }
+            value={verifier.strategy.transformSettings.mappingSettings.remove}
             help="When the JWT token is transformed, it is possible to remove fields"
             onChange={v =>
-              changeTheValue(
-                path + '.strategy.transformSettings.mappingSettings.remove',
-                v
-              )
+              changeTheValue(path + '.strategy.transformSettings.mappingSettings.remove', v)
             }
-          />
+          />,
         ]}
       </div>
     );

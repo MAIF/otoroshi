@@ -21,8 +21,8 @@ case class OtoroshiClaim(
     jti: String, // unique id forever
     metadata: Map[String, String] = Map.empty[String, String] // private claim
 ) {
-  def toJson: JsValue                                = OtoroshiClaim.format.writes(this)
-  def serialize(jwtSettings: AlgoSettings)(implicit env: Env): String           = OtoroshiClaim.serialize(this, jwtSettings)(env)
+  def toJson: JsValue                                                 = OtoroshiClaim.format.writes(this)
+  def serialize(jwtSettings: AlgoSettings)(implicit env: Env): String = OtoroshiClaim.serialize(this, jwtSettings)(env)
   def withClaims(claims: Option[Map[String, String]]): OtoroshiClaim = claims match {
     case Some(c) => withClaims(c)
     case None    => this
@@ -55,8 +55,8 @@ object OtoroshiClaim {
       .withJWTId(claim.jti)
     val signed = claim.metadata.toSeq
       .foldLeft[JWTCreator.Builder](builder) {
-      case (build, (key, value)) => build.withClaim(key, value)
-    }
+        case (build, (key, value)) => build.withClaim(key, value)
+      }
       .sign(algorithm)
     // logger.trace(s"JWT: $signed")
     signed

@@ -455,7 +455,7 @@ object ServiceDescriptor {
       "metadata"                   -> JsObject(sd.metadata.mapValues(JsString.apply)),
       "chaosConfig"                -> sd.chaosConfig.asJson,
       "jwtVerifier"                -> sd.jwtVerifier.asJson,
-      "secComSettings"            -> sd.secComSettings.asJson
+      "secComSettings"             -> sd.secComSettings.asJson
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

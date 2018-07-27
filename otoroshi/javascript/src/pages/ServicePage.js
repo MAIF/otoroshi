@@ -22,7 +22,7 @@ import { createTooltip } from '../tooltips';
 import { WithEnv } from '../components/WithEnv';
 import Select from 'react-select';
 import { ChaosConfigWithSkin } from '../components/ChaosConfig';
-import {JwtVerifier, LocationSettings} from '../components/JwtVerifier';
+import { JwtVerifier, LocationSettings } from '../components/JwtVerifier';
 import { AlgoSettings } from '../components/JwtVerifier';
 
 function shallowDiffers(a, b) {
@@ -748,15 +748,22 @@ export class ServicePage extends Component {
               <div className="form-group">
                 <label className="col-xs-12 col-sm-2 control-label" />
                 <div className="col-sm-10">
-                  <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948', width: '100%' }}>
-                    When an app. enforces user login (privateApp), it can be nice to allow logged users to access apps API
-                    without using an apikey (because the user is logged in, the app is exposing UI and API and we don't want
-                    to leak apikeys). By default Otoroshi allow this for historical reasons, but it means that you have
-                    anticipate that sometimes your api will be called whitout an apikey. If you don't want this behavior,
-                    juste enable the 'stricly private' mode.
+                  <p
+                    style={{
+                      padding: 10,
+                      borderRadius: 5,
+                      backgroundColor: '#494948',
+                      width: '100%',
+                    }}>
+                    When an app. enforces user login (privateApp), it can be nice to allow logged
+                    users to access apps API without using an apikey (because the user is logged in,
+                    the app is exposing UI and API and we don't want to leak apikeys). By default
+                    Otoroshi allow this for historical reasons, but it means that you have
+                    anticipate that sometimes your api will be called whitout an apikey. If you
+                    don't want this behavior, juste enable the 'stricly private' mode.
                   </p>
                 </div>
-              </div>
+              </div>,
             ]}
           </Collapse>
           <Collapse
@@ -962,12 +969,16 @@ export class ServicePage extends Component {
               value={this.state.service.jwtVerifier.type}
               onChange={e => {
                 switch (e) {
-                  case 'local': this.changeTheValue('jwtVerifier', JwtVerifier.defaultVerifier ); break;
-                  case 'ref': this.changeTheValue('jwtVerifier', {
-                    type: 'ref',
-                    enabled: this.state.service.jwtVerifier.enabled,
-                    id: null
-                  }); break;
+                  case 'local':
+                    this.changeTheValue('jwtVerifier', JwtVerifier.defaultVerifier);
+                    break;
+                  case 'ref':
+                    this.changeTheValue('jwtVerifier', {
+                      type: 'ref',
+                      enabled: this.state.service.jwtVerifier.enabled,
+                      id: null,
+                    });
+                    break;
                 }
               }}
               possibleValues={[
@@ -976,7 +987,7 @@ export class ServicePage extends Component {
               ]}
               help="..."
             />
-            {this.state.service.jwtVerifier.type === "ref" && (
+            {this.state.service.jwtVerifier.type === 'ref' && (
               <div>
                 <SelectInput
                   label="Verifier"
@@ -993,21 +1004,32 @@ export class ServicePage extends Component {
                   onChange={v => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
                 <div className="form-group">
-                  <label className="col-xs-12 col-sm-2 control-label">
-                  </label>
+                  <label className="col-xs-12 col-sm-2 control-label" />
                   <div className="col-sm-10">
-                    {!this.state.service.jwtVerifier.id && <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
-                      <i className="glyphicon glyphicon-plus"/> Create a new Jwt Verifier config
-                    </a>}
-                    {this.state.service.jwtVerifier.id && <a href={`/bo/dashboard/jwt-verifiers/edit/${this.state.service.jwtVerifier.id}`} className="btn btn-success">
-                      <i className="glyphicon glyphicon-edit"/> Edit the global Jwt Verifier
-                    </a>}
+                    {!this.state.service.jwtVerifier.id && (
+                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
+                        <i className="glyphicon glyphicon-plus" /> Create a new Jwt Verifier config
+                      </a>
+                    )}
+                    {this.state.service.jwtVerifier.id && (
+                      <a
+                        href={`/bo/dashboard/jwt-verifiers/edit/${
+                          this.state.service.jwtVerifier.id
+                        }`}
+                        className="btn btn-success">
+                        <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
             )}
-            {this.state.service.jwtVerifier.type === "local" && (
-              <JwtVerifier path="jwtVerifier" changeTheValue={this.changeTheValue} verifier={this.state.service.jwtVerifier} />
+            {this.state.service.jwtVerifier.type === 'local' && (
+              <JwtVerifier
+                path="jwtVerifier"
+                changeTheValue={this.changeTheValue}
+                verifier={this.state.service.jwtVerifier}
+              />
             )}
           </Collapse>
           <Collapse

@@ -35,8 +35,8 @@ class CassandraDataStores(configuration: Configuration,
     configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
   lazy val cassandraReplicationFactor: Int =
     configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
-  lazy val cassandraPort: Int   = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
-  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
+  lazy val cassandraPort: Int       = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
+  lazy val redisStatsItems: Int     = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
   lazy val username: Option[String] = configuration.getOptional[String]("app.cassandra.username")
   lazy val password: Option[String] = configuration.getOptional[String]("app.cassandra.password")
 
@@ -48,14 +48,16 @@ class CassandraDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis = new CassandraRedis(actorSystem,
-                                      cassandraReplicationStrategy,
-                                      cassandraReplicationFactor,
-                                      cassandraReplicationOptions,
-                                      cassandraContactPoints,
-                                      cassandraPort,
-                                      username,
-                                      password)
+  lazy val redis = new CassandraRedis(
+    actorSystem,
+    cassandraReplicationStrategy,
+    cassandraReplicationFactor,
+    cassandraReplicationOptions,
+    cassandraContactPoints,
+    cassandraPort,
+    username,
+    password
+  )
 
   override def before(configuration: Configuration,
                       environment: Environment,

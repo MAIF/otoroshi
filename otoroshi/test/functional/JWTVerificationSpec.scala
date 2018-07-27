@@ -25,7 +25,7 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
         val publicBytes = ApacheBase64.decodeBase64(
           value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
         )
-        val keySpec = new X509EncodedKeySpec(publicBytes)
+        val keySpec    = new X509EncodedKeySpec(publicBytes)
         val keyFactory = KeyFactory.getInstance("EC")
         keyFactory.generatePublic(keySpec).asInstanceOf[ECPublicKey]
       }
@@ -34,37 +34,41 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
         val publicBytes = ApacheBase64.decodeBase64(
           value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
         )
-        val keySpec = new PKCS8EncodedKeySpec(publicBytes)
+        val keySpec    = new PKCS8EncodedKeySpec(publicBytes)
         val keyFactory = KeyFactory.getInstance("EC")
         keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
       }
 
-      val algo1 = Algorithm.ECDSA512(getPublicKey(
-        """MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
+      val algo1 = Algorithm.ECDSA512(
+        getPublicKey("""MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
           |MMB/9ZENy8KZ+us26i/6PiBBc7XaiEi6Q8Icz2tiazwSpyLPeBrFVPFkPgIADyLa
           |T0fp7D2JKHWpdrWQvGLLMwGqYCaaDi79KugPo6V4bnpLBlVtbH4ogg0Hqv89BVyI
-          |ZfwWPCBH+Zssei1VlgM=""".stripMargin), getPrivateKey(
-        """MIHtAgEAMBAGByqGSM49AgEGBSuBBAAjBIHVMIHSAgEBBEHzl1DpZSQJ8YhCbN/u
+          |ZfwWPCBH+Zssei1VlgM=""".stripMargin),
+        getPrivateKey("""MIHtAgEAMBAGByqGSM49AgEGBSuBBAAjBIHVMIHSAgEBBEHzl1DpZSQJ8YhCbN/u
           |vo5SOu0BjDDX9Gub6zsBW6B2TxRzb5sBeQaWVscDUZha4Xr1HEWpVtua9+nEQU/9
           |Aq9Pl6GBiQOBhgAEAJhvCa6S89ePqlLO6MRV9KQqHvdAITDAf/WRDcvCmfrrNuov
           |+j4gQXO12ohIukPCHM9rYms8Eqciz3gaxVTxZD4CAA8i2k9H6ew9iSh1qXa1kLxi
-          |yzMBqmAmmg4u/SroD6OleG56SwZVbWx+KIINB6r/PQVciGX8FjwgR/mbLHotVZYD""".stripMargin))
-      val algo2 = Algorithm.ECDSA512(getPublicKey(
-        """MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
+          |yzMBqmAmmg4u/SroD6OleG56SwZVbWx+KIINB6r/PQVciGX8FjwgR/mbLHotVZYD""".stripMargin)
+      )
+      val algo2 = Algorithm.ECDSA512(
+        getPublicKey("""MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
           |MMB/9ZENy8KZ+us26i/6PiBBc7XaiEi6Q8Icz2tiazwSpyLPeBrFVPFkPgIADyLa
           |T0fp7D2JKHWpdrWQvGLLMwGqYCaaDi79KugPo6V4bnpLBlVtbH4ogg0Hqv89BVyI
-          |ZfwWPCBH+Zssei1VlgM=""".stripMargin), null)
-
+          |ZfwWPCBH+Zssei1VlgM=""".stripMargin),
+        null
+      )
 
       import com.auth0.jwt.JWT
 
       val token1 = JWT.create.withIssuer("auth0").sign(algo1)
 
-      val verifier1 = JWT.require(algo1)
+      val verifier1 = JWT
+        .require(algo1)
         .withIssuer("auth0")
         .build()
 
-      val verifier2 = JWT.require(algo2)
+      val verifier2 = JWT
+        .require(algo2)
         .withIssuer("auth0")
         .build()
 
@@ -87,7 +91,7 @@ object Implicit {
 }
 
 class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
@@ -165,7 +169,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> serviceHost,
-            "X-JWT-Token" -> JWT.create()
+            "X-JWT-Token" -> JWT
+              .create()
               .withIssuer("foo")
               .withClaim("bar", "yo")
               .sign(algorithm)
@@ -179,7 +184,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> serviceHost,
-            "X-JWT-Token" -> JWT.create()
+            "X-JWT-Token" -> JWT
+              .create()
               .withIssuer("mathieu")
               .withClaim("bar", "yo")
               .sign(algorithm)
@@ -193,7 +199,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> serviceHost,
-            "X-JWT-Token" -> JWT.create()
+            "X-JWT-Token" -> JWT
+              .create()
               .withIssuer("foo")
               .withClaim("bar", "foo")
               .sign(algorithm)
@@ -226,34 +233,40 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       import Implicit._
 
       import com.auth0.jwt.algorithms.Algorithm
-      val key = "very secret"
-      val algorithm = Algorithm.HMAC512("secret")
+      val key        = "very secret"
+      val algorithm  = Algorithm.HMAC512("secret")
       val algorithm2 = Algorithm.HMAC512(key)
 
-      val goodJwt = JWT.create()
+      val goodJwt = JWT
+        .create()
         .withIssuer("foo")
         .withClaim("bar", "yo")
         .sign(algorithm)
 
-      val goodJwtResigned = JWT.create()
+      val goodJwtResigned = JWT
+        .create()
         .withIssuer("foo")
         .withClaim("bar", "yo")
         .sign(algorithm2)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { r =>
-        r.getHeader("X-JWT-Token").asOption.map(a => a.value()).foreach { a =>
-          val v = JWT
-            .require(algorithm2)
-            .withIssuer("foo")
-            .build()
-          val verified = Try { v.verify(a) }.map(_ => true).getOrElse(false)
-          verified mustEqual true
+      val basicTestServer1 = TargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json", { r =>
+          r.getHeader("X-JWT-Token").asOption.map(a => a.value()).foreach { a =>
+            val v = JWT
+              .require(algorithm2)
+              .withIssuer("foo")
+              .build()
+            val verified = Try { v.verify(a) }.map(_ => true).getOrElse(false)
+            verified mustEqual true
+          }
+          callCounter1.incrementAndGet()
+          basicTestExpectedBody1
         }
-        callCounter1.incrementAndGet()
-        basicTestExpectedBody1
-      }).await()
+      ).await()
 
       val service = ServiceDescriptor(
         id = "jwt-test",
@@ -298,7 +311,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> goodJwt
           )
           .get()
@@ -310,7 +323,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> serviceHost,
-            "X-JWT-Token" -> JWT.create()
+            "X-JWT-Token" -> JWT
+              .create()
               .withIssuer("mathieu")
               .withClaim("bar", "yo")
               .sign(algorithm)
@@ -324,7 +338,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> serviceHost,
-            "X-JWT-Token" -> JWT.create()
+            "X-JWT-Token" -> JWT
+              .create()
               .withIssuer("foo")
               .withClaim("bar", "foo")
               .sign(algorithm)
@@ -357,11 +372,12 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       import Implicit._
 
       import com.auth0.jwt.algorithms.Algorithm
-      val key = "very secret"
-      val algorithm = Algorithm.HMAC512("secret")
+      val key        = "very secret"
+      val algorithm  = Algorithm.HMAC512("secret")
       val algorithm2 = Algorithm.HMAC512(key)
 
-      val goodJwt = JWT.create()
+      val goodJwt = JWT
+        .create()
         .withIssuer("foo")
         .withClaim("bar", "yo")
         .withClaim("foo", "bar")
@@ -369,25 +385,29 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { r =>
-        r.getHeader("X-Barrr").asOption.map(a => a.value()).foreach { a =>
-          import collection.JavaConverters._
-          val v = JWT
-            .require(algorithm2)
-            .withIssuer("foo")
-            .withClaim("x-bar", "yo")
-            .withClaim("x-yo", "foo")
-            .build()
-          val verified = Try {
-            val dec = v.verify(a)
-            println(dec.getClaims.asScala.mapValues(v => v.asString()))
-            dec
-          }.map(_ => true).getOrElse(false)
-          verified mustEqual true
+      val basicTestServer1 = TargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json", { r =>
+          r.getHeader("X-Barrr").asOption.map(a => a.value()).foreach { a =>
+            import collection.JavaConverters._
+            val v = JWT
+              .require(algorithm2)
+              .withIssuer("foo")
+              .withClaim("x-bar", "yo")
+              .withClaim("x-yo", "foo")
+              .build()
+            val verified = Try {
+              val dec = v.verify(a)
+              println(dec.getClaims.asScala.mapValues(v => v.asString()))
+              dec
+            }.map(_ => true).getOrElse(false)
+            verified mustEqual true
+          }
+          callCounter1.incrementAndGet()
+          basicTestExpectedBody1
         }
-        callCounter1.incrementAndGet()
-        basicTestExpectedBody1
-      }).await()
+      ).await()
 
       val service = ServiceDescriptor(
         id = "jwt-test",
@@ -415,7 +435,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
             transformSettings = TransformSettings(
               location = InHeader("X-Barrr"),
               mappingSettings = MappingSettings(
-                map = Map("bar" -> "x-bar"),
+                map = Map("bar"          -> "x-bar"),
                 values = Json.obj("x-yo" -> "foo"),
                 remove = Seq("foo")
               )
@@ -440,7 +460,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> goodJwt
           )
           .get()
@@ -452,7 +472,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> serviceHost,
-            "X-JWT-Token" -> JWT.create()
+            "X-JWT-Token" -> JWT
+              .create()
               .withIssuer("mathieu")
               .withClaim("bar", "yo")
               .sign(algorithm)
@@ -466,7 +487,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
             "Host" -> serviceHost,
-            "X-JWT-Token" -> JWT.create()
+            "X-JWT-Token" -> JWT
+              .create()
               .withIssuer("foo")
               .withClaim("bar", "foo")
               .sign(algorithm)

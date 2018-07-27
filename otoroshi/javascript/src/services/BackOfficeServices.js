@@ -712,7 +712,6 @@ export function updateTemplate(ak) {
   }).then(r => r.json());
 }
 
-
 export function findAllJwtVerifiers() {
   return fetch('/bo/api/proxy/api/verifiers', {
     method: 'GET',

@@ -158,10 +158,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
     val isSecured = getSecuredFor(request)
-    val protocol = getProtocolFor(request)
-    val url     = ByteString(s"$protocol://${request.host}${request.relativeUri}")
-    val cookies = request.cookies.map(_.value).map(ByteString.apply)
-    val headers = request.headers.toSimpleMap.values.map(ByteString.apply)
+    val protocol  = getProtocolFor(request)
+    val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
+    val cookies   = request.cookies.map(_.value).map(ByteString.apply)
+    val headers   = request.headers.toSimpleMap.values.map(ByteString.apply)
     // logger.info(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
     if (url.size > (4 * 1024)) {
       Some(tooBig("URL should be smaller than 4 Kb"))
@@ -232,7 +232,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def redirectToHttps() = actionBuilder { req =>
-    val domain = req.domain
+    val domain   = req.domain
     val protocol = getProtocolFor(req)
     logger.info(
       s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
@@ -242,7 +242,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def redirectToMainDomain() = actionBuilder { req =>
     val domain: String = env.redirections.foldLeft(req.domain)((domain, item) => domain.replace(item, env.domain))
-    val protocol = getProtocolFor(req)
+    val protocol       = getProtocolFor(req)
     logger.warn(
       s"redirectToMainDomain from $protocol://${req.domain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
     )
@@ -360,7 +360,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   @inline
   def getSecuredFor(req: RequestHeader): Boolean = {
     getProtocolFor(req) match {
-      case "http" => false
+      case "http"  => false
       case "https" => true
     }
   }
@@ -377,7 +377,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val counterOut          = new AtomicLong(0L)
     val start               = System.currentTimeMillis()
     val bodyAlreadyConsumed = new AtomicBoolean(false)
-    val protocol = getProtocolFor(req)
+    val protocol            = getProtocolFor(req)
 
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
     // val currentProcessedRequests = env.datastores.requestsDataStore.incrementProcessedRequests()
@@ -1340,7 +1340,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             } else {
                               if (env.isProd && !isSecured && desc.forceHttps) {
                                 val theDomain = req.domain
-                                val protocol = getProtocolFor(req)
+                                val protocol  = getProtocolFor(req)
                                 logger.info(
                                   s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                                 )

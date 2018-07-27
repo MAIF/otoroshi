@@ -148,7 +148,8 @@ class SnowMonkey(implicit env: Env) {
       conf.outageStrategy match {
         case OneServicePerGroup =>
           env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
-            case count if count < conf.timesPerDay
+            case count
+                if count < conf.timesPerDay
                 && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
                 && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
                 && descriptor.id != env.backOfficeServiceId =>
@@ -187,10 +188,11 @@ class SnowMonkey(implicit env: Env) {
           //   println(s"[$idx] should outage at " + start.plusMillis(idx * shouldAwait))
           // }
           env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
-            case count if count < conf.timesPerDay
-              && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
-              && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
-              && descriptor.id != env.backOfficeServiceId =>
+            case count
+                if count < conf.timesPerDay
+                && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
+                && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
+                && descriptor.id != env.backOfficeServiceId =>
               println(s"outages " + count)
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
@@ -214,10 +216,8 @@ class SnowMonkey(implicit env: Env) {
                       )
                     )
                     logger.warn(
-                      s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${
-                        DateTime
-                          .now()
-                      } to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
+                      s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
+                        .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
                     )
                 }
                 .map(_ => true)
@@ -234,11 +234,11 @@ class SnowMonkey(implicit env: Env) {
       isCurrentOutage        <- isCurrentOutage(descriptor, config)
       needMoreOutageForToday <- needMoreOutageForToday(isCurrentOutage, descriptor, config)
     } yield isCurrentOutage || needMoreOutageForToday
-      //if ((config.targetGroups.isEmpty || config.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId) {
-      //  isCurrentOutage || needMoreOutageForToday  
-      //} else {
-      //  false
-      //}
+    //if ((config.targetGroups.isEmpty || config.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId) {
+    //  isCurrentOutage || needMoreOutageForToday
+    //} else {
+    //  false
+    //}
     //}
   }
 

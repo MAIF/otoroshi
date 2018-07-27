@@ -275,7 +275,7 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
 
   @inline
   def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery): Seq[ServiceDescriptor] = {
-        // val sers = services
+    // val sers = services
     //   .sortWith {
     //     case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
     //       a.matchingRoot.get.size > b.matchingRoot.get.size

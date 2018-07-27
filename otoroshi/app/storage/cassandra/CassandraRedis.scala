@@ -88,7 +88,6 @@ class CassandraRedis(actorSystem: ActorSystem,
     clusterBuilder.withCredentials(username, password)
   }).getOrElse(clusterBuilder).build()
 
-
   val session = cluster.connect()
 
   private val cancel = actorSystem.scheduler.schedule(0.millis, 1.second) {

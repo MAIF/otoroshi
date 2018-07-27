@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
-import faker from "faker";
-import { JwtVerifier } from "../components/JwtVerifier";
+import faker from 'faker';
+import { JwtVerifier } from '../components/JwtVerifier';
 
 export class JwtVerifiersPage extends Component {
-
   columns = [
     { title: 'Name', content: item => item.name },
     { title: 'Description', content: item => item.description },
@@ -28,7 +27,13 @@ export class JwtVerifiersPage extends Component {
           parentProps={this.props}
           selfUrl="jwt-verifiers"
           defaultTitle="All Global Jwt Verifiers"
-          defaultValue={() => ({ ...JwtVerifier.defaultVerifier, id: faker.random.alphaNumeric(64), type: "global", name: 'New Jwt Verifier', desc: 'A new Jwt Verifier' })}
+          defaultValue={() => ({
+            ...JwtVerifier.defaultVerifier,
+            id: faker.random.alphaNumeric(64),
+            type: 'global',
+            name: 'New Jwt Verifier',
+            desc: 'A new Jwt Verifier',
+          })}
           itemName="Jwt Verifier"
           formSchema={this.formSchema}
           formFlow={this.formFlow}

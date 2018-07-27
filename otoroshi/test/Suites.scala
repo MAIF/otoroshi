@@ -127,4 +127,3 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 //     extends Suites(
 //       new SnowMonkeySpec("DEV", Configurations.InMemoryConfiguration),
 //     )
-
