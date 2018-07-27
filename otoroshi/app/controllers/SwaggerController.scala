@@ -61,6 +61,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     "type"  -> "array",
     "items" -> ref
   )
+  def OneOf(refs: JsValue*) = Json.obj(
+    "oneOf" -> JsArray(refs.toSeq)
+  )
 
   def RequestBody(typ: JsValue) = Json.obj(
     "required" -> true,
@@ -421,6 +424,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "Canary"                     -> Ref("Canary"),
       "statsdConfig"               -> Ref("StatsdConfig"),
       "chaosConfig"                -> Ref("ChaosConfig"),
+      "jwtVerifier"                -> OneOf(Ref("LocalJwtVerifier"), Ref("RefJwtVerifier")),
+      "secComSettings"             -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
       "metadata"                   -> SimpleObjectType ~~> "Just a bunch of random properties",
       "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
       "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication"
@@ -733,6 +738,227 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def RefJwtVerifier = Json.obj(
+    "description" -> "Reference to a global JWT verifier",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "id",
+      "enabled"
+    ),
+    "properties" -> Json.obj(
+      "type"    -> SimpleStringType ~~> "A string with value 'ref'",
+      "id"      -> SimpleStringType ~~> "The id of the GlobalJWTVerifier",
+      "enabled" -> SimpleBooleanType ~~> "Is it enabled"
+    )
+  )
+
+  def LocalJwtVerifier = Json.obj(
+    "description" -> "A JWT verifier used only for the current service descriptor",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "enabled",
+      "strict",
+      "source",
+      "algoSettings",
+      "strategy"
+    ),
+    "properties" -> Json.obj(
+      "type"    -> SimpleStringType ~~> "A string with value 'local'",
+      "enabled" -> SimpleBooleanType ~~> "Is it enabled",
+      "strict" -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source" -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
+      "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
+    )
+  )
+  def GlobalJwtVerifier = Json.obj(
+    "description" -> "A JWT verifier used by multiple service descriptor",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "id",
+      "name",
+      "desc",
+      "enabled",
+      "strict",
+      "source",
+      "algoSettings",
+      "strategy"
+    ),
+    "properties" -> Json.obj(
+      "id" -> SimpleStringType ~~> "Verifier id",
+      "name" -> SimpleStringType ~~> "Verifier name",
+      "desc" -> SimpleStringType ~~> "Verifier description",
+      "enabled" -> SimpleBooleanType ~~> "Is it enabled",
+      "strict" -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source" -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
+      "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
+    )
+  )
+  def InQueryParam = Json.obj(
+    "description" -> "JWT location in a query param",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "name",
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value InQueryParam",
+      "name"    -> SimpleStringType ~~> "Name of the query param"
+    )
+  )
+  def InHeader = Json.obj(
+    "description" -> "JWT location in a header",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "name",
+      "remove"
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value InHeader",
+      "name"    -> SimpleStringType ~~> "Name of the header",
+      "remove"    -> SimpleStringType ~~> "Remove regex inside the value, like 'Bearer '"
+    )
+  )
+  def InCookie = Json.obj(
+    "description" -> "JWT location in a cookie",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "name",
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value InCookie",
+      "name"    -> SimpleStringType ~~> "Name of the cookie"
+    )
+  )
+  def HSAlgoSettings = Json.obj(
+    "description" -> "Settings for an HMAC + SHA signing algorithm",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "size",
+      "secret",
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value HSAlgoSettings",
+      "size"    -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "secret"    -> SimpleStringType ~~> "The secret value for the HMAC function"
+    )
+  )
+  def RSAlgoSettings = Json.obj(
+    "description" -> "Settings for an HMAC + SHA signing algorithm",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "size",
+      "publicKey",
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value RSAlgoSettings",
+      "size"    -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "publicKey"    -> SimpleStringType ~~> "The public key for the RSA function",
+      "privateKey"    -> SimpleStringType ~~> "The private key for the RSA function"
+    )
+  )
+  def ESAlgoSettings = Json.obj(
+    "description" -> "Settings for an EC + SHA signing algorithm",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "size",
+      "publicKey",
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value ESAlgoSettings",
+      "size"    -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "publicKey"    -> SimpleStringType ~~> "The public key for the RSA function",
+      "privateKey"    -> SimpleStringType ~~> "The private key for the RSA function"
+    )
+  )
+  def MappingSettings = Json.obj(
+    "description" -> "Settings to change fields of a JWT token",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "map",
+      "values",
+      "remove"
+    ),
+    "properties" -> Json.obj(
+      "map"    -> SimpleObjectType ~~> "Fields to rename",
+      "values"      -> SimpleObjectType ~~> "Fields to set",
+      "remove" -> ArrayOf(SimpleStringType) ~~> "Fields to remove"
+    )
+  )
+  def TransformSettings = Json.obj(
+    "description" -> "Settings to transform a JWT token and its location",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "location",
+      "mappingSettings"
+    ),
+    "properties" -> Json.obj(
+      "location"    -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "mappingSettings"      -> Ref("MappingSettings")
+    )
+  )
+  def VerificationSettings = Json.obj(
+    "description" -> "Settings to verify the value of JWT token fields",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "fields"
+    ),
+    "properties" -> Json.obj(
+      "fields"    -> SimpleObjectType ~~> "Fields to verify with their values",
+      "mappingSettings"      -> Ref("MappingSettings")
+    )
+  )
+  def PassThrough = Json.obj(
+    "description" -> "Strategy where only signature and field values are verified",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "verificationSettings"
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value PassThrough",
+      "verificationSettings"      -> Ref("VerificationSettings")
+    )
+  )
+  def Sign = Json.obj(
+    "description" -> "Strategy where signature and field values are verified, and then token si re-signed",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "verificationSettings",
+      "algoSettings"
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value Sign",
+      "verificationSettings"      -> Ref("VerificationSettings"),
+      "algoSettings"      -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
+    )
+  )
+  def Transform = Json.obj(
+    "description" -> "Strategy where signature and field values are verified, trasnformed and then token si re-signed",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "verificationSettings",
+      "algoSettings"
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "String with value Transform",
+      "verificationSettings"      -> Ref("VerificationSettings"),
+      "transformSettings"      -> Ref("TransformSettings"),
+      "algoSettings"      -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
+    )
+  )
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -999,6 +1225,68 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         BodyParam("The api key to create", Ref("ApiKey"))
       ),
       goodResponse = GoodResponse(Ref("ApiKey"))
+    )
+  )
+
+  def JWTVerifiers = Json.obj(
+    "get" -> Operation(
+      tag = "jwt-verifiers",
+      summary = "Get all global JWT verifiers",
+      description = "Get all global JWT verifiers",
+      operationId = "findAllGlobalJwtVerifiers",
+      goodResponse = GoodResponse(ArrayOf(Ref("GlobalJwtVerifier")))
+    ),
+    "get" -> Operation(
+      tag = "jwt-verifiers",
+      summary = "Get one global JWT verifiers",
+      description = "Get one global JWT verifiers",
+      operationId = "findGlobalJwtVerifiersById",
+      parameters = Json.arr(
+        PathParam("verifierId", "The jwt verifier id")
+      ),
+      goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
+    ),
+    "delete" -> Operation(
+      tag = "jwt-verifiers",
+      summary = "Delete one global JWT verifiers",
+      description = "Delete one global JWT verifiers",
+      operationId = "deleteGlobalJwtVerifier",
+      parameters = Json.arr(
+        PathParam("verifierId", "The jwt verifier id")
+      ),
+      goodResponse = GoodResponse(Ref("Deleted"))
+    ),
+    "put" -> Operation(
+      tag = "jwt-verifiers",
+      summary = "Update one global JWT verifiers",
+      description = "Update one global JWT verifiers",
+      operationId = "updateGlobalJwtVerifier",
+      parameters = Json.arr(
+        PathParam("verifierId", "The jwt verifier id"),
+        BodyParam("The verifier to update", Ref("GlobalJwtVerifier"))
+      ),
+      goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
+    ),
+    "patch" -> Operation(
+      tag = "jwt-verifiers",
+      summary = "Update one global JWT verifiers",
+      description = "Update one global JWT verifiers",
+      operationId = "patchGlobalJwtVerifier",
+      parameters = Json.arr(
+        PathParam("verifierId", "The jwt verifier id"),
+        BodyParam("The verifier to update", Ref("Patch"))
+      ),
+      goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
+    ),
+    "post" -> Operation(
+      tag = "jwt-verifiers",
+      summary = "Create one global JWT verifiers",
+      description = "Create one global JWT verifiers",
+      operationId = "createGlobalJwtVerifier",
+      parameters = Json.arr(
+        BodyParam("The verifier to create", Ref("GlobalJwtVerifier"))
+      ),
+      goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
     )
   )
 
@@ -1390,7 +1678,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     Json.obj(
       "swagger" -> "2.0",
       "info" -> Json.obj(
-        "version"     -> "1.2.0-dev",
+        "version"     -> "1.2.0",
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact" -> Json.obj(
@@ -1412,7 +1700,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("services", "Everything about Otoroshi service descriptors"),
         Tag("stats", "Everything about Otoroshi stats"),
         Tag("snowmonkey", "Everything about Otoroshi Snow Monkey"),
-        Tag("health", "Everything about Otoroshi health status")
+        Tag("health", "Everything about Otoroshi health status"),
+        Tag("jwt-verifiers", "Everything about Otoroshi global JWT token verifiers")
       ),
       "externalDocs" -> Json.obj(
         "description" -> "Find out more about Otoroshi",
@@ -1442,6 +1731,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "/api/groups/{serviceGroupId}/services"               -> ServicesForGroup,
         "/api/groups/{serviceGroupId}"                        -> GroupManagement,
         "/api/groups"                                         -> GroupsManagement,
+        "/api/verifiers"                                      -> JWTVerifiers,
         "/api/snowmonkey/config"                              -> SnowMonkeyConfigApi,
         "/api/snowmonkey/outages"                             -> SnowMonkeyOutageApi,
         "/api/snowmonkey/_start"                              -> SnowMonkeyStartApi,
@@ -1522,7 +1812,22 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "OutageStrategy"              -> OutageStrategy,
         "SnowMonkeyConfig"            -> SnowMonkeyConfig,
         "OutageStrategy"              -> OutageStrategy,
-        "Outage"                      -> Outage
+        "Outage"                      -> Outage,
+        "RefJwtVerifier"              -> RefJwtVerifier,
+        "LocalJwtVerifier"            -> LocalJwtVerifier,
+        "InQueryParam"                -> InQueryParam,
+        "InHeader"                    -> InHeader,
+        "InCookie"                    -> InCookie,
+        "HSAlgoSettings"              -> HSAlgoSettings,
+        "RSAlgoSettings"              -> RSAlgoSettings,
+        "ESAlgoSettings"              -> ESAlgoSettings,
+        "MappingSettings"             -> MappingSettings,
+        "TransformSettings"           -> TransformSettings,
+        "VerificationSettings"        -> VerificationSettings,
+        "PassThrough"                 -> PassThrough,
+        "Sign"                        -> Sign,
+        "Transform"                   -> Transform,
+        "GlobalJwtVerifier"           -> GlobalJwtVerifier
       )
     )
   }

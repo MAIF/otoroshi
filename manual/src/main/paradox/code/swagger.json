@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "1.2.0-dev",
+    "version" : "1.2.0",
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
     "contact" : {
@@ -1817,6 +1817,201 @@
         } ]
       }
     },
+    "/api/verifiers" : {
+      "get" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Get one global JWT verifiers",
+        "description" : "Get one global JWT verifiers",
+        "operationId" : "findGlobalJwtVerifiersById",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Delete one global JWT verifiers",
+        "description" : "Delete one global JWT verifiers",
+        "operationId" : "deleteGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Deleted"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "put" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Update one global JWT verifiers",
+        "description" : "Update one global JWT verifiers",
+        "operationId" : "updateGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/GlobalJwtVerifier"
+          },
+          "description" : "The verifier to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "patch" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Update one global JWT verifiers",
+        "description" : "Update one global JWT verifiers",
+        "operationId" : "patchGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Patch"
+          },
+          "description" : "The verifier to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "post" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Create one global JWT verifiers",
+        "description" : "Create one global JWT verifiers",
+        "operationId" : "createGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/GlobalJwtVerifier"
+          },
+          "description" : "The verifier to create"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
     "/api/snowmonkey/config" : {
       "get" : {
         "deprecated" : false,
@@ -3195,6 +3390,22 @@
               "chaosConfig" : {
                 "$ref" : "#/definitions/ChaosConfig"
               },
+              "jwtVerifier" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/LocalJwtVerifier"
+                }, {
+                  "$ref" : "#/definitions/RefJwtVerifier"
+                } ]
+              },
+              "secComSettings" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/HSAlgoSettings"
+                }, {
+                  "$ref" : "#/definitions/RSAlgoSettings"
+                }, {
+                  "$ref" : "#/definitions/ESAlgoSettings"
+                } ]
+              },
               "metadata" : {
                 "type" : "object",
                 "example" : {
@@ -3576,6 +3787,22 @@
         },
         "chaosConfig" : {
           "$ref" : "#/definitions/ChaosConfig"
+        },
+        "jwtVerifier" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/LocalJwtVerifier"
+          }, {
+            "$ref" : "#/definitions/RefJwtVerifier"
+          } ]
+        },
+        "secComSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
         },
         "metadata" : {
           "type" : "object",
@@ -4032,6 +4259,411 @@
           "format" : "int32",
           "example" : 123123,
           "description" : "The duration of the outage"
+        }
+      }
+    },
+    "RefJwtVerifier" : {
+      "description" : "Reference to a global JWT verifier",
+      "type" : "object",
+      "required" : [ "type", "id", "enabled" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "A string with value 'ref'"
+        },
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The id of the GlobalJWTVerifier"
+        },
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Is it enabled"
+        }
+      }
+    },
+    "LocalJwtVerifier" : {
+      "description" : "A JWT verifier used only for the current service descriptor",
+      "type" : "object",
+      "required" : [ "type", "enabled", "strict", "source", "algoSettings", "strategy" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "A string with value 'local'"
+        },
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Is it enabled"
+        },
+        "strict" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Does it fail if JWT not found"
+        },
+        "source" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/InQueryParam"
+          }, {
+            "$ref" : "#/definitions/InHeader"
+          }, {
+            "$ref" : "#/definitions/InCookie"
+          } ]
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        },
+        "strategy" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/PassThrough"
+          }, {
+            "$ref" : "#/definitions/Sign"
+          }, {
+            "$ref" : "#/definitions/Transform"
+          } ]
+        }
+      }
+    },
+    "InQueryParam" : {
+      "description" : "JWT location in a query param",
+      "type" : "object",
+      "required" : [ "type", "name" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value InQueryParam"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the query param"
+        }
+      }
+    },
+    "InHeader" : {
+      "description" : "JWT location in a header",
+      "type" : "object",
+      "required" : [ "type", "name", "remove" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value InHeader"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the header"
+        },
+        "remove" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Remove regex inside the value, like 'Bearer '"
+        }
+      }
+    },
+    "InCookie" : {
+      "description" : "JWT location in a cookie",
+      "type" : "object",
+      "required" : [ "type", "name" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value InCookie"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the cookie"
+        }
+      }
+    },
+    "HSAlgoSettings" : {
+      "description" : "Settings for an HMAC + SHA signing algorithm",
+      "type" : "object",
+      "required" : [ "type", "size", "secret" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value HSAlgoSettings"
+        },
+        "size" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Size for SHA function. can be 256, 384 or 512"
+        },
+        "secret" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The secret value for the HMAC function"
+        }
+      }
+    },
+    "RSAlgoSettings" : {
+      "description" : "Settings for an HMAC + SHA signing algorithm",
+      "type" : "object",
+      "required" : [ "type", "size", "publicKey" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value RSAlgoSettings"
+        },
+        "size" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Size for SHA function. can be 256, 384 or 512"
+        },
+        "publicKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The public key for the RSA function"
+        },
+        "privateKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The private key for the RSA function"
+        }
+      }
+    },
+    "ESAlgoSettings" : {
+      "description" : "Settings for an EC + SHA signing algorithm",
+      "type" : "object",
+      "required" : [ "type", "size", "publicKey" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value ESAlgoSettings"
+        },
+        "size" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Size for SHA function. can be 256, 384 or 512"
+        },
+        "publicKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The public key for the RSA function"
+        },
+        "privateKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The private key for the RSA function"
+        }
+      }
+    },
+    "MappingSettings" : {
+      "description" : "Settings to change fields of a JWT token",
+      "type" : "object",
+      "required" : [ "map", "values", "remove" ],
+      "properties" : {
+        "map" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Fields to rename"
+        },
+        "values" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Fields to set"
+        },
+        "remove" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "Fields to remove"
+        }
+      }
+    },
+    "TransformSettings" : {
+      "description" : "Settings to transform a JWT token and its location",
+      "type" : "object",
+      "required" : [ "location", "mappingSettings" ],
+      "properties" : {
+        "location" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/InQueryParam"
+          }, {
+            "$ref" : "#/definitions/InHeader"
+          }, {
+            "$ref" : "#/definitions/InCookie"
+          } ]
+        },
+        "mappingSettings" : {
+          "$ref" : "#/definitions/MappingSettings"
+        }
+      }
+    },
+    "VerificationSettings" : {
+      "description" : "Settings to verify the value of JWT token fields",
+      "type" : "object",
+      "required" : [ "fields" ],
+      "properties" : {
+        "fields" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Fields to verify with their values"
+        },
+        "mappingSettings" : {
+          "$ref" : "#/definitions/MappingSettings"
+        }
+      }
+    },
+    "PassThrough" : {
+      "description" : "Strategy where only signature and field values are verified",
+      "type" : "object",
+      "required" : [ "type", "verificationSettings" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value PassThrough"
+        },
+        "verificationSettings" : {
+          "$ref" : "#/definitions/VerificationSettings"
+        }
+      }
+    },
+    "Sign" : {
+      "description" : "Strategy where signature and field values are verified, and then token si re-signed",
+      "type" : "object",
+      "required" : [ "type", "verificationSettings", "algoSettings" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value Sign"
+        },
+        "verificationSettings" : {
+          "$ref" : "#/definitions/VerificationSettings"
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        }
+      }
+    },
+    "Transform" : {
+      "description" : "Strategy where signature and field values are verified, trasnformed and then token si re-signed",
+      "type" : "object",
+      "required" : [ "type", "verificationSettings", "algoSettings" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value Transform"
+        },
+        "verificationSettings" : {
+          "$ref" : "#/definitions/VerificationSettings"
+        },
+        "transformSettings" : {
+          "$ref" : "#/definitions/TransformSettings"
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        }
+      }
+    },
+    "GlobalJwtVerifier" : {
+      "description" : "A JWT verifier used by multiple service descriptor",
+      "type" : "object",
+      "required" : [ "type", "id", "name", "desc", "enabled", "strict", "source", "algoSettings", "strategy" ],
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Verifier id"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Verifier name"
+        },
+        "desc" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Verifier description"
+        },
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Is it enabled"
+        },
+        "strict" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Does it fail if JWT not found"
+        },
+        "source" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/InQueryParam"
+          }, {
+            "$ref" : "#/definitions/InHeader"
+          }, {
+            "$ref" : "#/definitions/InCookie"
+          } ]
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        },
+        "strategy" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/PassThrough"
+          }, {
+            "$ref" : "#/definitions/Sign"
+          }, {
+            "$ref" : "#/definitions/Transform"
+          } ]
         }
       }
     }

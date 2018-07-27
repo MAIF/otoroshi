@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "1.1.2",
+    "version" : "1.2.0",
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
     "contact" : {
@@ -37,6 +37,12 @@
   }, {
     "name" : "stats",
     "description" : "Everything about Otoroshi stats"
+  }, {
+    "name" : "snowmonkey",
+    "description" : "Everything about Otoroshi Snow Monkey"
+  }, {
+    "name" : "health",
+    "description" : "Everything about Otoroshi health status"
   } ],
   "externalDocs" : {
     "description" : "Find out more about Otoroshi",
@@ -1811,6 +1817,431 @@
         } ]
       }
     },
+    "/api/verifiers" : {
+      "get" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Get one global JWT verifiers",
+        "description" : "Get one global JWT verifiers",
+        "operationId" : "findGlobalJwtVerifiersById",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Delete one global JWT verifiers",
+        "description" : "Delete one global JWT verifiers",
+        "operationId" : "deleteGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Deleted"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "put" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Update one global JWT verifiers",
+        "description" : "Update one global JWT verifiers",
+        "operationId" : "updateGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/GlobalJwtVerifier"
+          },
+          "description" : "The verifier to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "patch" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Update one global JWT verifiers",
+        "description" : "Update one global JWT verifiers",
+        "operationId" : "patchGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verifierId",
+          "required" : true,
+          "type" : "string",
+          "description" : "The jwt verifier id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Patch"
+          },
+          "description" : "The verifier to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "post" : {
+        "deprecated" : false,
+        "tags" : [ "jwt-verifiers" ],
+        "summary" : "Create one global JWT verifiers",
+        "description" : "Create one global JWT verifiers",
+        "operationId" : "createGlobalJwtVerifier",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/GlobalJwtVerifier"
+          },
+          "description" : "The verifier to create"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/GlobalJwtVerifier"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
+    "/api/snowmonkey/config" : {
+      "get" : {
+        "deprecated" : false,
+        "tags" : [ "snowmonkey" ],
+        "summary" : "Get current Snow Monkey config",
+        "description" : "Get current Snow Monkey config",
+        "operationId" : "getSnowMonkeyConfig",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/SnowMonkeyConfig"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "put" : {
+        "deprecated" : false,
+        "tags" : [ "snowmonkey" ],
+        "summary" : "Update current Snow Monkey config",
+        "description" : "Update current Snow Monkey config",
+        "operationId" : "updateSnowMonkey",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Group"
+          },
+          "description" : "The service group to create"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/SnowMonkeyConfig"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "patch" : {
+        "deprecated" : false,
+        "tags" : [ "snowmonkey" ],
+        "summary" : "Update current Snow Monkey config",
+        "description" : "Update current Snow Monkey config",
+        "operationId" : "patchSnowMonkey",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Group"
+          },
+          "description" : "The service group to create"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/SnowMonkeyConfig"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
+    "/api/snowmonkey/outages" : {
+      "get" : {
+        "deprecated" : false,
+        "tags" : [ "snowmonkey" ],
+        "summary" : "Get all current Snow Monkey ourages",
+        "description" : "Get all current Snow Monkey ourages",
+        "operationId" : "getSnowMonkeyOutages",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/Outage"
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "snowmonkey" ],
+        "summary" : "Reset Snow Monkey Outages for the day",
+        "description" : "Reset Snow Monkey Outages for the day",
+        "operationId" : "resetSnowMonkey",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Done"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
+    "/api/snowmonkey/_start" : {
+      "post" : {
+        "deprecated" : false,
+        "tags" : [ "snowmonkey" ],
+        "summary" : "Start the Snow Monkey",
+        "description" : "Start the Snow Monkey",
+        "operationId" : "startSnowMonkey",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Done"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
+    "/api/snowmonkey/_stop" : {
+      "post" : {
+        "deprecated" : false,
+        "tags" : [ "snowmonkey" ],
+        "summary" : "Stop the Snow Monkey",
+        "description" : "Stop the Snow Monkey",
+        "operationId" : "stopSnowMonkey",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Done"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
     "/api/live/{id}" : {
       "get" : {
         "deprecated" : false,
@@ -2879,6 +3310,11 @@
                 "example" : true,
                 "description" : "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist"
               },
+              "userFacing" : {
+                "type" : "boolean",
+                "example" : true,
+                "description" : "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey"
+              },
               "privateApp" : {
                 "type" : "boolean",
                 "example" : true,
@@ -2950,6 +3386,25 @@
               },
               "statsdConfig" : {
                 "$ref" : "#/definitions/StatsdConfig"
+              },
+              "chaosConfig" : {
+                "$ref" : "#/definitions/ChaosConfig"
+              },
+              "jwtVerifier" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/LocalJwtVerifier"
+                }, {
+                  "$ref" : "#/definitions/RefJwtVerifier"
+                } ]
+              },
+              "secComSettings" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/HSAlgoSettings"
+                }, {
+                  "$ref" : "#/definitions/RSAlgoSettings"
+                }, {
+                  "$ref" : "#/definitions/ESAlgoSettings"
+                } ]
               },
               "metadata" : {
                 "type" : "object",
@@ -3253,6 +3708,11 @@
           "example" : true,
           "description" : "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist"
         },
+        "userFacing" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey"
+        },
         "privateApp" : {
           "type" : "boolean",
           "example" : true,
@@ -3324,6 +3784,25 @@
         },
         "statsdConfig" : {
           "$ref" : "#/definitions/StatsdConfig"
+        },
+        "chaosConfig" : {
+          "$ref" : "#/definitions/ChaosConfig"
+        },
+        "jwtVerifier" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/LocalJwtVerifier"
+          }, {
+            "$ref" : "#/definitions/RefJwtVerifier"
+          } ]
+        },
+        "secComSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
         },
         "metadata" : {
           "type" : "object",
@@ -3545,6 +4024,646 @@
             "type" : "string"
           },
           "description" : "Headers to authorize the call or whatever"
+        }
+      }
+    },
+    "BadResponse" : {
+      "description" : "An HTTP response that is not supposed to be returned by a service",
+      "type" : "object",
+      "required" : [ "status", "body", "headers" ],
+      "properties" : {
+        "status" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "The HTTP status for the response"
+        },
+        "body" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The body of the HTTP response"
+        },
+        "headers" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "The HTTP headers of the response"
+        }
+      }
+    },
+    "LargeRequestFaultConfig" : {
+      "description" : "Config for large request injection fault",
+      "type" : "object",
+      "required" : [ "ratio", "additionalRequestSize" ],
+      "properties" : {
+        "ratio" : {
+          "type" : "integer",
+          "format" : "double",
+          "example" : 42.2,
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+        },
+        "additionalRequestSize" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "The size added to the request body in bytes. Added payload will be spaces only."
+        }
+      }
+    },
+    "LargeResponseFaultConfig" : {
+      "description" : "Config for large response injection fault",
+      "type" : "object",
+      "required" : [ "ratio", "additionalResponseSize" ],
+      "properties" : {
+        "ratio" : {
+          "type" : "integer",
+          "format" : "double",
+          "example" : 42.2,
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+        },
+        "additionalRequestSize" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "The size added to the response body in bytes. Added payload will be spaces only."
+        }
+      }
+    },
+    "LatencyInjectionFaultConfig" : {
+      "description" : "Config for large latency injection fault",
+      "type" : "object",
+      "required" : [ "ratio", "from", "to" ],
+      "properties" : {
+        "ratio" : {
+          "type" : "integer",
+          "format" : "double",
+          "example" : 42.2,
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+        },
+        "from" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "The start range of latency added to the request"
+        },
+        "to" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "The end range of latency added to the request"
+        }
+      }
+    },
+    "BadResponsesFaultConfig" : {
+      "description" : "Config for bad requests injection fault",
+      "type" : "object",
+      "required" : [ "ratio", "responses" ],
+      "properties" : {
+        "ratio" : {
+          "type" : "integer",
+          "format" : "double",
+          "example" : 42.2,
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+        },
+        "responses" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/BadResponse"
+          },
+          "description" : "The possibles responses"
+        }
+      }
+    },
+    "ChaosConfig" : {
+      "description" : "Configuration for the faults that can be injected in requests",
+      "type" : "object",
+      "required" : [ "enabled" ],
+      "properties" : {
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Whether or not this config is enabled"
+        },
+        "largeRequestFaultConfig" : {
+          "$ref" : "#/definitions/LargeRequestFaultConfig"
+        },
+        "largeResponseFaultConfig" : {
+          "$ref" : "#/definitions/LargeResponseFaultConfig"
+        },
+        "latencyInjectionFaultConfig" : {
+          "$ref" : "#/definitions/LatencyInjectionFaultConfig"
+        },
+        "badResponsesFaultConfig" : {
+          "$ref" : "#/definitions/BadResponsesFaultConfig"
+        }
+      }
+    },
+    "OutageStrategy" : {
+      "type" : "string",
+      "enum" : [ "OneServicePerGroup", "AllServicesPerGroup" ]
+    },
+    "SnowMonkeyConfig" : {
+      "description" : "Configuration for the faults that can be injected in requests. The name Snow Monkey is an hommage to Netflix's Chaos Monkey 😉",
+      "type" : "object",
+      "required" : [ "enabled", "outageStrategy", "includeUserFacingDescriptors", "dryRun", "timesPerDay", "startTime", "stopTime", "outageDurationFrom", "outageDurationTo", "targetGroups", "chaosConfig" ],
+      "properties" : {
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Whether or not this config is enabled"
+        },
+        "outageStrategy" : {
+          "$ref" : "#/definitions/OutageStrategy",
+          "description" : ""
+        },
+        "includeUserFacingDescriptors" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Whether or not user facing apps. will be impacted by Snow Monkey"
+        },
+        "dryRun" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Whether or not outages will actualy impact requests"
+        },
+        "timesPerDay" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Number of time per day each service will be outage"
+        },
+        "startTime" : {
+          "type" : "string",
+          "format" : "time",
+          "example" : "17:32:28.000",
+          "description" : "Start time of Snow Monkey each day"
+        },
+        "stopTime" : {
+          "type" : "string",
+          "format" : "time",
+          "example" : "17:32:28.000",
+          "description" : "Stop time of Snow Monkey each day"
+        },
+        "outageDurationFrom" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Start of outage duration range"
+        },
+        "outageDurationTo" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "End of outage duration range"
+        },
+        "targetGroups" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "Groups impacted by Snow Monkey. If empty, all groups will be impacted"
+        },
+        "chaosConfig" : {
+          "$ref" : "#/definitions/ChaosConfig"
+        }
+      }
+    },
+    "Outage" : {
+      "description" : "An outage by the Snow Monkey on a service",
+      "type" : "object",
+      "required" : [ "descriptorId", "descriptorName", "until", "duration" ],
+      "properties" : {
+        "descriptorId" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The service impacted by outage"
+        },
+        "descriptorName" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The name of service impacted by outage"
+        },
+        "until" : {
+          "type" : "string",
+          "format" : "time",
+          "example" : "17:32:28.000",
+          "description" : "The end of the outage"
+        },
+        "duration" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "The duration of the outage"
+        }
+      }
+    },
+    "RefJwtVerifier" : {
+      "description" : "Reference to a global JWT verifier",
+      "type" : "object",
+      "required" : [ "type", "id", "enabled" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "A string with value 'ref'"
+        },
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The id of the GlobalJWTVerifier"
+        },
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Is it enabled"
+        }
+      }
+    },
+    "LocalJwtVerifier" : {
+      "description" : "A JWT verifier used only for the current service descriptor",
+      "type" : "object",
+      "required" : [ "type", "enabled", "strict", "source", "algoSettings", "strategy" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "A string with value 'local'"
+        },
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Is it enabled"
+        },
+        "strict" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Does it fail if JWT not found"
+        },
+        "source" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/InQueryParam"
+          }, {
+            "$ref" : "#/definitions/InHeader"
+          }, {
+            "$ref" : "#/definitions/InCookie"
+          } ]
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        },
+        "strategy" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/PassThrough"
+          }, {
+            "$ref" : "#/definitions/Sign"
+          }, {
+            "$ref" : "#/definitions/Transform"
+          } ]
+        }
+      }
+    },
+    "InQueryParam" : {
+      "description" : "JWT location in a query param",
+      "type" : "object",
+      "required" : [ "type", "name" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value InQueryParam"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the query param"
+        }
+      }
+    },
+    "InHeader" : {
+      "description" : "JWT location in a header",
+      "type" : "object",
+      "required" : [ "type", "name", "remove" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value InHeader"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the header"
+        },
+        "remove" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Remove regex inside the value, like 'Bearer '"
+        }
+      }
+    },
+    "InCookie" : {
+      "description" : "JWT location in a cookie",
+      "type" : "object",
+      "required" : [ "type", "name" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value InCookie"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the cookie"
+        }
+      }
+    },
+    "HSAlgoSettings" : {
+      "description" : "Settings for an HMAC + SHA signing algorithm",
+      "type" : "object",
+      "required" : [ "type", "size", "secret" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value HSAlgoSettings"
+        },
+        "size" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Size for SHA function. can be 256, 384 or 512"
+        },
+        "secret" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The secret value for the HMAC function"
+        }
+      }
+    },
+    "RSAlgoSettings" : {
+      "description" : "Settings for an HMAC + SHA signing algorithm",
+      "type" : "object",
+      "required" : [ "type", "size", "publicKey" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value RSAlgoSettings"
+        },
+        "size" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Size for SHA function. can be 256, 384 or 512"
+        },
+        "publicKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The public key for the RSA function"
+        },
+        "privateKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The private key for the RSA function"
+        }
+      }
+    },
+    "ESAlgoSettings" : {
+      "description" : "Settings for an EC + SHA signing algorithm",
+      "type" : "object",
+      "required" : [ "type", "size", "publicKey" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value ESAlgoSettings"
+        },
+        "size" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Size for SHA function. can be 256, 384 or 512"
+        },
+        "publicKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The public key for the RSA function"
+        },
+        "privateKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The private key for the RSA function"
+        }
+      }
+    },
+    "MappingSettings" : {
+      "description" : "Settings to change fields of a JWT token",
+      "type" : "object",
+      "required" : [ "map", "values", "remove" ],
+      "properties" : {
+        "map" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Fields to rename"
+        },
+        "values" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Fields to set"
+        },
+        "remove" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "Fields to remove"
+        }
+      }
+    },
+    "TransformSettings" : {
+      "description" : "Settings to transform a JWT token and its location",
+      "type" : "object",
+      "required" : [ "location", "mappingSettings" ],
+      "properties" : {
+        "location" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/InQueryParam"
+          }, {
+            "$ref" : "#/definitions/InHeader"
+          }, {
+            "$ref" : "#/definitions/InCookie"
+          } ]
+        },
+        "mappingSettings" : {
+          "$ref" : "#/definitions/MappingSettings"
+        }
+      }
+    },
+    "VerificationSettings" : {
+      "description" : "Settings to verify the value of JWT token fields",
+      "type" : "object",
+      "required" : [ "fields" ],
+      "properties" : {
+        "fields" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Fields to verify with their values"
+        },
+        "mappingSettings" : {
+          "$ref" : "#/definitions/MappingSettings"
+        }
+      }
+    },
+    "PassThrough" : {
+      "description" : "Strategy where only signature and field values are verified",
+      "type" : "object",
+      "required" : [ "type", "verificationSettings" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value PassThrough"
+        },
+        "verificationSettings" : {
+          "$ref" : "#/definitions/VerificationSettings"
+        }
+      }
+    },
+    "Sign" : {
+      "description" : "Strategy where signature and field values are verified, and then token si re-signed",
+      "type" : "object",
+      "required" : [ "type", "verificationSettings", "algoSettings" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value Sign"
+        },
+        "verificationSettings" : {
+          "$ref" : "#/definitions/VerificationSettings"
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        }
+      }
+    },
+    "Transform" : {
+      "description" : "Strategy where signature and field values are verified, trasnformed and then token si re-signed",
+      "type" : "object",
+      "required" : [ "type", "verificationSettings", "algoSettings" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "String with value Transform"
+        },
+        "verificationSettings" : {
+          "$ref" : "#/definitions/VerificationSettings"
+        },
+        "transformSettings" : {
+          "$ref" : "#/definitions/TransformSettings"
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        }
+      }
+    },
+    "GlobalJwtVerifier" : {
+      "description" : "A JWT verifier used by multiple service descriptor",
+      "type" : "object",
+      "required" : [ "type", "id", "name", "desc", "enabled", "strict", "source", "algoSettings", "strategy" ],
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Verifier id"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Verifier name"
+        },
+        "desc" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Verifier description"
+        },
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Is it enabled"
+        },
+        "strict" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Does it fail if JWT not found"
+        },
+        "source" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/InQueryParam"
+          }, {
+            "$ref" : "#/definitions/InHeader"
+          }, {
+            "$ref" : "#/definitions/InCookie"
+          } ]
+        },
+        "algoSettings" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          } ]
+        },
+        "strategy" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/PassThrough"
+          }, {
+            "$ref" : "#/definitions/Sign"
+          }, {
+            "$ref" : "#/definitions/Transform"
+          } ]
         }
       }
     }

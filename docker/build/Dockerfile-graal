@@ -8,24 +8,27 @@ RUN mkdir -p /otoroshi
 
 WORKDIR /otoroshi
 
-COPY . /otoroshi
+COPY ./otoroshi.jar /otoroshi
+COPY ./entrypoint-graal.sh /otoroshi
 
 RUN apt-get update -y \
   && apt-get install -y curl build-essential zlib1g-dev \
-  && wget https://dl.bintray.com/maif/binaries/otoroshi.jar/snapshot/otoroshi.jar \
   && wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc4/graalvm-ce-1.0.0-rc4-linux-amd64.tar.gz \
   && tar -xvf graalvm-ce-1.0.0-rc4-linux-amd64.tar.gz \
   && mv graalvm-ce-1.0.0-rc4 graalvm \
+  && rm -rf graalvm-ce-1.0.0-rc4-linux-amd64.tar.gz \
+  && mkdir /otoroshi/conf \
   && mkdir /otoroshi/leveldb \
   && mkdir /otoroshi/imports \
   && chown -R otoroshi:otoroshi /otoroshi 
 
+VOLUME /otoroshi/conf
 VOLUME /otoroshi/imports
 VOLUME /otoroshi/leveldb
 
 # RUN /otoroshi/graalvm/bin/native-image -H:+ReportUnsupportedElementsAtRuntime --verbose -jar otoroshi.jar 
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./entrypoint-graal.sh"]
 
 USER otoroshi
 
