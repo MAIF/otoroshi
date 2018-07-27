@@ -23,7 +23,7 @@ RUN apt-get update -y \
 VOLUME /otoroshi/imports
 VOLUME /otoroshi/leveldb
 
-RUN /otoroshi/graalvm/bin/native-image -H:+ReportUnsupportedElementsAtRuntime --verbose -jar otoroshi.jar 
+# RUN /otoroshi/graalvm/bin/native-image -H:+ReportUnsupportedElementsAtRuntime --verbose -jar otoroshi.jar 
 
 ENTRYPOINT ["./entrypoint.sh"]
 
