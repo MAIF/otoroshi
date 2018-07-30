@@ -55,6 +55,7 @@ You can also try Otoroshi online with Google Cloud Shell if you're a user of the
 * @ref:[Setup Otoroshi](./setup/index.md)
 * @ref:[Using Otoroshi](./usage/index.md)
 * @ref:[Third party Integrations](./integrations/index.md)
+* @ref:[Detailed topics](./topics/index.md)
 * @ref:[Embedding Otoroshi](./embedding.md)
 * @ref:[Admin REST API](./api.md)
 * @ref:[Rust CLI](./cli.md)
