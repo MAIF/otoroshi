@@ -1294,8 +1294,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                               case None => {
                                 val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
-                                  .privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
-                                  .url
+                                  //.privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
+                                  .confidentialAppLoginPage(descriptor.id)
+                                  .url + s"?redirect=http://${req.host}${req.relativeUri}"
                                 logger.trace("should redirect to " + redirectTo)
                                 FastFuture.successful(
                                   Results
