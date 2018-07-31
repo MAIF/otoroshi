@@ -1,7 +1,7 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
-import auth.{AuthModule, FakeAuthModule}
+import auth._
 import env.Env
 import play.api.Logger
 import play.api.libs.json._
@@ -305,7 +305,7 @@ case class ServiceDescriptor(
       512,
       "${config.app.claim.sharedKey}"
     ),
-    authSettings: AuthModule = new FakeAuthModule()
+    authSettings: AuthModule = new GenericOauth2Module(new KeyCloakConfig())
 ) {
 
   def toHost: String = subdomain match {

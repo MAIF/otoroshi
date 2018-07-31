@@ -20,12 +20,38 @@ sealed trait AuthModule {
   def callback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]]
 }
 
-object AuthModule {
-
-
+trait AuthModuleConfig {
+  def clientId: String
+  def clientSecret: String
+  def tokenUrl: String
+  def userInfoUrl: String
+  def loginUrl: String
+  def logoutUrl: String
+  def accessTokenField: String
 }
 
-class FakeAuthModule extends AuthModule {
+class KeyCloakConfig extends AuthModuleConfig {
+  override def clientId = "otoroshi"
+  override def clientSecret = "4babd71e-fa18-4e9f-b98c-d4e6197a5c55"
+  override def tokenUrl = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+  override def userInfoUrl = "http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
+  override def loginUrl = "http://localhost:8081/auth/realms/master/protocol/openid-connect/auth"
+  override def logoutUrl = "http://localhost:8080/auth/realms/master/protocol/openid-connect/logout"
+  override def accessTokenField = "access_token"
+}
+
+class Auth0Config extends AuthModuleConfig {
+  val domain = "https://opunapps.eu.auth0.com"
+  override def clientId = "MZPfUJ9pebZrHvrFtPPCw8jaHMcXteeN"
+  override def clientSecret = "MNyavE6E3BRfmYgmFEk8EsxnxelD2wubS2UecbzHRVkOHw13JEHNIg1hJHJ9bGoI"
+  override def tokenUrl = s"$domain/oauth/token"
+  override def userInfoUrl = s"$domain/userinfo"
+  override def loginUrl = s"$domain/authorize"
+  override def logoutUrl = s"$domain/ogout"
+  override def accessTokenField = "access_token"
+}
+
+class GenericOauth2Module(authConfig: AuthModuleConfig) extends AuthModule {
 
   import play.api.libs.ws.DefaultBodyWritables._
   import utils.future.Implicits._
@@ -36,13 +62,13 @@ class FakeAuthModule extends AuthModule {
     implicit val req = request
 
     val redirect = request.getQueryString("redirect")
-    val clientId = "otoroshi"
+    val clientId = authConfig.clientId
     val responseType = "code"
     val scope = "openid profile email name"
 
-    val redirectUri = s"http://privateapps.dev.opunmaif.fr:9999/privateapps/generic/${descriptor.id}/callback"
+    val redirectUri = s"http://privateapps.dev.opunmaif.fr:9999/privateapps/generic/callback?desc=${descriptor.id}"
     Redirect(
-      s"http://localhost:8081/auth/realms/master/protocol/openid-connect/auth?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+      s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     ).addingToSession(
       "pa-redirect-after-login" -> redirect.getOrElse(
         routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
@@ -51,20 +77,22 @@ class FakeAuthModule extends AuthModule {
   }
 
   override def logout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env) = {
+    // TODO: implements
     ().asFuture
   }
 
   override def callback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
-    val clientId = "otoroshi"
-    val clientSecret = "4babd71e-fa18-4e9f-b98c-d4e6197a5c55"
-    val redirectUri = s"http://privateapps.dev.opunmaif.fr:9999/privateapps/generic/${descriptor.id}/callback"
+    val clientId = authConfig.clientId
+    val clientSecret = authConfig.clientSecret
+    val redirectUri = s"http://privateapps.dev.opunmaif.fr:9999/privateapps/generic/callback?desc=${descriptor.id}"
+    println(request.getQueryString("desc"))
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None => {
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            env.Ws.url("http://localhost:8081/auth/realms/master/protocol/openid-connect/token")
+            env.Ws.url(authConfig.tokenUrl)
               .post(
                 Map(
                   "code" -> code,
@@ -74,17 +102,21 @@ class FakeAuthModule extends AuthModule {
                   "redirect_uri" -> redirectUri
                 )
               )(writeableOf_urlEncodedSimpleForm).flatMap { resp =>
-                val accessToken = (resp.json \ "access_token").as[String]
-                env.Ws.url("http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo")
+              val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
+              env.Ws.url(authConfig.userInfoUrl)
                 .post(Map(
                   "access_token" -> accessToken
                 ))(writeableOf_urlEncodedSimpleForm).map(_.json)
-              }.map { user =>
-                Right(PrivateAppsUser(IdGenerator.token(64),
-                  (user \ "name").as[String],
-                  (user \ "email").as[String],
-                  user))
-              }
+            }.map { user =>
+              Right(
+                PrivateAppsUser(
+                  randomId = IdGenerator.token(64),
+                  name = (user \ "name").as[String],
+                  email = (user \ "email").as[String],
+                  profile = user
+                )
+              )
+            }
           }
         }
       }

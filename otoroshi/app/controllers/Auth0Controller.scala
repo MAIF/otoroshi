@@ -28,96 +28,111 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
   lazy val logger = Logger("otoroshi-auth0")
 
 
-  def confidentialAppLoginPage(serviceId: String) = PrivateAppsAction.async { ctx =>
+  def confidentialAppLoginPage() = PrivateAppsAction.async { ctx =>
 
     import utils.future.Implicits._
-
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+    
+    ctx.request.getQueryString("desc") match {
       case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
-      case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
-      case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
-        descriptor.authSettings.loginPage(ctx.request, ctx.globalConfig, descriptor)
-      }
-      case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
-    }
-  }
-
-  def confidentialAppLogout(serviceId: String) = PrivateAppsAction.async { ctx =>
-
-    import utils.future.Implicits._
-
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-      case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
-      case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
-      case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
-        descriptor.authSettings.logout(ctx.request, ctx.globalConfig, descriptor).map { _ =>
-
-          import play.api.mvc.DiscardingCookie
-
-          implicit val request = ctx.request
-          val redirect = ctx.request.getQueryString("redirect")
-          ctx.user.foreach(_.delete())
-          redirect match {
-            case Some(url) =>
-              val host = new java.net.URL(url).getHost
-              Redirect(url)
-                .removingFromSession("pa-redirect-after-login")
-                .discardingCookies(env.removePrivateSessionCookies(host): _*)
-            case None =>
-              Redirect(routes.PrivateAppsController.home())
-                .removingFromSession("pa-redirect-after-login")
-                .discardingCookies(env.removePrivateSessionCookies(request.host): _*)
+      case Some(serviceId) => {
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+          case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+          case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
+            descriptor.authSettings.loginPage(ctx.request, ctx.globalConfig, descriptor)
           }
+          case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
         }
       }
-      case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
     }
   }
 
-  def confidentialAppCallback(serviceId: String) = PrivateAppsAction.async { ctx =>
+  def confidentialAppLogout() = PrivateAppsAction.async { ctx =>
+
+    import utils.future.Implicits._
+
+    ctx.request.getQueryString("desc") match {
+      case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+      case Some(serviceId) => {
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+          case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+          case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
+            descriptor.authSettings.logout(ctx.request, ctx.globalConfig, descriptor).map { _ =>
+
+              import play.api.mvc.DiscardingCookie
+
+              implicit val request = ctx.request
+              val redirect = ctx.request.getQueryString("redirect")
+              ctx.user.foreach(_.delete())
+              redirect match {
+                case Some(url) =>
+                  val host = new java.net.URL(url).getHost
+                  Redirect(url)
+                    .removingFromSession("pa-redirect-after-login")
+                    .discardingCookies(env.removePrivateSessionCookies(host): _*)
+                case None =>
+                  Redirect(routes.PrivateAppsController.home())
+                    .removingFromSession("pa-redirect-after-login")
+                    .discardingCookies(env.removePrivateSessionCookies(request.host): _*)
+              }
+            }
+          }
+          case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+        }
+      }
+    }
+  }
+
+  def confidentialAppCallback() = PrivateAppsAction.async { ctx =>
 
     import utils.future.Implicits._
 
     implicit val req = ctx.request
 
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+    ctx.request.getQueryString("desc") match {
       case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
-      case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
-      case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
-        descriptor.authSettings.callback(ctx.request, ctx.globalConfig, descriptor).flatMap {
-          case Left(error) => {
-            BadRequest(
-              views.html.otoroshi
-                .error(message = s"You're not authorized here: ${error}", _env = env, title = "Authorization error")
-            ).asFuture
-          }
-          case Right(user) => {
-            user.save(Duration(env.privateAppsSessionExp, TimeUnit.MILLISECONDS))
-              .map { paUser =>
-                val redirectTo = ctx.request.session
-                  .get("pa-redirect-after-login")
-                  .getOrElse(
-                    routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-                  )
-                val url    = new java.net.URL(redirectTo)
-                val host   = url.getHost
-                val scheme = url.getProtocol
-                val path   = url.getPath
-                val query  = Option(url.getQuery).map(q => s"?$q").getOrElse(s"")
-                val setCookiesRedirect = url.getPort match {
-                  case -1 =>
-                    s"$scheme://$host/__otoroshi_private_apps_login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host"
-                  case port =>
-                    s"$scheme://$host:$port/__otoroshi_private_apps_login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host"
-                }
-                Redirect(setCookiesRedirect)
-                  .removingFromSession("pa-redirect-after-login")
-                  .withCookies(env.createPrivateSessionCookies(host, paUser.randomId): _*)
+      case Some(serviceId) => {
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+          case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+          case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
+            descriptor.authSettings.callback(ctx.request, ctx.globalConfig, descriptor).flatMap {
+              case Left(error) => {
+                BadRequest(
+                  views.html.otoroshi
+                    .error(message = s"You're not authorized here: ${error}", _env = env, title = "Authorization error")
+                ).asFuture
               }
+              case Right(user) => {
+                user.save(Duration(env.privateAppsSessionExp, TimeUnit.MILLISECONDS))
+                  .map { paUser =>
+                    val redirectTo = ctx.request.session
+                      .get("pa-redirect-after-login")
+                      .getOrElse(
+                        routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                      )
+                    val url = new java.net.URL(redirectTo)
+                    val host = url.getHost
+                    val scheme = url.getProtocol
+                    val path = url.getPath
+                    val query = Option(url.getQuery).map(q => s"?$q").getOrElse(s"")
+                    val setCookiesRedirect = url.getPort match {
+                      case -1 =>
+                        s"$scheme://$host/__otoroshi_private_apps_login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host"
+                      case port =>
+                        s"$scheme://$host:$port/__otoroshi_private_apps_login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host"
+                    }
+                    Redirect(setCookiesRedirect)
+                      .removingFromSession("pa-redirect-after-login")
+                      .withCookies(env.createPrivateSessionCookies(host, paUser.randomId): _*)
+                  }
+              }
+            }
           }
+          case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
         }
       }
-      case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
     }
   }
 
