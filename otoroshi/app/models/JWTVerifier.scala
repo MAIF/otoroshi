@@ -22,11 +22,11 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-sealed trait AsJson {
+trait AsJson {
   def asJson: JsValue
 }
 
-sealed trait FromJson[A] {
+trait FromJson[A] {
   def fromJson(json: JsValue): Either[Throwable, A]
 }
 

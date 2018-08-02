@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
+import auth.GenericOauth2Module
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
 import models.{BackOfficeUser, GlobalConfig, PrivateAppsUser}
@@ -31,15 +32,15 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
   def confidentialAppLoginPage() = PrivateAppsAction.async { ctx =>
 
     import utils.future.Implicits._
-    
+
     ctx.request.getQueryString("desc") match {
       case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
       case Some(serviceId) => {
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
           case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
-          case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
-          case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
-            descriptor.authSettings.loginPage(ctx.request, ctx.globalConfig, descriptor)
+          case Some(descriptor) if !descriptor.privateApp => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
+            descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
           }
           case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
         }
@@ -56,9 +57,9 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
       case Some(serviceId) => {
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
           case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
-          case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
-          case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
-            descriptor.authSettings.logout(ctx.request, ctx.globalConfig, descriptor).map { _ =>
+          case Some(descriptor) if !descriptor.privateApp => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
+            descriptor.privateAppSettings.authModule(ctx.globalConfig).logout(ctx.request, ctx.globalConfig, descriptor).map { _ =>
 
               import play.api.mvc.DiscardingCookie
 
@@ -95,9 +96,9 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
       case Some(serviceId) => {
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
           case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
-          case Some(descriptor) if !descriptor.authSettings.enabled => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
-          case Some(descriptor) if descriptor.authSettings.enabled && descriptor.id != env.backOfficeDescriptor.id => {
-            descriptor.authSettings.callback(ctx.request, ctx.globalConfig, descriptor).flatMap {
+          case Some(descriptor) if !descriptor.privateApp => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
+            descriptor.privateAppSettings.authModule(ctx.globalConfig).callback(ctx.request, ctx.globalConfig, descriptor).flatMap {
               case Left(error) => {
                 BadRequest(
                   views.html.otoroshi
@@ -143,6 +144,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     Redirect(routes.BackOfficeController.error(Some(s"Auth0 error - logged with id: $errorId")))
   }
 
+  /*
   def privateAppsLoginPage(redirect: Option[String]) = PrivateAppsAction { ctx =>
     implicit val request = ctx.request
     ctx.globalConfig.privateAppsAuth0Config match {
@@ -167,38 +169,6 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     }
   }
 
-  def backOfficeLogin(redirect: Option[String]) = BackOfficeAction.async { ctx =>
-    implicit val request = ctx.request
-    env.datastores.globalConfigDataStore.singleton().map {
-      case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
-        config.backofficeAuth0Config match {
-          case None => Redirect(controllers.routes.BackOfficeController.index())
-          case Some(aconf) => {
-            if (env.useUniversalLogin) {
-              Redirect(
-                s"https://${aconf.domain}/authorize?response_type=code&client_id=${aconf.clientId}&scope=openid+profile+email+name&redirect_uri=${aconf.callbackURL}"
-              ).addingToSession(
-                "bo-redirect-after-login" -> redirect.getOrElse(
-                  routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-                )
-              )
-            } else {
-              Ok(views.html.backoffice.login(env, aconf)).addingToSession(
-                "bo-redirect-after-login" -> redirect
-                  .orElse(ctx.request.session.get("bo-redirect-after-login"))
-                  .getOrElse(
-                    routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-                  )
-              )
-            }
-          }
-        }
-      }
-      case config if (config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) =>
-        Redirect(controllers.routes.BackOfficeController.index())
-    }
-  }
-
   def privateAppsLogout(redirect: Option[String]) = PrivateAppsAction { ctx =>
     import play.api.mvc.DiscardingCookie
 
@@ -216,19 +186,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           .discardingCookies(env.removePrivateSessionCookies(request.host): _*)
     }
   }
-
-  def backOfficeLogout(redirect: Option[String]) = BackOfficeActionAuth.async { ctx =>
-    implicit val request = ctx.request
-    ctx.user.delete().map { _ =>
-      Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
-      redirect match {
-        case Some(url) => Redirect(url).removingFromSession("bousr", "bo-redirect-after-login")
-        case None =>
-          Redirect(routes.BackOfficeController.index()).removingFromSession("bousr", "bo-redirect-after-login")
-      }
-    }
-  }
-
+  
   def privateAppsCallback(codeOpt: Option[String] = None,
                           error: Option[String] = None,
                           error_description: Option[String] = None) = PrivateAppsAction.async { ctx =>
@@ -296,6 +254,51 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
               }
           case _ => FastFuture.successful(BadRequest(views.html.otoroshi.error("No parameters supplied", env)))
         }
+      }
+    }
+  }
+  */
+
+  def backOfficeLogin(redirect: Option[String]) = BackOfficeAction.async { ctx =>
+    implicit val request = ctx.request
+    env.datastores.globalConfigDataStore.singleton().map {
+      case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
+        config.backofficeAuth0Config match {
+          case None => Redirect(controllers.routes.BackOfficeController.index())
+          case Some(aconf) => {
+            if (env.useUniversalLogin) {
+              Redirect(
+                s"https://${aconf.domain}/authorize?response_type=code&client_id=${aconf.clientId}&scope=openid+profile+email+name&redirect_uri=${aconf.callbackURL}"
+              ).addingToSession(
+                "bo-redirect-after-login" -> redirect.getOrElse(
+                  routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                )
+              )
+            } else {
+              Ok(views.html.backoffice.login(env, aconf)).addingToSession(
+                "bo-redirect-after-login" -> redirect
+                  .orElse(ctx.request.session.get("bo-redirect-after-login"))
+                  .getOrElse(
+                    routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                  )
+              )
+            }
+          }
+        }
+      }
+      case config if (config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) =>
+        Redirect(controllers.routes.BackOfficeController.index())
+    }
+  }
+
+  def backOfficeLogout(redirect: Option[String]) = BackOfficeActionAuth.async { ctx =>
+    implicit val request = ctx.request
+    ctx.user.delete().map { _ =>
+      Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+      redirect match {
+        case Some(url) => Redirect(url).removingFromSession("bousr", "bo-redirect-after-login")
+        case None =>
+          Redirect(routes.BackOfficeController.index()).removingFromSession("bousr", "bo-redirect-after-login")
       }
     }
   }

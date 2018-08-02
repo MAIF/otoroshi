@@ -61,11 +61,6 @@ GET     /privateapps/error                                    controllers.Privat
 GET     /privateapps/home                                     controllers.PrivateAppsController.home
 GET     /privateapps/redirect                                 controllers.PrivateAppsController.redirect
 
-# Auth0 URLs
-GET     /privateapps/auth0/login                              controllers.Auth0Controller.privateAppsLoginPage(redirect: Option[String])
-GET     /privateapps/auth0/logout                             controllers.Auth0Controller.privateAppsLogout(redirect: Option[String])
-GET     /privateapps/auth0/callback                           controllers.Auth0Controller.privateAppsCallback(code: Option[String], error: Option[String], error_description: Option[String])
-
 GET     /privateapps/generic/login                            controllers.Auth0Controller.confidentialAppLoginPage()
 GET     /privateapps/generic/logout                           controllers.Auth0Controller.confidentialAppLogout()
 GET     /privateapps/generic/callback                         controllers.Auth0Controller.confidentialAppCallback()

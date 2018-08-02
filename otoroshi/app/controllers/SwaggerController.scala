@@ -428,7 +428,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "secComSettings"             -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
       "metadata"                   -> SimpleObjectType ~~> "Just a bunch of random properties",
       "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
-      "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication"
+      "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
+      "privateAppSettings"         -> OneOf(Ref("OauthPrivateAppSettings"), Ref("GlobalAuth0PrivateAppSettings"))
     )
   )
 
@@ -798,6 +799,49 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
+  def OauthPrivateAppSettings = Json.obj(
+    "description" -> "Settings to authenticate users using a generic OAuth2 provider",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "clientId",
+      "clientSecret",
+      "authorizeUrl",
+      "tokenUrl",
+      "userInfoUrl",
+      "loginUrl",
+      "logoutUrl",
+      "callbackUrl",
+      "accessTokenField",
+      "nameField",
+      "emailField"
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "Type of settings. value is oauth2",
+      "clientId" -> SimpleStringType ~~> "OAuth Client id",
+      "clientSecret" -> SimpleStringType ~~> "OAuth Client secret",
+      "authorizeUrl" -> SimpleStringType ~~> "OAuth authorize URL",
+      "tokenUrl" -> SimpleStringType ~~> "OAuth token URL",
+      "userInfoUrl" -> SimpleStringType ~~> "OAuth userinfo to get user profile",
+      "loginUrl" -> SimpleStringType ~~> "OAuth login URL",
+      "logoutUrl" -> SimpleStringType ~~> "OAuth logout URL",
+      "callbackUrl" -> SimpleStringType ~~> "Otoroshi callback URL",
+      "accessTokenField" -> SimpleStringType ~~> "Field name to get access token",
+      "nameField" -> SimpleStringType ~~> "Field name to get name from user profile",
+      "emailField" -> SimpleStringType ~~> "Field name to get email from user profile"
+    )
+  )
+  def GlobalAuth0PrivateAppSettings = Json.obj(
+    "description" -> "Settings to authenticate users using the globally defined Auth0 settings for private apps",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "Type of settings. value is global-auth0",
+    )
+  )
+
   def InQueryParam = Json.obj(
     "description" -> "JWT location in a query param",
     "type"        -> "object",
@@ -1827,7 +1871,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "PassThrough"                 -> PassThrough,
         "Sign"                        -> Sign,
         "Transform"                   -> Transform,
-        "GlobalJwtVerifier"           -> GlobalJwtVerifier
+        "GlobalJwtVerifier"           -> GlobalJwtVerifier,
+        "OauthPrivateAppSettings"     -> OauthPrivateAppSettings,
+        "GlobalAuth0PrivateAppSettings" -> GlobalAuth0PrivateAppSettings
       )
     )
   }

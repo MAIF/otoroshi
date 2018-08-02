@@ -511,14 +511,6 @@ export class ServicePage extends Component {
               help="Display a construction page when a user try to use the service"
               onChange={v => this.changeTheValue('buildMode', v)}
             />
-            <WithEnv predicate={env => env.displayPrivateApps}>
-              <BooleanInput
-                label="Enforce user login to access the app"
-                value={this.state.service.privateApp}
-                help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
-                onChange={v => this.changeTheValue('privateApp', v)}
-              />
-            </WithEnv>
             <BooleanInput
               label="Send Otoroshi headers back"
               value={this.state.service.sendOtoroshiHeadersBack}
@@ -728,23 +720,142 @@ export class ServicePage extends Component {
               help="If you define a public pattern that is a little bit too much, you can make some of public URL private again"
               onChange={arr => this.changeTheValue('privatePatterns', arr)}
             />
-            {this.state.service.enforceSecureCommunication && (
-              <ArrayInput
-                label="Secured exclusions"
-                placeholder="URI pattern"
-                suffix="regex"
-                value={this.state.service.secComExcludedPatterns}
-                help="URI patterns excluded from secured communications"
-                onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
+          </Collapse>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Otoroshi exchange protocol">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.enforceSecureCommunication}
+              help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
+              onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
+            />
+            <ArrayInput
+              label="Secured exclusions"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.secComExcludedPatterns}
+              help="URI patterns excluded from secured communications"
+              onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
+            />
+            <AlgoSettings
+              algo={this.state.service.secComSettings}
+              path="secComSettings"
+              changeTheValue={this.changeTheValue}
+            />
+          </Collapse>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Security">
+              <BooleanInput
+                label="Enforce user login to access the app"
+                value={this.state.service.privateApp}
+                help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
+                onChange={v => this.changeTheValue('privateApp', v)}
               />
-            )}
-            {this.state.service.privateApp && [
+
+              <SelectInput
+                label="Type"
+                value={this.state.service.privateAppSettings.type}
+                onChange={e => {
+                  switch (e) {
+                    case 'global-auth0':
+                      this.changeTheValue('privateAppSettings', { type: 'global-auth0' });
+                      break;
+                    case 'oauth2':
+                      this.changeTheValue('privateAppSettings', { 
+                        type: 'oauth2',  
+                        clientId: 'client', 
+                        clientSecret: 'secret', 
+                        authorizeUrl: 'http://my.iam.local:8082/oauth/authorize', 
+                        tokenUrl: 'http://my.iam.local:8082/oauth/token', 
+                        userInfoUrl: 'http://my.iam.local:8082/userinfo', 
+                        loginUrl: 'http://my.iam.local:8082/login', 
+                        logoutUrl: 'http://my.iam.local:8082/logout', 
+                        callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback', 
+                        accessTokenField: 'access_token', 
+                      });
+                      break;
+                  }
+                }}
+                possibleValues={[
+                  { label: 'Global Auth0 settings', value: 'global-auth0' },
+                  { label: 'Generic OAuth2 provider', value: 'oauth2' },
+                ]}
+                help="The type of settings to log into your private app"
+              />
+
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Client ID"
+                value={this.state.service.privateAppSettings.clientId}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.clientId', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Client Secret"
+                value={this.state.service.privateAppSettings.clientSecret}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.clientSecret', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Authorize URL"
+                value={this.state.service.privateAppSettings.authorizeUrl}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.authorizeUrl', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Token URL"
+                value={this.state.service.privateAppSettings.tokenUrl}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.tokenUrl', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Userinfo URL"
+                value={this.state.service.privateAppSettings.userInfoUrl}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.userInfoUrl', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Login URL"
+                value={this.state.service.privateAppSettings.loginUrl}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.loginUrl', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Logout URL"
+                value={this.state.service.privateAppSettings.logoutUrl}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.logoutUrl', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Access token field name"
+                value={this.state.service.privateAppSettings.accessTokenField}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.accessTokenField', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Callback URL"
+                value={this.state.service.privateAppSettings.callbackUrl}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.callbackUrl', v)}
+              />
               <BooleanInput
                 label="Strictly private mode"
                 value={this.state.service.strictlyPrivate}
                 help="Strictly private mode enabled"
                 onChange={v => this.changeTheValue('strictlyPrivate', v)}
-              />,
+              />
               <div className="form-group">
                 <label className="col-xs-12 col-sm-2 control-label" />
                 <div className="col-sm-10">
@@ -763,24 +874,7 @@ export class ServicePage extends Component {
                     don't want this behavior, juste enable the 'stricly private' mode.
                   </p>
                 </div>
-              </div>,
-            ]}
-          </Collapse>
-          <Collapse
-            collapsed={this.state.allCollapsed}
-            initCollapsed={true}
-            label="Otoroshi exchange protocol">
-            <BooleanInput
-              label="Enabled"
-              value={this.state.service.enforceSecureCommunication}
-              help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
-              onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
-            />
-            <AlgoSettings
-              algo={this.state.service.secComSettings}
-              path="secComSettings"
-              changeTheValue={this.changeTheValue}
-            />
+              </div>
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
