@@ -121,8 +121,8 @@ case class GenericOauth2Module(authConfig: AuthModuleConfig) extends AuthModule 
               Right(
                 PrivateAppsUser(
                   randomId = IdGenerator.token(64),
-                  name = (user \ authConfig.nameField).as[String],
-                  email = (user \ authConfig.emailField).as[String],
+                  name = (user \ authConfig.nameField).asOpt[String].getOrElse("No Name"),
+                  email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                   profile = user
                 )
               )
