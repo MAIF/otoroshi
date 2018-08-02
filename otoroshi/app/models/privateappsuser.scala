@@ -20,7 +20,7 @@ case class PrivateAppsUser(randomId: String,
   def otoroshiData(implicit env: Env): Option[Map[String, String]] =
     (profile \ env.auth0AppMeta \ env.auth0UserMeta).asOpt[Map[String, String]]
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
-  def field(name: String): Option[String] = (profile \ "name").asOpt[String]
+  def field(name: String): Option[String] = (profile \ name).asOpt[String]
   def userId: Option[String]              = (profile \ "user_id").asOpt[String].orElse((profile \ "sub").asOpt[String])
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
