@@ -776,6 +776,8 @@ export class ServicePage extends Component {
                         logoutUrl: 'http://my.iam.local:8082/logout', 
                         callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback', 
                         accessTokenField: 'access_token', 
+                        nameField: 'name', 
+                        emailField: 'email', 
                       });
                       break;
                   }
