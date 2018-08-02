@@ -750,7 +750,7 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Security">
               <BooleanInput
-                label="Enforce user login to access the app"
+                label="Enforce user login"
                 value={this.state.service.privateApp}
                 help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
                 onChange={v => this.changeTheValue('privateApp', v)}
@@ -840,6 +840,13 @@ export class ServicePage extends Component {
               />
               <TextInput
                 hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Callback URL"
+                value={this.state.service.privateAppSettings.callbackUrl}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.callbackUrl', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
                 label="Access token field name"
                 value={this.state.service.privateAppSettings.accessTokenField}
                 help=""
@@ -847,10 +854,17 @@ export class ServicePage extends Component {
               />
               <TextInput
                 hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Callback URL"
-                value={this.state.service.privateAppSettings.callbackUrl}
+                label="Name field name"
+                value={this.state.service.privateAppSettings.nameField}
                 help=""
-                onChange={v => this.changeTheValue('privateAppSettings.callbackUrl', v)}
+                onChange={v => this.changeTheValue('privateAppSettings.nameField', v)}
+              />
+              <TextInput
+                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
+                label="Email field name"
+                value={this.state.service.privateAppSettings.emailField}
+                help=""
+                onChange={v => this.changeTheValue('privateAppSettings.emailField', v)}
               />
               <BooleanInput
                 label="Strictly private mode"
