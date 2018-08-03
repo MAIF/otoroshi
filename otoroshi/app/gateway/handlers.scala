@@ -221,8 +221,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]], desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
+    val expected = "oto-papps-" + desc.privateAppSettings.cookieSuffix(desc)
     req.cookies
-      .get("oto-papps-" + desc.privateAppSettings.cookieSuffix(desc))
+      .get(expected)
       .flatMap { cookie =>
         env.extractPrivateSessionId(cookie)
       }

@@ -193,7 +193,6 @@ class SnowMonkey(implicit env: Env) {
                 && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
                 && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
                 && descriptor.id != env.backOfficeServiceId =>
-              println(s"outages " + count)
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
                 .andThen {

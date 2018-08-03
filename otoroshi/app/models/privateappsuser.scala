@@ -42,7 +42,6 @@ case class PrivateAppsUser(randomId: String,
 }
 
 object PrivateAppsUser {
-  val fmtold = Json.format[PrivateAppsUser]
   val fmt = new Format[PrivateAppsUser] {
     override def reads(json: JsValue) = Try {
       JsSuccess(

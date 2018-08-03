@@ -32,6 +32,8 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
 
     import utils.future.Implicits._
 
+    implicit val req = ctx.request
+
     ctx.request.getQueryString("desc") match {
       case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
       case Some(serviceId) => {
@@ -39,7 +41,38 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
           case Some(descriptor) if !descriptor.privateApp => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-            descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
+            val expectedCookieName = s"oto-papps-${descriptor.privateAppSettings.cookieSuffix(descriptor)}"
+            ctx.request.cookies.find(c => c.name == expectedCookieName) match {
+              case Some(cookie) => {
+                env.extractPrivateSessionId(cookie) match {
+                  case None =>
+                    descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
+                  case Some(sessionId) => {
+                    env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
+                      case None =>
+                        descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
+                      case Some(user) =>
+                        val redirectTo = ctx.request.getQueryString("redirect").get
+                        val url = new java.net.URL(redirectTo)
+                        val host = url.getHost
+                        val scheme = url.getProtocol
+                        val setCookiesRedirect = url.getPort match {
+                          case -1 =>
+                            s"$scheme://$host/__otoroshi_private_apps_login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${descriptor.privateAppSettings.cookieSuffix(descriptor)}"
+                          case port =>
+                            s"$scheme://$host:$port/__otoroshi_private_apps_login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${descriptor.privateAppSettings.cookieSuffix(descriptor)}"
+                        }
+                        FastFuture.successful(Redirect(setCookiesRedirect)
+                          .removingFromSession("pa-redirect-after-login")
+                          .withCookies(env.createPrivateSessionCookies(host, user.randomId, descriptor): _*))
+                    }
+                  }
+                }
+              }
+              case None =>
+                descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
+            }
+
           }
           case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
         }

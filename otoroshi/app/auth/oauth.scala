@@ -225,7 +225,6 @@ case class GenericOauth2Module(authConfig: AuthModuleConfig) extends AuthModule 
 
     val redirectUri = authConfig.callbackUrl + s"?desc=${descriptor.id}"
     val loginUrl = s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
-    println(loginUrl)
     Redirect(
       loginUrl
     ).addingToSession(
