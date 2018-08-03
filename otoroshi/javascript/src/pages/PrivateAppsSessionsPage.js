@@ -30,6 +30,10 @@ export class PrivateAppsSessionsPage extends Component {
       cell: (v, item) => JSON.stringify(item.profile),
     },
     {
+      title: 'Realm',
+      content: item => item.realm,
+    },
+    {
       title: 'Action',
       style: { textAlign: 'center', width: 150 },
       notSortable: true,

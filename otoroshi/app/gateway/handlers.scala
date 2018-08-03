@@ -195,9 +195,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val sessionIdOpt: Option[String]  = req.queryString.get("sessionId").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
-    (redirectToOpt, sessionIdOpt, hostOpt) match {
-      case (Some(redirectTo), Some(sessionId), Some(host)) =>
-        FastFuture.successful(Redirect(redirectTo).withCookies(env.createPrivateSessionCookies(host, sessionId): _*))
+    val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
+    (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt) match {
+      case (Some(redirectTo), Some(sessionId), Some(host), Some(cp)) =>
+        FastFuture.successful(Redirect(redirectTo).withCookies(env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp): _*))
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
     }
@@ -206,9 +207,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def removePrivateAppsCookies() = actionBuilder.async { req =>
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
-    (redirectToOpt, hostOpt) match {
-      case (Some(redirectTo), Some(host)) =>
-        FastFuture.successful(Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookies(host): _*))
+    val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
+    (redirectToOpt, hostOpt, cookiePrefOpt) match {
+      case (Some(redirectTo), Some(host), Some(cp)) =>
+        FastFuture.successful(Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*))
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
     }
@@ -218,9 +220,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"))
   }
 
-  def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]]): Future[Option[PrivateAppsUser]] = {
+  def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]], desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
     req.cookies
-      .get("oto-papps")
+      .get("oto-papps-" + desc.privateAppSettings.cookieSuffix(desc))
       .flatMap { cookie =>
         env.extractPrivateSessionId(cookie)
       }
@@ -1290,7 +1292,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                           }
 
                           def passWithAuth0(config: GlobalConfig): Future[Result] =
-                            isPrivateAppsSessionValid(req).flatMap {
+                            isPrivateAppsSessionValid(req, descriptor).flatMap {
                               case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                               case None => {
                                 val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
@@ -1302,7 +1304,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     .Redirect(redirectTo)
                                     .discardingCookies(
                                       env.removePrivateSessionCookies(
-                                        ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost
+                                        ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
+                                        descriptor
                                       ): _*
                                     )
                                 )
@@ -1447,7 +1450,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   if (descriptor.isUriPublic(req.path)) {
                                     passWithAuth0(globalConfig)
                                   } else {
-                                    isPrivateAppsSessionValid(req).fast.flatMap {
+                                    isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
                                       case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
                                       case Some(user)                            => passWithAuth0(globalConfig)
                                       case None                                  => passWithApiKey(globalConfig)

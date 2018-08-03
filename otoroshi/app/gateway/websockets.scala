@@ -79,8 +79,10 @@ class WebSocketHandler()(implicit env: Env) {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  def isPrivateAppsSessionValid(req: RequestHeader): Future[Option[PrivateAppsUser]] = {
-    req.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
+    req.cookies.get(
+      "oto-papps-" + desc.privateAppSettings.cookieSuffix(desc)
+    ).flatMap(env.extractPrivateSessionId).map { id =>
       env.datastores.privateAppsUserDataStore.findById(id)
     } getOrElse {
       FastFuture.successful(None)
@@ -777,7 +779,7 @@ class WebSocketHandler()(implicit env: Env) {
                         def passWithAuth0(
                             config: GlobalConfig
                         ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
-                          isPrivateAppsSessionValid(req).flatMap {
+                          isPrivateAppsSessionValid(req, descriptor).flatMap {
                             case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                             case None => {
                               val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
@@ -909,7 +911,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   if (descriptor.isUriPublic(req.path)) {
                                     passWithAuth0(globalConfig)
                                   } else {
-                                    isPrivateAppsSessionValid(req).flatMap {
+                                    isPrivateAppsSessionValid(req, descriptor).flatMap {
                                       case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
                                       case Some(user)                            => passWithAuth0(globalConfig)
                                       case None                                  => passWithApiKey(globalConfig)

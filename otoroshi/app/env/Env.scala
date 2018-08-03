@@ -443,11 +443,15 @@ class Env(val configuration: Configuration,
     s"$signature::$id"
   }
 
-  def createPrivateSessionCookies(host: String, id: String): Seq[play.api.mvc.Cookie] =
+  def createPrivateSessionCookies(host: String, id: String, desc: ServiceDescriptor): Seq[play.api.mvc.Cookie] = {
+    createPrivateSessionCookiesWithSuffix(host, id, desc.privateAppSettings.cookieSuffix(desc))
+  }
+
+  def createPrivateSessionCookiesWithSuffix(host: String, id: String, suffix: String): Seq[play.api.mvc.Cookie] = {
     if (host.endsWith(sessionDomain)) {
       Seq(
         play.api.mvc.Cookie(
-          name = "oto-papps",
+          name = "oto-papps-" + suffix,
           value = signPrivateSessionId(id),
           maxAge = Some(sessionMaxAge),
           path = "/",
@@ -458,7 +462,7 @@ class Env(val configuration: Configuration,
     } else {
       Seq(
         play.api.mvc.Cookie(
-          name = "oto-papps",
+          name = "oto-papps-" + suffix,
           value = signPrivateSessionId(id),
           maxAge = Some(sessionMaxAge),
           path = "/",
@@ -466,7 +470,7 @@ class Env(val configuration: Configuration,
           httpOnly = false
         ),
         play.api.mvc.Cookie(
-          name = "oto-papps",
+          name = "oto-papps-" + suffix,
           value = signPrivateSessionId(id),
           maxAge = Some(sessionMaxAge),
           path = "/",
@@ -475,16 +479,21 @@ class Env(val configuration: Configuration,
         )
       )
     }
+  }
 
-  def removePrivateSessionCookies(host: String): Seq[play.api.mvc.DiscardingCookie] =
+  def removePrivateSessionCookies(host: String, desc: ServiceDescriptor): Seq[play.api.mvc.DiscardingCookie] = {
+    removePrivateSessionCookiesWithSuffix(host, desc.privateAppSettings.cookieSuffix(desc))
+  }
+
+  def removePrivateSessionCookiesWithSuffix(host: String, suffix: String): Seq[play.api.mvc.DiscardingCookie] =
     Seq(
       play.api.mvc.DiscardingCookie(
-        name = "oto-papps",
+        name = "oto-papps-" + suffix,
         path = "/",
         domain = Some(host)
       ),
       play.api.mvc.DiscardingCookie(
-        name = "oto-papps",
+        name = "oto-papps-" + suffix,
         path = "/",
         domain = Some(sessionDomain)
       )

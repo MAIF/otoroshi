@@ -49,6 +49,7 @@ case class Oauth2AuthModuleConfig(
                                    callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
                                  ) extends AuthModuleConfig {
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
+  override def cookieSuffix(desc: ServiceDescriptor) = s"desc-${desc.id}"
   override def asJson: JsValue = Json.obj(
     "type" -> "oauth2",
     "clientId" -> this.clientId,
@@ -146,6 +147,7 @@ case class GlobalOauth2AuthModuleConfig(
     "callbackUrl" -> this.callbackUrl
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalOAuth2ConfigDataStore.set(this)
+  override def cookieSuffix(desc: ServiceDescriptor) = s"global-oauth-$id"
 }
 
 object Oauth2RefAuthModuleConfig extends FromJson[AuthModuleConfig] {
@@ -171,6 +173,7 @@ case class Oauth2RefAuthModuleConfig(id: String) extends AuthModuleConfig {
   override def emailField = throw new RuntimeException("Should never be called ...")
   override def callbackUrl = throw new RuntimeException("Should never be called ...")
   override def authModule(config: GlobalConfig) = Oauth2RefModule(this)
+  override def cookieSuffix(desc: ServiceDescriptor) = s"global-oauth-$id"
   override def asJson = Json.obj(
     "type" -> "oauth2-ref",
     "id" -> id
@@ -268,7 +271,8 @@ case class GenericOauth2Module(authConfig: AuthModuleConfig) extends AuthModule 
                   randomId = IdGenerator.token(64),
                   name = (user \ authConfig.nameField).asOpt[String].getOrElse("No Name"),
                   email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
-                  profile = user
+                  profile = user,
+                  realm = descriptor.privateAppSettings.cookieSuffix(descriptor)
                 )
               )
             }

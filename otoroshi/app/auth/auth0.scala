@@ -1,6 +1,6 @@
 package auth
 
-import models.{FromJson, GlobalConfig}
+import models.{FromJson, GlobalConfig, ServiceDescriptor}
 import play.api.libs.json.{JsValue, Json}
 import security.Auth0Config
 
@@ -21,6 +21,7 @@ case class RefAuth0AuthModuleConfig() extends AuthModuleConfig {
   override def emailField = ???
   override def callbackUrl = ???
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(GlobalConfigAuth0AuthModuleConfig(config))
+  override def cookieSuffix(desc: ServiceDescriptor) = "global-auth0"
   override def asJson = Json.obj(
     "type" -> "global-auth0"
   )
@@ -49,6 +50,7 @@ case class GlobalConfigAuth0AuthModuleConfig(config: GlobalConfig) extends AuthM
   override def emailField: String = "email"
   override def callbackUrl: String = auth0Config.callbackURL
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
+  override def cookieSuffix(desc: ServiceDescriptor) = "global-auth0"
   override def asJson: JsValue = Json.obj(
     "type" -> "actual-global-auth0"
   )

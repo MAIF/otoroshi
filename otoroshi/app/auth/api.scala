@@ -30,6 +30,7 @@ trait AuthModuleConfig extends AsJson {
   def emailField: String
   def callbackUrl: String
   def authModule(config: GlobalConfig): AuthModule
+  def cookieSuffix(desc: ServiceDescriptor): String
 }
 
 object AuthModuleConfig extends FromJson[AuthModuleConfig] {
