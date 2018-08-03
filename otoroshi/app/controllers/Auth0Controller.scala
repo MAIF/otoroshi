@@ -4,10 +4,9 @@ import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
-import auth.GenericOauth2Module
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
-import models.{BackOfficeUser, GlobalConfig, PrivateAppsUser}
+import models.BackOfficeUser
 import play.api.Logger
 import play.api.http.MimeTypes
 import play.api.libs.json.{JsValue, Json}
@@ -61,7 +60,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
             descriptor.privateAppSettings.authModule(ctx.globalConfig).logout(ctx.request, ctx.globalConfig, descriptor).map { _ =>
 
-              import play.api.mvc.DiscardingCookie
+
 
               implicit val request = ctx.request
               val redirect = ctx.request.getQueryString("redirect")

@@ -2,6 +2,7 @@ package storage.redis
 
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
+import auth.GlobalOauth2AuthModuleConfig
 import env.Env
 import models._
 import play.api.libs.json._
@@ -187,31 +188,40 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     val apiKeys            = (export \ "apiKeys").as[JsArray]
     val serviceDescriptors = (export \ "serviceDescriptors").as[JsArray]
     val errorTemplates     = (export \ "errorTemplates").as[JsArray]
+    val jwtVerifiers       = (export \ "jwtVerifiers").as[JsArray]
+    val oauthConfigs       = (export \ "oauthConfigs").as[JsArray]
 
     for {
       _ <- redisCli.flushall()
       _ <- config.save()
       _ <- Future.sequence(
-            admins.value.map(
-              v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").as[String]}", Json.stringify(v))
-            )
-          )
+        admins.value.map(
+          v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").as[String]}", Json.stringify(v))
+        )
+      )
       _ <- Future.sequence(
-            simpleAdmins.value.map(
-              v => redisCli.set(s"${env.storageRoot}:admins:${(v \ "username").as[String]}", Json.stringify(v))
-            )
-          )
+        simpleAdmins.value.map(
+          v => redisCli.set(s"${env.storageRoot}:admins:${(v \ "username").as[String]}", Json.stringify(v))
+        )
+      )
       _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
       _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))
       _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))
       _ <- Future.sequence(errorTemplates.value.map(ErrorTemplate.fromJsons).map(_.save()))
+      _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
+      _ <- Future.sequence(oauthConfigs.value.map(GlobalOauth2AuthModuleConfig.fromJsons).map(_.save()))
     } yield ()
   }
 
   override def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
     val appConfig =
       Json.parse(
-        env.configuration.getOptional[Configuration]("app").get.underlying.root().render(ConfigRenderOptions.concise())
+        env.configuration
+          .getOptional[play.api.Configuration]("app")
+          .get
+          .underlying
+          .root()
+          .render(ConfigRenderOptions.concise())
       )
     for {
       config       <- env.datastores.globalConfigDataStore.singleton()
@@ -224,6 +234,8 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       dataOut      <- env.datastores.serviceDescriptorDataStore.globalDataOut()
       admins       <- env.datastores.u2FAdminDataStore.findAll()
       simpleAdmins <- env.datastores.simpleAdminDataStore.findAll()
+      jwtVerifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
+      oauthConfigs <- env.datastores.globalOAuth2ConfigDataStore.findAll()
     } yield
       Json.obj(
         "label"   -> "Otoroshi export",
@@ -241,7 +253,9 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
         "serviceGroups"      -> JsArray(groups.map(_.toJson)),
         "apiKeys"            -> JsArray(apikeys.map(_.toJson)),
         "serviceDescriptors" -> JsArray(descs.map(_.toJson)),
-        "errorTemplates"     -> JsArray(tmplts.map(_.toJson))
+        "errorTemplates"     -> JsArray(tmplts.map(_.toJson)),
+        "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
+        "oauthConfigs"       -> JsArray(oauthConfigs.map(_.asJson))
       )
   }
 }

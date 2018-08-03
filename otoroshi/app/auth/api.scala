@@ -36,6 +36,7 @@ object AuthModuleConfig extends FromJson[AuthModuleConfig] {
   override def fromJson(json: JsValue): Either[Throwable, AuthModuleConfig] = Try {
     (json \ "type").as[String] match {
       case "oauth2"              => Oauth2AuthModuleConfig.fromJson(json)
+      case "oauth2-ref"          => Oauth2RefAuthModuleConfig.fromJson(json)
       case "global-auth0"        => GlobalConfigAuth0AuthModuleConfig.fromJson(json)
       case "actual-global-auth0" => GlobalConfigAuth0AuthModuleConfig.fromJson(json)
     }

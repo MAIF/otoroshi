@@ -24,6 +24,7 @@ import Select from 'react-select';
 import { ChaosConfigWithSkin } from '../components/ChaosConfig';
 import { JwtVerifier, LocationSettings } from '../components/JwtVerifier';
 import { AlgoSettings } from '../components/JwtVerifier';
+import { AuthModuleConfig } from '../components/AuthModuleConfig';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -761,6 +762,9 @@ export class ServicePage extends Component {
                 value={this.state.service.privateAppSettings.type}
                 onChange={e => {
                   switch (e) {
+                    case 'oauth2-ref':
+                      this.changeTheValue('privateAppSettings', { type: 'oauth2-ref' });
+                      break;
                     case 'global-auth0':
                       this.changeTheValue('privateAppSettings', { type: 'global-auth0' });
                       break;
@@ -785,87 +789,26 @@ export class ServicePage extends Component {
                 possibleValues={[
                   { label: 'Global Auth0 settings', value: 'global-auth0' },
                   { label: 'Generic OAuth2 provider', value: 'oauth2' },
+                  { label: 'Global generic OAuth2 provider', value: 'oauth2-ref' },
                 ]}
                 help="The type of settings to log into your private app"
               />
 
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Client ID"
-                value={this.state.service.privateAppSettings.clientId}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.clientId', v)}
+              {this.state.service.privateAppSettings.type === 'oauth2-ref' && <SelectInput
+                label="OAuth Config"
+                value={this.state.service.privateAppSettings.id}
+                onChange={e => this.changeTheValue('privateAppSettings.id', e)}
+                valuesFrom="/bo/api/proxy/api/auths/oauth2"
+                transformer={a => ({ value: a.id, label: a.name })}
+                help="..."
+              />}
+
+              <AuthModuleConfig 
+                settings={this.state.service.privateAppSettings}
+                path="privateAppSettings"
+                changeTheValue={this.changeTheValue}
               />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Client Secret"
-                value={this.state.service.privateAppSettings.clientSecret}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.clientSecret', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Authorize URL"
-                value={this.state.service.privateAppSettings.authorizeUrl}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.authorizeUrl', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Token URL"
-                value={this.state.service.privateAppSettings.tokenUrl}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.tokenUrl', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Userinfo URL"
-                value={this.state.service.privateAppSettings.userInfoUrl}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.userInfoUrl', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Login URL"
-                value={this.state.service.privateAppSettings.loginUrl}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.loginUrl', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Logout URL"
-                value={this.state.service.privateAppSettings.logoutUrl}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.logoutUrl', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Callback URL"
-                value={this.state.service.privateAppSettings.callbackUrl}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.callbackUrl', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Access token field name"
-                value={this.state.service.privateAppSettings.accessTokenField}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.accessTokenField', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Name field name"
-                value={this.state.service.privateAppSettings.nameField}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.nameField', v)}
-              />
-              <TextInput
-                hide={this.state.service.privateAppSettings.type !== 'oauth2'}
-                label="Email field name"
-                value={this.state.service.privateAppSettings.emailField}
-                help=""
-                onChange={v => this.changeTheValue('privateAppSettings.emailField', v)}
-              />
+
               <BooleanInput
                 label="Strictly private mode"
                 value={this.state.service.strictlyPrivate}

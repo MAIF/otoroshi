@@ -25,6 +25,11 @@ export class PrivateAppsSessionsPage extends Component {
         item.expiredAt ? moment(item.expiredAt).format('DD/MM/YYYY HH:mm:ss') : '',
     },
     {
+      title: 'Profile',
+      content: item => 0,
+      cell: (v, item) => JSON.stringify(item.profile),
+    },
+    {
       title: 'Action',
       style: { textAlign: 'center', width: 150 },
       notSortable: true,

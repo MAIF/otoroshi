@@ -23,7 +23,7 @@ object Errors {
                           status: Status,
                           req: RequestHeader,
                           maybeDescriptor: Option[ServiceDescriptor] = None,
-                          maybeCauseId: Option[String],
+                          maybeCauseId: Option[String] = None,
                           duration: Long = 0L,
                           overhead: Long = 0L,
                           cbDuration: Long = 0L,

@@ -160,6 +160,13 @@ PATCH   /api/verifiers/:id                                    controllers.ApiCon
 GET     /api/verifiers                                        controllers.ApiController.findAllGlobalJwtVerifiers()
 POST    /api/verifiers                                        controllers.ApiController.createGlobalJwtVerifier()
 
+GET     /api/auths/oauth2/:id                                 controllers.ApiController.findGlobalAuthModuleById(id)
+DELETE  /api/auths/oauth2/:id                                 controllers.ApiController.deleteGlobalAuthModule(id)
+PUT     /api/auths/oauth2/:id                                 controllers.ApiController.updateGlobalAuthModule(id)
+PATCH   /api/auths/oauth2/:id                                 controllers.ApiController.patchGlobalAuthModule(id)
+GET     /api/auths/oauth2                                     controllers.ApiController.findAllGlobalAuthModules()
+POST    /api/auths/oauth2                                     controllers.ApiController.createGlobalAuthModule()
+
 GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 

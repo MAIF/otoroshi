@@ -765,3 +765,57 @@ export function updateJwtVerifier(ak) {
     body: JSON.stringify(ak),
   }).then(r => r.json());
 }
+
+export function findAllOAuth2Configs() {
+  return fetch('/bo/api/proxy/api/auths/oauth2', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findOAuth2ConfigById(id) {
+  return fetch(`/bo/api/proxy/api/auths/oauth2/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteOAuth2Config(ak) {
+  return fetch(`/bo/api/proxy/api/auths/oauth2/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createOAuth2Config(ak) {
+  return fetch(`/bo/api/proxy/api/auths/oauth2`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateOAuth2Config(ak) {
+  return fetch(`/bo/api/proxy/api/auths/oauth2/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}

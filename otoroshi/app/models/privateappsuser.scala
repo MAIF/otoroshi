@@ -17,8 +17,14 @@ case class PrivateAppsUser(randomId: String,
                            profile: JsValue,
                            createdAt: DateTime = DateTime.now(),
                            expiredAt: DateTime = DateTime.now()) {
-  def otoroshiData(implicit env: Env): Option[Map[String, String]] =
-    (profile \ env.auth0AppMeta \ env.auth0UserMeta).asOpt[Map[String, String]]
+  def otoroshiData(implicit env: Env): Option[Map[String, String]] = {
+    (profile \ env.auth0AppMeta \ env.auth0UserMeta).asOpt[String].map(s => Json.parse(s)
+      .as[Map[String, String]])
+      .orElse(
+        (profile \ env.auth0AppMeta \ env.auth0UserMeta).asOpt[Map[String, String]]
+      )
+  }
+
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
   def userId: Option[String]              = (profile \ "user_id").asOpt[String].orElse((profile \ "sub").asOpt[String])

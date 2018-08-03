@@ -11,6 +11,7 @@ import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import auth.GlobalOauth2AuthModuleConfig
 import env.Env
 import events._
 import models._
@@ -2878,6 +2879,71 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def deleteGlobalJwtVerifier(id: String) = ApiAction.async { ctx =>
     env.datastores.globalJwtVerifierDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  def findAllGlobalAuthModules() = ApiAction.async { ctx =>
+    env.datastores.globalOAuth2ConfigDataStore.findAll().map(all => Ok(JsArray(all.map(_.asJson))))
+  }
+
+  def findGlobalAuthModuleById(id: String) = ApiAction.async { ctx =>
+    env.datastores.globalJwtVerifierDataStore.findById(id).map {
+      case Some(verifier) => Ok(verifier.asJson)
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"GlobalAuthModule with id $id not found")
+        )
+    }
+  }
+
+  def createGlobalAuthModule() = ApiAction.async(parse.json) { ctx =>
+    GlobalOauth2AuthModuleConfig.fromJson(ctx.request.body) match {
+      case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
+      case Right(newVerifier) =>
+        env.datastores.globalOAuth2ConfigDataStore.set(newVerifier.asInstanceOf[GlobalOauth2AuthModuleConfig]).map(_ => Ok(newVerifier.asJson))
+    }
+  }
+
+  def updateGlobalAuthModule(id: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalOAuth2ConfigDataStore.findById(id).flatMap {
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"GlobalAuthModule with id $id not found")
+        ).asFuture
+      case Some(verifier) => {
+        GlobalOauth2AuthModuleConfig.fromJson(ctx.request.body) match {
+          case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
+          case Right(newVerifier) => {
+            env.datastores.globalOAuth2ConfigDataStore.set(newVerifier.asInstanceOf[GlobalOauth2AuthModuleConfig]).map(_ => Ok(newVerifier.asJson))
+          }
+        }
+      }
+    }
+  }
+
+  def patchGlobalAuthModule(id: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalOAuth2ConfigDataStore.findById(id).flatMap {
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"GlobalAuthModule with id $id not found")
+        ).asFuture
+      case Some(verifier) => {
+        val currentJson = verifier.asJson
+        val patch       = JsonPatch(ctx.request.body)
+        val newVerifier = patch(currentJson)
+        GlobalOauth2AuthModuleConfig.fromJson(newVerifier) match {
+          case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
+          case Right(newVerifier) => {
+            env.datastores.globalOAuth2ConfigDataStore.set(newVerifier.asInstanceOf[GlobalOauth2AuthModuleConfig]).map(_ => Ok(newVerifier.asJson))
+          }
+        }
+      }
+    }
+  }
+
+  def deleteGlobalAuthModule(id: String) = ApiAction.async { ctx =>
+    env.datastores.globalOAuth2ConfigDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
