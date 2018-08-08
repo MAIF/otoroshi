@@ -15,9 +15,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 
-object Oauth2AuthModuleConfig extends FromJson[AuthModuleConfig] {
+object GenericOAuth2AuthModuleConfig extends FromJson[AuthModuleConfig] {
   override def fromJson(json: JsValue): Either[Throwable, AuthModuleConfig] = Try {
-    Right(Oauth2AuthModuleConfig(
+    Right(GenericOAuth2AuthModuleConfig(
       clientId = (json \ "clientId").asOpt[String].getOrElse("client"),
       clientSecret = (json \ "clientSecret").asOpt[String].getOrElse("secret"),
       authorizeUrl = (json \ "authorizeUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/authorize"),
@@ -35,7 +35,7 @@ object Oauth2AuthModuleConfig extends FromJson[AuthModuleConfig] {
   } get
 }
 
-case class Oauth2AuthModuleConfig(
+case class GenericOAuth2AuthModuleConfig(
                                    clientId: String = "client",
                                    clientSecret: String = "secret",
                                    tokenUrl: String = "http://localhost:8082/oauth/token",
@@ -47,7 +47,7 @@ case class Oauth2AuthModuleConfig(
                                    nameField: String = "name",
                                    emailField: String = "email",
                                    callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
-                                 ) extends AuthModuleConfig {
+                                 ) extends OAuth2AuthModuleConfig {
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
   override def cookieSuffix(desc: ServiceDescriptor) = s"desc-${desc.id}"
   override def asJson: JsValue = Json.obj(
@@ -127,7 +127,7 @@ case class GlobalOauth2AuthModuleConfig(
     nameField: String = "name",
     emailField: String = "email",
     callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
-  ) extends AuthModuleConfig {
+  ) extends OAuth2AuthModuleConfig {
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
   override def asJson = Json.obj(
     "type" -> "oauth2-global",
@@ -161,17 +161,6 @@ object Oauth2RefAuthModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class Oauth2RefAuthModuleConfig(id: String) extends AuthModuleConfig {
-  override def clientId = throw new RuntimeException("Should never be called ...")
-  override def clientSecret = throw new RuntimeException("Should never be called ...")
-  override def authorizeUrl = throw new RuntimeException("Should never be called ...")
-  override def tokenUrl = throw new RuntimeException("Should never be called ...")
-  override def userInfoUrl = throw new RuntimeException("Should never be called ...")
-  override def loginUrl = throw new RuntimeException("Should never be called ...")
-  override def logoutUrl = throw new RuntimeException("Should never be called ...")
-  override def accessTokenField = throw new RuntimeException("Should never be called ...")
-  override def nameField = throw new RuntimeException("Should never be called ...")
-  override def emailField = throw new RuntimeException("Should never be called ...")
-  override def callbackUrl = throw new RuntimeException("Should never be called ...")
   override def authModule(config: GlobalConfig) = Oauth2RefModule(this)
   override def cookieSuffix(desc: ServiceDescriptor) = s"global-oauth-$id"
   override def asJson = Json.obj(
@@ -210,7 +199,7 @@ case class Oauth2RefModule(authConfig: Oauth2RefAuthModuleConfig) extends AuthMo
   }
 }
 
-case class GenericOauth2Module(authConfig: AuthModuleConfig) extends AuthModule {
+case class GenericOauth2Module(authConfig: OAuth2AuthModuleConfig) extends AuthModule {
 
   import play.api.libs.ws.DefaultBodyWritables._
   import utils.future.Implicits._

@@ -9,17 +9,6 @@ object GlobalConfigAuth0AuthModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class RefAuth0AuthModuleConfig() extends AuthModuleConfig {
-  override def clientId = ???
-  override def clientSecret = ???
-  override def authorizeUrl = ???
-  override def tokenUrl = ???
-  override def userInfoUrl = ???
-  override def loginUrl = ???
-  override def logoutUrl = ???
-  override def accessTokenField = ???
-  override def nameField = ???
-  override def emailField = ???
-  override def callbackUrl = ???
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(GlobalConfigAuth0AuthModuleConfig(config))
   override def cookieSuffix(desc: ServiceDescriptor) = "global-auth0"
   override def asJson = Json.obj(
@@ -27,7 +16,7 @@ case class RefAuth0AuthModuleConfig() extends AuthModuleConfig {
   )
 }
 
-case class GlobalConfigAuth0AuthModuleConfig(config: GlobalConfig) extends AuthModuleConfig {
+case class GlobalConfigAuth0AuthModuleConfig(config: GlobalConfig) extends OAuth2AuthModuleConfig {
 
   val auth0Config = config.privateAppsAuth0Config.getOrElse(Auth0Config(
     secret = "secret",
