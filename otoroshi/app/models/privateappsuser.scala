@@ -15,15 +15,9 @@ case class PrivateAppsUser(randomId: String,
                            email: String,
                            profile: JsValue,
                            realm: String,
+                           otoroshiData: Option[Map[String, String]],
                            createdAt: DateTime = DateTime.now(),
                            expiredAt: DateTime = DateTime.now()) {
-  def otoroshiData(implicit env: Env): Option[Map[String, String]] = {
-    (profile \ env.auth0AppMeta \ env.auth0UserMeta).asOpt[String].map(s => Json.parse(s)
-      .as[Map[String, String]])
-      .orElse(
-        (profile \ env.auth0AppMeta \ env.auth0UserMeta).asOpt[Map[String, String]]
-      )
-  }
 
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
@@ -42,6 +36,12 @@ case class PrivateAppsUser(randomId: String,
 }
 
 object PrivateAppsUser {
+
+  def select(from: JsValue, selector: String): JsValue = {
+    selector.split("\\.").foldLeft(from)((o, path) => (o \ path).asOpt[JsValue].getOrElse(JsNull))
+  }
+
+
   val fmt = new Format[PrivateAppsUser] {
     override def reads(json: JsValue) = Try {
       JsSuccess(
@@ -51,6 +51,7 @@ object PrivateAppsUser {
           email = (json \ "email").as[String],
           profile = (json \ "profile").as[JsValue],
           realm = (json \ "realm").asOpt[String].getOrElse("none"),
+          otoroshiData = (json \ "otoroshiData").asOpt[Map[String, String]],
           createdAt = new DateTime((json \ "createdAt").as[Long]),
           expiredAt = new DateTime((json \ "expiredAt").as[Long])
         )
@@ -65,6 +66,7 @@ object PrivateAppsUser {
       "email" -> o.email,
       "profile" -> o.profile,
       "realm" -> o.realm,
+      "otoroshiData" -> o.otoroshiData,
       "createdAt" -> o.createdAt.toDate.getTime,
       "expiredAt" -> o.expiredAt.toDate.getTime,
     )

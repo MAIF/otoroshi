@@ -35,6 +35,7 @@ trait OAuth2AuthModuleConfig extends AuthModuleConfig {
   def accessTokenField: String
   def nameField: String
   def emailField: String
+  def otoroshiDataField: String
   def callbackUrl: String
 }
 

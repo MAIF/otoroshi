@@ -152,6 +152,13 @@ export class AuthModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.emailField', v)}
         />
+        <TextInput
+          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          label="Otoroshi metadata field name"
+          value={settings.otoroshiDataField}
+          help="..."
+          onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
+        />
       </div>
     );
   }

@@ -28,6 +28,7 @@ object GenericOAuth2AuthModuleConfig extends FromJson[AuthModuleConfig] {
       accessTokenField = (json \ "accessTokenField").asOpt[String].getOrElse("access_token"),
       nameField = (json \ "nameField").asOpt[String].getOrElse("name"),
       emailField = (json \ "emailField").asOpt[String].getOrElse("email"),
+      otoroshiDataField = (json \ "otoroshiDataField").asOpt[String].getOrElse("app_metadata.otoroshi_data"),
       callbackUrl = (json \ "callbackUrl").asOpt[String].getOrElse("http://privateapps.foo.bar:8080/privateapps/generic/callback")
     ))
   } recover {
@@ -46,6 +47,7 @@ case class GenericOAuth2AuthModuleConfig(
    accessTokenField: String = "access_token",
    nameField: String = "name",
    emailField: String = "email",
+   otoroshiDataField: String = "app_metadata.otoroshi_data",
    callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
  ) extends OAuth2AuthModuleConfig {
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -62,6 +64,7 @@ case class GenericOAuth2AuthModuleConfig(
     "accessTokenField" -> this.accessTokenField,
     "nameField" -> this.nameField,
     "emailField" -> this.emailField,
+    "otoroshiDataField" -> this.otoroshiDataField,
     "callbackUrl" -> this.callbackUrl
   )
 }
@@ -105,6 +108,7 @@ object GlobalOauth2AuthModuleConfig extends FromJson[AuthModuleConfig] {
       accessTokenField = (json \ "accessTokenField").asOpt[String].getOrElse("access_token"),
       nameField = (json \ "nameField").asOpt[String].getOrElse("name"),
       emailField = (json \ "emailField").asOpt[String].getOrElse("email"),
+      otoroshiDataField = (json \ "otoroshiDataField").asOpt[String].getOrElse("app_metadata.otoroshi_data"),
       callbackUrl = (json \ "callbackUrl").asOpt[String].getOrElse("http://privateapps.foo.bar:8080/privateapps/generic/callback")
     ))
   } recover {
@@ -126,6 +130,7 @@ case class GlobalOauth2AuthModuleConfig(
     accessTokenField: String = "access_token",
     nameField: String = "name",
     emailField: String = "email",
+    otoroshiDataField: String = "app_metadata.otoroshi_data",
     callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
   ) extends OAuth2AuthModuleConfig {
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -144,6 +149,7 @@ case class GlobalOauth2AuthModuleConfig(
     "accessTokenField" -> this.accessTokenField,
     "nameField" -> this.nameField,
     "emailField" -> this.emailField,
+    "otoroshiDataField" -> this.otoroshiDataField,
     "callbackUrl" -> this.callbackUrl
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalOAuth2ConfigDataStore.set(this)
@@ -305,7 +311,12 @@ case class GenericOauth2Module(authConfig: OAuth2AuthModuleConfig) extends AuthM
                   name = (user \ authConfig.nameField).asOpt[String].getOrElse("No Name"),
                   email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                   profile = user,
-                  realm = descriptor.privateAppSettings.cookieSuffix(descriptor)
+                  realm = descriptor.privateAppSettings.cookieSuffix(descriptor),
+                  otoroshiData = PrivateAppsUser.select(user, authConfig.otoroshiDataField).asOpt[String].map(s => Json.parse(s)
+                    .as[Map[String, String]])
+                    .orElse(
+                      PrivateAppsUser.select(user, authConfig.otoroshiDataField).asOpt[Map[String, String]]
+                    )
                 )
               )
             }

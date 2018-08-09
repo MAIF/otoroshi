@@ -765,9 +765,6 @@ export class ServicePage extends Component {
                     case 'oauth2-ref':
                       this.changeTheValue('privateAppSettings', { type: 'oauth2-ref' });
                       break;
-                    case 'global-auth0':
-                      this.changeTheValue('privateAppSettings', { type: 'global-auth0' });
-                      break;
                     case 'oauth2':
                       this.changeTheValue('privateAppSettings', { 
                         type: 'oauth2',  
@@ -787,7 +784,6 @@ export class ServicePage extends Component {
                   }
                 }}
                 possibleValues={[
-                  { label: 'Global Auth0 settings', value: 'global-auth0' },
                   { label: 'Generic OAuth2 provider', value: 'oauth2' },
                   { label: 'Global generic OAuth2 provider', value: 'oauth2-ref' },
                 ]}
