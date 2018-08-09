@@ -6,15 +6,10 @@ import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
-import models.BackOfficeUser
 import play.api.Logger
-import play.api.http.MimeTypes
-import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import play.mvc.Http.HeaderNames
-import security.{Auth0Config, IdGenerator}
+import security.IdGenerator
 
-import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
@@ -46,11 +41,11 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
               case Some(cookie) => {
                 env.extractPrivateSessionId(cookie) match {
                   case None =>
-                    descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
+                    descriptor.privateAppSettings.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
                   case Some(sessionId) => {
                     env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
                       case None =>
-                        descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
+                        descriptor.privateAppSettings.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
                       case Some(user) =>
                         val redirectTo = ctx.request.getQueryString("redirect").get
                         val url = new java.net.URL(redirectTo)
@@ -70,7 +65,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
                 }
               }
               case None =>
-                descriptor.privateAppSettings.authModule(ctx.globalConfig).loginPage(ctx.request, ctx.globalConfig, descriptor)
+                descriptor.privateAppSettings.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
             }
 
           }
@@ -91,7 +86,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
           case Some(descriptor) if !descriptor.privateApp => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-            descriptor.privateAppSettings.authModule(ctx.globalConfig).logout(ctx.request, ctx.globalConfig, descriptor).map { _ =>
+            descriptor.privateAppSettings.authModule(ctx.globalConfig).paLogout(ctx.request, ctx.globalConfig, descriptor).map { _ =>
               implicit val request = ctx.request
               val redirect = ctx.request.getQueryString("redirect")
               ctx.user.foreach(_.delete())
@@ -127,7 +122,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
           case Some(descriptor) if !descriptor.privateApp => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-            descriptor.privateAppSettings.authModule(ctx.globalConfig).callback(ctx.request, ctx.globalConfig, descriptor).flatMap {
+            descriptor.privateAppSettings.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor).flatMap {
               case Left(error) => {
                 BadRequest(
                   views.html.otoroshi
@@ -166,110 +161,49 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     }
   }
 
-
   def auth0error(error: Option[String], error_description: Option[String]) = BackOfficeAction { ctx =>
     val errorId = IdGenerator.token(16)
     logger.error(s"[AUTH0 ERROR] error_id: $errorId => ${error.getOrElse("--")} : ${error_description.getOrElse("--")}")
     Redirect(routes.BackOfficeController.error(Some(s"Auth0 error - logged with id: $errorId")))
   }
 
-  def backOfficeLogin(redirect: Option[String]) = BackOfficeAction.async { ctx =>
-    implicit val request = ctx.request
-    env.datastores.globalConfigDataStore.singleton().map {
-      case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
-        config.backofficeAuth0Config match {
-          case None => Redirect(controllers.routes.BackOfficeController.index())
-          case Some(aconf) => {
-            if (env.useUniversalLogin) {
-              Redirect(
-                s"https://${aconf.domain}/authorize?response_type=code&client_id=${aconf.clientId}&scope=openid+profile+email+name&redirect_uri=${aconf.callbackURL}"
-              ).addingToSession(
-                "bo-redirect-after-login" -> redirect.getOrElse(
-                  routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-                )
-              )
-            } else {
-              Ok(views.html.backoffice.login(env, aconf)).addingToSession(
-                "bo-redirect-after-login" -> redirect
-                  .orElse(ctx.request.session.get("bo-redirect-after-login"))
-                  .getOrElse(
-                    routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-                  )
-              )
-            }
-          }
-        }
-      }
-      case config if (config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) =>
-        Redirect(controllers.routes.BackOfficeController.index())
-    }
-  }
-
-  def backOfficeLogout(redirect: Option[String]) = BackOfficeActionAuth.async { ctx =>
-    implicit val request = ctx.request
-    ctx.user.delete().map { _ =>
-      Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
-      redirect match {
-        case Some(url) => Redirect(url).removingFromSession("bousr", "bo-redirect-after-login")
-        case None =>
-          Redirect(routes.BackOfficeController.index()).removingFromSession("bousr", "bo-redirect-after-login")
-      }
-    }
-  }
-
-  def backOfficeCallback(codeOpt: Option[String] = None,
-                         error: Option[String] = None,
-                         error_description: Option[String] = None) = BackOfficeAction.async { ctx =>
+  def backOfficeLogin() = BackOfficeAction.async { ctx =>
     implicit val request = ctx.request
     env.datastores.globalConfigDataStore.singleton().flatMap {
-      case config if (config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) =>
-        FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
       case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
-
         config.backofficeAuth0Config match {
-          case None =>
-            FastFuture.successful(NotFound(views.html.otoroshi.error("Private apps are not configured", env)))
-          case Some(backOfficeAuth0Config) => {
-            (codeOpt, error) match {
-              case (None, Some(err)) => FastFuture.successful(BadRequest(views.html.backoffice.unauthorized(env)))
-              case (Some(code), None) =>
-                getToken(code, backOfficeAuth0Config)
-                  .flatMap {
-                    case (idToken, accessToken) =>
-                      getUser(accessToken, backOfficeAuth0Config).flatMap { user =>
-                        val name  = (user \ "name").as[String]
-                        val email = (user \ "email").as[String]
-                        logger.info(s"Login successful for user '$email'")
-                        BackOfficeUser(IdGenerator.token(64), name, email, user, None) // TODO : get from app_meta
-                          .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
-                          .map { boUser =>
-                            env.datastores.backOfficeUserDataStore.hasAlreadyLoggedIn(email).map {
-                              case false => {
-                                env.datastores.backOfficeUserDataStore.alreadyLoggedIn(email)
-                                Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
-                              }
-                              case true => {
-                                Alerts
-                                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
-                              }
-                            }
-                            Redirect(
-                              request.session
-                                .get("bo-redirect-after-login")
-                                .getOrElse(
-                                  routes.BackOfficeController
-                                    .index()
-                                    .absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-                                )
-                            ).removingFromSession("bo-redirect-after-login")
-                              .addingToSession("bousr" -> boUser.randomId)
-                          }
-                      }
-                  }
-                  .recover {
-                    case ex: IllegalStateException => Unauthorized(views.html.otoroshi.error(ex.getMessage, env))
-                  }
-              case _ => FastFuture.successful(BadRequest(views.html.otoroshi.error("No parameters supplied", env)))
+          case None => FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
+          case Some(aconf) => {
+            env.datastores.globalOAuth2ConfigDataStore.findById(aconf).flatMap {
+              case None => FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice Oauth is not configured", env)))
+              case Some(oauth) => oauth.authModule(config).boLoginPage(ctx.request, config)
+            }
+          }
+        }
+      }
+      case config if config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty =>
+        FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
+    }
+  }
+
+  def backOfficeLogout() = BackOfficeActionAuth.async { ctx =>
+    implicit val request = ctx.request
+    val redirect = request.getQueryString("redirect")
+    env.datastores.globalConfigDataStore.singleton().flatMap { config =>
+      config.backofficeAuth0Config match {
+        case None => FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
+        case Some(aconf) => {
+          env.datastores.globalOAuth2ConfigDataStore.findById(aconf).flatMap {
+            case None => FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice Oauth is not configured", env)))
+            case Some(oauth) => oauth.authModule(config).boLogout(ctx.request, config).flatMap { _ =>
+              ctx.user.delete().map { _ =>
+                Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+                redirect match {
+                  case Some(url) => Redirect(url).removingFromSession("bousr", "bo-redirect-after-login")
+                  case None =>
+                    Redirect(routes.BackOfficeController.index()).removingFromSession("bousr", "bo-redirect-after-login")
+                }
+              }
             }
           }
         }
@@ -277,37 +211,64 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     }
   }
 
-  def getToken(code: String, config: Auth0Config): Future[(String, String)] = {
-    val Auth0Config(clientSecret, clientId, callback, domain) = config
-    val tokenResponse = env.Ws
-      .url(s"https://$domain/oauth/token")
-      .withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
-      .post(
-        Json.obj(
-          "client_id"     -> clientId,
-          "client_secret" -> clientSecret,
-          "redirect_uri"  -> callback,
-          "code"          -> code,
-          "grant_type"    -> "authorization_code"
-        )
-      )
-    tokenResponse.flatMap { response =>
-      (for {
-        idToken     <- (response.json \ "id_token").asOpt[String]
-        accessToken <- (response.json \ "access_token").asOpt[String]
-      } yield {
-        FastFuture.successful((idToken, accessToken))
-      }).getOrElse(Future.failed[(String, String)](new IllegalStateException("Tokens not sent")))
+  def backOfficeCallback(error: Option[String] = None,
+                         error_description: Option[String] = None) = BackOfficeAction.async { ctx =>
+    implicit val request = ctx.request
+
+    error match {
+      case Some(e) => FastFuture.successful(BadRequest(views.html.backoffice.unauthorized(env)))
+      case None => {
+        env.datastores.globalConfigDataStore.singleton().flatMap {
+          case config if (config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) =>
+            FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
+          case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
+
+            config.backofficeAuth0Config match {
+              case None =>
+                FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not configured", env)))
+              case Some(backOfficeAuth0Config) => {
+                env.datastores.globalOAuth2ConfigDataStore.findById(backOfficeAuth0Config).flatMap {
+                  case None => FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not found", env)))
+                  case Some(oauth) => oauth.authModule(config).boCallback(ctx.request, config).flatMap {
+                    case Left(err) => {
+                      FastFuture.successful(BadRequest(
+                        views.html.otoroshi
+                          .error(message = s"You're not authorized here: ${error}", _env = env, title = "Authorization error")
+                      ))
+                    }
+                    case Right(user) => {
+                      logger.info(s"Login successful for user '${user.email}'")
+                      user.save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
+                        .map { boUser =>
+                          env.datastores.backOfficeUserDataStore.hasAlreadyLoggedIn(user.email).map {
+                            case false => {
+                              env.datastores.backOfficeUserDataStore.alreadyLoggedIn(user.email)
+                              Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                            }
+                            case true => {
+                              Alerts
+                                .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                            }
+                          }
+                          Redirect(
+                            request.session
+                              .get("bo-redirect-after-login")
+                              .getOrElse(
+                                routes.BackOfficeController
+                                  .index()
+                                  .absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                              )
+                          ).removingFromSession("bo-redirect-after-login")
+                            .addingToSession("bousr" -> boUser.randomId)
+                        }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
-
-  }
-
-  def getUser(accessToken: String, config: Auth0Config): Future[JsValue] = {
-    val Auth0Config(_, _, _, domain) = config
-    val userResponse = env.Ws
-      .url(s"https://$domain/userinfo")
-      .withQueryStringParameters("access_token" -> accessToken)
-      .get()
-    userResponse.flatMap(response => FastFuture.successful(response.json))
   }
 }

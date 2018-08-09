@@ -36,18 +36,18 @@ object GenericOAuth2AuthModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class GenericOAuth2AuthModuleConfig(
-                                   clientId: String = "client",
-                                   clientSecret: String = "secret",
-                                   tokenUrl: String = "http://localhost:8082/oauth/token",
-                                   authorizeUrl: String = "http://localhost:8082/oauth/authorize",
-                                   userInfoUrl: String = "http://localhost:8082/userinfo",
-                                   loginUrl: String = "http://localhost:8082/login",
-                                   logoutUrl: String = "http://localhost:8082/logout",
-                                   accessTokenField: String = "access_token",
-                                   nameField: String = "name",
-                                   emailField: String = "email",
-                                   callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
-                                 ) extends OAuth2AuthModuleConfig {
+   clientId: String = "client",
+   clientSecret: String = "secret",
+   tokenUrl: String = "http://localhost:8082/oauth/token",
+   authorizeUrl: String = "http://localhost:8082/oauth/authorize",
+   userInfoUrl: String = "http://localhost:8082/userinfo",
+   loginUrl: String = "http://localhost:8082/login",
+   logoutUrl: String = "http://localhost:8082/logout",
+   accessTokenField: String = "access_token",
+   nameField: String = "name",
+   emailField: String = "email",
+   callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
+ ) extends OAuth2AuthModuleConfig {
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
   override def cookieSuffix(desc: ServiceDescriptor) = s"desc-${desc.id}"
   override def asJson: JsValue = Json.obj(
@@ -177,24 +177,45 @@ case class Oauth2RefModule(authConfig: Oauth2RefAuthModuleConfig) extends AuthMo
     }
   }
 
-  override def loginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     getActualModule(ec, env).flatMap {
       case None => FastFuture.successful(Results.NotFound(views.html.otoroshi.error("OAuth config. ref not found ", env)))
-      case Some(mod) => mod.loginPage(request, config, descriptor)(ec, env)
+      case Some(mod) => mod.paLoginPage(request, config, descriptor)(ec, env)
     }
   }
 
-  override def logout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     getActualModule(ec, env).flatMap {
       case None => FastFuture.successful(Results.NotFound(views.html.otoroshi.error("OAuth config. ref not found ", env)))
-      case Some(mod) => mod.logout(request, config, descriptor)(ec, env)
+      case Some(mod) => mod.paLogout(request, config, descriptor)(ec, env)
     }
   }
 
-  override def callback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+  override def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
     getActualModule(ec, env).flatMap {
       case None => FastFuture.successful(Left("OAuth config. ref not found "))
-      case Some(mod) => mod.callback(request, config, descriptor)(ec, env)
+      case Some(mod) => mod.paCallback(request, config, descriptor)(ec, env)
+    }
+  }
+
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    getActualModule(ec, env).flatMap {
+      case None => FastFuture.successful(Results.NotFound(views.html.otoroshi.error("OAuth config. ref not found ", env)))
+      case Some(mod) => mod.boLoginPage(request, config)(ec, env)
+    }
+  }
+
+  override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    getActualModule(ec, env).flatMap {
+      case None => FastFuture.successful(Results.NotFound(views.html.otoroshi.error("OAuth config. ref not found ", env)))
+      case Some(mod) => mod.boLogout(request, config)(ec, env)
+    }
+  }
+
+  override def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+    getActualModule(ec, env).flatMap {
+      case None => FastFuture.successful(Left("OAuth config. ref not found "))
+      case Some(mod) => mod.boCallback(request, config)(ec, env)
     }
   }
 }
@@ -204,7 +225,7 @@ case class GenericOauth2Module(authConfig: OAuth2AuthModuleConfig) extends AuthM
   import play.api.libs.ws.DefaultBodyWritables._
   import utils.future.Implicits._
 
-  override def loginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val req = request
 
     val redirect = request.getQueryString("redirect")
@@ -223,12 +244,36 @@ case class GenericOauth2Module(authConfig: OAuth2AuthModuleConfig) extends AuthM
     ).asFuture
   }
 
-  override def logout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    // TODO: implements
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    implicit val req = request
+
+    val redirect = request.getQueryString("redirect")
+    val clientId = authConfig.clientId
+    val responseType = "code"
+    val scope = "openid profile email name"
+
+    val redirectUri = authConfig.callbackUrl
+    val loginUrl = s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+    Redirect(
+      loginUrl
+    ).addingToSession(
+      "bo-redirect-after-login" -> redirect.getOrElse(
+        routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+      )
+    ).asFuture
+  }
+
+  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    // TODO: implements if needed
     ().asFuture
   }
 
-  override def callback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+  override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    // TODO: implements if needed
+    ().asFuture
+  }
+
+  override def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
     val clientId = authConfig.clientId
     val clientSecret = authConfig.clientSecret
     val redirectUri = authConfig.callbackUrl + s"?desc=${descriptor.id}"
@@ -261,6 +306,48 @@ case class GenericOauth2Module(authConfig: OAuth2AuthModuleConfig) extends AuthM
                   email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                   profile = user,
                   realm = descriptor.privateAppSettings.cookieSuffix(descriptor)
+                )
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+
+  override def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+    val clientId = authConfig.clientId
+    val clientSecret = authConfig.clientSecret
+    val redirectUri = authConfig.callbackUrl
+    request.getQueryString("error") match {
+      case Some(error) => Left(error).asFuture
+      case None => {
+        request.getQueryString("code") match {
+          case None => Left("No code :(").asFuture
+          case Some(code) => {
+            env.Ws.url(authConfig.tokenUrl)
+              .post(
+                Map(
+                  "code" -> code,
+                  "grant_type" -> "authorization_code",
+                  "client_id" -> clientId,
+                  "client_secret" -> clientSecret,
+                  "redirect_uri" -> redirectUri
+                )
+              )(writeableOf_urlEncodedSimpleForm).flatMap { resp =>
+              val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
+              env.Ws.url(authConfig.userInfoUrl)
+                .post(Map(
+                  "access_token" -> accessToken
+                ))(writeableOf_urlEncodedSimpleForm).map(_.json)
+            }.map { user =>
+              Right(
+                BackOfficeUser(
+                  randomId = IdGenerator.token(64),
+                  name = (user \ authConfig.nameField).asOpt[String].getOrElse("No Name"),
+                  email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
+                  profile = user,
+                  authorizedGroup = None
                 )
               )
             }

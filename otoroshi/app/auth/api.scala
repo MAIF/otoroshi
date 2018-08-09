@@ -10,11 +10,13 @@ import scala.util.Try
 
 trait AuthModule {
 
-  def loginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result]
+  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result]
+  def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]]
 
-  def logout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-
-  def callback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]]
+  def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
+  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]
 }
 
 trait AuthModuleConfig extends AsJson {
@@ -41,8 +43,6 @@ object AuthModuleConfig extends FromJson[AuthModuleConfig] {
     (json \ "type").as[String] match {
       case "oauth2"              => GenericOAuth2AuthModuleConfig.fromJson(json)
       case "oauth2-ref"          => Oauth2RefAuthModuleConfig.fromJson(json)
-      case "global-auth0"        => GlobalConfigAuth0AuthModuleConfig.fromJson(json)
-      case "actual-global-auth0" => GlobalConfigAuth0AuthModuleConfig.fromJson(json)
     }
   } recover {
     case e => Left(e)

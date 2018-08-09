@@ -135,7 +135,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "u2fLoginOnly"       -> config.u2fLoginOnly,
             "env"                -> env.env,
             "redirectToDev"      -> env.redirectToDev,
-            "displayPrivateApps" -> config.privateAppsAuth0Config.isDefined,
             "clientIdHeader"     -> env.Headers.OtoroshiClientId,
             "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
             "version"            -> env.latestVersionHolder.get()

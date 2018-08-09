@@ -12,6 +12,7 @@ import play.api.Logger
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import auth.GlobalOauth2AuthModuleConfig
+import security.Auth0Config
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -246,5 +247,77 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
         "oauthConfigs"       -> JsArray(oauthConfigs.map(_.asJson))
       )
+  }
+
+  override def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    val migrationKey = s"${_env.storageRoot}:migrations:globalconfig:before130"
+    redisCli.get(migrationKey).flatMap {
+      case Some(_) => FastFuture.successful(())
+      case None => {
+        for {
+          configBS <- redisCli.get(key("global").key).map(_.get)
+          _ = logger.warn("OAuth config migration - Saving global configuration before migration")
+          _ <- redisCli.setBS(s"${_env.storageRoot}:migrations:globalconfig:before130", configBS)
+          json = Json.parse(configBS.utf8String)
+          backofficeAuth0Config = (json \ "backofficeAuth0Config").asOpt[JsValue].flatMap { config =>
+            (
+              (config \ "clientId").asOpt[String].filter(_.nonEmpty),
+              (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
+              (config \ "domain").asOpt[String].filter(_.nonEmpty),
+              (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
+            ) match {
+              case (Some(clientId), Some(clientSecret), Some(domain), Some(callbackUrl)) =>
+                Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
+              case _ => None
+            }
+          }
+          privateAppsAuth0Config = (json \ "privateAppsAuth0Config").asOpt[JsValue].flatMap { config =>
+            (
+              (config \ "clientId").asOpt[String].filter(_.nonEmpty),
+              (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
+              (config \ "domain").asOpt[String].filter(_.nonEmpty),
+              (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
+            ) match {
+              case (Some(clientId), Some(clientSecret), Some(domain), Some(callbackUrl)) =>
+                Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
+              case _ => None
+            }
+          }
+          _ = logger.warn("OAuth config migration - creating global oauth configuration for private apps")
+          _ <- privateAppsAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GlobalOauth2AuthModuleConfig(
+            id = "confidential-apps",
+            name = "Confidential apps Auth0 provider",
+            desc = "Use to be the Auth0 global config. for private apps",
+            clientId = c.clientId,
+            clientSecret = c.secret,
+            tokenUrl = s"https://${c.domain}/oauth/token",
+            authorizeUrl = s"https://${c.domain}/authorize",
+            userInfoUrl = s"https://${c.domain}/userinfo",
+            loginUrl = s"https://${c.domain}/authorize",
+            logoutUrl = s"https://${c.domain}/logout",
+            callbackUrl = c.callbackURL
+          ))).getOrElse(FastFuture.successful(()))
+          _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
+          _ <- backofficeAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GlobalOauth2AuthModuleConfig(
+            id = "otoroshi-backoffice",
+            name = "Otoroshi backoffic Auth0 provider",
+            desc = "Use to be the Auth0 global config. for Otoroshi backoffice",
+            clientId = c.clientId,
+            clientSecret = c.secret,
+            tokenUrl = s"https://${c.domain}/oauth/token",
+            authorizeUrl = s"https://${c.domain}/authorize",
+            userInfoUrl = s"https://${c.domain}/userinfo",
+            loginUrl = s"https://${c.domain}/authorize",
+            logoutUrl = s"https://${c.domain}/logout",
+            callbackUrl = c.callbackURL
+          ))).getOrElse(FastFuture.successful(()))
+          _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
+          config <- env.datastores.globalConfigDataStore.findById("global").map(_.get)
+          configWithBackOffice = backofficeAuth0Config.map(_ => config.copy(backofficeAuth0Config = Some("otoroshi-backoffice"))).getOrElse(config)
+          _ <- configWithBackOffice.save()
+          _ = logger.warn("OAuth config migration - migration done !")
+        } yield ()
+      }
+    }
   }
 }

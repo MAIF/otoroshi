@@ -66,9 +66,9 @@ GET     /privateapps/generic/logout                           controllers.Auth0C
 GET     /privateapps/generic/callback                         controllers.Auth0Controller.confidentialAppCallback()
 
 
-GET     /backoffice/auth0/login                               controllers.Auth0Controller.backOfficeLogin(redirect: Option[String])
-GET     /backoffice/auth0/logout                              controllers.Auth0Controller.backOfficeLogout(redirect: Option[String])
-GET     /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(code: Option[String], error: Option[String], error_description: Option[String])
+GET     /backoffice/auth0/login                               controllers.Auth0Controller.backOfficeLogin()
+GET     /backoffice/auth0/logout                              controllers.Auth0Controller.backOfficeLogout()
+GET     /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(error: Option[String], error_description: Option[String])
 
 # Admin API
 

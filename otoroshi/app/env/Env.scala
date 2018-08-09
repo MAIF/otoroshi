@@ -96,7 +96,6 @@ class Env(val configuration: Configuration,
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
-  lazy val useUniversalLogin: Boolean      = configuration.getOptional[Boolean]("app.useUniversalLogin").getOrElse(false)
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
   lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)
@@ -411,7 +410,13 @@ class Env(val configuration: Configuration,
         }
       }
       ()
-  }(otoroshiExecutionContext) //internalActorSystem.dispatcher)
+  }(otoroshiExecutionContext)
+
+  timeout(1000.millis).andThen {
+    case _ => {
+      datastores.globalConfigDataStore.migrate()(otoroshiExecutionContext, this)
+    }
+  }(otoroshiExecutionContext)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

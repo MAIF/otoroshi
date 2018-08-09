@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { ResetDBButton } from '../components/ResetDBButton';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Form } from '../components/inputs';
+import { Form, SelectInput } from '../components/inputs';
 import moment from 'moment';
 
 function shallowDiffers(a, b) {
@@ -228,6 +228,16 @@ export class DangerZonePage extends Component {
         suffix: 'events',
       },
     },
+    backofficeAuth0Config: {
+      type: SelectInput,
+      props: {
+        label: "Backoffice auth config",
+        valuesFrom: "/bo/api/proxy/api/auths/oauth2",
+        transformer: a => ({ value: a.id, label: a.name }),
+        help: "..."
+      }
+    },
+    /*
     'backofficeAuth0Config.clientId': {
       type: 'string',
       props: { label: 'Client ID', placeholder: 'Auth0 Client ID' },
@@ -265,7 +275,7 @@ export class DangerZonePage extends Component {
         label: 'Callback URL',
         placeholder: 'https://yourotoroshidomain/privateapps/auth0/callback',
       },
-    },
+    },*/
     'mailGunSettings.apiKey': {
       type: 'string',
       props: {
@@ -438,15 +448,16 @@ export class DangerZonePage extends Component {
     'statsdConfig.host',
     'statsdConfig.port',
     '>>>Backoffice Auth0 settings',
-    'backofficeAuth0Config.clientId',
-    'backofficeAuth0Config.clientSecret',
-    'backofficeAuth0Config.domain',
-    'backofficeAuth0Config.callbackUrl',
-    '>>>Private apps Auth0 settings',
-    'privateAppsAuth0Config.clientId',
-    'privateAppsAuth0Config.clientSecret',
-    'privateAppsAuth0Config.domain',
-    'privateAppsAuth0Config.callbackUrl',
+    'backofficeAuth0Config',
+    //'backofficeAuth0Config.clientId',
+    //'backofficeAuth0Config.clientSecret',
+    //'backofficeAuth0Config.domain',
+    //'backofficeAuth0Config.callbackUrl',
+    //'>>>Private apps Auth0 settings',
+    //'privateAppsAuth0Config.clientId',
+    //'privateAppsAuth0Config.clientSecret',
+    //'privateAppsAuth0Config.domain',
+    //'privateAppsAuth0Config.callbackUrl',
     '>>>Mailgun settings',
     'mailGunSettings.apiKey',
     'mailGunSettings.domain',
@@ -679,19 +690,6 @@ export class DangerZonePage extends Component {
           </div>
         </form>
         <hr />
-        {/*<Form value={this.state.sync} onChange={sync => this.setState({ sync })} flow={this.syncFlow}  schema={this.syncSchema} />
-        <form className="form-horizontal">
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
-              {!this.state.syncing && <button type="button" className="btn btn-danger" onClick={this.sync}>
-                <i className="glyphicon glyphicon-refresh" /> Sync with master</button>}
-              {this.state.syncing && <button type="button" disabled="true" className="btn btn-danger" onClick={this.sync}>
-                <i className="glyphicon glyphicon-refresh" /> Syncing with master ...</button>}
-              {this.state.syncingError && <span style={{ marginLeft: 5 }} className="label label-danger">error: {this.state.syncingError.message}</span>}
-            </div>
-          </div>
-        </form>*/}
       </div>
     );
   }
