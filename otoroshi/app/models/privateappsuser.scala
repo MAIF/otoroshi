@@ -38,9 +38,11 @@ case class PrivateAppsUser(randomId: String,
 object PrivateAppsUser {
 
   def select(from: JsValue, selector: String): JsValue = {
-    selector.split("\\.").foldLeft(from)((o, path) => (o \ path).asOpt[JsValue].getOrElse(JsNull))
+    val parts = selector.split("\\|")
+    parts.foldLeft(from) { (o, path) =>
+      (o \ path).asOpt[JsValue].getOrElse(JsNull)
+    }
   }
-
 
   val fmt = new Format[PrivateAppsUser] {
     override def reads(json: JsValue) = Try {

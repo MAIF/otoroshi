@@ -804,7 +804,14 @@ export class ServicePage extends Component {
                 path="privateAppSettings"
                 changeTheValue={this.changeTheValue}
               />
-
+              <ArrayInput
+                label="Excluded patterns"
+                placeholder="URI pattern"
+                suffix="regex"
+                value={this.state.service.securityExcludedPatterns}
+                help="By default, when security is enabled, everything is secured. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
+                onChange={arr => this.changeTheValue('securityExcludedPatterns', arr)}
+              />
               <BooleanInput
                 label="Strictly private mode"
                 value={this.state.service.strictlyPrivate}

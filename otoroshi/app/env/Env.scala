@@ -101,8 +101,6 @@ class Env(val configuration: Configuration,
   lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)
   lazy val throttlingWindow: Int           = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
   lazy val analyticsWindow: Int            = configuration.getOptional[Int]("app.analyticsWindow").getOrElse(30)
-  //lazy val auth0UserMeta: String           = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")
-  //lazy val auth0AppMeta: String            = configuration.getOptional[String]("app.appMeta").getOrElse("app_metadata")
   lazy val eventsName: String              = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
   lazy val storageRoot: String             = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")
   lazy val useCache: Boolean               = configuration.getOptional[Boolean]("app.useCache").getOrElse(false)

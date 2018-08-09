@@ -907,7 +907,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                        Some("errors.service.under.construction"))
                                   .asLeft[WSFlow]
                               } else if (isUp) {
-                                if (descriptor.isPrivate) {
+                                if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
                                   if (descriptor.isUriPublic(req.path)) {
                                     passWithAuth0(globalConfig)
                                   } else {

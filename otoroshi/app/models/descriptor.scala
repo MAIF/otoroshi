@@ -289,6 +289,7 @@ case class ServiceDescriptor(
     enforceSecureCommunication: Boolean = true,
     sendOtoroshiHeadersBack: Boolean = true,
     secComExcludedPatterns: Seq[String] = Seq.empty[String],
+    securityExcludedPatterns: Seq[String] = Seq.empty[String],
     publicPatterns: Seq[String] = Seq.empty[String],
     privatePatterns: Seq[String] = Seq.empty[String],
     additionalHeaders: Map[String, String] = Map.empty[String, String],
@@ -336,6 +337,13 @@ case class ServiceDescriptor(
     !privatePatterns.exists(p => utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
       p => utils.RegexPool.regex(p).matches(uri)
     )
+
+  def isExcludedFromSecurity(uri: String): Boolean = {
+    securityExcludedPatterns.exists(
+      p => utils.RegexPool.regex(p).matches(uri)
+    )
+  }
+
   def isUriExcludedFromSecuredCommunication(uri: String): Boolean =
     secComExcludedPatterns.exists(p => utils.RegexPool.regex(p).matches(uri))
   def isPrivate = privateApp
@@ -395,6 +403,7 @@ object ServiceDescriptor {
           enforceSecureCommunication = (json \ "enforceSecureCommunication").asOpt[Boolean].getOrElse(true),
           sendOtoroshiHeadersBack = (json \ "sendOtoroshiHeadersBack").asOpt[Boolean].getOrElse(true),
           secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          securityExcludedPatterns = (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           privatePatterns = (json \ "privatePatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           additionalHeaders =
@@ -447,6 +456,7 @@ object ServiceDescriptor {
       "enforceSecureCommunication" -> sd.enforceSecureCommunication,
       "sendOtoroshiHeadersBack"    -> sd.sendOtoroshiHeadersBack,
       "secComExcludedPatterns"     -> JsArray(sd.secComExcludedPatterns.map(JsString.apply)),
+      "securityExcludedPatterns"   -> JsArray(sd.securityExcludedPatterns.map(JsString.apply)),
       "publicPatterns"             -> JsArray(sd.publicPatterns.map(JsString.apply)),
       "privatePatterns"            -> JsArray(sd.privatePatterns.map(JsString.apply)),
       "additionalHeaders"          -> JsObject(sd.additionalHeaders.mapValues(JsString.apply)),

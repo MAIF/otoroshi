@@ -1447,7 +1447,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                 )
                               } else if (isUp) {
-                                if (descriptor.isPrivate) {
+                                if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
                                   if (descriptor.isUriPublic(req.path)) {
                                     passWithAuth0(globalConfig)
                                   } else {
