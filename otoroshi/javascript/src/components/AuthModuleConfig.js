@@ -224,7 +224,14 @@ export class AuthModuleConfig extends Component {
           case 'basic':
             this.props.onChange({ 
               type: 'basic',
-              users: []
+              users: [
+                {
+                  "name": "John Doe",
+                  "email": "john.doe@foo.bar",
+                  "password": "password",
+                  "metadata": {}
+                }
+              ]
             });
             break;
           case 'oauth2':
@@ -240,7 +247,8 @@ export class AuthModuleConfig extends Component {
               callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback', 
               accessTokenField: 'access_token', 
               nameField: 'name', 
-              emailField: 'email', 
+              emailField: 'email',
+              otoroshiDataField: 'app_metadata | otoroshi_data'
             });
             break;
         }
@@ -249,7 +257,7 @@ export class AuthModuleConfig extends Component {
         { label: 'Generic OAuth2 provider', value: 'oauth2' },
         { label: 'Basic Auth provider', value: 'basic' },
       ]}
-      help="The type of settings to log into your private app"
+      help="The type of settings to log into your app."
     />
     if (settings.type === 'oauth2') {
       return <div>{selector}<Oauth2ModuleConfig {...this.props} /></div>;

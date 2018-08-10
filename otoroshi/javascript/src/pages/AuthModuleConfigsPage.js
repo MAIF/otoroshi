@@ -50,7 +50,7 @@ export class AuthModuleConfigsPage extends Component {
           navigateTo={this.gotoConfig}
           itemUrl={i => `/bo/dashboard/auth-configs/edit/${i.id}`}
           showActions={true}
-          showLink={true}
+          showLink={false}
           rowNavigation={true}
           firstSort={0}
           extractKey={item => item.id}
