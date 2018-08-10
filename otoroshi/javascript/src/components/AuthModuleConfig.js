@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 
-import { TextInput } from './inputs';
+import { TextInput, TextareaInput, SelectInput } from './inputs';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
 
-export class AuthModuleConfig extends Component {
+export class Oauth2ModuleConfig extends Component {
   state = {
     error: null,
   };
@@ -22,22 +22,22 @@ export class AuthModuleConfig extends Component {
     accessTokenField: 'access_token', 
     nameField: 'name', 
     emailField: 'email', 
+    otoroshiDataField: 'app_metadata | otoroshi_data'
   };
 
   componentDidCatch(error) {
     const settings = this.props.value || this.props.settings;
     const path = this.props.path || '';
-    console.log('AuthModuleConfig did catch', error, path, settings);
+    console.log('Oauth2ModuleConfig did catch', error, path, settings);
     this.setState({ error });
   }
 
   changeTheValue = (name, value) => {
     console.log('changeTheValue', name, value);
     if (this.props.onChange) {
-      const clone = _.cloneDeep(this.props.value || this.props.verifier);
+      const clone = _.cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
-      // console.log('changeTheValue', name, path, value, newObj)
       this.props.onChange(newObj);
     } else {
       this.props.changeTheValue(name, value);
@@ -55,105 +55,90 @@ export class AuthModuleConfig extends Component {
     return (
       <div>
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Id"
           value={settings.id}
           help="..."
           onChange={v => changeTheValue(path + '.id', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Name"
           value={settings.name}
           help="..."
           onChange={v => changeTheValue(path + '.name', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Description"
           value={settings.desc}
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Client ID"
           value={settings.clientId}
           help="..."
           onChange={v => changeTheValue(path + '.clientId', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Client Secret"
           value={settings.clientSecret}
           help="..."
           onChange={v => changeTheValue(path + '.clientSecret', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Authorize URL"
           value={settings.authorizeUrl}
           help="..."
           onChange={v => changeTheValue(path + '.authorizeUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Token URL"
           value={settings.tokenUrl}
           help="..."
           onChange={v => changeTheValue(path + '.tokenUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Userinfo URL"
           value={settings.userInfoUrl}
           help="..."
           onChange={v => changeTheValue(path + '.userInfoUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Login URL"
           value={settings.loginUrl}
           help="..."
           onChange={v => changeTheValue(path + '.loginUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Logout URL"
           value={settings.logoutUrl}
           help="..."
           onChange={v => changeTheValue(path + '.logoutUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Callback URL"
           value={settings.callbackUrl}
           help="..."
           onChange={v => changeTheValue(path + '.callbackUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Access token field name"
           value={settings.accessTokenField}
           help="..."
           onChange={v => changeTheValue(path + '.accessTokenField', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Name field name"
           value={settings.nameField}
           help="..."
           onChange={v => changeTheValue(path + '.nameField', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Email field name"
           value={settings.emailField}
           help="..."
           onChange={v => changeTheValue(path + '.emailField', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2'}
           label="Otoroshi metadata field name"
           value={settings.otoroshiDataField}
           help="..."
@@ -161,5 +146,115 @@ export class AuthModuleConfig extends Component {
         />
       </div>
     );
+  }
+}
+
+export class BasicModuleConfig extends Component {
+  state = {
+    error: null,
+  };
+
+  componentDidCatch(error) {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    console.log('BasicModuleConfig did catch', error, path, settings);
+    this.setState({ error });
+  }
+
+  changeTheValue = (name, value) => {
+    console.log('changeTheValue', name, value);
+    if (this.props.onChange) {
+      const clone = _.cloneDeep(this.props.value || this.props.settings);
+      const path = name.startsWith('.') ? name.substr(1) : name;
+      const newObj = deepSet(clone, path, value);
+      this.props.onChange(newObj);
+    } else {
+      this.props.changeTheValue(name, value);
+    }
+  };
+
+  render() {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    const changeTheValue = this.changeTheValue;
+    if (this.state.error) {
+      return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
+    }
+    return (
+      <div>
+        <TextInput
+          label="Id"
+          value={settings.id}
+          help="..."
+          onChange={v => changeTheValue(path + '.id', v)}
+        />
+        <TextInput
+          label="Name"
+          value={settings.name}
+          help="..."
+          onChange={v => changeTheValue(path + '.name', v)}
+        />
+        <TextInput
+          label="Description"
+          value={settings.desc}
+          help="..."
+          onChange={v => changeTheValue(path + '.desc', v)}
+        />  
+        <TextareaInput
+          label="Users"
+          value={JSON.stringify(settings.users, null, 2)}
+          help="..."
+          onChange={v => changeTheValue(path + '.users', JSON.parse(v))}
+        />
+      </div>
+    );
+  }
+}
+
+export class AuthModuleConfig extends Component {
+  render() {
+    const settings = this.props.value || this.props.settings;
+    const selector = <SelectInput
+      label="Type"
+      value={settings.type}
+      onChange={e => {
+        switch (e) {
+          case 'basic':
+            this.props.onChange({ 
+              type: 'basic',
+              users: []
+            });
+            break;
+          case 'oauth2':
+            this.props.onChange({ 
+              type: 'oauth2',  
+              clientId: 'client', 
+              clientSecret: 'secret', 
+              authorizeUrl: 'http://my.iam.local:8082/oauth/authorize', 
+              tokenUrl: 'http://my.iam.local:8082/oauth/token', 
+              userInfoUrl: 'http://my.iam.local:8082/userinfo', 
+              loginUrl: 'http://my.iam.local:8082/login', 
+              logoutUrl: 'http://my.iam.local:8082/logout', 
+              callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback', 
+              accessTokenField: 'access_token', 
+              nameField: 'name', 
+              emailField: 'email', 
+            });
+            break;
+        }
+      }}
+      possibleValues={[
+        { label: 'Generic OAuth2 provider', value: 'oauth2' },
+        { label: 'Basic Auth provider', value: 'basic' },
+      ]}
+      help="The type of settings to log into your private app"
+    />
+    if (settings.type === 'oauth2') {
+      return <div>{selector}<Oauth2ModuleConfig {...this.props} /></div>;
+    } else if (settings.type === 'basic') {
+      return <div>{selector}<BasicModuleConfig {...this.props} /></div>;
+    } else {
+      return <h3>Unknown config type ...</h3>
+    }
   }
 }

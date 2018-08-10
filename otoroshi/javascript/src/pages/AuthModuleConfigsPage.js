@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import faker from 'faker';
-import { AuthModuleConfig } from '../components/AuthModuleConfig';
+import { AuthModuleConfig, Oauth2ModuleConfig } from '../components/AuthModuleConfig';
 
 export class AuthModuleConfigsPage extends Component {
 
@@ -30,10 +30,11 @@ export class AuthModuleConfigsPage extends Component {
           defaultTitle="All Global auth. configs"
           defaultValue={() => {
             const defv = {
-              ...AuthModuleConfig.defaultConfig,
+              ...Oauth2ModuleConfig.defaultConfig,
               id: faker.random.alphaNumeric(64),
               name: 'New auth. config',
               desc: 'A auth. config',
+              type: 'oauth2'
             };
             return defv;
           }}

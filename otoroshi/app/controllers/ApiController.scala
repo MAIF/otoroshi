@@ -11,7 +11,7 @@ import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import auth.GenericOauth2ModuleConfig
+import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
 import env.Env
 import events._
 import models._
@@ -2888,7 +2888,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def findGlobalAuthModuleById(id: String) = ApiAction.async { ctx =>
-    env.datastores.globalJwtVerifierDataStore.findById(id).map {
+    env.datastores.authConfigsDataStore.findById(id).map {
       case Some(verifier) => Ok(verifier.asJson)
       case None =>
         NotFound(
@@ -2898,10 +2898,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def createGlobalAuthModule() = ApiAction.async(parse.json) { ctx =>
-    GenericOauth2ModuleConfig.fromJson(ctx.request.body) match {
-      case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
-      case Right(newVerifier) =>
-        env.datastores.authConfigsDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
+    AuthModuleConfig._fmt.reads(ctx.request.body) match {
+      case JsError(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
+      case JsSuccess(newVerifier, _) =>
+        env.datastores.authConfigsDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
     }
   }
 
@@ -2912,10 +2912,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Json.obj("error" -> s"GlobalAuthModule with id $id not found")
         ).asFuture
       case Some(verifier) => {
-        GenericOauth2ModuleConfig.fromJson(ctx.request.body) match {
-          case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
-          case Right(newVerifier) => {
-            env.datastores.authConfigsDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
+        AuthModuleConfig._fmt.reads(ctx.request.body) match {
+          case JsError(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
+          case JsSuccess(newVerifier, _) => {
+            env.datastores.authConfigsDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
           }
         }
       }
@@ -2931,11 +2931,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       case Some(verifier) => {
         val currentJson = verifier.asJson
         val patch       = JsonPatch(ctx.request.body)
-        val newVerifier = patch(currentJson)
-        GenericOauth2ModuleConfig.fromJson(newVerifier) match {
-          case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
-          case Right(newVerifier) => {
-            env.datastores.authConfigsDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
+        val patchedVerifier = patch(currentJson)
+        AuthModuleConfig._fmt.reads(patchedVerifier) match {
+          case JsError(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
+          case JsSuccess(newVerifier, _) => {
+            env.datastores.authConfigsDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
           }
         }
       }

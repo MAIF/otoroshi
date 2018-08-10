@@ -2,7 +2,7 @@ package auth
 
 import env.Env
 import models._
-import play.api.libs.json.{Format, JsResult, JsValue}
+import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,8 +29,13 @@ trait AuthModuleConfig extends AsJson {
 
 object AuthModuleConfig {
   val _fmt: Format[AuthModuleConfig] = new Format[AuthModuleConfig] {
-    override def reads(json: JsValue): JsResult[AuthModuleConfig] = GenericOauth2ModuleConfig._fmt.reads(json)
-    override def writes(o: AuthModuleConfig): JsValue = GenericOauth2ModuleConfig._fmt.writes(o.asInstanceOf[GenericOauth2ModuleConfig])
+    override def reads(json: JsValue): JsResult[AuthModuleConfig] = (json \ "type").as[String] match {
+      case "oauth2" => GenericOauth2ModuleConfig._fmt.reads(json)
+      case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
+      case "basic" => BasicAuthModuleConfig._fmt.reads(json)
+      case _ => JsError("Unknown auth. config type")
+    }
+    override def writes(o: AuthModuleConfig): JsValue = o.asJson
   }
 }
 

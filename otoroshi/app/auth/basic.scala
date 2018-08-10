@@ -1,0 +1,162 @@
+package auth
+
+import java.util.Base64
+
+import akka.http.scaladsl.util.FastFuture
+import controllers.routes
+import env.Env
+import models.{FromJson, GlobalConfig, PrivateAppsUser, ServiceDescriptor}
+import play.api.Logger
+import play.api.libs.json._
+import play.api.mvc.{RequestHeader, Result, Results}
+import security.IdGenerator
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
+
+case class BasicAuthUser(
+  name: String,
+  password: String,
+  email: String,
+  metadata: JsObject = Json.obj()
+) {
+  def asJson: JsValue = BasicAuthUser.fmt.writes(this)
+}
+
+object BasicAuthUser {
+  def fmt = new Format[BasicAuthUser] {
+    override def writes(o: BasicAuthUser) = Json.obj(
+      "name" -> o.name,
+      "password" -> o.password,
+      "email" -> o.email,
+      "metadata" -> o.metadata,
+    )
+    override def reads(json: JsValue) = Try {
+      JsSuccess(BasicAuthUser(
+        name = (json \ "name").as[String],
+        password = (json \ "password").as[String],
+        email = (json \ "email").as[String],
+        metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj())
+      ))
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+
+object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
+
+  lazy val logger = Logger("otoroshi-basic-auth-config")
+
+  def fromJsons(value: JsValue): BasicAuthModuleConfig =
+    try {
+      _fmt.reads(value).get
+    } catch {
+      case e: Throwable => {
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
+      }
+    }
+
+  val _fmt = new Format[BasicAuthModuleConfig] {
+
+    override def reads(json: JsValue) = fromJson(json) match {
+      case Left(e)  => JsError(e.getMessage)
+      case Right(v) => JsSuccess(v.asInstanceOf[BasicAuthModuleConfig])
+    }
+
+    override def writes(o: BasicAuthModuleConfig) = o.asJson
+  }
+
+  override def fromJson(json: JsValue): Either[Throwable, AuthModuleConfig] = Try {
+    Right(BasicAuthModuleConfig(
+      id = (json \ "id").as[String],
+      name = (json \ "name").as[String],
+      desc = (json \ "desc").asOpt[String].getOrElse("--"),
+      users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser])
+    ))
+  } recover {
+    case e => Left(e)
+  } get
+}
+
+case class BasicAuthModuleConfig(
+  id: String,
+  name: String,
+  desc: String,
+  users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser]
+) extends AuthModuleConfig {
+  def `type`: String = "basic"
+  override def authModule(config: GlobalConfig): AuthModule = BasicAuthModule(this)
+  override def asJson = Json.obj(
+    "type" -> "basic",
+    "id" -> this.id,
+    "name" -> this.name,
+    "desc" -> this.desc,
+    "users" -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
+  )
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
+  override def cookieSuffix(desc: ServiceDescriptor) = s"basic-auth-$id"
+}
+
+case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule {
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    implicit val req = request
+    val redirect = request.getQueryString("redirect")
+    request.headers.get("Authorization") match {
+      case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {
+        val cleanAuthorization = authorization.replace("Basic ", "").replace("basic ", "")
+        val parts = new String(Base64.getDecoder.decode(cleanAuthorization)).split(":")
+        val email = parts.head
+        val password = parts.last
+        authConfig.users.find(u => u.email == email && u.password == password) match {
+          case Some(user) => FastFuture.successful(
+            Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}").addingToSession(
+              "pa-redirect-after-login" -> redirect.getOrElse(
+                routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+              )
+            )
+          )
+          case None => FastFuture.successful(Results.Forbidden(
+            views.html.otoroshi
+              .error(message = s"You're not authorized here", _env = env, title = "Authorization error")
+          ))
+        }
+      }
+      case _ => FastFuture.successful(
+        Results.Unauthorized("").withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
+      )
+    }
+  }
+  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env) = FastFuture.successful(())
+  override def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+    implicit val req = request
+    val redirect = request.getQueryString("redirect")
+    request.headers.get("Authorization") match {
+      case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {
+        val cleanAuthorization = authorization.replace("Basic ", "").replace("basic ", "")
+        val parts = new String(Base64.getDecoder.decode(cleanAuthorization)).split(":")
+        val email = parts.head
+        val password = parts.last
+        authConfig.users.find(u => u.email == email && u.password == password) match {
+          case Some(user) => FastFuture.successful(Right(PrivateAppsUser(
+            randomId = IdGenerator.token(64),
+            name = user.name,
+            email = user.email,
+            profile = user.asJson,
+            realm = authConfig.cookieSuffix(descriptor),
+            otoroshiData = user.metadata.asOpt[Map[String, String]]
+          )))
+          case None => FastFuture.successful(Left(s"You're not authorized here"))
+        }
+      }
+      case _ => FastFuture.successful(
+        Left("No Authorization header here")
+      )
+    }
+  }
+
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) = ???
+  override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) = FastFuture.successful(())
+  override def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) = ???
+}

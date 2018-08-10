@@ -4,11 +4,11 @@ import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
-import auth.{AuthModule, AuthModuleConfig}
+import auth.AuthModuleConfig
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
 import gateway.Errors
-import models.{ServiceDescriptor, ServiceDescriptorQuery}
+import models.ServiceDescriptor
 import play.api.Logger
 import play.api.mvc._
 import security.IdGenerator
