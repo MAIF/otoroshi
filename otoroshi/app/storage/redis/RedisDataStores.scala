@@ -2,7 +2,7 @@ package storage.redis
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
-import auth.GlobalOauth2AuthConfigDataStore
+import auth.AuthConfigsDataStore
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
@@ -86,7 +86,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _canaryDataStore            = new RedisCanaryDataStore(redis, env)
   private lazy val _chaosDataStore             = new RedisChaosDataStore(redis, env)
   private lazy val _jwtVerifDataStore          = new RedisGlobalJwtVerifierDataStore(redis, env)
-  private lazy val _globalOAuth2ConfigDataStore = new RedisGlobalOauth2AuthConfigDataStore(redis, env)
+  private lazy val _authConfigsDataStore       = new RedisAuthConfigsDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
@@ -104,7 +104,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
   override def chaosDataStore: ChaosDataStore                         = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
-  override def globalOAuth2ConfigDataStore: GlobalOauth2AuthConfigDataStore     = _globalOAuth2ConfigDataStore
+  override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover {
       case _ => Unreachable

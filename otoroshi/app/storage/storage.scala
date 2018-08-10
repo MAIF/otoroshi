@@ -12,7 +12,7 @@ import akka.stream.scaladsl._
 import akka.stream._
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
-import auth.GlobalOauth2AuthConfigDataStore
+import auth.AuthConfigsDataStore
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,7 +43,7 @@ trait DataStores {
   def canaryDataStore: CanaryDataStore
   def chaosDataStore: ChaosDataStore
   def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore
-  def globalOAuth2ConfigDataStore: GlobalOauth2AuthConfigDataStore
+  def authConfigsDataStore: AuthConfigsDataStore
 }
 
 trait BasicStore[T] {

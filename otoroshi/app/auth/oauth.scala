@@ -77,6 +77,7 @@ case class GenericOauth2ModuleConfig(
     otoroshiDataField: String = "app_metadata|otoroshi_data",
     callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
   ) extends OAuth2ModuleConfig {
+  def `type`: String = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
   override def asJson = Json.obj(
     "type" -> "oauth2",
@@ -96,7 +97,7 @@ case class GenericOauth2ModuleConfig(
     "otoroshiDataField" -> this.otoroshiDataField,
     "callbackUrl" -> this.callbackUrl
   )
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalOAuth2ConfigDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor) = s"global-oauth-$id"
 }
 
@@ -244,4 +245,4 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 }
 
-trait GlobalOauth2AuthConfigDataStore extends BasicStore[GenericOauth2ModuleConfig]
+trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig]

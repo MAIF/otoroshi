@@ -2884,7 +2884,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def findAllGlobalAuthModules() = ApiAction.async { ctx =>
-    env.datastores.globalOAuth2ConfigDataStore.findAll().map(all => Ok(JsArray(all.map(_.asJson))))
+    env.datastores.authConfigsDataStore.findAll().map(all => Ok(JsArray(all.map(_.asJson))))
   }
 
   def findGlobalAuthModuleById(id: String) = ApiAction.async { ctx =>
@@ -2901,12 +2901,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     GenericOauth2ModuleConfig.fromJson(ctx.request.body) match {
       case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
       case Right(newVerifier) =>
-        env.datastores.globalOAuth2ConfigDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
+        env.datastores.authConfigsDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
     }
   }
 
   def updateGlobalAuthModule(id: String) = ApiAction.async(parse.json) { ctx =>
-    env.datastores.globalOAuth2ConfigDataStore.findById(id).flatMap {
+    env.datastores.authConfigsDataStore.findById(id).flatMap {
       case None =>
         NotFound(
           Json.obj("error" -> s"GlobalAuthModule with id $id not found")
@@ -2915,7 +2915,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         GenericOauth2ModuleConfig.fromJson(ctx.request.body) match {
           case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
           case Right(newVerifier) => {
-            env.datastores.globalOAuth2ConfigDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
+            env.datastores.authConfigsDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
           }
         }
       }
@@ -2923,7 +2923,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def patchGlobalAuthModule(id: String) = ApiAction.async(parse.json) { ctx =>
-    env.datastores.globalOAuth2ConfigDataStore.findById(id).flatMap {
+    env.datastores.authConfigsDataStore.findById(id).flatMap {
       case None =>
         NotFound(
           Json.obj("error" -> s"GlobalAuthModule with id $id not found")
@@ -2935,7 +2935,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         GenericOauth2ModuleConfig.fromJson(newVerifier) match {
           case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
           case Right(newVerifier) => {
-            env.datastores.globalOAuth2ConfigDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
+            env.datastores.authConfigsDataStore.set(newVerifier.asInstanceOf[GenericOauth2ModuleConfig]).map(_ => Ok(newVerifier.asJson))
           }
         }
       }
@@ -2943,7 +2943,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def deleteGlobalAuthModule(id: String) = ApiAction.async { ctx =>
-    env.datastores.globalOAuth2ConfigDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+    env.datastores.authConfigsDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

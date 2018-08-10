@@ -2,7 +2,7 @@ package storage.inmemory
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
-import auth.GlobalOauth2AuthConfigDataStore
+import auth.AuthConfigsDataStore
 import com.typesafe.config.ConfigFactory
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
@@ -67,7 +67,7 @@ class InMemoryDataStores(configuration: Configuration,
   private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis, env)
   private lazy val _chaosDataStore             = new InMemoryChaosDataStore(redis, env)
   private lazy val _jwtVerifDataStore          = new InMemoryGlobalJwtVerifierDataStore(redis, env)
-  private lazy val _globalOAuth2ConfigDataStore = new InMemoryGlobalOauth2AuthConfigDataStore(redis, env)
+  private lazy val _authConfigsDataStore       = new InMemoryAuthConfigsDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -85,6 +85,6 @@ class InMemoryDataStores(configuration: Configuration,
   override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
-  override def globalOAuth2ConfigDataStore: GlobalOauth2AuthConfigDataStore     = _globalOAuth2ConfigDataStore
+  override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
 }

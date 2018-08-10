@@ -36,7 +36,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
         Some("errors.auth.config.ref.not.found")
       )
       case Some(ref) => {
-        env.datastores.globalOAuth2ConfigDataStore.findById(ref).flatMap {
+        env.datastores.authConfigsDataStore.findById(ref).flatMap {
           case None => Errors.craftResponseResult(
             "Auth. config. not found on the descriptor",
             Results.InternalServerError,
@@ -207,7 +207,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
         config.backofficeAuth0Config match {
           case None => FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
           case Some(aconf) => {
-            env.datastores.globalOAuth2ConfigDataStore.findById(aconf).flatMap {
+            env.datastores.authConfigsDataStore.findById(aconf).flatMap {
               case None => FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice Oauth is not configured", env)))
               case Some(oauth) => oauth.authModule(config).boLoginPage(ctx.request, config)
             }
@@ -226,7 +226,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
       config.backofficeAuth0Config match {
         case None => FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
         case Some(aconf) => {
-          env.datastores.globalOAuth2ConfigDataStore.findById(aconf).flatMap {
+          env.datastores.authConfigsDataStore.findById(aconf).flatMap {
             case None => FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice Oauth is not configured", env)))
             case Some(oauth) => oauth.authModule(config).boLogout(ctx.request, config).flatMap { _ =>
               ctx.user.delete().map { _ =>
@@ -260,7 +260,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
               case None =>
                 FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not configured", env)))
               case Some(backOfficeAuth0Config) => {
-                env.datastores.globalOAuth2ConfigDataStore.findById(backOfficeAuth0Config).flatMap {
+                env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
                   case None => FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not found", env)))
                   case Some(oauth) => oauth.authModule(config).boCallback(ctx.request, config).flatMap {
                     case Left(err) => {

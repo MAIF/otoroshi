@@ -222,7 +222,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]], desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
-    env.datastores.globalOAuth2ConfigDataStore.findById(desc.authConfigRef.get).flatMap {
+    env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
       case None => FastFuture.successful(None)
       case Some(auth) => {
         val expected = "oto-papps-" + auth.cookieSuffix(desc)
@@ -1317,7 +1317,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   )
                                   case Some(ref) => {
-                                    env.datastores.globalOAuth2ConfigDataStore.findById(ref).flatMap {
+                                    env.datastores.authConfigsDataStore.findById(ref).flatMap {
                                       case None => Errors.craftResponseResult(
                                         "Auth. config. not found on the descriptor",
                                         InternalServerError,

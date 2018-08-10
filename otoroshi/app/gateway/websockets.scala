@@ -80,7 +80,7 @@ class WebSocketHandler()(implicit env: Env) {
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
   def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
-    env.datastores.globalOAuth2ConfigDataStore.findById(desc.authConfigRef.get).flatMap {
+    env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
       case None => FastFuture.successful(None)
       case Some(auth) => {
         val expected = "oto-papps-" + auth.cookieSuffix(desc)

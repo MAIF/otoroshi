@@ -236,7 +236,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       admins       <- env.datastores.u2FAdminDataStore.findAll()
       simpleAdmins <- env.datastores.simpleAdminDataStore.findAll()
       jwtVerifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
-      oauthConfigs <- env.datastores.globalOAuth2ConfigDataStore.findAll()
+      oauthConfigs <- env.datastores.authConfigsDataStore.findAll()
     } yield
       Json.obj(
         "label"   -> "Otoroshi export",
@@ -295,7 +295,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
             }
           }
           _ = logger.warn("OAuth config migration - creating global oauth configuration for private apps")
-          _ <- privateAppsAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GenericOauth2ModuleConfig(
+          _ <- privateAppsAuth0Config.map(c => env.datastores.authConfigsDataStore.set(GenericOauth2ModuleConfig(
             id = "confidential-apps",
             name = "Confidential apps Auth0 provider",
             desc = "Former Auth0 global config. for private apps",
@@ -309,7 +309,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
             callbackUrl = c.callbackURL
           ))).getOrElse(FastFuture.successful(()))
           _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
-          _ <- backofficeAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GenericOauth2ModuleConfig(
+          _ <- backofficeAuth0Config.map(c => env.datastores.authConfigsDataStore.set(GenericOauth2ModuleConfig(
             id = "otoroshi-backoffice",
             name = "Otoroshi BackOffice Auth0 provider",
             desc = "Former Auth0 global config. for Otoroshi BackOffice",

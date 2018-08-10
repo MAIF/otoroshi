@@ -2,6 +2,7 @@ package auth
 
 import env.Env
 import models._
+import play.api.libs.json.{Format, JsResult, JsValue}
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,8 +19,19 @@ trait AuthModule {
 }
 
 trait AuthModuleConfig extends AsJson {
+  def `type`: String
+  def id: String
+  def name: String
+  def desc: String
   def authModule(config: GlobalConfig): AuthModule
   def cookieSuffix(desc: ServiceDescriptor): String
+}
+
+object AuthModuleConfig {
+  val _fmt: Format[AuthModuleConfig] = new Format[AuthModuleConfig] {
+    override def reads(json: JsValue): JsResult[AuthModuleConfig] = GenericOauth2ModuleConfig._fmt.reads(json)
+    override def writes(o: AuthModuleConfig): JsValue = GenericOauth2ModuleConfig._fmt.writes(o.asInstanceOf[GenericOauth2ModuleConfig])
+  }
 }
 
 trait OAuth2ModuleConfig extends AuthModuleConfig {
