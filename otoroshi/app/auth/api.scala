@@ -33,6 +33,7 @@ object AuthModuleConfig {
       case "oauth2" => GenericOauth2ModuleConfig._fmt.reads(json)
       case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
       case "basic" => BasicAuthModuleConfig._fmt.reads(json)
+      case "ldap" => LdapAuthModuleConfig._fmt.reads(json)
       case _ => JsError("Unknown auth. config type")
     }
     override def writes(o: AuthModuleConfig): JsValue = o.asJson

@@ -232,7 +232,7 @@ export class DangerZonePage extends Component {
       type: SelectInput,
       props: {
         label: "Backoffice auth config",
-        valuesFrom: "/bo/api/proxy/api/auths/oauth2",
+        valuesFrom: "/bo/api/proxy/api/auths",
         transformer: a => ({ value: a.id, label: a.name }),
         help: "..."
       }

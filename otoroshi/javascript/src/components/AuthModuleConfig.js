@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 
-import { TextInput, TextareaInput, SelectInput, CodeInput } from './inputs';
+import { TextInput, SelectInput, CodeInput } from './inputs';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
+import faker from 'faker';
 
 export class Oauth2ModuleConfig extends Component {
   state = {
@@ -213,6 +214,112 @@ export class BasicModuleConfig extends Component {
   }
 }
 
+export class LdapModuleConfig extends Component {
+  state = {
+    error: null,
+  };
+
+  componentDidCatch(error) {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    console.log('LdapModuleConfig did catch', error, path, settings);
+    this.setState({ error });
+  }
+
+  changeTheValue = (name, value) => {
+    console.log('changeTheValue', name, value);
+    if (this.props.onChange) {
+      const clone = _.cloneDeep(this.props.value || this.props.settings);
+      const path = name.startsWith('.') ? name.substr(1) : name;
+      const newObj = deepSet(clone, path, value);
+      this.props.onChange(newObj);
+    } else {
+      this.props.changeTheValue(name, value);
+    }
+  };
+
+  render() {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    const changeTheValue = this.changeTheValue;
+    console.log(settings);
+    if (this.state.error) {
+      return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
+    }
+    return (
+      <div>
+        <TextInput
+          label="Id"
+          value={settings.id}
+          disabled
+          help="..."
+          onChange={v => changeTheValue(path + '.id', v)}
+        />
+        <TextInput
+          label="Name"
+          value={settings.name}
+          help="..."
+          onChange={v => changeTheValue(path + '.name', v)}
+        />
+        <TextInput
+          label="Description"
+          value={settings.desc}
+          help="..."
+          onChange={v => changeTheValue(path + '.desc', v)}
+        />
+        <TextInput
+          label="LDAP Server URL"
+          value={settings.serverUrl}
+          help="..."
+          onChange={v => changeTheValue(path + '.serverUrl', v)}
+        />
+        <TextInput
+          label="Search Base"
+          value={settings.searchBase}
+          help="..."
+          onChange={v => changeTheValue(path + '.searchBase', v)}
+        />
+        <TextInput
+          label="Search Filter"
+          value={settings.searchFilter}
+          help="use ${username} as placeholder for searched username"
+          onChange={v => changeTheValue(path + '.searchFilter', v)}
+        />
+        <TextInput
+          label="Admin username (bind DN)"
+          value={settings.adminUsername}
+          help="if one"
+          onChange={v => changeTheValue(path + '.adminUsername', v)}
+        />
+        <TextInput
+          label="Admin password"
+          value={settings.adminPassword}
+          help="if one"
+          onChange={v => changeTheValue(path + '.adminPassword', v)}
+        />
+        <TextInput
+          label="Name field name"
+          value={settings.nameField}
+          help="..."
+          onChange={v => changeTheValue(path + '.nameField', v)}
+        />
+        <TextInput
+          label="Email field name"
+          value={settings.emailField}
+          help="..."
+          onChange={v => changeTheValue(path + '.emailField', v)}
+        />
+        <TextInput
+          label="Otoroshi metadata field name"
+          value={settings.metadataField}
+          help="..."
+          onChange={v => changeTheValue(path + '.metadataField', v)}
+        />
+      </div>
+    );
+  }
+}
+
 export class AuthModuleConfig extends Component {
   render() {
     const settings = this.props.value || this.props.settings;
@@ -223,6 +330,7 @@ export class AuthModuleConfig extends Component {
         switch (e) {
           case 'basic':
             this.props.onChange({ 
+              id: faker.random.alphaNumeric(64),
               type: 'basic',
               users: [
                 {
@@ -234,8 +342,23 @@ export class AuthModuleConfig extends Component {
               ]
             });
             break;
+          case 'ldap':
+            this.props.onChange({ 
+              id: faker.random.alphaNumeric(64),
+              type: 'ldap',
+              serverUrl: 'ldap://ldap.forumsys.com:389',
+              searchBase: 'dc=example,dc=com',
+              searchFilter: '(uid=${username})',
+              adminUsername: 'cn=read-only-admin,dc=example,dc=com',
+              adminPassword: 'password',
+              nameField: 'cn',
+              emailField: 'mail',
+              metadataField: null,
+            });
+            break;
           case 'oauth2':
             this.props.onChange({ 
+              id: faker.random.alphaNumeric(64),
               type: 'oauth2',  
               clientId: 'client', 
               clientSecret: 'secret', 
@@ -256,6 +379,7 @@ export class AuthModuleConfig extends Component {
       possibleValues={[
         { label: 'Generic OAuth2 provider', value: 'oauth2' },
         { label: 'Basic Auth provider', value: 'basic' },
+        { label: 'Ldap Auth provider', value: 'ldap' },
       ]}
       help="The type of settings to log into your app."
     />
@@ -263,6 +387,8 @@ export class AuthModuleConfig extends Component {
       return <div>{selector}<Oauth2ModuleConfig {...this.props} /></div>;
     } else if (settings.type === 'basic') {
       return <div>{selector}<BasicModuleConfig {...this.props} /></div>;
+    } else if (settings.type === 'ldap') {
+      return <div>{selector}<LdapModuleConfig {...this.props} /></div>;
     } else {
       return <h3>Unknown config type ...</h3>
     }
