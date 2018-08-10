@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { TextInput, TextareaInput, SelectInput } from './inputs';
+import { TextInput, TextareaInput, SelectInput, CodeInput } from './inputs';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -200,7 +200,7 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
         />  
-        <TextareaInput
+        <CodeInput 
           label="Users"
           value={JSON.stringify(settings.users, null, 2)}
           help="..."
