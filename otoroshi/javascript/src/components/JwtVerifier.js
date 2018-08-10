@@ -267,6 +267,7 @@ export class JwtVerifier extends Component {
           <TextInput
             label="Id"
             placeholder="The verifier Id"
+            disabled
             value={verifier.id}
             help="The verifier Id"
             onChange={e => changeTheValue(path + '.id', e)}

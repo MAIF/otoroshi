@@ -57,6 +57,7 @@ export class Oauth2ModuleConfig extends Component {
         <TextInput
           label="Id"
           value={settings.id}
+          disabled
           help="..."
           onChange={v => changeTheValue(path + '.id', v)}
         />
@@ -185,6 +186,7 @@ export class BasicModuleConfig extends Component {
         <TextInput
           label="Id"
           value={settings.id}
+          disabled
           help="..."
           onChange={v => changeTheValue(path + '.id', v)}
         />
