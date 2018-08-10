@@ -2,11 +2,9 @@ package auth
 
 import env.Env
 import models._
-import play.api.libs.json.JsValue
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 trait AuthModule {
 
@@ -24,7 +22,7 @@ trait AuthModuleConfig extends AsJson {
   def cookieSuffix(desc: ServiceDescriptor): String
 }
 
-trait OAuth2AuthModuleConfig extends AuthModuleConfig {
+trait OAuth2ModuleConfig extends AuthModuleConfig {
   def clientId: String
   def clientSecret: String
   def authorizeUrl: String
@@ -37,17 +35,6 @@ trait OAuth2AuthModuleConfig extends AuthModuleConfig {
   def emailField: String
   def otoroshiDataField: String
   def callbackUrl: String
-}
-
-object AuthModuleConfig extends FromJson[AuthModuleConfig] {
-  override def fromJson(json: JsValue): Either[Throwable, AuthModuleConfig] = Try {
-    (json \ "type").as[String] match {
-      case "oauth2"              => GenericOAuth2AuthModuleConfig.fromJson(json)
-      case "oauth2-ref"          => Oauth2RefAuthModuleConfig.fromJson(json)
-    }
-  } recover {
-    case e => Left(e)
-  } get
 }
 
 

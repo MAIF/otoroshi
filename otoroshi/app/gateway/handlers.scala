@@ -9,6 +9,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Concat, Merge, Sink, Source}
 import akka.util.ByteString
+import auth.AuthModuleConfig
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
@@ -221,16 +222,21 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]], desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
-    val expected = "oto-papps-" + desc.privateAppSettings.cookieSuffix(desc)
-    req.cookies
-      .get(expected)
-      .flatMap { cookie =>
-        env.extractPrivateSessionId(cookie)
+    env.datastores.globalOAuth2ConfigDataStore.findById(desc.authConfigRef.get).flatMap {
+      case None => FastFuture.successful(None)
+      case Some(auth) => {
+        val expected = "oto-papps-" + auth.cookieSuffix(desc)
+        req.cookies
+          .get(expected)
+          .flatMap { cookie =>
+            env.extractPrivateSessionId(cookie)
+          }
+          .map { id =>
+            env.datastores.privateAppsUserDataStore.findById(id)
+          } getOrElse {
+          FastFuture.successful(None)
+        }
       }
-      .map { id =>
-        env.datastores.privateAppsUserDataStore.findById(id)
-      } getOrElse {
-      FastFuture.successful(None)
     }
   }
 
@@ -1292,7 +1298,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             }
                           }
 
-                          def passWithAuth0(config: GlobalConfig): Future[Result] =
+                          def passWithAuth0(config: GlobalConfig): Future[Result] = {
                             isPrivateAppsSessionValid(req, descriptor).flatMap {
                               case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                               case None => {
@@ -1300,18 +1306,44 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   .confidentialAppLoginPage()
                                   .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
                                 logger.trace("should redirect to " + redirectTo)
-                                FastFuture.successful(
-                                  Results
-                                    .Redirect(redirectTo)
-                                    .discardingCookies(
-                                      env.removePrivateSessionCookies(
-                                        ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
-                                        descriptor
-                                      ): _*
-                                    )
-                                )
+                                descriptor.authConfigRef match {
+                                  case None => Errors.craftResponseResult(
+                                    "Auth. config. ref not found on the descriptor",
+                                    InternalServerError,
+                                    req,
+                                    Some(descriptor),
+                                    Some("errors.auth.config.ref.not.found"),
+                                    duration = System.currentTimeMillis - start,
+                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                  )
+                                  case Some(ref) => {
+                                    env.datastores.globalOAuth2ConfigDataStore.findById(ref).flatMap {
+                                      case None => Errors.craftResponseResult(
+                                        "Auth. config. not found on the descriptor",
+                                        InternalServerError,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.auth.config.not.found"),
+                                        duration = System.currentTimeMillis - start,
+                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                      )
+                                      case Some(auth) => {
+                                        FastFuture.successful(Results
+                                          .Redirect(redirectTo)
+                                          .discardingCookies(
+                                            env.removePrivateSessionCookies(
+                                              ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
+                                              descriptor,
+                                              auth
+                                            ): _*
+                                          ))
+                                      }
+                                    }
+                                  }
+                                }
                               }
                             }
+                          }
 
                           // Algo is :
                           // if (app.private) {
@@ -1453,8 +1485,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   } else {
                                     isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
                                       case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
-                                      case Some(user)                            => passWithAuth0(globalConfig)
-                                      case None                                  => passWithApiKey(globalConfig)
+                                      case Some(user) => passWithAuth0(globalConfig)
+                                      case None => passWithApiKey(globalConfig)
                                     }
                                   }
                                 } else {

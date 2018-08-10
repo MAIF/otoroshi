@@ -39,7 +39,8 @@ object PrivateAppsUser {
 
   def select(from: JsValue, selector: String): JsValue = {
     val parts = selector.split("\\|")
-    parts.foldLeft(from) { (o, path) =>
+    parts.foldLeft(from) { (o, rawPath) =>
+      val path = rawPath.trim
       (o \ path).asOpt[JsValue].getOrElse(JsNull)
     }
   }

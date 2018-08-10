@@ -80,12 +80,21 @@ class WebSocketHandler()(implicit env: Env) {
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
   def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
-    req.cookies.get(
-      "oto-papps-" + desc.privateAppSettings.cookieSuffix(desc)
-    ).flatMap(env.extractPrivateSessionId).map { id =>
-      env.datastores.privateAppsUserDataStore.findById(id)
-    } getOrElse {
-      FastFuture.successful(None)
+    env.datastores.globalOAuth2ConfigDataStore.findById(desc.authConfigRef.get).flatMap {
+      case None => FastFuture.successful(None)
+      case Some(auth) => {
+        val expected = "oto-papps-" + auth.cookieSuffix(desc)
+        req.cookies
+          .get(expected)
+          .flatMap { cookie =>
+            env.extractPrivateSessionId(cookie)
+          }
+          .map { id =>
+            env.datastores.privateAppsUserDataStore.findById(id)
+          } getOrElse {
+          FastFuture.successful(None)
+        }
+      }
     }
   }
 

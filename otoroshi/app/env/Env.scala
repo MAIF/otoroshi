@@ -6,6 +6,7 @@ import akka.actor.{ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
+import auth.AuthModuleConfig
 import com.typesafe.config.ConfigFactory
 import events._
 import gateway.CircuitBreakersHolder
@@ -446,8 +447,8 @@ class Env(val configuration: Configuration,
     s"$signature::$id"
   }
 
-  def createPrivateSessionCookies(host: String, id: String, desc: ServiceDescriptor): Seq[play.api.mvc.Cookie] = {
-    createPrivateSessionCookiesWithSuffix(host, id, desc.privateAppSettings.cookieSuffix(desc))
+  def createPrivateSessionCookies(host: String, id: String, desc: ServiceDescriptor, authConfig: AuthModuleConfig): Seq[play.api.mvc.Cookie] = {
+    createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc))
   }
 
   def createPrivateSessionCookiesWithSuffix(host: String, id: String, suffix: String): Seq[play.api.mvc.Cookie] = {
@@ -484,8 +485,8 @@ class Env(val configuration: Configuration,
     }
   }
 
-  def removePrivateSessionCookies(host: String, desc: ServiceDescriptor): Seq[play.api.mvc.DiscardingCookie] = {
-    removePrivateSessionCookiesWithSuffix(host, desc.privateAppSettings.cookieSuffix(desc))
+  def removePrivateSessionCookies(host: String, desc: ServiceDescriptor, authConfig: AuthModuleConfig): Seq[play.api.mvc.DiscardingCookie] = {
+    removePrivateSessionCookiesWithSuffix(host, authConfig.cookieSuffix(desc))
   }
 
   def removePrivateSessionCookiesWithSuffix(host: String, suffix: String): Seq[play.api.mvc.DiscardingCookie] =

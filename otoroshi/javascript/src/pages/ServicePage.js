@@ -756,53 +756,13 @@ export class ServicePage extends Component {
                 help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
                 onChange={v => this.changeTheValue('privateApp', v)}
               />
-
               <SelectInput
-                label="Type"
-                value={this.state.service.privateAppSettings.type}
-                onChange={e => {
-                  switch (e) {
-                    case 'oauth2-ref':
-                      this.changeTheValue('privateAppSettings', { type: 'oauth2-ref' });
-                      break;
-                    case 'oauth2':
-                      this.changeTheValue('privateAppSettings', { 
-                        type: 'oauth2',  
-                        clientId: 'client', 
-                        clientSecret: 'secret', 
-                        authorizeUrl: 'http://my.iam.local:8082/oauth/authorize', 
-                        tokenUrl: 'http://my.iam.local:8082/oauth/token', 
-                        userInfoUrl: 'http://my.iam.local:8082/userinfo', 
-                        loginUrl: 'http://my.iam.local:8082/login', 
-                        logoutUrl: 'http://my.iam.local:8082/logout', 
-                        callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback', 
-                        accessTokenField: 'access_token', 
-                        nameField: 'name', 
-                        emailField: 'email', 
-                      });
-                      break;
-                  }
-                }}
-                possibleValues={[
-                  { label: 'Generic OAuth2 provider', value: 'oauth2' },
-                  { label: 'Global generic OAuth2 provider', value: 'oauth2-ref' },
-                ]}
-                help="The type of settings to log into your private app"
-              />
-
-              {this.state.service.privateAppSettings.type === 'oauth2-ref' && <SelectInput
-                label="OAuth Config"
-                value={this.state.service.privateAppSettings.id}
-                onChange={e => this.changeTheValue('privateAppSettings.id', e)}
-                valuesFrom="/bo/api/proxy/api/auths/oauth2"
+                label="Auth. config"
+                value={this.state.service.authConfigRef}
+                onChange={e => this.changeTheValue('authConfigRef', e)}
+                valuesFrom="/bo/api/proxy/api/auths"
                 transformer={a => ({ value: a.id, label: a.name })}
                 help="..."
-              />}
-
-              <AuthModuleConfig 
-                settings={this.state.service.privateAppSettings}
-                path="privateAppSettings"
-                changeTheValue={this.changeTheValue}
               />
               <ArrayInput
                 label="Excluded patterns"

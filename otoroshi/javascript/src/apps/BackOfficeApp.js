@@ -281,15 +281,15 @@ class BackOfficeAppContainer extends Component {
                           component={props => this.decorate(JwtVerifiersPage, props)}
                         />
                         <Route
-                          path="/oauth-configs/:taction/:titem"
+                          path="/auth-configs/:taction/:titem"
                           component={props => this.decorate(AuthModuleConfigsPage, props)}
                         />
                         <Route
-                          path="/oauth-configs/:taction"
+                          path="/auth-configs/:taction"
                           component={props => this.decorate(AuthModuleConfigsPage, props)}
                         />
                         <Route
-                          path="/oauth-configs"
+                          path="/auth-configs"
                           component={props => this.decorate(AuthModuleConfigsPage, props)}
                         />
                         <Route

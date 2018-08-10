@@ -2,7 +2,7 @@ package storage.redis
 
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
-import auth.GlobalOauth2AuthModuleConfig
+import auth.GenericOauth2ModuleConfig
 import env.Env
 import models._
 import play.api.libs.json._
@@ -210,7 +210,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))
       _ <- Future.sequence(errorTemplates.value.map(ErrorTemplate.fromJsons).map(_.save()))
       _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
-      _ <- Future.sequence(oauthConfigs.value.map(GlobalOauth2AuthModuleConfig.fromJsons).map(_.save()))
+      _ <- Future.sequence(oauthConfigs.value.map(GenericOauth2ModuleConfig.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -295,7 +295,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
             }
           }
           _ = logger.warn("OAuth config migration - creating global oauth configuration for private apps")
-          _ <- privateAppsAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GlobalOauth2AuthModuleConfig(
+          _ <- privateAppsAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GenericOauth2ModuleConfig(
             id = "confidential-apps",
             name = "Confidential apps Auth0 provider",
             desc = "Former Auth0 global config. for private apps",
@@ -309,7 +309,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
             callbackUrl = c.callbackURL
           ))).getOrElse(FastFuture.successful(()))
           _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
-          _ <- backofficeAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GlobalOauth2AuthModuleConfig(
+          _ <- backofficeAuth0Config.map(c => env.datastores.globalOAuth2ConfigDataStore.set(GenericOauth2ModuleConfig(
             id = "otoroshi-backoffice",
             name = "Otoroshi BackOffice Auth0 provider",
             desc = "Former Auth0 global config. for Otoroshi BackOffice",

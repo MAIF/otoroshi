@@ -306,7 +306,7 @@ case class ServiceDescriptor(
       512,
       "${config.app.claim.sharedKey}"
     ),
-    privateAppSettings: AuthModuleConfig = Oauth2RefAuthModuleConfig("confidential-apps")
+    authConfigRef: Option[String] = None
 ) {
 
   def toHost: String = subdomain match {
@@ -422,8 +422,7 @@ object ServiceDescriptor {
           secComSettings = AlgoSettings
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
-          privateAppSettings = AuthModuleConfig.fromJson((json \ "privateAppSettings").asOpt[JsValue].getOrElse(JsNull))
-              .getOrElse(Oauth2RefAuthModuleConfig("confidential-apps"))
+          authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty)
         )
       } map {
         case sd => JsSuccess(sd)
@@ -470,7 +469,7 @@ object ServiceDescriptor {
       "chaosConfig"                -> sd.chaosConfig.asJson,
       "jwtVerifier"                -> sd.jwtVerifier.asJson,
       "secComSettings"             -> sd.secComSettings.asJson,
-      "privateAppSettings"         -> sd.privateAppSettings.asJson
+      "authConfigRef"              -> sd.authConfigRef
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

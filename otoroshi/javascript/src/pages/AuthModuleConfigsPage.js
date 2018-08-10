@@ -12,12 +12,12 @@ export class AuthModuleConfigsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Global OAuth2 configs`);
+    this.props.setTitle(`Global auth. configs`);
   }
 
   gotoConfig = config => {
     this.props.history.push({
-      pathname: `oauth-configs/edit/${config.id}`,
+      pathname: `auth-configs/edit/${config.id}`,
     });
   };
 
@@ -26,32 +26,31 @@ export class AuthModuleConfigsPage extends Component {
       <div>
         <Table
           parentProps={this.props}
-          selfUrl="oauth-configs"
-          defaultTitle="All Global OAuth2 configs"
+          selfUrl="auth-configs"
+          defaultTitle="All Global auth. configs"
           defaultValue={() => {
             const defv = {
               ...AuthModuleConfig.defaultConfig,
               id: faker.random.alphaNumeric(64),
-              type: 'oauth2-global',
-              name: 'New OAuth2 config',
-              desc: 'A OAuth2 config',
+              name: 'New auth. config',
+              desc: 'A auth. config',
             };
             return defv;
           }}
-          itemName="OAuth2 config"
+          itemName="Auth. config"
           formSchema={this.formSchema}
           formFlow={this.formFlow}
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllOAuth2Configs}
-          updateItem={BackOfficeServices.updateOAuth2Config}
-          deleteItem={BackOfficeServices.deleteOAuth2Config}
-          createItem={BackOfficeServices.createOAuth2Config}
+          fetchItems={BackOfficeServices.findAllAuthConfigs}
+          updateItem={BackOfficeServices.updateAuthConfig}
+          deleteItem={BackOfficeServices.deleteAuthConfig}
+          createItem={BackOfficeServices.createAuthConfig}
           navigateTo={this.gotoConfig}
-          itemUrl={i => `/bo/dashboard/oauth-configs/edit/${i.id}`}
+          itemUrl={i => `/bo/dashboard/auth-configs/edit/${i.id}`}
           showActions={true}
           showLink={true}
-          rowNavigation={false}
+          rowNavigation={true}
           firstSort={0}
           extractKey={item => item.id}
           formComponent={AuthModuleConfig}

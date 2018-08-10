@@ -766,8 +766,8 @@ export function updateJwtVerifier(ak) {
   }).then(r => r.json());
 }
 
-export function findAllOAuth2Configs() {
-  return fetch('/bo/api/proxy/api/auths/oauth2', {
+export function findAllAuthConfigs() {
+  return fetch('/bo/api/proxy/api/auths', {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -776,8 +776,8 @@ export function findAllOAuth2Configs() {
   }).then(r => r.json());
 }
 
-export function findOAuth2ConfigById(id) {
-  return fetch(`/bo/api/proxy/api/auths/oauth2/${id}`, {
+export function findAuthConfigById(id) {
+  return fetch(`/bo/api/proxy/api/auths/${id}`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -786,8 +786,8 @@ export function findOAuth2ConfigById(id) {
   }).then(r => r.json());
 }
 
-export function deleteOAuth2Config(ak) {
-  return fetch(`/bo/api/proxy/api/auths/oauth2/${ak.id}`, {
+export function deleteAuthConfig(ak) {
+  return fetch(`/bo/api/proxy/api/auths/${ak.id}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -796,8 +796,8 @@ export function deleteOAuth2Config(ak) {
   }).then(r => r.json());
 }
 
-export function createOAuth2Config(ak) {
-  return fetch(`/bo/api/proxy/api/auths/oauth2`, {
+export function createAuthConfig(ak) {
+  return fetch(`/bo/api/proxy/api/auths`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -808,8 +808,8 @@ export function createOAuth2Config(ak) {
   }).then(r => r.json());
 }
 
-export function updateOAuth2Config(ak) {
-  return fetch(`/bo/api/proxy/api/auths/oauth2/${ak.id}`, {
+export function updateAuthConfig(ak) {
+  return fetch(`/bo/api/proxy/api/auths/${ak.id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {

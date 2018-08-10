@@ -55,105 +55,105 @@ export class AuthModuleConfig extends Component {
     return (
       <div>
         <TextInput
-          hide={settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Id"
           value={settings.id}
           help="..."
           onChange={v => changeTheValue(path + '.id', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Name"
           value={settings.name}
           help="..."
           onChange={v => changeTheValue(path + '.name', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Description"
           value={settings.desc}
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Client ID"
           value={settings.clientId}
           help="..."
           onChange={v => changeTheValue(path + '.clientId', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Client Secret"
           value={settings.clientSecret}
           help="..."
           onChange={v => changeTheValue(path + '.clientSecret', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Authorize URL"
           value={settings.authorizeUrl}
           help="..."
           onChange={v => changeTheValue(path + '.authorizeUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Token URL"
           value={settings.tokenUrl}
           help="..."
           onChange={v => changeTheValue(path + '.tokenUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Userinfo URL"
           value={settings.userInfoUrl}
           help="..."
           onChange={v => changeTheValue(path + '.userInfoUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Login URL"
           value={settings.loginUrl}
           help="..."
           onChange={v => changeTheValue(path + '.loginUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Logout URL"
           value={settings.logoutUrl}
           help="..."
           onChange={v => changeTheValue(path + '.logoutUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Callback URL"
           value={settings.callbackUrl}
           help="..."
           onChange={v => changeTheValue(path + '.callbackUrl', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Access token field name"
           value={settings.accessTokenField}
           help="..."
           onChange={v => changeTheValue(path + '.accessTokenField', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Name field name"
           value={settings.nameField}
           help="..."
           onChange={v => changeTheValue(path + '.nameField', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Email field name"
           value={settings.emailField}
           help="..."
           onChange={v => changeTheValue(path + '.emailField', v)}
         />
         <TextInput
-          hide={settings.type !== 'oauth2' && settings.type !== 'oauth2-global'}
+          hide={settings.type !== 'oauth2'}
           label="Otoroshi metadata field name"
           value={settings.otoroshiDataField}
           help="..."
