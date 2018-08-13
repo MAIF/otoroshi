@@ -765,3 +765,57 @@ export function updateJwtVerifier(ak) {
     body: JSON.stringify(ak),
   }).then(r => r.json());
 }
+
+export function findAllAuthConfigs() {
+  return fetch('/bo/api/proxy/api/auths', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findAuthConfigById(id) {
+  return fetch(`/bo/api/proxy/api/auths/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteAuthConfig(ak) {
+  return fetch(`/bo/api/proxy/api/auths/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createAuthConfig(ak) {
+  return fetch(`/bo/api/proxy/api/auths`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateAuthConfig(ak) {
+  return fetch(`/bo/api/proxy/api/auths/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}

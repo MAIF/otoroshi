@@ -79,11 +79,22 @@ class WebSocketHandler()(implicit env: Env) {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  def isPrivateAppsSessionValid(req: RequestHeader): Future[Option[PrivateAppsUser]] = {
-    req.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
-      env.datastores.privateAppsUserDataStore.findById(id)
-    } getOrElse {
-      FastFuture.successful(None)
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
+    env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
+      case None => FastFuture.successful(None)
+      case Some(auth) => {
+        val expected = "oto-papps-" + auth.cookieSuffix(desc)
+        req.cookies
+          .get(expected)
+          .flatMap { cookie =>
+            env.extractPrivateSessionId(cookie)
+          }
+          .map { id =>
+            env.datastores.privateAppsUserDataStore.findById(id)
+          } getOrElse {
+          FastFuture.successful(None)
+        }
+      }
     }
   }
 
@@ -777,12 +788,12 @@ class WebSocketHandler()(implicit env: Env) {
                         def passWithAuth0(
                             config: GlobalConfig
                         ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
-                          isPrivateAppsSessionValid(req).flatMap {
+                          isPrivateAppsSessionValid(req, descriptor).flatMap {
                             case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                             case None => {
                               val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
-                                .privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
-                                .url
+                                .confidentialAppLoginPage()
+                                .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
                               logger.trace("should redirect to " + redirectTo)
                               FastFuture.successful(Left(Results.Redirect(redirectTo)))
                             }
@@ -905,11 +916,11 @@ class WebSocketHandler()(implicit env: Env) {
                                                        Some("errors.service.under.construction"))
                                   .asLeft[WSFlow]
                               } else if (isUp) {
-                                if (descriptor.isPrivate) {
+                                if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
                                   if (descriptor.isUriPublic(req.path)) {
                                     passWithAuth0(globalConfig)
                                   } else {
-                                    isPrivateAppsSessionValid(req).flatMap {
+                                    isPrivateAppsSessionValid(req, descriptor).flatMap {
                                       case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
                                       case Some(user)                            => passWithAuth0(globalConfig)
                                       case None                                  => passWithApiKey(globalConfig)

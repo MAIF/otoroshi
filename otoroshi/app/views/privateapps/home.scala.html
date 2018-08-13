@@ -7,14 +7,14 @@
         <h3 style="color: white;margin-bottom:40px"><span>おとろし - Private apps</span></h3>
         @for(user <- userOpt) {
             <p class="connectOK">
-                <a class="btn" href="@routes.Auth0Controller.privateAppsLogout(None)" role="button">
+                <a class="btn" href="@routes.Auth0Controller.confidentialAppLogout()" role="button">
                     <span class="glyphicon glyphicon-off"></span> Logout
                 </a>
             </p>
         }
         @if(userOpt.isEmpty) {
             <p>
-                <a class="btn btn-lg" href="@routes.Auth0Controller.privateAppsLoginPage(None)" role="button">Login</a>
+                <a class="btn btn-lg" href="@routes.Auth0Controller.confidentialAppLoginPage()" role="button">Login</a>
             </p>
         }
         <p><img class="logoOtoroshi" src="/__otoroshi_assets/images/otoroshi-logo-color.png" /></p>

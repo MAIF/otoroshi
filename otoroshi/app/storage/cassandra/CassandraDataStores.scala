@@ -2,6 +2,7 @@ package storage.cassandra
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import auth.AuthConfigsDataStore
 import com.typesafe.config.ConfigFactory
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
@@ -75,22 +76,23 @@ class CassandraDataStores(configuration: Configuration,
     FastFuture.successful(())
   }
 
-  private lazy val _privateAppsUserDataStore   = new InMemoryPrivateAppsUserDataStore(redis, env)
-  private lazy val _backOfficeUserDataStore    = new InMemoryBackOfficeUserDataStore(redis, env)
-  private lazy val _serviceGroupDataStore      = new InMemoryServiceGroupDataStore(redis, env)
-  private lazy val _globalConfigDataStore      = new InMemoryGlobalConfigDataStore(redis, env)
-  private lazy val _apiKeyDataStore            = new InMemoryApiKeyDataStore(redis, env)
-  private lazy val _serviceDescriptorDataStore = new InMemoryServiceDescriptorDataStore(redis, redisStatsItems, env)
-  private lazy val _u2FAdminDataStore          = new InMemoryU2FAdminDataStore(redis)
-  private lazy val _simpleAdminDataStore       = new InMemorySimpleAdminDataStore(redis, env)
-  private lazy val _alertDataStore             = new InMemoryAlertDataStore(redis)
-  private lazy val _auditDataStore             = new InMemoryAuditDataStore(redis)
-  private lazy val _healthCheckDataStore       = new InMemoryHealthCheckDataStore(redis, env)
-  private lazy val _errorTemplateDataStore     = new InMemoryErrorTemplateDataStore(redis, env)
-  private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
-  private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis, env)
-  private lazy val _chaosDataStore             = new InMemoryChaosDataStore(redis, env)
-  private lazy val _jwtVerifDataStore          = new InMemoryGlobalJwtVerifierDataStore(redis, env)
+  private lazy val _privateAppsUserDataStore    = new InMemoryPrivateAppsUserDataStore(redis, env)
+  private lazy val _backOfficeUserDataStore     = new InMemoryBackOfficeUserDataStore(redis, env)
+  private lazy val _serviceGroupDataStore       = new InMemoryServiceGroupDataStore(redis, env)
+  private lazy val _globalConfigDataStore       = new InMemoryGlobalConfigDataStore(redis, env)
+  private lazy val _apiKeyDataStore             = new InMemoryApiKeyDataStore(redis, env)
+  private lazy val _serviceDescriptorDataStore  = new InMemoryServiceDescriptorDataStore(redis, redisStatsItems, env)
+  private lazy val _u2FAdminDataStore           = new InMemoryU2FAdminDataStore(redis)
+  private lazy val _simpleAdminDataStore        = new InMemorySimpleAdminDataStore(redis, env)
+  private lazy val _alertDataStore              = new InMemoryAlertDataStore(redis)
+  private lazy val _auditDataStore              = new InMemoryAuditDataStore(redis)
+  private lazy val _healthCheckDataStore        = new InMemoryHealthCheckDataStore(redis, env)
+  private lazy val _errorTemplateDataStore      = new InMemoryErrorTemplateDataStore(redis, env)
+  private lazy val _requestsDataStore           = new InMemoryRequestsDataStore()
+  private lazy val _canaryDataStore             = new InMemoryCanaryDataStore(redis, env)
+  private lazy val _chaosDataStore              = new InMemoryChaosDataStore(redis, env)
+  private lazy val _jwtVerifDataStore           = new InMemoryGlobalJwtVerifierDataStore(redis, env)
+  private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -109,4 +111,6 @@ class CassandraDataStores(configuration: Configuration,
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
+  override def authConfigsDataStore: AuthConfigsDataStore     = _globalOAuth2ConfigDataStore
+
 }

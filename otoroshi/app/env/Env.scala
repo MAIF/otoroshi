@@ -6,6 +6,7 @@ import akka.actor.{ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
+import auth.AuthModuleConfig
 import com.typesafe.config.ConfigFactory
 import events._
 import gateway.CircuitBreakersHolder
@@ -96,14 +97,11 @@ class Env(val configuration: Configuration,
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
-  lazy val useUniversalLogin: Boolean      = configuration.getOptional[Boolean]("app.useUniversalLogin").getOrElse(false)
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
   lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)
   lazy val throttlingWindow: Int           = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
   lazy val analyticsWindow: Int            = configuration.getOptional[Int]("app.analyticsWindow").getOrElse(30)
-  lazy val auth0UserMeta: String           = configuration.getOptional[String]("app.userMeta").getOrElse("otoroshi_data")
-  lazy val auth0AppMeta: String            = configuration.getOptional[String]("app.appMeta").getOrElse("app_metadata")
   lazy val eventsName: String              = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
   lazy val storageRoot: String             = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")
   lazy val useCache: Boolean               = configuration.getOptional[Boolean]("app.useCache").getOrElse(false)
@@ -411,7 +409,13 @@ class Env(val configuration: Configuration,
         }
       }
       ()
-  }(otoroshiExecutionContext) //internalActorSystem.dispatcher)
+  }(otoroshiExecutionContext)
+
+  timeout(1000.millis).andThen {
+    case _ => {
+      datastores.globalConfigDataStore.migrate()(otoroshiExecutionContext, this)
+    }
+  }(otoroshiExecutionContext)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -443,11 +447,15 @@ class Env(val configuration: Configuration,
     s"$signature::$id"
   }
 
-  def createPrivateSessionCookies(host: String, id: String): Seq[play.api.mvc.Cookie] =
+  def createPrivateSessionCookies(host: String, id: String, desc: ServiceDescriptor, authConfig: AuthModuleConfig): Seq[play.api.mvc.Cookie] = {
+    createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc))
+  }
+
+  def createPrivateSessionCookiesWithSuffix(host: String, id: String, suffix: String): Seq[play.api.mvc.Cookie] = {
     if (host.endsWith(sessionDomain)) {
       Seq(
         play.api.mvc.Cookie(
-          name = "oto-papps",
+          name = "oto-papps-" + suffix,
           value = signPrivateSessionId(id),
           maxAge = Some(sessionMaxAge),
           path = "/",
@@ -458,7 +466,7 @@ class Env(val configuration: Configuration,
     } else {
       Seq(
         play.api.mvc.Cookie(
-          name = "oto-papps",
+          name = "oto-papps-" + suffix,
           value = signPrivateSessionId(id),
           maxAge = Some(sessionMaxAge),
           path = "/",
@@ -466,7 +474,7 @@ class Env(val configuration: Configuration,
           httpOnly = false
         ),
         play.api.mvc.Cookie(
-          name = "oto-papps",
+          name = "oto-papps-" + suffix,
           value = signPrivateSessionId(id),
           maxAge = Some(sessionMaxAge),
           path = "/",
@@ -475,16 +483,21 @@ class Env(val configuration: Configuration,
         )
       )
     }
+  }
 
-  def removePrivateSessionCookies(host: String): Seq[play.api.mvc.DiscardingCookie] =
+  def removePrivateSessionCookies(host: String, desc: ServiceDescriptor, authConfig: AuthModuleConfig): Seq[play.api.mvc.DiscardingCookie] = {
+    removePrivateSessionCookiesWithSuffix(host, authConfig.cookieSuffix(desc))
+  }
+
+  def removePrivateSessionCookiesWithSuffix(host: String, suffix: String): Seq[play.api.mvc.DiscardingCookie] =
     Seq(
       play.api.mvc.DiscardingCookie(
-        name = "oto-papps",
+        name = "oto-papps-" + suffix,
         path = "/",
         domain = Some(host)
       ),
       play.api.mvc.DiscardingCookie(
-        name = "oto-papps",
+        name = "oto-papps-" + suffix,
         path = "/",
         domain = Some(sessionDomain)
       )

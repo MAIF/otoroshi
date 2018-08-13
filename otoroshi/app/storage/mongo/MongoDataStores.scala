@@ -2,6 +2,7 @@ package storage.mongo
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import auth.AuthConfigsDataStore
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
@@ -94,6 +95,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _canaryDataStore            = new InMemoryCanaryDataStore(redis, env)
   private lazy val _chaosDataStore             = new InMemoryChaosDataStore(redis, env)
   private lazy val _jwtVerifDataStore          = new InMemoryGlobalJwtVerifierDataStore(redis, env)
+  private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -112,4 +114,5 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
+  override def authConfigsDataStore: AuthConfigsDataStore     = _globalOAuth2ConfigDataStore
 }

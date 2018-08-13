@@ -13,17 +13,24 @@
         <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap.min.css">
         <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap-theme.min.css">
         <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
+        <link href="@routes.Assets.versioned("fonts/font-awesome/css/font-awesome.min.css")" rel="stylesheet">
+        <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
         @moreStyles
     </head>
     <body>
         <div class="container">
             <div class="header clearfix">
-                <h3 class="text-muted col-md-3"><span class="">おとろし</span> Otoroshi</h3>
+                <nav class="navbar-inverse">
+                    <ul class="nav navbar-nav navbar-right hide">
+                        <li role="presentation"><a href="@routes.BackOfficeController.index()">Home</a></li>
+                        <li role="presentation"><a href="@routes.BackOfficeController.dashboard()"><i class="fa fa-tachometer"></i> Dashboard</a></li>
+                    </ul>
+                </nav>
+                <a class="navbar-brand" href="/" style="display: flex;">
+                    <span>おとろし</span>&nbsp; Otoroshi
+                </a>
             </div>
             @content
-            <footer class="footer hide">
-                <p>Otoroshi by MAIF</p>
-            </footer>
         </div>
         <script type="text/javascript" src="@routes.Assets.versioned("javascripts/jquery.js")"></script>
         @moreScripts

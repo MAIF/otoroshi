@@ -26,6 +26,7 @@ import { PrivateAppsSessionsPage } from '../pages/PrivateAppsSessionsPage';
 import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
 import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
 import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
+import { AuthModuleConfigsPage } from '../pages/AuthModuleConfigsPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -278,6 +279,18 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/jwt-verifiers"
                           component={props => this.decorate(JwtVerifiersPage, props)}
+                        />
+                        <Route
+                          path="/auth-configs/:taction/:titem"
+                          component={props => this.decorate(AuthModuleConfigsPage, props)}
+                        />
+                        <Route
+                          path="/auth-configs/:taction"
+                          component={props => this.decorate(AuthModuleConfigsPage, props)}
+                        />
+                        <Route
+                          path="/auth-configs"
+                          component={props => this.decorate(AuthModuleConfigsPage, props)}
                         />
                         <Route
                           path="/admins"

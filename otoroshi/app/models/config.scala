@@ -55,8 +55,7 @@ case class GlobalConfig(
     alertsEmails: Seq[String] = Seq.empty[String],
     endlessIpAddresses: Seq[String] = Seq.empty[String],
     kafkaConfig: Option[KafkaConfig] = None,
-    backofficeAuth0Config: Option[Auth0Config] = None,
-    privateAppsAuth0Config: Option[Auth0Config] = None,
+    backOfficeAuthRef: Option[String] = None,
     cleverSettings: Option[CleverCloudSettings] = None,
     mailGunSettings: Option[MailgunSettings] = None,
     statsdConfig: Option[StatsdConfig] = None,
@@ -95,26 +94,6 @@ object GlobalConfig {
 
   val _fmt: Format[GlobalConfig] = new Format[GlobalConfig] {
     override def writes(o: GlobalConfig): JsValue = {
-      val backofficeAuth0Config: JsValue = o.backofficeAuth0Config match {
-        case None => JsNull
-        case Some(config) =>
-          Json.obj(
-            "clientId"     -> config.clientId,
-            "clientSecret" -> config.secret,
-            "domain"       -> config.domain,
-            "callbackUrl"  -> config.callbackURL
-          )
-      }
-      val privateAppsAuth0Config: JsValue = o.privateAppsAuth0Config match {
-        case None => JsNull
-        case Some(config) =>
-          Json.obj(
-            "clientId"     -> config.clientId,
-            "clientSecret" -> config.secret,
-            "domain"       -> config.domain,
-            "callbackUrl"  -> config.callbackURL
-          )
-      }
       val mailGunSettings: JsValue = o.mailGunSettings match {
         case None => JsNull
         case Some(config) =>
@@ -176,8 +155,7 @@ object GlobalConfig {
         "endlessIpAddresses"      -> JsArray(o.endlessIpAddresses.map(JsString.apply)),
         "statsdConfig"            -> statsdConfig,
         "kafkaConfig"             -> kafkaConfig,
-        "backofficeAuth0Config"   -> backofficeAuth0Config,
-        "privateAppsAuth0Config"  -> privateAppsAuth0Config,
+        "backOfficeAuthRef"       -> o.backOfficeAuthRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "mailGunSettings"         -> mailGunSettings,
         "cleverSettings"          -> cleverSettings,
         "maxWebhookSize"          -> o.maxWebhookSize,
@@ -250,30 +228,7 @@ object GlobalConfig {
               case e => None
             }
           },
-          backofficeAuth0Config = (json \ "backofficeAuth0Config").asOpt[JsValue].flatMap { config =>
-            (
-              (config \ "clientId").asOpt[String].filter(_.nonEmpty),
-              (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
-              (config \ "domain").asOpt[String].filter(_.nonEmpty),
-              (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
-            ) match {
-              case (Some(clientId), Some(clientSecret), Some(domain), Some(callbackUrl)) =>
-                Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
-              case _ => None
-            }
-          },
-          privateAppsAuth0Config = (json \ "privateAppsAuth0Config").asOpt[JsValue].flatMap { config =>
-            (
-              (config \ "clientId").asOpt[String].filter(_.nonEmpty),
-              (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
-              (config \ "domain").asOpt[String].filter(_.nonEmpty),
-              (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
-            ) match {
-              case (Some(clientId), Some(clientSecret), Some(domain), Some(callbackUrl)) =>
-                Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
-              case _ => None
-            }
-          },
+          backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
           mailGunSettings = (json \ "mailGunSettings").asOpt[JsValue].flatMap { config =>
             (
               (config \ "apiKey").asOpt[String].filter(_.nonEmpty),
@@ -332,4 +287,5 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]
   def quotasValidationFor(from: String)(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
+  def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit]
 }

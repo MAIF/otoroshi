@@ -22,11 +22,11 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-sealed trait AsJson {
+trait AsJson {
   def asJson: JsValue
 }
 
-sealed trait FromJson[A] {
+trait FromJson[A] {
   def fromJson(json: JsValue): Either[Throwable, A]
 }
 
@@ -741,9 +741,23 @@ case class GlobalJwtVerifier(
   )
 
   override def isRef = false
+
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalJwtVerifierDataStore.set(this)
 }
 
 object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
+
+  lazy val logger = Logger("otoroshi-global-jwt-verifier")
+
+  def fromJsons(value: JsValue): GlobalJwtVerifier =
+    try {
+      _fmt.reads(value).get
+    } catch {
+      case e: Throwable => {
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
+      }
+    }
 
   val _fmt = new Format[GlobalJwtVerifier] {
 

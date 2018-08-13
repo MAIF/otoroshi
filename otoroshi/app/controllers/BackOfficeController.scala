@@ -135,7 +135,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "u2fLoginOnly"       -> config.u2fLoginOnly,
             "env"                -> env.env,
             "redirectToDev"      -> env.redirectToDev,
-            "displayPrivateApps" -> config.privateAppsAuth0Config.isDefined,
             "clientIdHeader"     -> env.Headers.OtoroshiClientId,
             "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
             "version"            -> env.latestVersionHolder.get()
@@ -152,7 +151,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         case None => {
           Ok(
             views.html.backoffice
-              .index(!(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty), ctx.user, ctx.request, env)
+              .index(!(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty), ctx.user, ctx.request, env)
           )
         }
       }

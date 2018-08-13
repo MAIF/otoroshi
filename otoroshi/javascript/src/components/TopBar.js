@@ -130,6 +130,12 @@ export class TopBar extends Component {
           value: 'Jwt-Verifiers',
         });
         options.push({
+          action: () => (window.location.href = '/bo/dashboard/auth-configs'),
+          env: <span className="glyphicon glyphicon-lock" />,
+          label: 'Global auth. configs',
+          value: 'auth-configs',
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
           env: (
             <span>
@@ -261,6 +267,9 @@ export class TopBar extends Component {
                     </a>
                     <a href="/bo/dashboard/jwt-verifiers">
                       <span className="glyphicon glyphicon-certificate" /> Global Jwt Verifiers
+                    </a>
+                    <a href="/bo/dashboard/auth-configs">
+                      <span className="glyphicon glyphicon-lock" /> Global auth. configs
                     </a>
                   </li>
                   <li>

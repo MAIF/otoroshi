@@ -46,7 +46,7 @@ export class JwtVerifiersPage extends Component {
           navigateTo={this.gotoVerifier}
           itemUrl={i => `/bo/dashboard/jwt-verifiers/edit/${i.id}`}
           showActions={true}
-          showLink={true}
+          showLink={false}
           rowNavigation={true}
           firstSort={0}
           extractKey={item => item.id}

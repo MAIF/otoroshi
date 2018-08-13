@@ -26,14 +26,19 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     host match {
       case env.privateAppsHost => {
         env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-          request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
+          val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+          cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
+          // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
             env.datastores.privateAppsUserDataStore.findById(id).flatMap {
               case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))
               case None       => block(PrivateAppsActionContext(request, None, globalConfig))
             }
           } getOrElse {
-            block(PrivateAppsActionContext(request, None, globalConfig)).fast
-              .map(_.discardingCookies(env.removePrivateSessionCookies(host): _*))
+            cookieOpt match {
+              case None => block(PrivateAppsActionContext(request, None, globalConfig))
+              case Some(cookie) => block(PrivateAppsActionContext(request, None, globalConfig)).fast
+                .map(_.discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", "")): _*))
+            }
           }
         }
       }

@@ -24,6 +24,7 @@ import Select from 'react-select';
 import { ChaosConfigWithSkin } from '../components/ChaosConfig';
 import { JwtVerifier, LocationSettings } from '../components/JwtVerifier';
 import { AlgoSettings } from '../components/JwtVerifier';
+import { AuthModuleConfig } from '../components/AuthModuleConfig';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -511,14 +512,6 @@ export class ServicePage extends Component {
               help="Display a construction page when a user try to use the service"
               onChange={v => this.changeTheValue('buildMode', v)}
             />
-            <WithEnv predicate={env => env.displayPrivateApps}>
-              <BooleanInput
-                label="Enforce user login to access the app"
-                value={this.state.service.privateApp}
-                help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
-                onChange={v => this.changeTheValue('privateApp', v)}
-              />
-            </WithEnv>
             <BooleanInput
               label="Send Otoroshi headers back"
               value={this.state.service.sendOtoroshiHeadersBack}
@@ -728,23 +721,63 @@ export class ServicePage extends Component {
               help="If you define a public pattern that is a little bit too much, you can make some of public URL private again"
               onChange={arr => this.changeTheValue('privatePatterns', arr)}
             />
-            {this.state.service.enforceSecureCommunication && (
+          </Collapse>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Otoroshi exchange protocol">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.enforceSecureCommunication}
+              help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
+              onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
+            />
+            <ArrayInput
+              label="Secured exclusions"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.secComExcludedPatterns}
+              help="URI patterns excluded from secured communications"
+              onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
+            />
+            <AlgoSettings
+              algo={this.state.service.secComSettings}
+              path="secComSettings"
+              changeTheValue={this.changeTheValue}
+            />
+          </Collapse>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Security">
+              <BooleanInput
+                label="Enforce user login"
+                value={this.state.service.privateApp}
+                help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
+                onChange={v => this.changeTheValue('privateApp', v)}
+              />
+              <SelectInput
+                label="Auth. config"
+                value={this.state.service.authConfigRef}
+                onChange={e => this.changeTheValue('authConfigRef', e)}
+                valuesFrom="/bo/api/proxy/api/auths"
+                transformer={a => ({ value: a.id, label: a.name })}
+                help="..."
+              />
               <ArrayInput
-                label="Secured exclusions"
+                label="Excluded patterns"
                 placeholder="URI pattern"
                 suffix="regex"
-                value={this.state.service.secComExcludedPatterns}
-                help="URI patterns excluded from secured communications"
-                onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
+                value={this.state.service.securityExcludedPatterns}
+                help="By default, when security is enabled, everything is secured. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
+                onChange={arr => this.changeTheValue('securityExcludedPatterns', arr)}
               />
-            )}
-            {this.state.service.privateApp && [
               <BooleanInput
                 label="Strictly private mode"
                 value={this.state.service.strictlyPrivate}
                 help="Strictly private mode enabled"
                 onChange={v => this.changeTheValue('strictlyPrivate', v)}
-              />,
+              />
               <div className="form-group">
                 <label className="col-xs-12 col-sm-2 control-label" />
                 <div className="col-sm-10">
@@ -763,24 +796,7 @@ export class ServicePage extends Component {
                     don't want this behavior, juste enable the 'stricly private' mode.
                   </p>
                 </div>
-              </div>,
-            ]}
-          </Collapse>
-          <Collapse
-            collapsed={this.state.allCollapsed}
-            initCollapsed={true}
-            label="Otoroshi exchange protocol">
-            <BooleanInput
-              label="Enabled"
-              value={this.state.service.enforceSecureCommunication}
-              help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
-              onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
-            />
-            <AlgoSettings
-              algo={this.state.service.secComSettings}
-              path="secComSettings"
-              changeTheValue={this.changeTheValue}
-            />
+              </div>
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}

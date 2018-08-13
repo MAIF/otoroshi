@@ -8,6 +8,9 @@ export class TextInput extends Component {
   };
 
   render() {
+    if (this.props.hide) {
+      return null;
+    }
     return (
       <div className="form-group">
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">

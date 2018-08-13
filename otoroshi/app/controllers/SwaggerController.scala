@@ -428,7 +428,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "secComSettings"             -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
       "metadata"                   -> SimpleObjectType ~~> "Just a bunch of random properties",
       "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
-      "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication"
+      "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
+      "authConfigRef"              -> SimpleStringType ~~> "A reference to a global auth module config"
     )
   )
 
@@ -798,6 +799,47 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
+  def GenericOauth2ModuleConfig = Json.obj(
+    "description" -> "Settings to authenticate users using a generic OAuth2 provider",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "id",
+      "name",
+      "desc",
+      "clientId",
+      "clientSecret",
+      "authorizeUrl",
+      "tokenUrl",
+      "userInfoUrl",
+      "loginUrl",
+      "logoutUrl",
+      "callbackUrl",
+      "accessTokenField",
+      "nameField",
+      "emailField",
+      "otoroshiDataField"
+    ),
+    "properties" -> Json.obj(
+      "type" -> SimpleStringType ~~> "Type of settings. value is oauth2",
+      "id" -> SimpleStringType ~~> "Unique id of the config",
+      "name" -> SimpleStringType ~~> "Name of the config",
+      "desc" -> SimpleStringType ~~> "Description of the config",
+      "clientId" -> SimpleStringType ~~> "OAuth Client id",
+      "clientSecret" -> SimpleStringType ~~> "OAuth Client secret",
+      "authorizeUrl" -> SimpleStringType ~~> "OAuth authorize URL",
+      "tokenUrl" -> SimpleStringType ~~> "OAuth token URL",
+      "userInfoUrl" -> SimpleStringType ~~> "OAuth userinfo to get user profile",
+      "loginUrl" -> SimpleStringType ~~> "OAuth login URL",
+      "logoutUrl" -> SimpleStringType ~~> "OAuth logout URL",
+      "callbackUrl" -> SimpleStringType ~~> "Otoroshi callback URL",
+      "accessTokenField" -> SimpleStringType ~~> "Field name to get access token",
+      "nameField" -> SimpleStringType ~~> "Field name to get name from user profile",
+      "emailField" -> SimpleStringType ~~> "Field name to get email from user profile",
+      "otoroshiDataField" -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
+    )
+  )
+
   def InQueryParam = Json.obj(
     "description" -> "JWT location in a query param",
     "type"        -> "object",
@@ -1290,6 +1332,68 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def AuthConfigs = Json.obj(
+    "get" -> Operation(
+      tag = "auth-config",
+      summary = "Get all global auth. module configs",
+      description = "Get all global auth. module configs",
+      operationId = "findAllGlobalAuthModules",
+      goodResponse = GoodResponse(ArrayOf(Ref("GenericOauth2ModuleConfig")))
+    ),
+    "get" -> Operation(
+      tag = "auth-config",
+      summary = "Get one global auth. module configs",
+      description = "Get one global auth. module configs",
+      operationId = "findGlobalAuthModuleById",
+      parameters = Json.arr(
+        PathParam("id", "The auth. config id")
+      ),
+      goodResponse = GoodResponse(Ref("GenericOauth2ModuleConfig"))
+    ),
+    "delete" -> Operation(
+      tag = "auth-config",
+      summary = "Delete one global auth. module config",
+      description = "Delete one global auth. module config",
+      operationId = "deleteGlobalAuthModule",
+      parameters = Json.arr(
+        PathParam("id", "The auth. config id id")
+      ),
+      goodResponse = GoodResponse(Ref("Deleted"))
+    ),
+    "put" -> Operation(
+      tag = "auth-config",
+      summary = "Update one global auth. module config",
+      description = "Update one global auth. module config",
+      operationId = "updateGlobalAuthModule",
+      parameters = Json.arr(
+        PathParam("id", "The auth. config id"),
+        BodyParam("The auth. config to update", Ref("GenericOauth2ModuleConfig"))
+      ),
+      goodResponse = GoodResponse(Ref("GenericOauth2ModuleConfig"))
+    ),
+    "patch" -> Operation(
+      tag = "auth-config",
+      summary = "Update one global auth. module config",
+      description = "Update one global auth. module config",
+      operationId = "patchGlobalAuthModule",
+      parameters = Json.arr(
+        PathParam("id", "The auth. config id"),
+        BodyParam("The auth. config to update", Ref("Patch"))
+      ),
+      goodResponse = GoodResponse(Ref("GenericOauth2ModuleConfig"))
+    ),
+    "post" -> Operation(
+      tag = "auth-config",
+      summary = "Create one global auth. module config",
+      description = "Create one global auth. module config",
+      operationId = "createGlobalAuthModule",
+      parameters = Json.arr(
+        BodyParam("The auth. config to create", Ref("GenericOauth2ModuleConfig"))
+      ),
+      goodResponse = GoodResponse(Ref("GenericOauth2ModuleConfig"))
+    )
+  )
+
   def ApiKeys = Json.obj(
     "get" -> Operation(
       tag = "apikeys",
@@ -1701,7 +1805,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("stats", "Everything about Otoroshi stats"),
         Tag("snowmonkey", "Everything about Otoroshi Snow Monkey"),
         Tag("health", "Everything about Otoroshi health status"),
-        Tag("jwt-verifiers", "Everything about Otoroshi global JWT token verifiers")
+        Tag("jwt-verifiers", "Everything about Otoroshi global JWT token verifiers"),
+        Tag("auth-config", "Everything about Otoroshi global auth. module config")
       ),
       "externalDocs" -> Json.obj(
         "description" -> "Find out more about Otoroshi",
@@ -1732,6 +1837,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "/api/groups/{serviceGroupId}"                        -> GroupManagement,
         "/api/groups"                                         -> GroupsManagement,
         "/api/verifiers"                                      -> JWTVerifiers,
+        "/api/auths"                                          -> AuthConfigs,
         "/api/snowmonkey/config"                              -> SnowMonkeyConfigApi,
         "/api/snowmonkey/outages"                             -> SnowMonkeyOutageApi,
         "/api/snowmonkey/_start"                              -> SnowMonkeyStartApi,
@@ -1827,7 +1933,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "PassThrough"                 -> PassThrough,
         "Sign"                        -> Sign,
         "Transform"                   -> Transform,
-        "GlobalJwtVerifier"           -> GlobalJwtVerifier
+        "GlobalJwtVerifier"           -> GlobalJwtVerifier,
+        "GenericOauth2ModuleConfig"   -> GenericOauth2ModuleConfig
       )
     )
   }

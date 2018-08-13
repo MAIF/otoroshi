@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { ResetDBButton } from '../components/ResetDBButton';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Form } from '../components/inputs';
+import { Form, SelectInput } from '../components/inputs';
 import moment from 'moment';
 
 function shallowDiffers(a, b) {
@@ -145,7 +145,7 @@ export class DangerZonePage extends Component {
     u2fLoginOnly: {
       type: 'bool',
       props: {
-        label: 'No Auth0 login',
+        label: 'No OAuth login for BackOffice',
         placeholder: '--',
         help: 'Forces admins to login only with user/password or user/password/u2F device',
       },
@@ -228,43 +228,14 @@ export class DangerZonePage extends Component {
         suffix: 'events',
       },
     },
-    'backofficeAuth0Config.clientId': {
-      type: 'string',
-      props: { label: 'Client ID', placeholder: 'Auth0 Client ID' },
-    },
-    'backofficeAuth0Config.clientSecret': {
-      type: 'string',
-      props: { label: 'Client Secret', placeholder: 'Auth0 Client Secret' },
-    },
-    'backofficeAuth0Config.domain': {
-      type: 'string',
-      props: { label: 'Domain', placeholder: 'Auth0 domain' },
-    },
-    'backofficeAuth0Config.callbackUrl': {
-      type: 'string',
+    backOfficeAuthRef: {
+      type: SelectInput,
       props: {
-        label: 'Callback URL',
-        placeholder: 'https://yourotoroshidomain/backoffice/auth0/callback',
-      },
-    },
-    'privateAppsAuth0Config.clientId': {
-      type: 'string',
-      props: { label: 'Client ID', placeholder: 'Auth0 Client ID' },
-    },
-    'privateAppsAuth0Config.clientSecret': {
-      type: 'string',
-      props: { label: 'Client Secret', placeholder: 'Auth0 Client Secret' },
-    },
-    'privateAppsAuth0Config.domain': {
-      type: 'string',
-      props: { label: 'Domain', placeholder: 'Auth0 domain' },
-    },
-    'privateAppsAuth0Config.callbackUrl': {
-      type: 'string',
-      props: {
-        label: 'Callback URL',
-        placeholder: 'https://yourotoroshidomain/privateapps/auth0/callback',
-      },
+        label: "Backoffice auth. config",
+        valuesFrom: "/bo/api/proxy/api/auths",
+        transformer: a => ({ value: a.id, label: a.name }),
+        help: "..."
+      }
     },
     'mailGunSettings.apiKey': {
       type: 'string',
@@ -437,16 +408,8 @@ export class DangerZonePage extends Component {
     'statsdConfig.datadog',
     'statsdConfig.host',
     'statsdConfig.port',
-    '>>>Backoffice Auth0 settings',
-    'backofficeAuth0Config.clientId',
-    'backofficeAuth0Config.clientSecret',
-    'backofficeAuth0Config.domain',
-    'backofficeAuth0Config.callbackUrl',
-    '>>>Private apps Auth0 settings',
-    'privateAppsAuth0Config.clientId',
-    'privateAppsAuth0Config.clientSecret',
-    'privateAppsAuth0Config.domain',
-    'privateAppsAuth0Config.callbackUrl',
+    '>>>Backoffice auth. settings',
+    'backOfficeAuthRef',
     '>>>Mailgun settings',
     'mailGunSettings.apiKey',
     'mailGunSettings.domain',
@@ -679,19 +642,6 @@ export class DangerZonePage extends Component {
           </div>
         </form>
         <hr />
-        {/*<Form value={this.state.sync} onChange={sync => this.setState({ sync })} flow={this.syncFlow}  schema={this.syncSchema} />
-        <form className="form-horizontal">
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
-              {!this.state.syncing && <button type="button" className="btn btn-danger" onClick={this.sync}>
-                <i className="glyphicon glyphicon-refresh" /> Sync with master</button>}
-              {this.state.syncing && <button type="button" disabled="true" className="btn btn-danger" onClick={this.sync}>
-                <i className="glyphicon glyphicon-refresh" /> Syncing with master ...</button>}
-              {this.state.syncingError && <span style={{ marginLeft: 5 }} className="label label-danger">error: {this.state.syncingError.message}</span>}
-            </div>
-          </div>
-        </form>*/}
       </div>
     );
   }

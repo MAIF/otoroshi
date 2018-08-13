@@ -61,14 +61,16 @@ GET     /privateapps/error                                    controllers.Privat
 GET     /privateapps/home                                     controllers.PrivateAppsController.home
 GET     /privateapps/redirect                                 controllers.PrivateAppsController.redirect
 
-# Auth0 URLs
-GET     /privateapps/auth0/login                              controllers.Auth0Controller.privateAppsLoginPage(redirect: Option[String])
-GET     /privateapps/auth0/logout                             controllers.Auth0Controller.privateAppsLogout(redirect: Option[String])
-GET     /privateapps/auth0/callback                           controllers.Auth0Controller.privateAppsCallback(code: Option[String], error: Option[String], error_description: Option[String])
+GET     /privateapps/generic/login                            controllers.Auth0Controller.confidentialAppLoginPage()
+GET     /privateapps/generic/logout                           controllers.Auth0Controller.confidentialAppLogout()
+GET     /privateapps/generic/callback                         controllers.Auth0Controller.confidentialAppCallback()
+POST    /privateapps/generic/callback                         controllers.Auth0Controller.confidentialAppCallback()
 
-GET     /backoffice/auth0/login                               controllers.Auth0Controller.backOfficeLogin(redirect: Option[String])
-GET     /backoffice/auth0/logout                              controllers.Auth0Controller.backOfficeLogout(redirect: Option[String])
-GET     /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(code: Option[String], error: Option[String], error_description: Option[String])
+
+GET     /backoffice/auth0/login                               controllers.Auth0Controller.backOfficeLogin()
+GET     /backoffice/auth0/logout                              controllers.Auth0Controller.backOfficeLogout()
+GET     /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(error: Option[String], error_description: Option[String])
+POST    /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(error: Option[String], error_description: Option[String])
 
 # Admin API
 
@@ -159,6 +161,13 @@ PUT     /api/verifiers/:id                                    controllers.ApiCon
 PATCH   /api/verifiers/:id                                    controllers.ApiController.patchGlobalJwtVerifier(id)
 GET     /api/verifiers                                        controllers.ApiController.findAllGlobalJwtVerifiers()
 POST    /api/verifiers                                        controllers.ApiController.createGlobalJwtVerifier()
+
+GET     /api/auths/:id                                        controllers.ApiController.findGlobalAuthModuleById(id)
+DELETE  /api/auths/:id                                        controllers.ApiController.deleteGlobalAuthModule(id)
+PUT     /api/auths/:id                                        controllers.ApiController.updateGlobalAuthModule(id)
+PATCH   /api/auths/:id                                        controllers.ApiController.patchGlobalAuthModule(id)
+GET     /api/auths                                            controllers.ApiController.findAllGlobalAuthModules()
+POST    /api/auths                                            controllers.ApiController.createGlobalAuthModule()
 
 GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()

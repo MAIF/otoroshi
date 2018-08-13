@@ -9,6 +9,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Concat, Merge, Sink, Source}
 import akka.util.ByteString
+import auth.AuthModuleConfig
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
@@ -195,9 +196,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val sessionIdOpt: Option[String]  = req.queryString.get("sessionId").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
-    (redirectToOpt, sessionIdOpt, hostOpt) match {
-      case (Some(redirectTo), Some(sessionId), Some(host)) =>
-        FastFuture.successful(Redirect(redirectTo).withCookies(env.createPrivateSessionCookies(host, sessionId): _*))
+    val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
+    (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt) match {
+      case (Some(redirectTo), Some(sessionId), Some(host), Some(cp)) =>
+        FastFuture.successful(Redirect(redirectTo).withCookies(env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp): _*))
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
     }
@@ -206,9 +208,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def removePrivateAppsCookies() = actionBuilder.async { req =>
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
-    (redirectToOpt, hostOpt) match {
-      case (Some(redirectTo), Some(host)) =>
-        FastFuture.successful(Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookies(host): _*))
+    val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
+    (redirectToOpt, hostOpt, cookiePrefOpt) match {
+      case (Some(redirectTo), Some(host), Some(cp)) =>
+        FastFuture.successful(Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*))
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
     }
@@ -218,16 +221,22 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"))
   }
 
-  def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]]): Future[Option[PrivateAppsUser]] = {
-    req.cookies
-      .get("oto-papps")
-      .flatMap { cookie =>
-        env.extractPrivateSessionId(cookie)
+  def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]], desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
+    env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
+      case None => FastFuture.successful(None)
+      case Some(auth) => {
+        val expected = "oto-papps-" + auth.cookieSuffix(desc)
+        req.cookies
+          .get(expected)
+          .flatMap { cookie =>
+            env.extractPrivateSessionId(cookie)
+          }
+          .map { id =>
+            env.datastores.privateAppsUserDataStore.findById(id)
+          } getOrElse {
+          FastFuture.successful(None)
+        }
       }
-      .map { id =>
-        env.datastores.privateAppsUserDataStore.findById(id)
-      } getOrElse {
-      FastFuture.successful(None)
     }
   }
 
@@ -1289,25 +1298,52 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             }
                           }
 
-                          def passWithAuth0(config: GlobalConfig): Future[Result] =
-                            isPrivateAppsSessionValid(req).flatMap {
+                          def passWithAuth0(config: GlobalConfig): Future[Result] = {
+                            isPrivateAppsSessionValid(req, descriptor).flatMap {
                               case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                               case None => {
                                 val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
-                                  .privateAppsLoginPage(Some(s"http://${req.host}${req.relativeUri}"))
-                                  .url
+                                  .confidentialAppLoginPage()
+                                  .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
                                 logger.trace("should redirect to " + redirectTo)
-                                FastFuture.successful(
-                                  Results
-                                    .Redirect(redirectTo)
-                                    .discardingCookies(
-                                      env.removePrivateSessionCookies(
-                                        ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost
-                                      ): _*
-                                    )
-                                )
+                                descriptor.authConfigRef match {
+                                  case None => Errors.craftResponseResult(
+                                    "Auth. config. ref not found on the descriptor",
+                                    InternalServerError,
+                                    req,
+                                    Some(descriptor),
+                                    Some("errors.auth.config.ref.not.found"),
+                                    duration = System.currentTimeMillis - start,
+                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                  )
+                                  case Some(ref) => {
+                                    env.datastores.authConfigsDataStore.findById(ref).flatMap {
+                                      case None => Errors.craftResponseResult(
+                                        "Auth. config. not found on the descriptor",
+                                        InternalServerError,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.auth.config.not.found"),
+                                        duration = System.currentTimeMillis - start,
+                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                      )
+                                      case Some(auth) => {
+                                        FastFuture.successful(Results
+                                          .Redirect(redirectTo)
+                                          .discardingCookies(
+                                            env.removePrivateSessionCookies(
+                                              ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
+                                              descriptor,
+                                              auth
+                                            ): _*
+                                          ))
+                                      }
+                                    }
+                                  }
+                                }
                               }
                             }
+                          }
 
                           // Algo is :
                           // if (app.private) {
@@ -1443,14 +1479,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                 )
                               } else if (isUp) {
-                                if (descriptor.isPrivate) {
+                                if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
                                   if (descriptor.isUriPublic(req.path)) {
                                     passWithAuth0(globalConfig)
                                   } else {
-                                    isPrivateAppsSessionValid(req).fast.flatMap {
+                                    isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
                                       case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
-                                      case Some(user)                            => passWithAuth0(globalConfig)
-                                      case None                                  => passWithApiKey(globalConfig)
+                                      case Some(user) => passWithAuth0(globalConfig)
+                                      case None => passWithApiKey(globalConfig)
                                     }
                                   }
                                 } else {
