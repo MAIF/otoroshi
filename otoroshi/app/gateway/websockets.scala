@@ -115,8 +115,13 @@ class WebSocketHandler()(implicit env: Env) {
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     if (service.jwtVerifier.enabled) {
-      logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-      service.jwtVerifier.verifyWs(req, service)(f)
+      service.jwtVerifier.shouldBeVerified(req.path).flatMap {
+        case false => f(JwtInjection())
+        case true => {
+          logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
+          service.jwtVerifier.verifyWs(req, service)(f)
+        }
+      }
     } else {
       f(JwtInjection())
     }

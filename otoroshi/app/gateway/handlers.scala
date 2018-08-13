@@ -274,8 +274,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def applyJwtVerifier(service: ServiceDescriptor,
                        req: RequestHeader)(f: JwtInjection => Future[Result])(implicit env: Env): Future[Result] = {
     if (service.jwtVerifier.enabled) {
-      logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-      service.jwtVerifier.verify(req, service)(f)
+      service.jwtVerifier.shouldBeVerified(req.path).flatMap {
+        case false => f(JwtInjection())
+        case true => {
+          logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
+          service.jwtVerifier.verify(req, service)(f)
+        }
+      }
     } else {
       f(JwtInjection())
     }

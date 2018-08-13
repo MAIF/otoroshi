@@ -5,6 +5,7 @@ import java.security.KeyFactory
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -475,6 +476,7 @@ sealed trait JwtVerifier extends AsJson {
   def isRef: Boolean
   def enabled: Boolean
   def strict: Boolean
+  def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def source: JwtTokenLocation
   def algoSettings: AlgoSettings
   def strategy: VerifierStrategy
@@ -614,6 +616,7 @@ sealed trait JwtVerifier extends AsJson {
 case class LocalJwtVerifier(
     enabled: Boolean = false,
     strict: Boolean = true,
+    excludedPatterns: Seq[String] = Seq.empty[String],
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
@@ -624,12 +627,15 @@ case class LocalJwtVerifier(
     "type"         -> "local",
     "enabled"      -> this.enabled,
     "strict"       -> this.strict,
+    "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply)),
     "source"       -> this.source.asJson,
     "algoSettings" -> this.algoSettings.asJson,
     "strategy"     -> this.strategy.asJson
   )
 
   override def isRef = false
+
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
 case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with AsJson {
@@ -679,6 +685,11 @@ case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with
           .map(a => Left(a))
     }
   }
+
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
+    case Some(verifier) => verifier.shouldBeVerified(path)
+    case None => Future.failed(new RuntimeException("Jwt verifier not found ..."))
+  }
 }
 
 object RefJwtVerifier extends FromJson[RefJwtVerifier] {
@@ -706,6 +717,7 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
         LocalJwtVerifier(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
@@ -722,6 +734,7 @@ case class GlobalJwtVerifier(
     name: String,
     desc: String,
     strict: Boolean = true,
+    excludedPatterns: Seq[String] = Seq.empty[String],
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
@@ -735,6 +748,7 @@ case class GlobalJwtVerifier(
     "name"         -> this.name,
     "desc"         -> this.desc,
     "strict"       -> this.strict,
+    "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply)),
     "source"       -> this.source.asJson,
     "algoSettings" -> this.algoSettings.asJson,
     "strategy"     -> this.strategy.asJson
@@ -743,6 +757,8 @@ case class GlobalJwtVerifier(
   override def isRef = false
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalJwtVerifierDataStore.set(this)
+
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
 object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
@@ -782,6 +798,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
