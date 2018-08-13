@@ -1,21 +1,19 @@
 package storage.inmemory
 
+import akka.http.scaladsl.util.FastFuture
+import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
+import com.typesafe.config.ConfigRenderOptions
 import env.Env
 import models._
-import play.api.libs.json._
-import utils.JsonImplicits._
-import storage.{RedisLike, RedisLikeStore}
-import utils.LocalCache
-import com.typesafe.config.ConfigRenderOptions
 import org.joda.time.DateTime
 import play.api.Logger
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
+import play.api.libs.json._
 import security.Auth0Config
+import storage.{RedisLike, RedisLikeStore}
+import utils.JsonImplicits._
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Success
 
 class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)

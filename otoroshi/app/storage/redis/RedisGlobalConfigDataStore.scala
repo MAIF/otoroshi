@@ -1,22 +1,20 @@
 package storage.redis
 
-import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
+import akka.http.scaladsl.util.FastFuture._
 import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
+import com.typesafe.config.ConfigRenderOptions
 import env.Env
 import models._
-import play.api.libs.json._
-import utils.JsonImplicits._
-import redis.RedisClientMasterSlaves
-import utils.LocalCache
-import com.typesafe.config.{Config, ConfigRenderOptions}
 import org.joda.time.DateTime
-import play.api.{Configuration, Logger}
-import env.Env
+import play.api.Logger
+import play.api.libs.json._
+import redis.RedisClientMasterSlaves
 import security.Auth0Config
+import utils.JsonImplicits._
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Success
 
 class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
