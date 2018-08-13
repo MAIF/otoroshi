@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigObject, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
@@ -332,25 +332,37 @@ class Env(val configuration: Configuration,
                 datastores.globalConfigDataStore.fullImport(json)(ec, this)
               }
               case _ => {
-                val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
-                val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
-                                                "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
-                                                "default-apikey",
-                                                "default")
-                logger.warn(
-                  s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
-                )
-                for {
-                  _ <- defaultConfig.save()(ec, this)
-                  _ <- backOfficeGroup.save()(ec, this)
-                  _ <- defaultGroup.save()(ec, this)
-                  _ <- backOfficeDescriptor.save()(ec, this)
-                  _ <- backOfficeApiKey.save()(ec, this)
-                  _ <- defaultGroupApiKey.save()(ec, this)
-                  _ <- datastores.simpleAdminDataStore
+                configuration.getOptional[play.api.Configuration]("app.importFrom") match {
+                  case Some(obj) => {
+                    val importJson = Json.parse(
+                      obj.underlying
+                        .root()
+                        .render(ConfigRenderOptions.concise())
+                    ).as[JsObject]
+                    datastores.globalConfigDataStore.fullImport(importJson)(ec, this)
+                  }
+                  case _ => {
+                    val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
+                    val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
+                      "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
+                      "default-apikey",
+                      "default")
+                    logger.warn(
+                      s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+                    )
+                    for {
+                      _ <- defaultConfig.save()(ec, this)
+                      _ <- backOfficeGroup.save()(ec, this)
+                      _ <- defaultGroup.save()(ec, this)
+                      _ <- backOfficeDescriptor.save()(ec, this)
+                      _ <- backOfficeApiKey.save()(ec, this)
+                      _ <- defaultGroupApiKey.save()(ec, this)
+                      _ <- datastores.simpleAdminDataStore
                         .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(ec,
-                                                                                                                this)
-                } yield ()
+                          this)
+                    } yield ()
+                  }
+                }
               }
             }
           }
