@@ -41,9 +41,12 @@ case class CorsSettings(
   }
 
   def shouldNotPass(req: RequestHeader): Boolean = {
-    val passOrigin: Boolean = req.headers.get("Origin").map(_.toLowerCase()).map(o => allowOrigin == "*" || o == allowOrigin).getOrElse(allowOrigin == "*")
-    val passAllowedRequestHeaders: Boolean = req.headers.get("Access-Control-Request-Headers").map(h => h.split(",").map(_.trim.toLowerCase())).map(headers => headers.map(h => allowHeaders.contains(h)).foldLeft(true)(_ && _)).getOrElse(!req.headers.get("Access-Control-Request-Headers").isDefined)
-    val passAllowedRequestMethod: Boolean = req.headers.get("Access-Control-Request-Method").map(h => h.split(",").map(_.trim.toLowerCase())).map(_.contains(req.method.toLowerCase())).getOrElse(!req.headers.get("Access-Control-Request-Method").isDefined)
+    val originOpt = req.headers.get("Origin")
+    val headersOpt = req.headers.get("Access-Control-Request-Headers")
+    val methodOpt = req.headers.get("Access-Control-Request-Method")
+    val passOrigin: Boolean = originOpt.map(_.toLowerCase()).map(o => allowOrigin == "*" || o == allowOrigin).getOrElse(allowOrigin == "*")
+    val passAllowedRequestHeaders: Boolean = headersOpt.map(h => h.split(",").map(_.trim.toLowerCase())).map(headers => headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).foldLeft(true)(_ && _)).getOrElse(!headersOpt.isDefined)
+    val passAllowedRequestMethod: Boolean = methodOpt.map(_.trim.toLowerCase()).map(m => allowMethods.map(n => n.trim.toLowerCase()).contains(m.trim.toLowerCase())).getOrElse(!methodOpt.isDefined)
     !(passOrigin && passAllowedRequestHeaders && passAllowedRequestMethod)
   }
 

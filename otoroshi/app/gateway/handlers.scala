@@ -1485,17 +1485,19 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 )
                               } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
                                 // handle cors preflight request
-                                FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders: _*))
-                              } else if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
-                                Errors.craftResponseResult(
-                                  "Cors error",
-                                  BadRequest,
-                                  req,
-                                  Some(descriptor),
-                                  Some("errors.cors.error"),
-                                  duration = System.currentTimeMillis - start,
-                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                )
+                                if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
+                                  Errors.craftResponseResult(
+                                    "Cors error",
+                                    BadRequest,
+                                    req,
+                                    Some(descriptor),
+                                    Some("errors.cors.error"),
+                                    duration = System.currentTimeMillis - start,
+                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                  )
+                                } else {
+                                  FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders: _*))
+                                }
                               } else if (isUp) {
                                 if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
                                   if (descriptor.isUriPublic(req.path)) {
