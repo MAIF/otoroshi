@@ -1,11 +1,10 @@
 package auth
 
-import java.util.Base64
-
 import akka.http.scaladsl.util.FastFuture
 import controllers.routes
 import env.Env
 import models._
+import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -117,14 +116,13 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     request.body.asFormUrlEncoded match {
       case None => FastFuture.successful(Left("No Authorization form here"))
       case Some(form) => {
-        println(form.toString())
         (form.get("username").map(_.last),
         form.get("password").map(_.last),
         form.get("token").map(_.last)) match {
           case (Some(username), Some(password), Some(token)) => {
             env.datastores.authConfigsDataStore.validateLoginToken(token).map {
               case false => Left("Bad token")
-              case true => authConfig.users.find(u => u.email == username && u.password == password) match {
+              case true => authConfig.users.find(u => u.email == username).filter(u => BCrypt.checkpw(password, u.password)) match {
                 case Some(user) => Right(PrivateAppsUser(
                   randomId = IdGenerator.token(64),
                   name = user.name,
@@ -168,7 +166,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           case (Some(username), Some(password), Some(token)) => {
             env.datastores.authConfigsDataStore.validateLoginToken(token).map {
               case false => Left("Bad token")
-              case true => authConfig.users.find(u => u.email == username && u.password == password) match {
+              case true => authConfig.users.find(u => u.email == username).filter(u => BCrypt.checkpw(password, u.password)) match {
                 case Some(user) => Right(BackOfficeUser(
                   randomId = IdGenerator.token(64),
                   name = user.name,

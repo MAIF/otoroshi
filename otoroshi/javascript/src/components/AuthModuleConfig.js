@@ -5,6 +5,7 @@ import { TextInput, SelectInput, CodeInput } from './inputs';
 import deepSet from 'set-value';
 import _ from 'lodash';
 import faker from 'faker';
+import bcrypt from 'bcryptjs';
 
 export class Oauth2ModuleConfig extends Component {
   state = {
@@ -151,9 +152,34 @@ export class Oauth2ModuleConfig extends Component {
   }
 }
 
+export class User extends Component {
+  render() {
+    return (
+      <div style={{
+        display: 'flex',
+      }}>
+        <input type="text" placeholder="User name" className="form-control" value={this.props.user.name} onChange={e => this.props.onChange(this.props.user.email, 'name', e.target.value)} />
+        <input type="text" placeholder="User email" className="form-control" value={this.props.user.email} onChange={e => this.props.onChange(this.props.user.email, 'email', e.target.value)} />
+        <input type="text" placeholder="User metadata" className="form-control" value={JSON.stringify(this.props.user.metadata)} onChange={e => this.props.onChange(this.props.user.email, 'metadata', e.target.value)} />
+        <button type="button" className="btn btn-sm btn-success" onClick={e => {
+          const value1 = prompt("Type password");
+          const value2 = prompt("Re-type password");
+          if (value1 && value2 && value1 === value2) {
+            this.props.hashPassword(this.props.user.email, value1);
+          }
+        }} style={{ marginLeft: 5 }}>Set password</button>
+        <button type="button" className="btn btn-sm btn-danger" onClick={e => this.props.removeUser(this.props.user.email)}>
+          <i className="glyphicon glyphicon-trash" />
+        </button>
+      </div>
+    );
+  }
+}
+
 export class BasicModuleConfig extends Component {
   state = {
     error: null,
+    showRaw: false
   };
 
   componentDidCatch(error) {
@@ -173,6 +199,45 @@ export class BasicModuleConfig extends Component {
     } else {
       this.props.changeTheValue(name, value);
     }
+  };
+
+  addUser = () => {
+    const newValue = _.cloneDeep(this.props.value);
+    const firstName = faker.name.firstName();
+    const lastName = faker.name.lastName();
+    newValue.users.push({
+      name: firstName + ' ' + lastName,
+      password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
+      email: firstName.toLowerCase() + '.' + lastName.toLowerCase() + '@foo.bar',
+      metadata: {}
+    });
+    this.props.onChange(newValue);
+  };
+
+  removeUser = (email) => {
+    const newValue = _.cloneDeep(this.props.value);
+    newValue.users = newValue.users.filter(u => u.email !== email);
+    this.props.onChange(newValue);
+  };
+
+  hashPassword = (email, password) => {
+    const newValue = _.cloneDeep(this.props.value);
+    newValue.users.map(user => {
+      if (user.email === email) {
+        user.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+      }
+    });
+    this.props.onChange(newValue);
+  };
+
+  changeField = (email, name, value) => {
+    const newValue = _.cloneDeep(this.props.value);
+    newValue.users.map(user => {
+      if (user.email === email) {
+        user[name] = value;
+      }
+    });
+    this.props.onChange(newValue);
   };
 
   render() {
@@ -203,12 +268,45 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
         />  
-        <CodeInput 
-          label="Users"
-          value={JSON.stringify(settings.users, null, 2)}
-          help="..."
-          onChange={v => changeTheValue(path + '.users', JSON.parse(v))}
-        />
+        <div className="form-group">
+          <label htmlFor={`input-users`} className="col-sm-2 control-label">
+            Users
+          </label>
+          <div className="col-sm-10">
+            {this.props.value.users.map(user => <User user={user} removeUser={this.removeUser} hashPassword={this.hashPassword} onChange={this.changeField} />)}
+            <button type="button" className="btn btn-info" onClick={this.addUser} style={{ marginTop: 20 }}>
+              <i className="glyphicon glyphicon-plus-sign" /> Add user
+            </button>
+          </div>
+        </div>
+        {!this.state.showRaw && (
+          <div className="form-group">
+            <label className="col-sm-2 control-label">
+              Users raw
+            </label>
+            <div className="col-sm-10">
+              <button type="button" className="btn btn-info" onClick={e => this.setState({ showRaw: !this.state.showRaw })}>Show raw users</button>
+            </div>
+          </div>
+        )}
+        {this.state.showRaw && (
+          <div className="form-group">
+            <label className="col-sm-2 control-label">
+              Users raw
+            </label>
+            <div className="col-sm-10">
+              <button type="button" className="btn btn-info" onClick={e => this.setState({ showRaw: !this.state.showRaw })}>Hide raw users</button>
+            </div>
+          </div>
+        )}
+        {this.state.showRaw && (
+          <CodeInput 
+            label=""
+            value={JSON.stringify(settings.users, null, 2)}
+            help="..."
+            onChange={v => changeTheValue(path + '.users', JSON.parse(v))}
+          />
+        )}
       </div>
     );
   }
@@ -336,7 +434,7 @@ export class AuthModuleConfig extends Component {
                 {
                   "name": "John Doe",
                   "email": "john.doe@foo.bar",
-                  "password": "password",
+                  "password": bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
                   "metadata": {}
                 }
               ]

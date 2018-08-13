@@ -1,7 +1,5 @@
 package auth
 
-import java.util.Base64
-
 import akka.http.scaladsl.util.FastFuture
 import controllers.routes
 import env.Env
@@ -200,7 +198,6 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     request.body.asFormUrlEncoded match {
       case None => FastFuture.successful(Left("No Authorization form here"))
       case Some(form) => {
-        println(form.toString())
         (form.get("username").map(_.last),
           form.get("password").map(_.last),
           form.get("token").map(_.last)) match {
