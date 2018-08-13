@@ -8,7 +8,7 @@ import env.Env
 import models._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc._
 import security.IdGenerator
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -212,7 +212,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
   override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env) = FastFuture.successful(())
-  override def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
     implicit val req = request
     request.headers.get("Authorization") match {
       case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {
@@ -267,7 +267,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
   override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) = FastFuture.successful(())
-  override def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]  = {
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]  = {
     implicit val req = request
     request.headers.get("Authorization") match {
       case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {

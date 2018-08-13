@@ -15,6 +15,7 @@ import ReactDOM from 'react-dom';
 import browserUpdate from 'browser-update';
 import { BackOfficeApp } from './apps/BackOfficeApp';
 import { U2FLoginPage } from './pages/U2FLoginPage';
+import { GenericLoginPage } from './pages/GenericLoginPage';
 import * as BackOfficeServices from './services/BackOfficeServices';
 
 if (!window.Symbol) {
@@ -112,4 +113,9 @@ export function init(node) {
 export function login(node) {
   setupOutdatedBrowser();
   ReactDOM.render(<U2FLoginPage />, node);
+}
+
+export function genericLogin(opts, node) {
+  setupOutdatedBrowser();
+  ReactDOM.render(<GenericLoginPage {...opts} />, node);
 }

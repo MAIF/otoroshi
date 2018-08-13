@@ -1,0 +1,22 @@
+@import env.Env
+
+@(action: String, method: String, token: String, _env: Env)
+
+@authScript = {
+@if(_env.isDev) {
+    <script src="//localhost:3040/assets/javascripts/bundle/backoffice.js" type="text/javascript"></script>
+} else {
+    <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/backoffice.js?v=${_env.hash}")"></script>
+}
+    <script>
+        Otoroshi.genericLogin({
+            method: '@method',
+            action: '@action',
+            token: '@token'
+        }, document.getElementById("app"));
+    </script>
+}
+
+@main("Login", _env, moreScripts = authScript) {
+    <div id="app"></div>
+}

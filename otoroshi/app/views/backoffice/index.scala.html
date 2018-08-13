@@ -18,7 +18,7 @@
         @if(userOpt.isEmpty) {
            <p>
            @if(auth0Enabled) {
-                <a class="btn btn-lg" href="@routes.Auth0Controller.backOfficeLogin()" role="button">Login using OAuth</a>
+                <a class="btn btn-lg" href="@routes.Auth0Controller.backOfficeLogin()" role="button">Login using third-party</a>
             }
             <a class="btn btn-lg" href="@routes.U2FController.loginPage()" role="button">Login</a></p>
         }

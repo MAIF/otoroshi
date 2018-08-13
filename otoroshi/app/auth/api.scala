@@ -3,7 +3,8 @@ package auth
 import env.Env
 import models._
 import play.api.libs.json._
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
+import storage.BasicStore
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -11,11 +12,11 @@ trait AuthModule {
 
   def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result]
   def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]]
+  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
   def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]
+  def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]
 }
 
 trait AuthModuleConfig extends AsJson {
@@ -54,5 +55,11 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def otoroshiDataField: String
   def callbackUrl: String
 }
+
+trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
+  def generateLoginToken()(implicit ec: ExecutionContext): Future[String]
+  def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean]
+}
+
 
 

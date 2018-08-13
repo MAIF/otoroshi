@@ -6,7 +6,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results.Redirect
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
 import storage.BasicStore
 
@@ -154,7 +154,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     ().asFuture
   }
 
-  override def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
     val clientId = authConfig.clientId
     val clientSecret = authConfig.clientSecret
     val redirectUri = authConfig.callbackUrl + s"?desc=${descriptor.id}"
@@ -202,7 +202,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  override def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
     val clientId = authConfig.clientId
     val clientSecret = authConfig.clientSecret
     val redirectUri = authConfig.callbackUrl
@@ -244,5 +244,3 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 }
-
-trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig]

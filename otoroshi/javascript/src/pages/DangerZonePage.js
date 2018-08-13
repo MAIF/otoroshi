@@ -228,10 +228,10 @@ export class DangerZonePage extends Component {
         suffix: 'events',
       },
     },
-    backofficeAuth0Config: {
+    backOfficeAuthRef: {
       type: SelectInput,
       props: {
-        label: "Backoffice auth config",
+        label: "Backoffice auth. config",
         valuesFrom: "/bo/api/proxy/api/auths",
         transformer: a => ({ value: a.id, label: a.name }),
         help: "..."
@@ -408,8 +408,8 @@ export class DangerZonePage extends Component {
     'statsdConfig.datadog',
     'statsdConfig.host',
     'statsdConfig.port',
-    '>>>Backoffice Auth0 settings',
-    'backofficeAuth0Config',
+    '>>>Backoffice auth. settings',
+    'backOfficeAuthRef',
     '>>>Mailgun settings',
     'mailGunSettings.apiKey',
     'mailGunSettings.domain',

@@ -55,7 +55,7 @@ case class GlobalConfig(
     alertsEmails: Seq[String] = Seq.empty[String],
     endlessIpAddresses: Seq[String] = Seq.empty[String],
     kafkaConfig: Option[KafkaConfig] = None,
-    backofficeAuth0Config: Option[String] = None,
+    backOfficeAuthRef: Option[String] = None,
     cleverSettings: Option[CleverCloudSettings] = None,
     mailGunSettings: Option[MailgunSettings] = None,
     statsdConfig: Option[StatsdConfig] = None,
@@ -155,7 +155,7 @@ object GlobalConfig {
         "endlessIpAddresses"      -> JsArray(o.endlessIpAddresses.map(JsString.apply)),
         "statsdConfig"            -> statsdConfig,
         "kafkaConfig"             -> kafkaConfig,
-        "backofficeAuth0Config"   -> o.backofficeAuth0Config.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "backOfficeAuthRef"       -> o.backOfficeAuthRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "mailGunSettings"         -> mailGunSettings,
         "cleverSettings"          -> cleverSettings,
         "maxWebhookSize"          -> o.maxWebhookSize,
@@ -228,7 +228,7 @@ object GlobalConfig {
               case e => None
             }
           },
-          backofficeAuth0Config = (json \ "backofficeAuth0Config").asOpt[String],
+          backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
           mailGunSettings = (json \ "mailGunSettings").asOpt[JsValue].flatMap { config =>
             (
               (config \ "apiKey").asOpt[String].filter(_.nonEmpty),

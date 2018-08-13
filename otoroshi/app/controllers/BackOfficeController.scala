@@ -151,7 +151,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         case None => {
           Ok(
             views.html.backoffice
-              .index(!(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty), ctx.user, ctx.request, env)
+              .index(!(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty), ctx.user, ctx.request, env)
           )
         }
       }

@@ -203,8 +203,8 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
   def backOfficeLogin() = BackOfficeAction.async { ctx =>
     implicit val request = ctx.request
     env.datastores.globalConfigDataStore.singleton().flatMap {
-      case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
-        config.backofficeAuth0Config match {
+      case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
+        config.backOfficeAuthRef match {
           case None => FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
           case Some(aconf) => {
             env.datastores.authConfigsDataStore.findById(aconf).flatMap {
@@ -214,7 +214,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
           }
         }
       }
-      case config if config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty =>
+      case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty =>
         FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
     }
   }
@@ -223,7 +223,7 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
     implicit val request = ctx.request
     val redirect = request.getQueryString("redirect")
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-      config.backofficeAuth0Config match {
+      config.backOfficeAuthRef match {
         case None => FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
         case Some(aconf) => {
           env.datastores.authConfigsDataStore.findById(aconf).flatMap {
@@ -252,11 +252,11 @@ class Auth0Controller(BackOfficeActionAuth: BackOfficeActionAuth,
       case Some(e) => FastFuture.successful(BadRequest(views.html.backoffice.unauthorized(env)))
       case None => {
         env.datastores.globalConfigDataStore.singleton().flatMap {
-          case config if (config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) =>
+          case config if (config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) =>
             FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
-          case config if !(config.u2fLoginOnly || config.backofficeAuth0Config.isEmpty) => {
+          case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
 
-            config.backofficeAuth0Config match {
+            config.backOfficeAuthRef match {
               case None =>
                 FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not configured", env)))
               case Some(backOfficeAuth0Config) => {

@@ -8,7 +8,7 @@ import env.Env
 import models._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc._
 import security.IdGenerator
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -103,109 +103,88 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val req = request
     val redirect = request.getQueryString("redirect")
-    request.headers.get("Authorization") match {
-      case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {
-        val cleanAuthorization = authorization.replace("Basic ", "").replace("basic ", "")
-        val parts = new String(Base64.getDecoder.decode(cleanAuthorization)).split(":")
-        val email = parts.head
-        val password = parts.last
-        authConfig.users.find(u => u.email == email && u.password == password) match {
-          case Some(user) => FastFuture.successful(
-            Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}").addingToSession(
-              "pa-redirect-after-login" -> redirect.getOrElse(
-                routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-              )
-            )
-          )
-          case None => FastFuture.successful(Results.Forbidden(
-            views.html.otoroshi
-              .error(message = s"You're not authorized here", _env = env, title = "Authorization error")
-          ))
-        }
-      }
-      case _ => FastFuture.successful(
-        Results.Unauthorized("").withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
+    env.datastores.authConfigsDataStore.generateLoginToken().map { token =>
+      Results.Ok(views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, env)).addingToSession(
+        "pa-redirect-after-login" -> redirect.getOrElse(
+          routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+        )
       )
     }
   }
   override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env) = FastFuture.successful(())
-  override def paCallback(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
     implicit val req = request
-    request.headers.get("Authorization") match {
-      case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {
-        val cleanAuthorization = authorization.replace("Basic ", "").replace("basic ", "")
-        val parts = new String(Base64.getDecoder.decode(cleanAuthorization)).split(":")
-        val email = parts.head
-        val password = parts.last
-        authConfig.users.find(u => u.email == email && u.password == password) match {
-          case Some(user) => FastFuture.successful(Right(PrivateAppsUser(
-            randomId = IdGenerator.token(64),
-            name = user.name,
-            email = user.email,
-            profile = user.asJson,
-            realm = authConfig.cookieSuffix(descriptor),
-            otoroshiData = user.metadata.asOpt[Map[String, String]]
-          )))
-          case None => FastFuture.successful(Left(s"You're not authorized here"))
+    request.body.asFormUrlEncoded match {
+      case None => FastFuture.successful(Left("No Authorization form here"))
+      case Some(form) => {
+        println(form.toString())
+        (form.get("username").map(_.last),
+        form.get("password").map(_.last),
+        form.get("token").map(_.last)) match {
+          case (Some(username), Some(password), Some(token)) => {
+            env.datastores.authConfigsDataStore.validateLoginToken(token).map {
+              case false => Left("Bad token")
+              case true => authConfig.users.find(u => u.email == username && u.password == password) match {
+                case Some(user) => Right(PrivateAppsUser(
+                  randomId = IdGenerator.token(64),
+                  name = user.name,
+                  email = user.email,
+                  profile = user.asJson,
+                  realm = authConfig.cookieSuffix(descriptor),
+                  otoroshiData = user.metadata.asOpt[Map[String, String]]
+                ))
+                case None => Left(s"You're not authorized here")
+              }
+            }
+          }
+          case _ => {
+            FastFuture.successful(Left("Authorization form is not complete"))
+          }
         }
       }
-      case _ => FastFuture.successful(
-        Left("No Authorization header here")
-      )
     }
   }
 
   override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val req = request
     val redirect = request.getQueryString("redirect")
-    request.headers.get("Authorization") match {
-      case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {
-        val cleanAuthorization = authorization.replace("Basic ", "").replace("basic ", "")
-        val parts = new String(Base64.getDecoder.decode(cleanAuthorization)).split(":")
-        val email = parts.head
-        val password = parts.last
-        authConfig.users.find(u => u.email == email && u.password == password) match {
-          case Some(user) => FastFuture.successful(
-            Results.Redirect(s"/backoffice/auth0/callback").addingToSession(
-              "bo-redirect-after-login" -> redirect.getOrElse(
-                routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
-              )
-            )
-          )
-          case None => FastFuture.successful(Results.Forbidden(
-            views.html.otoroshi
-              .error(message = s"You're not authorized here", _env = env, title = "Authorization error")
-          ))
-        }
-      }
-      case _ => FastFuture.successful(
-        Results.Unauthorized("").withHeaders("WWW-Authenticate" -> s"""Basic realm="otoroshi-backoffice"""")
+    env.datastores.authConfigsDataStore.generateLoginToken().map { token =>
+      Results.Ok(views.html.otoroshi.login(s"/backoffice/auth0/callback", "POST", token, env)).addingToSession(
+        "bo-redirect-after-login" -> redirect.getOrElse(
+          routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+        )
       )
     }
   }
   override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) = FastFuture.successful(())
-  override def boCallback(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]  = {
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]  = {
     implicit val req = request
-    request.headers.get("Authorization") match {
-      case Some(authorization) if authorization.toLowerCase().startsWith("basic ") => {
-        val cleanAuthorization = authorization.replace("Basic ", "").replace("basic ", "")
-        val parts = new String(Base64.getDecoder.decode(cleanAuthorization)).split(":")
-        val email = parts.head
-        val password = parts.last
-        authConfig.users.find(u => u.email == email && u.password == password) match {
-          case Some(user) => FastFuture.successful(Right(BackOfficeUser(
-            randomId = IdGenerator.token(64),
-            name = user.name,
-            email = user.email,
-            profile = user.asJson,
-            authorizedGroup = None
-          )))
-          case None => FastFuture.successful(Left(s"You're not authorized here"))
+    request.body.asFormUrlEncoded match {
+      case None => FastFuture.successful(Left("No Authorization form here"))
+      case Some(form) => {
+        (form.get("username").map(_.last),
+          form.get("password").map(_.last),
+          form.get("token").map(_.last)) match {
+          case (Some(username), Some(password), Some(token)) => {
+            env.datastores.authConfigsDataStore.validateLoginToken(token).map {
+              case false => Left("Bad token")
+              case true => authConfig.users.find(u => u.email == username && u.password == password) match {
+                case Some(user) => Right(BackOfficeUser(
+                  randomId = IdGenerator.token(64),
+                  name = user.name,
+                  email = user.email,
+                  profile = user.asJson,
+                  authorizedGroup = None
+                ))
+                case None => Left(s"You're not authorized here")
+              }
+            }
+          }
+          case _ => {
+            FastFuture.successful(Left("Authorization form is not complete"))
+          }
         }
       }
-      case _ => FastFuture.successful(
-        Left("No Authorization header here")
-      )
     }
   }
 }
