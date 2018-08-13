@@ -2,7 +2,7 @@ package storage.redis
 
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
-import auth.GenericOauth2ModuleConfig
+import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
 import env.Env
 import models._
 import play.api.libs.json._
@@ -190,7 +190,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     val serviceDescriptors = (export \ "serviceDescriptors").as[JsArray]
     val errorTemplates     = (export \ "errorTemplates").as[JsArray]
     val jwtVerifiers       = (export \ "jwtVerifiers").as[JsArray]
-    val oauthConfigs       = (export \ "oauthConfigs").as[JsArray]
+    val authConfigs        = (export \ "authConfigs").as[JsArray]
 
     for {
       _ <- redisCli.flushall()
@@ -210,7 +210,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))
       _ <- Future.sequence(errorTemplates.value.map(ErrorTemplate.fromJsons).map(_.save()))
       _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
-      _ <- Future.sequence(oauthConfigs.value.map(GenericOauth2ModuleConfig.fromJsons).map(_.save()))
+      _ <- Future.sequence(authConfigs.value.map(AuthModuleConfig.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -236,7 +236,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       admins       <- env.datastores.u2FAdminDataStore.findAll()
       simpleAdmins <- env.datastores.simpleAdminDataStore.findAll()
       jwtVerifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
-      oauthConfigs <- env.datastores.authConfigsDataStore.findAll()
+      authConfigs  <- env.datastores.authConfigsDataStore.findAll()
     } yield
       Json.obj(
         "label"   -> "Otoroshi export",
@@ -256,7 +256,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
         "serviceDescriptors" -> JsArray(descs.map(_.toJson)),
         "errorTemplates"     -> JsArray(tmplts.map(_.toJson)),
         "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
-        "oauthConfigs"       -> JsArray(oauthConfigs.map(_.asJson))
+        "authConfigs"        -> JsArray(authConfigs.map(_.asJson))
       )
   }
 

@@ -17,16 +17,6 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
 
   lazy val logger = Logger("otoroshi-global-oauth2-config")
 
-  def fromJsons(value: JsValue): GenericOauth2ModuleConfig =
-    try {
-      _fmt.reads(value).get
-    } catch {
-      case e: Throwable => {
-        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
-        throw e
-      }
-    }
-
   val _fmt = new Format[GenericOauth2ModuleConfig] {
 
     override def reads(json: JsValue) = fromJson(json) match {

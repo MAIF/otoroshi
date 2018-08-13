@@ -2,6 +2,7 @@ package auth
 
 import env.Env
 import models._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import storage.BasicStore
@@ -26,9 +27,22 @@ trait AuthModuleConfig extends AsJson {
   def desc: String
   def authModule(config: GlobalConfig): AuthModule
   def cookieSuffix(desc: ServiceDescriptor): String
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
 object AuthModuleConfig {
+
+  lazy val logger = Logger("otoroshi-auth-module-config")
+
+  def fromJsons(value: JsValue) = try {
+    _fmt.reads(value).get
+  } catch {
+    case e: Throwable => {
+      logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+      throw e
+    }
+  }
+
   val _fmt: Format[AuthModuleConfig] = new Format[AuthModuleConfig] {
     override def reads(json: JsValue): JsResult[AuthModuleConfig] = (json \ "type").as[String] match {
       case "oauth2" => GenericOauth2ModuleConfig._fmt.reads(json)
