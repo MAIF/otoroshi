@@ -801,6 +801,53 @@ export class ServicePage extends Component {
           <Collapse
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
+            label="CORS support">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.cors.enabled}
+              help="..."
+              onChange={v => this.changeTheValue('cors.enabled', v)}
+            />
+            <BooleanInput
+              label="Allow credentials"
+              value={this.state.service.cors.allowCredentials}
+              help="..."
+              onChange={v => this.changeTheValue('cors.allowCredentials', v)}
+            />
+            <TextInput
+              label="Allow origin"
+              value={this.state.service.cors.allowOrigin}
+              help="..."
+              onChange={v => this.changeTheValue('cors.allowOrigin', v)}
+            />
+            <NumberInput
+              label="Max age"
+              value={this.state.service.cors.maxAge}
+              help="..."
+              onChange={v => this.changeTheValue('cors.maxAge', v)}
+            />
+            <ArrayInput 
+              label="Expose headers"
+              value={this.state.service.cors.exposeHeaders}
+              help="..."
+              onChange={v => this.changeTheValue('cors.exposeHeaders', v)}
+            />
+            <ArrayInput 
+              label="Allow headers"
+              value={this.state.service.cors.allowHeaders}
+              help="..."
+              onChange={v => this.changeTheValue('cors.allowHeaders', v)}
+            />
+            <ArrayInput 
+              label="Allow methods"
+              value={this.state.service.cors.allowMethods}
+              help="..."
+              onChange={v => this.changeTheValue('cors.allowMethods', v)}
+            />
+          </Collapse>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label={
               <span>
                 Canary mode <i className="fa fa-twitter" />

@@ -306,7 +306,8 @@ case class ServiceDescriptor(
       512,
       "${config.app.claim.sharedKey}"
     ),
-    authConfigRef: Option[String] = None
+    authConfigRef: Option[String] = None,
+    cors: CorsSettings = CorsSettings(false)
 ) {
 
   def toHost: String = subdomain match {
@@ -422,7 +423,8 @@ object ServiceDescriptor {
           secComSettings = AlgoSettings
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
-          authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty)
+          authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
+          cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false))
         )
       } map {
         case sd => JsSuccess(sd)
@@ -469,6 +471,7 @@ object ServiceDescriptor {
       "chaosConfig"                -> sd.chaosConfig.asJson,
       "jwtVerifier"                -> sd.jwtVerifier.asJson,
       "secComSettings"             -> sd.secComSettings.asJson,
+      "cors"                       -> sd.cors.asJson,
       "authConfigRef"              -> sd.authConfigRef
     )
   }

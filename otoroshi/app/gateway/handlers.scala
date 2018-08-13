@@ -945,7 +945,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                                                                               )
                                                                                                                             } else {
                                                                                                                               Seq.empty[(String, String)]
-                                                                                                                            })
+                                                                                                                            }) ++ descriptor.cors.asHeaders
                                   val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
                                   val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                   // meterOut.mark(responseHeader.length)
@@ -1480,6 +1480,19 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   req,
                                   Some(descriptor),
                                   Some("errors.service.under.construction"),
+                                  duration = System.currentTimeMillis - start,
+                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                )
+                              } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
+                                // handle cors preflight request
+                                FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders: _*))
+                              } else if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
+                                Errors.craftResponseResult(
+                                  "Cors error",
+                                  BadRequest,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.cors.error"),
                                   duration = System.currentTimeMillis - start,
                                   overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                 )
