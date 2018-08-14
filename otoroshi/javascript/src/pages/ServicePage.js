@@ -844,6 +844,14 @@ export class ServicePage extends Component {
               help="..."
               onChange={v => this.changeTheValue('cors.allowMethods', v)}
             />
+            <ArrayInput
+              label="Excluded patterns"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.cors.excludedPatterns}
+              help="By default, when cors is enabled, everything has cors. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
+              onChange={arr => this.changeTheValue('cors.excludedPatterns', arr)}
+            />
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}

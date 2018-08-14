@@ -13,11 +13,12 @@ case class CorsSettings(
   exposeHeaders: Seq[String] = Seq.empty[String],
   allowHeaders: Seq[String] = Seq.empty[String],
   allowMethods: Seq[String] = Seq.empty[String],
+  excludedPatterns: Seq[String] = Seq.empty[String],
   maxAge: Option[FiniteDuration] = None,
   allowCredentials: Boolean = true
 ) extends AsJson {
-  def asHeaders: Seq[(String, String)] = {
-    if (enabled) {
+  def asHeaders(requestHeader: RequestHeader): Seq[(String, String)] = {
+    if (enabled && shouldApplyCors(requestHeader.path)) {
       var headers = Map(
         "Access-Control-Allow-Origin" -> allowOrigin,
         "Access-Control-Allow-Credentials" -> allowCredentials.toString
@@ -50,12 +51,17 @@ case class CorsSettings(
     !(passOrigin && passAllowedRequestHeaders && passAllowedRequestMethod)
   }
 
+  def shouldApplyCors(path: String): Boolean = {
+    !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
+  }
+
   override def asJson: JsValue = Json.obj(
     "enabled" -> enabled,
     "allowOrigin" -> allowOrigin,
     "exposeHeaders" -> JsArray(exposeHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
     "allowHeaders" -> JsArray(allowHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
     "allowMethods" -> JsArray(allowMethods.map(JsString.apply)),
+    "excludedPatterns" -> JsArray(excludedPatterns.map(JsString.apply)),
     "maxAge" -> maxAge.map(a => JsNumber(BigDecimal(a.toSeconds))).getOrElse(JsNull).as[JsValue],
     "allowCredentials" -> allowCredentials
   )
@@ -69,6 +75,7 @@ object CorsSettings extends FromJson[CorsSettings] {
       exposeHeaders = (json \ "exposeHeaders").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
       allowHeaders = (json \ "allowHeaders").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
       allowMethods = (json \ "allowMethods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+      excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
       maxAge = (json \ "maxAge").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
       allowCredentials = (json \ "allowCredentials").asOpt[Boolean].getOrElse(true)
     ))

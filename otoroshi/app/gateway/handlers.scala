@@ -945,7 +945,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                                                                               )
                                                                                                                             } else {
                                                                                                                               Seq.empty[(String, String)]
-                                                                                                                            }) ++ descriptor.cors.asHeaders
+                                                                                                                            }) ++ descriptor.cors.asHeaders(req)
                                   val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
                                   val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                   // meterOut.mark(responseHeader.length)
@@ -1483,7 +1483,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   duration = System.currentTimeMillis - start,
                                   overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                 )
-                              } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
+                              } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined && descriptor.cors.shouldApplyCors(req.path)) {
                                 // handle cors preflight request
                                 if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
                                   Errors.craftResponseResult(
@@ -1496,7 +1496,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   )
                                 } else {
-                                  FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders: _*))
+                                  FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders(req): _*))
                                 }
                               } else if (isUp) {
                                 if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
