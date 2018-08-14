@@ -589,7 +589,7 @@ sealed trait JwtVerifier extends AsJson {
                       case Some(outputAlgorithm) => {
                         val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
                         val newJsonToken: JsObject = JsObject(
-                          (tSettings.mappingSettings.map.foldLeft(jsonToken)(
+                          (tSettings.mappingSettings.map.filter(a => (jsonToken \ a._1).isDefined).foldLeft(jsonToken)(
                             (a, b) => a.+(b._2, (a \ b._1).as[JsValue]).-(b._1)
                           ) ++ tSettings.mappingSettings.values).fields
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))

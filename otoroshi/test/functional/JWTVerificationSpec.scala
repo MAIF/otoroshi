@@ -435,7 +435,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
             transformSettings = TransformSettings(
               location = InHeader("X-Barrr"),
               mappingSettings = MappingSettings(
-                map = Map("bar"          -> "x-bar"),
+                map = Map("fakebar" -> "x-bar", "bar" -> "x-bar", "superfakebar" -> "x-bar"),
                 values = Json.obj("x-yo" -> "foo"),
                 remove = Seq("foo")
               )
