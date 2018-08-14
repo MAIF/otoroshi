@@ -30,6 +30,11 @@ export class PrivateAppsSessionsPage extends Component {
       cell: (v, item) => JSON.stringify(item.profile),
     },
     {
+      title: 'Meta.',
+      content: item => 0,
+      cell: (v, item) => JSON.stringify(item.otoroshiData),
+    },
+    {
       title: 'Realm',
       content: item => item.realm,
     },

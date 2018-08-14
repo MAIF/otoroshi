@@ -127,6 +127,8 @@ class Env(val configuration: Configuration,
     configuration.getOptional[String]("app.backoffice.subdomain").getOrElse("otoroshi")
   lazy val privateAppsSubDomain: String =
     configuration.getOptional[String]("app.privateapps.subdomain").getOrElse("privateapps")
+  lazy val privateAppsPort: Option[Int] =
+    configuration.getOptional[Int]("app.privateapps.port")
   lazy val retries: Int = configuration.getOptional[Int]("app.retries").getOrElse(5)
 
   lazy val backOfficeServiceId = configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeServiceId").get
