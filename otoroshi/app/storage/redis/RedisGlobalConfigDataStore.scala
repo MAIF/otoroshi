@@ -194,15 +194,15 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       _ <- redisCli.flushall()
       _ <- config.save()
       _ <- Future.sequence(
-        admins.value.map(
-          v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").as[String]}", Json.stringify(v))
-        )
-      )
+            admins.value.map(
+              v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").as[String]}", Json.stringify(v))
+            )
+          )
       _ <- Future.sequence(
-        simpleAdmins.value.map(
-          v => redisCli.set(s"${env.storageRoot}:admins:${(v \ "username").as[String]}", Json.stringify(v))
-        )
-      )
+            simpleAdmins.value.map(
+              v => redisCli.set(s"${env.storageRoot}:admins:${(v \ "username").as[String]}", Json.stringify(v))
+            )
+          )
       _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
       _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))
       _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))
@@ -267,7 +267,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
           configBS <- redisCli.get(key("global").key).map(_.get)
           _        = logger.warn("OAuth config migration - Saving global configuration before migration")
           _        <- redisCli.set(migrationKey, configBS)
-          json     =  Json.parse(configBS.utf8String)
+          json     = Json.parse(configBS.utf8String)
           backofficeAuth0Config = (json \ "backofficeAuth0Config").asOpt[JsValue].flatMap { config =>
             (
               (config \ "clientId").asOpt[String].filter(_.nonEmpty),
@@ -293,36 +293,52 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
             }
           }
           _ = logger.warn("OAuth config migration - creating global oauth configuration for private apps")
-          _ <- privateAppsAuth0Config.map(c => env.datastores.authConfigsDataStore.set(GenericOauth2ModuleConfig(
-            id = "confidential-apps",
-            name = "Confidential apps Auth0 provider",
-            desc = "Former Auth0 global config. for private apps",
-            clientId = c.clientId,
-            clientSecret = c.secret,
-            tokenUrl = s"https://${c.domain}/oauth/token",
-            authorizeUrl = s"https://${c.domain}/authorize",
-            userInfoUrl = s"https://${c.domain}/userinfo",
-            loginUrl = s"https://${c.domain}/authorize",
-            logoutUrl = s"https://${c.domain}/logout",
-            callbackUrl = c.callbackURL
-          ))).getOrElse(FastFuture.successful(()))
+          _ <- privateAppsAuth0Config
+                .map(
+                  c =>
+                    env.datastores.authConfigsDataStore.set(
+                      GenericOauth2ModuleConfig(
+                        id = "confidential-apps",
+                        name = "Confidential apps Auth0 provider",
+                        desc = "Former Auth0 global config. for private apps",
+                        clientId = c.clientId,
+                        clientSecret = c.secret,
+                        tokenUrl = s"https://${c.domain}/oauth/token",
+                        authorizeUrl = s"https://${c.domain}/authorize",
+                        userInfoUrl = s"https://${c.domain}/userinfo",
+                        loginUrl = s"https://${c.domain}/authorize",
+                        logoutUrl = s"https://${c.domain}/logout",
+                        callbackUrl = c.callbackURL
+                      )
+                  )
+                )
+                .getOrElse(FastFuture.successful(()))
           _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
-          _ <- backofficeAuth0Config.map(c => env.datastores.authConfigsDataStore.set(GenericOauth2ModuleConfig(
-            id = "otoroshi-backoffice",
-            name = "Otoroshi BackOffice Auth0 provider",
-            desc = "Former Auth0 global config. for Otoroshi BackOffice",
-            clientId = c.clientId,
-            clientSecret = c.secret,
-            tokenUrl = s"https://${c.domain}/oauth/token",
-            authorizeUrl = s"https://${c.domain}/authorize",
-            userInfoUrl = s"https://${c.domain}/userinfo",
-            loginUrl = s"https://${c.domain}/authorize",
-            logoutUrl = s"https://${c.domain}/logout",
-            callbackUrl = c.callbackURL
-          ))).getOrElse(FastFuture.successful(()))
-          _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
+          _ <- backofficeAuth0Config
+                .map(
+                  c =>
+                    env.datastores.authConfigsDataStore.set(
+                      GenericOauth2ModuleConfig(
+                        id = "otoroshi-backoffice",
+                        name = "Otoroshi BackOffice Auth0 provider",
+                        desc = "Former Auth0 global config. for Otoroshi BackOffice",
+                        clientId = c.clientId,
+                        clientSecret = c.secret,
+                        tokenUrl = s"https://${c.domain}/oauth/token",
+                        authorizeUrl = s"https://${c.domain}/authorize",
+                        userInfoUrl = s"https://${c.domain}/userinfo",
+                        loginUrl = s"https://${c.domain}/authorize",
+                        logoutUrl = s"https://${c.domain}/logout",
+                        callbackUrl = c.callbackURL
+                      )
+                  )
+                )
+                .getOrElse(FastFuture.successful(()))
+          _      = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
           config <- env.datastores.globalConfigDataStore.findById("global").map(_.get)
-          configWithBackOffice = backofficeAuth0Config.map(_ => config.copy(backOfficeAuthRef = Some("otoroshi-backoffice"))).getOrElse(config)
+          configWithBackOffice = backofficeAuth0Config
+            .map(_ => config.copy(backOfficeAuthRef = Some("otoroshi-backoffice")))
+            .getOrElse(config)
           _ <- configWithBackOffice.save()
           _ = logger.warn("OAuth config migration - migration done !")
         } yield ()

@@ -5,7 +5,6 @@ import faker from 'faker';
 import { AuthModuleConfig, Oauth2ModuleConfig } from '../components/AuthModuleConfig';
 
 export class AuthModuleConfigsPage extends Component {
-
   columns = [
     { title: 'Name', content: item => item.name },
     { title: 'Description', content: item => item.desc },
@@ -34,7 +33,7 @@ export class AuthModuleConfigsPage extends Component {
               id: faker.random.alphaNumeric(64),
               name: 'New auth. config',
               desc: 'A auth. config',
-              type: 'oauth2'
+              type: 'oauth2',
             };
             return defv;
           }}

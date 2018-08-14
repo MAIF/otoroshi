@@ -11,13 +11,23 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthModule {
 
-  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]]
+  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(
+      implicit ec: ExecutionContext,
+      env: Env
+  ): Future[Result]
+  def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(
+      implicit ec: ExecutionContext,
+      env: Env
+  ): Future[Unit]
+  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(
+      implicit ec: ExecutionContext,
+      env: Env
+  ): Future[Either[String, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
   def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]]
+  def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext,
+                                                                     env: Env): Future[Either[String, BackOfficeUser]]
 }
 
 trait AuthModuleConfig extends AsJson {
@@ -34,22 +44,23 @@ object AuthModuleConfig {
 
   lazy val logger = Logger("otoroshi-auth-module-config")
 
-  def fromJsons(value: JsValue) = try {
-    _fmt.reads(value).get
-  } catch {
-    case e: Throwable => {
-      logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
-      throw e
+  def fromJsons(value: JsValue) =
+    try {
+      _fmt.reads(value).get
+    } catch {
+      case e: Throwable => {
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
+      }
     }
-  }
 
   val _fmt: Format[AuthModuleConfig] = new Format[AuthModuleConfig] {
     override def reads(json: JsValue): JsResult[AuthModuleConfig] = (json \ "type").as[String] match {
-      case "oauth2" => GenericOauth2ModuleConfig._fmt.reads(json)
+      case "oauth2"        => GenericOauth2ModuleConfig._fmt.reads(json)
       case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
-      case "basic" => BasicAuthModuleConfig._fmt.reads(json)
-      case "ldap" => LdapAuthModuleConfig._fmt.reads(json)
-      case _ => JsError("Unknown auth. config type")
+      case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
+      case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
+      case _               => JsError("Unknown auth. config type")
     }
     override def writes(o: AuthModuleConfig): JsValue = o.asJson
   }
@@ -74,6 +85,3 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
   def generateLoginToken()(implicit ec: ExecutionContext): Future[String]
   def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean]
 }
-
-
-

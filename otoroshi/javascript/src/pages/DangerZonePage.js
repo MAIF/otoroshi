@@ -231,11 +231,11 @@ export class DangerZonePage extends Component {
     backOfficeAuthRef: {
       type: SelectInput,
       props: {
-        label: "Backoffice auth. config",
-        valuesFrom: "/bo/api/proxy/api/auths",
+        label: 'Backoffice auth. config',
+        valuesFrom: '/bo/api/proxy/api/auths',
         transformer: a => ({ value: a.id, label: a.name }),
-        help: "..."
-      }
+        help: '...',
+      },
     },
     'mailGunSettings.apiKey': {
       type: 'string',

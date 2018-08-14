@@ -334,19 +334,21 @@ class Env(val configuration: Configuration,
               case _ => {
                 configuration.getOptional[play.api.Configuration]("app.importFrom") match {
                   case Some(obj) => {
-                    val importJson = Json.parse(
-                      obj.underlying
-                        .root()
-                        .render(ConfigRenderOptions.concise())
-                    ).as[JsObject]
+                    val importJson = Json
+                      .parse(
+                        obj.underlying
+                          .root()
+                          .render(ConfigRenderOptions.concise())
+                      )
+                      .as[JsObject]
                     datastores.globalConfigDataStore.fullImport(importJson)(ec, this)
                   }
                   case _ => {
                     val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
                     val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
-                      "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
-                      "default-apikey",
-                      "default")
+                                                    "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
+                                                    "default-apikey",
+                                                    "default")
                     logger.warn(
                       s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
                     )
@@ -358,8 +360,10 @@ class Env(val configuration: Configuration,
                       _ <- backOfficeApiKey.save()(ec, this)
                       _ <- defaultGroupApiKey.save()(ec, this)
                       _ <- datastores.simpleAdminDataStore
-                        .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(ec,
-                          this)
+                            .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(
+                              ec,
+                              this
+                            )
                     } yield ()
                   }
                 }
@@ -459,7 +463,10 @@ class Env(val configuration: Configuration,
     s"$signature::$id"
   }
 
-  def createPrivateSessionCookies(host: String, id: String, desc: ServiceDescriptor, authConfig: AuthModuleConfig): Seq[play.api.mvc.Cookie] = {
+  def createPrivateSessionCookies(host: String,
+                                  id: String,
+                                  desc: ServiceDescriptor,
+                                  authConfig: AuthModuleConfig): Seq[play.api.mvc.Cookie] = {
     createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc))
   }
 
@@ -497,7 +504,9 @@ class Env(val configuration: Configuration,
     }
   }
 
-  def removePrivateSessionCookies(host: String, desc: ServiceDescriptor, authConfig: AuthModuleConfig): Seq[play.api.mvc.DiscardingCookie] = {
+  def removePrivateSessionCookies(host: String,
+                                  desc: ServiceDescriptor,
+                                  authConfig: AuthModuleConfig): Seq[play.api.mvc.DiscardingCookie] = {
     removePrivateSessionCookiesWithSuffix(host, authConfig.cookieSuffix(desc))
   }
 

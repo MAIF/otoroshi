@@ -46,32 +46,33 @@ object PrivateAppsUser {
   }
 
   val fmt = new Format[PrivateAppsUser] {
-    override def reads(json: JsValue) = Try {
-      JsSuccess(
-        PrivateAppsUser(
-          randomId = (json \ "randomId").as[String],
-          name = (json \ "name").as[String],
-          email = (json \ "email").as[String],
-          profile = (json \ "profile").as[JsValue],
-          realm = (json \ "realm").asOpt[String].getOrElse("none"),
-          otoroshiData = (json \ "otoroshiData").asOpt[Map[String, String]],
-          createdAt = new DateTime((json \ "createdAt").as[Long]),
-          expiredAt = new DateTime((json \ "expiredAt").as[Long])
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          PrivateAppsUser(
+            randomId = (json \ "randomId").as[String],
+            name = (json \ "name").as[String],
+            email = (json \ "email").as[String],
+            profile = (json \ "profile").as[JsValue],
+            realm = (json \ "realm").asOpt[String].getOrElse("none"),
+            otoroshiData = (json \ "otoroshiData").asOpt[Map[String, String]],
+            createdAt = new DateTime((json \ "createdAt").as[Long]),
+            expiredAt = new DateTime((json \ "expiredAt").as[Long])
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
 
     override def writes(o: PrivateAppsUser) = Json.obj(
-      "randomId" -> o.randomId,
-      "name" -> o.name,
-      "email" -> o.email,
-      "profile" -> o.profile,
-      "realm" -> o.realm,
+      "randomId"     -> o.randomId,
+      "name"         -> o.name,
+      "email"        -> o.email,
+      "profile"      -> o.profile,
+      "realm"        -> o.realm,
       "otoroshiData" -> o.otoroshiData,
-      "createdAt" -> o.createdAt.toDate.getTime,
-      "expiredAt" -> o.expiredAt.toDate.getTime,
+      "createdAt"    -> o.createdAt.toDate.getTime,
+      "expiredAt"    -> o.expiredAt.toDate.getTime,
     )
   }
 }

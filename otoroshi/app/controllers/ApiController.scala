@@ -2929,8 +2929,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Json.obj("error" -> s"GlobalAuthModule with id $id not found")
         ).asFuture
       case Some(verifier) => {
-        val currentJson = verifier.asJson
-        val patch       = JsonPatch(ctx.request.body)
+        val currentJson     = verifier.asJson
+        val patch           = JsonPatch(ctx.request.body)
         val patchedVerifier = patch(currentJson)
         AuthModuleConfig._fmt.reads(patchedVerifier) match {
           case JsError(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture

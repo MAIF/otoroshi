@@ -21,7 +21,9 @@ class RedisAuthConfigsDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
 
   override def generateLoginToken()(implicit ec: ExecutionContext): Future[String] = {
     val token = IdGenerator.token(128)
-    redisCli.set(s"${_env.storageRoot}:auth:tokens:$token", token, pxMilliseconds = Some(5.minutes.toMillis)).map(_ => token)
+    redisCli
+      .set(s"${_env.storageRoot}:auth:tokens:$token", token, pxMilliseconds = Some(5.minutes.toMillis))
+      .map(_ => token)
   }
   override def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean] = {
     redisCli.exists(s"${_env.storageRoot}:auth:tokens:$token")

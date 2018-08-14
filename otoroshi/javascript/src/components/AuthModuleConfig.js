@@ -13,18 +13,18 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   static defaultConfig = {
-    clientId: 'client', 
-    clientSecret: 'secret', 
-    authorizeUrl: 'http://my.iam.local:8082/oauth/authorize', 
-    tokenUrl: 'http://my.iam.local:8082/oauth/token', 
-    userInfoUrl: 'http://my.iam.local:8082/userinfo', 
-    loginUrl: 'http://my.iam.local:8082/login', 
-    logoutUrl: 'http://my.iam.local:8082/logout', 
-    callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback', 
-    accessTokenField: 'access_token', 
-    nameField: 'name', 
-    emailField: 'email', 
-    otoroshiDataField: 'app_metadata | otoroshi_data'
+    clientId: 'client',
+    clientSecret: 'secret',
+    authorizeUrl: 'http://my.iam.local:8082/oauth/authorize',
+    tokenUrl: 'http://my.iam.local:8082/oauth/token',
+    userInfoUrl: 'http://my.iam.local:8082/userinfo',
+    loginUrl: 'http://my.iam.local:8082/login',
+    logoutUrl: 'http://my.iam.local:8082/logout',
+    callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback',
+    accessTokenField: 'access_token',
+    nameField: 'name',
+    emailField: 'email',
+    otoroshiDataField: 'app_metadata | otoroshi_data',
   };
 
   componentDidCatch(error) {
@@ -155,20 +155,48 @@ export class Oauth2ModuleConfig extends Component {
 export class User extends Component {
   render() {
     return (
-      <div style={{
-        display: 'flex',
-      }}>
-        <input type="text" placeholder="User name" className="form-control" value={this.props.user.name} onChange={e => this.props.onChange(this.props.user.email, 'name', e.target.value)} />
-        <input type="text" placeholder="User email" className="form-control" value={this.props.user.email} onChange={e => this.props.onChange(this.props.user.email, 'email', e.target.value)} />
-        <input type="text" placeholder="User metadata" className="form-control" value={JSON.stringify(this.props.user.metadata)} onChange={e => this.props.onChange(this.props.user.email, 'metadata', e.target.value)} />
-        <button type="button" className="btn btn-sm btn-success" onClick={e => {
-          const value1 = prompt("Type password");
-          const value2 = prompt("Re-type password");
-          if (value1 && value2 && value1 === value2) {
-            this.props.hashPassword(this.props.user.email, value1);
-          }
-        }} style={{ marginLeft: 5 }}>Set password</button>
-        <button type="button" className="btn btn-sm btn-danger" onClick={e => this.props.removeUser(this.props.user.email)}>
+      <div
+        style={{
+          display: 'flex',
+        }}>
+        <input
+          type="text"
+          placeholder="User name"
+          className="form-control"
+          value={this.props.user.name}
+          onChange={e => this.props.onChange(this.props.user.email, 'name', e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="User email"
+          className="form-control"
+          value={this.props.user.email}
+          onChange={e => this.props.onChange(this.props.user.email, 'email', e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="User metadata"
+          className="form-control"
+          value={JSON.stringify(this.props.user.metadata)}
+          onChange={e => this.props.onChange(this.props.user.email, 'metadata', e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={e => {
+            const value1 = prompt('Type password');
+            const value2 = prompt('Re-type password');
+            if (value1 && value2 && value1 === value2) {
+              this.props.hashPassword(this.props.user.email, value1);
+            }
+          }}
+          style={{ marginLeft: 5 }}>
+          Set password
+        </button>
+        <button
+          type="button"
+          className="btn btn-sm btn-danger"
+          onClick={e => this.props.removeUser(this.props.user.email)}>
           <i className="glyphicon glyphicon-trash" />
         </button>
       </div>
@@ -179,7 +207,7 @@ export class User extends Component {
 export class BasicModuleConfig extends Component {
   state = {
     error: null,
-    showRaw: false
+    showRaw: false,
   };
 
   componentDidCatch(error) {
@@ -209,12 +237,12 @@ export class BasicModuleConfig extends Component {
       name: firstName + ' ' + lastName,
       password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
       email: firstName.toLowerCase() + '.' + lastName.toLowerCase() + '@foo.bar',
-      metadata: {}
+      metadata: {},
     });
     this.props.onChange(newValue);
   };
 
-  removeUser = (email) => {
+  removeUser = email => {
     const newValue = _.cloneDeep(this.props.value);
     newValue.users = newValue.users.filter(u => u.email !== email);
     this.props.onChange(newValue);
@@ -267,40 +295,57 @@ export class BasicModuleConfig extends Component {
           value={settings.desc}
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
-        />  
+        />
         <div className="form-group">
           <label htmlFor={`input-users`} className="col-sm-2 control-label">
             Users
           </label>
           <div className="col-sm-10">
-            {this.props.value.users.map(user => <User user={user} removeUser={this.removeUser} hashPassword={this.hashPassword} onChange={this.changeField} />)}
-            <button type="button" className="btn btn-info" onClick={this.addUser} style={{ marginTop: 20 }}>
+            {this.props.value.users.map(user => (
+              <User
+                user={user}
+                removeUser={this.removeUser}
+                hashPassword={this.hashPassword}
+                onChange={this.changeField}
+              />
+            ))}
+            <button
+              type="button"
+              className="btn btn-info"
+              onClick={this.addUser}
+              style={{ marginTop: 20 }}>
               <i className="glyphicon glyphicon-plus-sign" /> Add user
             </button>
           </div>
         </div>
         {!this.state.showRaw && (
           <div className="form-group">
-            <label className="col-sm-2 control-label">
-              Users raw
-            </label>
+            <label className="col-sm-2 control-label">Users raw</label>
             <div className="col-sm-10">
-              <button type="button" className="btn btn-info" onClick={e => this.setState({ showRaw: !this.state.showRaw })}>Show raw users</button>
+              <button
+                type="button"
+                className="btn btn-info"
+                onClick={e => this.setState({ showRaw: !this.state.showRaw })}>
+                Show raw users
+              </button>
             </div>
           </div>
         )}
         {this.state.showRaw && (
           <div className="form-group">
-            <label className="col-sm-2 control-label">
-              Users raw
-            </label>
+            <label className="col-sm-2 control-label">Users raw</label>
             <div className="col-sm-10">
-              <button type="button" className="btn btn-info" onClick={e => this.setState({ showRaw: !this.state.showRaw })}>Hide raw users</button>
+              <button
+                type="button"
+                className="btn btn-info"
+                onClick={e => this.setState({ showRaw: !this.state.showRaw })}>
+                Hide raw users
+              </button>
             </div>
           </div>
         )}
         {this.state.showRaw && (
-          <CodeInput 
+          <CodeInput
             label=""
             value={JSON.stringify(settings.users, null, 2)}
             help="..."
@@ -433,74 +478,91 @@ export class LdapModuleConfig extends Component {
 export class AuthModuleConfig extends Component {
   render() {
     const settings = this.props.value || this.props.settings;
-    const selector = <SelectInput
-      label="Type"
-      value={settings.type}
-      onChange={e => {
-        switch (e) {
-          case 'basic':
-            this.props.onChange({ 
-              id: faker.random.alphaNumeric(64),
-              type: 'basic',
-              users: [
-                {
-                  "name": "John Doe",
-                  "email": "john.doe@foo.bar",
-                  "password": bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
-                  "metadata": {}
-                }
-              ]
-            });
-            break;
-          case 'ldap':
-            this.props.onChange({ 
-              id: faker.random.alphaNumeric(64),
-              type: 'ldap',
-              serverUrl: 'ldap://ldap.forumsys.com:389',
-              searchBase: 'dc=example,dc=com',
-              searchFilter: '(uid=${username})',
-              adminUsername: 'cn=read-only-admin,dc=example,dc=com',
-              adminPassword: 'password',
-              nameField: 'cn',
-              emailField: 'mail',
-              metadataField: null,
-            });
-            break;
-          case 'oauth2':
-            this.props.onChange({ 
-              id: faker.random.alphaNumeric(64),
-              type: 'oauth2',  
-              clientId: 'client', 
-              clientSecret: 'secret', 
-              authorizeUrl: 'http://my.iam.local:8082/oauth/authorize', 
-              tokenUrl: 'http://my.iam.local:8082/oauth/token', 
-              userInfoUrl: 'http://my.iam.local:8082/userinfo', 
-              loginUrl: 'http://my.iam.local:8082/login', 
-              logoutUrl: 'http://my.iam.local:8082/logout', 
-              callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback', 
-              accessTokenField: 'access_token', 
-              nameField: 'name', 
-              emailField: 'email',
-              otoroshiDataField: 'app_metadata | otoroshi_data'
-            });
-            break;
-        }
-      }}
-      possibleValues={[
-        { label: 'Generic oauth2 provider', value: 'oauth2' },
-        { label: 'Basic auth. provider (experimental)', value: 'basic' },
-        { label: 'Ldap auth. provider (experimental)', value: 'ldap' },
-      ]}
-      help="The type of settings to log into your app."
-    />
+    const selector = (
+      <SelectInput
+        label="Type"
+        value={settings.type}
+        onChange={e => {
+          switch (e) {
+            case 'basic':
+              this.props.onChange({
+                id: faker.random.alphaNumeric(64),
+                type: 'basic',
+                users: [
+                  {
+                    name: 'John Doe',
+                    email: 'john.doe@foo.bar',
+                    password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
+                    metadata: {},
+                  },
+                ],
+              });
+              break;
+            case 'ldap':
+              this.props.onChange({
+                id: faker.random.alphaNumeric(64),
+                type: 'ldap',
+                serverUrl: 'ldap://ldap.forumsys.com:389',
+                searchBase: 'dc=example,dc=com',
+                searchFilter: '(uid=${username})',
+                adminUsername: 'cn=read-only-admin,dc=example,dc=com',
+                adminPassword: 'password',
+                nameField: 'cn',
+                emailField: 'mail',
+                metadataField: null,
+              });
+              break;
+            case 'oauth2':
+              this.props.onChange({
+                id: faker.random.alphaNumeric(64),
+                type: 'oauth2',
+                clientId: 'client',
+                clientSecret: 'secret',
+                authorizeUrl: 'http://my.iam.local:8082/oauth/authorize',
+                tokenUrl: 'http://my.iam.local:8082/oauth/token',
+                userInfoUrl: 'http://my.iam.local:8082/userinfo',
+                loginUrl: 'http://my.iam.local:8082/login',
+                logoutUrl: 'http://my.iam.local:8082/logout',
+                callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback',
+                accessTokenField: 'access_token',
+                nameField: 'name',
+                emailField: 'email',
+                otoroshiDataField: 'app_metadata | otoroshi_data',
+              });
+              break;
+          }
+        }}
+        possibleValues={[
+          { label: 'Generic oauth2 provider', value: 'oauth2' },
+          { label: 'Basic auth. provider (experimental)', value: 'basic' },
+          { label: 'Ldap auth. provider (experimental)', value: 'ldap' },
+        ]}
+        help="The type of settings to log into your app."
+      />
+    );
     if (settings.type === 'oauth2') {
-      return <div>{selector}<Oauth2ModuleConfig {...this.props} /></div>;
+      return (
+        <div>
+          {selector}
+          <Oauth2ModuleConfig {...this.props} />
+        </div>
+      );
     } else if (settings.type === 'basic') {
-      return <div>{selector}<BasicModuleConfig {...this.props} /></div>;
+      return (
+        <div>
+          {selector}
+          <BasicModuleConfig {...this.props} />
+        </div>
+      );
     } else if (settings.type === 'ldap') {
-      return <div>{selector}<LdapModuleConfig {...this.props} /></div>;
+      return (
+        <div>
+          {selector}
+          <LdapModuleConfig {...this.props} />
+        </div>
+      );
     } else {
-      return <h3>Unknown config type ...</h3>
+      return <h3>Unknown config type ...</h3>;
     }
   }
 }

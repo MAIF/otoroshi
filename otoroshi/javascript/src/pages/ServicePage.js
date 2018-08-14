@@ -746,62 +746,56 @@ export class ServicePage extends Component {
               changeTheValue={this.changeTheValue}
             />
           </Collapse>
-          <Collapse
-            collapsed={this.state.allCollapsed}
-            initCollapsed={true}
-            label="Security">
-              <BooleanInput
-                label="Enforce user login"
-                value={this.state.service.privateApp}
-                help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
-                onChange={v => this.changeTheValue('privateApp', v)}
-              />
-              <SelectInput
-                label="Auth. config"
-                value={this.state.service.authConfigRef}
-                onChange={e => this.changeTheValue('authConfigRef', e)}
-                valuesFrom="/bo/api/proxy/api/auths"
-                transformer={a => ({ value: a.id, label: a.name })}
-                help="..."
-              />
-              <ArrayInput
-                label="Excluded patterns"
-                placeholder="URI pattern"
-                suffix="regex"
-                value={this.state.service.securityExcludedPatterns}
-                help="By default, when security is enabled, everything is secured. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
-                onChange={arr => this.changeTheValue('securityExcludedPatterns', arr)}
-              />
-              <BooleanInput
-                label="Strictly private mode"
-                value={this.state.service.strictlyPrivate}
-                help="Strictly private mode enabled"
-                onChange={v => this.changeTheValue('strictlyPrivate', v)}
-              />
-              <div className="form-group">
-                <label className="col-xs-12 col-sm-2 control-label" />
-                <div className="col-sm-10">
-                  <p
-                    style={{
-                      padding: 10,
-                      borderRadius: 5,
-                      backgroundColor: '#494948',
-                      width: '100%',
-                    }}>
-                    When an app. enforces user login (privateApp), it can be nice to allow logged
-                    users to access apps API without using an apikey (because the user is logged in,
-                    the app is exposing UI and API and we don't want to leak apikeys). By default
-                    Otoroshi allow this for historical reasons, but it means that you have
-                    anticipate that sometimes your api will be called whitout an apikey. If you
-                    don't want this behavior, juste enable the 'stricly private' mode.
-                  </p>
-                </div>
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Security">
+            <BooleanInput
+              label="Enforce user login"
+              value={this.state.service.privateApp}
+              help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
+              onChange={v => this.changeTheValue('privateApp', v)}
+            />
+            <SelectInput
+              label="Auth. config"
+              value={this.state.service.authConfigRef}
+              onChange={e => this.changeTheValue('authConfigRef', e)}
+              valuesFrom="/bo/api/proxy/api/auths"
+              transformer={a => ({ value: a.id, label: a.name })}
+              help="..."
+            />
+            <ArrayInput
+              label="Excluded patterns"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.securityExcludedPatterns}
+              help="By default, when security is enabled, everything is secured. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
+              onChange={arr => this.changeTheValue('securityExcludedPatterns', arr)}
+            />
+            <BooleanInput
+              label="Strictly private mode"
+              value={this.state.service.strictlyPrivate}
+              help="Strictly private mode enabled"
+              onChange={v => this.changeTheValue('strictlyPrivate', v)}
+            />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                <p
+                  style={{
+                    padding: 10,
+                    borderRadius: 5,
+                    backgroundColor: '#494948',
+                    width: '100%',
+                  }}>
+                  When an app. enforces user login (privateApp), it can be nice to allow logged
+                  users to access apps API without using an apikey (because the user is logged in,
+                  the app is exposing UI and API and we don't want to leak apikeys). By default
+                  Otoroshi allow this for historical reasons, but it means that you have anticipate
+                  that sometimes your api will be called whitout an apikey. If you don't want this
+                  behavior, juste enable the 'stricly private' mode.
+                </p>
               </div>
+            </div>
           </Collapse>
-          <Collapse
-            collapsed={this.state.allCollapsed}
-            initCollapsed={true}
-            label="CORS support">
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="CORS support">
             <BooleanInput
               label="Enabled"
               value={this.state.service.cors.enabled}
@@ -826,19 +820,19 @@ export class ServicePage extends Component {
               help="..."
               onChange={v => this.changeTheValue('cors.maxAge', v)}
             />
-            <ArrayInput 
+            <ArrayInput
               label="Expose headers"
               value={this.state.service.cors.exposeHeaders}
               help="..."
               onChange={v => this.changeTheValue('cors.exposeHeaders', v)}
             />
-            <ArrayInput 
+            <ArrayInput
               label="Allow headers"
               value={this.state.service.cors.allowHeaders}
               help="..."
               onChange={v => this.changeTheValue('cors.allowHeaders', v)}
             />
-            <ArrayInput 
+            <ArrayInput
               label="Allow methods"
               value={this.state.service.cors.allowMethods}
               help="..."

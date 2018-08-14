@@ -199,7 +199,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
     (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt) match {
       case (Some(redirectTo), Some(sessionId), Some(host), Some(cp)) =>
-        FastFuture.successful(Redirect(redirectTo).withCookies(env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp): _*))
+        FastFuture.successful(
+          Redirect(redirectTo).withCookies(env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp): _*)
+        )
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
     }
@@ -211,7 +213,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
     (redirectToOpt, hostOpt, cookiePrefOpt) match {
       case (Some(redirectTo), Some(host), Some(cp)) =>
-        FastFuture.successful(Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*))
+        FastFuture.successful(
+          Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*)
+        )
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
     }
@@ -221,7 +225,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"))
   }
 
-  def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]], desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
+  def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]],
+                                desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
     env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
       case None => FastFuture.successful(None)
       case Some(auth) => {
@@ -945,7 +950,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                                                                               )
                                                                                                                             } else {
                                                                                                                               Seq.empty[(String, String)]
-                                                                                                                            }) ++ descriptor.cors.asHeaders(req)
+                                                                                                                            }) ++ descriptor.cors
+                                    .asHeaders(req)
                                   val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
                                   val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                   // meterOut.mark(responseHeader.length)
@@ -1312,36 +1318,40 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
                                 logger.trace("should redirect to " + redirectTo)
                                 descriptor.authConfigRef match {
-                                  case None => Errors.craftResponseResult(
-                                    "Auth. config. ref not found on the descriptor",
-                                    InternalServerError,
-                                    req,
-                                    Some(descriptor),
-                                    Some("errors.auth.config.ref.not.found"),
-                                    duration = System.currentTimeMillis - start,
-                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                  )
+                                  case None =>
+                                    Errors.craftResponseResult(
+                                      "Auth. config. ref not found on the descriptor",
+                                      InternalServerError,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.auth.config.ref.not.found"),
+                                      duration = System.currentTimeMillis - start,
+                                      overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                    )
                                   case Some(ref) => {
                                     env.datastores.authConfigsDataStore.findById(ref).flatMap {
-                                      case None => Errors.craftResponseResult(
-                                        "Auth. config. not found on the descriptor",
-                                        InternalServerError,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.auth.config.not.found"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                      )
+                                      case None =>
+                                        Errors.craftResponseResult(
+                                          "Auth. config. not found on the descriptor",
+                                          InternalServerError,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.auth.config.not.found"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
                                       case Some(auth) => {
-                                        FastFuture.successful(Results
-                                          .Redirect(redirectTo)
-                                          .discardingCookies(
-                                            env.removePrivateSessionCookies(
-                                              ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
-                                              descriptor,
-                                              auth
-                                            ): _*
-                                          ))
+                                        FastFuture.successful(
+                                          Results
+                                            .Redirect(redirectTo)
+                                            .discardingCookies(
+                                              env.removePrivateSessionCookies(
+                                                ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
+                                                descriptor,
+                                                auth
+                                              ): _*
+                                            )
+                                        )
                                       }
                                     }
                                   }
@@ -1483,7 +1493,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   duration = System.currentTimeMillis - start,
                                   overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                 )
-                              } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined && descriptor.cors.shouldApplyCors(req.path)) {
+                              } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
+                                           .get("Access-Control-Request-Method")
+                                           .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
                                 // handle cors preflight request
                                 if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
                                   Errors.craftResponseResult(
@@ -1496,7 +1508,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   )
                                 } else {
-                                  FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders(req): _*))
+                                  FastFuture.successful(
+                                    Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders(req): _*)
+                                  )
                                 }
                               } else if (isUp) {
                                 if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
@@ -1505,8 +1519,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   } else {
                                     isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
                                       case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
-                                      case Some(user) => passWithAuth0(globalConfig)
-                                      case None => passWithApiKey(globalConfig)
+                                      case Some(user)                            => passWithAuth0(globalConfig)
+                                      case None                                  => passWithApiKey(globalConfig)
                                     }
                                   }
                                 } else {

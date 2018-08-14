@@ -24,13 +24,12 @@ export class GenericLoginPage extends Component {
     return (
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Login</h3>
-        <form className="form-horizontal" style={{ textAlign: 'left' }} method={this.props.method} action={this.props.action}>
-          <input
-            type="hidden"
-            name="token"
-            className="form-control"
-            value={this.props.token}
-          />
+        <form
+          className="form-horizontal"
+          style={{ textAlign: 'left' }}
+          method={this.props.method}
+          action={this.props.action}>
+          <input type="hidden" name="token" className="form-control" value={this.props.token} />
           <div className="form-group">
             <label className="col-sm-2 control-label">Username</label>
             <div className="col-sm-10">

@@ -5,9 +5,8 @@ import 'brace/mode/html';
 import 'brace/theme/monokai';
 
 export class CodeInput extends Component {
-
   state = {
-    value: null
+    value: null,
   };
 
   onChange = e => {
@@ -17,8 +16,8 @@ export class CodeInput extends Component {
       this.setState({ value: null }, () => {
         this.props.onChange(e);
       });
-    } catch(ex) {
-      this.setState({ value: e })
+    } catch (ex) {
+      this.setState({ value: e });
     }
   };
 

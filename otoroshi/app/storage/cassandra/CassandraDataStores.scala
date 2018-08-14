@@ -111,6 +111,6 @@ class CassandraDataStores(configuration: Configuration,
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
-  override def authConfigsDataStore: AuthConfigsDataStore     = _globalOAuth2ConfigDataStore
+  override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
 
 }

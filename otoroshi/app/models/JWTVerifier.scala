@@ -624,18 +624,19 @@ case class LocalJwtVerifier(
     with AsJson {
 
   def asJson: JsValue = Json.obj(
-    "type"         -> "local",
-    "enabled"      -> this.enabled,
-    "strict"       -> this.strict,
+    "type"             -> "local",
+    "enabled"          -> this.enabled,
+    "strict"           -> this.strict,
     "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply)),
-    "source"       -> this.source.asJson,
-    "algoSettings" -> this.algoSettings.asJson,
-    "strategy"     -> this.strategy.asJson
+    "source"           -> this.source.asJson,
+    "algoSettings"     -> this.algoSettings.asJson,
+    "strategy"         -> this.strategy.asJson
   )
 
   override def isRef = false
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
 case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with AsJson {
@@ -686,10 +687,11 @@ case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with
     }
   }
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
-    case Some(verifier) => verifier.shouldBeVerified(path)
-    case None => Future.failed(new RuntimeException("Jwt verifier not found ..."))
-  }
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
+      case Some(verifier) => verifier.shouldBeVerified(path)
+      case None           => Future.failed(new RuntimeException("Jwt verifier not found ..."))
+    }
 }
 
 object RefJwtVerifier extends FromJson[RefJwtVerifier] {
@@ -742,23 +744,25 @@ case class GlobalJwtVerifier(
     with AsJson {
 
   def asJson: JsValue = Json.obj(
-    "type"         -> "global",
-    "enabled"      -> this.enabled,
-    "id"           -> this.id,
-    "name"         -> this.name,
-    "desc"         -> this.desc,
-    "strict"       -> this.strict,
+    "type"             -> "global",
+    "enabled"          -> this.enabled,
+    "id"               -> this.id,
+    "name"             -> this.name,
+    "desc"             -> this.desc,
+    "strict"           -> this.strict,
     "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply)),
-    "source"       -> this.source.asJson,
-    "algoSettings" -> this.algoSettings.asJson,
-    "strategy"     -> this.strategy.asJson
+    "source"           -> this.source.asJson,
+    "algoSettings"     -> this.algoSettings.asJson,
+    "strategy"         -> this.strategy.asJson
   )
 
   override def isRef = false
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.globalJwtVerifierDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.globalJwtVerifierDataStore.set(this)
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
 object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
