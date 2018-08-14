@@ -378,6 +378,18 @@ export class LdapModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.searchBase', v)}
         />
         <TextInput
+          label="Users search base"
+          value={settings.userBase}
+          help="..."
+          onChange={v => changeTheValue(path + '.userBase', v)}
+        />
+        <TextInput
+          label="Group filter"
+          value={settings.groupFilter}
+          help="..."
+          onChange={v => changeTheValue(path + '.groupFilter', v)}
+        />
+        <TextInput
           label="Search Filter"
           value={settings.searchFilter}
           help="use ${username} as placeholder for searched username"

@@ -70,9 +70,11 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
       desc = (json \ "desc").asOpt[String].getOrElse("--"),
       serverUrl = (json \ "serverUrl").as[String],
       searchBase = (json \ "searchBase").as[String],
+      userBase = (json \ "userBase").asOpt[String].filterNot(_.trim.isEmpty),
+      groupFilter = (json \ "groupFilter").asOpt[String].filterNot(_.trim.isEmpty),
       searchFilter = (json \ "searchFilter").as[String],
-      adminUsername = (json \ "username").asOpt[String].filterNot(_.trim.isEmpty),
-      adminPassword = (json \ "password").asOpt[String].filterNot(_.trim.isEmpty),
+      adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
+      adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
       nameField = (json \ "nameField").as[String],
       emailField = (json \ "emailField").as[String],
       metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty)
@@ -88,7 +90,9 @@ case class LdapAuthModuleConfig(
   desc: String,
   serverUrl: String,
   searchBase: String,
-  searchFilter: String = "(uid=${username})",
+  userBase: Option[String] = None,
+  groupFilter: Option[String] = None,
+  searchFilter: String = "(mail=${username})",
   adminUsername: Option[String] = None,
   adminPassword: Option[String] = None,
   nameField: String = "cn",
@@ -106,6 +110,8 @@ case class LdapAuthModuleConfig(
     "desc" -> this.desc,
     "serverUrl" -> this.serverUrl,
     "searchBase" -> this.searchBase,
+    "userBase" -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "groupFilter" -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "searchFilter" -> this.searchFilter,
     "adminUsername" -> this.adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "adminPassword" -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -136,6 +142,7 @@ case class LdapAuthModuleConfig(
     import javax.naming._
     import javax.naming.directory._
     import javax.naming.ldap._
+    import collection.JavaConverters._
 
     val env = new util.Hashtable[String, AnyRef]
     env.put(Context.SECURITY_AUTHENTICATION, "simple")
@@ -149,28 +156,46 @@ case class LdapAuthModuleConfig(
     val searchControls = new SearchControls()
     searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE)
 
-    val res = ctx.search(searchBase, searchFilter.replace("${username}", username), searchControls)
+    val usersInGroup: Seq[String] = groupFilter.map { filter =>
+      val groupSearch = ctx.search(searchBase, filter, searchControls)
+      val uids = if (groupSearch.hasMore) {
+        val item = groupSearch.next()
+        val attrs = item.getAttributes
+        attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
+          attr.getAll.asScala.toSeq.map(_.toString)
+        }
+      } else {
+        Seq.empty[String]
+      }
+      groupSearch.close()
+      uids
+    }.getOrElse(Seq.empty[String])
+    val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase, searchFilter.replace("${username}", username), searchControls)
     val boundUser: Option[LdapAuthUser] = if (res.hasMore) {
       val item = res.next()
       val dn = item.getNameInNamespace
-      val attrs = item.getAttributes
-      val env2 = new util.Hashtable[String, AnyRef]
-      env2.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-      env2.put(Context.PROVIDER_URL, serverUrl)
-      env2.put(Context.SECURITY_AUTHENTICATION, "simple")
-      env2.put(Context.SECURITY_PRINCIPAL, dn)
-      env2.put(Context.SECURITY_CREDENTIALS, password)
-      scala.util.Try {
-        val ctx2 = new InitialDirContext(env2)
-        ctx2.close()
-        Some(LdapAuthUser(
-          name = attrs.get(nameField).toString.split(":").last.trim,
-          email = attrs.get(emailField).toString.split(":").last.trim,
-          metadata = metadataField.map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject]).getOrElse(Json.obj())
-        ))
-      } recover {
-        case _ => None
-      } get
+      if (groupFilter.map(_ => usersInGroup.contains(dn)).getOrElse(true)) {
+        val attrs = item.getAttributes
+        val env2 = new util.Hashtable[String, AnyRef]
+        env2.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+        env2.put(Context.PROVIDER_URL, serverUrl)
+        env2.put(Context.SECURITY_AUTHENTICATION, "simple")
+        env2.put(Context.SECURITY_PRINCIPAL, dn)
+        env2.put(Context.SECURITY_CREDENTIALS, password)
+        scala.util.Try {
+          val ctx2 = new InitialDirContext(env2)
+          ctx2.close()
+          Some(LdapAuthUser(
+            name = attrs.get(nameField).toString.split(":").last.trim,
+            email = attrs.get(emailField).toString.split(":").last.trim,
+            metadata = metadataField.map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject]).getOrElse(Json.obj())
+          ))
+        } recover {
+          case _ => None
+        } get
+      } else {
+        None
+      }
     } else {
       None
     }
