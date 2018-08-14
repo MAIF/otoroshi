@@ -285,46 +285,46 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                 }
                 _ = logger.warn("OAuth config migration - creating global oauth configuration for private apps")
                 _ <- privateAppsAuth0Config
-                  .map(
-                    c =>
-                      env.datastores.authConfigsDataStore.set(
-                        GenericOauth2ModuleConfig(
-                          id = "confidential-apps",
-                          name = "Confidential apps Auth0 provider",
-                          desc = "Use to be the Auth0 global config. for private apps",
-                          clientId = c.clientId,
-                          clientSecret = c.secret,
-                          tokenUrl = s"https://${c.domain}/oauth/token",
-                          authorizeUrl = s"https://${c.domain}/authorize",
-                          userInfoUrl = s"https://${c.domain}/userinfo",
-                          loginUrl = s"https://${c.domain}/authorize",
-                          logoutUrl = s"https://${c.domain}/logout",
-                          callbackUrl = c.callbackURL
+                      .map(
+                        c =>
+                          env.datastores.authConfigsDataStore.set(
+                            GenericOauth2ModuleConfig(
+                              id = "confidential-apps",
+                              name = "Confidential apps Auth0 provider",
+                              desc = "Use to be the Auth0 global config. for private apps",
+                              clientId = c.clientId,
+                              clientSecret = c.secret,
+                              tokenUrl = s"https://${c.domain}/oauth/token",
+                              authorizeUrl = s"https://${c.domain}/authorize",
+                              userInfoUrl = s"https://${c.domain}/userinfo",
+                              loginUrl = s"https://${c.domain}/authorize",
+                              logoutUrl = s"https://${c.domain}/logout",
+                              callbackUrl = c.callbackURL
+                            )
                         )
                       )
-                  )
-                  .getOrElse(FastFuture.successful(()))
+                      .getOrElse(FastFuture.successful(()))
                 _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
                 _ <- backofficeAuth0Config
-                  .map(
-                    c =>
-                      env.datastores.authConfigsDataStore.set(
-                        GenericOauth2ModuleConfig(
-                          id = "otoroshi-backoffice",
-                          name = "Otoroshi backoffic Auth0 provider",
-                          desc = "Use to be the Auth0 global config. for Otoroshi backoffice",
-                          clientId = c.clientId,
-                          clientSecret = c.secret,
-                          tokenUrl = s"https://${c.domain}/oauth/token",
-                          authorizeUrl = s"https://${c.domain}/authorize",
-                          userInfoUrl = s"https://${c.domain}/userinfo",
-                          loginUrl = s"https://${c.domain}/authorize",
-                          logoutUrl = s"https://${c.domain}/logout",
-                          callbackUrl = c.callbackURL
+                      .map(
+                        c =>
+                          env.datastores.authConfigsDataStore.set(
+                            GenericOauth2ModuleConfig(
+                              id = "otoroshi-backoffice",
+                              name = "Otoroshi backoffic Auth0 provider",
+                              desc = "Use to be the Auth0 global config. for Otoroshi backoffice",
+                              clientId = c.clientId,
+                              clientSecret = c.secret,
+                              tokenUrl = s"https://${c.domain}/oauth/token",
+                              authorizeUrl = s"https://${c.domain}/authorize",
+                              userInfoUrl = s"https://${c.domain}/userinfo",
+                              loginUrl = s"https://${c.domain}/authorize",
+                              logoutUrl = s"https://${c.domain}/logout",
+                              callbackUrl = c.callbackURL
+                            )
                         )
                       )
-                  )
-                  .getOrElse(FastFuture.successful(()))
+                      .getOrElse(FastFuture.successful(()))
                 _      = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
                 config <- env.datastores.globalConfigDataStore.findById("global").map(_.get)
                 configWithBackOffice = backofficeAuth0Config

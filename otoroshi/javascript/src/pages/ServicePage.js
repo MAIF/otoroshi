@@ -627,7 +627,7 @@ export class ServicePage extends Component {
             <BooleanInput
               label="Redirect to local"
               value={this.state.service.redirectToLocal}
-              help="If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests"
+              help="If you work locally with Otoroshi, you may want to use that feature to redirect one specific service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests"
               onChange={v => this.changeTheValue('redirectToLocal', v)}
               after={() => {
                 return (
@@ -785,12 +785,12 @@ export class ServicePage extends Component {
                     backgroundColor: '#494948',
                     width: '100%',
                   }}>
-                  When an app. enforces user authentication (ex. privateApp), it can be nice to allow logged
-                  users to access apps API without using an apikey (because the user is logged in,
-                  the app is exposing UI and API and we don't want to leak apikeys). By default
-                  Otoroshi allow this for historical reasons, but it means that you have anticipate
-                  that sometimes your api will be called whitout an apikey. If you don't want this
-                  behavior, juste enable the strict mode.
+                  When an app. enforces user authentication (ex. privateApp), it can be nice to
+                  allow logged users to access apps API without using an apikey (because the user is
+                  logged in, the app is exposing UI and API and we don't want to leak apikeys). By
+                  default Otoroshi allow this for historical reasons, but it means that you have
+                  anticipate that sometimes your api will be called whitout an apikey. If you don't
+                  want this behavior, juste enable the strict mode.
                 </p>
               </div>
             </div>
@@ -902,7 +902,7 @@ export class ServicePage extends Component {
                       <a
                         href={`/bo/dashboard/jwt-verifiers/edit/${
                           this.state.service.jwtVerifier.id
-                          }`}
+                        }`}
                         className="btn btn-success">
                         <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
                       </a>
