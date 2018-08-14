@@ -733,11 +733,11 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
             />
             <ArrayInput
-              label="Secured exclusions"
+              label="Excluded patterns"
               placeholder="URI pattern"
               suffix="regex"
               value={this.state.service.secComExcludedPatterns}
-              help="URI patterns excluded from secured communications"
+              help="URI patterns excluded from the otoroshi exchange protocol"
               onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
             />
             <AlgoSettings
@@ -746,11 +746,11 @@ export class ServicePage extends Component {
               changeTheValue={this.changeTheValue}
             />
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Security">
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Authentication">
             <BooleanInput
-              label="Enforce user login"
+              label="Enforce user authentication"
               value={this.state.service.privateApp}
-              help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain."
+              help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the chosen authentication module."
               onChange={v => this.changeTheValue('privateApp', v)}
             />
             <SelectInput
@@ -770,9 +770,9 @@ export class ServicePage extends Component {
               onChange={arr => this.changeTheValue('securityExcludedPatterns', arr)}
             />
             <BooleanInput
-              label="Strictly private mode"
+              label="Strict mode"
               value={this.state.service.strictlyPrivate}
-              help="Strictly private mode enabled"
+              help="Strict mode enabled"
               onChange={v => this.changeTheValue('strictlyPrivate', v)}
             />
             <div className="form-group">
@@ -785,12 +785,12 @@ export class ServicePage extends Component {
                     backgroundColor: '#494948',
                     width: '100%',
                   }}>
-                  When an app. enforces user login (privateApp), it can be nice to allow logged
+                  When an app. enforces user authentication (ex. privateApp), it can be nice to allow logged
                   users to access apps API without using an apikey (because the user is logged in,
                   the app is exposing UI and API and we don't want to leak apikeys). By default
                   Otoroshi allow this for historical reasons, but it means that you have anticipate
                   that sometimes your api will be called whitout an apikey. If you don't want this
-                  behavior, juste enable the 'stricly private' mode.
+                  behavior, juste enable the strict mode.
                 </p>
               </div>
             </div>
@@ -850,56 +850,74 @@ export class ServicePage extends Component {
           <Collapse
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label={
-              <span>
-                Canary mode <i className="fa fa-twitter" />
-              </span>
-            }>
-            <BooleanInput
-              label="Enabled"
-              value={this.state.service.canary.enabled}
-              help="Canary mode enabled"
-              onChange={v => this.changeTheValue('canary.enabled', v)}
+            label="JWT tokens verification">
+            <SelectInput
+              label="Type"
+              value={this.state.service.jwtVerifier.type}
+              onChange={e => {
+                switch (e) {
+                  case 'local':
+                    this.changeTheValue('jwtVerifier', JwtVerifier.defaultVerifier);
+                    break;
+                  case 'ref':
+                    this.changeTheValue('jwtVerifier', {
+                      type: 'ref',
+                      enabled: this.state.service.jwtVerifier.enabled,
+                      id: null,
+                    });
+                    break;
+                }
+              }}
+              possibleValues={[
+                { label: 'Local to service descriptor', value: 'local' },
+                { label: 'Reference to global definition', value: 'ref' },
+              ]}
+              help="..."
             />
-            <NumberInput
-              suffix="ratio"
-              label="Traffic split"
-              help="Ratio of traffic that will be sent to canary targets. For instance, if traffic is at 0.2, for 10 request, 2 request will go on canary targets and 8 will go on regular targets."
-              value={this.state.service.canary.traffic}
-              onChange={v => this.changeTheValue('canary.traffic', v)}
-            />
-            <ArrayInput
-              label="Targets"
-              placeholder="Target URL"
-              value={this.state.service.canary.targets.map(this.transformTarget)}
-              help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
-              onChange={this.changeCanaryTargetsValue}
-            />
-            <TextInput
-              label="Targets root"
-              placeholder="The root URL of the target service"
-              value={this.state.service.canary.root}
-              help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
-              onChange={e => this.changeTheValue('canary.root', e)}
-            />
-            <CanaryCampaign serviceId={this.state.service.id} />
-          </Collapse>
-          <Collapse
-            collapsed={this.state.allCollapsed}
-            initCollapsed={true}
-            label="HealthCheck settings">
-            <BooleanInput
-              label="HealthCheck enabled"
-              value={this.state.service.healthCheck.enabled}
-              help="To help failing fast, you can activate healthcheck on a specific URL."
-              onChange={v => this.changeTheValue('healthCheck.enabled', v)}
-            />
-            <TextInput
-              label="HealthCheck url"
-              value={this.state.service.healthCheck.url}
-              help="The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete."
-              onChange={v => this.changeTheValue('healthCheck.url', v)}
-            />
+            {this.state.service.jwtVerifier.type === 'ref' && (
+              <div>
+                <SelectInput
+                  label="Verifier"
+                  value={this.state.service.jwtVerifier.id}
+                  onChange={e => this.changeTheValue('jwtVerifier.id', e)}
+                  valuesFrom="/bo/api/proxy/api/verifiers"
+                  transformer={a => ({ value: a.id, label: a.name })}
+                  help="..."
+                />
+                <BooleanInput
+                  label="Enabled"
+                  value={this.state.service.jwtVerifier.enabled}
+                  help="Is JWT verification enabled for this service"
+                  onChange={v => this.changeTheValue('jwtVerifier.enabled', v)}
+                />
+                <div className="form-group">
+                  <label className="col-xs-12 col-sm-2 control-label" />
+                  <div className="col-sm-10">
+                    {!this.state.service.jwtVerifier.id && (
+                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
+                        <i className="glyphicon glyphicon-plus" /> Create a new Jwt Verifier config
+                      </a>
+                    )}
+                    {this.state.service.jwtVerifier.id && (
+                      <a
+                        href={`/bo/dashboard/jwt-verifiers/edit/${
+                          this.state.service.jwtVerifier.id
+                          }`}
+                        className="btn btn-success">
+                        <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {this.state.service.jwtVerifier.type === 'local' && (
+              <JwtVerifier
+                path="jwtVerifier"
+                changeTheValue={this.changeTheValue}
+                verifier={this.state.service.jwtVerifier}
+              />
+            )}
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
@@ -1028,74 +1046,56 @@ export class ServicePage extends Component {
           <Collapse
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="JWT tokens verification">
-            <SelectInput
-              label="Type"
-              value={this.state.service.jwtVerifier.type}
-              onChange={e => {
-                switch (e) {
-                  case 'local':
-                    this.changeTheValue('jwtVerifier', JwtVerifier.defaultVerifier);
-                    break;
-                  case 'ref':
-                    this.changeTheValue('jwtVerifier', {
-                      type: 'ref',
-                      enabled: this.state.service.jwtVerifier.enabled,
-                      id: null,
-                    });
-                    break;
-                }
-              }}
-              possibleValues={[
-                { label: 'Local to service descriptor', value: 'local' },
-                { label: 'Reference to global definition', value: 'ref' },
-              ]}
-              help="..."
+            label={
+              <span>
+                Canary mode <i className="fa fa-twitter" />
+              </span>
+            }>
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.canary.enabled}
+              help="Canary mode enabled"
+              onChange={v => this.changeTheValue('canary.enabled', v)}
             />
-            {this.state.service.jwtVerifier.type === 'ref' && (
-              <div>
-                <SelectInput
-                  label="Verifier"
-                  value={this.state.service.jwtVerifier.id}
-                  onChange={e => this.changeTheValue('jwtVerifier.id', e)}
-                  valuesFrom="/bo/api/proxy/api/verifiers"
-                  transformer={a => ({ value: a.id, label: a.name })}
-                  help="..."
-                />
-                <BooleanInput
-                  label="Enabled"
-                  value={this.state.service.jwtVerifier.enabled}
-                  help="Is JWT verification enabled for this service"
-                  onChange={v => this.changeTheValue('jwtVerifier.enabled', v)}
-                />
-                <div className="form-group">
-                  <label className="col-xs-12 col-sm-2 control-label" />
-                  <div className="col-sm-10">
-                    {!this.state.service.jwtVerifier.id && (
-                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
-                        <i className="glyphicon glyphicon-plus" /> Create a new Jwt Verifier config
-                      </a>
-                    )}
-                    {this.state.service.jwtVerifier.id && (
-                      <a
-                        href={`/bo/dashboard/jwt-verifiers/edit/${
-                          this.state.service.jwtVerifier.id
-                        }`}
-                        className="btn btn-success">
-                        <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-            {this.state.service.jwtVerifier.type === 'local' && (
-              <JwtVerifier
-                path="jwtVerifier"
-                changeTheValue={this.changeTheValue}
-                verifier={this.state.service.jwtVerifier}
-              />
-            )}
+            <NumberInput
+              suffix="ratio"
+              label="Traffic split"
+              help="Ratio of traffic that will be sent to canary targets. For instance, if traffic is at 0.2, for 10 request, 2 request will go on canary targets and 8 will go on regular targets."
+              value={this.state.service.canary.traffic}
+              onChange={v => this.changeTheValue('canary.traffic', v)}
+            />
+            <ArrayInput
+              label="Targets"
+              placeholder="Target URL"
+              value={this.state.service.canary.targets.map(this.transformTarget)}
+              help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
+              onChange={this.changeCanaryTargetsValue}
+            />
+            <TextInput
+              label="Targets root"
+              placeholder="The root URL of the target service"
+              value={this.state.service.canary.root}
+              help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
+              onChange={e => this.changeTheValue('canary.root', e)}
+            />
+            <CanaryCampaign serviceId={this.state.service.id} />
+          </Collapse>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="HealthCheck settings">
+            <BooleanInput
+              label="HealthCheck enabled"
+              value={this.state.service.healthCheck.enabled}
+              help="To help failing fast, you can activate healthcheck on a specific URL."
+              onChange={v => this.changeTheValue('healthCheck.enabled', v)}
+            />
+            <TextInput
+              label="HealthCheck url"
+              value={this.state.service.healthCheck.url}
+              help="The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete."
+              onChange={v => this.changeTheValue('healthCheck.url', v)}
+            />
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
