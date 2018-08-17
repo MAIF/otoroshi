@@ -1,25 +1,11 @@
-FROM node:8.6.0
+FROM node:10.6.0
 
-MAINTAINER MAIF <oss@maif.fr>
+RUN mkdir -p /server
+WORKDIR /server
 
-ENV APP_NAME otoroshi-elastic-connector
-ENV APP_VERSION 1.0.0
+COPY . /server
 
-# Install Yarn
-
-WORKDIR /opt
-
-RUN curl -o- -L https://yarnpkg.com/install.sh | bash
-
-# Copy sources
-
-RUN mkdir -p /usr/app/
-COPY . /usr/app/
-WORKDIR /usr/app/
-
-# Install deps
-
-RUN yarn install 
+RUN yarn install
 
 ENTRYPOINT ["./entrypoint.sh"]
 

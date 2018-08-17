@@ -253,7 +253,7 @@ class SnowMonkey(implicit env: Env) {
   }
 
   private def notUserFacing(descriptor: ServiceDescriptor): Boolean =
-    !descriptor.userFacing && !descriptor.publicPatterns.contains("/.*")
+    !descriptor.userFacing // && !descriptor.publicPatterns.contains("/.*")
 
   private def introduceSnowMonkeyDefinedChaos(reqNumber: Long,
                                               config: SnowMonkeyConfig,

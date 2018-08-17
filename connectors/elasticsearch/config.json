@@ -3,5 +3,8 @@
         "host": "localhost",  
         "protocol": "http",
         "port": 9200
+    },
+    "express": {
+        "jsonlimit": "300mb"
     }
 }

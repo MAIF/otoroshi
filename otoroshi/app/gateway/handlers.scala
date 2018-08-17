@@ -178,6 +178,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         case _ if request.relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
         case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
         case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
+        case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")     => Some(setPrivateAppsCookies())
+        case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout")    => Some(removePrivateAppsCookies())
         case env.backOfficeHost if !isSecured && toHttps && env.isProd              => Some(redirectToHttps())
         case env.privateAppsHost if !isSecured && toHttps && env.isProd             => Some(redirectToHttps())
         case env.adminApiHost if env.exposeAdminApi                                 => super.routeRequest(request)

@@ -15,6 +15,7 @@ const ES_HOST = process.env.ES_HOST || CONFIG.elasticsearch.host || 'localhost';
 const ES_PORT = process.env.ES_PORT || CONFIG.elasticsearch.port || 9200;
 const ES_PROTOCOL = process.env.ES_PROTOCOL || CONFIG.elasticsearch.protocol || 'http';
 const ES_AUTH = process.env.ES_AUTH || CONFIG.elasticsearch.auth;
+const JSON_LIMIT = process.env.JSON_LIMIT || CONFIG.express.jsonlimit;
 
 const INDEX_NAME = 'analytics';
 const TYPE_NAME = 'analytics';
@@ -40,7 +41,7 @@ const client = new elasticsearch.Client({
 
 client.indices.putTemplate(
   {
-    id: 'analytics-tpl',
+    name: 'analytics-tpl',
     body: TEMPLATE,
   },
   (error, response) => {
@@ -52,7 +53,7 @@ client.indices.putTemplate(
   }
 );
 
-const app = express().use(bodyParser.json());
+const app = express().use(bodyParser.json({ limit: JSON_LIMIT }));
 
 app.post('/api/v1/events', (req, res) => {
   const body = req.body;
@@ -79,10 +80,18 @@ app.post('/api/v1/events', (req, res) => {
             .type('application/json')
             .status(500);
         } else {
-          res
-            .status(200)
-            .type('application/json')
-            .send({});
+          // console.log(JSON.stringify(resp, null, 2))
+          if (resp.errors) {
+            res
+              .type('application/json')
+              .status(500)
+              .send(resp)
+          } else {
+            res
+              .status(200)
+              .type('application/json')
+              .send({ });
+          }
         }
       }
     );
@@ -463,11 +472,13 @@ function aggregation(operation, req, res) {
 
 const handleError = (req, res) => func => (err, response) => {
   if (err) {
+    console.log(err);
     res
       .status(500)
       .type('application/json')
       .send({
         error: 'Error',
+        err: err.message
       });
   } else {
     func(response);
