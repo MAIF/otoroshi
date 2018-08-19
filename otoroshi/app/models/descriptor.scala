@@ -381,8 +381,8 @@ object ServiceDescriptor {
         ServiceDescriptor(
           id = (json \ "id").as[String],
           groupId = (json \ "groupId").as[String],
-          name = (json \ "name").as[String],
-          env = (json \ "env").as[String],
+          name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
+          env = (json \ "env").asOpt[String].getOrElse("prod"),
           domain = (json \ "domain").as[String],
           subdomain = (json \ "subdomain").as[String],
           targets = (json \ "targets")

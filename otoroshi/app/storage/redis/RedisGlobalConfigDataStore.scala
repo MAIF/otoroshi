@@ -180,15 +180,15 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   }
 
   override def fullImport(export: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    val config             = GlobalConfig.fromJsons((export \ "config").as[JsObject])
-    val admins             = (export \ "admins").as[JsArray]
-    val simpleAdmins       = (export \ "simpleAdmins").as[JsArray]
-    val serviceGroups      = (export \ "serviceGroups").as[JsArray]
-    val apiKeys            = (export \ "apiKeys").as[JsArray]
-    val serviceDescriptors = (export \ "serviceDescriptors").as[JsArray]
-    val errorTemplates     = (export \ "errorTemplates").as[JsArray]
-    val jwtVerifiers       = (export \ "jwtVerifiers").as[JsArray]
-    val authConfigs        = (export \ "authConfigs").as[JsArray]
+    val config             = GlobalConfig.fromJsons((export \ "config").asOpt[JsObject].getOrElse(GlobalConfig().toJson))
+    val admins             = (export \ "admins").asOpt[JsArray].getOrElse(Json.arr())
+    val simpleAdmins       = (export \ "simpleAdmins").asOpt[JsArray].getOrElse(Json.arr())
+    val serviceGroups      = (export \ "serviceGroups").asOpt[JsArray].getOrElse(Json.arr())
+    val apiKeys            = (export \ "apiKeys").asOpt[JsArray].getOrElse(Json.arr())
+    val serviceDescriptors = (export \ "serviceDescriptors").asOpt[JsArray].getOrElse(Json.arr())
+    val errorTemplates     = (export \ "errorTemplates").asOpt[JsArray].getOrElse(Json.arr())
+    val jwtVerifiers       = (export \ "jwtVerifiers").asOpt[JsArray].getOrElse(Json.arr())
+    val authConfigs        = (export \ "authConfigs").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli.flushall()

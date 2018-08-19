@@ -319,55 +319,57 @@ class Env(val configuration: Configuration,
               .getOptional[Seq[String]]("app.importFromHeaders")
               .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
               .getOrElse(Seq.empty[(String, String)])
-            configuration.getOptional[String]("app.importFrom") match {
-              case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
-                logger.warn(s"Importing from URL: $url")
-                wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
-                  val json = resp.json.as[JsObject]
+            if (configuration.has("app.importFrom")) {
+              configuration.getOptional[String]("app.importFrom") match {
+                case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
+                  logger.warn(s"Importing from URL: $url")
+                  wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
+                    val json = resp.json.as[JsObject]
+                    datastores.globalConfigDataStore.fullImport(json)(ec, this)
+                  }
+                }
+                case Some(path) => {
+                  logger.warn(s"Importing from: $path")
+                  val source = Source.fromFile(path).getLines().mkString("\n")
+                  val json = Json.parse(source).as[JsObject]
                   datastores.globalConfigDataStore.fullImport(json)(ec, this)
                 }
               }
-              case Some(path) => {
-                logger.warn(s"Importing from: $path")
-                val source = Source.fromFile(path).getLines().mkString("\n")
-                val json   = Json.parse(source).as[JsObject]
-                datastores.globalConfigDataStore.fullImport(json)(ec, this)
-              }
-              case _ => {
-                configuration.getOptional[play.api.Configuration]("app.importFrom") match {
-                  case Some(obj) => {
-                    val importJson = Json
-                      .parse(
-                        obj.underlying
-                          .root()
-                          .render(ConfigRenderOptions.concise())
-                      )
-                      .as[JsObject]
-                    datastores.globalConfigDataStore.fullImport(importJson)(ec, this)
-                  }
-                  case _ => {
-                    val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
-                    val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
-                                                    "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
-                                                    "default-apikey",
-                                                    "default")
-                    logger.warn(
-                      s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+            } else {
+              configuration.getOptional[play.api.Configuration]("app.initialData") match {
+                case Some(obj) => {
+                  val importJson = Json
+                    .parse(
+                      obj.underlying
+                        .root()
+                        .render(ConfigRenderOptions.concise())
                     )
-                    for {
-                      _ <- defaultConfig.save()(ec, this)
-                      _ <- backOfficeGroup.save()(ec, this)
-                      _ <- defaultGroup.save()(ec, this)
-                      _ <- backOfficeDescriptor.save()(ec, this)
-                      _ <- backOfficeApiKey.save()(ec, this)
-                      _ <- defaultGroupApiKey.save()(ec, this)
-                      _ <- datastores.simpleAdminDataStore
-                            .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(
-                              ec,
-                              this
-                            )
-                    } yield ()
-                  }
+                    .as[JsObject]
+                  logger.warn(s"Importing from config file ${Json.prettyPrint(importJson)}")
+                  datastores.globalConfigDataStore.fullImport(importJson)(ec, this)
+                }
+                case _ => {
+                  val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
+                  val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
+                    "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
+                    "default-apikey",
+                    "default")
+                  logger.warn(
+                    s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+                  )
+                  for {
+                    _ <- defaultConfig.save()(ec, this)
+                    _ <- backOfficeGroup.save()(ec, this)
+                    _ <- defaultGroup.save()(ec, this)
+                    _ <- backOfficeDescriptor.save()(ec, this)
+                    _ <- backOfficeApiKey.save()(ec, this)
+                    _ <- defaultGroupApiKey.save()(ec, this)
+                    _ <- datastores.simpleAdminDataStore
+                      .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(
+                        ec,
+                        this
+                      )
+                  } yield ()
                 }
               }
             }
