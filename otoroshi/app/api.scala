@@ -85,6 +85,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val swaggerController     = wire[SwaggerController]
   lazy val apiController         = wire[ApiController]
+  lazy val analyticsController   = wire[AnalyticsController]
   lazy val auth0Controller       = wire[Auth0Controller]
   lazy val backOfficeController  = wire[BackOfficeController]
   lazy val privateAppsController = wire[PrivateAppsController]

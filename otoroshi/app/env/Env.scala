@@ -9,6 +9,7 @@ import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
 import com.typesafe.config.{ConfigFactory, ConfigObject, ConfigRenderOptions}
 import events._
+import events.impl.ElasticAnalytics
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
 import models._
@@ -237,6 +238,17 @@ class Env(val configuration: Configuration,
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
+
+  lazy val elasticAnalyticsConfig: Option[ElasticAnalyticsConfig] = configuration.getOptional[String]("app.elastic.url").map { url =>
+    models.ElasticAnalyticsConfig(
+      url,
+      configuration.getOptional[String]("app.elastic.index"),
+      configuration.getOptional[String]("app.elastic.user"),
+      configuration.getOptional[String]("app.elastic.password")
+    )
+  }
+
+  lazy val elasticAnalytics: Option[ElasticAnalytics] = elasticAnalyticsConfig.map(c => new ElasticAnalytics(c, wsClient))
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 

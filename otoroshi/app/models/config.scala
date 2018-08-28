@@ -12,9 +12,38 @@ import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String]) {
-  def toJson = Webhook.format.writes(this)
+
+trait AnalyticsConfig {
+  def toJson: JsValue = AnalyticsConfig.format.writes(this)
 }
+object AnalyticsConfig {
+  val reads: Reads[AnalyticsConfig] = Reads {
+    case json: JsObject if (json \ "type").asOpt[String].contains("elastic") => ElasticAnalytics.format.reads(json)
+    case json: JsObject => WebhookAnalytics.format.reads(json) //We don't test the type to be compatible with old data
+    case _ => JsError("Error parsing analytics config")
+  }
+  val writes: Writes[AnalyticsConfig] = Writes {
+    case c: ElasticAnalyticsConfig => ElasticAnalytics.format.writes(c) ++ Json.obj("type" -> "elastic")
+    case c: WebhookAnalyticsConfig => WebhookAnalytics.format.writes(c) ++ Json.obj("type" -> "webhook")
+  }
+  implicit val format: Format[AnalyticsConfig] = Format(reads, writes)
+}
+
+case class ElasticAnalyticsConfig(clusterUri: String, index: Option[String], user: Option[String], password: Option[String]) extends AnalyticsConfig
+object ElasticAnalytics {
+  val format = Json.format[ElasticAnalyticsConfig]
+}
+
+case class WebhookAnalyticsConfig(url: String, headers: Map[String, String] = Map.empty[String, String]) extends AnalyticsConfig
+object WebhookAnalytics {
+  val format = Json.format[WebhookAnalyticsConfig]
+}
+
+case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String]) {
+  def toJson: JsObject = Webhook.format.writes(this)
+}
+
+
 
 object Webhook {
   implicit val format = Json.format[Webhook]
@@ -49,7 +78,7 @@ case class GlobalConfig(
     ipFiltering: IpFiltering = IpFiltering(),
     throttlingQuota: Long = BaseQuotas.MaxValue,
     perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
-    analyticsEventsUrl: Option[Webhook] = None,
+    analyticsEventsUrl: Option[AnalyticsConfig] = None,
     analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
     alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
     alertsEmails: Seq[String] = Seq.empty[String],
@@ -183,7 +212,7 @@ object GlobalConfig {
           perIpThrottlingQuota = (json \ "perIpThrottlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           analyticsEventsUrl = (json \ "analyticsEventsUrl")
             .asOpt[JsObject]
-            .map(obj => Webhook.format.reads(obj))
+            .map(AnalyticsConfig.format.reads)
             .filter(_.isSuccess)
             .map(r => Some(r.get))
             .getOrElse(None),
