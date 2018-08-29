@@ -5,7 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import env.Env
 import events.AnalyticsService
 import models.ElasticAnalyticsConfig
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, Interval}
 import org.joda.time.format.ISODateTimeFormat
 import play.api.Logger
 import play.api.libs.json.Json.JsValueWrapper
@@ -35,12 +35,12 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
         )
       )
     ))
-      .map { resp =>
-        Json.obj(
-          "count" -> (resp \ "hits" \ "total").asOpt[Int]
-        )
-      }
-      .map(Some.apply)
+    .map { resp =>
+      Json.obj(
+        "count" -> (resp \ "hits" \ "total").asOpt[Int]
+      )
+    }
+    .map(Some.apply)
 
 
 
@@ -52,7 +52,37 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
                       size: Int)(
       implicit env: Env,
       ec: ExecutionContext
-  ): Future[Option[JsValue]] = ???
+  ): Future[Option[JsValue]] = {
+    val pageFrom = (page - 1) * size
+
+    val queryFilters: Seq[JsObject] = filters(None, from, to) ++ Seq(
+      service.map(s => Json.obj("term" -> Json.obj("@service" -> s)))
+    ).flatten
+
+
+    query(
+      Json.obj(
+        "size" -> size,
+        "from" -> pageFrom,
+        "query" -> Json.obj(
+          "bool" -> Json.obj(
+            "filters" -> queryFilters
+          )
+        ),
+        "sort" -> Json.obj(
+          "@timestamp" -> Json.obj(
+            "order" -> "desc"
+          )
+        )
+      )
+    )
+    .map { res =>
+      Json.obj(
+        "events" -> (res \ "response" \ "hits" \ "hits" \ "_source").asOpt[Seq[JsObject]]
+      )
+    }
+    .map(Some.apply)
+  }
 
 
   override def fetchDataIn(service: Option[String],
@@ -132,25 +162,23 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
         )
       )
     )).map { res =>
-      val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
 
-      val series = buckets.value.filter {
-        case (_, v) => (v \ "codesOverTime" \ "buckets").asOpt[JsArray].exists(_.value.nonEmpty)
-      }.map {
-        case (k, v) =>
-          Json.obj(
-            "name"  -> k,
-            "count" -> (v \ "doc_count").asOpt[Int],
-            "data" -> (v \ "codesOverTime" \ "buckets")
-              .asOpt[JsArray]
-              .map(_.value.flatMap { j =>
-                for {
-                  k <- (j \ "key").asOpt[String]
-                  v <- (j \ "doc_count").asOpt[Int]
-                } yield Json.arr(k, v)
-              })
-          )
-      }
+      val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
+      val series = buckets.value
+        .map { case (k, v) =>
+            Json.obj(
+              "name"  -> k,
+              "count" -> (v \ "doc_count").asOpt[Int],
+              "data" -> (v \ "codesOverTime" \ "buckets")
+                .asOpt[Seq[JsValue]]
+                .map(_.flatMap { j =>
+                  for {
+                    k <- (j \ "key").asOpt[JsValue]
+                    v <- (j \ "doc_count").asOpt[Int]
+                  } yield Json.arr(k, v)
+                })
+            )
+        }
       Json.obj(
         "chart" -> Json.obj("type" -> "areaspline"),
         "series" -> series
@@ -275,11 +303,11 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
       Json.obj(
         "chart" -> Json.obj("type" -> "chart"),
         "series" -> Json.arr(
-          extractSerie(bucket, "count", json => (json \ "stats" \ "count").asOpt[Int]),
-          extractSerie(bucket, "min", json => (json \ "stats" \ "min").asOpt[Int]),
-          extractSerie(bucket, "max", json => (json \ "stats" \ "max").asOpt[Int]),
-          extractSerie(bucket, "avg", json => (json \ "stats" \ "avg").asOpt[Int]),
-          extractSerie(bucket, "std deviation", json => (json \ "stats" \ "std_deviation").asOpt[Int])
+          extractSerie(bucket, "count", json => (json \ "stats" \ "count").asOpt[JsValue]),
+          extractSerie(bucket, "min", json => (json \ "stats" \ "min").asOpt[JsValue]),
+          extractSerie(bucket, "max", json => (json \ "stats" \ "max").asOpt[JsValue]),
+          extractSerie(bucket, "avg", json => (json \ "stats" \ "avg").asOpt[JsValue]),
+          extractSerie(bucket, "std deviation", json => (json \ "stats" \ "std_deviation").asOpt[JsValue])
         )
       )
     }
@@ -312,28 +340,53 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
     )).map { res =>
       val bucket = (res \ "aggregations" \ "stats" \ "buckets").as[JsValue]
       Json.obj(
-        "chart" -> Json.obj("type" -> "chart"),
+        "chart" -> Json.obj("type" -> "areaspline"),
         "series" -> Json.arr(
-          extractSerie(bucket, "1.0",   json => (json \ "stats" \ "values" \ "1.0").asOpt[Int]),
-          extractSerie(bucket, "5.0",   json => (json \ "stats" \ "values" \ "5.0").asOpt[Int]),
-          extractSerie(bucket, "25.0",  json => (json \ "stats" \ "values" \ "25.0").asOpt[Int]),
-          extractSerie(bucket, "50.0",  json => (json \ "stats" \ "values" \ "50.0").asOpt[Int]),
-          extractSerie(bucket, "75.0",  json => (json \ "stats" \ "values" \ "75.0").asOpt[Int]),
-          extractSerie(bucket, "95.0",  json => (json \ "stats" \ "values" \ "95.0").asOpt[Int]),
-          extractSerie(bucket, "99.0",  json => (json \ "stats" \ "values" \ "99.0").asOpt[Int])
+          extractSerie(bucket, "1.0",   json => (json \ "stats" \ "values" \ "1.0").asOpt[JsValue]),
+          extractSerie(bucket, "5.0",   json => (json \ "stats" \ "values" \ "5.0").asOpt[JsValue]),
+          extractSerie(bucket, "25.0",  json => (json \ "stats" \ "values" \ "25.0").asOpt[JsValue]),
+          extractSerie(bucket, "50.0",  json => (json \ "stats" \ "values" \ "50.0").asOpt[JsValue]),
+          extractSerie(bucket, "75.0",  json => (json \ "stats" \ "values" \ "75.0").asOpt[JsValue]),
+          extractSerie(bucket, "95.0",  json => (json \ "stats" \ "values" \ "95.0").asOpt[JsValue]),
+          extractSerie(bucket, "99.0",  json => (json \ "stats" \ "values" \ "99.0").asOpt[JsValue])
         )
       )
     }
   }
 
-  private def calcInterval(from: Option[DateTime], to: Option[DateTime]) = "month"
+  private def calcInterval(mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime]) = {
+    val from = mayBeFrom.getOrElse(DateTime.now())
+    val to = mayBeTo.getOrElse(DateTime.now())
+
+    val interval = new Interval(from, to).toDuration
+    val days = interval.toStandardDays.getDays
+    val hours = interval.toStandardHours.getHours
+
+    if (days > 24) {
+      "month"
+    } else if (days > 60) {
+      "week"
+    } else if (days > 30) {
+      "day"
+    } else if (hours > 12) {
+      "hour"
+    } else {
+      "minute"
+    }
+
+  }
 
   private def extractSerie(bucket: JsValue, name: String, extract: JsValue => JsValueWrapper, extra: JsObject = Json.obj()): JsValue = {
     bucket match {
       case JsArray(array) =>
         Json.obj(
           "name" -> name,
-          "data" -> Json.arr(array.map { extract }:_*),
+          "data" -> array.map { j =>
+            Json.arr(
+              (j \ "key").as[JsValue],
+              extract(j)
+            )
+          },
         ) ++ extra
       case _ => JsNull
     }
@@ -398,14 +451,18 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
         .getOrElse(Seq.empty)
         .map { o =>
           Json.obj(
-            "name" -> s"${(o \ "key").asOpt[String].getOrElse("")}",
-            "y" -> (o \ "doc_count").asOpt[Int]
+            "name" -> s"${(o \ "key").as[JsValue]}",
+            "y" -> (o \ "doc_count").asOpt[JsValue]
           )
         }
       Json.obj(
         "name" -> "Pie Chart",
         "colorPoint" -> true,
-        "data" -> JsArray(pie)
+        "series" -> Json.arr(
+          Json.obj(
+            "data" -> JsArray(pie)
+          )
+        )
       )
     }
 
@@ -457,11 +514,7 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
     }
 
     Seq(
-      Some(Json.obj(
-        "terms" -> Json.obj(
-          "@type" -> "GatewayEvent"
-        )
-      )),
+      Some(Json.obj("term" -> Json.obj("@type" -> "GatewayEvent"))),
       Some(rangeQuery),
       serviceQuery
     ).flatten
