@@ -243,12 +243,13 @@ class Env(val configuration: Configuration,
     models.ElasticAnalyticsConfig(
       url,
       configuration.getOptional[String]("app.elastic.index"),
+      configuration.getOptional[String]("app.elastic.type"),
       configuration.getOptional[String]("app.elastic.user"),
       configuration.getOptional[String]("app.elastic.password")
     )
   }
 
-  lazy val elasticAnalytics: Option[ElasticAnalytics] = elasticAnalyticsConfig.map(c => new ElasticAnalytics(c, wsClient))
+  lazy val elasticAnalytics: Option[ElasticAnalytics] = elasticAnalyticsConfig.map(c => new ElasticAnalytics(c, environment, wsClient, otoroshiExecutionContext))
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 

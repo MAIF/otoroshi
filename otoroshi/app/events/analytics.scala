@@ -1,6 +1,5 @@
 package events
 
-import java.util.Base64
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, PoisonPill, Props, Terminated}
@@ -9,14 +8,11 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
-import events.impl.{ElasticAnalytics, WebHookAnalytics}
+import events.impl.{WebHookAnalytics}
 import models._
 import org.joda.time.DateTime
-import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
-import security.{IdGenerator, OtoroshiClaim}
 import utils.JsonImplicits._
 
 import scala.concurrent.duration.FiniteDuration
@@ -55,41 +51,12 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             kafkaWrapperAudit.close()
           }
         }
-        Future.sequence(config.analyticsWebhooks.map { webhook =>
-          val state = IdGenerator.extendedToken(128)
-          val claim = OtoroshiClaim(
-            iss = env.Headers.OtoroshiIssuer,
-            sub = "otoroshi-analytics",
-            aud = "omoikane",
-            exp = DateTime.now().plusSeconds(30).toDate.getTime,
-            iat = DateTime.now().toDate.getTime,
-            jti = IdGenerator.uuid
-          ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}"))(env) // TODO : maybe we need some config here ?
-          val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
-            env.Headers.OtoroshiState -> state,
-            env.Headers.OtoroshiClaim -> claim
-          )
-
-          val url = evts.headOption
-            .map(
-              evt =>
-                webhook.url
-                //.replace("@product", env.eventsName)
-                  .replace("@service", evt.`@service`)
-                  .replace("@serviceId", evt.`@serviceId`)
-                  .replace("@id", evt.`@id`)
-                  .replace("@messageType", evt.`@type`)
-            )
-            .getOrElse(webhook.url)
-          env.Ws.url(url).withHttpHeaders(headers: _*).post(JsArray(evts.map(_.toJson))).andThen {
-            case Success(resp) => {
-              logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")
-            }
-            case Failure(e) => {
-              logger.error("SEND_TO_ANALYTICS_FAILURE: Error while sending AnalyticEvent", e)
-            }
-          }
-        })
+        Future.traverse(
+            config.analyticsWebhooks.map(new WebHookAnalytics(_)) ++
+            env.elasticAnalytics.toList
+        ) {
+          _.publish(evts)
+        }
       }
     }
 
@@ -312,6 +279,8 @@ trait HealthCheckDataStore {
 
 trait AnalyticsService {
 
+  def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit]
+
   def events(eventType: String, service: Option[String], from: Option[DateTime], to: Option[DateTime], page: Int = 1, size: Int = 50)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
 
   def fetchHits(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
@@ -348,14 +317,18 @@ class AnalyticsServiceImpl  extends AnalyticsService {
           .singleton()
           .map { _.analyticsEventsUrl }
           .map {
-            case Some(conf: WebhookAnalyticsConfig) => Some(new WebHookAnalytics(conf))
-            case Some(conf: ElasticAnalyticsConfig) => Some(new ElasticAnalytics(conf, env.Ws))
+            case Some(conf) => Some(new WebHookAnalytics(conf))
             case _ => None
           }
       }
   }
 
-
+  override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    underlyingService().flatMap( _
+      .map(_.publish(event))
+      .getOrElse(FastFuture.successful(Unit))
+    )
+  }
 
   override def events(eventType: String,
                       service: Option[String],

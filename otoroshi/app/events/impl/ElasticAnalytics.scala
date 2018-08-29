@@ -1,25 +1,86 @@
 package events.impl
+import java.nio.file.{Files, Paths}
 import java.util.Base64
 
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import events.AnalyticsService
+import events.{AnalyticEvent, AnalyticsService}
 import models.ElasticAnalyticsConfig
 import org.joda.time.{DateTime, Interval}
 import org.joda.time.format.ISODateTimeFormat
-import play.api.Logger
+import play.api.{Environment, Logger}
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
+import play.api.libs.ws.{WSClient, WSRequest}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationLong
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
-class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends AnalyticsService {
+class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment, client: WSClient, executionContext: ExecutionContext) extends AnalyticsService {
 
+  private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
+  private val `type`: String = config.`type`.getOrElse("type")
   private val index: String = config.index.getOrElse("otoroshi-events")
-  private val searchUri   = s"${config.clusterUri}/$index*/_search"
+  private val searchUri   = urlFromPath(s"/$index*/_search")
 
-  lazy val logger = Logger("otoroshi-analytics-api")
+  private def indexUri: String = {
+    val df = ISODateTimeFormat.date().print(DateTime.now())
+    urlFromPath(s"/$index-$df/${`type`}")
+  }
+
+  lazy val logger = Logger("otoroshi-analytics-elastic")
+
+  init()
+
+  private def init(): Unit = {
+    implicit val ec: ExecutionContext = executionContext
+    val strTpl = new String(Files.readAllBytes(Paths.get(environment.getFile("conf/elasticsearch/template.json").toURI)))
+    val tpl: JsValue = Json.parse(strTpl.replace("$$$INDEX$$$", index))
+    logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
+    Await.result(
+      url(urlFromPath("/_template/otoroshi-tpl"))
+        .get()
+        .flatMap { resp =>
+            resp.status match {
+              case 200  =>
+                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
+                tplCreated.onComplete {
+                  case Success(r) if r.status >= 400 =>
+                    logger.error(s"Error creating template ${r.status}: ${r.body}")
+                  case Failure(e) =>
+                    logger.error("Error creating template", e)
+                  case _ =>
+                    logger.debug("Otoroshi template created")
+                }
+                tplCreated.map(_ => ())
+              case 404 =>
+                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
+                tplCreated.onComplete {
+                  case Success(r) if r.status >= 400 =>
+                    logger.error(s"Error creating template ${r.status}: ${r.body}")
+                  case Failure(e) =>
+                    logger.error("Error creating template", e)
+                  case _ =>
+                    logger.debug("Otoroshi template created")
+                }
+                tplCreated.map(_ => ())
+              case _ =>
+                logger.error(s"Error creating template ${resp.status}: ${resp.body}")
+                FastFuture.successful(())
+            }
+          },
+      1.second
+    )
+  }
+
+  private def url(url: String): WSRequest = {
+    val builder = client.url(url)
+    authHeader()
+      .fold(builder) { h =>
+        builder.withHttpHeaders("Authorization" -> h)
+      }
+  }
 
   override def fetchHits(service: Option[String],
                          from: Option[DateTime],
@@ -42,6 +103,29 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
     }
     .map(Some.apply)
 
+
+
+
+  override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val builder = client.url(indexUri)
+    val clientInstance = authHeader()
+      .fold(builder) { h =>
+        builder.withHttpHeaders("Authorization" -> h)
+      }
+    Future.traverse(event) { event =>
+      val post = clientInstance.post(event.toJson)
+        post.onComplete {
+          case Success(resp) =>
+            if (resp.status >= 400) {
+              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
+            }
+          case Failure(e) =>
+            logger.error(s"Error publishing event to elastic", e)
+        }
+      post
+    }
+    .map(_ => ())
+  }
 
 
   override def events(eventType: String,
@@ -253,16 +337,11 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
 
 
   private def query(query: JsObject)(implicit ec: ExecutionContext): Future[JsValue] = {
-    val basicHeader: Option[String] = for {
-      user <- config.user
-      password <- config.password
-    } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
-
     val builder = client.url(searchUri)
 
     logger.debug(s"Query to Elasticsearch: $query")
 
-    basicHeader
+    authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
@@ -270,9 +349,16 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
       .flatMap { resp =>
         resp.status match {
           case 200 => FastFuture.successful(resp.json)
-          case  _ => FastFuture.failed(new RuntimeException(s"Error during es request: ${resp.body}"))
+          case  _ => FastFuture.failed(new RuntimeException(s"Error during es request: \n * ${resp.body}, \nquery was \n * $query"))
         }
       }
+  }
+
+  private def authHeader(): Option[String] = {
+    for {
+      user <- config.user
+      password <- config.password
+    } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
   }
 
   private def statsHistogram(field: String, service: Option[String], mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime])(implicit ec: ExecutionContext): Future[JsObject] = {
@@ -299,7 +385,7 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
         )
       )
     )).map { res =>
-      val bucket = (res \ "aggregations" \ "stats" \ "buckets").as[JsValue]
+      val bucket = (res \ "aggregations" \ "stats" \ "buckets").asOpt[JsValue].getOrElse(JsNull)
       Json.obj(
         "chart" -> Json.obj("type" -> "chart"),
         "series" -> Json.arr(
@@ -338,7 +424,7 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
         )
       )
     )).map { res =>
-      val bucket = (res \ "aggregations" \ "stats" \ "buckets").as[JsValue]
+      val bucket = (res \ "aggregations" \ "stats" \ "buckets").asOpt[JsValue].getOrElse(JsNull)
       Json.obj(
         "chart" -> Json.obj("type" -> "areaspline"),
         "series" -> Json.arr(
@@ -416,7 +502,7 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
       }
     )).map { res =>
       Json.obj(
-        field -> (res \ "aggregations" \ operation \ "value").as[JsValue]
+        field -> (res \ "aggregations" \ operation \ "value").asOpt[JsValue]
       )
     }
   }
@@ -470,16 +556,15 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
                       mayBeFrom: Option[DateTime],
                       mayBeTo: Option[DateTime]): Seq[JsObject] = {
     val to = mayBeTo.getOrElse(DateTime.now())
+    //val formatter = ISODateTimeFormat.dateHourMinuteSecondMillis()
     val rangeCriteria = mayBeFrom.map { from =>
       Json.obj(
-        "format" -> "date_optional_time",
-        "lte" -> ISODateTimeFormat.dateTime().print(to),
-        "gte" -> ISODateTimeFormat.dateTime().print(from)
+        "lte" -> to.getMillis,
+        "gte" -> from.getMillis
       )
     }.getOrElse {
       Json.obj(
-        "format" -> "date_optional_time",
-        "lte" -> ISODateTimeFormat.dateTime().print(to)
+        "lte" -> to.getMillis
       )
     }
 
@@ -504,8 +589,8 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, client: WSClient) extends
               )
             ),
             Json.obj(
-              "terms" -> Json.obj(
-                "@product" -> Json.arr(s)
+              "term" -> Json.obj(
+                "@product" -> s
               )
             )
           )
