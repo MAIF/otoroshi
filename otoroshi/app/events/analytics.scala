@@ -449,7 +449,7 @@ class AnalyticsServiceImpl  extends AnalyticsService {
                                                   to: Option[DateTime]
                                                 )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap( _
-      .map(_.fetchDurationStatsHistogram(service, from, to))
+      .map(_.fetchDurationPercentilesHistogram(service, from, to))
       .getOrElse(FastFuture.successful(None))
     )
 

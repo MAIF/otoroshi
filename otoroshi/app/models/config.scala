@@ -12,7 +12,7 @@ import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class ElasticAnalyticsConfig(clusterUri: String, index: Option[String], `type`: Option[String], user: Option[String], password: Option[String])
+case class ElasticAnalyticsConfig(clusterUri: String, index: Option[String] = None, `type`: Option[String] = None, user: Option[String] = None, password: Option[String] = None)
 object ElasticAnalytics {
   val format = Json.format[ElasticAnalyticsConfig]
 }
