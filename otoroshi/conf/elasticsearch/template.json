@@ -39,6 +39,9 @@
         "@service": {
           "type": "keyword"
         },
+        "@serviceId": {
+          "type": "keyword"
+        },
         "@env": {
           "type": "keyword"
         }

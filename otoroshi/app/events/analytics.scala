@@ -340,7 +340,7 @@ class AnalyticsServiceImpl  extends AnalyticsService {
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     underlyingService().flatMap( _
-      .map(_.events(eventType, service, from, to))
+      .map(_.events(eventType, service, from, to, page, size))
       .getOrElse(FastFuture.successful(None))
     )
 

@@ -138,19 +138,13 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
     val pageFrom = (page - 1) * size
-
-    val queryFilters: Seq[JsObject] = filters(None, from, to) ++ Seq(
-      service.map(s => Json.obj("term" -> Json.obj("@service" -> s)))
-    ).flatten
-
-
     query(
       Json.obj(
         "size" -> size,
         "from" -> pageFrom,
         "query" -> Json.obj(
           "bool" -> Json.obj(
-            "filters" -> queryFilters
+            "must" -> (dateFilters(from, to) ++ gatewayEventFilters ++  service.map(id => Json.obj("term" -> Json.obj("@serviceId" -> id))).toSeq)
           )
         ),
         "sort" -> Json.obj(
@@ -161,8 +155,9 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment,
       )
     )
     .map { res =>
+      val events: Seq[JsValue] = (res \ "hits" \ "hits").as[Seq[JsValue]].map { j => (j \ "_source").as[JsValue]}
       Json.obj(
-        "events" -> (res \ "response" \ "hits" \ "hits" \ "_source").asOpt[Seq[JsObject]]
+        "events" -> events
       )
     }
     .map(Some.apply)
@@ -552,9 +547,8 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment,
       )
     }
 
-  private def filters(service: Option[String],
-                      mayBeFrom: Option[DateTime],
-                      mayBeTo: Option[DateTime]): Seq[JsObject] = {
+  private def dateFilters(mayBeFrom: Option[DateTime],
+                          mayBeTo: Option[DateTime]): Seq[JsObject] = {
     val to = mayBeTo.getOrElse(DateTime.now())
     //val formatter = ISODateTimeFormat.dateHourMinuteSecondMillis()
     val rangeCriteria = mayBeFrom.map { from =>
@@ -574,35 +568,27 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment,
       )
     )
 
+    Seq(
+      Some(rangeQuery)
+    ).flatten
+  }
+
+  private def gatewayEventFilters = Seq(Json.obj("term" -> Json.obj("@type" -> "GatewayEvent")))
+
+  private def filters(service: Option[String],
+                      mayBeFrom: Option[DateTime],
+                      mayBeTo: Option[DateTime]): Seq[JsObject] = {
+
     val serviceQuery = service.map { s =>
       Json.obj(
-        "bool" -> Json.obj(
-          "minimum_should_match"  -> 1,
-          "should" -> Json.arr(
-            Json.obj(
-              "bool" -> Json.obj(
-                "must_not" -> Json.obj(
-                  "exists" -> Json.obj(
-                    "field" -> "@product"
-                  )
-                )
-              )
-            ),
-            Json.obj(
-              "term" -> Json.obj(
-                "@product" -> s
-              )
-            )
-          )
+        "term" -> Json.obj(
+          "@service" -> s
         )
       )
     }
-
-    Seq(
-      Some(Json.obj("term" -> Json.obj("@type" -> "GatewayEvent"))),
-      Some(rangeQuery),
-      serviceQuery
-    ).flatten
+    dateFilters(mayBeFrom, mayBeTo) ++
+      gatewayEventFilters ++
+      serviceQuery.toSeq
   }
 
 
