@@ -2,7 +2,10 @@ package events.impl
 import java.nio.file.{Files, Paths}
 import java.util.Base64
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Sink, Source}
 import env.Env
 import events.{AnalyticEvent, AnalyticsService}
 import models.ElasticAnalyticsConfig
@@ -17,12 +20,13 @@ import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment, client: WSClient, executionContext: ExecutionContext) extends AnalyticsService {
+class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment, client: WSClient, executionContext: ExecutionContext, system: ActorSystem) extends AnalyticsService {
 
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val `type`: String = config.`type`.getOrElse("type")
   private val index: String = config.index.getOrElse("otoroshi-events")
   private val searchUri   = urlFromPath(s"/$index*/_search")
+  private implicit val mat = ActorMaterializer()(system)
 
   private def indexUri: String = {
     val df = ISODateTimeFormat.date().print(DateTime.now())
@@ -107,24 +111,46 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment,
 
 
   override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val builder = client.url(indexUri)
+    val builder = client.url(urlFromPath("/_bulk"))
+
     val clientInstance = authHeader()
-      .fold(builder) { h =>
-        builder.withHttpHeaders("Authorization" -> h)
+      .fold{
+        builder.withHttpHeaders(
+          "Content-Type" -> "application/x-ndjson"
+        )
+      } { h =>
+        builder.withHttpHeaders(
+          "Authorization" -> h,
+          "Content-Type" -> "application/x-ndjson"
+        )
       }
-    Future.traverse(event) { event =>
-      val post = clientInstance.post(event.toJson)
-        post.onComplete {
-          case Success(resp) =>
-            if (resp.status >= 400) {
-              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
-            }
-          case Failure(e) =>
-            logger.error(s"Error publishing event to elastic", e)
+    Source(event.toList)
+        .map(_.toJson)
+        .grouped(500)
+        .map(_.map(bulkRequest))
+        .mapAsync(10) { bulk =>
+          val req = bulk.mkString("", "\n", "\n\n")
+          val post = clientInstance.post(req)
+          post.onComplete {
+            case Success(resp) =>
+              if (resp.status >= 400) {
+                logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
+              }
+            case Failure(e) =>
+              logger.error(s"Error publishing event to elastic", e)
+          }
+          post
         }
-      post
-    }
-    .map(_ => ())
+        .runWith(Sink.ignore)
+        .map(_ => ())
+  }
+
+  private def bulkRequest(source: JsValue): String = {
+    val df = ISODateTimeFormat.date().print(DateTime.now())
+    val indexWithDate = s"$index-$df"
+    val indexClause  = Json.stringify(Json.obj("index" -> Json.obj("_index" -> indexWithDate, "_type" -> `type`)))
+    val sourceClause = Json.stringify(source)
+    s"$indexClause\n$sourceClause"
   }
 
 

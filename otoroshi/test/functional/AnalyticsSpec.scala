@@ -25,7 +25,7 @@ class AnalyticsSpec()
   lazy val serviceHost  = "api.foo.bar"
   lazy val ws: WSClient = otoroshiComponents.wsClient
   lazy val elasticUrl = "http://localhost:9200"
-  lazy val analytics = new ElasticAnalytics(ElasticAnalyticsConfig(elasticUrl), otoroshiComponents.environment, ws, otoroshiComponents.executionContext)
+  lazy val analytics = new ElasticAnalytics(ElasticAnalyticsConfig(elasticUrl), otoroshiComponents.environment, ws, otoroshiComponents.executionContext, otoroshiComponents.actorSystem)
 
   override def getConfiguration(configuration: Configuration) = configuration ++ Configuration(
     ConfigFactory
