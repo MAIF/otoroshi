@@ -198,11 +198,11 @@ class AnalyticsSpec()
     // Init datas
     otoroshiApiCall("PATCH", "/api/globalconfig", Some(Json.parse("""
       |[
-      |  { "op": "replace", "path": "/elasticWritesConfigs", "value": [
+      |  { "op": "replace", "path": "/elasticWritesConfigs", "value": [ {
       |    "clusterUri": "http://127.0.0.1:9200",
       |    "index": "otoroshi-events",
       |    "type": "event",
-      |  ] }
+      |  } ] }
       |]
     """.stripMargin))).futureValue
     otoroshiApiCall("POST", "/api/groups", Some(testGroup.toJson)).futureValue
