@@ -87,6 +87,7 @@ object OtoroshiTests {
         new QuotasSpec(name, Configurations.LevelDBConfiguration),
         new CanarySpec(name, Configurations.LevelDBConfiguration),
         new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration),
+        new AnalyticsSpec(name, Configurations.LevelDBConfiguration),
         new ApiKeysSpec(name, Configurations.LevelDBConfiguration),
         new SidecarSpec(name, Configurations.LevelDBConfiguration),
         new JWTVerificationSpec(name, Configurations.LevelDBConfiguration),
@@ -100,6 +101,7 @@ object OtoroshiTests {
         new ProgrammaticApiSpec(name, config),
         new CircuitBreakerSpec(name, config),
         new AlertAndAnalyticsSpec(name, config),
+        new AnalyticsSpec(name, config),
         new ApiKeysSpec(name, config),
         new CanarySpec(name, config),
         new QuotasSpec(name, config),
@@ -125,5 +127,5 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 // class DevOtoroshiTests
 //     extends Suites(
-//       new SnowMonkeySpec("DEV", Configurations.InMemoryConfiguration),
+//       new AnalyticsSpec("DEV", Configurations.InMemoryConfiguration),
 //     )

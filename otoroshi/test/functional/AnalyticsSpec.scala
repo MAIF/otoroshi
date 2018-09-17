@@ -1,5 +1,6 @@
 package functional
 
+import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events._
@@ -14,30 +15,34 @@ import play.api.libs.ws.WSClient
 import security.IdGenerator
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
-class AnalyticsSpec()
+class AnalyticsSpec(name: String, configurationSpec: => Configuration)
   extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
+  implicit val system  = ActorSystem("otoroshi-test")
+
   lazy val serviceHost  = "api.foo.bar"
   lazy val ws: WSClient = otoroshiComponents.wsClient
-  lazy val elasticUrl = "http://localhost:9200"
+  lazy val elasticUrl = "http://127.0.0.1:9200"
   lazy val analytics = new ElasticWritesAnalytics(
-    ElasticAnalyticsConfig(elasticUrl),
+    ElasticAnalyticsConfig(elasticUrl, Some("otoroshi-events"), Some("event"), None, None),
     otoroshiComponents.environment,
     ws,
     otoroshiComponents.executionContext,
     otoroshiComponents.actorSystem
   )
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ Configuration(
+  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
                       |  http.port=$port
                       |  play.server.http.port=$port
+                      |  app.analyticsWindow = 2
                       |}
        """.stripMargin)
       .resolve()
@@ -46,7 +51,7 @@ class AnalyticsSpec()
   s"Analytics API" should {
 
 
-    def runTest(serviceId: Option[String] = None) = {
+    def runTest(serviceId: Option[String] = None, count: Int) = {
       setUp {
         // Inject events
         val now = DateTime.now()
@@ -55,6 +60,9 @@ class AnalyticsSpec()
             event(now.minusMinutes(i), getStatus(i), 500L, 50L, 500, 1000)
           }: _*
         )
+
+        awaitF(10.seconds).futureValue
+
         ws.url(s"$elasticUrl/_refresh").post("").futureValue
 
 
@@ -68,7 +76,7 @@ class AnalyticsSpec()
         status mustBe 200
 
         val statusesPiechart = (resp \ "statusesPiechart" \ "series" \ 0 \ "data").as[Seq[JsValue]]
-        (statusesPiechart.find(j => (j \ "name").as[String] == "200").get \ "y").as[Int] mustBe 50
+        (statusesPiechart.find(j => (j \ "name").as[String] == "200").get \ "y").as[Int] mustBe count
         (statusesPiechart.find(j => (j \ "name").as[String] == "400").get \ "y").as[Int] mustBe 20
         (statusesPiechart.find(j => (j \ "name").as[String] == "500").get \ "y").as[Int] mustBe 30
 
@@ -77,7 +85,7 @@ class AnalyticsSpec()
         (`4**` \ "count").as[Int] mustBe 20
         (`4**` \ "data").as[Seq[JsValue]].nonEmpty mustBe true
         val `2**` = statusesHistogram.find(j => (j \ "name").as[String] == "2**").get
-        (`2**` \ "count").as[Int] mustBe 50
+        (`2**` \ "count").as[Int] mustBe count
         (`2**` \ "data").as[Seq[JsValue]].nonEmpty mustBe true
         val `5**` = statusesHistogram.find(j => (j \ "name").as[String] == "5**").get
         (`5**` \ "count").as[Int] mustBe 30
@@ -93,8 +101,7 @@ class AnalyticsSpec()
         val overheadPercentiles      = (resp \ "overheadPercentiles" \ "series").as[Seq[JsValue]]
         val overheadPercentilesNames = overheadPercentiles.map(j => (j \ "name").as[String])
         overheadPercentilesNames must contain theSameElementsAs Vector("1.0", "5.0", "25.0", "50.0", "75.0", "95.0", "99.0")
-        overheadPercentilesNames foreach { n => testHistoValues(overheadPercentiles, n, 50)
-        }
+        overheadPercentilesNames foreach { n => testHistoValues(overheadPercentiles, n, 50) }
 
         val overheadStats      = (resp \ "overheadStats" \ "series").as[Seq[JsValue]]
         val overheadStatsNames = overheadStats.map(j => (j \ "name").as[String])
@@ -156,12 +163,12 @@ class AnalyticsSpec()
 
 
     "Global stats API" in {
-      runTest()
+      // runTest(None, 54)
     }
 
 
     "Service stats API" in {
-      runTest(Some("mon-service-id"))
+      runTest(Some("mon-service-id"), 50)
     }
 
     "Events api" in {
@@ -173,6 +180,7 @@ class AnalyticsSpec()
             event(now.minusMinutes(i), getStatus(i), 500L, 50L, 500, 1000)
           }: _*
         )
+        awaitF(10.seconds).futureValue
         ws.url(s"$elasticUrl/_refresh").post("").futureValue
 
         val from = now.minusMinutes(1000)
@@ -201,8 +209,13 @@ class AnalyticsSpec()
       |  { "op": "replace", "path": "/elasticWritesConfigs", "value": [ {
       |    "clusterUri": "http://127.0.0.1:9200",
       |    "index": "otoroshi-events",
-      |    "type": "event",
-      |  } ] }
+      |    "type": "event"
+      |  } ] },
+      |  { "op": "replace", "path": "/elasticReadsConfig", "value": {
+      |    "clusterUri": "http://127.0.0.1:9200",
+      |    "index": "otoroshi-events",
+      |    "type": "event"
+      |  } }
       |]
     """.stripMargin))).futureValue
     otoroshiApiCall("POST", "/api/groups", Some(testGroup.toJson)).futureValue
