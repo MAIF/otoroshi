@@ -7,3 +7,4 @@ mongo-data
 node_modules
 .idea
 target
+/data

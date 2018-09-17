@@ -44,16 +44,41 @@ export class DangerZonePage extends Component {
   analyticsWebhooksFormSchema = {
     url: {
       type: 'string',
-      props: { label: 'Analytics hook URL', placeholder: 'URL of the webhook target' },
+      props: { label: 'Analytics webhook URL', placeholder: 'URL of the webhook target' },
     },
     headers: {
       type: 'object',
       props: {
-        label: 'Hook Headers',
+        label: 'Webhook Headers',
         placeholderKey: 'Name of the header',
         placeholderValue: 'Value of the header',
       },
     },
+  };
+
+  elasticConfigFormFlow = ['clusterUri', 'index', 'type', 'user', 'password'];
+
+  elasticConfigFormSchema = {
+    clusterUri: {
+      type: 'string',
+      props: { label: 'Cluster URI', placeholder: 'Elastic cluster URI' },
+    },
+    index: {
+      type: 'string',
+      props: { label: 'Index', placeholder: 'Elastic index' },
+    },
+    type: {
+      type: 'string',
+      props: { label: 'Type', placeholder: 'Event type' },
+    },
+    user: {
+      type: 'string',
+      props: { label: 'User', placeholder: 'Elastic User (optional)' },
+    },
+    password: {
+      type: 'string',
+      props: { label: 'Password', placeholder: 'Elastic password (optional)' },
+    }
   };
 
   analyticsEventsUrlFromSchema = {
@@ -117,6 +142,20 @@ export class DangerZonePage extends Component {
     alertsWebhook: {
       type: Form,
       props: { flow: this.webhooksFormFlow, schema: this.alertWebhooksFormSchema },
+    },
+    elasticReadsConfig: {
+      type: Form,
+      props: {
+        flow: this.elasticConfigFormFlow,
+        schema: this.elasticConfigFormSchema
+      },
+    },
+    elasticWritesConfig: {
+      type: Form,
+      props: {
+        flow: this.elasticConfigFormFlow,
+        schema: this.elasticConfigFormSchema
+      },
     },
     alertsEmails: {
       type: 'array',
@@ -390,9 +429,12 @@ export class DangerZonePage extends Component {
     '>>>Quotas settings',
     'throttlingQuota',
     'perIpThrottlingQuota',
-    '>>>Analytics settings',
+    '>>>Analytics: Webhooks',
     'analyticsWebhook',
-    'analyticsEventsUrl',
+    '>>>Analytics: Elastic write cluster',
+    'elasticWritesConfig',
+    '>>>Analytics: Elastic read cluster',
+    'elasticReadsConfig',
     '>>>Kafka settings',
     'kafkaConfig.servers',
     'kafkaConfig.keyPass',
@@ -472,9 +514,11 @@ export class DangerZonePage extends Component {
     const value = {
       ...raw,
       analyticsWebhooks: [raw.analyticsWebhook],
+      elasticWritesConfigs: [raw.elasticWritesConfig],
       alertsWebhooks: [raw.alertsWebhook],
     };
     delete value.analyticsWebhook;
+    delete value.elasticWritesConfig;
     delete value.alertsWebhook;
     this.setState({ value, changed: shallowDiffers(this.state.originalValue, value) });
   };
@@ -482,9 +526,11 @@ export class DangerZonePage extends Component {
   getValue = () => {
     const value = { ...this.state.value };
     value.analyticsWebhook = (value.analyticsWebhooks || [])[0];
+    value.elasticWritesConfig = (value.elasticWritesConfigs || [])[0];
     value.alertsWebhook = (value.alertsWebhooks || [])[0];
     delete value.alertsWebhooks;
-    delete value.alertsWebhooks;
+    delete value.elasticWritesConfigs;
+    delete value.analyticsWebhooks;
     return value;
   };
 

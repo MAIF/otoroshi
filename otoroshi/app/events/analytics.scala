@@ -8,7 +8,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
-import events.impl.{WebHookAnalytics}
+import events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
 import models._
 import org.joda.time.DateTime
 import play.api.Logger
@@ -17,7 +17,7 @@ import utils.JsonImplicits._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 case object SendToAnalytics
 
@@ -52,8 +52,8 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           }
         }
         Future.traverse(
-            config.analyticsWebhooks.map(new WebHookAnalytics(_)) ++
-            env.elasticAnalytics.toList
+          config.analyticsWebhooks.map(c => new WebHookAnalytics(c)) ++
+          config.elasticWritesConfigs.map(c => new ElasticWritesAnalytics(c, env.environment, env.wsClient, env.otoroshiExecutionContext, env.otoroshiActorSystem))
         ) {
           _.publish(evts)
         }
@@ -276,13 +276,8 @@ trait HealthCheckDataStore {
   def push(event: HealthCheckEvent)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
-
-trait AnalyticsService {
-
-  def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit]
-
+trait AnalyticsReadsService {
   def events(eventType: String, service: Option[String], from: Option[DateTime], to: Option[DateTime], page: Int = 1, size: Int = 50)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
-
   def fetchHits(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def fetchDataIn(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def fetchDataOut(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
@@ -296,38 +291,19 @@ trait AnalyticsService {
   def fetchDurationPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def fetchOverheadPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def fetchOverheadStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
-
   def fetchProductPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
-
 }
 
-object AnalyticsService {
-  def apply: AnalyticsService = new AnalyticsServiceImpl
+trait AnalyticsWritesService {
+  def init(): Unit
+  def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit]
 }
 
+class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends AnalyticsReadsService {
 
-class AnalyticsServiceImpl  extends AnalyticsService {
-
-  private def underlyingService()(implicit env: Env, ec: ExecutionContext): Future[Option[AnalyticsService]] = {
-    env.elasticAnalytics
-      .map(es => FastFuture.successful(Some(es)))
-      .getOrElse {
-        env.datastores.globalConfigDataStore
-          .singleton()
-          .map { _.analyticsEventsUrl }
-          .map {
-            case Some(conf) => Some(new WebHookAnalytics(conf))
-            case _ => None
-          }
-      }
-  }
-
-  override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    underlyingService().flatMap( _
-      .map(_.publish(event))
-      .getOrElse(FastFuture.successful(Unit))
-    )
+  private def underlyingService()(implicit env: Env, ec: ExecutionContext): Future[Option[AnalyticsReadsService]] = {
+    FastFuture.successful(globalConfig.elasticReadsConfig.map(c => new ElasticReadsAnalytics(c, env.environment, env.wsClient, env.otoroshiExecutionContext, env.otoroshiActorSystem)))
   }
 
   override def events(eventType: String,

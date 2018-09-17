@@ -1,26 +1,217 @@
 package events.impl
-import java.nio.file.{Files, Paths}
 import java.util.Base64
+import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import env.Env
-import events.{AnalyticEvent, AnalyticsService}
+import events.{AnalyticEvent, AnalyticsReadsService, AnalyticsWritesService}
 import models.ElasticAnalyticsConfig
-import org.joda.time.{DateTime, Interval}
 import org.joda.time.format.ISODateTimeFormat
-import play.api.{Environment, Logger}
+import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSRequest}
+import play.api.{Environment, Logger}
 
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment, client: WSClient, executionContext: ExecutionContext, system: ActorSystem) extends AnalyticsService {
+object ElasticTemplates {
+  val indexTemplate =
+    """{
+      |  "template": "$$$INDEX$$$-*",
+      |  "settings": {
+      |    "number_of_shards": 1,
+      |    "index": {
+      |    }
+      |  },
+      |  "mappings": {
+      |    "_default_": {
+      |      "date_detection": false,
+      |      "dynamic_templates": [
+      |        {
+      |          "string_template": {
+      |            "match": "*",
+      |            "mapping": {
+      |              "type": "text",
+      |              "fielddata": true
+      |            },
+      |            "match_mapping_type": "string"
+      |          }
+      |        }
+      |      ],
+      |      "properties": {
+      |        "@id": {
+      |          "type": "keyword"
+      |        },
+      |        "@timestamp": {
+      |          "type": "date"
+      |        },
+      |        "@created": {
+      |          "type": "date"
+      |        },
+      |        "@product": {
+      |          "type": "keyword"
+      |        },
+      |        "@type": {
+      |          "type": "keyword"
+      |        },
+      |        "@service": {
+      |          "type": "keyword"
+      |        },
+      |        "@serviceId": {
+      |          "type": "keyword"
+      |        },
+      |        "@env": {
+      |          "type": "keyword"
+      |        }
+      |      }
+      |    }
+      |  }
+      |}
+    """.stripMargin
+}
+
+object ElasticWritesAnalytics {
+
+  import collection.JavaConverters._
+
+  val clusterInitializedCache = new ConcurrentHashMap[String, Boolean]()
+
+  def toKey(config: ElasticAnalyticsConfig): String = s"${config.clusterUri}/${config.index}/${config.`type`}"
+
+  def initialized(config: ElasticAnalyticsConfig): Unit = {
+    clusterInitializedCache.putIfAbsent(toKey(config), true)
+  }
+
+  def isInitialized(config: ElasticAnalyticsConfig): Boolean = {
+    clusterInitializedCache.asScala.getOrElse(toKey(config), false)
+  }
+}
+
+class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, environment: Environment, client: WSClient, executionContext: ExecutionContext, system: ActorSystem) extends AnalyticsWritesService {
+
+  lazy val logger = Logger("otoroshi-analytics-writes-elastic")
+
+  private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
+  private val index: String = config.index.getOrElse("otoroshi-events")
+  private val `type`: String = config.`type`.getOrElse("event")
+  private implicit val mat = ActorMaterializer()(system)
+
+  private def url(url: String): WSRequest = {
+    val builder = client.url(url)
+    authHeader()
+      .fold(builder) { h =>
+        builder.withHttpHeaders("Authorization" -> h)
+      }
+  }
+
+  override def init(): Unit = {
+    if (ElasticWritesAnalytics.isInitialized(config)) {
+      ()
+    } else {
+      implicit val ec: ExecutionContext = executionContext
+      val strTpl = ElasticTemplates.indexTemplate
+      val tpl: JsValue = Json.parse(strTpl.replace("$$$INDEX$$$", index))
+      logger.warn(s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/${config.index}/${config.`type`}" )
+      logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
+      Await.result(
+        url(urlFromPath("/_template/otoroshi-tpl"))
+          .get()
+          .flatMap { resp =>
+            resp.status match {
+              case 200  =>
+                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
+                tplCreated.onComplete {
+                  case Success(r) if r.status >= 400 =>
+                    logger.error(s"Error creating template ${r.status}: ${r.body}")
+                  case Failure(e) =>
+                    logger.error("Error creating template", e)
+                  case _ =>
+                    logger.debug("Otoroshi template created")
+                    ElasticWritesAnalytics.initialized(config)
+                }
+                tplCreated.map(_ => ())
+              case 404 =>
+                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
+                tplCreated.onComplete {
+                  case Success(r) if r.status >= 400 =>
+                    logger.error(s"Error creating template ${r.status}: ${r.body}")
+                  case Failure(e) =>
+                    logger.error("Error creating template", e)
+                  case _ =>
+                    logger.debug("Otoroshi template created")
+                    ElasticWritesAnalytics.initialized(config)
+                }
+                tplCreated.map(_ => ())
+              case _ =>
+                logger.error(s"Error creating template ${resp.status}: ${resp.body}")
+                FastFuture.successful(())
+            }
+          },
+        5.second
+      )
+    }
+  }
+
+  init()
+
+  private def bulkRequest(source: JsValue): String = {
+    val df = ISODateTimeFormat.date().print(DateTime.now())
+    val indexWithDate = s"$index-$df"
+    val indexClause  = Json.stringify(Json.obj("index" -> Json.obj("_index" -> indexWithDate, "_type" -> `type`)))
+    val sourceClause = Json.stringify(source)
+    s"$indexClause\n$sourceClause"
+  }
+
+  private def authHeader(): Option[String] = {
+    for {
+      user <- config.user
+      password <- config.password
+    } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
+  }
+
+  override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val builder = client.url(urlFromPath("/_bulk"))
+
+    val clientInstance = authHeader()
+      .fold{
+        builder.withHttpHeaders(
+          "Content-Type" -> "application/x-ndjson"
+        )
+      } { h =>
+        builder.withHttpHeaders(
+          "Authorization" -> h,
+          "Content-Type" -> "application/x-ndjson"
+        )
+      }
+    Source(event.toList)
+      .map(_.toJson)
+      .grouped(500)
+      .map(_.map(bulkRequest))
+      .mapAsync(10) { bulk =>
+        val req = bulk.mkString("", "\n", "\n\n")
+        val post = clientInstance.post(req)
+        post.onComplete {
+          case Success(resp) =>
+            if (resp.status >= 400) {
+              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
+            }
+          case Failure(e) =>
+            logger.error(s"Error publishing event to elastic", e)
+        }
+        post
+      }
+      .runWith(Sink.ignore)
+      .map(_ => ())
+  }
+}
+
+class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, environment: Environment, client: WSClient, executionContext: ExecutionContext, system: ActorSystem) extends AnalyticsReadsService {
 
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val `type`: String = config.`type`.getOrElse("type")
@@ -33,50 +224,7 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment,
     urlFromPath(s"/$index-$df/${`type`}")
   }
 
-  lazy val logger = Logger("otoroshi-analytics-elastic")
-
-  init()
-
-  private def init(): Unit = {
-    implicit val ec: ExecutionContext = executionContext
-    val strTpl = new String(Files.readAllBytes(Paths.get(environment.getFile("conf/elasticsearch/template.json").toURI)))
-    val tpl: JsValue = Json.parse(strTpl.replace("$$$INDEX$$$", index))
-    logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
-    Await.result(
-      url(urlFromPath("/_template/otoroshi-tpl"))
-        .get()
-        .flatMap { resp =>
-            resp.status match {
-              case 200  =>
-                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
-                tplCreated.onComplete {
-                  case Success(r) if r.status >= 400 =>
-                    logger.error(s"Error creating template ${r.status}: ${r.body}")
-                  case Failure(e) =>
-                    logger.error("Error creating template", e)
-                  case _ =>
-                    logger.debug("Otoroshi template created")
-                }
-                tplCreated.map(_ => ())
-              case 404 =>
-                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
-                tplCreated.onComplete {
-                  case Success(r) if r.status >= 400 =>
-                    logger.error(s"Error creating template ${r.status}: ${r.body}")
-                  case Failure(e) =>
-                    logger.error("Error creating template", e)
-                  case _ =>
-                    logger.debug("Otoroshi template created")
-                }
-                tplCreated.map(_ => ())
-              case _ =>
-                logger.error(s"Error creating template ${resp.status}: ${resp.body}")
-                FastFuture.successful(())
-            }
-          },
-      1.second
-    )
-  }
+  lazy val logger = Logger("otoroshi-analytics-reads-elastic")
 
   private def url(url: String): WSRequest = {
     val builder = client.url(url)
@@ -106,53 +254,6 @@ class ElasticAnalytics(config: ElasticAnalyticsConfig, environment: Environment,
       )
     }
     .map(Some.apply)
-
-
-
-
-  override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val builder = client.url(urlFromPath("/_bulk"))
-
-    val clientInstance = authHeader()
-      .fold{
-        builder.withHttpHeaders(
-          "Content-Type" -> "application/x-ndjson"
-        )
-      } { h =>
-        builder.withHttpHeaders(
-          "Authorization" -> h,
-          "Content-Type" -> "application/x-ndjson"
-        )
-      }
-    Source(event.toList)
-        .map(_.toJson)
-        .grouped(500)
-        .map(_.map(bulkRequest))
-        .mapAsync(10) { bulk =>
-          val req = bulk.mkString("", "\n", "\n\n")
-          val post = clientInstance.post(req)
-          post.onComplete {
-            case Success(resp) =>
-              if (resp.status >= 400) {
-                logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
-              }
-            case Failure(e) =>
-              logger.error(s"Error publishing event to elastic", e)
-          }
-          post
-        }
-        .runWith(Sink.ignore)
-        .map(_ => ())
-  }
-
-  private def bulkRequest(source: JsValue): String = {
-    val df = ISODateTimeFormat.date().print(DateTime.now())
-    val indexWithDate = s"$index-$df"
-    val indexClause  = Json.stringify(Json.obj("index" -> Json.obj("_index" -> indexWithDate, "_type" -> `type`)))
-    val sourceClause = Json.stringify(source)
-    s"$indexClause\n$sourceClause"
-  }
-
 
   override def events(eventType: String,
                       service: Option[String],

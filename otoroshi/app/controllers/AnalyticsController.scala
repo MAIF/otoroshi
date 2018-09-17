@@ -2,10 +2,10 @@ package controllers
 import actions.{ApiAction, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import events.{AdminApiEvent, Audit}
+import events.{AdminApiEvent, AnalyticsReadsServiceImpl, Audit}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.future.Implicits._
 
@@ -34,65 +34,69 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
     val paginationPageSize: Int =
       ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
     val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-      case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(desc) =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+        case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+        case Some(desc) => {
 
-        val analyticsService = env.datastores.analyticsService
+          val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
-        val fromDate = from.map(f => new DateTime(f.toLong))
-        val toDate = to.map(f => new DateTime(f.toLong))
-        for {
-          _ <- FastFuture.successful(())
+          val fromDate = from.map(f => new DateTime(f.toLong))
+          val toDate = to.map(f => new DateTime(f.toLong))
+          for {
+            _ <- FastFuture.successful(())
 
-          fhits                = analyticsService.fetchHits(Some(desc.name), fromDate, toDate)
-          fdatain              = analyticsService.fetchDataIn(Some(desc.name), fromDate, toDate)
-          fdataout             = analyticsService.fetchDataOut(Some(desc.name), fromDate, toDate)
-          favgduration         = analyticsService.fetchAvgDuration(Some(desc.name), fromDate, toDate)
-          favgoverhead         = analyticsService.fetchAvgOverhead(Some(desc.name), fromDate, toDate)
-          fstatusesPiechart    = analyticsService.fetchStatusesPiechart(Some(desc.name), fromDate, toDate)
-          fstatusesHistogram   = analyticsService.fetchStatusesHistogram(Some(desc.name), fromDate, toDate)
-          foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(Some(desc.name), fromDate, toDate)
-          foverheadStats       = analyticsService.fetchOverheadStatsHistogram(Some(desc.name), fromDate, toDate)
-          fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(Some(desc.name), fromDate, toDate)
-          fdurationStats       = analyticsService.fetchDurationStatsHistogram(Some(desc.name), fromDate, toDate)
-          fdataInHistogram     = analyticsService.fetchDataInStatsHistogram(Some(desc.name), fromDate, toDate)
-          fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(Some(desc.name), fromDate, toDate)
+            fhits = analyticsService.fetchHits(Some(desc.name), fromDate, toDate)
+            fdatain = analyticsService.fetchDataIn(Some(desc.name), fromDate, toDate)
+            fdataout = analyticsService.fetchDataOut(Some(desc.name), fromDate, toDate)
+            favgduration = analyticsService.fetchAvgDuration(Some(desc.name), fromDate, toDate)
+            favgoverhead = analyticsService.fetchAvgOverhead(Some(desc.name), fromDate, toDate)
+            fstatusesPiechart = analyticsService.fetchStatusesPiechart(Some(desc.name), fromDate, toDate)
+            fstatusesHistogram = analyticsService.fetchStatusesHistogram(Some(desc.name), fromDate, toDate)
+            foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(Some(desc.name), fromDate, toDate)
+            foverheadStats = analyticsService.fetchOverheadStatsHistogram(Some(desc.name), fromDate, toDate)
+            fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(Some(desc.name), fromDate, toDate)
+            fdurationStats = analyticsService.fetchDurationStatsHistogram(Some(desc.name), fromDate, toDate)
+            fdataInHistogram = analyticsService.fetchDataInStatsHistogram(Some(desc.name), fromDate, toDate)
+            fdataOutHistogram = analyticsService.fetchDataOutStatsHistogram(Some(desc.name), fromDate, toDate)
 
-          statusesPiechart    <- fstatusesPiechart
-          statusesHistogram   <- fstatusesHistogram
-          overheadPercentiles <- foverheadPercentiles
-          overheadStats       <- foverheadStats
-          durationPercentiles <- fdurationPercentiles
-          durationStats       <- fdurationStats
-          dataInStats         <- fdataInHistogram
-          dataOutStats        <- fdataOutHistogram
+            statusesPiechart <- fstatusesPiechart
+            statusesHistogram <- fstatusesHistogram
+            overheadPercentiles <- foverheadPercentiles
+            overheadStats <- foverheadStats
+            durationPercentiles <- fdurationPercentiles
+            durationStats <- fdurationStats
+            dataInStats <- fdataInHistogram
+            dataOutStats <- fdataOutHistogram
 
-          hits        <- fhits
-          datain      <- fdatain
-          dataout     <- fdataout
-          avgduration <- favgduration
-          avgoverhead <- favgoverhead
-        } yield
-          Ok(
-            Json.obj(
-              "statusesPiechart"    -> statusesPiechart,
-              "statusesHistogram"   -> statusesHistogram,
-              "overheadPercentiles" -> overheadPercentiles,
-              "overheadStats"       -> overheadStats,
-              "durationPercentiles" -> durationPercentiles,
-              "durationStats"       -> durationStats,
-              "dataInStats"         -> dataInStats,
-              "dataOutStats"        -> dataOutStats,
-              "hits"                -> hits,
-              "dataIn"              -> datain,
-              "dataOut"             -> dataout,
-              "avgDuration"         -> avgduration,
-              "avgOverhead"         -> avgoverhead
+            hits <- fhits
+            datain <- fdatain
+            dataout <- fdataout
+            avgduration <- favgduration
+            avgoverhead <- favgoverhead
+          } yield {
+            Ok(
+              Json.obj(
+                "statusesPiechart" -> statusesPiechart,
+                "statusesHistogram" -> statusesHistogram,
+                "overheadPercentiles" -> overheadPercentiles,
+                "overheadStats" -> overheadStats,
+                "durationPercentiles" -> durationPercentiles,
+                "durationStats" -> durationStats,
+                "dataInStats" -> dataInStats,
+                "dataOutStats" -> dataOutStats,
+                "hits" -> hits,
+                "dataIn" -> datain,
+                "dataOut" -> dataout,
+                "avgDuration" -> avgduration,
+                "avgOverhead" -> avgoverhead
+              )
             )
-          )
+          }
+        }
       }
     }
+  }
 
 
   def globalStats(from: Option[String] = None, to: Option[String] = None) = ApiAction.async { ctx =>
@@ -113,68 +117,71 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
       ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
     val paginationPosition = (paginationPage - 1) * paginationPageSize
 
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
     env.datastores.serviceDescriptorDataStore.count().flatMap { nbrOfServices =>
 
-    val analyticsService = env.datastores.analyticsService
 
-    val fromDate = from.map(f => new DateTime(f.toLong))
-    val toDate = to.map(f => new DateTime(f.toLong))
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
-    for {
-      _ <- FastFuture.successful(())
+      val fromDate = from.map(f => new DateTime(f.toLong))
+      val toDate = to.map(f => new DateTime(f.toLong))
 
-      fhits                = analyticsService.fetchHits(None, fromDate, toDate)
-      fdatain              = analyticsService.fetchDataIn(None, fromDate, toDate)
-      fdataout             = analyticsService.fetchDataOut(None, fromDate, toDate)
-      favgduration         = analyticsService.fetchAvgDuration(None, fromDate, toDate)
-      favgoverhead         = analyticsService.fetchAvgOverhead(None, fromDate, toDate)
-      fstatusesPiechart    = analyticsService.fetchStatusesPiechart(None, fromDate, toDate)
-      fstatusesHistogram   = analyticsService.fetchStatusesHistogram(None, fromDate, toDate)
-      foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(None, fromDate, toDate)
-      foverheadStats       = analyticsService.fetchOverheadStatsHistogram(None, fromDate, toDate)
-      fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(None, fromDate, toDate)
-      fdurationStats       = analyticsService.fetchDurationStatsHistogram(None, fromDate, toDate)
-      fdataInHistogram     = analyticsService.fetchDataInStatsHistogram(None, fromDate, toDate)
-      fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(None, fromDate, toDate)
-      fProductPiechart     = analyticsService.fetchProductPiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
-      fServicePiechart     = analyticsService.fetchServicePiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
+      for {
+        _ <- FastFuture.successful(())
 
-      statusesPiechart    <- fstatusesPiechart
-      statusesHistogram   <- fstatusesHistogram
-      overheadPercentiles <- foverheadPercentiles
-      overheadStats       <- foverheadStats
-      durationPercentiles <- fdurationPercentiles
-      durationStats       <- fdurationStats
-      dataInStats         <- fdataInHistogram
-      dataOutStats        <- fdataOutHistogram
-      productPiechart     <- fProductPiechart
-      servicePiechart     <- fServicePiechart
+        fhits = analyticsService.fetchHits(None, fromDate, toDate)
+        fdatain = analyticsService.fetchDataIn(None, fromDate, toDate)
+        fdataout = analyticsService.fetchDataOut(None, fromDate, toDate)
+        favgduration = analyticsService.fetchAvgDuration(None, fromDate, toDate)
+        favgoverhead = analyticsService.fetchAvgOverhead(None, fromDate, toDate)
+        fstatusesPiechart = analyticsService.fetchStatusesPiechart(None, fromDate, toDate)
+        fstatusesHistogram = analyticsService.fetchStatusesHistogram(None, fromDate, toDate)
+        foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(None, fromDate, toDate)
+        foverheadStats = analyticsService.fetchOverheadStatsHistogram(None, fromDate, toDate)
+        fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(None, fromDate, toDate)
+        fdurationStats = analyticsService.fetchDurationStatsHistogram(None, fromDate, toDate)
+        fdataInHistogram = analyticsService.fetchDataInStatsHistogram(None, fromDate, toDate)
+        fdataOutHistogram = analyticsService.fetchDataOutStatsHistogram(None, fromDate, toDate)
+        fProductPiechart = analyticsService.fetchProductPiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
+        fServicePiechart = analyticsService.fetchServicePiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
 
-      hits        <- fhits
-      datain      <- fdatain
-      dataout     <- fdataout
-      avgduration <- favgduration
-      avgoverhead <- favgoverhead
-    } yield
-      Ok(
-        Json.obj(
-          "statusesPiechart"    -> statusesPiechart,
-          "statusesHistogram"   -> statusesHistogram,
-          "overheadPercentiles" -> overheadPercentiles,
-          "overheadStats"       -> overheadStats,
-          "durationPercentiles" -> durationPercentiles,
-          "durationStats"       -> durationStats,
-          "dataInStats"         -> dataInStats,
-          "dataOutStats"        -> dataOutStats,
-          "hits"                -> hits,
-          "dataIn"              -> datain,
-          "dataOut"             -> dataout,
-          "avgDuration"         -> avgduration,
-          "avgOverhead"         -> avgoverhead,
-          "productPiechart"     -> productPiechart,
-          "servicePiechart"     -> servicePiechart
+        statusesPiechart <- fstatusesPiechart
+        statusesHistogram <- fstatusesHistogram
+        overheadPercentiles <- foverheadPercentiles
+        overheadStats <- foverheadStats
+        durationPercentiles <- fdurationPercentiles
+        durationStats <- fdurationStats
+        dataInStats <- fdataInHistogram
+        dataOutStats <- fdataOutHistogram
+        productPiechart <- fProductPiechart
+        servicePiechart <- fServicePiechart
+
+        hits <- fhits
+        datain <- fdatain
+        dataout <- fdataout
+        avgduration <- favgduration
+        avgoverhead <- favgoverhead
+      } yield
+        Ok(
+          Json.obj(
+            "statusesPiechart" -> statusesPiechart,
+            "statusesHistogram" -> statusesHistogram,
+            "overheadPercentiles" -> overheadPercentiles,
+            "overheadStats" -> overheadStats,
+            "durationPercentiles" -> durationPercentiles,
+            "durationStats" -> durationStats,
+            "dataInStats" -> dataInStats,
+            "dataOutStats" -> dataOutStats,
+            "hits" -> hits,
+            "dataIn" -> datain,
+            "dataOut" -> dataout,
+            "avgDuration" -> avgduration,
+            "avgOverhead" -> avgoverhead,
+            "productPiechart" -> productPiechart,
+            "servicePiechart" -> servicePiechart
+          )
         )
-      )
+    }
     }
   }
 
@@ -199,16 +206,21 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
       val fromDate = from.map(f => new DateTime(f.toLong))
       val toDate = to.map(f => new DateTime(f.toLong))
 
-      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-        case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-        case Some(desc) =>
-          env.datastores.analyticsService.events("GatewayEvent", Some(desc.id), fromDate, toDate, paginationPage, paginationPageSize)
-            .map(_.getOrElse(Json.obj()))
-            .map { r =>
-              logger.debug(s"$r")
-              (r \ "events").as[JsValue]
-            }
-            .map(json => Ok(json))
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+          case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+          case Some(desc) => {
+
+            val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+            analyticsService.events("GatewayEvent", Some(desc.id), fromDate, toDate, paginationPage, paginationPageSize)
+              .map(_.getOrElse(Json.obj()))
+              .map { r =>
+                logger.debug(s"$r")
+                (r \ "events").as[JsValue]
+              }
+              .map(json => Ok(json))
+          }
+        }
       }
   }
 

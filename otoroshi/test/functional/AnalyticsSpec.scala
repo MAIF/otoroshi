@@ -3,7 +3,7 @@ package functional
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events._
-import events.impl.ElasticAnalytics
+import events.impl.ElasticWritesAnalytics
 import models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
@@ -15,7 +15,6 @@ import security.IdGenerator
 
 import scala.concurrent.ExecutionContext
 
-
 class AnalyticsSpec()
   extends PlaySpec
     with OneServerPerSuiteWithMyComponents
@@ -25,7 +24,13 @@ class AnalyticsSpec()
   lazy val serviceHost  = "api.foo.bar"
   lazy val ws: WSClient = otoroshiComponents.wsClient
   lazy val elasticUrl = "http://localhost:9200"
-  lazy val analytics = new ElasticAnalytics(ElasticAnalyticsConfig(elasticUrl), otoroshiComponents.environment, ws, otoroshiComponents.executionContext, otoroshiComponents.actorSystem)
+  lazy val analytics = new ElasticWritesAnalytics(
+    ElasticAnalyticsConfig(elasticUrl),
+    otoroshiComponents.environment,
+    ws,
+    otoroshiComponents.executionContext,
+    otoroshiComponents.actorSystem
+  )
 
   override def getConfiguration(configuration: Configuration) = configuration ++ Configuration(
     ConfigFactory
@@ -33,7 +38,6 @@ class AnalyticsSpec()
                       |{
                       |  http.port=$port
                       |  play.server.http.port=$port
-                      |  app.elastic.url="$elasticUrl"
                       |}
        """.stripMargin)
       .resolve()
@@ -192,6 +196,15 @@ class AnalyticsSpec()
     ws.url(s"$elasticUrl/otoroshi-events-*").delete().futureValue
 
     // Init datas
+    otoroshiApiCall("PATCH", "/api/globalconfig", Some(Json.parse("""
+      |[
+      |  { "op": "replace", "path": "/elasticWritesConfigs", "value": [
+      |    "clusterUri": "http://127.0.0.1:9200",
+      |    "index": "otoroshi-events",
+      |    "type": "event",
+      |  ] }
+      |]
+    """.stripMargin))).futureValue
     otoroshiApiCall("POST", "/api/groups", Some(testGroup.toJson)).futureValue
     otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id").toJson)).futureValue
     otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id2").toJson)).futureValue

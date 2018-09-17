@@ -44,7 +44,6 @@ trait DataStores {
   def chaosDataStore: ChaosDataStore
   def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore
   def authConfigsDataStore: AuthConfigsDataStore
-  def analyticsService: AnalyticsService = AnalyticsService.apply
 }
 
 trait BasicStore[T] {

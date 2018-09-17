@@ -7,9 +7,8 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
-import com.typesafe.config.{ConfigFactory, ConfigObject, ConfigRenderOptions}
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
-import events.impl.ElasticAnalytics
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
 import models._
@@ -42,9 +41,9 @@ case class SidecarConfig(
 )
 
 class Env(val configuration: Configuration,
-          environment: Environment,
-          lifecycle: ApplicationLifecycle,
-          wsClient: WSClient,
+          val environment: Environment,
+          val lifecycle: ApplicationLifecycle,
+          val wsClient: WSClient,
           val circuitBeakersHolder: CircuitBreakersHolder) {
 
   val logger = Logger("otoroshi-env")
@@ -238,18 +237,6 @@ class Env(val configuration: Configuration,
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
-
-  lazy val elasticAnalyticsConfig: Option[ElasticAnalyticsConfig] = configuration.getOptional[String]("app.elastic.url").map { url =>
-    models.ElasticAnalyticsConfig(
-      url,
-      configuration.getOptional[String]("app.elastic.index"),
-      configuration.getOptional[String]("app.elastic.type"),
-      configuration.getOptional[String]("app.elastic.user"),
-      configuration.getOptional[String]("app.elastic.password")
-    )
-  }
-
-  lazy val elasticAnalytics: Option[ElasticAnalytics] = elasticAnalyticsConfig.map(c => new ElasticAnalytics(c, environment, wsClient, otoroshiExecutionContext, otoroshiActorSystem))
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
