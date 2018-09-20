@@ -151,16 +151,15 @@ class Env(val configuration: Configuration,
 
   lazy val gatewayClient = {
     val parser  = new WSConfigParser(configuration.underlying, environment.classLoader)
-    val config  = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(keepAlive = true)
-    val builder = new AhcConfigBuilder(config)
-    // TODO : use it
-    val ahcConfig: AsyncHttpClientConfig = builder
-      .configure()
-      .setCompressionEnforced(false)
-      .setKeepAlive(true)
-      .setHttpClientCodecMaxChunkSize(1024 * 100)
-      .build()
-    AhcWSClient(config.copy(wsClientConfig = config.wsClientConfig.copy(compressionEnabled = false)))(
+    val config  = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
+      keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
+      //setHttpClientCodecMaxChunkSize(1024 * 100)
+    )
+    AhcWSClient(config.copy(wsClientConfig = config.wsClientConfig.copy(
+      compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      idleTimeout = configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+      connectionTimeout = configuration.getOptional[Int]("app.proxy.connectionTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis)
+    )))(
       otoroshiMaterializer
     )
   }
