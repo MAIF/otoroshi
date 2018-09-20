@@ -22,11 +22,11 @@ before_install:
   - nvm install 8.6.0 
   - nvm use 8.6.0 
   - curl -o- -L https://yarnpkg.com/install.sh | bash
-  - wget --quiet https://sh.rustup.rs -O rustupinstall.sh
-  - sh ./rustupinstall.sh -y
-  - export PATH=$PATH:$HOME/.cargo/bin
-  - rustup update
-  - rustup default stable 
+  #- wget --quiet https://sh.rustup.rs -O rustupinstall.sh
+  #- sh ./rustupinstall.sh -y
+  #- export PATH=$PATH:$HOME/.cargo/bin
+  #- rustup update
+  #- rustup default stable 
   - docker-compose -f docker-compose-test.yml up -d
   #- docker run -d -p 9042:9042 -p 7000:7000 --env CASSANDRA_LISTEN_ADDRESS=127.0.0.1 cassandra:3.11
   #- docker run -d -p 6379:6379 redis:4.0.8 redis-server --appendonly yes
