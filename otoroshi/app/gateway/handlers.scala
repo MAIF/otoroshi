@@ -253,10 +253,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
             .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
             .flatMap {
               case None => {
-                Errors.craftResponseResult(s"Service not found 1", NotFound, req, None, Some("errors.service.not.found"))
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
               }
               case Some(desc) if !desc.enabled => {
-                Errors.craftResponseResult(s"Service not found 2", NotFound, req, None, Some("errors.service.not.found"))
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
               }
               case Some(descriptor) if !descriptor.privateApp => {
                 Errors.craftResponseResult(s"Private apps are not configured", NotFound, req, None, Some("errors.service.auth.not.configured"))
