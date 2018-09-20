@@ -65,6 +65,26 @@ case "${1}" in
   cleanup)
     cleanup
     ;;
+  build-jdk8)
+    prepare_build
+    build_jdk8 $2
+    cleanup
+    ;;
+  build-jdk9)
+    prepare_build
+    build_jdk9 $2
+    cleanup
+    ;;
+  build-jdk10)
+    prepare_build
+    build_jdk10 $2
+    cleanup
+    ;;
+  build-jdk11)
+    prepare_build
+    build_jdk11 $2
+    cleanup
+    ;;
   build-all)
     prepare_build
     build_jdk8 $2
