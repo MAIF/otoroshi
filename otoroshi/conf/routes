@@ -111,8 +111,8 @@ POST    /api/services/:serviceId/targets                      controllers.ApiCon
 DELETE  /api/services/:serviceId/targets                      controllers.ApiController.serviceDeleteTarget(serviceId)
 PATCH   /api/services/:serviceId/targets                      controllers.ApiController.updateServiceTargets(serviceId)
 GET     /api/services/:serviceId/live                         controllers.ApiController.serviceLiveStats(serviceId, every: Option[Int])
-GET     /api/services/:serviceId/stats                        controllers.ApiController.serviceStats(serviceId, from: Option[String], to: Option[String])
-GET     /api/services/:serviceId/events                       controllers.ApiController.serviceEvents(serviceId, from: Option[String], to: Option[String])
+GET     /api/services/:serviceId/stats                        controllers.AnalyticsController.serviceStats(serviceId, from: Option[String], to: Option[String])
+GET     /api/services/:serviceId/events                       controllers.AnalyticsController.serviceEvents(serviceId, from: Option[String], to: Option[String])
 GET     /api/services/:serviceId/health                       controllers.ApiController.serviceHealth(serviceId)
 GET     /api/services/:serviceId/canary                       controllers.ApiController.serviceCanaryMembers(serviceId)
 DELETE  /api/services/:serviceId/canary                       controllers.ApiController.resetServiceCanaryMembers(serviceId)
@@ -169,7 +169,7 @@ PATCH   /api/auths/:id                                        controllers.ApiCon
 GET     /api/auths                                            controllers.ApiController.findAllGlobalAuthModules()
 POST    /api/auths                                            controllers.ApiController.createGlobalAuthModule()
 
-GET     /api/stats/global                                     controllers.ApiController.globalStats(from: Option[String], to: Option[String])
+GET     /api/stats/global                                     controllers.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()

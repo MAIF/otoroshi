@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
-import com.typesafe.config.{ConfigFactory, ConfigObject, ConfigRenderOptions}
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
@@ -41,9 +41,9 @@ case class SidecarConfig(
 )
 
 class Env(val configuration: Configuration,
-          environment: Environment,
-          lifecycle: ApplicationLifecycle,
-          wsClient: WSClient,
+          val environment: Environment,
+          val lifecycle: ApplicationLifecycle,
+          val wsClient: WSClient,
           val circuitBeakersHolder: CircuitBreakersHolder) {
 
   val logger = Logger("otoroshi-env")

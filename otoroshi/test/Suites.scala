@@ -78,7 +78,7 @@ object OtoroshiTests {
 
   def getSuites(): Seq[Suite] = {
     val (name, config) = getNameAndConfig()
-    if (name == "LevelDB") {
+    val suites = if (name == "LevelDB") {
       Seq(
         new BasicSpec(name, Configurations.LevelDBConfiguration),
         new AdminApiSpec(name, Configurations.LevelDBConfiguration),
@@ -87,6 +87,7 @@ object OtoroshiTests {
         new QuotasSpec(name, Configurations.LevelDBConfiguration),
         new CanarySpec(name, Configurations.LevelDBConfiguration),
         new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration),
+        // new AnalyticsSpec(name, Configurations.LevelDBConfiguration),
         new ApiKeysSpec(name, Configurations.LevelDBConfiguration),
         new SidecarSpec(name, Configurations.LevelDBConfiguration),
         new JWTVerificationSpec(name, Configurations.LevelDBConfiguration),
@@ -100,6 +101,7 @@ object OtoroshiTests {
         new ProgrammaticApiSpec(name, config),
         new CircuitBreakerSpec(name, config),
         new AlertAndAnalyticsSpec(name, config),
+        // new AnalyticsSpec(name, config),
         new ApiKeysSpec(name, config),
         new CanarySpec(name, config),
         new QuotasSpec(name, config),
@@ -108,6 +110,11 @@ object OtoroshiTests {
         new SnowMonkeySpec(name, config)
         // new WebsocketSpec(name, config)
       )
+    }
+    Option(System.getenv("TEST_ANALYTICS")) match {
+      case Some("true") if name == "LevelDB" => suites :+ new AnalyticsSpec(name, Configurations.LevelDBConfiguration)
+      case Some("true") => suites :+ new AnalyticsSpec(name, config)
+      case None => suites
     }
   }
 }
@@ -125,5 +132,5 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 // class DevOtoroshiTests
 //     extends Suites(
-//       new SnowMonkeySpec("DEV", Configurations.InMemoryConfiguration),
+//       new AnalyticsSpec("DEV", Configurations.InMemoryConfiguration),
 //     )

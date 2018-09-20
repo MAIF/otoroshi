@@ -40,6 +40,8 @@
   <logger name="otoroshi-alerts" level="WARN" />
   <logger name="otoroshi-analytics-actor" level="WARN" />
   <logger name="otoroshi-analytics" level="WARN" />
+  <logger name="otoroshi-analytics-elastic" level="WARN" />
+  <logger name="otoroshi-analytics-webhook" level="WARN" />
   <logger name="otoroshi-circuit-breaker" level="WARN" />
   <logger name="otoroshi-error-handler" level="WARN" />
   <logger name="otoroshi-http-handler" level="WARN" />

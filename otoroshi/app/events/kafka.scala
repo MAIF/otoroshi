@@ -4,18 +4,17 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
-import org.apache.kafka.common.serialization.{ByteArraySerializer, StringDeserializer, StringSerializer}
-import akka.{Done, NotUsed}
+import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
+import akka.Done
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
 import akka.kafka.ProducerSettings
 import org.apache.kafka.common.config.SslConfigs
-import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import play.api.libs.json._
 import env.Env
+import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
 
 case class KafkaConfig(servers: Seq[String],
                        keyPass: Option[String] = None,
@@ -43,7 +42,7 @@ object KafkaSettings {
     } yield {
       settings
         .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
-        .withProperty(SslConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
+        .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
         .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kp)
         .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ks)
         .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, kp)

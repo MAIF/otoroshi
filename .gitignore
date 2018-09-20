@@ -4,3 +4,7 @@ release-*
 *.swp
 cassandra-data
 mongo-data
+node_modules
+.idea
+target
+/data

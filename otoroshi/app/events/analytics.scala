@@ -1,22 +1,23 @@
 package events
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, PoisonPill, Props, Terminated}
+import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
-import models.{HSAlgoSettings, RemainingQuotas, ServiceDescriptor}
+import events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
+import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import utils.JsonImplicits._
-import security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 case object SendToAnalytics
 
@@ -50,41 +51,12 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             kafkaWrapperAudit.close()
           }
         }
-        Future.sequence(config.analyticsWebhooks.map { webhook =>
-          val state = IdGenerator.extendedToken(128)
-          val claim = OtoroshiClaim(
-            iss = env.Headers.OtoroshiIssuer,
-            sub = "otoroshi-analytics",
-            aud = "omoikane",
-            exp = DateTime.now().plusSeconds(30).toDate.getTime,
-            iat = DateTime.now().toDate.getTime,
-            jti = IdGenerator.uuid
-          ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}"))(env) // TODO : maybe we need some config here ?
-          val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
-            env.Headers.OtoroshiState -> state,
-            env.Headers.OtoroshiClaim -> claim
-          )
-
-          val url = evts.headOption
-            .map(
-              evt =>
-                webhook.url
-                //.replace("@product", env.eventsName)
-                  .replace("@service", evt.`@service`)
-                  .replace("@serviceId", evt.`@serviceId`)
-                  .replace("@id", evt.`@id`)
-                  .replace("@messageType", evt.`@type`)
-            )
-            .getOrElse(webhook.url)
-          env.Ws.url(url).withHttpHeaders(headers: _*).post(JsArray(evts.map(_.toJson))).andThen {
-            case Success(resp) => {
-              logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")
-            }
-            case Failure(e) => {
-              logger.error("SEND_TO_ANALYTICS_FAILURE: Error while sending AnalyticEvent", e)
-            }
-          }
-        })
+        Future.traverse(
+          config.analyticsWebhooks.map(c => new WebHookAnalytics(c)) ++
+          config.elasticWritesConfigs.map(c => new ElasticWritesAnalytics(c, env.environment, env.wsClient, env.otoroshiExecutionContext, env.otoroshiActorSystem))
+        ) {
+          _.publish(evts)
+        }
       }
     }
 
@@ -303,3 +275,195 @@ trait HealthCheckDataStore {
                                                      env: Env): Future[Option[HealthCheckEvent]]
   def push(event: HealthCheckEvent)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
+
+trait AnalyticsReadsService {
+  def events(eventType: String, service: Option[String], from: Option[DateTime], to: Option[DateTime], page: Int = 1, size: Int = 50)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchHits(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchDataIn(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchDataOut(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchAvgDuration(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchAvgOverhead(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchStatusesPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchStatusesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchDataInStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchDataOutStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchDurationStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchDurationPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchOverheadPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchOverheadStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchProductPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+}
+
+trait AnalyticsWritesService {
+  def init(): Unit
+  def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit]
+}
+
+class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends AnalyticsReadsService {
+
+  private def underlyingService()(implicit env: Env, ec: ExecutionContext): Future[Option[AnalyticsReadsService]] = {
+    FastFuture.successful(globalConfig.elasticReadsConfig.map(c => new ElasticReadsAnalytics(c, env.environment, env.wsClient, env.otoroshiExecutionContext, env.otoroshiActorSystem)))
+  }
+
+  override def events(eventType: String,
+                      service: Option[String],
+                      from: Option[DateTime],
+                      to: Option[DateTime],
+                      page: Int,
+                      size: Int)(
+      implicit env: Env,
+      ec: ExecutionContext
+  ): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.events(eventType, service, from, to, page, size))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchHits(
+                          service: Option[String],
+                          from: Option[DateTime],
+                          to: Option[DateTime]
+                        )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchHits(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchDataIn(
+                            service: Option[String],
+                            from: Option[DateTime],
+                            to: Option[DateTime]
+                          )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchDataIn(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+  override def fetchDataOut(
+                             service: Option[String],
+                             from: Option[DateTime],
+                             to: Option[DateTime]
+                           )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchDataOut(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchAvgDuration(
+                                 service: Option[String],
+                                 from: Option[DateTime],
+                                 to: Option[DateTime]
+                               )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchAvgDuration(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchAvgOverhead(
+                                 service: Option[String],
+                                 from: Option[DateTime],
+                                 to: Option[DateTime]
+                               )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchAvgOverhead(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchStatusesPiechart(
+                                      service: Option[String],
+                                      from: Option[DateTime],
+                                      to: Option[DateTime]
+                                    )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchStatusesPiechart(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchStatusesHistogram(
+                                       service: Option[String],
+                                       from: Option[DateTime],
+                                       to: Option[DateTime]
+                                     )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchStatusesHistogram(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchDataInStatsHistogram(
+                                          service: Option[String],
+                                          from: Option[DateTime],
+                                          to: Option[DateTime]
+                                        )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchDataInStatsHistogram(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchDataOutStatsHistogram(
+                                           service: Option[String],
+                                           from: Option[DateTime],
+                                           to: Option[DateTime]
+                                         )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchDataOutStatsHistogram(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchDurationStatsHistogram(
+                                            service: Option[String],
+                                            from: Option[DateTime],
+                                            to: Option[DateTime]
+                                          )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchDurationStatsHistogram(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchDurationPercentilesHistogram(
+                                                  service: Option[String],
+                                                  from: Option[DateTime],
+                                                  to: Option[DateTime]
+                                                )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchDurationPercentilesHistogram(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchOverheadPercentilesHistogram(
+                                                  service: Option[String],
+                                                  from: Option[DateTime],
+                                                  to: Option[DateTime]
+                                                )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchOverheadPercentilesHistogram(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchOverheadStatsHistogram(
+                                            service: Option[String],
+                                            from: Option[DateTime],
+                                            to: Option[DateTime]
+                                          )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchOverheadStatsHistogram(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+    )
+  override def fetchProductPiechart(service: Option[String],
+                                    from: Option[DateTime],
+                                    to: Option[DateTime],
+                                    size: Int)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchProductPiechart(service, from, to, size))
+      .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchServicePiechart(service: Option[String],
+                                    from: Option[DateTime],
+                                    to: Option[DateTime],
+                                    size: Int)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap( _
+      .map(_.fetchServicePiechart(service, from, to, size))
+      .getOrElse(FastFuture.successful(None))
+    )
+}
+

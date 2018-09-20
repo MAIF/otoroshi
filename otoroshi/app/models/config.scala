@@ -12,9 +12,46 @@ import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String]) {
-  def toJson = Webhook.format.writes(this)
+case class ElasticAnalyticsConfig(
+  clusterUri: String,
+  index: Option[String] = None,
+  `type`: Option[String] = None,
+  user: Option[String] = None,
+  password: Option[String] = None
+) {
+  def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
+
+object ElasticAnalyticsConfig {
+  val format = new Format[ElasticAnalyticsConfig] {
+    override def writes(o: ElasticAnalyticsConfig) = Json.obj(
+      "clusterUri" -> o.clusterUri,
+      "index" -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "type" -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "user" -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "password" -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
+    override def reads(json: JsValue) = Try {
+      JsSuccess(
+        ElasticAnalyticsConfig(
+          clusterUri = (json \ "clusterUri").as[String],
+          index = (json \ "index").asOpt[String],
+          `type` = (json \ "type").asOpt[String],
+          user = (json \ "user").asOpt[String],
+          password = (json \ "password").asOpt[String]
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+
+case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String]) {
+  def toJson: JsObject = Webhook.format.writes(this)
+}
+
+
 
 object Webhook {
   implicit val format = Json.format[Webhook]
@@ -49,7 +86,8 @@ case class GlobalConfig(
     ipFiltering: IpFiltering = IpFiltering(),
     throttlingQuota: Long = BaseQuotas.MaxValue,
     perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
-    analyticsEventsUrl: Option[Webhook] = None,
+    elasticReadsConfig: Option[ElasticAnalyticsConfig] = None,
+    elasticWritesConfigs: Seq[ElasticAnalyticsConfig] = Seq.empty[ElasticAnalyticsConfig],
     analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
     alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
     alertsEmails: Seq[String] = Seq.empty[String],
@@ -148,9 +186,10 @@ object GlobalConfig {
         "ipFiltering"             -> o.ipFiltering.toJson,
         "throttlingQuota"         -> o.throttlingQuota,
         "perIpThrottlingQuota"    -> o.perIpThrottlingQuota,
-        "analyticsEventsUrl"      -> o.analyticsEventsUrl.map(_.toJson).getOrElse(JsNull).as[JsValue],
         "analyticsWebhooks"       -> JsArray(o.analyticsWebhooks.map(_.toJson)),
         "alertsWebhooks"          -> JsArray(o.alertsWebhooks.map(_.toJson)),
+        "elasticWritesConfigs"    -> JsArray(o.elasticWritesConfigs.map(_.toJson)),
+        "elasticReadsConfig"      -> o.elasticReadsConfig.map(_.toJson).getOrElse(JsNull).as[JsValue],
         "alertsEmails"            -> JsArray(o.alertsEmails.map(JsString.apply)),
         "endlessIpAddresses"      -> JsArray(o.endlessIpAddresses.map(JsString.apply)),
         "statsdConfig"            -> statsdConfig,
@@ -181,16 +220,25 @@ object GlobalConfig {
           ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](IpFiltering.format).getOrElse(IpFiltering()),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           perIpThrottlingQuota = (json \ "perIpThrottlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
-          analyticsEventsUrl = (json \ "analyticsEventsUrl")
-            .asOpt[JsObject]
-            .map(obj => Webhook.format.reads(obj))
-            .filter(_.isSuccess)
-            .map(r => Some(r.get))
-            .getOrElse(None),
+          elasticReadsConfig = (json \ "elasticReadsConfig").asOpt[JsObject].flatMap { config =>
+            (
+              (config \ "clusterUri").asOpt[String],
+              (config \ "index").asOpt[String],
+              (config \ "type").asOpt[String],
+              (config \ "user").asOpt[String],
+              (config \ "password").asOpt[String]
+            ) match {
+              case (Some(clusterUri), index, typ, user, password) if clusterUri.nonEmpty =>
+                Some(ElasticAnalyticsConfig(clusterUri, index, typ, user, password))
+              case e => None
+            }
+          },
           analyticsWebhooks =
             (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
           alertsWebhooks =
             (json \ "alertsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
+          elasticWritesConfigs =
+            (json \ "elasticWritesConfigs").asOpt[Seq[ElasticAnalyticsConfig]](Reads.seq(ElasticAnalyticsConfig.format)).getOrElse(Seq.empty[ElasticAnalyticsConfig]),
           alertsEmails = (json \ "alertsEmails").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           maxWebhookSize = (json \ "maxWebhookSize").asOpt[Int].getOrElse(100),
