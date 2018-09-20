@@ -1,15 +1,15 @@
 import actions._
-import controllers._
-import modules._
-import play.api._
-import play.api.ApplicationLoader.Context
-import play.api.routing.Router
 import com.softwaremill.macwire._
+import controllers._
 import env.Env
 import gateway._
+import modules._
+import play.api.ApplicationLoader.Context
+import play.api._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
+import play.api.mvc.EssentialFilter
+import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import router.Routes
 
@@ -55,7 +55,7 @@ package object modules {
     lazy val swaggerController     = wire[SwaggerController]
     lazy val apiController         = wire[ApiController]
     lazy val analyticsController   = wire[AnalyticsController]
-    lazy val auth0Controller       = wire[Auth0Controller]
+    lazy val auth0Controller       = wire[AuthController]
     lazy val backOfficeController  = wire[BackOfficeController]
     lazy val privateAppsController = wire[PrivateAppsController]
     lazy val u2fController         = wire[U2FController]

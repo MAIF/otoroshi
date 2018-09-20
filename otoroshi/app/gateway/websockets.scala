@@ -796,7 +796,7 @@ class WebSocketHandler()(implicit env: Env) {
                           isPrivateAppsSessionValid(req, descriptor).flatMap {
                             case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                             case None => {
-                              val redirectTo = env.rootScheme + env.privateAppsHost + controllers.routes.Auth0Controller
+                              val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort.map(a => s":$a").getOrElse("") + controllers.routes.AuthController
                                 .confidentialAppLoginPage()
                                 .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
                               logger.trace("should redirect to " + redirectTo)

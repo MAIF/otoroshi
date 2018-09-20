@@ -2,6 +2,7 @@ package gateway
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 
+import actions.{PrivateAppsAction, PrivateAppsActionContext}
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.util.FastFuture
@@ -13,6 +14,7 @@ import auth.AuthModuleConfig
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
+import controllers.routes
 import env.{Env, SidecarConfig}
 import events._
 import models._
@@ -209,17 +211,78 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def removePrivateAppsCookies() = actionBuilder.async { req =>
-    val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
-    val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
-    val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
-    (redirectToOpt, hostOpt, cookiePrefOpt) match {
-      case (Some(redirectTo), Some(host), Some(cp)) =>
-        FastFuture.successful(
-          Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*)
+  def withAuthConfig(descriptor: ServiceDescriptor,
+                     req: RequestHeader)(f: AuthModuleConfig => Future[Result]): Future[Result] = {
+    descriptor.authConfigRef match {
+      case None =>
+        Errors.craftResponseResult(
+          "Auth. config. ref not found on the descriptor",
+          Results.InternalServerError,
+          req,
+          Some(descriptor),
+          Some("errors.auth.config.ref.not.found")
         )
-      case _ =>
-        Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
+      case Some(ref) => {
+        env.datastores.authConfigsDataStore.findById(ref).flatMap {
+          case None =>
+            Errors.craftResponseResult(
+              "Auth. config. not found on the descriptor",
+              Results.InternalServerError,
+              req,
+              Some(descriptor),
+              Some("errors.auth.config.not.found")
+            )
+          case Some(auth) => f(auth)
+        }
+      }
+    }
+  }
+
+  def removePrivateAppsCookies() = actionBuilder.async { req =>
+    import utils.future.Implicits._
+
+    implicit val request = req
+
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      ServiceLocation(req.host, globalConfig) match {
+        case None => {
+          Errors.craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}", NotFound, req, None, Some("errors.service.not.found"))
+        }
+        case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
+          env.datastores.serviceDescriptorDataStore
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
+            .flatMap {
+              case None => {
+                Errors.craftResponseResult(s"Service not found 1", NotFound, req, None, Some("errors.service.not.found"))
+              }
+              case Some(desc) if !desc.enabled => {
+                Errors.craftResponseResult(s"Service not found 2", NotFound, req, None, Some("errors.service.not.found"))
+              }
+              case Some(descriptor) if !descriptor.privateApp => {
+                Errors.craftResponseResult(s"Private apps are not configured", NotFound, req, None, Some("errors.service.auth.not.configured"))
+              }
+              case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
+                withAuthConfig(descriptor, req) { auth =>
+                  auth.authModule(globalConfig).paLogout(req, globalConfig, descriptor).map { _ =>
+                    val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                    cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
+                      env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                    }
+                    val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort.map(a => s":$a").getOrElse("") + controllers.routes.AuthController
+                      .confidentialAppLogout()
+                      .url + s"?redirectTo=http://${req.host}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
+                    logger.trace("should redirect to " + redirectTo)
+                    Redirect(redirectTo)
+                      .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
+                  }
+                }
+              }
+              case _ => {
+                Errors.craftResponseResult(s"Private apps are not configured", NotFound, req, None, Some("errors.service.auth.not.configured"))
+              }
+            }
+        }
+      }
     }
   }
 
@@ -1315,7 +1378,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             isPrivateAppsSessionValid(req, descriptor).flatMap {
                               case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                               case None => {
-                                val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort.map(a => s":$a").getOrElse("") + controllers.routes.Auth0Controller
+                                val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort.map(a => s":$a").getOrElse("") + controllers.routes.AuthController
                                   .confidentialAppLoginPage()
                                   .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
                                 logger.trace("should redirect to " + redirectTo)

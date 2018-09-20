@@ -10,7 +10,7 @@
                 <a class="btn" href="@routes.BackOfficeController.dashboard()" role="button">
                     <i class="fa fa-tachometer"></i> Dashboard for @user.name
                 </a>
-                <a class="btn" href="@routes.Auth0Controller.backOfficeLogout()" role="button">
+                <a class="btn" href="@routes.AuthController.backOfficeLogout()" role="button">
                     <span class="glyphicon glyphicon-off"></span> Logout
                 </a>
             </p>
@@ -18,7 +18,7 @@
         @if(userOpt.isEmpty) {
            <p>
            @if(auth0Enabled) {
-                <a class="btn btn-lg" href="@routes.Auth0Controller.backOfficeLogin()" role="button">Login using third-party</a>
+                <a class="btn btn-lg" href="@routes.AuthController.backOfficeLogin()" role="button">Login using third-party</a>
             }
             <a class="btn btn-lg" href="@routes.U2FController.loginPage()" role="button">Login</a></p>
         }

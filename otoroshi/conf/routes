@@ -2,7 +2,7 @@
 GET     /                                                     controllers.BackOfficeController.index
 GET     /robot.txt                                            controllers.BackOfficeController.robotTxt
 GET     /error                                                controllers.BackOfficeController.error(message: Option[String])
-GET     /auth0error                                           controllers.Auth0Controller.auth0error(error: Option[String], error_description: Option[String])
+GET     /auth0error                                           controllers.AuthController.auth0error(error: Option[String], error_description: Option[String])
 GET     /health                                               controllers.ApiController.health()
 
 # U2F URLs
@@ -61,16 +61,16 @@ GET     /privateapps/error                                    controllers.Privat
 GET     /privateapps/home                                     controllers.PrivateAppsController.home
 GET     /privateapps/redirect                                 controllers.PrivateAppsController.redirect
 
-GET     /privateapps/generic/login                            controllers.Auth0Controller.confidentialAppLoginPage()
-GET     /privateapps/generic/logout                           controllers.Auth0Controller.confidentialAppLogout()
-GET     /privateapps/generic/callback                         controllers.Auth0Controller.confidentialAppCallback()
-POST    /privateapps/generic/callback                         controllers.Auth0Controller.confidentialAppCallback()
+GET     /privateapps/generic/login                            controllers.AuthController.confidentialAppLoginPage()
+GET     /privateapps/generic/logout                           controllers.AuthController.confidentialAppLogout()
+GET     /privateapps/generic/callback                         controllers.AuthController.confidentialAppCallback()
+POST    /privateapps/generic/callback                         controllers.AuthController.confidentialAppCallback()
 
 
-GET     /backoffice/auth0/login                               controllers.Auth0Controller.backOfficeLogin()
-GET     /backoffice/auth0/logout                              controllers.Auth0Controller.backOfficeLogout()
-GET     /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(error: Option[String], error_description: Option[String])
-POST    /backoffice/auth0/callback                            controllers.Auth0Controller.backOfficeCallback(error: Option[String], error_description: Option[String])
+GET     /backoffice/auth0/login                               controllers.AuthController.backOfficeLogin()
+GET     /backoffice/auth0/logout                              controllers.AuthController.backOfficeLogout()
+GET     /backoffice/auth0/callback                            controllers.AuthController.backOfficeCallback(error: Option[String], error_description: Option[String])
+POST    /backoffice/auth0/callback                            controllers.AuthController.backOfficeCallback(error: Option[String], error_description: Option[String])
 
 # Admin API
 
