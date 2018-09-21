@@ -639,7 +639,7 @@ case class LocalJwtVerifier(
     FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
-case class RefJwtVerifier(id: Option[String], enabled: Boolean) extends JwtVerifier with AsJson {
+case class RefJwtVerifier(id: Option[String] = None, enabled: Boolean = false) extends JwtVerifier with AsJson {
 
   def asJson: JsValue = Json.obj(
     "type"    -> "ref",

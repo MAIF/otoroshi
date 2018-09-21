@@ -301,7 +301,7 @@ case class ServiceDescriptor(
     canary: Canary = Canary(),
     metadata: Map[String, String] = Map.empty[String, String],
     chaosConfig: ChaosConfig = ChaosConfig(),
-    jwtVerifier: JwtVerifier = LocalJwtVerifier(),
+    jwtVerifier: JwtVerifier = RefJwtVerifier(),
     secComSettings: AlgoSettings = HSAlgoSettings(
       512,
       "${config.app.claim.sharedKey}"
@@ -419,7 +419,7 @@ object ServiceDescriptor {
           chaosConfig = (json \ "chaosConfig").asOpt(ChaosConfig._fmt).getOrElse(ChaosConfig()),
           jwtVerifier = JwtVerifier
             .fromJson((json \ "jwtVerifier").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(LocalJwtVerifier()),
+            .getOrElse(RefJwtVerifier()),
           secComSettings = AlgoSettings
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
