@@ -639,11 +639,11 @@ case class LocalJwtVerifier(
     FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
-case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with AsJson {
+case class RefJwtVerifier(id: Option[String], enabled: Boolean) extends JwtVerifier with AsJson {
 
   def asJson: JsValue = Json.obj(
     "type"    -> "ref",
-    "id"      -> this.id,
+    "id"      -> this.id.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "enabled" -> this.enabled
   )
 
@@ -656,42 +656,52 @@ case class RefJwtVerifier(id: String, enabled: Boolean) extends JwtVerifier with
   override def verify(request: RequestHeader, desc: ServiceDescriptor)(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env) = {
-    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
-      case Some(verifier) => verifier.verify(request, desc)(f)
-      case None =>
-        Errors.craftResponseResult(
-          "error.bad.globaljwtverifier.id",
-          Results.InternalServerError,
-          request,
-          Some(desc),
-          None
-        )
-    }
-  }
-
-  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(
-      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env) = {
-    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
-      case Some(verifier) => verifier.verifyWs(request, desc)(f)
-      case None =>
-        Errors
-          .craftResponseResult(
+    id match {
+      case None => f(JwtInjection())
+      case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+        case Some(verifier) => verifier.verify(request, desc)(f)
+        case None =>
+          Errors.craftResponseResult(
             "error.bad.globaljwtverifier.id",
             Results.InternalServerError,
             request,
             Some(desc),
             None
           )
-          .map(a => Left(a))
+      }
     }
   }
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    env.datastores.globalJwtVerifierDataStore.findById(id).flatMap {
-      case Some(verifier) => verifier.shouldBeVerified(path)
-      case None           => Future.failed(new RuntimeException("Jwt verifier not found ..."))
+  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env) = {
+    id match {
+      case None => f(JwtInjection())
+      case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+        case Some(verifier) => verifier.verifyWs(request, desc)(f)
+        case None =>
+          Errors
+            .craftResponseResult(
+              "error.bad.globaljwtverifier.id",
+              Results.InternalServerError,
+              request,
+              Some(desc),
+              None
+            )
+            .map(a => Left(a))
+      }
     }
+  }
+
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    id match {
+      case None => FastFuture.successful(false)
+      case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+        case Some(verifier) => verifier.shouldBeVerified(path)
+        case None => Future.failed(new RuntimeException("Jwt verifier not found ..."))
+      }
+    }
+  }
 }
 
 object RefJwtVerifier extends FromJson[RefJwtVerifier] {
@@ -699,7 +709,7 @@ object RefJwtVerifier extends FromJson[RefJwtVerifier] {
     Try {
       Right[Throwable, RefJwtVerifier](
         RefJwtVerifier(
-          id = (json \ "id").as[String],
+          id = (json \ "id").asOpt[String],
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false)
         )
       )
