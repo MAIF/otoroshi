@@ -58,8 +58,13 @@ export class SelectInput extends Component {
   };
 
   onChange = e => {
-    this.setState({ value: e.value });
-    this.props.onChange(e.value);
+    if (e) {
+      this.setState({value: e.value});
+      this.props.onChange(e.value);
+    } else {
+      this.setState({ value: null });
+      this.props.onChange(null);
+    }
   };
 
   onChangeClassic = e => {

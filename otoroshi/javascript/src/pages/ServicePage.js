@@ -761,6 +761,25 @@ export class ServicePage extends Component {
               transformer={a => ({ value: a.id, label: a.name })}
               help="..."
             />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                {!this.state.service.authConfigRef && (
+                  <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-primary">
+                    <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
+                  </a>
+                )}
+                {this.state.service.authConfigRef && (
+                  <a
+                    href={`/bo/dashboard/auth-configs/edit/${
+                      this.state.service.authConfigRef
+                      }`}
+                    className="btn btn-success">
+                    <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
+                  </a>
+                )}
+              </div>
+            </div>
             <ArrayInput
               label="Excluded patterns"
               placeholder="URI pattern"
