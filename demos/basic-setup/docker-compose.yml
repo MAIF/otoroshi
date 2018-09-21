@@ -150,18 +150,6 @@ services:
     networks:
       - basicsetup
 
-  es-ingester:
-    build: ./es-ingester
-    networks:
-      - basicsetup
-    environment: 
-      - PORT=8080
-      - ES_HOST=elastic
-    expose:
-      - 8080
-    depends_on:
-      - elastic
-
 networks:
   basicsetup:
     driver: bridge

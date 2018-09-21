@@ -435,7 +435,7 @@ export class DangerZonePage extends Component {
     'elasticWritesConfig',
     '>>>Analytics: Elastic dashboard datasource (read)',
     'elasticReadsConfig',
-    '>>>Analytics: Kafka settings',
+    '>>>Analytics: Kafka',
     'kafkaConfig.servers',
     'kafkaConfig.keyPass',
     'kafkaConfig.keystore',

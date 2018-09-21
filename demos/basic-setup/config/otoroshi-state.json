@@ -17,13 +17,23 @@
     },
     "throttlingQuota": 100000,
     "perIpThrottlingQuota": 100000,
-    "analyticsEventsUrl": null,
-    "analyticsWebhooks": [
+    "analyticsWebhooks": [],
+    "elasticWritesConfigs": [
       {
-        "url": "http://es-ingester:8080/api/v1/events",
-        "headers": {}
+        "clusterUri": "http://elastic:9200",
+        "index": "otoroshi-events",
+        "type": "event",
+        "user": null,
+        "password": null
       }
     ],
+    "elasticReadsConfig": {
+      "clusterUri": "http://elastic:9200",
+      "index": "otoroshi-events",
+      "type": "event",
+      "user": null,
+      "password": null
+    },
     "alertsWebhooks": [],
     "alertsEmails": [],
     "endlessIpAddresses": [],

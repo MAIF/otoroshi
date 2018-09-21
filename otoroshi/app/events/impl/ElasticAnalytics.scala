@@ -107,7 +107,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, environment: Enviro
     authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
-      }
+      }.addHttpHeaders(config.headers.toSeq:_*)
   }
 
   override def init(): Unit = {
@@ -188,7 +188,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, environment: Enviro
           "Authorization" -> h,
           "Content-Type" -> "application/x-ndjson"
         )
-      }
+      }.addHttpHeaders(config.headers.toSeq:_*)
     Source(event.toList)
       .map(_.toJson)
       .grouped(500)
@@ -231,7 +231,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, environment: Environ
     authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
-      }
+      }.addHttpHeaders(config.headers.toSeq:_*)
   }
 
   override def fetchHits(service: Option[String],
@@ -467,6 +467,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, environment: Environ
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
+      .addHttpHeaders(config.headers.toSeq:_*)
       .post(query)
       .flatMap { resp =>
         resp.status match {

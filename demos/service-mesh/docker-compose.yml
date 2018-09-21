@@ -183,7 +183,7 @@ services:
       - mesh
     command: redis-server --appendonly yes
     volumes:
-      - ./internal-redis-data:/data
+      - ./data/internal-redis-data:/data
   
   gateway-redis:
     image: redis:4.0.8
@@ -193,7 +193,7 @@ services:
       - mesh
     command: redis-server --appendonly yes
     volumes:
-      - ./gateway-redis-data:/data
+      - ./data/gateway-redis-data:/data
 
 networks:
   mesh:

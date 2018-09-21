@@ -339,6 +339,20 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def ElasticConfig = Json.obj(
+    "description" -> "The configuration for elastic access",
+    "type"        -> "object",
+    "required"    -> Json.arr("clusterUri", "index", "type", "user", "password", "headers"),
+    "properties" -> Json.obj(
+      "clusterUri" -> SimpleStringType ~~> "URL of the elastic cluster",
+      "index" -> OptionalStringType ~~> "Index for events. Default is otoroshi-events",
+      "type" -> OptionalStringType ~~> "Type of events. Default is event",
+      "user" -> OptionalStringType ~~> "Optional user",
+      "password" -> OptionalStringType ~~> "Optional password",
+      "headers" -> SimpleObjectType ~~> "Additionnal http headers"
+    )
+  )
+
   def ClientConfig = Json.obj(
     "description" -> "The configuration of the circuit breaker for a service descriptor",
     "type"        -> "object",
@@ -509,7 +523,6 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "ipFiltering",
       "throttlingQuota",
       "perIpThrottlingQuota",
-      "analyticsEventsUrl",
       "analyticsWebhooks",
       "alertsWebhooks",
       "alertsEmails",
@@ -529,7 +542,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "ipFiltering"             -> Ref("IpFiltering"),
       "throttlingQuota"         -> SimpleLongType ~~> "Authorized number of calls per second globally, measured on 10 seconds",
       "perIpThrottlingQuota"    -> SimpleLongType ~~> "Authorized number of calls per second globally per IP address, measured on 10 seconds",
-      "analyticsEventsUrl"      -> SimpleUriType ~~> "The URL to get analytics events from",
+      "elasticWritesConfigs"    -> ArrayOf(Ref("ElasticConfig")) ~~> "Configs. for Elastic writes",
+      "elasticReadsConfig"      -> Ref("ElasticConfig") ~~> "Config. for elastic reads",
       "analyticsWebhooks"       -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all internal Otoroshi events",
       "alertsWebhooks"          -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all Otoroshi alert events",
       "alertsEmails"            -> ArrayOf(SimpleEmailType) ~~> "Email addresses that will receive all Otoroshi alert events",

@@ -17,7 +17,8 @@ case class ElasticAnalyticsConfig(
   index: Option[String] = None,
   `type`: Option[String] = None,
   user: Option[String] = None,
-  password: Option[String] = None
+  password: Option[String] = None,
+  headers: Map[String, String] = Map.empty[String, String]
 ) {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -29,7 +30,8 @@ object ElasticAnalyticsConfig {
       "index" -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "type" -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "user" -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "password" -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      "password" -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "headers" -> JsObject(o.headers.mapValues(JsString.apply)),
     )
     override def reads(json: JsValue) = Try {
       JsSuccess(
@@ -38,7 +40,8 @@ object ElasticAnalyticsConfig {
           index = (json \ "index").asOpt[String],
           `type` = (json \ "type").asOpt[String],
           user = (json \ "user").asOpt[String],
-          password = (json \ "password").asOpt[String]
+          password = (json \ "password").asOpt[String],
+          headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
         )
       )
     } recover {

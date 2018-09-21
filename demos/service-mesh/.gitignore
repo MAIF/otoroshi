@@ -1,3 +1,4 @@
 gateway-redis-data
 internal-redis-data
+/data
 .DS_Store
