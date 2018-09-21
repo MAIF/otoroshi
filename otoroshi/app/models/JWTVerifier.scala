@@ -731,7 +731,6 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
 }
 
 case class GlobalJwtVerifier(
-    enabled: Boolean = false,
     id: String,
     name: String,
     desc: String,
@@ -745,7 +744,6 @@ case class GlobalJwtVerifier(
 
   def asJson: JsValue = Json.obj(
     "type"             -> "global",
-    "enabled"          -> this.enabled,
     "id"               -> this.id,
     "name"             -> this.name,
     "desc"             -> this.desc,
@@ -763,6 +761,8 @@ case class GlobalJwtVerifier(
 
   override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
+
+  override def enabled = true
 }
 
 object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
@@ -800,7 +800,6 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
           excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           source = source,

@@ -51,6 +51,7 @@ export class JwtVerifiersPage extends Component {
           firstSort={0}
           extractKey={item => item.id}
           formComponent={JwtVerifier}
+          formPassProps={{ global: true }}
         />
       </div>
     );

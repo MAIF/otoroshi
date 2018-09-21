@@ -291,12 +291,12 @@ export class JwtVerifier extends Component {
             onChange={e => changeTheValue(path + '.desc', e)}
           />
         )}
-        <BooleanInput
+        {!this.props.global && <BooleanInput
           label="Enabled"
           value={verifier.enabled}
           help="Is JWT verification enabled for this service"
           onChange={v => changeTheValue(path + '.enabled', v)}
-        />
+        />}
         <BooleanInput
           label="Strict"
           value={verifier.strict}
