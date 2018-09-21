@@ -31,28 +31,32 @@ prepare_build () {
 
 build_jdk8 () {
   docker build --no-cache -t otoroshi .
-  docker tag otoroshi "maif/otoroshi:$1"
-  docker tag otoroshi "maif/otoroshi:jdk8-$1"
+  docker tag otoroshi "maif/otoroshi:latest" "maif/otoroshi:$1" "maif/otoroshi:$1-jdk8"
 }
 
 build_jdk9 () {
   docker build --no-cache -f ./Dockerfile-jdk9 -t otoroshi-jdk9 .
-  docker tag otoroshi-jdk9 "maif/otoroshi:jdk9-$1"
+  docker tag otoroshi-jdk9 "maif/otoroshi:$1-jdk9"
 }
 
 build_jdk10 () {
   docker build --no-cache -f ./Dockerfile-jdk10 -t otoroshi-jdk10 .
-  docker tag otoroshi-jdk10 "maif/otoroshi:jdk10-$1"
+  docker tag otoroshi-jdk10 "maif/otoroshi:$1-jdk10"
 }
 
 build_jdk11 () {
   docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11 .
-  docker tag otoroshi-jdk11 "maif/otoroshi:jdk11-$1"
+  docker tag otoroshi-jdk11 "maif/otoroshi:$1-jdk11"
+}
+
+build_jdk12 () {
+  docker build --no-cache -f ./Dockerfile-jdk12 -t otoroshi-jdk12 .
+  docker tag otoroshi-jdk12 "maif/otoroshi:$1-jdk12"
 }
 
 build_graal () {
   docker build --no-cache -f ./Dockerfile-graal -t otoroshi-graal .
-  docker tag otoroshi-graal "maif/otoroshi:graal-$1"
+  docker tag otoroshi-graal "maif/otoroshi:$1-graal"
 }
 
 # sh ./build.sh build-all 1.2.1-dev-$(date +%s)
@@ -85,12 +89,18 @@ case "${1}" in
     build_jdk11 $2
     cleanup
     ;;
+  build-jdk12)
+    prepare_build
+    build_jdk12 $2
+    cleanup
+    ;;
   build-all)
     prepare_build
     build_jdk8 $2
     build_jdk9 $2
     build_jdk10 $2
     build_jdk11 $2
+    build_jdk12 $2
     build_graal $2
     cleanup
     ;;
@@ -100,14 +110,17 @@ case "${1}" in
     build_jdk9 $2
     build_jdk10 $2
     build_jdk11 $2
+    build_jdk12 $2
     build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
-    docker push "maif/otoroshi:jdk8-$2"
-    docker push "maif/otoroshi:jdk9-$2"
-    docker push "maif/otoroshi:jdk10-$2"
-    docker push "maif/otoroshi:jdk11-$2"
-    docker push "maif/otoroshi:graal-$2"
+    docker push "maif/otoroshi:$2-jdk8"
+    docker push "maif/otoroshi:$2-jdk9"
+    docker push "maif/otoroshi:$2-jdk10"
+    docker push "maif/otoroshi:$2-jdk11"
+    docker push "maif/otoroshi:$2-jdk12"
+    docker push "maif/otoroshi:$2-graal"
+    docker push "maif/otoroshi:latest"
     ;;
   *)
     echo "Build otoroshi docker images"
