@@ -62,6 +62,7 @@ As Otoroshi supports multiple datastores, you'll have to provide some details ab
 | `app.storage` | string | "inmemory" | what kind of storage engine you want to use. Possible values are `inmemory`, `leveldb`, `redis`, `cassandra`, `mongo` |
 | `app.importFrom` | string | | a file path or a URL to an Otoroshi export file. If the datastore is empty on startup, this file will be used to import data to the empty DB |
 | `app.importFromHeaders` | array | [] | a list of `:` separated header to use if the `app.importFrom` setting is a URL |
+| `app.initialData` | object |  | object representing Otoroshi internal data as exported from danger zone so you don't need a config file and a data import file |
 | `app.redis.host` | string | "localhost" | the host of the redis server |
 | `app.redis.port` | number | 6379 | the port of the redis server |
 | `app.redis.slaves` | array | [] | the redis slaves lists |
