@@ -303,14 +303,6 @@ export class JwtVerifier extends Component {
           help="If not strict, request without JWT token will be allowed to pass"
           onChange={v => changeTheValue(path + '.strict', v)}
         />
-        <ArrayInput
-          label="Excluded patterns"
-          placeholder="URI pattern"
-          suffix="regex"
-          value={verifier.excludedPatterns}
-          help="By default, when jwt verification is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
-          onChange={v => changeTheValue(path + '.excludedPatterns', v)}
-        />
         <br />
         {/* **************************************************************************************************** */}
         <LocationSettings

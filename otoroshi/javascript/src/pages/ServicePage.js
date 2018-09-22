@@ -937,6 +937,14 @@ export class ServicePage extends Component {
                 verifier={this.state.service.jwtVerifier}
               />
             )}
+            <ArrayInput
+              label="Excluded patterns"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.jwtVerifier.excludedPatterns}
+              help="By default, when jwt verification is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
+              onChange={v => this.changeTheValue('jwtVerifier.excludedPatterns', v)}
+            />
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}

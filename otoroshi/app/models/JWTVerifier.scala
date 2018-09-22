@@ -639,12 +639,17 @@ case class LocalJwtVerifier(
     FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
 }
 
-case class RefJwtVerifier(id: Option[String] = None, enabled: Boolean = false) extends JwtVerifier with AsJson {
+case class RefJwtVerifier(
+  id: Option[String] = None,
+  enabled: Boolean = false,
+  excludedPatterns: Seq[String] = Seq.empty[String]
+) extends JwtVerifier with AsJson {
 
   def asJson: JsValue = Json.obj(
     "type"    -> "ref",
     "id"      -> this.id.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "enabled" -> this.enabled
+    "enabled" -> this.enabled,
+    "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply))
   )
 
   override def isRef        = true
@@ -696,10 +701,7 @@ case class RefJwtVerifier(id: Option[String] = None, enabled: Boolean = false) e
   override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     id match {
       case None => FastFuture.successful(false)
-      case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-        case Some(verifier) => verifier.shouldBeVerified(path)
-        case None => Future.failed(new RuntimeException("Jwt verifier not found ..."))
-      }
+      case Some(_) => FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
     }
   }
 }
@@ -710,7 +712,8 @@ object RefJwtVerifier extends FromJson[RefJwtVerifier] {
       Right[Throwable, RefJwtVerifier](
         RefJwtVerifier(
           id = (json \ "id").asOpt[String],
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false)
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       )
     } recover {
@@ -745,7 +748,6 @@ case class GlobalJwtVerifier(
     name: String,
     desc: String,
     strict: Boolean = true,
-    excludedPatterns: Seq[String] = Seq.empty[String],
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
@@ -758,7 +760,6 @@ case class GlobalJwtVerifier(
     "name"             -> this.name,
     "desc"             -> this.desc,
     "strict"           -> this.strict,
-    "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply)),
     "source"           -> this.source.asJson,
     "algoSettings"     -> this.algoSettings.asJson,
     "strategy"         -> this.strategy.asJson
@@ -769,8 +770,7 @@ case class GlobalJwtVerifier(
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalJwtVerifierDataStore.set(this)
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(true)
 
   override def enabled = true
 }
@@ -811,7 +811,6 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
