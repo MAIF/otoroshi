@@ -501,6 +501,12 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('enabled', v)}
             />
             <BooleanInput
+              label="Read only mode"
+              value={this.state.service.readOnly}
+              help="Authorize only GET, HEAD, OPTIONS calls on this service "
+              onChange={v => this.changeTheValue('readOnly', v)}
+            />
+            <BooleanInput
               label="Maintenance mode"
               value={this.state.service.maintenanceMode}
               help="Display a maintainance page when a user try to use the service"

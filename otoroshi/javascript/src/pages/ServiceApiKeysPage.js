@@ -343,6 +343,14 @@ export class ServiceApiKeysPage extends Component {
         help: 'If the API key is disabled, then any call using this API key will fail',
       },
     },
+    readOnly: {
+      type: 'bool',
+      props: {
+        label: 'Read only',
+        placeholder: 'The ApiKey is read only',
+        help: 'If the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs',
+      },
+    },
     metadata: {
       type: 'object',
       props: {
@@ -426,6 +434,7 @@ export class ServiceApiKeysPage extends Component {
     'resetSecret',
     '---',
     'enabled',
+    'readOnly',
     '---',
     'metadata',
     '>>>Service Group settings',
