@@ -201,10 +201,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val sessionIdOpt: Option[String]  = req.queryString.get("sessionId").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
     val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
-    (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt) match {
-      case (Some(redirectTo), Some(sessionId), Some(host), Some(cp)) =>
+    val maOpt: Option[Int] = req.queryString.get("ma").map(_.last).map(_.toInt)
+    (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt) match {
+      case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma) =>
         FastFuture.successful(
-          Redirect(redirectTo).withCookies(env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp): _*)
+          Redirect(redirectTo).withCookies(env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400)): _*)
         )
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))

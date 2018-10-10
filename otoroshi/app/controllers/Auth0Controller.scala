@@ -85,10 +85,10 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                           val setCookiesRedirect = url.getPort match {
                             case -1 =>
                               s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                .cookieSuffix(descriptor)}"
+                                .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
                             case port =>
                               s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                .cookieSuffix(descriptor)}"
+                                .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
                           }
                           FastFuture.successful(
                             Redirect(setCookiesRedirect)
@@ -150,7 +150,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                 }
                 case Right(user) => {
                   user
-                    .save(Duration(env.privateAppsSessionExp, TimeUnit.MILLISECONDS))
+                    .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
                     .map { paUser =>
                       val redirectTo = ctx.request.session
                         .get("pa-redirect-after-login")
@@ -165,10 +165,10 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                       val setCookiesRedirect = url.getPort match {
                         case -1 =>
                           s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}"
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
                         case port =>
                           s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}"
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
                       }
                       Redirect(setCookiesRedirect)
                         .removingFromSession("pa-redirect-after-login")

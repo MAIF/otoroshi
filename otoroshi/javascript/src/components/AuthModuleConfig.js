@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { TextInput, SelectInput, CodeInput } from './inputs';
+import { TextInput, NumberInput, SelectInput, CodeInput } from './inputs';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -13,6 +13,7 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   static defaultConfig = {
+    sessionMaxAge: 86400,
     clientId: 'client',
     clientSecret: 'secret',
     authorizeUrl: 'http://my.iam.local:8082/oauth/authorize',
@@ -74,6 +75,13 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.desc}
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
+        />
+        <NumberInput
+          label="Session max. age"
+          value={settings.sessionMaxAge}
+          help="..."
+          suffix="seconds"
+          onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
         />
         <TextInput
           label="Client ID"
@@ -296,6 +304,13 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
         />
+        <NumberInput
+          label="Session max. age"
+          value={settings.sessionMaxAge}
+          help="..."
+          suffix="seconds"
+          onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
+        />
         <div className="form-group">
           <label htmlFor={`input-users`} className="col-sm-2 control-label">
             Users
@@ -409,6 +424,13 @@ export class LdapModuleConfig extends Component {
           value={settings.desc}
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
+        />
+        <NumberInput
+          label="Session max. age"
+          value={settings.sessionMaxAge}
+          help="..."
+          suffix="seconds"
+          onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
         />
         <TextInput
           label="LDAP Server URL"

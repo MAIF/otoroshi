@@ -172,7 +172,6 @@ class Env(val configuration: Configuration,
   lazy val notDev = !isDev
   lazy val hash   = s"${System.currentTimeMillis()}"
 
-  lazy val privateAppsSessionExp = configuration.getOptional[Long]("app.privateapps.session.exp").get
   lazy val backOfficeSessionExp  = configuration.getOptional[Long]("app.backoffice.session.exp").get
 
   lazy val exposedRootScheme = configuration.getOptional[String]("app.rootScheme").getOrElse("https")
@@ -439,7 +438,6 @@ class Env(val configuration: Configuration,
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   lazy val sessionDomain = configuration.getOptional[String]("play.http.session.domain").get
-  lazy val sessionMaxAge = configuration.getOptional[Int]("play.http.session.maxAge").getOrElse(86400)
   lazy val playSecret    = configuration.getOptional[String]("play.http.secret.key").get
 
   def sign(message: String): String =
@@ -470,10 +468,10 @@ class Env(val configuration: Configuration,
                                   id: String,
                                   desc: ServiceDescriptor,
                                   authConfig: AuthModuleConfig): Seq[play.api.mvc.Cookie] = {
-    createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc))
+    createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc), authConfig.sessionMaxAge)
   }
 
-  def createPrivateSessionCookiesWithSuffix(host: String, id: String, suffix: String): Seq[play.api.mvc.Cookie] = {
+  def createPrivateSessionCookiesWithSuffix(host: String, id: String, suffix: String, sessionMaxAge: Int): Seq[play.api.mvc.Cookie] = {
     if (host.endsWith(sessionDomain)) {
       Seq(
         play.api.mvc.Cookie(

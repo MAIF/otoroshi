@@ -7,6 +7,7 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import storage.BasicStore
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthModule {
@@ -37,6 +38,7 @@ trait AuthModuleConfig extends AsJson {
   def desc: String
   def authModule(config: GlobalConfig): AuthModule
   def cookieSuffix(desc: ServiceDescriptor): String
+  def sessionMaxAge: Int
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 

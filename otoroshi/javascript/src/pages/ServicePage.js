@@ -771,7 +771,7 @@ export class ServicePage extends Component {
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 {!this.state.service.authConfigRef && (
-                  <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-primary">
+                  <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
                     <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
                   </a>
                 )}
@@ -780,10 +780,15 @@ export class ServicePage extends Component {
                     href={`/bo/dashboard/auth-configs/edit/${
                       this.state.service.authConfigRef
                       }`}
-                    className="btn btn-success">
+                    className="btn btn-sm btn-success">
                     <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
                   </a>
                 )}
+                <a
+                    href={`/bo/dashboard/auth-configs`}
+                    className="btn btn-sm btn-primary">
+                    <i className="glyphicon glyphicon-link" /> all auth. config.
+                  </a>
               </div>
             </div>
             <ArrayInput

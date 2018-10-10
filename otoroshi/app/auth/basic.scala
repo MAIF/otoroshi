@@ -77,6 +77,7 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
+          sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser])
         )
       )
@@ -89,7 +90,8 @@ case class BasicAuthModuleConfig(
     id: String,
     name: String,
     desc: String,
-    users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser]
+    users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser],
+    sessionMaxAge: Int = 86400,
 ) extends AuthModuleConfig {
   def `type`: String                                        = "basic"
   override def authModule(config: GlobalConfig): AuthModule = BasicAuthModule(this)
@@ -98,6 +100,7 @@ case class BasicAuthModuleConfig(
     "id"    -> this.id,
     "name"  -> this.name,
     "desc"  -> this.desc,
+    "sessionMaxAge"  -> this.sessionMaxAge,
     "users" -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
