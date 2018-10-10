@@ -199,7 +199,7 @@ export class AlgoSettings extends Component {
           />,
           <TextareaInput
             label="Private key"
-            value={algo.publicKey}
+            value={algo.privateKey}
             help="The RSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,
@@ -224,7 +224,7 @@ export class AlgoSettings extends Component {
           />,
           <TextareaInput
             label="Private key"
-            value={algo.publicKey}
+            value={algo.privateKey}
             help="The ECDSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,

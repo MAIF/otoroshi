@@ -18,6 +18,7 @@ import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import storage.BasicStore
+import utils.PemUtils
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -211,9 +212,10 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     val publicBytes = ApacheBase64.decodeBase64(
       value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
     )
-    val keySpec    = new X509EncodedKeySpec(publicBytes)
-    val keyFactory = KeyFactory.getInstance("RSA")
-    keyFactory.generatePublic(keySpec).asInstanceOf[RSAPublicKey]
+    //val keySpec    = new X509EncodedKeySpec(publicBytes)
+    //val keyFactory = KeyFactory.getInstance("RSA")
+    //keyFactory.generatePublic(keySpec).asInstanceOf[RSAPublicKey]
+    PemUtils.getPublicKey(publicBytes, "RSA").asInstanceOf[RSAPublicKey]
   }
 
   def getPrivateKey(value: String): RSAPrivateKey = {
@@ -223,9 +225,10 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
       val privateBytes = ApacheBase64.decodeBase64(
         value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
       )
-      val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
-      val keyFactory = KeyFactory.getInstance("RSA")
-      keyFactory.generatePrivate(keySpec).asInstanceOf[RSAPrivateKey]
+      // val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
+      // val keyFactory = KeyFactory.getInstance("RSA")
+      // keyFactory.generatePrivate(keySpec).asInstanceOf[RSAPrivateKey]
+      PemUtils.getPrivateKey(privateBytes, "RSA").asInstanceOf[RSAPrivateKey]
     }
   }
 
@@ -233,17 +236,17 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     case 256 =>
       Some(
         Algorithm.RSA256(getPublicKey(transformValue(publicKey)),
-                         privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+                         privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
       )
     case 384 =>
       Some(
         Algorithm.RSA384(getPublicKey(transformValue(publicKey)),
-                         privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+                         privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
       )
     case 512 =>
       Some(
         Algorithm.RSA512(getPublicKey(transformValue(publicKey)),
-                         privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+          privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
       )
     case _ => None
   }
@@ -275,9 +278,10 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     val publicBytes = ApacheBase64.decodeBase64(
       value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
     )
-    val keySpec    = new X509EncodedKeySpec(publicBytes)
-    val keyFactory = KeyFactory.getInstance("EC")
-    keyFactory.generatePublic(keySpec).asInstanceOf[ECPublicKey]
+    //val keySpec    = new X509EncodedKeySpec(publicBytes)
+    //val keyFactory = KeyFactory.getInstance("EC")
+    //keyFactory.generatePublic(keySpec).asInstanceOf[ECPublicKey]
+    PemUtils.getPublicKey(publicBytes, "EC").asInstanceOf[ECPublicKey]
   }
 
   def getPrivateKey(value: String): ECPrivateKey = {
@@ -287,9 +291,10 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
       val privateBytes = ApacheBase64.decodeBase64(
         value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
       )
-      val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
-      val keyFactory = KeyFactory.getInstance("EC")
-      keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
+      //val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
+      //val keyFactory = KeyFactory.getInstance("EC")
+      //keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
+      PemUtils.getPublicKey(privateBytes, "EC").asInstanceOf[ECPrivateKey]
     }
   }
 
@@ -297,17 +302,17 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     case 256 =>
       Some(
         Algorithm.ECDSA256(getPublicKey(transformValue(publicKey)),
-                           privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+                           privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
       )
     case 384 =>
       Some(
         Algorithm.ECDSA384(getPublicKey(transformValue(publicKey)),
-                           privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+                           privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
       )
     case 512 =>
       Some(
         Algorithm.ECDSA512(getPublicKey(transformValue(publicKey)),
-                           privateKey.map(pk => getPrivateKey(transformValue(pk))).orNull)
+                           privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
       )
     case _ => None
   }
