@@ -294,7 +294,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
       //val keySpec    = new PKCS8EncodedKeySpec(privateBytes)
       //val keyFactory = KeyFactory.getInstance("EC")
       //keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
-      PemUtils.getPublicKey(privateBytes, "EC").asInstanceOf[ECPrivateKey]
+      PemUtils.getPrivateKey(privateBytes, "EC").asInstanceOf[ECPrivateKey]
     }
   }
 
