@@ -25,8 +25,8 @@ export class LabelInput extends Component {
           {this.props.label} <Help text={this.props.help} />
         </label>
         <div className="col-sm-10">
-          {!this.state.loading && <span className="form-control">Loading ...</span>}
-          {this.state.loading && <span className="form-control">{this.state.value}</span>}
+          {!this.state.loading && <p>Loading ...</p>}
+          {this.state.loading && <p>{this.state.value}</p>}
         </div>
       </div>
     );

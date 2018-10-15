@@ -4,13 +4,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import auth.AuthConfigsDataStore
 import com.typesafe.config.ConfigFactory
+import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
-import play.api.{Configuration, Environment, Logger}
 import play.api.inject.ApplicationLifecycle
+import play.api.{Configuration, Environment, Logger}
+import ssl.CertificateDataStore
 import storage.{DataStoreHealth, DataStores}
-import env.Env
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,12 +41,14 @@ class InMemoryDataStores(configuration: Configuration,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.warn("Now using InMemory DataStores")
     redis.start()
+    _certificateDataStore.startSync()
     FastFuture.successful(())
   }
 
   override def after(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+    _certificateDataStore.stopSync()
     redis.stop()
     actorSystem.terminate()
     FastFuture.successful(())
@@ -68,6 +71,8 @@ class InMemoryDataStores(configuration: Configuration,
   private lazy val _chaosDataStore             = new InMemoryChaosDataStore(redis, env)
   private lazy val _jwtVerifDataStore          = new InMemoryGlobalJwtVerifierDataStore(redis, env)
   private lazy val _authConfigsDataStore       = new InMemoryAuthConfigsDataStore(redis, env)
+  private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
+
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -86,5 +91,6 @@ class InMemoryDataStores(configuration: Configuration,
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
+  override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
 }

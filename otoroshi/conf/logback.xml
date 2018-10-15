@@ -70,6 +70,8 @@
   <logger name="otoroshi-swagger-controller" level="WARN" />
   <logger name="otoroshi-regex-pool" level="WARN" />
   <logger name="otoroshi-http-handler-debug" level="WARN" />
+  <logger name="otoroshi-ssl-trust-manager" level="DEBUG" />
+  <logger name="otoroshi-ssl-provider" level="DEBUG" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />

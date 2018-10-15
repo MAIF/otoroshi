@@ -13,6 +13,7 @@ import {
 
 import _ from 'lodash';
 import { Collapse } from './Collapse';
+import { TextareaInput } from './TextInput';
 
 export class Form extends Component {
   static propTypes = {
@@ -170,6 +171,16 @@ export class Form extends Component {
         } else if (type === 'code') {
           return (
             <CodeInput
+              disabled={disabled}
+              key={name}
+              value={this.getValue(name, '')}
+              {...props}
+              onChange={v => this.changeValue(name, v)}
+            />
+          );
+        } else if (type === 'text') {
+          return (
+            <TextareaInput
               disabled={disabled}
               key={name}
               value={this.getValue(name, '')}

@@ -46,6 +46,8 @@ GET     /bo/api/loggers                                       controllers.BackOf
 GET     /bo/api/services/top10                                controllers.BackOfficeController.mostCalledServices()
 GET     /bo/api/services/map                                  controllers.BackOfficeController.servicesMap()
 DELETE  /bo/api/services/:id/circuitbreakers                  controllers.BackOfficeController.resetCircuitBreakers(id)
+POST    /bo/api/certificates/_data                            controllers.BackOfficeController.certificateData()
+POST    /bo/api/certificates/_valid                           controllers.BackOfficeController.certificateIsValid()
 
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
@@ -131,6 +133,14 @@ PUT     /api/groups/:serviceGroupId                           controllers.ApiCon
 PATCH   /api/groups/:serviceGroupId                           controllers.ApiController.patchGroup(serviceGroupId)
 GET     /api/groups                                           controllers.ApiController.allServiceGroups()
 POST    /api/groups                                           controllers.ApiController.createGroup()
+
+## Certificates
+GET     /api/certificates/:certId                             controllers.ApiController.oneCert(certId)
+DELETE  /api/certificates/:certId                             controllers.ApiController.deleteCert(certId)
+PUT     /api/certificates/:certId                             controllers.ApiController.updateCert(certId)
+PATCH   /api/certificates/:certId                             controllers.ApiController.patchCert(certId)
+GET     /api/certificates                                     controllers.ApiController.allCerts()
+POST    /api/certificates                                     controllers.ApiController.createCert()
 
 GET     /api/lines/:line/services                             controllers.ApiController.servicesForALine(line)
 GET     /api/lines                                            controllers.ApiController.allLines()

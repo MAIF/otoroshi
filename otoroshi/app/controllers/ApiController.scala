@@ -22,6 +22,7 @@ import play.api.libs.json.{JsSuccess, Json, _}
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import security.IdGenerator
+import ssl.Cert
 import storage.{Healthy, Unhealthy, Unreachable}
 import utils.future.Implicits._
 
@@ -2234,6 +2235,198 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def deleteGlobalAuthModule(id: String) = ApiAction.async { ctx =>
     env.datastores.authConfigsDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  def createCert() = ApiAction.async(parse.json) { ctx =>
+    val body: JsObject = (ctx.request.body \ "id").asOpt[String] match {
+      case None    => ctx.request.body.as[JsObject] ++ Json.obj("id" -> IdGenerator.token(64))
+      case Some(b) => ctx.request.body.as[JsObject]
+    }
+    Cert.fromJsonSafe(body) match {
+      case JsError(e) => BadRequest(Json.obj("error" -> "Bad Cert format")).asFuture
+      case JsSuccess(group, _) =>
+        group.save().map {
+          case true => {
+            val event: AdminApiEvent = AdminApiEvent(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              Some(ctx.apiKey),
+              ctx.user,
+              "CREATE_CERTIFICATE",
+              s"User created a certificate",
+              ctx.from,
+              body
+            )
+            Audit.send(event)
+            Alerts.send(
+              CertCreatedAlert(env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                ctx.user.getOrElse(ctx.apiKey.toJson),
+                event)
+            )
+            Ok(group.toJson)
+          }
+          case false => InternalServerError(Json.obj("error" -> "Certificate not stored ..."))
+        }
+    }
+  }
+
+  def updateCert(CertId: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.certificatesDataStore.findById(CertId).flatMap {
+      case None => NotFound(Json.obj("error" -> s"Certificate with clienId '$CertId' not found")).asFuture
+      case Some(group) => {
+        Cert.fromJsonSafe(ctx.request.body) match {
+          case JsError(e) => BadRequest(Json.obj("error" -> "Bad Certificate format")).asFuture
+          case JsSuccess(newGroup, _) if newGroup.id != CertId =>
+            BadRequest(Json.obj("error" -> "Bad Certificate format")).asFuture
+          case JsSuccess(newGroup, _) if newGroup.id == CertId => {
+            val event: AdminApiEvent = AdminApiEvent(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              Some(ctx.apiKey),
+              ctx.user,
+              "UPDATE_CERTIFICATE",
+              s"User updated a certificate",
+              ctx.from,
+              ctx.request.body
+            )
+            Audit.send(event)
+            Alerts.send(
+              CertUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                ctx.user.getOrElse(ctx.apiKey.toJson),
+                event)
+            )
+            newGroup.save().map(_ => Ok(newGroup.toJson))
+          }
+        }
+      }
+    }
+  }
+
+  def patchCert(CertId: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.certificatesDataStore.findById(CertId).flatMap {
+      case None => NotFound(Json.obj("error" -> s"Certificate with clienId '$CertId' not found")).asFuture
+      case Some(group) => {
+        val currentGroupJson = group.toJson
+        val patch            = JsonPatch(ctx.request.body)
+        val newGroupJson     = patch(currentGroupJson)
+        Cert.fromJsonSafe(newGroupJson) match {
+          case JsError(e) => BadRequest(Json.obj("error" -> "Bad Certificate format")).asFuture
+          case JsSuccess(newGroup, _) if newGroup.id != CertId =>
+            BadRequest(Json.obj("error" -> "Bad Certificate format")).asFuture
+          case JsSuccess(newGroup, _) if newGroup.id == CertId => {
+            val event: AdminApiEvent = AdminApiEvent(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              Some(ctx.apiKey),
+              ctx.user,
+              "UPDATE_CERTIFICATE",
+              s"User updated a certificate",
+              ctx.from,
+              ctx.request.body
+            )
+            Audit.send(event)
+            Alerts.send(
+              CertUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                ctx.user.getOrElse(ctx.apiKey.toJson),
+                event)
+            )
+            newGroup.save().map(_ => Ok(newGroup.toJson))
+          }
+        }
+      }
+    }
+  }
+
+  def deleteCert(CertId: String) = ApiAction.async { ctx =>
+    env.datastores.certificatesDataStore.findById(CertId).flatMap {
+      case None => NotFound(Json.obj("error" -> s"Certificate with id: '$CertId' not found")).asFuture
+      case Some(dev) =>
+        dev.delete().map { res =>
+          val event: AdminApiEvent = AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "DELETE_CERTIFICATE",
+            s"User deleted a certificate",
+            ctx.from,
+            Json.obj("CertId" -> CertId)
+          )
+          Audit.send(event)
+          Alerts.send(
+            CertDeleteAlert(env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              ctx.user.getOrElse(ctx.apiKey.toJson),
+              event)
+          )
+          Ok(Json.obj("deleted" -> res))
+        }
+    }
+  }
+
+  def allCerts() = ApiAction.async { ctx =>
+    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    val paginationPageSize: Int =
+      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+    val paginationPosition = (paginationPage - 1) * paginationPageSize
+    Audit.send(
+      AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "ACCESS_ALL_CERTIFICATES",
+        s"User accessed all certificates",
+        ctx.from
+      )
+    )
+    val id: Option[String]   = ctx.request.queryString.get("id").flatMap(_.headOption)
+    val domain: Option[String] = ctx.request.queryString.get("domain").flatMap(_.headOption)
+    val hasFilters           = id.orElse(domain).isDefined
+    env.datastores.certificatesDataStore.streamedFindAndMat(_ => true, 50, paginationPage, paginationPageSize).map {
+      groups =>
+        if (hasFilters) {
+          Ok(
+            JsArray(
+              groups
+                .filter {
+                  case group if id.isDefined && group.id == id.get       => true
+                  case group if domain.isDefined && group.domain == domain.get => true
+                  case _                                                 => false
+                }
+                .map(_.toJson)
+            )
+          )
+        } else {
+          Ok(JsArray(groups.map(_.toJson)))
+        }
+    }
+  }
+
+  def oneCert(CertId: String) = ApiAction.async { ctx =>
+    env.datastores.certificatesDataStore.findById(CertId).map {
+      case None => NotFound(Json.obj("error" -> s"Certificate with id: '$CertId' not found"))
+      case Some(group) => {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_CERTIFICATE",
+            s"User accessed a certificate",
+            ctx.from,
+            Json.obj("certId" -> CertId)
+          )
+        )
+        Ok(group.toJson)
+      }
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -12,6 +12,7 @@ import play.api.inject.ApplicationLifecycle
 import storage.{DataStoreHealth, DataStores}
 import storage.inmemory._
 import env.Env
+import ssl.CertificateDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,12 +43,14 @@ class LevelDbDataStores(configuration: Configuration,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.warn("Now using LevelDB DataStores")
     redis.start()
+    _certificateDataStore.startSync()
     FastFuture.successful(())
   }
 
   override def after(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+    _certificateDataStore.stopSync()
     redis.stop()
     actorSystem.terminate()
     FastFuture.successful(())
@@ -70,6 +73,7 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _chaosDataStore              = new InMemoryChaosDataStore(redis, env)
   private lazy val _jwtVerifDataStore           = new InMemoryGlobalJwtVerifierDataStore(redis, env)
   private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
+  private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -88,5 +92,6 @@ class LevelDbDataStores(configuration: Configuration,
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
+  override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
 }

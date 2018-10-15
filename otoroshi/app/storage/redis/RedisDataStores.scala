@@ -11,6 +11,7 @@ import models._
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
+import ssl.CertificateDataStore
 import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -60,12 +61,14 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.warn("Now using Redis DataStores")
+    _certificateDataStore.startSync()
     FastFuture.successful(())
   }
 
   override def after(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+    _certificateDataStore.stopSync()
     redisActorSystem.terminate()
     FastFuture.successful(())
   }
@@ -87,6 +90,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _chaosDataStore             = new RedisChaosDataStore(redis, env)
   private lazy val _jwtVerifDataStore          = new RedisGlobalJwtVerifierDataStore(redis, env)
   private lazy val _authConfigsDataStore       = new RedisAuthConfigsDataStore(redis, env)
+  private lazy val _certificateDataStore       = new RedisCertificateDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
@@ -105,6 +109,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def chaosDataStore: ChaosDataStore                         = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
+  override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover {
       case _ => Unreachable

@@ -20,6 +20,7 @@ import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
 import security.{ClaimCrypto, IdGenerator}
+import ssl.DynamicSSLEngineProvider
 import storage.DataStores
 import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores
@@ -306,6 +307,7 @@ class Env(val configuration: Configuration,
     case _ =>
       implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
+      DynamicSSLEngineProvider.setCurrentEnv(this)
       datastores.globalConfigDataStore
         .isOtoroshiEmpty()
         .andThen {

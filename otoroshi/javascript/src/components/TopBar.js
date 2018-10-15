@@ -125,7 +125,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/jwt-verifiers'),
-          env: <span className="glyphicon glyphicon-certificate" />,
+          env: <span className="fa fa-key" />,
           label: 'Global Jwt Verifiers',
           value: 'Jwt-Verifiers',
         });
@@ -134,6 +134,12 @@ export class TopBar extends Component {
           env: <span className="glyphicon glyphicon-lock" />,
           label: 'Global auth. configs',
           value: 'auth-configs',
+        });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/certificates'),
+          env: <span className="fa fa-certificate" />,
+          label: 'SSL Certificates',
+          value: 'certificates',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
@@ -266,10 +272,13 @@ export class TopBar extends Component {
                       <span className="glyphicon glyphicon-folder-open" /> All service groups
                     </a>
                     <a href="/bo/dashboard/jwt-verifiers">
-                      <span className="glyphicon glyphicon-certificate" /> Global Jwt Verifiers
+                      <span className="fa fa-key" /> Global Jwt Verifiers
                     </a>
                     <a href="/bo/dashboard/auth-configs">
                       <span className="glyphicon glyphicon-lock" /> Global auth. configs
+                    </a>
+                    <a href="/bo/dashboard/certificates">
+                      <span className="fa fa-certificate" /> SSL Certificates
                     </a>
                   </li>
                   <li>

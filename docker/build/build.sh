@@ -22,6 +22,7 @@ prepare_build () {
   fi
   unzip otoroshi-dist.zip
   mv otoroshi-1.2.1-dev otoroshi
+  rm -rf otoroshi-dist.zip
   chmod +x ./otoroshi/bin/otoroshi
   mkdir -p ./otoroshi/imports
   mkdir -p ./otoroshi/leveldb
@@ -121,6 +122,16 @@ case "${1}" in
     docker push "maif/otoroshi:$2-jdk12"
     docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
+    ;;
+  build-and-push-snapshot)
+    NBR=`date +%s`
+    echo "Will build version 1.3.0-dev-$NBR"
+    cp ../../otoroshi/target/universal/otoroshi-1.2.1-dev.zip otoroshi-dist.zip
+    prepare_build
+    docker build --no-cache -t otoroshi .
+    docker tag otoroshi "maif/otoroshi:1.3.0-dev-$NBR"
+    cleanup
+    docker push "maif/otoroshi:1.3.0-dev-$NBR"
     ;;
   *)
     echo "Build otoroshi docker images"

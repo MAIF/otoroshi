@@ -13,6 +13,7 @@ import akka.stream._
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import auth.AuthConfigsDataStore
+import ssl.CertificateDataStore
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,6 +45,7 @@ trait DataStores {
   def chaosDataStore: ChaosDataStore
   def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore
   def authConfigsDataStore: AuthConfigsDataStore
+  def certificatesDataStore: CertificateDataStore
 }
 
 trait BasicStore[T] {

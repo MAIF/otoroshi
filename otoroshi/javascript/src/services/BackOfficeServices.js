@@ -819,3 +819,83 @@ export function updateAuthConfig(ak) {
     body: JSON.stringify(ak),
   }).then(r => r.json());
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export function findAllCertificates() {
+  return fetch('/bo/api/proxy/api/certificates', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findCertificateById(id) {
+  return fetch(`/bo/api/proxy/api/certificates/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteCertificate(ak) {
+  return fetch(`/bo/api/proxy/api/certificates/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createCertificate(ak) {
+  return fetch(`/bo/api/proxy/api/certificates`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateCertificate(ak) {
+  return fetch(`/bo/api/proxy/api/certificates/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function certData(chain) {
+  return fetch(`/bo/api/certificates/_data`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'text/plain',
+    },
+    body: chain,
+  }).then(r => r.json());
+}
+
+export function certValid(cert) {
+  return fetch(`/bo/api/certificates/_valid`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(cert),
+  }).then(r => r.json());
+}

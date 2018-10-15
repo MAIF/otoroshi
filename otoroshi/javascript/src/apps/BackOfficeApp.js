@@ -27,6 +27,7 @@ import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
 import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
 import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
 import { AuthModuleConfigsPage } from '../pages/AuthModuleConfigsPage';
+import { CertificatesPage } from '../pages/CertificatesPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -227,6 +228,20 @@ class BackOfficeAppContainer extends Component {
                           path="/groups"
                           component={props => this.decorate(GroupsPage, props)}
                         />
+
+                        <Route
+                          path="/certificates/:taction/:titem"
+                          component={props => this.decorate(CertificatesPage, props)}
+                        />
+                        <Route
+                          path="/certificates/:taction"
+                          component={props => this.decorate(CertificatesPage, props)}
+                        />
+                        <Route
+                          path="/certificates"
+                          component={props => this.decorate(CertificatesPage, props)}
+                        />
+                        
                         <Route
                           path="/dangerzone"
                           component={props => this.decorate(DangerZonePage, props)}

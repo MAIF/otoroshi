@@ -1,9 +1,7 @@
 package models
 
 import java.nio.charset.StandardCharsets
-import java.security.KeyFactory
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
@@ -14,11 +12,11 @@ import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import play.api.Logger
+import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
-import play.api.http.websocket.{Message => PlayWSMessage}
+import ssl.PemUtils
 import storage.BasicStore
-import utils.PemUtils
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}

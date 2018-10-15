@@ -24,10 +24,11 @@ import utils.LocalCache
 import security._
 import org.mindrot.jbcrypt.BCrypt
 import akka.http.scaladsl.util.FastFuture._
+import ssl.{Cert, CertificateData}
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
-import scala.util.Success
+import scala.util.{Success, Try}
 
 class BackOfficeController(BackOfficeAction: BackOfficeAction,
                            BackOfficeActionAuth: BackOfficeActionAuth,
@@ -566,5 +567,45 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def resetCircuitBreakers(id: String) = BackOfficeActionAuth { ctx =>
     env.circuitBeakersHolder.resetCircuitBreakersFor(id)
     Ok(Json.obj("done" -> true))
+  }
+
+  def certificateData(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
+      Try {
+        val parts: Seq[String] = body.utf8String.split("-----BEGIN CERTIFICATE-----").toSeq
+        parts.tail.headOption.map { cert =>
+          val content: String = cert.replace("-----END CERTIFICATE-----", "")
+          Ok(CertificateData(content))
+        } getOrElse {
+          Try {
+            val content: String = body.utf8String.replace("-----BEGIN CERTIFICATE-----", "").replace("-----END CERTIFICATE-----", "")
+            Ok(CertificateData(content))
+          } recover {
+            case e =>
+              e.printStackTrace()
+              BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+          } get
+        }
+      } recover {
+        case e =>
+          e.printStackTrace()
+          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+      } get
+    }
+  }
+
+  def certificateIsValid(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
+      Try {
+        Cert.fromJsonSafe(Json.parse(body.utf8String)) match {
+          case JsSuccess(cert, _) => Ok(Json.obj("valid" -> cert.isValid()))
+          case JsError(e) => BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+        }
+      } recover {
+        case e =>
+          e.printStackTrace()
+          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+      } get
+    }
   }
 }

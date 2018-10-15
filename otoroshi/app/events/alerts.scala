@@ -309,6 +309,75 @@ case class SnowMonkeyResetAlert(`@id`: String,
   )
 }
 
+case class CertCreatedAlert(`@id`: String,
+                                `@env`: String,
+                                user: JsValue,
+                                audit: AuditEvent,
+                                `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"           -> `@id`,
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"         -> `@type`,
+    "@product"      -> _env.eventsName,
+    "@serviceId"    -> `@serviceId`,
+    "@service"      -> `@service`,
+    "@env"          -> `@env`,
+    "alert"         -> "CertCreatedAlert",
+    "adminApiAlert" -> true,
+    "user"          -> user,
+    "audit"         -> audit.toJson
+  )
+}
+
+case class CertUpdatedAlert(`@id`: String,
+                            `@env`: String,
+                            user: JsValue,
+                            audit: AuditEvent,
+                            `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"           -> `@id`,
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"         -> `@type`,
+    "@product"      -> _env.eventsName,
+    "@serviceId"    -> `@serviceId`,
+    "@service"      -> `@service`,
+    "@env"          -> `@env`,
+    "alert"         -> "CertUpdatedAlert",
+    "adminApiAlert" -> true,
+    "user"          -> user,
+    "audit"         -> audit.toJson
+  )
+}
+
+case class CertDeleteAlert(`@id`: String,
+                            `@env`: String,
+                            user: JsValue,
+                            audit: AuditEvent,
+                            `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"           -> `@id`,
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"         -> `@type`,
+    "@product"      -> _env.eventsName,
+    "@serviceId"    -> `@serviceId`,
+    "@service"      -> `@service`,
+    "@env"          -> `@env`,
+    "alert"         -> "CertDeleteAlert",
+    "adminApiAlert" -> true,
+    "user"          -> user,
+    "audit"         -> audit.toJson
+  )
+}
+
 case class SnowMonkeyOutageRegisteredAlert(`@id`: String,
                                            `@env`: String,
                                            audit: AuditEvent,
