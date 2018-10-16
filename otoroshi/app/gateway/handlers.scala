@@ -1157,7 +1157,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                             def passWithApiKey(config: GlobalConfig): Future[Result] = {
                               val authByJwtToken = req.headers
-                                .get(env.Headers.OtoroshiAuthorization)
+                                .get(env.Headers.OtoroshiBearer)
                                 .orElse(
                                   req.headers.get("Authorization").filter(_.startsWith("Bearer "))
                                 )
@@ -1166,6 +1166,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   req.queryString.get(env.Headers.OtoroshiBearerAuthorization).flatMap(_.lastOption)
                                 )
                                 .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
+                                .filter(_.split("\\.").length == 3)
                               val authBasic = req.headers
                                 .get(env.Headers.OtoroshiAuthorization)
                                 .orElse(
@@ -1294,7 +1295,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           }
                                           case None =>
                                             Errors.craftResponseResult(
-                                              "Invalid ApiKey provided",
+                                              "Invalid ApiKey provided 1",
                                               BadRequest,
                                               req,
                                               Some(descriptor),
@@ -1305,7 +1306,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         }
                                     case None =>
                                       Errors.craftResponseResult(
-                                        "Invalid ApiKey provided",
+                                        "Invalid ApiKey provided 2",
                                         BadRequest,
                                         req,
                                         Some(descriptor),
@@ -1315,7 +1316,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       )
                                   }
                                 } getOrElse Errors.craftResponseResult(
-                                  "Invalid ApiKey provided",
+                                  s"Invalid ApiKey provided 3, $authByJwtToken, $authBasic",
                                   BadRequest,
                                   req,
                                   Some(descriptor),

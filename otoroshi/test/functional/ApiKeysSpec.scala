@@ -328,14 +328,14 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service).futureValue
     }
 
-    "Allow access with bearer otoroshi header (Otoroshi-Authorization)" in {
+    "Allow access with bearer otoroshi header (Otoroshi-Bearer)" in {
       createOtoroshiService(service).futureValue
 
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host"                   -> serviceHost,
-          "Otoroshi-Authorization" -> s"Bearer $bearerAuth"
+          "Otoroshi-Token" -> s"Bearer $bearerAuth"
         )
         .get()
         .futureValue

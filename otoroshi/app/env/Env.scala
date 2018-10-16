@@ -199,6 +199,7 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiRequestId            = configuration.getOptional[String]("otoroshi.headers.request.id").get
     lazy val OtoroshiRequestTimestamp     = configuration.getOptional[String]("otoroshi.headers.request.timestamp").get
     lazy val OtoroshiAuthorization        = configuration.getOptional[String]("otoroshi.headers.request.authorization").get
+    lazy val OtoroshiBearer               = configuration.getOptional[String]("otoroshi.headers.request.bearer").get
     lazy val OtoroshiJWTAuthorization =
       configuration.getOptional[String]("otoroshi.headers.request.jwtAuthorization").get
     lazy val OtoroshiBasicAuthorization =

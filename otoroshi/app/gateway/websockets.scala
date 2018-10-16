@@ -596,16 +596,19 @@ class WebSocketHandler()(implicit env: Env) {
                                               config: GlobalConfig
                                             ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                             val authByJwtToken = req.headers
-                              .get(env.Headers.OtoroshiAuthorization)
-                              .orElse(req.headers.get("Authorization"))
-                              .filter(_.startsWith("Bearer "))
+                              .get(env.Headers.OtoroshiBearer)
+                              .orElse(
+                                req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+                              )
                               .map(_.replace("Bearer ", ""))
                               .orElse(req.queryString.get(env.Headers.OtoroshiBearerAuthorization).flatMap(_.lastOption))
                               .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
+                              .filter(_.split("\\.").length == 3)
                             val authBasic = req.headers
                               .get(env.Headers.OtoroshiAuthorization)
-                              .orElse(req.headers.get("Authorization"))
-                              .filter(_.startsWith("Basic "))
+                              .orElse(
+                                req.headers.get("Authorization").filter(_.startsWith("Basic "))
+                              )
                               .map(_.replace("Basic ", ""))
                               .flatMap(e => Try(decodeBase64(e)).toOption)
                               .orElse(
