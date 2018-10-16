@@ -56,6 +56,11 @@ class CertificateInfos extends Component {
           value={this.state.cert.issuerDN}
         />
         <TextInput
+          label="Self signed"
+          disabled={true}
+          value={this.state.cert.selfSigned ? 'yes' : 'no'}
+        />
+        <TextInput
           label="Serial number"
           disabled={true}
           value={'Ox' + this.state.cert.serialNumber.toUpperCase()}
@@ -82,6 +87,23 @@ class CertificateInfos extends Component {
           rows={6}
           value={this.state.cert.publicKey}
         />           
+      </div>
+    );
+  }
+}
+
+class SelfSignedCert extends Component {
+  render() {
+    return (
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+        <button type="button" className="btn btn-sm btn-success" onClick={e => {
+          const value = prompt("Certificate host ?");
+          if (value && value.trim() !== '') {
+            BackOfficeServices.selfSignedCert(value).then(cert => {
+              this.props.rawOnChange(cert);
+            });
+          }
+        }}><i className="fas fa-screwdriver" /> Generate self signed cert.</button>
       </div>
     );
   }
@@ -150,6 +172,10 @@ export class CertificatesPage extends Component {
       type: 'string',
       props: { label: 'Certificate domain', placeholder: 'www.foo.bar' },
     },
+    selfCert: {
+      type: SelfSignedCert,
+      props: {},
+    },
     infos: {
       type: CertificateInfos,
       props: {},
@@ -173,7 +199,7 @@ export class CertificatesPage extends Component {
     { title: 'Domain', content: item => item.domain }
   ];
 
-  formFlow = ['id', 'domain', 'valid', 'chain', 'privateKey', 'infos'];
+  formFlow = ['id', 'domain', 'selfCert', 'valid', 'chain', 'privateKey', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates`);

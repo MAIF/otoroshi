@@ -24,7 +24,7 @@ import utils.LocalCache
 import security._
 import org.mindrot.jbcrypt.BCrypt
 import akka.http.scaladsl.util.FastFuture._
-import ssl.{Cert, CertificateData}
+import ssl.{Cert, CertificateData, FakeKeyStore}
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -600,6 +600,21 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         Cert.fromJsonSafe(Json.parse(body.utf8String)) match {
           case JsSuccess(cert, _) => Ok(Json.obj("valid" -> cert.isValid()))
           case JsError(e) => BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+        }
+      } recover {
+        case e =>
+          e.printStackTrace()
+          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+      } get
+    }
+  }
+
+  def selfSignedCert(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
+      Try {
+        Json.parse(body.utf8String).\("host").asOpt[String] match {
+          case Some(host) => Ok(FakeKeyStore.generateCert(host).toJson)
+          case None => BadRequest(Json.obj("error" -> s"No host provided"))
         }
       } recover {
         case e =>

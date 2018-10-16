@@ -899,3 +899,15 @@ export function certValid(cert) {
     body: JSON.stringify(cert),
   }).then(r => r.json());
 }
+
+export function selfSignedCert(host) {
+  return fetch(`/bo/api/certificates/_selfSigned`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ host }),
+  }).then(r => r.json());
+}

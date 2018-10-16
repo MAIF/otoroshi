@@ -20,7 +20,7 @@ import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
 import security.{ClaimCrypto, IdGenerator}
-import ssl.DynamicSSLEngineProvider
+import ssl.{DynamicSSLEngineProvider, FakeKeyStore}
 import storage.DataStores
 import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores
@@ -434,6 +434,14 @@ class Env(val configuration: Configuration,
   timeout(1000.millis).andThen {
     case _ => {
       datastores.globalConfigDataStore.migrate()(otoroshiExecutionContext, this)
+      datastores.certificatesDataStore.findAll()(otoroshiExecutionContext, this).map { certs =>
+        if (certs.isEmpty) {
+          FakeKeyStore.generateCert(s"*.${this.domain}").save()(otoroshiExecutionContext, this)
+          if (env.toLowerCase() == "dev") {
+            FakeKeyStore.generateCert(s"*.dev.${this.domain}").save()(otoroshiExecutionContext, this)
+          }
+        }
+      }(otoroshiExecutionContext)
     }
   }(otoroshiExecutionContext)
 

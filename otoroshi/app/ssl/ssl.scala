@@ -1,15 +1,17 @@
 package ssl
 
-import java.io.{ByteArrayInputStream, FileOutputStream}
+import java.io._
+import java.math.BigInteger
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert.{Certificate => _, _}
 import java.security.spec.PKCS8EncodedKeySpec
-import java.util.Base64
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
+import java.util.{Base64, Date}
 
+import com.google.common.base.Charsets
 import env.Env
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
@@ -19,14 +21,15 @@ import play.api.Logger
 import play.api.libs.json._
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
+import security.IdGenerator
 import storage.BasicStore
+import sun.security.util.ObjectIdentifier
+import sun.security.x509._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-// TODO: autogenerate certificate if keystore is empty
-// TODO: add button to create auto signed certificates
 // TODO: doc + swagger
 case class Cert(id: String, domain: String, chain: String, privateKey: String) {
   def password: Option[String] = None
@@ -244,7 +247,6 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     context.createSSLEngine()
-    // context.createSSLEngine("ssl.foo.bar", 443)
   }
 }
 
@@ -269,7 +271,8 @@ object CertificateData {
       "subjectDN" -> cert.getSubjectDN.getName,
       "version" -> cert.getVersion,
       "type" -> cert.getType,
-      "publicKey" -> new String(encoder.encode(cert.getPublicKey.getEncoded))
+      "publicKey" -> new String(encoder.encode(cert.getPublicKey.getEncoded)),
+      "selfSigned" -> DynamicSSLEngineProvider.isSelfSigned(cert)
     )
   }
 }
@@ -282,4 +285,130 @@ object PemHeaders {
   val BeginPrivateKey = "-----BEGIN PRIVATE KEY-----"
   val EndPrivateKey = "-----END PRIVATE KEY-----"
 }
+
+object FakeKeyStore {
+
+  private val EMPTY_PASSWORD = Array.emptyCharArray
+  private val encoder = Base64.getEncoder
+
+  object SelfSigned {
+
+    object Alias {
+      val trustedCertEntry = "otoroshi-selfsigned-trust"
+      val PrivateKeyEntry = "otoroshi-selfsigned"
+    }
+
+    def DistinguishedName(host: String) = s"CN=$host, OU=Otoroshi Testing (self-signed), O=Otoroshi, C=FR"
+    def SubDN(host: String) = s"CN=$host"
+  }
+
+  object KeystoreSettings {
+    val SignatureAlgorithmName = "SHA256withRSA"
+    val KeyPairAlgorithmName = "RSA"
+    val KeyPairKeyLength = 2048 // 2048 is the NIST acceptable key length until 2030
+    val KeystoreType = "JKS"
+    val SignatureAlgorithmOID: ObjectIdentifier = AlgorithmId.sha256WithRSAEncryption_oid
+  }
+
+  def generateKeyStore(host: String): KeyStore = {
+    val keyStore: KeyStore = KeyStore.getInstance(KeystoreSettings.KeystoreType)
+    val (cert, keyPair) = generateX509Certificate(host)
+    keyStore.load(null, EMPTY_PASSWORD)
+    keyStore.setKeyEntry(SelfSigned.Alias.PrivateKeyEntry, keyPair.getPrivate, EMPTY_PASSWORD, Array(cert))
+    keyStore.setCertificateEntry(SelfSigned.Alias.trustedCertEntry, cert)
+    keyStore
+  }
+
+  def generateX509Certificate(host: String): (X509Certificate, KeyPair) = {
+    val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+    keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+    val keyPair = keyPairGenerator.generateKeyPair()
+    val cert = createSelfSignedCertificate(host, keyPair)
+    (cert, keyPair)
+  }
+
+  def generateCert(host: String): Cert = {
+    val (cert, keyPair) = generateX509Certificate(host)
+    Cert(
+      id = IdGenerator.token(32),
+      domain = host,
+      chain = s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
+      privateKey = s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}"
+    )
+  }
+
+  def createSelfSignedCertificate(host: String, keyPair: KeyPair): X509Certificate = {
+    val certInfo = new X509CertInfo()
+
+    // Serial number and version
+    certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(64, new SecureRandom())))
+    certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3))
+
+    // Validity
+    val validFrom = new Date()
+    val validTo = new Date(validFrom.getTime + 50l * 365l * 24l * 60l * 60l * 1000l)
+    val validity = new CertificateValidity(validFrom, validTo)
+    certInfo.set(X509CertInfo.VALIDITY, validity)
+
+    // Subject and issuer
+    val owner = new X500Name(SelfSigned.DistinguishedName(host))
+    certInfo.set(X509CertInfo.SUBJECT, owner)
+    certInfo.set(X509CertInfo.ISSUER, owner)
+
+    // Key and algorithm
+    certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic))
+    val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
+    certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
+
+    // Create a new certificate and sign it
+    val cert = new X509CertImpl(certInfo)
+    cert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
+
+    // Since the signature provider may have a different algorithm ID to what we think it should be,
+    // we need to reset the algorithm ID, and resign the certificate
+    val actualAlgorithm = cert.get(X509CertImpl.SIG_ALG).asInstanceOf[AlgorithmId]
+    certInfo.set(CertificateAlgorithmId.NAME + "." + CertificateAlgorithmId.ALGORITHM, actualAlgorithm)
+    val newCert = new X509CertImpl(certInfo)
+    newCert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
+    newCert
+  }
+
+}
+
+/*
+object Test {
+
+  implicit val system = ActorSystem()
+  implicit val ec     = system.dispatcher
+  implicit val mat    = ActorMaterializer.create(system)
+  implicit val http   = Http(system)
+
+  def handler(request: HttpRequest): Future[HttpResponse] = {
+    FastFuture.successful(HttpResponse(
+      200,
+      entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "hello")
+    ))
+  }
+
+  val httpsContext: ConnectionContext = {
+    val ks: KeyStore = KeyStore.getInstance("JKS")
+    val keystore: InputStream = new FileInputStream(new File("/Users/mathieuancelin/Desktop/keystore.jks"))
+    require(keystore != null, "Keystore required!")
+    ks.load(keystore, "".toCharArray)
+    val keyManagerFactory: KeyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+    keyManagerFactory.init(ks, "".toCharArray)
+    val tmf: TrustManagerFactory = TrustManagerFactory.getInstance("SunX509")
+    tmf.init(ks)
+    val sslContext: SSLContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagerFactory.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
+    ConnectionContext.https(sslContext)
+  }
+
+  val bound = http.bindAndHandleAsync(
+    handler = handler,
+    interface = "0.0.0.0",
+    port = 8443,
+    connectionContext = httpsContext
+  )
+}*/
 

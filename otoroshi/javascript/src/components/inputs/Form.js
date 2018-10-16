@@ -205,6 +205,7 @@ export class Form extends Component {
             ...props,
             disabled,
             rawValue: this.props.value,
+            rawOnChange: this.props.onChange,
             key: name,
             value: this.getValue(name, {}),
             changeValue: this.changeValue,
