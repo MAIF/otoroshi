@@ -1158,8 +1158,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             def passWithApiKey(config: GlobalConfig): Future[Result] = {
                               val authByJwtToken = req.headers
                                 .get(env.Headers.OtoroshiAuthorization)
-                                .orElse(req.headers.get("Authorization"))
-                                .filter(_.startsWith("Bearer "))
+                                .orElse(
+                                  req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+                                )
                                 .map(_.replace("Bearer ", ""))
                                 .orElse(
                                   req.queryString.get(env.Headers.OtoroshiBearerAuthorization).flatMap(_.lastOption)
@@ -1167,8 +1168,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
                               val authBasic = req.headers
                                 .get(env.Headers.OtoroshiAuthorization)
-                                .orElse(req.headers.get("Authorization"))
-                                .filter(_.startsWith("Basic "))
+                                .orElse(
+                                  req.headers.get("Authorization").filter(_.startsWith("Basic "))
+                                )
                                 .map(_.replace("Basic ", ""))
                                 .flatMap(e => Try(decodeBase64(e)).toOption)
                                 .orElse(
