@@ -19,7 +19,6 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
 
     public X509KeyManagerSnitch(X509KeyManager manager) {
         this.manager = manager;
-        System.out.println("new X509KeyManagerSnitch(" +  manager + ")");
     }
 
     private void debug(String message) {

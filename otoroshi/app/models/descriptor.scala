@@ -288,7 +288,7 @@ case class ServiceDescriptor(
     strictlyPrivate: Boolean = false,
     enforceSecureCommunication: Boolean = true,
     sendOtoroshiHeadersBack: Boolean = true,
-    readOnly: Boolean = true,
+    readOnly: Boolean = false,
     secComExcludedPatterns: Seq[String] = Seq.empty[String],
     securityExcludedPatterns: Seq[String] = Seq.empty[String],
     publicPatterns: Seq[String] = Seq.empty[String],
