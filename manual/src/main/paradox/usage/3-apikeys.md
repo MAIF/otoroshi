@@ -20,9 +20,9 @@ In the Otoroshi admin dashboard, we chose to access `API keys` from `service des
 
 `API keys` can be provided to Otoroshi through :
 
-* `Otoroshi-Authorization: Basic $base64(client_id:client_secret)` header, in that case, the `Otoroshi-Authorization` header will **not** be sent to the target
+* `Otoroshi-Authorization: Basic $base64(client_id:client_secret)` header, in that case, the `Otoroshi-Authorization` header will **not** be sent to the target. `Basic ` is optional.
 * `Authorization: Basic $base64(client_id:client_secret)` header, in that case, the `Authorization` header **will** be sent to the target
-* `Otoroshi-Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret, in that case, the `Otoroshi-Authorization` header will **not** be sent to the target
+* `Otoroshi-Token: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret, in that case, the `Otoroshi-Token` header will **not** be sent to the target. `Bearer ` is optional.
 * `Authorization: Bearer $jwt_token` where the JWT token has been signed with the `API key` client secret, in that case, the `Authorization` header **will** be sent to the target
 * `Cookie: access_token=$jwt_token;` where the JWT token has been signed with the `API key` client secret, in that case, the cookie named `access_token` **will** be sent to the target
 * `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers, in that case the `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers will not be sent to the target.
