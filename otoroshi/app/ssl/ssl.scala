@@ -1,7 +1,6 @@
 package ssl
 
 import java.io.{ByteArrayInputStream, FileOutputStream}
-import java.net.Socket
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert.{Certificate => _, _}
@@ -128,35 +127,20 @@ object DynamicSSLEngineProvider {
       case false => null
     } orNull
 
-    if (true) {
-      logger.debug("Setting up SSL Context ")
-      val sslContext: SSLContext = SSLContext.getInstance("TLS")
-      val keyStore: KeyStore = createKeyStore(certificates.values.toSeq) //.sortWith((c1, c2) => c1.domain.compareTo(c2.domain) > 0))
-      keyStore.store(new FileOutputStream(s"/Users/mathieuancelin/Desktop/keystore.jks"), "".toCharArray)
-      val keyManagerFactory: KeyManagerFactory = Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
-      keyManagerFactory.init(keyStore, "".toCharArray)
-      logger.debug("SSL Context init ...")
-      sslContext.init(keyManagerFactory.getKeyManagers, tm, null)
-      logger.debug(s"SSL Context init done ! (${keyStore.size()})")
-      // SSLContext.setDefault(sslContext)
-      sslContext
-    } else {
-      logger.debug("Setting up SSL Context ")
-      val sslContext: SSLContext = SSLContext.getInstance("TLS")
-      val managers: Seq[X509KeyManager] = certificates.toSeq.flatMap { cert =>
-        val keyStore: KeyStore = createKeyStore(Seq(cert._2))
-        val keyManagerFactory: KeyManagerFactory = Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
-        keyManagerFactory.init(keyStore, "".toCharArray)
-        keyManagerFactory.getKeyManagers.toSeq.map(_.asInstanceOf[X509KeyManager])
-      }
-      logger.debug(s"managers: $managers")
-      val compositeKeyManager = new CompositeKeyManager(managers)
-      logger.debug("SSL Context init ...")
-      sslContext.init(managers.toArray, tm, null)
-      logger.debug(s"SSL Context init done !")
-      // SSLContext.setDefault(sslContext)
-      sslContext
-    }
+    val dumpPath: Option[String] = optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
+
+    logger.debug("Setting up SSL Context ")
+    val sslContext: SSLContext = SSLContext.getInstance("TLS")
+    val keyStore: KeyStore = createKeyStore(certificates.values.toSeq)
+    dumpPath.foreach(path => keyStore.store(new FileOutputStream(path), "".toCharArray))
+    val keyManagerFactory: KeyManagerFactory = Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
+    keyManagerFactory.init(keyStore, "".toCharArray)
+    logger.debug("SSL Context init ...")
+    val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager])
+    sslContext.init(keyManagers, tm, null)
+    logger.debug(s"SSL Context init done ! (${keyStore.size()})")
+    SSLContext.setDefault(sslContext)
+    sslContext
   }
 
   def addCertificates(certs: Seq[Cert]): SSLContext = {
@@ -187,12 +171,12 @@ object DynamicSSLEngineProvider {
         } else {
           logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
           keyStore.setKeyEntry(cert.domain, key, cert.password.getOrElse("").toCharArray, certificateChain.toArray[java.security.cert.Certificate])
-          certificateChain.tail.foreach { cert =>
-            val id = cert.getSerialNumber.toString(16)
-            if (!keyStore.containsAlias(id)) {
-              keyStore.setCertificateEntry(s"ca-$id", cert)
-            }
-          }
+          // certificateChain.tail.foreach { cert =>
+          //   val id = cert.getSerialNumber.toString(16)
+          //   if (!keyStore.containsAlias(id)) {
+          //     keyStore.setCertificateEntry(s"ca-$id", cert)
+          //   }
+          // }
         }
       }
     }
@@ -257,48 +241,10 @@ object noCATrustManager extends X509TrustManager {
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
 
   override def createSSLEngine(): SSLEngine = {
-    // val env = appProvider.get.get.requestHandler.asInstanceOf[gateway.GatewayRequestHandler].env
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     context.createSSLEngine()
-  }
-}
-
-class CompositeKeyManager(managers: Seq[X509KeyManager]) extends X509KeyManager {
-
-  private def log[A](name: String)(f: => A): A = {
-    DynamicSSLEngineProvider.logger.debug(s"CompositeKeyManager.$name")
-    f
-  }
-
-  override def getClientAliases(s: String, p: Array[Principal]): Array[String] = log(s"getClientAliases($s)") {
-    managers.map(_.getClientAliases(s, p)).filterNot(a => a != null && a.length != 0) match {
-      case list if list.isEmpty => null
-      case list => list.flatten.toArray[String]
-    }
-  }
-
-  override def chooseClientAlias(s: Array[String], p: Array[Principal], so: Socket): String = log(s"chooseClientAlias(${s.toSeq})") {
-    managers.map(_.chooseClientAlias(s, p, so)).find(_ != null).orNull
-  }
-
-  override def getServerAliases(s: String, p: Array[Principal]): Array[String] = log(s"getServerAliases($s)") {
-    managers.map(_.getServerAliases(s, p)).filterNot(a => a != null && a.length != 0) match {
-      case list if list.isEmpty => null
-      case list => list.flatten.toArray[String]
-    }
-  }
-
-  override def chooseServerAlias(s: String, p: Array[Principal], so: Socket): String = log(s"chooseServerAlias($s)") {
-    managers.map(_.chooseServerAlias(s, p, so)).find(_ != null).orNull
-  }
-
-  override def getCertificateChain(s: String): Array[X509Certificate] = log(s"getCertificateChain($s)") {
-    managers.map(_.getCertificateChain(s)).find(a => a != null && a.length > 0).orNull
-  }
-
-  override def getPrivateKey(s: String): PrivateKey = log(s"getPrivateKey($s)") {
-    managers.map(_.getPrivateKey(s)).find(_ != null).orNull
+    // context.createSSLEngine("ssl.foo.bar", 443)
   }
 }
 
