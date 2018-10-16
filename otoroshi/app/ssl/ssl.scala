@@ -174,12 +174,12 @@ object DynamicSSLEngineProvider {
         } else {
           logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
           keyStore.setKeyEntry(cert.domain, key, cert.password.getOrElse("").toCharArray, certificateChain.toArray[java.security.cert.Certificate])
-          // certificateChain.tail.foreach { cert =>
-          //   val id = cert.getSerialNumber.toString(16)
-          //   if (!keyStore.containsAlias(id)) {
-          //     keyStore.setCertificateEntry(s"ca-$id", cert)
-          //   }
-          // }
+          certificateChain.tail.foreach { cert =>
+            val id = cert.getSerialNumber.toString(16)
+            if (!keyStore.containsAlias(id)) {
+              keyStore.setCertificateEntry(s"ca-$id", cert)
+            }
+          }
         }
       }
     }
