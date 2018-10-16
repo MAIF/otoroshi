@@ -189,8 +189,8 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host"                   -> serviceHost,
-          "Otoroshi-Client-Id"     -> "apikey-test",
-          "Otoroshi-Client-Secret" -> "1234"
+          otoroshiComponents.env.Headers.OtoroshiClientId     -> "apikey-test",
+          otoroshiComponents.env.Headers.OtoroshiClientSecret -> "1234"
         )
         .get()
         .futureValue
@@ -208,7 +208,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host"                   -> serviceHost,
-          "Otoroshi-Authorization" -> s"Basic $basicAuth"
+          otoroshiComponents.env.Headers.OtoroshiAuthorization -> s"Basic $basicAuth"
         )
         .get()
         .futureValue
@@ -335,7 +335,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host"                   -> serviceHost,
-          "Otoroshi-Token" -> s"Bearer $bearerAuth"
+          otoroshiComponents.env.Headers.OtoroshiBearer -> s"Bearer $bearerAuth"
         )
         .get()
         .futureValue
