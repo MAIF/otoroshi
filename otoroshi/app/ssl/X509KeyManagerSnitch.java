@@ -71,7 +71,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
         try {
             String host = ssl.getPeerHost();
             String[] aliases = manager.getServerAliases(s, p);
-            if (aliases != null) {
+            if (host != null && aliases != null) {
                 List<String> al = Arrays.asList(aliases);
                 Optional<String> theFirst = al.stream().findFirst();
                 String first = al.stream().filter(alias -> RegexPool.apply(host).matches(alias)).findFirst().orElse(theFirst.get());
@@ -80,7 +80,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                 return this.chooseServerAlias(s, p, (Socket) null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            DynamicSSLEngineProvider.logger().underlyingLogger().error("Error while chosing server alias", e);
             return this.chooseServerAlias(s, p, (Socket) null);
         }
     }

@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert.{Certificate => _, _}
 import java.security.spec.PKCS8EncodedKeySpec
+import java.util
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
@@ -53,7 +54,7 @@ case class Cert(id: String, domain: String, chain: String, privateKey: String) {
     }
   } recover {
     case e =>
-      e.printStackTrace
+      DynamicSSLEngineProvider.logger.error("Error while checking certificate validity", e)
       false
   } getOrElse false
 }
@@ -104,6 +105,8 @@ object DynamicSSLEngineProvider {
 
   type KeyStoreError = String
 
+  private val EMPTY_PASSWORD = Array.emptyCharArray
+
   val logger = Logger("otoroshi-ssl-provider")
 
   private val CERT_PATTERN: Pattern = Pattern.compile("-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
@@ -135,15 +138,19 @@ object DynamicSSLEngineProvider {
     logger.debug("Setting up SSL Context ")
     val sslContext: SSLContext = SSLContext.getInstance("TLS")
     val keyStore: KeyStore = createKeyStore(certificates.values.toSeq)
-    dumpPath.foreach(path => keyStore.store(new FileOutputStream(path), "".toCharArray))
+    dumpPath.foreach(path => keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD))
     val keyManagerFactory: KeyManagerFactory = Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
-    keyManagerFactory.init(keyStore, "".toCharArray)
+    keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
     logger.debug("SSL Context init ...")
     val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager])
     sslContext.init(keyManagers, tm, null)
     logger.debug(s"SSL Context init done ! (${keyStore.size()})")
     SSLContext.setDefault(sslContext)
     sslContext
+  }
+
+  def getHostNames(): Seq[String] = {
+    certificates.values.map(_.domain).toSet.toSeq
   }
 
   def addCertificates(certs: Seq[Cert]): SSLContext = {
@@ -243,10 +250,18 @@ object noCATrustManager extends X509TrustManager {
 
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
 
+  import collection.JavaConverters._
+
   override def createSSLEngine(): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
-    context.createSSLEngine()
+    val sslParameters = new SSLParameters
+    val names = DynamicSSLEngineProvider.getHostNames().map(_.replace("*", "ssl"))
+    val hostNames = names.map(n => new SNIHostName(n))
+    //sslParameters.setServerNames(new util.ArrayList(hostNames.asJavaCollection))
+    val engine = context.createSSLEngine()
+    engine.setSSLParameters(sslParameters)
+    engine
   }
 }
 
@@ -374,41 +389,3 @@ object FakeKeyStore {
   }
 
 }
-
-/*
-object Test {
-
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = ActorMaterializer.create(system)
-  implicit val http   = Http(system)
-
-  def handler(request: HttpRequest): Future[HttpResponse] = {
-    FastFuture.successful(HttpResponse(
-      200,
-      entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "hello")
-    ))
-  }
-
-  val httpsContext: ConnectionContext = {
-    val ks: KeyStore = KeyStore.getInstance("JKS")
-    val keystore: InputStream = new FileInputStream(new File("/Users/mathieuancelin/Desktop/keystore.jks"))
-    require(keystore != null, "Keystore required!")
-    ks.load(keystore, "".toCharArray)
-    val keyManagerFactory: KeyManagerFactory = KeyManagerFactory.getInstance("SunX509")
-    keyManagerFactory.init(ks, "".toCharArray)
-    val tmf: TrustManagerFactory = TrustManagerFactory.getInstance("SunX509")
-    tmf.init(ks)
-    val sslContext: SSLContext = SSLContext.getInstance("TLS")
-    sslContext.init(keyManagerFactory.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
-    ConnectionContext.https(sslContext)
-  }
-
-  val bound = http.bindAndHandleAsync(
-    handler = handler,
-    interface = "0.0.0.0",
-    port = 8443,
-    connectionContext = httpsContext
-  )
-}*/
-
