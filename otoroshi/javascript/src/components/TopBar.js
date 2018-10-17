@@ -176,8 +176,7 @@ export class TopBar extends Component {
   }
 
   listenToSlash = e => {
-    if (e.keyCode === 191 && e.target.tagName.toLowerCase() !== 'input') {
-      console.log(e.target.className)
+    if (e.keyCode === 191 && e.target.tagName.toLowerCase() !== 'input' && e.target.className && e.target.className.indexOf('ace_text-input') === -1) {
       setTimeout(() => this.selector.focus());
     }
   };
