@@ -100,6 +100,10 @@ and confirm the command
 <img src="../img/apikey-delete-confirm.png" />
 @@@
 
+### Read only
+
+The read only flag on an `ApiKey` this apikey can only use allowed services with `HEAD`, `OPTIONS` and `GET` http verbs.
+
 ## Use a JWT token to pass an API key
 
 You can use a JWT token to pass an API key to Otoroshi. 

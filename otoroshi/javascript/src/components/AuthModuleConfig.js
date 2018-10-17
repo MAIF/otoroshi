@@ -556,7 +556,7 @@ export class AuthModuleConfig extends Component {
         }}
         possibleValues={[
           { label: 'Generic oauth2 provider', value: 'oauth2' },
-          { label: 'Basic auth. provider (experimental)', value: 'basic' },
+          { label: 'In memory auth. provider (experimental)', value: 'basic' },
           { label: 'Ldap auth. provider (experimental)', value: 'ldap' },
         ]}
         help="The type of settings to log into your app."

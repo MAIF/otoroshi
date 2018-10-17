@@ -25,7 +25,6 @@ You will have a serie of toggle buttons to
 * activate / deactivate a service
 * display maintenance page for a service
 * display contruction page for a service
-* enforce user login to access the app (renamed from `private app`)
 * enable otoroshi custom response headers containing request id, latency, etc 
 * force https usage on the exposed service
 
@@ -88,30 +87,6 @@ if you decode it, the payload will look something like
 }
 ```
 
-if your service is using the private apps mechanism, then the JWT token will have more fields coming from it's Auth0 profile (all those fields are optional and could not be present)
-
-* `email`
-* `name`
-* `picture`
-* `user_id`
-* `given_name`
-* `family_name`
-* `gender`
-* `locale`
-* `nickname`
-
-finally the last possible fields are metadata about the client. Those metadata can be placed on the `ApiKey`s (using `ApiKey` metadata) or in the Auth0 profile. In Auth0, the metadata is a flat object placed in the `profile / http://yourdomain/app_metadata / otoroshi_data`. You might need to write an Auth0 rule to copy app metadata under `http://yourdomain/app_metadata`, the `http://yourdomain/app_metadata` value is a config property `app.appMeta`. The rule could be something like the following
-
-```js
-function (user, context, callback) {
-  var namespace = 'http://yourdomain/';
-  context.idToken[namespace + 'user_id'] = user.user_id;
-  context.idToken[namespace + 'user_metadata'] = user.user_metadata;
-  context.idToken[namespace + 'app_metadata'] = user.app_metadata;
-  callback(null, user, context);
-}
-```
-
 If you want to validate the `Otoroshi-Claim` on the target app side to ensure that the input requests only comes from `Otoroshi`, you will have to write an HTTP filter to do the job. For instance, if you want to write a filter to make sure that requests only comes from Otoroshi, you can write something like the following (using playframework 2.6).
 
 Scala
@@ -154,6 +129,22 @@ Here you can also define some headers that will be added to each request to the 
 @@@ div { .centered-img #service-meta }
 <img src="../img/new-service-meta.png" />
 @@@
+
+### Read only
+
+The read only flag on a service descriptor means that this service can only be used with `HEAD`, `OPTIONS` and `GET` http verbs. You can also active the same flag on `ApiKey`s to be more specific on who cannot use write http verbs.
+
+### CORS 
+
+If you enabled this section, CORS will be automatically supported on the current service provider. The pre-flight request will be handled by Otoroshi. You can customize every CORS headers :
+
+@@@ div { .centered-img }
+<img src="../img/cors.png" />
+@@@
+
+### Service authentication
+
+See @ref:[Aauthentication](./9-auth.md)
 
 ### Custom error templates
 

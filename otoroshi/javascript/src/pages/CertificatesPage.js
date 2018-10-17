@@ -202,7 +202,7 @@ export class CertificatesPage extends Component {
   formFlow = ['id', 'domain', 'selfCert', 'valid', 'chain', 'privateKey', 'infos'];
 
   componentDidMount() {
-    this.props.setTitle(`All certificates`);
+    this.props.setTitle(`All certificates (experimental)`);
   }
 
   render() {
