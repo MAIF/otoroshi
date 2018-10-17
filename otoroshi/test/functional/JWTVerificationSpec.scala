@@ -381,6 +381,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         .withIssuer("foo")
         .withClaim("bar", "yo")
         .withClaim("foo", "bar")
+        .withClaim("var1", "math")
+        .withClaim("var2", "yo")
         .sign(algorithm)
 
       val callCounter1           = new AtomicInteger(0)
@@ -435,8 +437,19 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
             transformSettings = TransformSettings(
               location = InHeader("X-Barrr"),
               mappingSettings = MappingSettings(
-                map = Map("fakebar" -> "x-bar", "bar" -> "x-bar", "superfakebar" -> "x-bar"),
-                values = Json.obj("x-yo" -> "foo"),
+                map = Map(
+                  "fakebar" -> "x-bar", 
+                  "bar" -> "x-bar", 
+                  "superfakebar" -> "x-bar"
+                ),
+                values = Json.obj(
+                  "x-yo" -> "foo",
+                  "the-date-1" -> "the-${date}",
+                  "the-date-2" -> "the-${date.format('dd-MM-yyyy')}",
+                  "the-var-1" -> "the-${token.var1}",
+                  "the-var-2" -> "the-${token.var2}",
+                  "the-var-1-2" -> "the-${token.var1}-${token.var2}"
+                ),
                 remove = Seq("foo")
               )
             )
@@ -502,6 +515,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       val (status1, body1) = callServerWithJWT()
       val (status2, body2) = callServerWithBadJWT1()
       val (status3, body3) = callServerWithBadJWT2()
+      //println(body0)
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
       status1 mustBe 200

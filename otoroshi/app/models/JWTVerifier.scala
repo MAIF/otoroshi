@@ -11,12 +11,14 @@ import com.auth0.jwt.interfaces.Verification
 import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.PemUtils
 import storage.BasicStore
+import utils.ReplaceAllWith
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,6 +30,64 @@ trait AsJson {
 
 trait FromJson[A] {
   def fromJson(json: JsValue): Either[Throwable, A]
+}
+
+object JwtExpressionLanguage {
+
+  import kaleidoscope._
+
+  lazy val logger = Logger("otoroshi-jwt-el")
+
+  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
+
+  def apply(value: String, context: Map[String, String]): String = {
+    Try {
+      expressionReplacer.replaceOn(value) { expression =>
+        expression match {
+          case "date" => DateTime.now().toString()
+          case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
+          case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse(value)
+          case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse(value)
+          case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(value)
+          case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(value)
+          case r"token.$field@(.*)" => context.getOrElse(field, value)
+          case _ => "bad-expr"
+        }
+      }
+    } recover {
+      case e =>
+        logger.error(s"Error while parsing expression, returning raw value: $value", e)
+        value
+    } get
+  }
+
+  def apply(value: JsValue, context: Map[String, String]): JsValue = {
+    value match {
+      case JsObject(map) => new JsObject(map.toSeq.map {
+        case (key, JsString(str)) => (key, JsString(apply(str, context)))
+        case (key, obj@JsObject(_)) => (key, apply(obj, context))
+        case (key, arr@JsArray(_)) => (key,  apply(arr, context))
+        case (key, v) => (key, v)
+      }.toMap)
+      case JsArray(values) => new JsArray(values.map {
+        case JsString(str) => JsString(apply(str, context))
+        case obj: JsObject => apply(obj, context)
+        case arr: JsArray => apply(arr, context)
+        case v => v
+      })
+      case JsString(str) => {
+        apply(str, context) match {
+          case "true" => JsBoolean(true)
+          case "false" => JsBoolean(false)
+          case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)
+          case r"$nbr@([0-9]+)" => JsNumber(nbr.toInt)
+          case s => JsString(s)
+
+        }
+      }
+      case _ => value
+    }
+  }
 }
 
 case class JwtInjection(
@@ -546,7 +606,7 @@ sealed trait JwtVerifier extends AsJson {
             val verification = strategy.verificationSettings.asVerification(algorithm)
             Try(verification.build().verify(token)) match {
               case Failure(e) =>
-                logger.error("Bad JWT token", e)
+                // logger.error("Bad JWT token", e)
                 Errors
                   .craftResponseResult(
                     "error.bad.token",
@@ -591,10 +651,16 @@ sealed trait JwtVerifier extends AsJson {
                           .left[A]
                       case Some(outputAlgorithm) => {
                         val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val context: Map[String, String] = jsonToken.value.toSeq.collect {
+                          case (key, JsString(str)) => (key, str)
+                          case (key, JsBoolean(bool)) => (key, bool.toString)
+                          case (key, JsNumber(nbr)) => (key, nbr.toString())
+                        } toMap
+                        val evaluatedValues: JsObject = JwtExpressionLanguage(tSettings.mappingSettings.values, context).as[JsObject]
                         val newJsonToken: JsObject = JsObject(
                           (tSettings.mappingSettings.map.filter(a => (jsonToken \ a._1).isDefined).foldLeft(jsonToken)(
-                            (a, b) => a.+(b._2, (a \ b._1).as[JsValue]).-(b._1)
-                          ) ++ tSettings.mappingSettings.values).fields
+                            (a, b) => a.+(b._2, JwtExpressionLanguage((a \ b._1).as[JsValue], context)).-(b._1)
+                          ) ++ evaluatedValues).fields
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
                         )
@@ -622,7 +688,7 @@ case class LocalJwtVerifier(
     excludedPatterns: Seq[String] = Seq.empty[String],
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
-    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
+    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map.empty))
 ) extends JwtVerifier
     with AsJson {
 

@@ -133,6 +133,15 @@ case "${1}" in
     cleanup
     docker push "maif/otoroshi:1.3.0-dev-$NBR"
     ;;
+  build-snapshot)
+    NBR=`date +%s`
+    echo "Will build version 1.3.0-dev-$NBR"
+    cp ../../otoroshi/target/universal/otoroshi-1.2.1-dev.zip otoroshi-dist.zip
+    prepare_build
+    docker build --no-cache -t otoroshi .
+    docker tag otoroshi "maif/otoroshi:1.3.0-dev-$NBR"
+    cleanup
+    ;;
   *)
     echo "Build otoroshi docker images"
     ;;
