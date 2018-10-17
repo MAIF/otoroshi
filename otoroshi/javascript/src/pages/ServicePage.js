@@ -1249,14 +1249,50 @@ export class TemplateInput extends Component {
     return this.state.template;
   };
 
+  template = (title, message, comeBack = false, error = false) => {
+    return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <title>${title}</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+      <meta name="theme-color" content="#000000">
+      <meta name="robots" content="noindex, nofollow">
+      <link rel="shortcut icon" type="image/png" href="/__otoroshi_assets/images/favicon.png">
+      <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap.min.css">
+      <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap-theme.min.css">
+      <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
+      <link href="/assets/fonts/raleway/raleway.css" rel="stylesheet">
+      <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/error.css">
+  </head>
+  <body>
+      <div class="container">
+        <div class="header clearfix">
+            <nav class="navbar-inverse"></nav>
+            <a class="navbar-brand" href="/" style="display: flex;">
+            <span>おとろし</span>&nbsp; Otoroshi
+            </a>
+        </div>
+        <div class="jumbotron">
+            ${error ? `<h2><i class="glyphicon glyphicon-warning-sign"></i> ${title}</h2>` : `<h2 style="color:white;">${title}</h2>`}
+            <p class="lead">
+              ${message}
+            </p>
+            ${comeBack ? '<p class="lead">try to come back later 😉</p>' : ''}
+            <p><img class="logo" src="/__otoroshi_assets/images/otoroshi-logo-color.png" style="width: 300px;"></p>
+        </div>
+      </div>
+  </body>
+</html>`;
+  };
+
   createTemplate = () => {
     BackOfficeServices.createTemplate({
       serviceId: this.props.service.id,
-      templateBuild: '<h1 style="color: green;">Service under construction</h1>',
-      templateMaintenance: '<h1 style="color: green;">Service in maintenance</h1>',
-      template40x:
-        '<h1 style="color: green;">${message} - ${cause} - error number: ${errorId}</h1>',
-      template50x: '<h1 style="color: red;">${message} - ${cause} - error number: ${errorId}</h1>',
+      templateBuild: this.template('Custom service under construction', 'The service you\'re trying to reach is under construction', true),
+      templateMaintenance: this.template('Custom service in maintenance', 'The service you\'re trying to reach is in maintenance', true),
+      template40x: this.template('Otoroshi error', '${message} - ${cause} - error number: ${errorId}', false, true),
+      template50x: this.template('Otoroshi error', '${message} - ${cause} - error number: ${errorId}', false, true),
       messages: {
         'message-400': '400',
         'message-403': '403',
