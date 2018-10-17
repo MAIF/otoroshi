@@ -1163,7 +1163,17 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Custom errors template">
-            <TemplateInput service={this.state.service} />
+            {!this.state.neverSaved && <TemplateInput service={this.state.service} />}
+            {this.state.neverSaved && (
+              <div className="form-group">
+                <label className="col-xs-12 col-sm-2 control-label" />
+                <div className="col-sm-10">
+                  <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
+                    Custom error templates are not available on a service descriptor that hasn't been created yet. Just save the service descriptor and it will be available. 
+                  </p>
+                </div>
+              </div>
+            )}
           </Collapse>
         </form>
       </div>
