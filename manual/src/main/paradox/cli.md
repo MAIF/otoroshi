@@ -7,11 +7,11 @@ Otoroshi provides a command line tool to command Otoroshi instances.
 First, download the Otoroshi CLI depending on your operating system :
 
 ```sh
-wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.0/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.1-dev/otoroshicli
 # or if you use linux
-wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.0/otoroshicli
+wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.1-dev/otoroshicli
 # or if you use windows
-wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.0/otoroshicli.exe
+wget -q --show-progress https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.1-dev/otoroshicli.exe
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ You can read more about it [here](https://github.com/MAIF/otoroshi/tree/master/c
 ```
 $ otoroshicli -h
 
-otoroshicli 1.3.0
+otoroshicli 1.3.1-dev
    ____  __________  ____  ____  _____ __  ______     ________    ____
   / __ \/_  __/ __ \/ __ \/ __ \/ ___// / / /  _/    / ____/ /   /  _/
  / / / / / / / / / / /_/ / / / /\__ \/ /_/ // /_____/ /   / /    / /

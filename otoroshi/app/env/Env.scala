@@ -308,7 +308,7 @@ class Env(val configuration: Configuration,
     publicPatterns = Seq("/health")
   )
 
-  lazy val otoroshiVersion     = "1.3.0"
+  lazy val otoroshiVersion     = "1.3.1-dev"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 

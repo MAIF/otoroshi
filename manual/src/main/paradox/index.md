@@ -6,7 +6,7 @@
 > *The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of the gate to devour those who approach the shrine for only self-serving purposes.*
 
 @@@ div { .centered-img }
-[![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.0/otoroshi.jar)
+[![Build Status](https://travis-ci.org/MAIF/otoroshi.svg?branch=master)](https://travis-ci.org/MAIF/otoroshi) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.1-dev/otoroshi.jar)
 @@@
 
 @@@ div { .centered-img }
@@ -15,12 +15,12 @@
 
 ## Installation
 
-You can download the latest build of Otoroshi as a [fat jar](https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.0/otoroshi.jar), as a [zip package](https://dl.bintray.com/maif/binaries/otoroshi-dist/1.3.0/otoroshi-dist.zip) or as a @ref:[docker image](./getotoroshi/fromdocker.md).
+You can download the latest build of Otoroshi as a [fat jar](https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.1-dev/otoroshi.jar), as a [zip package](https://dl.bintray.com/maif/binaries/otoroshi-dist/1.3.1-dev/otoroshi-dist.zip) or as a @ref:[docker image](./getotoroshi/fromdocker.md).
 
 You can install and run Otoroshi with this little bash snippet
 
 ```sh
-wget -q --show-progress 'https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.0/otoroshi.jar'
+wget -q --show-progress 'https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.1-dev/otoroshi.jar'
 # run the following line if you want to use the admin UI in your browser
 sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar" >> /etc/hosts
 # Java 8
@@ -32,7 +32,7 @@ java --add-modules java.xml.bind -jar otoroshi.jar
 or using docker
 
 ```sh
-docker run -p "8080:8080" maif/otoroshi:1.3.0
+docker run -p "8080:8080" maif/otoroshi:1.3.1-dev
 ```
 
 now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
