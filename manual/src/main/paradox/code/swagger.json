@@ -43,6 +43,12 @@
   }, {
     "name" : "health",
     "description" : "Everything about Otoroshi health status"
+  }, {
+    "name" : "jwt-verifiers",
+    "description" : "Everything about Otoroshi global JWT token verifiers"
+  }, {
+    "name" : "auth-config",
+    "description" : "Everything about Otoroshi global auth. module config"
   } ],
   "externalDocs" : {
     "description" : "Find out more about Otoroshi",
@@ -2012,6 +2018,237 @@
         } ]
       }
     },
+    "/api/auths" : {
+      "get" : {
+        "deprecated" : false,
+        "tags" : [ "auth-config" ],
+        "summary" : "Get one global auth. module configs",
+        "description" : "Get one global auth. module configs",
+        "operationId" : "findGlobalAuthModuleById",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The auth. config id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "oneOf" : [ {
+                "$ref" : "#/definitions/LdapAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/InMemoryAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/GenericOauth2ModuleConfig"
+              } ]
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "auth-config" ],
+        "summary" : "Delete one global auth. module config",
+        "description" : "Delete one global auth. module config",
+        "operationId" : "deleteGlobalAuthModule",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The auth. config id id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Deleted"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "put" : {
+        "deprecated" : false,
+        "tags" : [ "auth-config" ],
+        "summary" : "Update one global auth. module config",
+        "description" : "Update one global auth. module config",
+        "operationId" : "updateGlobalAuthModule",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The auth. config id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "oneOf" : [ {
+              "$ref" : "#/definitions/LdapAuthModuleConfig"
+            }, {
+              "$ref" : "#/definitions/InMemoryAuthModuleConfig"
+            }, {
+              "$ref" : "#/definitions/GenericOauth2ModuleConfig"
+            } ]
+          },
+          "description" : "The auth. config to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "oneOf" : [ {
+                "$ref" : "#/definitions/LdapAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/InMemoryAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/GenericOauth2ModuleConfig"
+              } ]
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "patch" : {
+        "deprecated" : false,
+        "tags" : [ "auth-config" ],
+        "summary" : "Update one global auth. module config",
+        "description" : "Update one global auth. module config",
+        "operationId" : "patchGlobalAuthModule",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The auth. config id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Patch"
+          },
+          "description" : "The auth. config to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "oneOf" : [ {
+                "$ref" : "#/definitions/LdapAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/InMemoryAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/GenericOauth2ModuleConfig"
+              } ]
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "post" : {
+        "deprecated" : false,
+        "tags" : [ "auth-config" ],
+        "summary" : "Create one global auth. module config",
+        "description" : "Create one global auth. module config",
+        "operationId" : "createGlobalAuthModule",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "oneOf" : [ {
+              "$ref" : "#/definitions/LdapAuthModuleConfig"
+            }, {
+              "$ref" : "#/definitions/InMemoryAuthModuleConfig"
+            }, {
+              "$ref" : "#/definitions/GenericOauth2ModuleConfig"
+            } ]
+          },
+          "description" : "The auth. config to create"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "oneOf" : [ {
+                "$ref" : "#/definitions/LdapAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/InMemoryAuthModuleConfig"
+              }, {
+                "$ref" : "#/definitions/GenericOauth2ModuleConfig"
+              } ]
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
     "/api/snowmonkey/config" : {
       "get" : {
         "deprecated" : false,
@@ -2844,7 +3081,7 @@
     },
     "GlobalConfig" : {
       "type" : "object",
-      "required" : [ "streamEntityOnly", "autoLinkToDefaultGroup", "limitConcurrentRequests", "maxConcurrentRequests", "useCircuitBreakers", "apiReadOnly", "u2fLoginOnly", "ipFiltering", "throttlingQuota", "perIpThrottlingQuota", "analyticsEventsUrl", "analyticsWebhooks", "alertsWebhooks", "alertsEmails", "endlessIpAddresses" ],
+      "required" : [ "streamEntityOnly", "autoLinkToDefaultGroup", "limitConcurrentRequests", "maxConcurrentRequests", "useCircuitBreakers", "apiReadOnly", "u2fLoginOnly", "ipFiltering", "throttlingQuota", "perIpThrottlingQuota", "analyticsWebhooks", "alertsWebhooks", "alertsEmails", "endlessIpAddresses" ],
       "description" : "The global config object of Otoroshi, used to customize settings of the current Otoroshi instance",
       "properties" : {
         "lines" : {
@@ -2912,11 +3149,16 @@
           "example" : 123,
           "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds"
         },
-        "analyticsEventsUrl" : {
-          "type" : "string",
-          "format" : "uri",
-          "example" : "http://www.google.com",
-          "description" : "The URL to get analytics events from"
+        "elasticWritesConfigs" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/ElasticConfig"
+          },
+          "description" : "Configs. for Elastic writes"
+        },
+        "elasticReadsConfig" : {
+          "$ref" : "#/definitions/ElasticConfig",
+          "description" : "Config. for elastic reads"
         },
         "analyticsWebhooks" : {
           "type" : "array",
@@ -3435,6 +3677,14 @@
                   "type" : "string"
                 },
                 "description" : "Specify headers that will be added to each client request. Useful to add authentication"
+              },
+              "authConfigRef" : {
+                "type" : "string",
+                "example" : "a string value",
+                "description" : "A reference to a global auth module config"
+              },
+              "cors" : {
+                "$ref" : "#/definitions/CorsSettings"
               }
             }
           },
@@ -3833,6 +4083,14 @@
             "type" : "string"
           },
           "description" : "Specify headers that will be added to each client request. Useful to add authentication"
+        },
+        "authConfigRef" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "A reference to a global auth module config"
+        },
+        "cors" : {
+          "$ref" : "#/definitions/CorsSettings"
         }
       }
     },
@@ -4664,6 +4922,340 @@
           }, {
             "$ref" : "#/definitions/Transform"
           } ]
+        }
+      }
+    },
+    "GenericOauth2ModuleConfig" : {
+      "description" : "Settings to authenticate users using a generic OAuth2 provider",
+      "type" : "object",
+      "required" : [ "type", "id", "name", "desc", "sessionMaxAge", "clientId", "clientSecret", "authorizeUrl", "tokenUrl", "userInfoUrl", "loginUrl", "logoutUrl", "callbackUrl", "accessTokenField", "nameField", "emailField", "otoroshiDataField" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Type of settings. value is oauth2"
+        },
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Unique id of the config"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the config"
+        },
+        "desc" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Description of the config"
+        },
+        "sessionMaxAge" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Max age of the session"
+        },
+        "clientId" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "OAuth Client id"
+        },
+        "clientSecret" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "OAuth Client secret"
+        },
+        "authorizeUrl" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "OAuth authorize URL"
+        },
+        "tokenUrl" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "OAuth token URL"
+        },
+        "userInfoUrl" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "OAuth userinfo to get user profile"
+        },
+        "loginUrl" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "OAuth login URL"
+        },
+        "logoutUrl" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "OAuth logout URL"
+        },
+        "callbackUrl" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Otoroshi callback URL"
+        },
+        "accessTokenField" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Field name to get access token"
+        },
+        "nameField" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Field name to get name from user profile"
+        },
+        "emailField" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Field name to get email from user profile"
+        },
+        "otoroshiDataField" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
+        }
+      }
+    },
+    "InMemoryAuthModuleConfig" : {
+      "description" : "Settings to authenticate users using the in memory user store",
+      "type" : "object",
+      "required" : [ "type", "id", "name", "desc", "users", "sessionMaxAge" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Type of settings. value is basic"
+        },
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Unique id of the config"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the config"
+        },
+        "desc" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Description of the config"
+        },
+        "sessionMaxAge" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Max age of the session"
+        },
+        "users" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/InMemoryUser"
+          },
+          "description" : "List of users"
+        }
+      }
+    },
+    "LdapAuthModuleConfig" : {
+      "description" : "Settings to authenticate users using a generic OAuth2 provider",
+      "type" : "object",
+      "required" : [ "type", "id", "name", "desc", "sessionMaxAge", "serverUrl", "searchBase", "userBase", "groupFilter", "searchFilter", "adminUsername", "adminPassword", "nameField", "emailField", "metadataField" ],
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Type of settings. value is ldap"
+        },
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Unique id of the config"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the config"
+        },
+        "desc" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Description of the config"
+        },
+        "sessionMaxAge" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Max age of the session"
+        },
+        "serverUrl" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "URL of the ldap server"
+        },
+        "searchBase" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "LDAP search base"
+        },
+        "userBase" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "LDAP user base DN"
+        },
+        "groupFilter" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Filter for groups"
+        },
+        "searchFilter" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Filter for users"
+        },
+        "adminUsername" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The admin username"
+        },
+        "adminPassword" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The admin password"
+        },
+        "nameField" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Field name to get name from user profile"
+        },
+        "emailField" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Field name to get email from user profile"
+        },
+        "otoroshiDataField" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
+        }
+      }
+    },
+    "CorsSettings" : {
+      "description" : "The configuration for cors support",
+      "type" : "object",
+      "required" : [ "enabled", "allowOrigin", "exposeHeaders", "allowHeaders", "allowMethods", "excludedPatterns", "maxAge", "allowCredentials" ],
+      "properties" : {
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Whether or not cors is enabled"
+        },
+        "allowOrigin" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The cors allowed origin"
+        },
+        "exposeHeaders" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "The cors exposed header"
+        },
+        "allowHeaders" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "The cors allowed headers"
+        },
+        "allowMethods" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "The cors allowed methods"
+        },
+        "excludedPatterns" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "The cors excluded patterns"
+        },
+        "maxAge" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Cors max age"
+        },
+        "allowCredentials" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Allow to pass credentials"
+        }
+      }
+    },
+    "InMemoryUser" : {
+      "description" : "A user",
+      "type" : "object",
+      "required" : [ "name", "password", "email", "metadata" ],
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the user"
+        },
+        "email" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Email of the user"
+        },
+        "password" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Password of the user (BCrypt hash)"
+        },
+        "metadata" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Metadata of the user"
+        }
+      }
+    },
+    "LdapUser" : {
+      "description" : "A user",
+      "type" : "object",
+      "required" : [ "name", "email", "metadata" ],
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Name of the user"
+        },
+        "email" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Email of the user"
+        },
+        "metadata" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Metadata of the user"
         }
       }
     }
