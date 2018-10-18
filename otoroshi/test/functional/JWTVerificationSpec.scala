@@ -401,7 +401,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
               .build()
             val verified = Try {
               val dec = v.verify(a)
-              println(dec.getClaims.asScala.mapValues(v => v.asString()))
+              //println(dec.getClaims.asScala.mapValues(v => v.asString()))
               dec
             }.map(_ => true).getOrElse(false)
             verified mustEqual true
@@ -515,7 +515,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       val (status1, body1) = callServerWithJWT()
       val (status2, body2) = callServerWithBadJWT1()
       val (status3, body3) = callServerWithBadJWT2()
-      //println(body0)
+      // println(body0)
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
       status1 mustBe 200

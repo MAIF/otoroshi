@@ -41,24 +41,27 @@ object JwtExpressionLanguage {
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(value: String, context: Map[String, String]): String = {
-    Try {
-      expressionReplacer.replaceOn(value) { expression =>
-        expression match {
-          case "date" => DateTime.now().toString()
-          case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
-          case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse(value)
-          case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse(value)
-          case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(value)
-          case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(value)
-          case r"token.$field@(.*)" => context.getOrElse(field, value)
-          case _ => "bad-expr"
+    value match {
+      case v if v.contains("${") => Try {
+        expressionReplacer.replaceOn(value) { expression =>
+          expression match {
+            case "date" => DateTime.now().toString()
+            case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
+            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*)" => context.getOrElse(field, value)
+            case _ => "bad-expr"
+          }
         }
-      }
-    } recover {
-      case e =>
-        logger.error(s"Error while parsing expression, returning raw value: $value", e)
-        value
-    } get
+      } recover {
+        case e =>
+          logger.error(s"Error while parsing expression, returning raw value: $value", e)
+          value
+      } get
+      case _ => value
+    }
   }
 
   def apply(value: JsValue, context: Map[String, String]): JsValue = {
