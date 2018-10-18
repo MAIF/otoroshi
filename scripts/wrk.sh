@@ -53,7 +53,7 @@ if [ ! -f "$LOCATION/otoroshicli.toml" ]; then
 fi
 
 if [ ! -f "$LOCATION/otoroshicli" ]; then
-	wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.2.1-dev/otoroshicli
+	wget -q --show-progress https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.0/otoroshicli
 fi
 
 if [ ! -f "$LOCATION/traefik_darwin-amd64" ]; then	
