@@ -13,12 +13,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 case class ElasticAnalyticsConfig(
-  clusterUri: String,
-  index: Option[String] = None,
-  `type`: Option[String] = None,
-  user: Option[String] = None,
-  password: Option[String] = None,
-  headers: Map[String, String] = Map.empty[String, String]
+    clusterUri: String,
+    index: Option[String] = None,
+    `type`: Option[String] = None,
+    user: Option[String] = None,
+    password: Option[String] = None,
+    headers: Map[String, String] = Map.empty[String, String]
 ) {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -27,34 +27,33 @@ object ElasticAnalyticsConfig {
   val format = new Format[ElasticAnalyticsConfig] {
     override def writes(o: ElasticAnalyticsConfig) = Json.obj(
       "clusterUri" -> o.clusterUri,
-      "index" -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "type" -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "user" -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "password" -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "headers" -> JsObject(o.headers.mapValues(JsString.apply)),
+      "index"      -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "type"       -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "user"       -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "password"   -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "headers"    -> JsObject(o.headers.mapValues(JsString.apply)),
     )
-    override def reads(json: JsValue) = Try {
-      JsSuccess(
-        ElasticAnalyticsConfig(
-          clusterUri = (json \ "clusterUri").as[String],
-          index = (json \ "index").asOpt[String],
-          `type` = (json \ "type").asOpt[String],
-          user = (json \ "user").asOpt[String],
-          password = (json \ "password").asOpt[String],
-          headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          ElasticAnalyticsConfig(
+            clusterUri = (json \ "clusterUri").as[String],
+            index = (json \ "index").asOpt[String],
+            `type` = (json \ "type").asOpt[String],
+            user = (json \ "user").asOpt[String],
+            password = (json \ "password").asOpt[String],
+            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 
 case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String]) {
   def toJson: JsObject = Webhook.format.writes(this)
 }
-
-
 
 object Webhook {
   implicit val format = Json.format[Webhook]
@@ -240,8 +239,9 @@ object GlobalConfig {
             (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
           alertsWebhooks =
             (json \ "alertsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
-          elasticWritesConfigs =
-            (json \ "elasticWritesConfigs").asOpt[Seq[ElasticAnalyticsConfig]](Reads.seq(ElasticAnalyticsConfig.format)).getOrElse(Seq.empty[ElasticAnalyticsConfig]),
+          elasticWritesConfigs = (json \ "elasticWritesConfigs")
+            .asOpt[Seq[ElasticAnalyticsConfig]](Reads.seq(ElasticAnalyticsConfig.format))
+            .getOrElse(Seq.empty[ElasticAnalyticsConfig]),
           alertsEmails = (json \ "alertsEmails").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           maxWebhookSize = (json \ "maxWebhookSize").asOpt[Int].getOrElse(100),

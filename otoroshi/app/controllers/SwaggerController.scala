@@ -342,7 +342,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   def CorsSettings = Json.obj(
     "description" -> "The configuration for cors support",
     "type"        -> "object",
-    "required"    -> Json.arr(
+    "required" -> Json.arr(
       "enabled",
       "allowOrigin",
       "exposeHeaders",
@@ -353,13 +353,13 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "allowCredentials"
     ),
     "properties" -> Json.obj(
-      "enabled" -> SimpleBooleanType ~~> "Whether or not cors is enabled",
-      "allowOrigin" -> SimpleStringType ~~> "The cors allowed origin",
-      "exposeHeaders" -> ArrayOf(SimpleStringType) ~~> "The cors exposed header",
-      "allowHeaders" -> ArrayOf(SimpleStringType) ~~> "The cors allowed headers",
-      "allowMethods" -> ArrayOf(SimpleStringType) ~~> "The cors allowed methods",
+      "enabled"          -> SimpleBooleanType ~~> "Whether or not cors is enabled",
+      "allowOrigin"      -> SimpleStringType ~~> "The cors allowed origin",
+      "exposeHeaders"    -> ArrayOf(SimpleStringType) ~~> "The cors exposed header",
+      "allowHeaders"     -> ArrayOf(SimpleStringType) ~~> "The cors allowed headers",
+      "allowMethods"     -> ArrayOf(SimpleStringType) ~~> "The cors allowed methods",
       "excludedPatterns" -> ArrayOf(SimpleStringType) ~~> "The cors excluded patterns",
-      "maxAge" -> SimpleIntType ~~> "Cors max age",
+      "maxAge"           -> SimpleIntType ~~> "Cors max age",
       "allowCredentials" -> SimpleBooleanType ~~> "Allow to pass credentials"
     )
   )
@@ -370,11 +370,11 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     "required"    -> Json.arr("clusterUri", "index", "type", "user", "password", "headers"),
     "properties" -> Json.obj(
       "clusterUri" -> SimpleStringType ~~> "URL of the elastic cluster",
-      "index" -> OptionalStringType ~~> "Index for events. Default is otoroshi-events",
-      "type" -> OptionalStringType ~~> "Type of events. Default is event",
-      "user" -> OptionalStringType ~~> "Optional user",
-      "password" -> OptionalStringType ~~> "Optional password",
-      "headers" -> SimpleObjectType ~~> "Additionnal http headers"
+      "index"      -> OptionalStringType ~~> "Index for events. Default is otoroshi-events",
+      "type"       -> OptionalStringType ~~> "Type of events. Default is event",
+      "user"       -> OptionalStringType ~~> "Optional user",
+      "password"   -> OptionalStringType ~~> "Optional password",
+      "headers"    -> SimpleObjectType ~~> "Additionnal http headers"
     )
   )
 
@@ -866,7 +866,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "id"                -> SimpleStringType ~~> "Unique id of the config",
       "name"              -> SimpleStringType ~~> "Name of the config",
       "desc"              -> SimpleStringType ~~> "Description of the config",
-      "sessionMaxAge"     -> SimpleIntType    ~~> "Max age of the session",       
+      "sessionMaxAge"     -> SimpleIntType ~~> "Max age of the session",
       "clientId"          -> SimpleStringType ~~> "OAuth Client id",
       "clientSecret"      -> SimpleStringType ~~> "OAuth Client secret",
       "authorizeUrl"      -> SimpleStringType ~~> "OAuth authorize URL",
@@ -1056,12 +1056,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "sessionMaxAge"
     ),
     "properties" -> Json.obj(
-      "type"              -> SimpleStringType ~~> "Type of settings. value is basic",
-      "id"                -> SimpleStringType ~~> "Unique id of the config",
-      "name"              -> SimpleStringType ~~> "Name of the config",
-      "desc"              -> SimpleStringType ~~> "Description of the config",
-      "sessionMaxAge"     -> SimpleStringType ~~> "Max age of the session",
-      "users"             -> ArrayOf(Ref("InMemoryUser")) ~~> "List of users"
+      "type"          -> SimpleStringType ~~> "Type of settings. value is basic",
+      "id"            -> SimpleStringType ~~> "Unique id of the config",
+      "name"          -> SimpleStringType ~~> "Name of the config",
+      "desc"          -> SimpleStringType ~~> "Description of the config",
+      "sessionMaxAge" -> SimpleStringType ~~> "Max age of the session",
+      "users"         -> ArrayOf(Ref("InMemoryUser")) ~~> "List of users"
     )
   )
 
@@ -1075,10 +1075,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "metadata",
     ),
     "properties" -> Json.obj(
-      "name"              -> SimpleStringType ~~> "Name of the user",
-      "email"             -> SimpleStringType ~~> "Email of the user",
-      "password"          -> SimpleStringType ~~> "Password of the user (BCrypt hash)",
-      "metadata"          -> SimpleObjectType ~~> "Metadata of the user"
+      "name"     -> SimpleStringType ~~> "Name of the user",
+      "email"    -> SimpleStringType ~~> "Email of the user",
+      "password" -> SimpleStringType ~~> "Password of the user (BCrypt hash)",
+      "metadata" -> SimpleObjectType ~~> "Metadata of the user"
     )
   )
 
@@ -1091,9 +1091,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "metadata",
     ),
     "properties" -> Json.obj(
-      "name"              -> SimpleStringType ~~> "Name of the user",
-      "email"             -> SimpleStringType ~~> "Email of the user",
-      "metadata"          -> SimpleObjectType ~~> "Metadata of the user"
+      "name"     -> SimpleStringType ~~> "Name of the user",
+      "email"    -> SimpleStringType ~~> "Email of the user",
+      "metadata" -> SimpleObjectType ~~> "Metadata of the user"
     )
   )
 
@@ -1122,14 +1122,14 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "id"                -> SimpleStringType ~~> "Unique id of the config",
       "name"              -> SimpleStringType ~~> "Name of the config",
       "desc"              -> SimpleStringType ~~> "Description of the config",
-      "sessionMaxAge"     -> SimpleIntType    ~~> "Max age of the session",       
-      "serverUrl"         -> SimpleStringType ~~> "URL of the ldap server",   
-      "searchBase"        -> SimpleStringType ~~> "LDAP search base",    
-      "userBase"          -> SimpleStringType ~~> "LDAP user base DN",  
-      "groupFilter"       -> SimpleStringType ~~> "Filter for groups",     
-      "searchFilter"      -> SimpleStringType ~~> "Filter for users",      
-      "adminUsername"     -> SimpleStringType ~~> "The admin username",       
-      "adminPassword"     -> SimpleStringType ~~> "The admin password",       
+      "sessionMaxAge"     -> SimpleIntType ~~> "Max age of the session",
+      "serverUrl"         -> SimpleStringType ~~> "URL of the ldap server",
+      "searchBase"        -> SimpleStringType ~~> "LDAP search base",
+      "userBase"          -> SimpleStringType ~~> "LDAP user base DN",
+      "groupFilter"       -> SimpleStringType ~~> "Filter for groups",
+      "searchFilter"      -> SimpleStringType ~~> "Filter for users",
+      "adminUsername"     -> SimpleStringType ~~> "The admin username",
+      "adminPassword"     -> SimpleStringType ~~> "The admin password",
       "nameField"         -> SimpleStringType ~~> "Field name to get name from user profile",
       "emailField"        -> SimpleStringType ~~> "Field name to get email from user profile",
       "otoroshiDataField" -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
@@ -1473,7 +1473,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Get all global auth. module configs",
       description = "Get all global auth. module configs",
       operationId = "findAllGlobalAuthModules",
-      goodResponse = GoodResponse(ArrayOf(OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))))
+      goodResponse = GoodResponse(
+        ArrayOf(OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+      )
     ),
     "get" -> Operation(
       tag = "auth-config",
@@ -1483,7 +1485,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       parameters = Json.arr(
         PathParam("id", "The auth. config id")
       ),
-      goodResponse = GoodResponse(OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+      goodResponse = GoodResponse(
+        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
+      )
     ),
     "delete" -> Operation(
       tag = "auth-config",
@@ -1502,9 +1506,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "updateGlobalAuthModule",
       parameters = Json.arr(
         PathParam("id", "The auth. config id"),
-        BodyParam("The auth. config to update", OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+        BodyParam("The auth. config to update",
+                  OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
       ),
-      goodResponse = GoodResponse(OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+      goodResponse = GoodResponse(
+        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
+      )
     ),
     "patch" -> Operation(
       tag = "auth-config",
@@ -1515,7 +1522,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         PathParam("id", "The auth. config id"),
         BodyParam("The auth. config to update", Ref("Patch"))
       ),
-      goodResponse = GoodResponse(OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+      goodResponse = GoodResponse(
+        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
+      )
     ),
     "post" -> Operation(
       tag = "auth-config",
@@ -1523,9 +1532,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Create one global auth. module config",
       operationId = "createGlobalAuthModule",
       parameters = Json.arr(
-        BodyParam("The auth. config to create", OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+        BodyParam("The auth. config to create",
+                  OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
       ),
-      goodResponse = GoodResponse(OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+      goodResponse = GoodResponse(
+        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
+      )
     )
   )
 

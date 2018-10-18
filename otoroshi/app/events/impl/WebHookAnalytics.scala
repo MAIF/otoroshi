@@ -14,7 +14,12 @@ class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
 
   lazy val logger = Logger("otoroshi-analytics-webhook")
 
-  def basicCall(path: String, service: Option[String], from: Option[DateTime], to: Option[DateTime], page: Option[Int] = None, size: Option[Int] = None)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
+  def basicCall(path: String,
+                service: Option[String],
+                from: Option[DateTime],
+                to: Option[DateTime],
+                page: Option[Int] = None,
+                size: Option[Int] = None)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     env.Ws
       .url(webhook.url + path)
       .withHttpHeaders(webhook.headers.toSeq: _*)
@@ -23,7 +28,6 @@ class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
       .map(_.json)
       .map(r => Some(r))
 
-
   private def defaultParams(service: Option[String],
                             from: Option[DateTime],
                             to: Option[DateTime],
@@ -31,18 +35,19 @@ class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
                             size: Option[Int] = None): Seq[(String, String)] =
     Seq(
       service.map(s => "services" -> s),
-      page.map(s => "page" -> s.toString),
-      size.map(s => "size" -> s.toString),
-      Some("from" -> from
-        .getOrElse(DateTime.now().minusHours(1))
-        .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZ")),
-      Some("to" -> to
-        .getOrElse(DateTime.now())
-        .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      page.map(s => "page"        -> s.toString),
+      size.map(s => "size"        -> s.toString),
+      Some(
+        "from" -> from
+          .getOrElse(DateTime.now().minusHours(1))
+          .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      ),
+      Some(
+        "to" -> to
+          .getOrElse(DateTime.now())
+          .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
       )
     ).flatten
-
-
 
   override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val state = IdGenerator.extendedToken(128)
@@ -63,7 +68,7 @@ class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
       .map(
         evt =>
           webhook.url
-            //.replace("@product", env.eventsName)
+          //.replace("@product", env.eventsName)
             .replace("@service", evt.`@service`)
             .replace("@serviceId", evt.`@serviceId`)
             .replace("@id", evt.`@id`)

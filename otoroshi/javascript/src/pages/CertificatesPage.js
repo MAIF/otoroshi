@@ -5,56 +5,48 @@ import moment from 'moment';
 import faker from 'faker';
 
 class CertificateInfos extends Component {
-
   state = {
     cert: null,
-    error: null
-  }
+    error: null,
+  };
 
-  update = (chain) => {
-    BackOfficeServices.certData(chain).then(cert => {
-      if (cert.error) {
-        this.setState({ cert: null, error: cert.error });
-      } else {
-        this.setState({ cert, error: null });
-      }
-    }).catch(e => {
-      console.log('update: ffuuuuu')
-      this.setState({ cert: null, error: e });
-    });
-  }
+  update = chain => {
+    BackOfficeServices.certData(chain)
+      .then(cert => {
+        if (cert.error) {
+          this.setState({ cert: null, error: cert.error });
+        } else {
+          this.setState({ cert, error: null });
+        }
+      })
+      .catch(e => {
+        console.log('update: ffuuuuu');
+        this.setState({ cert: null, error: e });
+      });
+  };
 
   componentDidMount() {
-    this.update(this.props.rawValue.chain)
+    this.update(this.props.rawValue.chain);
   }
 
   componentWillReceiveProps(next) {
     if (next.rawValue && next.rawValue !== this.props.rawValue) {
-      this.update(next.rawValue.chain)
+      this.update(next.rawValue.chain);
     }
   }
 
   render() {
-    if (!this.state.cert) return (
-      null
-    );
-    if (!!this.state.error) return (
-      <div>
-        <LabelInput label="Infos" value={this.state.error} />
-      </div>
-    );
+    if (!this.state.cert) return null;
+    if (!!this.state.error)
+      return (
+        <div>
+          <LabelInput label="Infos" value={this.state.error} />
+        </div>
+      );
     return (
       <div>
-        <TextInput
-          label="Subject"
-          disabled={true}
-          value={this.state.cert.subjectDN}
-        />
-        <TextInput
-          label="Issuer"
-          disabled={true}
-          value={this.state.cert.issuerDN}
-        />
+        <TextInput label="Subject" disabled={true} value={this.state.cert.subjectDN} />
+        <TextInput label="Issuer" disabled={true} value={this.state.cert.issuerDN} />
         <TextInput
           label="Self signed"
           disabled={true}
@@ -86,7 +78,7 @@ class CertificateInfos extends Component {
           disabled={true}
           rows={6}
           value={this.state.cert.publicKey}
-        />           
+        />
       </div>
     );
   }
@@ -96,69 +88,84 @@ class SelfSignedCert extends Component {
   render() {
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-        <button type="button" className="btn btn-sm btn-success" onClick={e => {
-          const value = prompt("Certificate host ?");
-          if (value && value.trim() !== '') {
-            BackOfficeServices.selfSignedCert(value).then(cert => {
-              this.props.rawOnChange(cert);
-            });
-          }
-        }}><i className="fas fa-screwdriver" /> Generate self signed cert.</button>
+        <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={e => {
+            const value = prompt('Certificate host ?');
+            if (value && value.trim() !== '') {
+              BackOfficeServices.selfSignedCert(value).then(cert => {
+                this.props.rawOnChange(cert);
+              });
+            }
+          }}>
+          <i className="fas fa-screwdriver" /> Generate self signed cert.
+        </button>
       </div>
     );
   }
 }
 
 class CertificateValid extends Component {
-
   state = {
     loading: false,
     valid: false,
-    error: null
-  }
+    error: null,
+  };
 
-  update = (cert) => {
+  update = cert => {
     this.setState({ loading: true }, () => {
-      BackOfficeServices.certValid(cert).then(payload => {
-        if (payload.error) {
-          this.setState({ loading: false, valid: false, error: payload.error });
-        } else {
-          this.setState({ valid: payload.valid, loading: false, error: null });
-        }
-      }).catch(e => {
-        this.setState({ loading: false, valid: false, error: e });
-      });
-    })
-    
-  }
+      BackOfficeServices.certValid(cert)
+        .then(payload => {
+          if (payload.error) {
+            this.setState({ loading: false, valid: false, error: payload.error });
+          } else {
+            this.setState({ valid: payload.valid, loading: false, error: null });
+          }
+        })
+        .catch(e => {
+          this.setState({ loading: false, valid: false, error: e });
+        });
+    });
+  };
 
   componentDidMount() {
-    this.update(this.props.rawValue)
+    this.update(this.props.rawValue);
   }
 
   componentWillReceiveProps(next) {
     if (next.rawValue && next.rawValue !== this.props.rawValue) {
-      this.update(next.rawValue)
+      this.update(next.rawValue);
     }
   }
 
   render() {
-    if (this.state.loading) return (
-      <div>
-        <LabelInput label="Error" value="Loading ..." />
-      </div>
-    );
-    if (!!this.state.error) return (
-      <div>
-        <LabelInput label="Error" value={this.state.error} />
-      </div>
-    );
+    if (this.state.loading)
+      return (
+        <div>
+          <LabelInput label="Error" value="Loading ..." />
+        </div>
+      );
+    if (!!this.state.error)
+      return (
+        <div>
+          <LabelInput label="Error" value={this.state.error} />
+        </div>
+      );
     return (
       <div className="form-group">
-        <label className="col-sm-2 control-label"></label>
+        <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
-          {this.state.valid && <div className="alert alert-success" role="alert">Your certificate is valid</div>}
-          {!this.state.valid && <div className="alert alert-danger" role="alert">Your certificate is not valid</div>}
+          {this.state.valid && (
+            <div className="alert alert-success" role="alert">
+              Your certificate is valid
+            </div>
+          )}
+          {!this.state.valid && (
+            <div className="alert alert-danger" role="alert">
+              Your certificate is not valid
+            </div>
+          )}
         </div>
       </div>
     );
@@ -196,7 +203,7 @@ export class CertificatesPage extends Component {
 
   columns = [
     { title: 'Id', content: item => item.id },
-    { title: 'Domain', content: item => item.domain }
+    { title: 'Domain', content: item => item.domain },
   ];
 
   formFlow = ['id', 'domain', 'selfCert', 'valid', 'chain', 'privateKey', 'infos'];

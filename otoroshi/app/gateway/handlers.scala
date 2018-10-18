@@ -201,11 +201,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val sessionIdOpt: Option[String]  = req.queryString.get("sessionId").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
     val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
-    val maOpt: Option[Int] = req.queryString.get("ma").map(_.last).map(_.toInt)
+    val maOpt: Option[Int]            = req.queryString.get("ma").map(_.last).map(_.toInt)
     (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt) match {
       case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma) =>
         FastFuture.successful(
-          Redirect(redirectTo).withCookies(env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400)): _*)
+          Redirect(redirectTo).withCookies(
+            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400)): _*
+          )
         )
       case _ =>
         Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
@@ -247,7 +249,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       ServiceLocation(req.host, globalConfig) match {
         case None => {
-          Errors.craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}", NotFound, req, None, Some("errors.service.not.found"))
+          Errors.craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}",
+                                     NotFound,
+                                     req,
+                                     None,
+                                     Some("errors.service.not.found"))
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
@@ -260,7 +266,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
               }
               case Some(descriptor) if !descriptor.privateApp => {
-                Errors.craftResponseResult(s"Private apps are not configured", NotFound, req, None, Some("errors.service.auth.not.configured"))
+                Errors.craftResponseResult(s"Private apps are not configured",
+                                           NotFound,
+                                           req,
+                                           None,
+                                           Some("errors.service.auth.not.configured"))
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
                 withAuthConfig(descriptor, req) { auth =>
@@ -269,7 +279,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                       env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                     }
-                    val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort.map(a => s":$a").getOrElse("") + controllers.routes.AuthController
+                    val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
+                      .map(a => s":$a")
+                      .getOrElse("") + controllers.routes.AuthController
                       .confidentialAppLogout()
                       .url + s"?redirectTo=http://${req.host}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
                     logger.trace("should redirect to " + redirectTo)
@@ -279,7 +291,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 }
               }
               case _ => {
-                Errors.craftResponseResult(s"Private apps are not configured", NotFound, req, None, Some("errors.service.auth.not.configured"))
+                Errors.craftResponseResult(s"Private apps are not configured",
+                                           NotFound,
+                                           req,
+                                           None,
+                                           Some("errors.service.auth.not.configured"))
               }
             }
         }
@@ -431,18 +447,20 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def passWithReadOnly(readOnly: Boolean, req: RequestHeader)(f: => Future[Result]): Future[Result] = {
     readOnly match {
       case false => f
-      case true => req.method.toLowerCase match {
-        case "get" => f
-        case "head" => f
-        case "options" => f
-        case _ => Errors.craftResponseResult(
-          s"Method not allowed. Can only handle GET, HEAD, OPTIONS",
-          MethodNotAllowed,
-          req,
-          None,
-          Some("errors.method.not.allowed")
-        )
-      }
+      case true =>
+        req.method.toLowerCase match {
+          case "get"     => f
+          case "head"    => f
+          case "options" => f
+          case _ =>
+            Errors.craftResponseResult(
+              s"Method not allowed. Can only handle GET, HEAD, OPTIONS",
+              MethodNotAllowed,
+              req,
+              None,
+              Some("errors.method.not.allowed")
+            )
+        }
     }
   }
 
@@ -554,7 +572,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               if (value.contains("::")) {
                                 value.split("::").toList match {
                                   case signed :: id :: Nil if env.sign(id) == signed => true
-                                  case _ => false
+                                  case _                                             => false
                                 }
                               } else {
                                 false
@@ -611,10 +629,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       counter,
                                       (t, attempts) =>
                                         actuallyCallDownstream(t,
-                                          apiKey,
-                                          paUsr,
-                                          System.currentTimeMillis - cbStart,
-                                          counter.get())
+                                                               apiKey,
+                                                               paUsr,
+                                                               System.currentTimeMillis - cbStart,
+                                                               counter.get())
                                     ) recoverWith {
                                     case BodyAlreadyConsumedException =>
                                       Errors.craftResponseResult(
@@ -665,9 +683,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         callAttempts = counter.get()
                                       )
                                     case error
-                                      if error != null && error.getMessage != null && error.getMessage
-                                        .toLowerCase()
-                                        .contains("connection refused") =>
+                                        if error != null && error.getMessage != null && error.getMessage
+                                          .toLowerCase()
+                                          .contains("connection refused") =>
                                       Errors.craftResponseResult(
                                         s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
                                         BadGateway,
@@ -708,8 +726,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   }
                                 } else {
                                   val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
-                                    descriptor.targets.size
-                                  else 1)
+                                                                    descriptor.targets.size
+                                                                  else 1)
                                   // Round robin loadbalancing is happening here !!!!!
                                   val target = descriptor.targets.apply(index.toInt)
                                   actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
@@ -722,17 +740,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                        paUsr: Option[PrivateAppsUser] = None,
                                                        cbDuration: Long,
                                                        callAttempts: Int): Future[Result] = {
-                              val snowflake = env.snowflakeGenerator.nextIdStr()
+                              val snowflake        = env.snowflakeGenerator.nextIdStr()
                               val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-                              val state = IdGenerator.extendedToken(128)
-                              val rawUri = req.relativeUri.substring(1)
-                              val uriParts = rawUri.split("/").toSeq
+                              val state            = IdGenerator.extendedToken(128)
+                              val rawUri           = req.relativeUri.substring(1)
+                              val uriParts         = rawUri.split("/").toSeq
                               val uri: String =
                                 descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
-                              val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                              val host = if (descriptor.redirectToLocal) descriptor.localHost else target.host
-                              val root = descriptor.root
-                              val url = s"$scheme://$host$root$uri"
+                              val scheme                 = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
+                              val host                   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
+                              val root                   = descriptor.root
+                              val url                    = s"$scheme://$host$root$uri"
                               lazy val currentReqHasBody = hasBody(req)
                               // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                               val fromOtoroshi = req.headers
@@ -772,27 +790,27 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       else false
                                   )
                                   .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                                  env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
-                                  "Host" -> host,
-                                  env.Headers.OtoroshiRequestId -> snowflake,
+                                  env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
+                                  "Host"                               -> host,
+                                  env.Headers.OtoroshiRequestId        -> snowflake,
                                   env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
                                 ) ++ (if (descriptor.enforceSecureCommunication) {
-                                  Map(
-                                    env.Headers.OtoroshiState -> state,
-                                    env.Headers.OtoroshiClaim -> claim
-                                  )
-                                } else {
-                                  Map.empty[String, String]
-                                }) ++
-                                  req.headers
-                                    .get("Content-Length")
-                                    .map(l => {
-                                      Map(
-                                        "Content-Length" -> (l.toInt + snowMonkeyContext.trailingRequestBodySize).toString
-                                      )
-                                    })
-                                    .getOrElse(Map.empty[String, String]) ++
-                                  descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
+                                        Map(
+                                          env.Headers.OtoroshiState -> state,
+                                          env.Headers.OtoroshiClaim -> claim
+                                        )
+                                      } else {
+                                        Map.empty[String, String]
+                                      }) ++
+                                req.headers
+                                  .get("Content-Length")
+                                  .map(l => {
+                                    Map(
+                                      "Content-Length" -> (l.toInt + snowMonkeyContext.trailingRequestBodySize).toString
+                                    )
+                                  })
+                                  .getOrElse(Map.empty[String, String]) ++
+                                descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
                                   .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                   .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
                                   .filterNot(t => jwtInjection.removeHeaders.contains(t._1))
@@ -817,10 +835,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               // counterIn.addAndGet(requestHeader.length)
                               // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
                               debugLogger.trace(
-                                s"curl -X ${
-                                  req.method
-                                    .toUpperCase()
-                                } ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
+                                s"curl -X ${req.method
+                                  .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
                               )
                               val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                               if (overhead > env.overheadThreshold) {
@@ -847,12 +863,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     else actualDuration
 
                                   analyticsQueue ! AnalyticsQueueEvent(descriptor,
-                                    duration,
-                                    overhead,
-                                    counterIn.get(),
-                                    counterOut.get(),
-                                    resp.upstreamLatency,
-                                    globalConfig)
+                                                                       duration,
+                                                                       overhead,
+                                                                       counterIn.get(),
+                                                                       counterOut.get(),
+                                                                       resp.upstreamLatency,
+                                                                       globalConfig)
 
                                   quotas.andThen {
                                     case Success(q) => {
@@ -904,7 +920,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 identityType = "APIKEY",
                                                 identity = k.clientId,
                                                 label = k.clientName
-                                              )
+                                            )
                                           )
                                           .orElse(
                                             paUsr.map(
@@ -913,7 +929,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   identityType = "PRIVATEAPP",
                                                   identity = k.email,
                                                   label = k.name
-                                                )
+                                              )
                                             )
                                           ),
                                         `@serviceId` = descriptor.id,
@@ -951,11 +967,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                   // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
                                   if (env.notDev && descriptor.enforceSecureCommunication
-                                    && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
-                                    && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                                      && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
+                                      && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                     if (resp.status == 404 && headers
-                                      .get("X-CleverCloudUpgrade")
-                                      .contains("true")) {
+                                          .get("X-CleverCloudUpgrade")
+                                          .contains("true")) {
                                       Errors.craftResponseResult(
                                         "No service found for the specified target host, the service descriptor should be verified !",
                                         NotFound,
@@ -971,15 +987,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
                                       val exchange = Json.prettyPrint(
                                         Json.obj(
-                                          "uri" -> req.relativeUri,
-                                          "url" -> url,
+                                          "uri"   -> req.relativeUri,
+                                          "url"   -> url,
                                           "state" -> state,
                                           "reveivedState" -> JsString(
                                             headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
                                           ),
-                                          "claim" -> claim,
+                                          "claim"  -> claim,
                                           "method" -> req.method,
-                                          "query" -> req.rawQueryString,
+                                          "query"  -> req.rawQueryString,
                                           "status" -> resp.status,
                                           "headersIn" -> JsArray(
                                             req.headers.toSimpleMap
@@ -991,7 +1007,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           )
                                         )
                                       )
-                                      logger.error(s"\n\nError while talking with downstream service :(\n\n$exchange\n\n")
+                                      logger
+                                        .error(s"\n\nError while talking with downstream service :(\n\n$exchange\n\n")
                                       Errors.craftResponseResult(
                                         "Downstream microservice does not seems to be secured. Cancelling request !",
                                         BadGateway,
@@ -1022,27 +1039,29 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
                                       if (descriptor.sendOtoroshiHeadersBack) {
                                         Seq(
-                                          env.Headers.OtoroshiRequestId -> snowflake,
+                                          env.Headers.OtoroshiRequestId        -> snowflake,
                                           env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-                                          env.Headers.OtoroshiProxyLatency -> s"$overhead",
-                                          env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
+                                          env.Headers.OtoroshiProxyLatency     -> s"$overhead",
+                                          env.Headers.OtoroshiUpstreamLatency  -> s"$upstreamLatency" //,
                                           //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
                                         )
                                       } else {
                                         Seq.empty[(String, String)]
                                       }
-                                      ) ++ Some(trackingId)
+                                    ) ++ Some(trackingId)
                                       .filter(_ => desc.canary.enabled)
-                                      .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId") ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                                      Seq(
-                                        env.Headers.OtoroshiDailyCallsRemaining -> remainingQuotas.remainingCallsPerDay.toString,
-                                        env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                                      )
-                                    } else {
-                                      Seq.empty[(String, String)]
-                                    }) ++ descriptor.cors
+                                      .map(
+                                        _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
+                                      ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
+                                              Seq(
+                                                env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                                env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                              )
+                                            } else {
+                                              Seq.empty[(String, String)]
+                                            }) ++ descriptor.cors
                                       .asHeaders(req)
-                                    val contentType = headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                                    val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
                                     val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                     // meterOut.mark(responseHeader.length)
                                     // counterOut.addAndGet(responseHeader.length)
@@ -1078,7 +1097,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       finalStream
                                         .via(
                                           MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt,
-                                            str => logger.warn(str))
+                                                           str => logger.warn(str))
                                         )
                                         .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
                                         .fast
@@ -1091,28 +1110,28 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     } else if (globalConfig.streamEntityOnly) { // only temporary
                                       // stream out
                                       val entity =
-                                      if (resp.headers
-                                        .get("Transfer-Encoding")
-                                        .flatMap(_.lastOption)
-                                        .contains("chunked")) {
-                                        HttpEntity.Chunked(
-                                          finalStream
-                                            .map(i => play.api.http.HttpChunk.Chunk(i))
-                                            .concat(
-                                              Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
-                                            ),
-                                          Some(contentType) // contentTypeOpt
-                                        )
-                                      } else {
-                                        HttpEntity.Streamed(
-                                          finalStream,
-                                          resp.headers
-                                            .get("Content-Length")
-                                            .flatMap(_.lastOption)
-                                            .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
-                                          Some(contentType) // contentTypeOpt
-                                        )
-                                      }
+                                        if (resp.headers
+                                              .get("Transfer-Encoding")
+                                              .flatMap(_.lastOption)
+                                              .contains("chunked")) {
+                                          HttpEntity.Chunked(
+                                            finalStream
+                                              .map(i => play.api.http.HttpChunk.Chunk(i))
+                                              .concat(
+                                                Source.single(play.api.http.HttpChunk.LastChunk(play.api.mvc.Headers()))
+                                              ),
+                                            Some(contentType) // contentTypeOpt
+                                          )
+                                        } else {
+                                          HttpEntity.Streamed(
+                                            finalStream,
+                                            resp.headers
+                                              .get("Content-Length")
+                                              .flatMap(_.lastOption)
+                                              .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
+                                            Some(contentType) // contentTypeOpt
+                                          )
+                                        }
                                       FastFuture.successful(
                                         Status(resp.status)
                                           .sendEntity(entity)
@@ -1199,11 +1218,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   case Some(key) if key.isInvalid(clientSecret) => {
                                     Alerts.send(
                                       RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                        DateTime.now(),
-                                        env.env,
-                                        req,
-                                        key,
-                                        descriptor)
+                                                              DateTime.now(),
+                                                              env.env,
+                                                              req,
+                                                              key,
+                                                              descriptor)
                                     )
                                     Errors.craftResponseResult(
                                       "Bad API key",
@@ -1247,7 +1266,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
                                             val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
                                             Try(verifier.verify(jwtTokenValue)).filter { token =>
-                                              val xsrfToken = token.getClaim("xsrfToken")
+                                              val xsrfToken       = token.getClaim("xsrfToken")
                                               val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
                                               if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
                                                 xsrfToken.asString() == xsrfTokenHeader.get
@@ -1275,11 +1294,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               case Failure(e) => {
                                                 Alerts.send(
                                                   RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                    DateTime.now(),
-                                                    env.env,
-                                                    req,
-                                                    apiKey,
-                                                    descriptor)
+                                                                          DateTime.now(),
+                                                                          env.env,
+                                                                          req,
+                                                                          apiKey,
+                                                                          descriptor)
                                                 )
                                                 Errors.craftResponseResult(
                                                   "Bad API key",
@@ -1325,8 +1344,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                 )
                               } else if (authBasic.isDefined) {
-                                val auth = authBasic.get
-                                val id = auth.split(":").headOption.map(_.trim)
+                                val auth   = authBasic.get
+                                val id     = auth.split(":").headOption.map(_.trim)
                                 val secret = auth.split(":").lastOption.map(_.trim)
                                 (id, secret) match {
                                   case (Some(apiKeyClientId), Some(apiKeySecret)) => {
@@ -1346,11 +1365,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         case Some(key) if key.isInvalid(apiKeySecret) => {
                                           Alerts.send(
                                             RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                              DateTime.now(),
-                                              env.env,
-                                              req,
-                                              key,
-                                              descriptor)
+                                                                    DateTime.now(),
+                                                                    env.env,
+                                                                    req,
+                                                                    key,
+                                                                    descriptor)
                                           )
                                           Errors.craftResponseResult(
                                             "Bad API key",
@@ -1406,7 +1425,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               isPrivateAppsSessionValid(req, descriptor).flatMap {
                                 case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                                 case None => {
-                                  val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort.map(a => s":$a").getOrElse("") + controllers.routes.AuthController
+                                  val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
+                                    .map(a => s":$a")
+                                    .getOrElse("") + controllers.routes.AuthController
                                     .confidentialAppLoginPage()
                                     .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
                                   logger.trace("should redirect to " + redirectTo)
@@ -1470,7 +1491,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                             env.datastores.globalConfigDataStore.quotasValidationFor(from).flatMap { r =>
                               val (within, secCalls, maybeQuota) = r
-                              val quota = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+                              val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
                               if (secCalls > (quota * 10L)) {
                                 Errors.craftResponseResult(
                                   "[IP] You performed too much requests",
@@ -1484,7 +1505,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               } else {
                                 if (env.isProd && !isSecured && desc.forceHttps) {
                                   val theDomain = req.domain
-                                  val protocol = getProtocolFor(req)
+                                  val protocol  = getProtocolFor(req)
                                   logger.info(
                                     s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                                   )
@@ -1502,7 +1523,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   )
                                 } else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
-                                  .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                             .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                                   Errors.craftResponseResult(
                                     "Your IP address is not allowed",
                                     Forbidden,
@@ -1513,7 +1534,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   ) // global whitelist
                                 } else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
-                                  .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                             .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                                   Errors.craftResponseResult(
                                     "Your IP address is not allowed",
                                     Forbidden,
@@ -1524,7 +1545,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   ) // global blacklist
                                 } else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
-                                  .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                             .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                                   Errors.craftResponseResult(
                                     "Your IP address is not allowed",
                                     Forbidden,
@@ -1535,7 +1556,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   ) // service whitelist
                                 } else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
-                                  .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                             .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
                                   Errors.craftResponseResult(
                                     "Your IP address is not allowed",
                                     Forbidden,
@@ -1546,14 +1567,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   ) // service blacklist
                                 } else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
-                                  .exists(ip => RegexPool(ip).matches(remoteAddress))) {
+                                             .exists(ip => RegexPool(ip).matches(remoteAddress))) {
                                   val gigas: Long = 128L * 1024L * 1024L * 1024L
                                   val middleFingers = ByteString.fromString(
                                     "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
                                   )
-                                  val zeros = ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                                  val zeros                  = ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
                                   val characters: ByteString = if (!globalConfig.middleFingers) middleFingers else zeros
-                                  val expected: Long = (gigas / characters.size) + 1L
+                                  val expected: Long         = (gigas / characters.size) + 1L
                                   FastFuture.successful(
                                     Status(200)
                                       .sendEntity(
@@ -1587,8 +1608,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                   )
                                 } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
-                                  .get("Access-Control-Request-Method")
-                                  .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
+                                             .get("Access-Control-Request-Method")
+                                             .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
                                   // handle cors preflight request
                                   if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
                                     Errors.craftResponseResult(
@@ -1612,8 +1633,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     } else {
                                       isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
                                         case Some(_) if descriptor.strictlyPrivate => passWithApiKey(globalConfig)
-                                        case Some(user) => passWithAuth0(globalConfig)
-                                        case None => passWithApiKey(globalConfig)
+                                        case Some(user)                            => passWithAuth0(globalConfig)
+                                        case None                                  => passWithApiKey(globalConfig)
                                       }
                                     }
                                   } else {

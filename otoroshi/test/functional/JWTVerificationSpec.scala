@@ -438,16 +438,16 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
               location = InHeader("X-Barrr"),
               mappingSettings = MappingSettings(
                 map = Map(
-                  "fakebar" -> "x-bar", 
-                  "bar" -> "x-bar", 
+                  "fakebar"      -> "x-bar",
+                  "bar"          -> "x-bar",
                   "superfakebar" -> "x-bar"
                 ),
                 values = Json.obj(
-                  "x-yo" -> "foo",
-                  "the-date-1" -> "the-${date}",
-                  "the-date-2" -> "the-${date.format('dd-MM-yyyy')}",
-                  "the-var-1" -> "the-${token.var1}",
-                  "the-var-2" -> "the-${token.var2}",
+                  "x-yo"        -> "foo",
+                  "the-date-1"  -> "the-${date}",
+                  "the-date-2"  -> "the-${date.format('dd-MM-yyyy')}",
+                  "the-var-1"   -> "the-${token.var1}",
+                  "the-var-2"   -> "the-${token.var2}",
                   "the-var-1-2" -> "the-${token.var1}-${token.var2}"
                 ),
                 remove = Seq("foo")

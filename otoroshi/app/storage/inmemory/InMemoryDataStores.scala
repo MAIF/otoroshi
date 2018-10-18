@@ -73,7 +73,6 @@ class InMemoryDataStores(configuration: Configuration,
   private lazy val _authConfigsDataStore       = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
 
-
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore

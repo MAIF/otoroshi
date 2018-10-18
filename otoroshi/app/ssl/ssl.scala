@@ -33,30 +33,39 @@ import scala.util.Try
 
 // TODO: doc + swagger
 case class Cert(id: String, domain: String, chain: String, privateKey: String) {
-  def password: Option[String] = None
+  def password: Option[String]                          = None
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.certificatesDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.exists(this)
   def toJson                                            = Cert.toJson(this)
-  def isValid(): Boolean = Try {
-    val keyStore: KeyStore = KeyStore.getInstance("JKS")
-    keyStore.load(null, null)
-    DynamicSSLEngineProvider.readPrivateKey(this.id, this.privateKey, this.password, false).toOption.exists { encodedKeySpec: PKCS8EncodedKeySpec =>
-      val key: PrivateKey = Try(KeyFactory.getInstance("RSA")).orElse(Try(KeyFactory.getInstance("DSA"))).map(_.generatePrivate(encodedKeySpec)).get
-      val certificateChain: Seq[X509Certificate] = DynamicSSLEngineProvider.readCertificateChain(this.id, this.chain, false)
-      if (certificateChain.isEmpty) {
-        DynamicSSLEngineProvider.logger.error(s"[${this.id}] Certificate file does not contain any certificates :(")
-        false
-      } else {
-        keyStore.setKeyEntry(this.id, key, this.password.getOrElse("").toCharArray, certificateChain.toArray[java.security.cert.Certificate])
-        true
+  def isValid(): Boolean =
+    Try {
+      val keyStore: KeyStore = KeyStore.getInstance("JKS")
+      keyStore.load(null, null)
+      DynamicSSLEngineProvider.readPrivateKey(this.id, this.privateKey, this.password, false).toOption.exists {
+        encodedKeySpec: PKCS8EncodedKeySpec =>
+          val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
+            .orElse(Try(KeyFactory.getInstance("DSA")))
+            .map(_.generatePrivate(encodedKeySpec))
+            .get
+          val certificateChain: Seq[X509Certificate] =
+            DynamicSSLEngineProvider.readCertificateChain(this.id, this.chain, false)
+          if (certificateChain.isEmpty) {
+            DynamicSSLEngineProvider.logger.error(s"[${this.id}] Certificate file does not contain any certificates :(")
+            false
+          } else {
+            keyStore.setKeyEntry(this.id,
+                                 key,
+                                 this.password.getOrElse("").toCharArray,
+                                 certificateChain.toArray[java.security.cert.Certificate])
+            true
+          }
       }
-    }
-  } recover {
-    case e =>
-      DynamicSSLEngineProvider.logger.error("Error while checking certificate validity", e)
-      false
-  } getOrElse false
+    } recover {
+      case e =>
+        DynamicSSLEngineProvider.logger.error("Error while checking certificate validity", e)
+        false
+    } getOrElse false
 }
 
 object Cert {
@@ -65,7 +74,7 @@ object Cert {
 
   val _fmt: Format[Cert] = new Format[Cert] {
     override def writes(cert: Cert): JsValue = Json.obj(
-      "id"       -> cert.id,
+      "id"         -> cert.id,
       "domain"     -> cert.domain,
       "chain"      -> cert.chain,
       "privateKey" -> cert.privateKey
@@ -109,16 +118,21 @@ object DynamicSSLEngineProvider {
 
   val logger = Logger("otoroshi-ssl-provider")
 
-  private val CERT_PATTERN: Pattern = Pattern.compile("-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-    "([a-z0-9+/=\\r\\n]+)" + // Base64 text
+  private val CERT_PATTERN: Pattern = Pattern.compile(
+    "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
+    "([a-z0-9+/=\\r\\n]+)" +                            // Base64 text
     "-+END\\s+.*CERTIFICATE[^-]*-+", // Footer
-    CASE_INSENSITIVE)
+    CASE_INSENSITIVE
+  )
 
-  private val KEY_PATTERN: Pattern = Pattern.compile("-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", CASE_INSENSITIVE)
+  private val KEY_PATTERN: Pattern = Pattern.compile(
+    "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",
+    CASE_INSENSITIVE
+  )
   private val certificates = new TrieMap[String, Cert]()
 
   private lazy val currentContext = new AtomicReference[SSLContext](null) //setupContext())
-  private val currentEnv = new AtomicReference[Env](null)
+  private val currentEnv          = new AtomicReference[Env](null)
 
   def setCurrentEnv(env: Env): Unit = {
     currentEnv.set(env)
@@ -128,21 +142,26 @@ object DynamicSSLEngineProvider {
 
     val optEnv = Option(currentEnv.get)
 
-    val tm: Array[TrustManager] = optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
-      case true => Array[TrustManager](noCATrustManager)
-      case false => null
-    } orNull
+    val tm: Array[TrustManager] =
+      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+        case true  => Array[TrustManager](noCATrustManager)
+        case false => null
+      } orNull
 
-    val dumpPath: Option[String] = optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
+    val dumpPath: Option[String] =
+      optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
 
     logger.debug("Setting up SSL Context ")
     val sslContext: SSLContext = SSLContext.getInstance("TLS")
-    val keyStore: KeyStore = createKeyStore(certificates.values.toSeq)
+    val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq)
     dumpPath.foreach(path => keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD))
-    val keyManagerFactory: KeyManagerFactory = Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
+    val keyManagerFactory: KeyManagerFactory =
+      Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
     keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
     logger.debug("SSL Context init ...")
-    val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager])
+    val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
+      m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+    )
     sslContext.init(keyManagers, tm, null)
     logger.debug(s"SSL Context init done ! (${keyStore.size()})")
     SSLContext.setDefault(sslContext)
@@ -174,13 +193,19 @@ object DynamicSSLEngineProvider {
     keyStore.load(null, null)
     certificates.foreach { cert =>
       readPrivateKey(cert.domain, cert.privateKey, cert.password).foreach { encodedKeySpec: PKCS8EncodedKeySpec =>
-        val key: PrivateKey = Try(KeyFactory.getInstance("RSA")).orElse(Try(KeyFactory.getInstance("DSA"))).map(_.generatePrivate(encodedKeySpec)).get
+        val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
+          .orElse(Try(KeyFactory.getInstance("DSA")))
+          .map(_.generatePrivate(encodedKeySpec))
+          .get
         val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
         if (certificateChain.isEmpty) {
           logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
         } else {
           logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
-          keyStore.setKeyEntry(cert.domain, key, cert.password.getOrElse("").toCharArray, certificateChain.toArray[java.security.cert.Certificate])
+          keyStore.setKeyEntry(cert.domain,
+                               key,
+                               cert.password.getOrElse("").toCharArray,
+                               certificateChain.toArray[java.security.cert.Certificate])
           certificateChain.tail.foreach { cert =>
             val id = cert.getSerialNumber.toString(16)
             if (!keyStore.containsAlias(id)) {
@@ -195,19 +220,24 @@ object DynamicSSLEngineProvider {
 
   def readCertificateChain(id: String, certificateChain: String, log: Boolean = true): Seq[X509Certificate] = {
     if (log) logger.debug(s"Reading cert chain for $id")
-    val matcher: Matcher = CERT_PATTERN.matcher(certificateChain)
+    val matcher: Matcher                       = CERT_PATTERN.matcher(certificateChain)
     val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
-    var certificates = Seq.empty[X509Certificate]
-    var start = 0
-    while ({  matcher.find(start) }) {
+    var certificates                           = Seq.empty[X509Certificate]
+    var start                                  = 0
+    while ({ matcher.find(start) }) {
       val buffer: Array[Byte] = base64Decode(matcher.group(1))
-      certificates = certificates :+ certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
+      certificates = certificates :+ certificateFactory
+        .generateCertificate(new ByteArrayInputStream(buffer))
+        .asInstanceOf[X509Certificate]
       start = matcher.end
     }
     certificates
   }
 
-  def readPrivateKey(id: String, content: String, keyPassword: Option[String], log: Boolean = true): Either[KeyStoreError, PKCS8EncodedKeySpec] = {
+  def readPrivateKey(id: String,
+                     content: String,
+                     keyPassword: Option[String],
+                     log: Boolean = true): Either[KeyStoreError, PKCS8EncodedKeySpec] = {
     if (log) logger.debug(s"Reading private key for $id")
     val matcher: Matcher = KEY_PATTERN.matcher(content)
     if (!matcher.find) {
@@ -215,16 +245,18 @@ object DynamicSSLEngineProvider {
       Left(s"[$id] Found no private key")
     } else {
       val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
-      keyPassword.map { _ =>
-        val encryptedPrivateKeyInfo = new EncryptedPrivateKeyInfo(encodedKey)
-        val keyFactory: SecretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivateKeyInfo.getAlgName)
-        val secretKey: SecretKey = keyFactory.generateSecret(new PBEKeySpec(keyPassword.get.toCharArray))
-        val cipher: Cipher = Cipher.getInstance(encryptedPrivateKeyInfo.getAlgName)
-        cipher.init(DECRYPT_MODE, secretKey, encryptedPrivateKeyInfo.getAlgParameters)
-        Right(encryptedPrivateKeyInfo.getKeySpec(cipher))
-      }.getOrElse {
-        Right(new PKCS8EncodedKeySpec(encodedKey))
-      }
+      keyPassword
+        .map { _ =>
+          val encryptedPrivateKeyInfo      = new EncryptedPrivateKeyInfo(encodedKey)
+          val keyFactory: SecretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivateKeyInfo.getAlgName)
+          val secretKey: SecretKey         = keyFactory.generateSecret(new PBEKeySpec(keyPassword.get.toCharArray))
+          val cipher: Cipher               = Cipher.getInstance(encryptedPrivateKeyInfo.getAlgName)
+          cipher.init(DECRYPT_MODE, secretKey, encryptedPrivateKeyInfo.getAlgParameters)
+          Right(encryptedPrivateKeyInfo.getKeySpec(cipher))
+        }
+        .getOrElse {
+          Right(new PKCS8EncodedKeySpec(encodedKey))
+        }
     }
   }
 
@@ -242,10 +274,10 @@ object DynamicSSLEngineProvider {
 }
 
 object noCATrustManager extends X509TrustManager {
-  val nullArray = Array[X509Certificate]()
+  val nullArray                                                                     = Array[X509Certificate]()
   def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
   def checkServerTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
-  def getAcceptedIssuers() = nullArray
+  def getAcceptedIssuers()                                                          = nullArray
 }
 
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
@@ -256,8 +288,8 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val sslParameters = new SSLParameters
-    val names = DynamicSSLEngineProvider.getHostNames().map(_.replace("*", "ssl"))
-    val hostNames = names.map(n => new SNIHostName(n))
+    val names         = DynamicSSLEngineProvider.getHostNames().map(_.replace("*", "ssl"))
+    val hostNames     = names.map(n => new SNIHostName(n))
     //sslParameters.setServerNames(new util.ArrayList(hostNames.asJavaCollection))
     val engine = context.createSSLEngine()
     engine.setSSLParameters(sslParameters)
@@ -267,67 +299,69 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
 
 object CertificateData {
 
-  private val encoder = Base64.getEncoder
+  private val encoder                                = Base64.getEncoder
   private val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
 
   private def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
 
   def apply(pemContent: String): JsValue = {
-    val buffer = base64Decode(pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, ""))
+    val buffer = base64Decode(
+      pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
+    )
     val cert = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
     Json.obj(
-      "issuerDN" -> cert.getIssuerDN.getName,
-      "notAfter" -> cert.getNotAfter.getTime,
-      "notBefore" -> cert.getNotBefore.getTime,
+      "issuerDN"     -> cert.getIssuerDN.getName,
+      "notAfter"     -> cert.getNotAfter.getTime,
+      "notBefore"    -> cert.getNotBefore.getTime,
       "serialNumber" -> cert.getSerialNumber.toString(16),
-      "sigAlgName" -> cert.getSigAlgName,
-      "sigAlgOID" -> cert.getSigAlgOID,
-      "signature" -> new String(encoder.encode(cert.getSignature)),
-      "subjectDN" -> cert.getSubjectDN.getName,
-      "version" -> cert.getVersion,
-      "type" -> cert.getType,
-      "publicKey" -> new String(encoder.encode(cert.getPublicKey.getEncoded)),
-      "selfSigned" -> DynamicSSLEngineProvider.isSelfSigned(cert)
+      "sigAlgName"   -> cert.getSigAlgName,
+      "sigAlgOID"    -> cert.getSigAlgOID,
+      "signature"    -> new String(encoder.encode(cert.getSignature)),
+      "subjectDN"    -> cert.getSubjectDN.getName,
+      "version"      -> cert.getVersion,
+      "type"         -> cert.getType,
+      "publicKey"    -> new String(encoder.encode(cert.getPublicKey.getEncoded)),
+      "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert)
     )
   }
 }
 
 object PemHeaders {
   val BeginCertificate = "-----BEGIN CERTIFICATE-----"
-  val EndCertificate = "-----END CERTIFICATE-----"
-  val BeginPublicKey = "-----BEGIN PUBLIC KEY-----"
-  val EndPublicKey = "-----END PUBLIC KEY-----"
-  val BeginPrivateKey = "-----BEGIN PRIVATE KEY-----"
-  val EndPrivateKey = "-----END PRIVATE KEY-----"
+  val EndCertificate   = "-----END CERTIFICATE-----"
+  val BeginPublicKey   = "-----BEGIN PUBLIC KEY-----"
+  val EndPublicKey     = "-----END PUBLIC KEY-----"
+  val BeginPrivateKey  = "-----BEGIN PRIVATE KEY-----"
+  val EndPrivateKey    = "-----END PRIVATE KEY-----"
 }
 
 object FakeKeyStore {
 
   private val EMPTY_PASSWORD = Array.emptyCharArray
-  private val encoder = Base64.getEncoder
+  private val encoder        = Base64.getEncoder
 
   object SelfSigned {
 
     object Alias {
       val trustedCertEntry = "otoroshi-selfsigned-trust"
-      val PrivateKeyEntry = "otoroshi-selfsigned"
+      val PrivateKeyEntry  = "otoroshi-selfsigned"
     }
 
     def DistinguishedName(host: String) = s"CN=$host, OU=Otoroshi Testing (self-signed), O=Otoroshi, C=FR"
-    def SubDN(host: String) = s"CN=$host"
+    def SubDN(host: String)             = s"CN=$host"
   }
 
   object KeystoreSettings {
-    val SignatureAlgorithmName = "SHA256withRSA"
-    val KeyPairAlgorithmName = "RSA"
-    val KeyPairKeyLength = 2048 // 2048 is the NIST acceptable key length until 2030
-    val KeystoreType = "JKS"
+    val SignatureAlgorithmName                  = "SHA256withRSA"
+    val KeyPairAlgorithmName                    = "RSA"
+    val KeyPairKeyLength                        = 2048 // 2048 is the NIST acceptable key length until 2030
+    val KeystoreType                            = "JKS"
     val SignatureAlgorithmOID: ObjectIdentifier = AlgorithmId.sha256WithRSAEncryption_oid
   }
 
   def generateKeyStore(host: String): KeyStore = {
     val keyStore: KeyStore = KeyStore.getInstance(KeystoreSettings.KeystoreType)
-    val (cert, keyPair) = generateX509Certificate(host)
+    val (cert, keyPair)    = generateX509Certificate(host)
     keyStore.load(null, EMPTY_PASSWORD)
     keyStore.setKeyEntry(SelfSigned.Alias.PrivateKeyEntry, keyPair.getPrivate, EMPTY_PASSWORD, Array(cert))
     keyStore.setCertificateEntry(SelfSigned.Alias.trustedCertEntry, cert)
@@ -338,7 +372,7 @@ object FakeKeyStore {
     val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
     keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
     val keyPair = keyPairGenerator.generateKeyPair()
-    val cert = createSelfSignedCertificate(host, keyPair)
+    val cert    = createSelfSignedCertificate(host, keyPair)
     (cert, keyPair)
   }
 
@@ -347,8 +381,10 @@ object FakeKeyStore {
     Cert(
       id = IdGenerator.token(32),
       domain = host,
-      chain = s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
-      privateKey = s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}"
+      chain =
+        s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
+      privateKey =
+        s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}"
     )
   }
 
@@ -361,8 +397,8 @@ object FakeKeyStore {
 
     // Validity
     val validFrom = new Date()
-    val validTo = new Date(validFrom.getTime + 50l * 365l * 24l * 60l * 60l * 1000l)
-    val validity = new CertificateValidity(validFrom, validTo)
+    val validTo   = new Date(validFrom.getTime + 50l * 365l * 24l * 60l * 60l * 1000l)
+    val validity  = new CertificateValidity(validFrom, validTo)
     certInfo.set(X509CertInfo.VALIDITY, validity)
 
     // Subject and issuer

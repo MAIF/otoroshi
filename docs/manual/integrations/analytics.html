@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.2.0
+1.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -70,6 +70,7 @@
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -99,7 +100,6 @@
     <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
-    <li><a href="../connectors/elastic.html" class="page">Elastic *</a></li>
   </ul></li>
 </ul>
 </div>
@@ -134,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.2.0
+1.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -174,6 +174,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -203,7 +204,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
-    <li><a href="../connectors/elastic.html" class="page">Elastic *</a></li>
   </ul></li>
 </ul>
 </div>
@@ -230,16 +230,18 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#analytics" name="analytics" class="anchor"><span class="anchor-link"></span></a>Analytics</h1>
 <p>Each action and request on Otoroshi creates events that can be sent outside of Otoroshi for further usage. Those events can be sent using a webhook and/or through a Kafka topic.</p>
-<h2><a href="#webhooks" name="webhooks" class="anchor"><span class="anchor-link"></span></a>WebHooks</h2>
-<p>Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics settings</code> section.</p><div class="centered-img">
+<h2><a href="#push-events-to-elasticsearch" name="push-events-to-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Push events to Elasticsearch</h2>
+<p>You can use elastic search to store otoroshi events. To do this you have to configure the access to elasticsearch from <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Elastic cluster (write)</code> section.</p><div class="centered-img">
+<img src="../img/push-to-elastic.png" /></div>
+<h2><a href="#read-events-from-elasticsearch" name="read-events-from-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Read events from Elasticsearch</h2>
+<p>You can use elastic search to store otoroshi events. To do this you have to configure the access to elasticsearch from <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Elastic dashboard datasource (read)</code> section.</p><div class="centered-img">
+<img src="../img/push-to-elastic.png" /></div>
+<h2><a href="#push-events-to-webhooks" name="push-events-to-webhooks" class="anchor"><span class="anchor-link"></span></a>Push events to WebHooks</h2>
+<p>Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Webhooks</code> section.</p><div class="centered-img">
 <img src="../img/danger-zone-4-analytics.png" /></div>
-<p>Here you can configure two URLs. The first one is the URL where events will be posted (in batch). The second one is a URL used to query the produced events to display analytics pages in Otoroshi. Those URLs must point to a instance of Omoikane or an instance of the <a href="../connectors/elastic.html">Elastic connector</a>. The Elastic connector is just a thin layer of APIs on top of Elastic.</p>
-<p>For instance, valid values can be :</p>
-<pre><code>https://my.elastic.connector.host/api/v1/events
-</code></pre>
-<p>You can also provide some security headers if needed.</p>
-<h2><a href="#kafka" name="kafka" class="anchor"><span class="anchor-link"></span></a>Kafka</h2>
-<p>Events can also be sent through a Kafka topic. Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Kafka  settings</code> section.</p><div class="centered-img">
+<p>Here you can configure the URL of the webhook and its headers if needed.</p>
+<h2><a href="#push-events-to-kafka" name="push-events-to-kafka" class="anchor"><span class="anchor-link"></span></a>Push events to Kafka</h2>
+<p>Events can also be sent through a Kafka topic. Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Kafka</code> section.</p><div class="centered-img">
 <img src="../img/danger-zone-5-kafka.png" /></div>
 <p>Fill the form, default values for topic names are :</p>
 <ul>
@@ -260,8 +262,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../integrations/analytics.html#analytics" class="header">Analytics</a>
   <ul>
-    <li><a href="../integrations/analytics.html#webhooks" class="header">WebHooks</a></li>
-    <li><a href="../integrations/analytics.html#kafka" class="header">Kafka</a></li>
+    <li><a href="../integrations/analytics.html#push-events-to-elasticsearch" class="header">Push events to Elasticsearch</a></li>
+    <li><a href="../integrations/analytics.html#read-events-from-elasticsearch" class="header">Read events from Elasticsearch</a></li>
+    <li><a href="../integrations/analytics.html#push-events-to-webhooks" class="header">Push events to WebHooks</a></li>
+    <li><a href="../integrations/analytics.html#push-events-to-kafka" class="header">Push events to Kafka</a></li>
   </ul></li>
 </ul>
 </div>

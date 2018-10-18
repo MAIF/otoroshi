@@ -59,7 +59,7 @@ export class SelectInput extends Component {
 
   onChange = e => {
     if (e) {
-      this.setState({value: e.value});
+      this.setState({ value: e.value });
       this.props.onChange(e.value);
     } else {
       this.setState({ value: null });

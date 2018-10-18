@@ -96,12 +96,12 @@ case class BasicAuthModuleConfig(
   def `type`: String                                        = "basic"
   override def authModule(config: GlobalConfig): AuthModule = BasicAuthModule(this)
   override def asJson = Json.obj(
-    "type"  -> "basic",
-    "id"    -> this.id,
-    "name"  -> this.name,
-    "desc"  -> this.desc,
-    "sessionMaxAge"  -> this.sessionMaxAge,
-    "users" -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
+    "type"          -> "basic",
+    "id"            -> this.id,
+    "name"          -> this.name,
+    "desc"          -> this.desc,
+    "sessionMaxAge" -> this.sessionMaxAge,
+    "users"         -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"

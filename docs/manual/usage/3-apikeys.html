@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.2.0
+1.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -70,6 +70,7 @@
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -99,7 +100,6 @@
     <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
-    <li><a href="../connectors/elastic.html" class="page">Elastic *</a></li>
   </ul></li>
 </ul>
 </div>
@@ -134,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.2.0
+1.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -174,6 +174,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -203,7 +204,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
-    <li><a href="../connectors/elastic.html" class="page">Elastic *</a></li>
   </ul></li>
 </ul>
 </div>
@@ -242,9 +242,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>In the Otoroshi admin dashboard, we chose to access <code>API keys</code> from <code>service descriptors</code> only, but when you access <code>API keys</code> for a <code>service descriptor</code>, you actually access <code>API keys</code> for the <code>service group</code> containing the <code>service descriptor</code>.</p>
 <p><code>API keys</code> can be provided to Otoroshi through :</p>
 <ul>
-  <li><code>Otoroshi-Authorization: Basic $base64(client_id:client_secret)</code> header, in that case, the <code>Otoroshi-Authorization</code> header will <strong>not</strong> be sent to the target</li>
+  <li><code>Otoroshi-Authorization: Basic $base64(client_id:client_secret)</code> header, in that case, the <code>Otoroshi-Authorization</code> header will <strong>not</strong> be sent to the target. <code>Basic</code> is optional.</li>
   <li><code>Authorization: Basic $base64(client_id:client_secret)</code> header, in that case, the <code>Authorization</code> header <strong>will</strong> be sent to the target</li>
-  <li><code>Otoroshi-Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the <code>Otoroshi-Authorization</code> header will <strong>not</strong> be sent to the target</li>
+  <li><code>Otoroshi-Token: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the <code>Otoroshi-Token</code> header will <strong>not</strong> be sent to the target. <code>Bearer</code> is optional.</li>
   <li><code>Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the <code>Authorization</code> header <strong>will</strong> be sent to the target</li>
   <li><code>Cookie: access_token=$jwt_token;</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the cookie named <code>access_token</code> <strong>will</strong> be sent to the target</li>
   <li><code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers, in that case the <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers will not be sent to the target.</li>
@@ -279,6 +279,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <img src="../img/apikey-delete.png" /></div>
 <p>and confirm the command</p><div class="centered-img">
 <img src="../img/apikey-delete-confirm.png" /></div>
+<h3><a href="#read-only" name="read-only" class="anchor"><span class="anchor-link"></span></a>Read only</h3>
+<p>The read only flag on an <code>ApiKey</code> this apikey can only use allowed services with <code>HEAD</code>, <code>OPTIONS</code> and <code>GET</code> http verbs.</p>
 <h2><a href="#use-a-jwt-token-to-pass-an-api-key" name="use-a-jwt-token-to-pass-an-api-key" class="anchor"><span class="anchor-link"></span></a>Use a JWT token to pass an API key</h2>
 <p>You can use a JWT token to pass an API key to Otoroshi. You can use <code>Otoroshi-Authorization: Bearer $jwt_token</code>, <code>Authorization: Bearer $jwt_token</code> header and <code>Cookie: access_token=$jwt_token;</code> to pass the JWT token. You have to create a JWT token with a signing algorythm that can be <code>HS256</code> or <code>HS512</code>. Then you have to provide an <code>iss</code> claim with the value of your API key <code>clientId</code> and sign the JWT token with your API key <code>clientSecret</code>.</p>
 <p>For example, with an API key like <code>clientId=abcdef</code> and <code>clientSecret=1234456789</code>, your JWT token should look like</p>

@@ -18,16 +18,16 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class AnalyticsSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system = ActorSystem("otoroshi-test")
 
   lazy val serviceHost  = "api.foo.bar"
   lazy val ws: WSClient = otoroshiComponents.wsClient
-  lazy val elasticUrl = "http://127.0.0.1:9200"
+  lazy val elasticUrl   = "http://127.0.0.1:9200"
   lazy val analytics = new ElasticWritesAnalytics(
     ElasticAnalyticsConfig(elasticUrl, Some("otoroshi-events"), Some("event"), None, None),
     otoroshiComponents.environment,
@@ -50,7 +50,6 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
   s"Analytics API" should {
 
-
     def runTest(serviceId: Option[String] = None, count: Int) = {
       setUp {
         // Inject events
@@ -64,7 +63,6 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
         awaitF(10.seconds).futureValue
 
         ws.url(s"$elasticUrl/_refresh").post("").futureValue
-
 
         val from = now.minusMinutes(100)
         val url = serviceId
@@ -100,8 +98,16 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
         val overheadPercentiles      = (resp \ "overheadPercentiles" \ "series").as[Seq[JsValue]]
         val overheadPercentilesNames = overheadPercentiles.map(j => (j \ "name").as[String])
-        overheadPercentilesNames must contain theSameElementsAs Vector("1.0", "5.0", "25.0", "50.0", "75.0", "95.0", "99.0")
-        overheadPercentilesNames foreach { n => testHistoValues(overheadPercentiles, n, 50) }
+        overheadPercentilesNames must contain theSameElementsAs Vector("1.0",
+                                                                       "5.0",
+                                                                       "25.0",
+                                                                       "50.0",
+                                                                       "75.0",
+                                                                       "95.0",
+                                                                       "99.0")
+        overheadPercentilesNames foreach { n =>
+          testHistoValues(overheadPercentiles, n, 50)
+        }
 
         val overheadStats      = (resp \ "overheadStats" \ "series").as[Seq[JsValue]]
         val overheadStatsNames = overheadStats.map(j => (j \ "name").as[String])
@@ -123,8 +129,15 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
         val durationPercentiles      = (resp \ "durationPercentiles" \ "series").as[Seq[JsValue]]
         val durationPercentilesNames = overheadPercentiles.map(j => (j \ "name").as[String])
-        durationPercentilesNames must contain theSameElementsAs Vector("1.0", "5.0", "25.0", "50.0", "75.0", "95.0", "99.0")
-        durationPercentilesNames foreach { n => testHistoValues(durationPercentiles, n, 500)
+        durationPercentilesNames must contain theSameElementsAs Vector("1.0",
+                                                                       "5.0",
+                                                                       "25.0",
+                                                                       "50.0",
+                                                                       "75.0",
+                                                                       "95.0",
+                                                                       "99.0")
+        durationPercentilesNames foreach { n =>
+          testHistoValues(durationPercentiles, n, 500)
         }
 
         val dataInStats      = (resp \ "dataInStats" \ "series").as[Seq[JsValue]]
@@ -161,11 +174,9 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       }
     }
 
-
     "Global stats API" in {
       // runTest(None, 54)
     }
-
 
     "Service stats API" in {
       runTest(Some("mon-service-id"), 50)
@@ -183,8 +194,8 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
         awaitF(10.seconds).futureValue
         ws.url(s"$elasticUrl/_refresh").post("").futureValue
 
-        val from = now.minusMinutes(1000)
-        val url = s"/api/services/mon-service-id/events?from=${from.getMillis}&to=${now.getMillis}"
+        val from           = now.minusMinutes(1000)
+        val url            = s"/api/services/mon-service-id/events?from=${from.getMillis}&to=${now.getMillis}"
         val (resp, status) = otoroshiApiCall("GET", url).futureValue
 
         status mustBe 200
@@ -192,7 +203,10 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
         events.length mustBe 100
 
-        val (resp2, status2) = otoroshiApiCall("GET", s"/api/services/mon-service-id2/events?from=${from.getMillis}&to=${now.getMillis}").futureValue
+        val (resp2, status2) = otoroshiApiCall(
+          "GET",
+          s"/api/services/mon-service-id2/events?from=${from.getMillis}&to=${now.getMillis}"
+        ).futureValue
         status2 mustBe 200
         resp2.as[Seq[JsValue]].length mustBe 0
       }
@@ -204,7 +218,10 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
     ws.url(s"$elasticUrl/otoroshi-events-*").delete().futureValue
 
     // Init datas
-    otoroshiApiCall("PATCH", "/api/globalconfig", Some(Json.parse("""
+    otoroshiApiCall(
+      "PATCH",
+      "/api/globalconfig",
+      Some(Json.parse("""
       |[
       |  { "op": "replace", "path": "/elasticWritesConfigs", "value": [ {
       |    "clusterUri": "http://127.0.0.1:9200",
@@ -217,7 +234,8 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       |    "type": "event"
       |  } }
       |]
-    """.stripMargin))).futureValue
+    """.stripMargin))
+    ).futureValue
     otoroshiApiCall("POST", "/api/groups", Some(testGroup.toJson)).futureValue
     otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id").toJson)).futureValue
     otoroshiApiCall("POST", "/api/services", Some(serviceDescriptor("mon-service-id2").toJson)).futureValue
@@ -227,14 +245,26 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
   }
 
   private def testHistoValues[T](vals: Seq[JsValue], name: String, value: T)(implicit reads: Reads[T]): Unit = {
-      val v = vals.find(j => (j \ "name").as[String] == name).getOrElse(throw new IllegalArgumentException(s"$name not found in $vals"))
-      (v \ "data").as[Seq[JsArray]].map { arr => (arr \ 1).as[T] }.foreach {
+    val v = vals
+      .find(j => (j \ "name").as[String] == name)
+      .getOrElse(throw new IllegalArgumentException(s"$name not found in $vals"))
+    (v \ "data")
+      .as[Seq[JsArray]]
+      .map { arr =>
+        (arr \ 1).as[T]
+      }
+      .foreach {
         _ mustBe value
       }
 
   }
 
-  private def event(ts: DateTime, status: Int, duration: Long, overhead: Long, dataIn: Long, dataOut: Long): AnalyticEvent = {
+  private def event(ts: DateTime,
+                    status: Int,
+                    duration: Long,
+                    overhead: Long,
+                    dataIn: Long,
+                    dataOut: Long): AnalyticEvent = {
     GatewayEvent(
       `@id` = IdGenerator.nextId(1024).toString,
       `@timestamp` = ts,
@@ -254,14 +284,19 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       callAttempts = 0,
       data = DataInOut(dataIn, dataOut),
       status = status,
-      headers= Seq.empty,
-      headersOut= Seq.empty,
+      headers = Seq.empty,
+      headersOut = Seq.empty,
       identity = None,
       gwError = None,
       `@serviceId` = "mon-service-id",
       `@service` = "mon-service",
       `@product` = "mon-product",
-      descriptor = ServiceDescriptor(id = "123456", groupId = "test", name = "name", env = "prod", domain = "toto.com", subdomain = ""),
+      descriptor = ServiceDescriptor(id = "123456",
+                                     groupId = "test",
+                                     name = "name",
+                                     env = "prod",
+                                     domain = "toto.com",
+                                     subdomain = ""),
       remainingQuotas = RemainingQuotas(),
       viz = None
     )
@@ -311,15 +346,15 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
   def setUpEvent(seq: AnalyticEvent*): Unit = {
     implicit val ec: ExecutionContext = otoroshiComponents.executionContext
-    implicit val env: Env = otoroshiComponents.env
+    implicit val env: Env             = otoroshiComponents.env
     analytics.publish(seq).futureValue
   }
 
   private def getStatus(i: Int): Int = {
     i % 10 match {
-      case v if v < 5 => 200
-      case v if v > 5 && v > 7  => 400
-      case _ => 500
+      case v if v < 5          => 200
+      case v if v > 5 && v > 7 => 400
+      case _                   => 500
     }
   }
 

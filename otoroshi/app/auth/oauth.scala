@@ -81,7 +81,7 @@ case class GenericOauth2ModuleConfig(
     "id"                -> this.id,
     "name"              -> this.name,
     "desc"              -> this.desc,
-    "sessionMaxAge"              -> this.sessionMaxAge,
+    "sessionMaxAge"     -> this.sessionMaxAge,
     "clientId"          -> this.clientId,
     "clientSecret"      -> this.clientSecret,
     "authorizeUrl"      -> this.authorizeUrl,

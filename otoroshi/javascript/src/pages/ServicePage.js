@@ -777,18 +777,14 @@ export class ServicePage extends Component {
                 )}
                 {this.state.service.authConfigRef && (
                   <a
-                    href={`/bo/dashboard/auth-configs/edit/${
-                      this.state.service.authConfigRef
-                      }`}
+                    href={`/bo/dashboard/auth-configs/edit/${this.state.service.authConfigRef}`}
                     className="btn btn-sm btn-success">
                     <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
                   </a>
                 )}
-                <a
-                    href={`/bo/dashboard/auth-configs`}
-                    className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-link" /> all auth. config.
-                  </a>
+                <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
+                  <i className="glyphicon glyphicon-link" /> all auth. config.
+                </a>
               </div>
             </div>
             <ArrayInput
@@ -1169,7 +1165,8 @@ export class ServicePage extends Component {
                 <label className="col-xs-12 col-sm-2 control-label" />
                 <div className="col-sm-10">
                   <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
-                    Custom error templates are not available on a service descriptor that hasn't been created yet. Just save the service descriptor and it will be available. 
+                    Custom error templates are not available on a service descriptor that hasn't
+                    been created yet. Just save the service descriptor and it will be available.
                   </p>
                 </div>
               </div>
@@ -1274,7 +1271,11 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${error ? `<h2><i class="glyphicon glyphicon-warning-sign"></i> ${title}</h2>` : `<h2 style="color:white;">${title}</h2>`}
+            ${
+              error
+                ? `<h2><i class="glyphicon glyphicon-warning-sign"></i> ${title}</h2>`
+                : `<h2 style="color:white;">${title}</h2>`
+            }
             <p class="lead">
               ${message}
             </p>
@@ -1289,10 +1290,28 @@ export class TemplateInput extends Component {
   createTemplate = () => {
     BackOfficeServices.createTemplate({
       serviceId: this.props.service.id,
-      templateBuild: this.template('Custom service under construction', 'The service you\'re trying to reach is under construction', true),
-      templateMaintenance: this.template('Custom service in maintenance', 'The service you\'re trying to reach is in maintenance', true),
-      template40x: this.template('Otoroshi error', '${message} - ${cause} - error number: ${errorId}', false, true),
-      template50x: this.template('Otoroshi error', '${message} - ${cause} - error number: ${errorId}', false, true),
+      templateBuild: this.template(
+        'Custom service under construction',
+        "The service you're trying to reach is under construction",
+        true
+      ),
+      templateMaintenance: this.template(
+        'Custom service in maintenance',
+        "The service you're trying to reach is in maintenance",
+        true
+      ),
+      template40x: this.template(
+        'Otoroshi error',
+        '${message} - ${cause} - error number: ${errorId}',
+        false,
+        true
+      ),
+      template50x: this.template(
+        'Otoroshi error',
+        '${message} - ${cause} - error number: ${errorId}',
+        false,
+        true
+      ),
       messages: {
         'message-400': '400',
         'message-403': '403',

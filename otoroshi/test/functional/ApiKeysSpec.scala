@@ -188,7 +188,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"                   -> serviceHost,
+          "Host"                                              -> serviceHost,
           otoroshiComponents.env.Headers.OtoroshiClientId     -> "apikey-test",
           otoroshiComponents.env.Headers.OtoroshiClientSecret -> "1234"
         )
@@ -207,7 +207,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"                   -> serviceHost,
+          "Host"                                               -> serviceHost,
           otoroshiComponents.env.Headers.OtoroshiAuthorization -> s"Basic $basicAuth"
         )
         .get()
@@ -334,7 +334,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"                   -> serviceHost,
+          "Host"                                        -> serviceHost,
           otoroshiComponents.env.Headers.OtoroshiBearer -> s"Bearer $bearerAuth"
         )
         .get()

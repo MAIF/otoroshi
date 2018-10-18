@@ -42,7 +42,7 @@ export class FreeDomainInput extends Component {
       .replace('://', '');
     if (value.indexOf('/') > -1) {
       const parts = value.split('/');
-      const lastParts = [ ...parts ];
+      const lastParts = [...parts];
       lastParts.shift();
       const matchingRoot = '/' + lastParts.join('/');
       value = parts[0];

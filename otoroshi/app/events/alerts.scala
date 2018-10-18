@@ -310,11 +310,11 @@ case class SnowMonkeyResetAlert(`@id`: String,
 }
 
 case class CertCreatedAlert(`@id`: String,
-                                `@env`: String,
-                                user: JsValue,
-                                audit: AuditEvent,
-                                `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+                            `@env`: String,
+                            user: JsValue,
+                            audit: AuditEvent,
+                            `@timestamp`: DateTime = DateTime.now())
+    extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
@@ -337,7 +337,7 @@ case class CertUpdatedAlert(`@id`: String,
                             user: JsValue,
                             audit: AuditEvent,
                             `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+    extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(
@@ -356,11 +356,11 @@ case class CertUpdatedAlert(`@id`: String,
 }
 
 case class CertDeleteAlert(`@id`: String,
-                            `@env`: String,
-                            user: JsValue,
-                            audit: AuditEvent,
-                            `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+                           `@env`: String,
+                           user: JsValue,
+                           audit: AuditEvent,
+                           `@timestamp`: DateTime = DateTime.now())
+    extends AlertEvent {
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
   override def toJson(implicit _env: Env): JsValue = Json.obj(

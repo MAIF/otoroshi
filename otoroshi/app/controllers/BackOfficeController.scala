@@ -578,7 +578,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           Ok(CertificateData(content))
         } getOrElse {
           Try {
-            val content: String = body.utf8String.replace("-----BEGIN CERTIFICATE-----", "").replace("-----END CERTIFICATE-----", "")
+            val content: String =
+              body.utf8String.replace("-----BEGIN CERTIFICATE-----", "").replace("-----END CERTIFICATE-----", "")
             Ok(CertificateData(content))
           } recover {
             case e =>
@@ -598,8 +599,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
       Try {
         Cert.fromJsonSafe(Json.parse(body.utf8String)) match {
-          case JsSuccess(cert, _) => Ok(Json.obj("valid" -> cert.isValid()))
-          case JsError(e) => BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+          case JsSuccess(cert, _) => Ok(Json.obj("valid"         -> cert.isValid()))
+          case JsError(e)         => BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
         }
       } recover {
         case e =>
@@ -614,7 +615,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       Try {
         Json.parse(body.utf8String).\("host").asOpt[String] match {
           case Some(host) => Ok(FakeKeyStore.generateCert(host).toJson)
-          case None => BadRequest(Json.obj("error" -> s"No host provided"))
+          case None       => BadRequest(Json.obj("error" -> s"No host provided"))
         }
       } recover {
         case e =>

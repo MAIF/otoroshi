@@ -99,7 +99,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _chaosDataStore              = new InMemoryChaosDataStore(redis, env)
   private lazy val _jwtVerifDataStore           = new InMemoryGlobalJwtVerifierDataStore(redis, env)
   private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
-  private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
+  private lazy val _certificateDataStore        = new InMemoryCertificateDataStore(redis, env)
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

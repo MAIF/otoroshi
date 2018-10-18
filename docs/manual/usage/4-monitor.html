@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.2.0
+1.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -70,6 +70,7 @@
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -99,7 +100,6 @@
     <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
-    <li><a href="../connectors/elastic.html" class="page">Elastic *</a></li>
   </ul></li>
 </ul>
 </div>
@@ -134,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.2.0
+1.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -174,6 +174,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
     <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
     <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
@@ -203,7 +204,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
     <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
     <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
-    <li><a href="../connectors/elastic.html" class="page">Elastic *</a></li>
   </ul></li>
 </ul>
 </div>
@@ -230,7 +230,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#monitoring-services" name="monitoring-services" class="anchor"><span class="anchor-link"></span></a>Monitoring services</h1>
 <p>Once you have declared services, you can monitor them with Otoroshi.</p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>You have to use <a href="../connectors/elastic.html">the Elastic connector</a> to enable analytics features in Otoroshi</p></div>
+<p>You have to use <a href="https://www.elastic.co">Elastic</a> to enable analytics features in Otoroshi</p></div>
+<p>Once you have setup <a href="../integrations/analytics.html">Otoroshi events push to an elastic cluster</a> (through webhooks, kafka, or elastic integration) you can setup Otoroshi events read from an elastic cluster. Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Elastic dashboard datasource (read)</code> section.</p><div class="centered-img">
+<img src="../img/push-to-elastic.png" /></div>
 <h2><a href="#service-healthcheck" name="service-healthcheck" class="anchor"><span class="anchor-link"></span></a>Service healthcheck</h2>
 <p>If you have defined an health check URL in the service descriptor, you can access the health check page from the sidebar of the service page.</p><div class="centered-img">
 <img src="../img/service-healthcheck.png" /></div>

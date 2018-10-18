@@ -78,7 +78,7 @@ export class DangerZonePage extends Component {
     password: {
       type: 'string',
       props: { label: 'Password', placeholder: 'Elastic password (optional)' },
-    }
+    },
   };
 
   analyticsEventsUrlFromSchema = {
@@ -147,14 +147,14 @@ export class DangerZonePage extends Component {
       type: Form,
       props: {
         flow: this.elasticConfigFormFlow,
-        schema: this.elasticConfigFormSchema
+        schema: this.elasticConfigFormSchema,
       },
     },
     elasticWritesConfig: {
       type: Form,
       props: {
         flow: this.elasticConfigFormFlow,
-        schema: this.elasticConfigFormSchema
+        schema: this.elasticConfigFormSchema,
       },
     },
     alertsEmails: {

@@ -113,8 +113,8 @@ object OtoroshiTests {
     }
     Option(System.getenv("TEST_ANALYTICS")) match {
       case Some("true") if name == "LevelDB" => suites :+ new AnalyticsSpec(name, Configurations.LevelDBConfiguration)
-      case Some("true") => suites :+ new AnalyticsSpec(name, config)
-      case None => suites
+      case Some("true")                      => suites :+ new AnalyticsSpec(name, config)
+      case None                              => suites
     }
   }
 }

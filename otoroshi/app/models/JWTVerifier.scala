@@ -42,49 +42,56 @@ object JwtExpressionLanguage {
 
   def apply(value: String, context: Map[String, String]): String = {
     value match {
-      case v if v.contains("${") => Try {
-        expressionReplacer.replaceOn(value) { expression =>
-          expression match {
-            case "date" => DateTime.now().toString()
-            case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
-            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*)" => context.getOrElse(field, value)
-            case _ => "bad-expr"
+      case v if v.contains("${") =>
+        Try {
+          expressionReplacer.replaceOn(value) { expression =>
+            expression match {
+              case "date"                           => DateTime.now().toString()
+              case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
+              case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
+                context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+              case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" =>
+                context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+              case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+                context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+              case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+                context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+              case r"token.$field@(.*)" => context.getOrElse(field, value)
+              case _                    => "bad-expr"
+            }
           }
-        }
-      } recover {
-        case e =>
-          logger.error(s"Error while parsing expression, returning raw value: $value", e)
-          value
-      } get
+        } recover {
+          case e =>
+            logger.error(s"Error while parsing expression, returning raw value: $value", e)
+            value
+        } get
       case _ => value
     }
   }
 
   def apply(value: JsValue, context: Map[String, String]): JsValue = {
     value match {
-      case JsObject(map) => new JsObject(map.toSeq.map {
-        case (key, JsString(str)) => (key, JsString(apply(str, context)))
-        case (key, obj@JsObject(_)) => (key, apply(obj, context))
-        case (key, arr@JsArray(_)) => (key,  apply(arr, context))
-        case (key, v) => (key, v)
-      }.toMap)
-      case JsArray(values) => new JsArray(values.map {
-        case JsString(str) => JsString(apply(str, context))
-        case obj: JsObject => apply(obj, context)
-        case arr: JsArray => apply(arr, context)
-        case v => v
-      })
+      case JsObject(map) =>
+        new JsObject(map.toSeq.map {
+          case (key, JsString(str))     => (key, JsString(apply(str, context)))
+          case (key, obj @ JsObject(_)) => (key, apply(obj, context))
+          case (key, arr @ JsArray(_))  => (key, apply(arr, context))
+          case (key, v)                 => (key, v)
+        }.toMap)
+      case JsArray(values) =>
+        new JsArray(values.map {
+          case JsString(str) => JsString(apply(str, context))
+          case obj: JsObject => apply(obj, context)
+          case arr: JsArray  => apply(arr, context)
+          case v             => v
+        })
       case JsString(str) => {
         apply(str, context) match {
-          case "true" => JsBoolean(true)
-          case "false" => JsBoolean(false)
+          case "true"               => JsBoolean(true)
+          case "false"              => JsBoolean(false)
           case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)
-          case r"$nbr@([0-9]+)" => JsNumber(nbr.toInt)
-          case s => JsString(s)
+          case r"$nbr@([0-9]+)"     => JsNumber(nbr.toInt)
+          case s                    => JsString(s)
 
         }
       }
@@ -307,7 +314,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     case 512 =>
       Some(
         Algorithm.RSA512(getPublicKey(transformValue(publicKey)),
-          privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
+                         privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
       )
     case _ => None
   }
@@ -655,15 +662,18 @@ sealed trait JwtVerifier extends AsJson {
                       case Some(outputAlgorithm) => {
                         val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
                         val context: Map[String, String] = jsonToken.value.toSeq.collect {
-                          case (key, JsString(str)) => (key, str)
+                          case (key, JsString(str))   => (key, str)
                           case (key, JsBoolean(bool)) => (key, bool.toString)
-                          case (key, JsNumber(nbr)) => (key, nbr.toString())
+                          case (key, JsNumber(nbr))   => (key, nbr.toString())
                         } toMap
-                        val evaluatedValues: JsObject = JwtExpressionLanguage(tSettings.mappingSettings.values, context).as[JsObject]
+                        val evaluatedValues: JsObject =
+                          JwtExpressionLanguage(tSettings.mappingSettings.values, context).as[JsObject]
                         val newJsonToken: JsObject = JsObject(
-                          (tSettings.mappingSettings.map.filter(a => (jsonToken \ a._1).isDefined).foldLeft(jsonToken)(
-                            (a, b) => a.+(b._2, JwtExpressionLanguage((a \ b._1).as[JsValue], context)).-(b._1)
-                          ) ++ evaluatedValues).fields
+                          (tSettings.mappingSettings.map
+                            .filter(a => (jsonToken \ a._1).isDefined)
+                            .foldLeft(jsonToken)(
+                              (a, b) => a.+(b._2, JwtExpressionLanguage((a \ b._1).as[JsValue], context)).-(b._1)
+                            ) ++ evaluatedValues).fields
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
                         )
@@ -712,15 +722,16 @@ case class LocalJwtVerifier(
 }
 
 case class RefJwtVerifier(
-  id: Option[String] = None,
-  enabled: Boolean = false,
-  excludedPatterns: Seq[String] = Seq.empty[String]
-) extends JwtVerifier with AsJson {
+    id: Option[String] = None,
+    enabled: Boolean = false,
+    excludedPatterns: Seq[String] = Seq.empty[String]
+) extends JwtVerifier
+    with AsJson {
 
   def asJson: JsValue = Json.obj(
-    "type"    -> "ref",
-    "id"      -> this.id.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "enabled" -> this.enabled,
+    "type"             -> "ref",
+    "id"               -> this.id.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "enabled"          -> this.enabled,
     "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply))
   )
 
@@ -735,17 +746,18 @@ case class RefJwtVerifier(
   )(implicit ec: ExecutionContext, env: Env) = {
     id match {
       case None => f(JwtInjection())
-      case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-        case Some(verifier) => verifier.verify(request, desc)(f)
-        case None =>
-          Errors.craftResponseResult(
-            "error.bad.globaljwtverifier.id",
-            Results.InternalServerError,
-            request,
-            Some(desc),
-            None
-          )
-      }
+      case Some(ref) =>
+        env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+          case Some(verifier) => verifier.verify(request, desc)(f)
+          case None =>
+            Errors.craftResponseResult(
+              "error.bad.globaljwtverifier.id",
+              Results.InternalServerError,
+              request,
+              Some(desc),
+              None
+            )
+        }
     }
   }
 
@@ -754,25 +766,26 @@ case class RefJwtVerifier(
   )(implicit ec: ExecutionContext, env: Env) = {
     id match {
       case None => f(JwtInjection())
-      case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-        case Some(verifier) => verifier.verifyWs(request, desc)(f)
-        case None =>
-          Errors
-            .craftResponseResult(
-              "error.bad.globaljwtverifier.id",
-              Results.InternalServerError,
-              request,
-              Some(desc),
-              None
-            )
-            .map(a => Left(a))
-      }
+      case Some(ref) =>
+        env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+          case Some(verifier) => verifier.verifyWs(request, desc)(f)
+          case None =>
+            Errors
+              .craftResponseResult(
+                "error.bad.globaljwtverifier.id",
+                Results.InternalServerError,
+                request,
+                Some(desc),
+                None
+              )
+              .map(a => Left(a))
+        }
     }
   }
 
   override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     id match {
-      case None => FastFuture.successful(false)
+      case None    => FastFuture.successful(false)
       case Some(_) => FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
     }
   }
@@ -827,14 +840,14 @@ case class GlobalJwtVerifier(
     with AsJson {
 
   def asJson: JsValue = Json.obj(
-    "type"             -> "global",
-    "id"               -> this.id,
-    "name"             -> this.name,
-    "desc"             -> this.desc,
-    "strict"           -> this.strict,
-    "source"           -> this.source.asJson,
-    "algoSettings"     -> this.algoSettings.asJson,
-    "strategy"         -> this.strategy.asJson
+    "type"         -> "global",
+    "id"           -> this.id,
+    "name"         -> this.name,
+    "desc"         -> this.desc,
+    "strict"       -> this.strict,
+    "source"       -> this.source.asJson,
+    "algoSettings" -> this.algoSettings.asJson,
+    "strategy"     -> this.strategy.asJson
   )
 
   override def isRef = false
@@ -842,7 +855,8 @@ case class GlobalJwtVerifier(
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalJwtVerifierDataStore.set(this)
 
-  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(true)
+  override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    FastFuture.successful(true)
 
   override def enabled = true
 }

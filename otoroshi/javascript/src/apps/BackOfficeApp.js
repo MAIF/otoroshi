@@ -241,7 +241,7 @@ class BackOfficeAppContainer extends Component {
                           path="/certificates"
                           component={props => this.decorate(CertificatesPage, props)}
                         />
-                        
+
                         <Route
                           path="/dangerzone"
                           component={props => this.decorate(DangerZonePage, props)}

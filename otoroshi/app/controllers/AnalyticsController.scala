@@ -9,8 +9,9 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.future.Implicits._
 
-class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(implicit env: Env)
-  extends AbstractController(cc)  {
+class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(
+    implicit env: Env
+) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -42,54 +43,54 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
           val fromDate = from.map(f => new DateTime(f.toLong))
-          val toDate = to.map(f => new DateTime(f.toLong))
+          val toDate   = to.map(f => new DateTime(f.toLong))
           for {
             _ <- FastFuture.successful(())
 
-            fhits = analyticsService.fetchHits(Some(desc.name), fromDate, toDate)
-            fdatain = analyticsService.fetchDataIn(Some(desc.name), fromDate, toDate)
-            fdataout = analyticsService.fetchDataOut(Some(desc.name), fromDate, toDate)
-            favgduration = analyticsService.fetchAvgDuration(Some(desc.name), fromDate, toDate)
-            favgoverhead = analyticsService.fetchAvgOverhead(Some(desc.name), fromDate, toDate)
-            fstatusesPiechart = analyticsService.fetchStatusesPiechart(Some(desc.name), fromDate, toDate)
-            fstatusesHistogram = analyticsService.fetchStatusesHistogram(Some(desc.name), fromDate, toDate)
+            fhits                = analyticsService.fetchHits(Some(desc.name), fromDate, toDate)
+            fdatain              = analyticsService.fetchDataIn(Some(desc.name), fromDate, toDate)
+            fdataout             = analyticsService.fetchDataOut(Some(desc.name), fromDate, toDate)
+            favgduration         = analyticsService.fetchAvgDuration(Some(desc.name), fromDate, toDate)
+            favgoverhead         = analyticsService.fetchAvgOverhead(Some(desc.name), fromDate, toDate)
+            fstatusesPiechart    = analyticsService.fetchStatusesPiechart(Some(desc.name), fromDate, toDate)
+            fstatusesHistogram   = analyticsService.fetchStatusesHistogram(Some(desc.name), fromDate, toDate)
             foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(Some(desc.name), fromDate, toDate)
-            foverheadStats = analyticsService.fetchOverheadStatsHistogram(Some(desc.name), fromDate, toDate)
+            foverheadStats       = analyticsService.fetchOverheadStatsHistogram(Some(desc.name), fromDate, toDate)
             fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(Some(desc.name), fromDate, toDate)
-            fdurationStats = analyticsService.fetchDurationStatsHistogram(Some(desc.name), fromDate, toDate)
-            fdataInHistogram = analyticsService.fetchDataInStatsHistogram(Some(desc.name), fromDate, toDate)
-            fdataOutHistogram = analyticsService.fetchDataOutStatsHistogram(Some(desc.name), fromDate, toDate)
+            fdurationStats       = analyticsService.fetchDurationStatsHistogram(Some(desc.name), fromDate, toDate)
+            fdataInHistogram     = analyticsService.fetchDataInStatsHistogram(Some(desc.name), fromDate, toDate)
+            fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(Some(desc.name), fromDate, toDate)
 
-            statusesPiechart <- fstatusesPiechart
-            statusesHistogram <- fstatusesHistogram
+            statusesPiechart    <- fstatusesPiechart
+            statusesHistogram   <- fstatusesHistogram
             overheadPercentiles <- foverheadPercentiles
-            overheadStats <- foverheadStats
+            overheadStats       <- foverheadStats
             durationPercentiles <- fdurationPercentiles
-            durationStats <- fdurationStats
-            dataInStats <- fdataInHistogram
-            dataOutStats <- fdataOutHistogram
+            durationStats       <- fdurationStats
+            dataInStats         <- fdataInHistogram
+            dataOutStats        <- fdataOutHistogram
 
-            hits <- fhits
-            datain <- fdatain
-            dataout <- fdataout
+            hits        <- fhits
+            datain      <- fdatain
+            dataout     <- fdataout
             avgduration <- favgduration
             avgoverhead <- favgoverhead
           } yield {
             Ok(
               Json.obj(
-                "statusesPiechart" -> statusesPiechart,
-                "statusesHistogram" -> statusesHistogram,
+                "statusesPiechart"    -> statusesPiechart,
+                "statusesHistogram"   -> statusesHistogram,
                 "overheadPercentiles" -> overheadPercentiles,
-                "overheadStats" -> overheadStats,
+                "overheadStats"       -> overheadStats,
                 "durationPercentiles" -> durationPercentiles,
-                "durationStats" -> durationStats,
-                "dataInStats" -> dataInStats,
-                "dataOutStats" -> dataOutStats,
-                "hits" -> hits,
-                "dataIn" -> datain,
-                "dataOut" -> dataout,
-                "avgDuration" -> avgduration,
-                "avgOverhead" -> avgoverhead
+                "durationStats"       -> durationStats,
+                "dataInStats"         -> dataInStats,
+                "dataOutStats"        -> dataOutStats,
+                "hits"                -> hits,
+                "dataIn"              -> datain,
+                "dataOut"             -> dataout,
+                "avgDuration"         -> avgduration,
+                "avgOverhead"         -> avgoverhead
               )
             )
           }
@@ -97,7 +98,6 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
       }
     }
   }
-
 
   def globalStats(from: Option[String] = None, to: Option[String] = None) = ApiAction.async { ctx =>
     Audit.send(
@@ -118,70 +118,68 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
     val paginationPosition = (paginationPage - 1) * paginationPageSize
 
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-    env.datastores.serviceDescriptorDataStore.count().flatMap { nbrOfServices =>
+      env.datastores.serviceDescriptorDataStore.count().flatMap { nbrOfServices =>
+        val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
+        val fromDate = from.map(f => new DateTime(f.toLong))
+        val toDate   = to.map(f => new DateTime(f.toLong))
 
-      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+        for {
+          _ <- FastFuture.successful(())
 
-      val fromDate = from.map(f => new DateTime(f.toLong))
-      val toDate = to.map(f => new DateTime(f.toLong))
+          fhits                = analyticsService.fetchHits(None, fromDate, toDate)
+          fdatain              = analyticsService.fetchDataIn(None, fromDate, toDate)
+          fdataout             = analyticsService.fetchDataOut(None, fromDate, toDate)
+          favgduration         = analyticsService.fetchAvgDuration(None, fromDate, toDate)
+          favgoverhead         = analyticsService.fetchAvgOverhead(None, fromDate, toDate)
+          fstatusesPiechart    = analyticsService.fetchStatusesPiechart(None, fromDate, toDate)
+          fstatusesHistogram   = analyticsService.fetchStatusesHistogram(None, fromDate, toDate)
+          foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(None, fromDate, toDate)
+          foverheadStats       = analyticsService.fetchOverheadStatsHistogram(None, fromDate, toDate)
+          fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(None, fromDate, toDate)
+          fdurationStats       = analyticsService.fetchDurationStatsHistogram(None, fromDate, toDate)
+          fdataInHistogram     = analyticsService.fetchDataInStatsHistogram(None, fromDate, toDate)
+          fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(None, fromDate, toDate)
+          fProductPiechart     = analyticsService.fetchProductPiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
+          fServicePiechart     = analyticsService.fetchServicePiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
 
-      for {
-        _ <- FastFuture.successful(())
+          statusesPiechart    <- fstatusesPiechart
+          statusesHistogram   <- fstatusesHistogram
+          overheadPercentiles <- foverheadPercentiles
+          overheadStats       <- foverheadStats
+          durationPercentiles <- fdurationPercentiles
+          durationStats       <- fdurationStats
+          dataInStats         <- fdataInHistogram
+          dataOutStats        <- fdataOutHistogram
+          productPiechart     <- fProductPiechart
+          servicePiechart     <- fServicePiechart
 
-        fhits = analyticsService.fetchHits(None, fromDate, toDate)
-        fdatain = analyticsService.fetchDataIn(None, fromDate, toDate)
-        fdataout = analyticsService.fetchDataOut(None, fromDate, toDate)
-        favgduration = analyticsService.fetchAvgDuration(None, fromDate, toDate)
-        favgoverhead = analyticsService.fetchAvgOverhead(None, fromDate, toDate)
-        fstatusesPiechart = analyticsService.fetchStatusesPiechart(None, fromDate, toDate)
-        fstatusesHistogram = analyticsService.fetchStatusesHistogram(None, fromDate, toDate)
-        foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(None, fromDate, toDate)
-        foverheadStats = analyticsService.fetchOverheadStatsHistogram(None, fromDate, toDate)
-        fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(None, fromDate, toDate)
-        fdurationStats = analyticsService.fetchDurationStatsHistogram(None, fromDate, toDate)
-        fdataInHistogram = analyticsService.fetchDataInStatsHistogram(None, fromDate, toDate)
-        fdataOutHistogram = analyticsService.fetchDataOutStatsHistogram(None, fromDate, toDate)
-        fProductPiechart = analyticsService.fetchProductPiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
-        fServicePiechart = analyticsService.fetchServicePiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
-
-        statusesPiechart <- fstatusesPiechart
-        statusesHistogram <- fstatusesHistogram
-        overheadPercentiles <- foverheadPercentiles
-        overheadStats <- foverheadStats
-        durationPercentiles <- fdurationPercentiles
-        durationStats <- fdurationStats
-        dataInStats <- fdataInHistogram
-        dataOutStats <- fdataOutHistogram
-        productPiechart <- fProductPiechart
-        servicePiechart <- fServicePiechart
-
-        hits <- fhits
-        datain <- fdatain
-        dataout <- fdataout
-        avgduration <- favgduration
-        avgoverhead <- favgoverhead
-      } yield
-        Ok(
-          Json.obj(
-            "statusesPiechart" -> statusesPiechart,
-            "statusesHistogram" -> statusesHistogram,
-            "overheadPercentiles" -> overheadPercentiles,
-            "overheadStats" -> overheadStats,
-            "durationPercentiles" -> durationPercentiles,
-            "durationStats" -> durationStats,
-            "dataInStats" -> dataInStats,
-            "dataOutStats" -> dataOutStats,
-            "hits" -> hits,
-            "dataIn" -> datain,
-            "dataOut" -> dataout,
-            "avgDuration" -> avgduration,
-            "avgOverhead" -> avgoverhead,
-            "productPiechart" -> productPiechart,
-            "servicePiechart" -> servicePiechart
+          hits        <- fhits
+          datain      <- fdatain
+          dataout     <- fdataout
+          avgduration <- favgduration
+          avgoverhead <- favgoverhead
+        } yield
+          Ok(
+            Json.obj(
+              "statusesPiechart"    -> statusesPiechart,
+              "statusesHistogram"   -> statusesHistogram,
+              "overheadPercentiles" -> overheadPercentiles,
+              "overheadStats"       -> overheadStats,
+              "durationPercentiles" -> durationPercentiles,
+              "durationStats"       -> durationStats,
+              "dataInStats"         -> dataInStats,
+              "dataOutStats"        -> dataOutStats,
+              "hits"                -> hits,
+              "dataIn"              -> datain,
+              "dataOut"             -> dataout,
+              "avgDuration"         -> avgduration,
+              "avgOverhead"         -> avgoverhead,
+              "productPiechart"     -> productPiechart,
+              "servicePiechart"     -> servicePiechart
+            )
           )
-        )
-    }
+      }
     }
   }
 
@@ -203,8 +201,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
       val paginationPageSize: Int =
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
       val paginationPosition = (paginationPage - 1) * paginationPageSize
-      val fromDate = from.map(f => new DateTime(f.toLong))
-      val toDate = to.map(f => new DateTime(f.toLong))
+      val fromDate           = from.map(f => new DateTime(f.toLong))
+      val toDate             = to.map(f => new DateTime(f.toLong))
 
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -212,7 +210,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           case Some(desc) => {
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
-            analyticsService.events("GatewayEvent", Some(desc.id), fromDate, toDate, paginationPage, paginationPageSize)
+            analyticsService
+              .events("GatewayEvent", Some(desc.id), fromDate, toDate, paginationPage, paginationPageSize)
               .map(_.getOrElse(Json.obj()))
               .map { r =>
                 logger.debug(s"$r")
@@ -223,6 +222,5 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
         }
       }
   }
-
 
 }

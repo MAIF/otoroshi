@@ -17,9 +17,9 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
-                      PrivateAppsAction: PrivateAppsAction,
-                      BackOfficeAction: BackOfficeAction,
-                      cc: ControllerComponents)(implicit env: Env)
+                     PrivateAppsAction: PrivateAppsAction,
+                     BackOfficeAction: BackOfficeAction,
+                     cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec = env.otoroshiExecutionContext
@@ -111,7 +111,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   }
 
   def confidentialAppLogout() = PrivateAppsAction.async { ctx =>
-    implicit val req = ctx.request
+    implicit val req                  = ctx.request
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
     val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
@@ -121,7 +121,11 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
           Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*)
         )
       case _ =>
-        Errors.craftResponseResult("Missing parameters", Results.BadRequest, req, None, Some("errors.missing.parameters"))
+        Errors.craftResponseResult("Missing parameters",
+                                   Results.BadRequest,
+                                   req,
+                                   None,
+                                   Some("errors.missing.parameters"))
     }
   }
 

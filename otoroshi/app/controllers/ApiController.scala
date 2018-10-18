@@ -2262,9 +2262,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             Audit.send(event)
             Alerts.send(
               CertCreatedAlert(env.snowflakeGenerator.nextIdStr(),
-                env.env,
-                ctx.user.getOrElse(ctx.apiKey.toJson),
-                event)
+                               env.env,
+                               ctx.user.getOrElse(ctx.apiKey.toJson),
+                               event)
             )
             Ok(group.toJson)
           }
@@ -2295,9 +2295,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             Audit.send(event)
             Alerts.send(
               CertUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
-                env.env,
-                ctx.user.getOrElse(ctx.apiKey.toJson),
-                event)
+                               env.env,
+                               ctx.user.getOrElse(ctx.apiKey.toJson),
+                               event)
             )
             newGroup.save().map(_ => Ok(newGroup.toJson))
           }
@@ -2331,9 +2331,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             Audit.send(event)
             Alerts.send(
               CertUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
-                env.env,
-                ctx.user.getOrElse(ctx.apiKey.toJson),
-                event)
+                               env.env,
+                               ctx.user.getOrElse(ctx.apiKey.toJson),
+                               event)
             )
             newGroup.save().map(_ => Ok(newGroup.toJson))
           }
@@ -2359,10 +2359,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           )
           Audit.send(event)
           Alerts.send(
-            CertDeleteAlert(env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              ctx.user.getOrElse(ctx.apiKey.toJson),
-              event)
+            CertDeleteAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
           )
           Ok(Json.obj("deleted" -> res))
         }
@@ -2385,9 +2382,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ctx.from
       )
     )
-    val id: Option[String]   = ctx.request.queryString.get("id").flatMap(_.headOption)
+    val id: Option[String]     = ctx.request.queryString.get("id").flatMap(_.headOption)
     val domain: Option[String] = ctx.request.queryString.get("domain").flatMap(_.headOption)
-    val hasFilters           = id.orElse(domain).isDefined
+    val hasFilters             = id.orElse(domain).isDefined
     env.datastores.certificatesDataStore.streamedFindAndMat(_ => true, 50, paginationPage, paginationPageSize).map {
       groups =>
         if (hasFilters) {
@@ -2395,9 +2392,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             JsArray(
               groups
                 .filter {
-                  case group if id.isDefined && group.id == id.get       => true
+                  case group if id.isDefined && group.id == id.get             => true
                   case group if domain.isDefined && group.domain == domain.get => true
-                  case _                                                 => false
+                  case _                                                       => false
                 }
                 .map(_.toJson)
             )

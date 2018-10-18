@@ -348,7 +348,8 @@ export class ServiceApiKeysPage extends Component {
       props: {
         label: 'Read only',
         placeholder: 'The ApiKey is read only',
-        help: 'If the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs',
+        help:
+          'If the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs',
       },
     },
     metadata: {

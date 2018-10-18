@@ -151,16 +151,24 @@ class Env(val configuration: Configuration,
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
   lazy val gatewayClient = {
-    val parser  = new WSConfigParser(configuration.underlying, environment.classLoader)
-    val config  = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
+    val parser = new WSConfigParser(configuration.underlying, environment.classLoader)
+    val config = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
       keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
-    AhcWSClient(config.copy(wsClientConfig = config.wsClientConfig.copy(
-      compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
-      idleTimeout = configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
-      connectionTimeout = configuration.getOptional[Int]("app.proxy.connectionTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis)
-    )))(
+    AhcWSClient(
+      config.copy(
+        wsClientConfig = config.wsClientConfig.copy(
+          compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+          idleTimeout =
+            configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+          connectionTimeout = configuration
+            .getOptional[Int]("app.proxy.connectionTimeout")
+            .map(_.millis)
+            .getOrElse((2 * 60 * 1000).millis)
+        )
+      )
+    )(
       otoroshiMaterializer
     )
   }
@@ -173,7 +181,7 @@ class Env(val configuration: Configuration,
   lazy val notDev = !isDev
   lazy val hash   = s"${System.currentTimeMillis()}"
 
-  lazy val backOfficeSessionExp  = configuration.getOptional[Long]("app.backoffice.session.exp").get
+  lazy val backOfficeSessionExp = configuration.getOptional[Long]("app.backoffice.session.exp").get
 
   lazy val exposedRootScheme = configuration.getOptional[String]("app.rootScheme").getOrElse("https")
 
@@ -332,7 +340,7 @@ class Env(val configuration: Configuration,
                 case Some(path) => {
                   logger.warn(s"Importing from: $path")
                   val source = Source.fromFile(path).getLines().mkString("\n")
-                  val json = Json.parse(source).as[JsObject]
+                  val json   = Json.parse(source).as[JsObject]
                   datastores.globalConfigDataStore.fullImport(json)(ec, this)
                 }
               }
@@ -352,9 +360,9 @@ class Env(val configuration: Configuration,
                 case _ => {
                   val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
                   val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
-                    "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
-                    "default-apikey",
-                    "default")
+                                                  "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
+                                                  "default-apikey",
+                                                  "default")
                   logger.warn(
                     s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
                   )
@@ -366,10 +374,10 @@ class Env(val configuration: Configuration,
                     _ <- backOfficeApiKey.save()(ec, this)
                     _ <- defaultGroupApiKey.save()(ec, this)
                     _ <- datastores.simpleAdminDataStore
-                      .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(
-                        ec,
-                        this
-                      )
+                          .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(
+                            ec,
+                            this
+                          )
                   } yield ()
                 }
               }
@@ -435,14 +443,16 @@ class Env(val configuration: Configuration,
   timeout(1000.millis).andThen {
     case _ => {
       datastores.globalConfigDataStore.migrate()(otoroshiExecutionContext, this)
-      datastores.certificatesDataStore.findAll()(otoroshiExecutionContext, this).map { certs =>
-        if (certs.isEmpty) {
-          FakeKeyStore.generateCert(s"*.${this.domain}").save()(otoroshiExecutionContext, this)
-          if (env.toLowerCase() == "dev") {
-            FakeKeyStore.generateCert(s"*.dev.${this.domain}").save()(otoroshiExecutionContext, this)
+      datastores.certificatesDataStore
+        .findAll()(otoroshiExecutionContext, this)
+        .map { certs =>
+          if (certs.isEmpty) {
+            FakeKeyStore.generateCert(s"*.${this.domain}").save()(otoroshiExecutionContext, this)
+            if (env.toLowerCase() == "dev") {
+              FakeKeyStore.generateCert(s"*.dev.${this.domain}").save()(otoroshiExecutionContext, this)
+            }
           }
-        }
-      }(otoroshiExecutionContext)
+        }(otoroshiExecutionContext)
     }
   }(otoroshiExecutionContext)
 
@@ -482,7 +492,10 @@ class Env(val configuration: Configuration,
     createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc), authConfig.sessionMaxAge)
   }
 
-  def createPrivateSessionCookiesWithSuffix(host: String, id: String, suffix: String, sessionMaxAge: Int): Seq[play.api.mvc.Cookie] = {
+  def createPrivateSessionCookiesWithSuffix(host: String,
+                                            id: String,
+                                            suffix: String,
+                                            sessionMaxAge: Int): Seq[play.api.mvc.Cookie] = {
     if (host.endsWith(sessionDomain)) {
       Seq(
         play.api.mvc.Cookie(

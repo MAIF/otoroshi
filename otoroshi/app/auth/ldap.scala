@@ -116,7 +116,7 @@ case class LdapAuthModuleConfig(
     "id"            -> this.id,
     "name"          -> this.name,
     "desc"          -> this.desc,
-    "sessionMaxAge"          -> this.sessionMaxAge,
+    "sessionMaxAge" -> this.sessionMaxAge,
     "serverUrl"     -> this.serverUrl,
     "searchBase"    -> this.searchBase,
     "userBase"      -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
