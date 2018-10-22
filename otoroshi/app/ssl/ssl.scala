@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert.{Certificate => _, _}
 import java.security.spec.PKCS8EncodedKeySpec
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
@@ -30,6 +31,7 @@ import sun.security.x509._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 // TODO: doc + swagger
@@ -394,7 +396,28 @@ object FakeKeyStore {
     val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
     keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
     val keyPair = keyPairGenerator.generateKeyPair()
-    val cert    = createSelfSignedCertificate(host, keyPair)
+    val cert    = createSelfSignedCertificate(host, FiniteDuration(365, TimeUnit.DAYS), keyPair)
+
+    // Try {
+    //   val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+    //   keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+    //   val keyPair = keyPairGenerator.generateKeyPair()
+    //   val keyPair2 = keyPairGenerator.generateKeyPair()
+    //   val ca    = createCA("CN=ROOT", FiniteDuration(30, TimeUnit.DAYS), keyPair)
+    //   val leaf    = createCertificateFromCA(s"CN=$host", FiniteDuration(30, TimeUnit.DAYS), keyPair2, ca, keyPair)
+    //   println(PemHeaders.BeginCertificate)
+    //   println(Base64.getEncoder.encodeToString(leaf.getEncoded))
+    //   println(PemHeaders.EndCertificate)
+    //   println(PemHeaders.BeginCertificate)
+    //   println(Base64.getEncoder.encodeToString(ca.getEncoded))
+    //   println(PemHeaders.EndCertificate)
+    //   println(PemHeaders.BeginPrivateKey)
+    //   println(Base64.getEncoder.encodeToString(keyPair2.getPrivate.getEncoded))
+    //   println(PemHeaders.EndPrivateKey)
+    // } recover {
+    //   case e => e.printStackTrace()
+    // }
+
     (cert, keyPair)
   }
 
@@ -410,7 +433,7 @@ object FakeKeyStore {
     )
   }
 
-  def createSelfSignedCertificate(host: String, keyPair: KeyPair): X509Certificate = {
+  def createSelfSignedCertificate(host: String, duration: FiniteDuration, keyPair: KeyPair): X509Certificate = {
     val certInfo = new X509CertInfo()
 
     // Serial number and version
@@ -419,7 +442,7 @@ object FakeKeyStore {
 
     // Validity
     val validFrom = new Date()
-    val validTo   = new Date(validFrom.getTime + 50l * 365l * 24l * 60l * 60l * 1000l)
+    val validTo   = new Date(validFrom.getTime + duration.toMillis)
     val validity  = new CertificateValidity(validFrom, validTo)
     certInfo.set(X509CertInfo.VALIDITY, validity)
 
@@ -432,6 +455,85 @@ object FakeKeyStore {
     certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic))
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
+
+    // Create a new certificate and sign it
+    val cert = new X509CertImpl(certInfo)
+    cert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
+
+    // Since the signature provider may have a different algorithm ID to what we think it should be,
+    // we need to reset the algorithm ID, and resign the certificate
+    val actualAlgorithm = cert.get(X509CertImpl.SIG_ALG).asInstanceOf[AlgorithmId]
+    certInfo.set(CertificateAlgorithmId.NAME + "." + CertificateAlgorithmId.ALGORITHM, actualAlgorithm)
+    val newCert = new X509CertImpl(certInfo)
+    newCert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
+    newCert
+  }
+
+  def createCertificateFromCA(host: String, duration: FiniteDuration, kp: KeyPair, ca: X509Certificate, caKeyPair: KeyPair): X509Certificate = {
+    val certInfo = new X509CertInfo()
+
+    // Serial number and version
+    certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(64, new SecureRandom())))
+    certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3))
+
+    // Validity
+    val validFrom = new Date()
+    val validTo   = new Date(validFrom.getTime + duration.toMillis)
+    val validity  = new CertificateValidity(validFrom, validTo)
+    certInfo.set(X509CertInfo.VALIDITY, validity)
+
+    // Subject and issuer
+    val owner = new X500Name(s"$host")
+    certInfo.set(X509CertInfo.SUBJECT, owner)
+    certInfo.set(X509CertInfo.ISSUER, ca.getSubjectDN)
+
+    // Key and algorithm
+    certInfo.set(X509CertInfo.KEY, new CertificateX509Key(kp.getPublic))
+    val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
+    certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
+
+    // Create a new certificate and sign it
+    val cert = new X509CertImpl(certInfo)
+    val issuerSigAlg: String = ca.getSigAlgName
+    cert.sign(caKeyPair.getPrivate, issuerSigAlg)
+
+    // Since the signature provider may have a different algorithm ID to what we think it should be,
+    // we need to reset the algorithm ID, and resign the certificate
+    val actualAlgorithm = cert.get(X509CertImpl.SIG_ALG).asInstanceOf[AlgorithmId]
+    certInfo.set(CertificateAlgorithmId.NAME + "." + CertificateAlgorithmId.ALGORITHM, actualAlgorithm)
+    val newCert = new X509CertImpl(certInfo)
+    newCert.sign(caKeyPair.getPrivate, issuerSigAlg)
+    newCert
+  }
+
+  def createCA(cn: String, duration: FiniteDuration, keyPair: KeyPair): X509Certificate = {
+    val certInfo = new X509CertInfo()
+
+    // Serial number and version
+    certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(64, new SecureRandom())))
+    certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3))
+
+    // Validity
+    val validFrom = new Date()
+    val validTo   = new Date(validFrom.getTime + duration.toMillis)
+    val validity  = new CertificateValidity(validFrom, validTo)
+    certInfo.set(X509CertInfo.VALIDITY, validity)
+
+    // Subject and issuer
+    val owner = new X500Name(cn)
+    certInfo.set(X509CertInfo.SUBJECT, owner)
+    certInfo.set(X509CertInfo.ISSUER, owner)
+
+    // Key and algorithm
+    certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic))
+    val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
+    certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
+
+
+    val exts = new CertificateExtensions
+    val bce = new BasicConstraintsExtension(true, -1)
+    exts.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(false, bce.getExtensionValue))
+    certInfo.set(X509CertInfo.EXTENSIONS, exts)
 
     // Create a new certificate and sign it
     val cert = new X509CertImpl(certInfo)
