@@ -1,12 +1,13 @@
 package ssl
 
 import java.io._
+import java.lang.reflect.Field
 import java.math.BigInteger
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert.{Certificate => _, _}
 import java.security.spec.PKCS8EncodedKeySpec
-import java.util
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
@@ -273,28 +274,38 @@ object DynamicSSLEngineProvider {
   private def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
 }
 
+class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
+
+  override def createSSLEngine(): SSLEngine = {
+    val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
+    DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
+    val engine = new CustomSSLEngine(context.createSSLEngine())
+    val sslParameters = new SSLParameters
+    val matchers = new java.util.ArrayList[SNIMatcher]()
+    matchers.add(new SNIMatcher(0) {
+      override def matches(sniServerName: SNIServerName): Boolean = {
+        sniServerName match {
+          case hn: SNIHostName =>
+            val hostName = hn.getAsciiName
+            DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
+            engine.setEngineHostName(hostName)
+          case _ =>
+            DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
+        }
+        true
+      }
+    })
+    sslParameters.setSNIMatchers(matchers)
+    engine.setSSLParameters(sslParameters)
+    engine
+  }
+}
+
 object noCATrustManager extends X509TrustManager {
   val nullArray                                                                     = Array[X509Certificate]()
   def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
   def checkServerTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
   def getAcceptedIssuers()                                                          = nullArray
-}
-
-class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
-
-  import collection.JavaConverters._
-
-  override def createSSLEngine(): SSLEngine = {
-    val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
-    DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
-    val sslParameters = new SSLParameters
-    val names         = DynamicSSLEngineProvider.getHostNames().map(_.replace("*", "ssl"))
-    val hostNames     = names.map(n => new SNIHostName(n))
-    //sslParameters.setServerNames(new util.ArrayList(hostNames.asJavaCollection))
-    val engine = context.createSSLEngine()
-    engine.setSSLParameters(sslParameters)
-    engine
-  }
 }
 
 object CertificateData {
@@ -424,4 +435,88 @@ object FakeKeyStore {
     newCert
   }
 
+}
+
+class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
+
+  private val hostnameHolder = new AtomicReference[String]()
+
+ private lazy val field: Field = {
+   val f = Option(classOf[SSLEngine].getDeclaredField("peerHost")).getOrElse(classOf[SSLEngine].getField("peerHost"))
+   f.setAccessible(true)
+   f
+ }
+
+  def setEngineHostName(hostName: String): Unit = {
+    DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
+    hostnameHolder.set(hostName)
+    field.set(this, hostName)
+    field.set(delegate, hostName)
+  }
+
+  override def getPeerHost: String = Option(hostnameHolder.get()).getOrElse(delegate.getPeerHost)
+
+  override def getPeerPort: Int = delegate.getPeerPort
+
+  override def wrap(byteBuffers: Array[ByteBuffer], i: Int, i1: Int, byteBuffer: ByteBuffer): SSLEngineResult = delegate.wrap(byteBuffers, i, i1, byteBuffer)
+
+  override def unwrap(byteBuffer: ByteBuffer, byteBuffers: Array[ByteBuffer], i: Int, i1: Int): SSLEngineResult = delegate.unwrap(byteBuffer, byteBuffers, i, i1)
+
+  override def getDelegatedTask: Runnable = delegate.getDelegatedTask
+
+  override def closeInbound(): Unit = delegate.closeInbound()
+
+  override def isInboundDone: Boolean = delegate.isInboundDone
+
+  override def closeOutbound(): Unit = delegate.closeOutbound()
+
+  override def isOutboundDone: Boolean = delegate.isOutboundDone
+
+  override def getSupportedCipherSuites: Array[String] = delegate.getSupportedCipherSuites
+
+  override def getEnabledCipherSuites: Array[String] = delegate.getEnabledCipherSuites
+
+  override def setEnabledCipherSuites(strings: Array[String]): Unit = delegate.setEnabledCipherSuites(strings)
+
+  override def getSupportedProtocols: Array[String] = delegate.getSupportedProtocols
+
+  override def getEnabledProtocols: Array[String] = delegate.getEnabledProtocols
+
+  override def setEnabledProtocols(strings: Array[String]): Unit = delegate.setEnabledProtocols(strings)
+
+  override def getSession: SSLSession = delegate.getSession
+
+  override def beginHandshake(): Unit = delegate.beginHandshake()
+
+  override def getHandshakeStatus: SSLEngineResult.HandshakeStatus = delegate.getHandshakeStatus
+
+  override def setUseClientMode(b: Boolean): Unit = delegate.setUseClientMode(b)
+
+  override def getUseClientMode: Boolean = delegate.getUseClientMode
+
+  override def setNeedClientAuth(b: Boolean): Unit = delegate.setNeedClientAuth(b)
+
+  override def getNeedClientAuth: Boolean = delegate.getNeedClientAuth
+
+  override def setWantClientAuth(b: Boolean): Unit = delegate.setWantClientAuth(b)
+
+  override def getWantClientAuth: Boolean = delegate.getWantClientAuth
+
+  override def setEnableSessionCreation(b: Boolean): Unit = delegate.setNeedClientAuth(b)
+
+  override def getEnableSessionCreation: Boolean = delegate.getEnableSessionCreation
+
+  override def wrap(var1: ByteBuffer, var2: ByteBuffer): SSLEngineResult = delegate.wrap(var1, var2)
+
+  override def wrap(var1: Array[ByteBuffer], var2: ByteBuffer): SSLEngineResult = delegate.wrap(var1, var2)
+
+  override def unwrap(var1: ByteBuffer, var2: ByteBuffer): SSLEngineResult = delegate.unwrap(var1, var2)
+
+  override def unwrap(var1: ByteBuffer, var2: Array[ByteBuffer]): SSLEngineResult = delegate.unwrap(var1, var2)
+
+  override def getHandshakeSession: SSLSession = delegate.getHandshakeSession
+
+  override def getSSLParameters: SSLParameters = delegate.getSSLParameters
+
+  override def setSSLParameters(var1: SSLParameters): Unit = delegate.setSSLParameters(var1)
 }

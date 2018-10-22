@@ -74,12 +74,14 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
             if (host != null && aliases != null) {
                 List<String> al = Arrays.asList(aliases);
                 Optional<String> theFirst = al.stream().findFirst();
-                String first = al.stream().filter(alias -> RegexPool.apply(host).matches(alias)).findFirst().orElse(theFirst.get());
+                String first = al.stream().filter(alias -> RegexPool.apply(alias).matches(host)).findFirst().orElse(theFirst.get());
+                DynamicSSLEngineProvider.logger().underlyingLogger().debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
                 return first;
             } else {
                 return this.chooseServerAlias(s, p, (Socket) null);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             DynamicSSLEngineProvider.logger().underlyingLogger().error("Error while chosing server alias", e);
             return this.chooseServerAlias(s, p, (Socket) null);
         }
