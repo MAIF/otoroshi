@@ -135,12 +135,12 @@ export class TopBar extends Component {
           label: 'Global auth. configs',
           value: 'auth-configs',
         });
-        // options.push({
-        //   action: () => (window.location.href = '/bo/dashboard/certificates'),
-        //   env: <span className="fa fa-certificate" />,
-        //   label: 'SSL Certificates',
-        //   value: 'certificates',
-        // });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/certificates'),
+          env: <span className="fa fa-certificate" />,
+          label: 'SSL Certificates',
+          value: 'certificates',
+        });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
           env: (
@@ -282,9 +282,9 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/auth-configs">
                       <span className="glyphicon glyphicon-lock" /> Global auth. configs
                     </a>
-                    {/*<a href="/bo/dashboard/certificates">
+                    <a href="/bo/dashboard/certificates">
                       <span className="fa fa-certificate" /> SSL Certificates
-                    </a>*/}
+                    </a>
                   </li>
                   <li>
                     <a href="/bo/dashboard/clever">

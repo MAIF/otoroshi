@@ -203,7 +203,16 @@ object DynamicSSLEngineProvider {
           logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
         } else {
           logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
-          keyStore.setKeyEntry(cert.domain,
+          val domain = Try {
+            certificateChain.head
+              .getSubjectDN.getName
+              .split(",")
+              .map(_.trim)
+              .find(_.toLowerCase().startsWith("cn="))
+              .map(_.replace("CN=", "").replace("cn=", ""))
+              .getOrElse(cert.domain)
+          }.toOption.getOrElse(cert.domain)
+          keyStore.setKeyEntry(domain,
                                key,
                                cert.password.getOrElse("").toCharArray,
                                certificateChain.toArray[java.security.cert.Certificate])
