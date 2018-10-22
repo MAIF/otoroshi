@@ -17,6 +17,16 @@ class CertificateInfos extends Component {
           this.setState({ cert: null, error: cert.error });
         } else {
           this.setState({ cert, error: null });
+          const domain = this.props.rawValue.domain;
+          const rawCopy = { ...this.props.rawValue };
+          if (!domain) {
+            rawCopy.domain = cert.domain;
+            this.props.rawOnChange(rawCopy);
+          }
+          if (domain && domain !== cert.domain) {
+            rawCopy.domain = cert.domain;
+            this.props.rawOnChange(rawCopy);
+          }
         }
       })
       .catch(e => {
@@ -173,10 +183,12 @@ class CertificateValid extends Component {
 }
 
 export class CertificatesPage extends Component {
+
   formSchema = {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     domain: {
       type: 'string',
+      disabled: true,
       props: { label: 'Certificate domain', placeholder: 'www.foo.bar' },
     },
     selfCert: {

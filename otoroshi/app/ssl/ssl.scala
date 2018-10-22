@@ -320,6 +320,7 @@ object CertificateData {
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
     val cert = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
+    val domain: String = Option(cert.getSubjectDN.getName).flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN="))).map(_.replace("CN=", "")).getOrElse(cert.getSubjectDN.getName)
     Json.obj(
       "issuerDN"     -> cert.getIssuerDN.getName,
       "notAfter"     -> cert.getNotAfter.getTime,
@@ -329,6 +330,7 @@ object CertificateData {
       "sigAlgOID"    -> cert.getSigAlgOID,
       "signature"    -> new String(encoder.encode(cert.getSignature)),
       "subjectDN"    -> cert.getSubjectDN.getName,
+      "domain"       -> domain,
       "version"      -> cert.getVersion,
       "type"         -> cert.getType,
       "publicKey"    -> new String(encoder.encode(cert.getPublicKey.getEncoded)),
