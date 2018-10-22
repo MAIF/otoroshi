@@ -701,7 +701,6 @@ export class DangerZonePage extends Component {
 
 class BackOfficeAuthButtons extends Component {
   render() {
-    console.log(this.props);
     return (
       <div className="form-group">
         <label className="col-xs-12 col-sm-2 control-label" />
