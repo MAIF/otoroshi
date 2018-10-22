@@ -372,6 +372,18 @@ export class ServicePage extends Component {
       .then(d => console.log(d));
   };
 
+  canaryToStandard = () => {
+    if (this.state.service.canary.enabled && this.state.service.canary.targets.length > 0) {
+      const newService = this.state.service;
+      newService.targets = newService.canary.targets;
+      newService.root = newService.canary.root;
+      newService.canary.targets = [];
+      newService.canary.root = '/';
+      newService.canary.enabled = false;
+      this.setState({ service: newService });
+    }
+  };
+
   render() {
     if (!this.state.service) return null;
     const propsDisabled = { disabled: true };
@@ -1113,6 +1125,14 @@ export class ServicePage extends Component {
               onChange={e => this.changeTheValue('canary.root', e)}
             />
             <CanaryCampaign serviceId={this.state.service.id} />
+            <div className="form-group">
+              <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label"></label>
+              <div className="col-sm-10" style={{ paddingTop: 5 }}>
+                <button type="button" className="btn btn-success btn-xs" onClick={this.canaryToStandard}>
+                  <i className="fa fa-twitter" /> Use canary targets as standard targets
+                </button>
+              </div>
+            </div>
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
