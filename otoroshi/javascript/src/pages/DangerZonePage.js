@@ -407,6 +407,10 @@ export class DangerZonePage extends Component {
         help: 'The port on which StatsD agent is listening (default is 8125)',
       },
     },
+    backOfficeAuthButtons: {
+      type: BackOfficeAuthButtons,
+      props: {}
+    }
   };
 
   formFlow = [
@@ -452,6 +456,7 @@ export class DangerZonePage extends Component {
     'statsdConfig.port',
     '>>>Backoffice auth. settings',
     'backOfficeAuthRef',
+    'backOfficeAuthButtons',
     '>>>Mailgun settings',
     'mailGunSettings.apiKey',
     'mailGunSettings.domain',
@@ -688,6 +693,35 @@ export class DangerZonePage extends Component {
           </div>
         </form>
         <hr />
+      </div>
+    );
+  }
+}
+
+
+class BackOfficeAuthButtons extends Component {
+  render() {
+    console.log(this.props);
+    return (
+      <div className="form-group">
+        <label className="col-xs-12 col-sm-2 control-label" />
+        <div className="col-sm-10">
+          {!this.props.rawValue.backOfficeAuthRef && (
+            <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
+              <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
+            </a>
+          )}
+          {this.props.rawValue.backOfficeAuthRef && (
+            <a
+              href={`/bo/dashboard/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
+              className="btn btn-sm btn-success">
+              <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
+            </a>
+          )}
+          <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
+            <i className="glyphicon glyphicon-link" /> all auth. config.
+          </a>
+        </div>
       </div>
     );
   }
