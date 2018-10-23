@@ -56,7 +56,7 @@ function runSystemCommand(command, args, location, env = {}) {
   return echoReadable(source.stdout);
 }
 
-function runScript(script, where, env) {
+function runScript(script, where, env = {}) {
   const source = spawn(script, [], {
     cwd: where,
     shell: true,
@@ -85,16 +85,38 @@ async function buildVersion(version, where, releaseDir) {
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/fmt.sh')], where);
   // clean
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'clean'], where);
+  // build ui
+  await runScript(`
+    source $NVM_TOOL
+    nvm install 8.6.0
+    nvm use 8.6.0
+    cd ${where}/otoroshi/javascript
+    yarn install
+    cd ${where}
+    sh ${where}/scripts/build.sh ui
+  `, where);
+  // build bootstrap server
+  await runScript(`
+    cd ${where}/otoroshi
+    sbt ";clean;compile;assembly"
+  `, where);
+  await runScript(`
+    cd ${where}/otoroshi/target/scala-2.12/
+    java -jar otoroshi.jar &
+    sleep 10
+    curl http://otoroshi.foo.bar:8080/api/swagger.json > ${releaseDir}/swagger.json
+    cp ${releaseDir}/swagger.json ${where}/manual/src/main/paradox/code/
+    ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
+    rm -f ./RUNNING_PID
+  `, where);
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
-  // build ui
-  await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'ui'], where, {
-    PATH: process.env.PATH.replace('10.11.0', '8.6.0')
-  });
-  // build server
-  await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
-  // TODO: extract swagger and copy it in manual
-  // TODO: run tests
+  // run test and build server
+  await runScript(`
+    cd ${where}/otoroshi
+    sbt ";test;dist;assembly"
+  `, where);
+  // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/universal/otoroshi-${version}.zip`),  path.resolve(where, releaseDir)], where);
 }
@@ -242,9 +264,9 @@ async function createGithubRelease(version) {
 }
 
 async function installDependencies(location) {
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './otoroshi/javascript'), {
-    PATH: process.env.PATH.replace('10.11.0', '8.6.0')
-  });
+  // await runSystemCommand('yarn', ['install'], path.resolve(location, './otoroshi/javascript'), {
+  //   PATH: process.env.PATH.replace('10.11.0', '8.6.0')
+  // });
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
   await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/clevercloud'));
