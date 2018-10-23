@@ -24,8 +24,6 @@ fmt_connectors () {
   yarn prettier
   cd $LOCATION/connectors/common
   yarn prettier
-  cd $LOCATION/connectors/elasticsearch
-  yarn prettier
   cd $LOCATION/connectors/kubernetes
   yarn prettier
   cd $LOCATION/connectors/rancher
