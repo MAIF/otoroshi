@@ -263,10 +263,7 @@ async function createGithubRelease(version) {
   });
 }
 
-async function installDependencies(location) {
-  // await runSystemCommand('yarn', ['install'], path.resolve(location, './otoroshi/javascript'), {
-  //   PATH: process.env.PATH.replace('10.11.0', '8.6.0')
-  // });
+async function installDependencies(location) {s
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
   await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/clevercloud'));
