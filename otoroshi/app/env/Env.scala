@@ -447,8 +447,10 @@ class Env(val configuration: Configuration,
         .findAll()(otoroshiExecutionContext, this)
         .map { certs =>
           if (certs.isEmpty) {
+            logger.warn(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
             FakeKeyStore.generateCert(s"*.${this.domain}").save()(otoroshiExecutionContext, this)
             if (env.toLowerCase() == "dev") {
+              logger.warn(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
               FakeKeyStore.generateCert(s"*.dev.${this.domain}").save()(otoroshiExecutionContext, this)
             }
           }
