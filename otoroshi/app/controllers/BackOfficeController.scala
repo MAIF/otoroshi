@@ -618,7 +618,19 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
       Try {
         Json.parse(body.utf8String).\("host").asOpt[String] match {
-          case Some(host) => Ok(FakeKeyStore.generateCert(host).toJson)
+          case Some(host) => {
+            env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).map {
+              case None => NotFound(Json.obj("error" -> s"No CA found"))
+              case Some(ca) => {
+                val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+                keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+                val keyPair = keyPairGenerator.generateKeyPair()
+                val cert = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
+                Ok(Cert(cert, keyPair, Some(ca.id)).enrich().toJson)
+              }
+            }
+            Ok(FakeKeyStore.generateCert(host).toJson)
+          }
           case None       => BadRequest(Json.obj("error" -> s"No host provided"))
         }
       } recover {

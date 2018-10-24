@@ -100,11 +100,33 @@ class CertificateInfos extends Component {
 }
 
 class Commands extends Component {
+
+  createCASigned = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const value = prompt('Certificate hostname');
+    if (value && value.trim() !== '') {
+      BackOfficeServices.caSignedCert(id, value).then(cert => {
+        this.props.setTitle(`Create a new certificate`);
+        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+        this.props.table().setState({ currentItem: cert, showAddForm: true });
+      });
+    }
+  }
+
   render() {
     const certIsEmpty = !(this.props.rawValue.chain && this.props.rawValue.privateKey);
     const canRenew = this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+        {this.props.rawValue.ca && <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={e => {
+            this.createCASigned(e, this.props.rawValue.id);
+          }}>
+          <i className="glyphicon glyphicon-plus-sign" /> Create cert.
+        </button>}
         {canRenew && <button
           type="button"
           className="btn btn-sm btn-success"
@@ -210,7 +232,10 @@ export class CertificatesPage extends Component {
     },
     commands: {
       type: Commands,
-      props: {},
+      props: {
+        setTitle: (t) => this.props.setTitle(t),
+        table: () => this.table
+      },
     },
     infos: {
       type: CertificateInfos,
@@ -249,6 +274,10 @@ export class CertificatesPage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`All certificates (experimental)`);
+    if (window.history.state && window.history.state.cert) {
+      this.props.setTitle(`Create a new certificate`);
+      this.table.setState({ currentItem: window.history.state.cert, showAddForm: true });
+    }
   }
 
   createSelfSigned = () => {

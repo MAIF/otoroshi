@@ -127,6 +127,8 @@ case class Cert(
 
 object Cert {
 
+  val OtoroshiCA = "otoroshi-ca"
+
   lazy val logger = Logger("otoroshi-cert")
 
   def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String]): Cert = {

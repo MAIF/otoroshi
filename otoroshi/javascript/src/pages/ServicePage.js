@@ -384,6 +384,14 @@ export class ServicePage extends Component {
     }
   };
 
+  createSelfSignedCert = () => {
+    const line = this.state.service.line;
+    const value = this.state.service.subdomain + (line ? (line === 'prod' ? '' : '.' + line): '') + '.' + this.state.service.domain
+    BackOfficeServices.selfSignedCert(value).then(cert => {
+      window.history.pushState({ cert: cert }, '', `/bo/dashboard/certificates/add`);
+    });
+  }
+
   render() {
     if (!this.state.service) return null;
     const propsDisabled = { disabled: true };
@@ -611,6 +619,8 @@ export class ServicePage extends Component {
                   }}>
                   {this.state.freeDomain ? 'exposed domain assistant' : 'exposed domain free input'}
                 </button>
+                {!this.state.neverSaved && <button type="button" onClick={this.createSelfSignedCert} className="btn btn-xs btn-info"><i className="glyphicon glyphicon-plus-sign"/> Create self signed cert.</button>}
+                {!this.state.neverSaved && <button type="button" disabled className="btn btn-xs btn-info"><i className="glyphicon glyphicon-plus-sign"/> Create Let's Encrypt cert.</button>}
               </div>
             </div>
             {this.state.service.env === 'prod' &&
