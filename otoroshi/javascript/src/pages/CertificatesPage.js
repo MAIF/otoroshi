@@ -102,9 +102,20 @@ class CertificateInfos extends Component {
 class Commands extends Component {
   render() {
     const certIsEmpty = !(this.props.rawValue.chain && this.props.rawValue.privateKey);
+    const canRenew = this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-        {certIsEmpty && <button
+        {canRenew && <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={e => {
+            BackOfficeServices.renewCert(this.props.rawValue.id).then(cert => {
+              this.props.rawOnChange(cert);
+            });
+          }}>
+          <i className="glyphicon glyphicon-repeat" /> Renew
+        </button>}
+        {false && <button
           type="button"
           className="btn btn-sm btn-success"
           onClick={e => {
@@ -234,7 +245,7 @@ export class CertificatesPage extends Component {
     { title: 'To', content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss') },
   ];
 
-  formFlow = ['id', 'valid', 'chain', 'privateKey', 'infos'];
+  formFlow = ['id', 'commands', 'valid', 'chain', 'privateKey', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates (experimental)`);

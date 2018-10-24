@@ -935,3 +935,15 @@ export function caCert(cn) {
     body: JSON.stringify({ cn }),
   }).then(r => r.json());
 }
+
+export function renewCert(id) {
+  return fetch(`/bo/api/certificates/${id}/_renew`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: '',
+  }).then(r => r.json());
+}

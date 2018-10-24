@@ -1,5 +1,6 @@
 package controllers
 
+import java.security.cert.X509Certificate
 import java.security.{KeyPair, KeyPairGenerator}
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -681,7 +682,41 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
   }
 
-  def renewSelfSignedCert() = ???
-  def renewCASignedCert() = ???
-  def renewCA() = ???
+  def renew(id: String) = BackOfficeActionAuth.async { ctx =>
+    env.datastores.certificatesDataStore.findById(id).flatMap {
+      case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+      case Some(original) if original.ca => {
+        val keyPair: KeyPair = original.keyPair
+        val cert: X509Certificate = FakeKeyStore.createCA(original.subject, FiniteDuration(365, TimeUnit.DAYS), keyPair)
+        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        certificate.save().map { _ =>
+          Ok(certificate.toJson)
+        }
+      }
+      case Some(original) if original.selfSigned => {
+        val keyPair: KeyPair = original.keyPair
+        val cert: X509Certificate = FakeKeyStore.createSelfSignedCertificate(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair)
+        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        certificate.save().map { _ =>
+          Ok(certificate.toJson)
+        }
+      }
+      case Some(original) if original.caRef.isDefined => {
+        env.datastores.certificatesDataStore.findById(original.caRef.get).flatMap {
+          case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+          case Some(ca) => {
+            val keyPair: KeyPair = original.keyPair
+            val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
+            val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+            certificate.save().map { _ =>
+              Ok(certificate.toJson)
+            }
+          }
+        }
+      }
+      case _ => {
+        FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad renew")))
+      }
+    }
+  }
 }
