@@ -23,6 +23,7 @@ POST    /bo/simple/login                                      controllers.U2FCon
 DELETE  /bo/simple/admins/:username                           controllers.U2FController.deleteAdmin(username)
 
 # BackOffice URLs
+GET     /bo/cacert                                            controllers.BackOfficeController.caCert()
 GET     /bo/dashboard                                         controllers.BackOfficeController.dashboard
 GET     /bo/dashboard/*ui                                     controllers.BackOfficeController.dashboardRoutes(ui)
 GET     /bo/api/lines/:lineId/:serviceId/docframe             controllers.BackOfficeController.documentationFrame(lineId, serviceId)

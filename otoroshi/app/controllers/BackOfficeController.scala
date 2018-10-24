@@ -1,6 +1,8 @@
 package controllers
 
+import java.security.KeyPairGenerator
 import java.util.Base64
+import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
@@ -24,7 +26,8 @@ import utils.LocalCache
 import security._
 import org.mindrot.jbcrypt.BCrypt
 import akka.http.scaladsl.util.FastFuture._
-import ssl.{Cert, CertificateData, FakeKeyStore}
+import ssl.FakeKeyStore.KeystoreSettings
+import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -623,5 +626,35 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
       } get
     }
+  }
+
+  def caCert() = Action {
+    Try {
+      val host = "*.foo.bar"
+      val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+      keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+      val keyPair = keyPairGenerator.generateKeyPair()
+      val keyPair2 = keyPairGenerator.generateKeyPair()
+      val ca   = FakeKeyStore.createCA("CN=ROOT", FiniteDuration(30, TimeUnit.DAYS), keyPair)
+      val leaf = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(30, TimeUnit.DAYS), keyPair2, ca, keyPair)
+      Ok(s"""${PemHeaders.BeginCertificate}
+            |${Base64.getEncoder.encodeToString(leaf.getEncoded)}
+            |${PemHeaders.EndCertificate}
+            |${PemHeaders.BeginCertificate}
+            |${Base64.getEncoder.encodeToString(ca.getEncoded)}
+            |${PemHeaders.EndCertificate}
+            |${PemHeaders.BeginPrivateKey}
+            |${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}
+            |${PemHeaders.EndPrivateKey}""".stripMargin)
+      Ok(s"""${PemHeaders.BeginCertificate}
+        |${Base64.getEncoder.encodeToString(ca.getEncoded)}
+        |${PemHeaders.EndCertificate}
+        |${PemHeaders.BeginPrivateKey}
+        |${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}
+        |${PemHeaders.EndPrivateKey}""".stripMargin)
+    } recover {
+      case e =>
+        InternalServerError(e.getMessage)
+    } get
   }
 }

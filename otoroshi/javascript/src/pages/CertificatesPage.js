@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, TextInput, TextareaInput, LabelInput } from '../components/inputs';
+import { Table, TextInput, TextareaInput, LabelInput, BooleanInput } from '../components/inputs';
 import moment from 'moment';
 import faker from 'faker';
 
@@ -30,7 +30,6 @@ class CertificateInfos extends Component {
         }
       })
       .catch(e => {
-        console.log('update: ffuuuuu');
         this.setState({ cert: null, error: e });
       });
   };
@@ -57,10 +56,16 @@ class CertificateInfos extends Component {
       <div>
         <TextInput label="Subject" disabled={true} value={this.state.cert.subjectDN} />
         <TextInput label="Issuer" disabled={true} value={this.state.cert.issuerDN} />
-        <TextInput
+        <TextInput label="Domain" disabled={true} value={this.state.cert.domain} />
+        <BooleanInput
           label="Self signed"
           disabled={true}
-          value={this.state.cert.selfSigned ? 'yes' : 'no'}
+          value={this.state.cert.selfSigned}
+        />
+        <BooleanInput
+          label="CA"
+          disabled={true}
+          value={this.state.cert.ca}
         />
         <TextInput
           label="Serial number"
@@ -214,11 +219,16 @@ export class CertificatesPage extends Component {
   };
 
   columns = [
-    { title: 'Id', content: item => item.id },
+    { title: 'Subject', content: item => item.subject },
     { title: 'Domain', content: item => item.domain },
+    { title: 'Valid', content: item => item.valid ? 'yes' : 'no' },
+    { title: 'CA', content: item => item.ca ? 'yes' : 'no' },
+    { title: 'Self Signed', content: item => item.selfSigned ? 'yes' : 'no' },
+    { title: 'From', content: item => moment(item.from).format('MM/DD/YYYY HH:mm:ss') },
+    { title: 'To', content: item => moment(item.to).format('MM/DD/YYYY HH:mm:ss') },
   ];
 
-  formFlow = ['id', 'domain', 'selfCert', 'valid', 'chain', 'privateKey', 'infos'];
+  formFlow = ['id', 'selfCert', 'valid', 'chain', 'privateKey', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates (experimental)`);

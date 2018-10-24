@@ -8,6 +8,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}

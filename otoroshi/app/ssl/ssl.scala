@@ -14,12 +14,14 @@ import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
 
+import akka.util.ByteString
 import com.google.common.base.Charsets
 import env.Env
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
 import javax.net.ssl._
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.core.ApplicationProvider
@@ -35,13 +37,43 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 // TODO: doc + swagger
-case class Cert(id: String, domain: String, chain: String, privateKey: String) {
+case class Cert(
+    id: String,
+    chain: String,
+    privateKey: String,
+    domain: String = "--",
+    selfSigned: Boolean = false,
+    ca: Boolean = false,
+    valid: Boolean = false,
+    subject: String = "--",
+    from: DateTime = DateTime.now(),
+    to: DateTime = DateTime.now()
+) {
   def password: Option[String]                          = None
-  def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.certificatesDataStore.set(this)
+  def save()(implicit ec: ExecutionContext, env: Env)   = {
+    val isCertValid = this.isValid()
+    val meta = this.metadata.get
+    val current = this.copy(
+      domain = (meta \ "domain").asOpt[String].getOrElse("--"),
+      selfSigned = (meta \ "selfSigned").asOpt[Boolean].getOrElse(false),
+      ca = (meta \ "ca").asOpt[Boolean].getOrElse(false),
+      valid = isCertValid,
+      subject = (meta \ "subjectDN").as[String],
+      from = (meta \ "notBefore").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+      to = (meta \ "notAfter").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+    )
+    env.datastores.certificatesDataStore.set(current)
+  }
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.exists(this)
   def toJson                                            = Cert.toJson(this)
-  def isValid(): Boolean =
+  def metadata: Option[JsValue] = {
+    chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
+      val content: String = cert.replace(PemHeaders.EndCertificate, "")
+      CertificateData(content)
+    }
+  }
+  def isValid(): Boolean = {
     Try {
       val keyStore: KeyStore = KeyStore.getInstance("JKS")
       keyStore.load(null, null)
@@ -58,9 +90,9 @@ case class Cert(id: String, domain: String, chain: String, privateKey: String) {
             false
           } else {
             keyStore.setKeyEntry(this.id,
-                                 key,
-                                 this.password.getOrElse("").toCharArray,
-                                 certificateChain.toArray[java.security.cert.Certificate])
+              key,
+              this.password.getOrElse("").toCharArray,
+              certificateChain.toArray[java.security.cert.Certificate])
             true
           }
       }
@@ -69,6 +101,7 @@ case class Cert(id: String, domain: String, chain: String, privateKey: String) {
         DynamicSSLEngineProvider.logger.error("Error while checking certificate validity", e)
         false
     } getOrElse false
+  }
 }
 
 object Cert {
@@ -80,7 +113,13 @@ object Cert {
       "id"         -> cert.id,
       "domain"     -> cert.domain,
       "chain"      -> cert.chain,
-      "privateKey" -> cert.privateKey
+      "privateKey" -> cert.privateKey,
+      "selfSigned" -> cert.selfSigned,
+      "ca"         -> cert.ca,
+      "valid"      -> cert.valid,
+      "subject"    -> cert.subject,
+      "from"       -> cert.from.getMillis,
+      "to"         -> cert.to.getMillis,
     )
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
@@ -88,7 +127,13 @@ object Cert {
           id = (json \ "id").as[String],
           domain = (json \ "domain").as[String],
           chain = (json \ "chain").as[String],
-          privateKey = (json \ "privateKey").as[String]
+          privateKey = (json \ "privateKey").as[String],
+          selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
+          ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
+          valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
+          subject = (json \ "subject").asOpt[String].getOrElse("--"),
+          from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+          to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now())
         )
       } map {
         case sd => JsSuccess(sd)
@@ -321,6 +366,8 @@ object noCATrustManager extends X509TrustManager {
 
 object CertificateData {
 
+  import collection.JavaConverters._
+
   private val encoder                                = Base64.getEncoder
   private val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
 
@@ -345,7 +392,23 @@ object CertificateData {
       "version"      -> cert.getVersion,
       "type"         -> cert.getType,
       "publicKey"    -> new String(encoder.encode(cert.getPublicKey.getEncoded)),
-      "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert)
+      "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert),
+      "constraints"  -> cert.getBasicConstraints,
+      "ca"           -> (cert.getBasicConstraints != -1),
+      "cExtensions"  -> JsArray(Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+        val ext: String = Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
+        Json.obj(
+          "oid" -> oid,
+          "value" -> ext
+        )
+      }),
+      "ncExtensions" -> JsArray(Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+        val ext: String = Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
+        Json.obj(
+          "oid" -> oid,
+          "value" -> ext
+        )
+      })
     )
   }
 }
@@ -397,27 +460,6 @@ object FakeKeyStore {
     keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
     val keyPair = keyPairGenerator.generateKeyPair()
     val cert    = createSelfSignedCertificate(host, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-
-    // Try {
-    //   val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-    //   keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-    //   val keyPair = keyPairGenerator.generateKeyPair()
-    //   val keyPair2 = keyPairGenerator.generateKeyPair()
-    //   val ca    = createCA("CN=ROOT", FiniteDuration(30, TimeUnit.DAYS), keyPair)
-    //   val leaf    = createCertificateFromCA(s"CN=$host", FiniteDuration(30, TimeUnit.DAYS), keyPair2, ca, keyPair)
-    //   println(PemHeaders.BeginCertificate)
-    //   println(Base64.getEncoder.encodeToString(leaf.getEncoded))
-    //   println(PemHeaders.EndCertificate)
-    //   println(PemHeaders.BeginCertificate)
-    //   println(Base64.getEncoder.encodeToString(ca.getEncoded))
-    //   println(PemHeaders.EndCertificate)
-    //   println(PemHeaders.BeginPrivateKey)
-    //   println(Base64.getEncoder.encodeToString(keyPair2.getPrivate.getEncoded))
-    //   println(PemHeaders.EndPrivateKey)
-    // } recover {
-    //   case e => e.printStackTrace()
-    // }
-
     (cert, keyPair)
   }
 
@@ -483,7 +525,7 @@ object FakeKeyStore {
     certInfo.set(X509CertInfo.VALIDITY, validity)
 
     // Subject and issuer
-    val owner = new X500Name(s"$host")
+    val owner = new X500Name(s"CN=$host")
     certInfo.set(X509CertInfo.SUBJECT, owner)
     certInfo.set(X509CertInfo.ISSUER, ca.getSubjectDN)
 

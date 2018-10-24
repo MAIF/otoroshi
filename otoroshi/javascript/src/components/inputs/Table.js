@@ -97,8 +97,8 @@ export class Table extends Component {
       } else if (action === 'edit') {
         const item = this.props.parentProps.params.titem;
         this.props.fetchItems().then(data => {
-          console.log(this.props.parentProps.params);
-          console.log(data);
+          //console.log(this.props.parentProps.params);
+          //console.log(data);
           const row = data.filter(d => this.props.extractKey(d) === item)[0];
           this.showEditForm(null, row);
         });
