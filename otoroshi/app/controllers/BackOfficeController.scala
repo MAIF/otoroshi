@@ -1,6 +1,6 @@
 package controllers
 
-import java.security.KeyPairGenerator
+import java.security.{KeyPair, KeyPairGenerator}
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
@@ -602,7 +602,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
       Try {
         Cert.fromJsonSafe(Json.parse(body.utf8String)) match {
-          case JsSuccess(cert, _) => Ok(Json.obj("valid"         -> cert.isValid()))
+          case JsSuccess(cert, _) => Ok(Json.obj("valid"         -> cert.isValid))
           case JsError(e)         => BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
         }
       } recover {
@@ -628,33 +628,60 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
   }
 
-  def caCert() = Action {
-    Try {
-      val host = "*.foo.bar"
-      val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-      keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-      val keyPair = keyPairGenerator.generateKeyPair()
-      val keyPair2 = keyPairGenerator.generateKeyPair()
-      val ca   = FakeKeyStore.createCA("CN=ROOT", FiniteDuration(30, TimeUnit.DAYS), keyPair)
-      val leaf = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(30, TimeUnit.DAYS), keyPair2, ca, keyPair)
-      Ok(s"""${PemHeaders.BeginCertificate}
-            |${Base64.getEncoder.encodeToString(leaf.getEncoded)}
-            |${PemHeaders.EndCertificate}
-            |${PemHeaders.BeginCertificate}
-            |${Base64.getEncoder.encodeToString(ca.getEncoded)}
-            |${PemHeaders.EndCertificate}
-            |${PemHeaders.BeginPrivateKey}
-            |${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}
-            |${PemHeaders.EndPrivateKey}""".stripMargin)
-      Ok(s"""${PemHeaders.BeginCertificate}
-        |${Base64.getEncoder.encodeToString(ca.getEncoded)}
-        |${PemHeaders.EndCertificate}
-        |${PemHeaders.BeginPrivateKey}
-        |${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}
-        |${PemHeaders.EndPrivateKey}""".stripMargin)
-    } recover {
-      case e =>
-        InternalServerError(e.getMessage)
-    } get
+  def caCert(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
+      Try {
+        Json.parse(body.utf8String).\("cn").asOpt[String] match {
+          case Some(cn) => {
+            val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+            keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+            val keyPair = keyPairGenerator.generateKeyPair()
+            val ca   = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), keyPair)
+            val cert = Cert(
+              id = IdGenerator.token(32),
+              chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}",
+              privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+              caRef = None
+            ).enrich()
+            Ok(cert.toJson)
+          }
+          case None       => BadRequest(Json.obj("error" -> s"No host provided"))
+        }
+      } recover {
+        case e =>
+          e.printStackTrace()
+          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+      } get
+    }
   }
+
+  def caSignedCert(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+      Try {
+        (Json.parse(body.utf8String).\("id").asOpt[String], Json.parse(body.utf8String).\("host").asOpt[String]) match {
+          case (Some(id), Some(host)) => {
+            env.datastores.certificatesDataStore.findById(id).map {
+              case None => NotFound(Json.obj("error" -> s"No CA found"))
+              case Some(ca) => {
+                val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+                keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+                val keyPair = keyPairGenerator.generateKeyPair()
+                val cert = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
+                Ok(Cert(cert, keyPair, Some(ca.id)).enrich().toJson)
+              }
+            }
+          }
+          case _ => FastFuture.successful(BadRequest(Json.obj("error" -> s"No host provided")))
+        }
+      } recover {
+        case e =>
+          e.printStackTrace()
+          FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
+      } get
+    }
+  }
+
+  def renewSelfSignedCert() = ???
+  def renewCASignedCert() = ???
+  def renewCA() = ???
 }

@@ -16,16 +16,16 @@ const OffSwitch = props => (
 export class BooleanInput extends Component {
   toggleOff = e => {
     if (e && e.preventDefault) e.preventDefault();
-    this.props.onChange(false);
+    if (!this.props.disabled) this.props.onChange(false);
   };
 
   toggleOn = e => {
     if (e && e.preventDefault) e.preventDefault();
-    this.props.onChange(true);
+    if (!this.props.disabled) this.props.onChange(true);
   };
 
   toggle = value => {
-    this.props.onChange(value);
+    if (!this.props.disabled) this.props.onChange(value);
   };
 
   render() {
@@ -58,17 +58,17 @@ export class SimpleBooleanInput extends Component {
   toggleOff = e => {
     if (e && e.preventDefault) e.preventDefault();
     console.log('off');
-    this.props.onChange(false);
+    if (!this.props.disabled) this.props.onChange(false);
   };
 
   toggleOn = e => {
     if (e && e.preventDefault) e.preventDefault();
     console.log('on');
-    this.props.onChange(true);
+    if (!this.props.disabled) this.props.onChange(true);
   };
 
   toggle = value => {
-    this.props.onChange(value);
+    if (!this.props.disabled) this.props.onChange(value);
   };
 
   render() {

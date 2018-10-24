@@ -99,11 +99,12 @@ class CertificateInfos extends Component {
   }
 }
 
-class SelfSignedCert extends Component {
+class Commands extends Component {
   render() {
+    const certIsEmpty = !(this.props.rawValue.chain && this.props.rawValue.privateKey);
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-        <button
+        {certIsEmpty && <button
           type="button"
           className="btn btn-sm btn-success"
           onClick={e => {
@@ -115,7 +116,7 @@ class SelfSignedCert extends Component {
             }
           }}>
           <i className="fas fa-screwdriver" /> Generate self signed cert.
-        </button>
+        </button>}
       </div>
     );
   }
@@ -196,8 +197,8 @@ export class CertificatesPage extends Component {
       disabled: true,
       props: { label: 'Certificate domain', placeholder: 'www.foo.bar' },
     },
-    selfCert: {
-      type: SelfSignedCert,
+    commands: {
+      type: Commands,
       props: {},
     },
     infos: {
@@ -219,19 +220,59 @@ export class CertificatesPage extends Component {
   };
 
   columns = [
+    { title: 'Domain', content: item => !item.ca ? item.domain : '' },
     { title: 'Subject', content: item => item.subject },
-    { title: 'Domain', content: item => item.domain },
-    { title: 'Valid', content: item => item.valid ? 'yes' : 'no' },
-    { title: 'CA', content: item => item.ca ? 'yes' : 'no' },
-    { title: 'Self Signed', content: item => item.selfSigned ? 'yes' : 'no' },
-    { title: 'From', content: item => moment(item.from).format('MM/DD/YYYY HH:mm:ss') },
-    { title: 'To', content: item => moment(item.to).format('MM/DD/YYYY HH:mm:ss') },
+    { title: 'Valid', content: item => {
+      const now = Date.now();
+      return (item.valid && (now > item.from && now < item.to)) ? 'yes' : 'no';
+    }, style: { textAlign: 'center', width: 70 }, notFilterable: true },
+    { title: 'CA', content: item => item.ca ? (
+      <button type="button" className="btn btn-primary btn-sm" onClick={e => this.createCASigned(e, item.id)}><i className="glyphicon glyphicon-plus-sign" /></button>
+    ) : 'no', style: { textAlign: 'center', width: 70 }, notFilterable: true },
+    { title: 'Self signed', content: item => item.selfSigned ? 'yes' : 'no', style: { textAlign: 'center', width: 100 }, notFilterable: true },
+    { title: 'From', content: item => moment(item.from).format('DD/MM/YYYY HH:mm:ss') },
+    { title: 'To', content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss') },
   ];
 
-  formFlow = ['id', 'selfCert', 'valid', 'chain', 'privateKey', 'infos'];
+  formFlow = ['id', 'valid', 'chain', 'privateKey', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates (experimental)`);
+  }
+
+  createSelfSigned = () => {
+    const value = prompt('Certificate hostname');
+    if (value && value.trim() !== '') {
+      BackOfficeServices.selfSignedCert(value).then(cert => {
+        this.props.setTitle(`Create a new certificate`);
+        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+        this.table.setState({ currentItem: cert, showAddForm: true });
+      });
+    }
+  }
+
+  createCASigned = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const value = prompt('Certificate hostname');
+    if (value && value.trim() !== '') {
+      BackOfficeServices.caSignedCert(id, value).then(cert => {
+        this.props.setTitle(`Create a new certificate`);
+        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+        this.table.setState({ currentItem: cert, showAddForm: true });
+      });
+    }
+  }
+
+  createCA = () => {
+    const value = prompt('Certificate Authority CN');
+    if (value && value.trim() !== '') {
+      BackOfficeServices.caCert(value).then(cert => {
+        this.props.setTitle(`Create a new Certificate Authority`);
+        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+        this.table.setState({ currentItem: cert, showAddForm: true });
+      });
+    }
   }
 
   render() {
@@ -258,6 +299,15 @@ export class CertificatesPage extends Component {
         showLink={true}
         rowNavigation={true}
         extractKey={item => item.id}
+        injectTable={table => this.table = table}
+        injectTopBar={() => (
+          <div className="btn-group">
+            <button type="button" onClick={this.createSelfSigned} style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Self signed cert.</button>
+            <button type="button" onClick={this.createCASigned}   style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> CA signed cert.</button>
+            <button type="button" onClick={this.createCA}         style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Certificate Authority</button>
+            <button type="button"                                 style={{ marginRight: 0 }} disabled className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Let's encrypt signed cert.</button>
+          </div>
+        )}
       />
     );
   }

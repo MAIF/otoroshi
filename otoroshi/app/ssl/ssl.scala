@@ -41,6 +41,7 @@ case class Cert(
     id: String,
     chain: String,
     privateKey: String,
+    caRef: Option[String],
     domain: String = "--",
     selfSigned: Boolean = false,
     ca: Boolean = false,
@@ -51,29 +52,40 @@ case class Cert(
 ) {
   def password: Option[String]                          = None
   def save()(implicit ec: ExecutionContext, env: Env)   = {
-    val isCertValid = this.isValid()
+    val current = this.enrich()
+    env.datastores.certificatesDataStore.set(current)
+  }
+  def enrich()(implicit ec: ExecutionContext, env: Env)   = {
     val meta = this.metadata.get
-    val current = this.copy(
+    this.copy(
       domain = (meta \ "domain").asOpt[String].getOrElse("--"),
       selfSigned = (meta \ "selfSigned").asOpt[Boolean].getOrElse(false),
       ca = (meta \ "ca").asOpt[Boolean].getOrElse(false),
-      valid = isCertValid,
+      valid = this.isValid,
       subject = (meta \ "subjectDN").as[String],
       from = (meta \ "notBefore").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
-      to = (meta \ "notAfter").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+      to = (meta \ "notAfter").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now())
     )
-    env.datastores.certificatesDataStore.set(current)
   }
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.exists(this)
   def toJson                                            = Cert.toJson(this)
-  def metadata: Option[JsValue] = {
+  lazy val certificate: Option[X509Certificate] = Try {
+    chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
+      val content: String = cert.replace(PemHeaders.EndCertificate, "")
+      val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+      certificateFactory
+        .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(content)))
+        .asInstanceOf[X509Certificate]
+    }
+  }.toOption.flatten
+  lazy val metadata: Option[JsValue] = {
     chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
       val content: String = cert.replace(PemHeaders.EndCertificate, "")
       CertificateData(content)
     }
   }
-  def isValid(): Boolean = {
+  lazy val isValid: Boolean = {
     Try {
       val keyStore: KeyStore = KeyStore.getInstance("JKS")
       keyStore.load(null, null)
@@ -102,17 +114,36 @@ case class Cert(
         false
     } getOrElse false
   }
+  lazy val keyPair: KeyPair = {
+    val privkeySpec = DynamicSSLEngineProvider.readPrivateKey(id, privateKey, None).right.get
+    val privkey: PrivateKey = Try(KeyFactory.getInstance("RSA"))
+      .orElse(Try(KeyFactory.getInstance("DSA")))
+      .map(_.generatePrivate(privkeySpec))
+      .get
+    val pubkey: PublicKey = certificate.get.getPublicKey
+    new KeyPair(pubkey, privkey)
+  }
 }
 
 object Cert {
 
   lazy val logger = Logger("otoroshi-cert")
 
+  def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String]): Cert = {
+    Cert(
+      id = IdGenerator.token(32),
+      chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}",
+      privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      caRef = caRef
+    )
+  }
+
   val _fmt: Format[Cert] = new Format[Cert] {
     override def writes(cert: Cert): JsValue = Json.obj(
       "id"         -> cert.id,
       "domain"     -> cert.domain,
       "chain"      -> cert.chain,
+      "caRef"      -> cert.caRef,
       "privateKey" -> cert.privateKey,
       "selfSigned" -> cert.selfSigned,
       "ca"         -> cert.ca,
@@ -127,6 +158,7 @@ object Cert {
           id = (json \ "id").as[String],
           domain = (json \ "domain").as[String],
           chain = (json \ "chain").as[String],
+          caRef = (json \ "caRef").asOpt[String],
           privateKey = (json \ "privateKey").as[String],
           selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
           ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
@@ -179,7 +211,7 @@ object DynamicSSLEngineProvider {
   )
   private val certificates = new TrieMap[String, Cert]()
 
-  private lazy val currentContext = new AtomicReference[SSLContext](null) //setupContext())
+  private lazy val currentContext = new AtomicReference[SSLContext](setupContext())
   private val currentEnv          = new AtomicReference[Env](null)
 
   def setCurrentEnv(env: Env): Unit = {
@@ -201,8 +233,11 @@ object DynamicSSLEngineProvider {
 
     logger.debug("Setting up SSL Context ")
     val sslContext: SSLContext = SSLContext.getInstance("TLS")
-    val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq)
-    dumpPath.foreach(path => keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD))
+    val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq)//.filterNot(_.ca))
+    dumpPath.foreach { path =>
+      logger.warn(s"Dumping keystore at $dumpPath")
+      keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
+    }
     val keyManagerFactory: KeyManagerFactory =
       Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
     keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
@@ -239,34 +274,44 @@ object DynamicSSLEngineProvider {
     logger.debug(s"Creating keystore ...")
     val keyStore: KeyStore = KeyStore.getInstance("JKS")
     keyStore.load(null, null)
-    certificates.foreach { cert =>
-      readPrivateKey(cert.domain, cert.privateKey, cert.password).foreach { encodedKeySpec: PKCS8EncodedKeySpec =>
-        val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
-          .orElse(Try(KeyFactory.getInstance("DSA")))
-          .map(_.generatePrivate(encodedKeySpec))
-          .get
-        val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
-        if (certificateChain.isEmpty) {
-          logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
-        } else {
-          logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
-          val domain = Try {
-            certificateChain.head
-              .getSubjectDN.getName
-              .split(",")
-              .map(_.trim)
-              .find(_.toLowerCase().startsWith("cn="))
-              .map(_.replace("CN=", "").replace("cn=", ""))
-              .getOrElse(cert.domain)
-          }.toOption.getOrElse(cert.domain)
-          keyStore.setKeyEntry(domain,
-                               key,
-                               cert.password.getOrElse("").toCharArray,
-                               certificateChain.toArray[java.security.cert.Certificate])
-          certificateChain.tail.foreach { cert =>
-            val id = cert.getSerialNumber.toString(16)
-            if (!keyStore.containsAlias(id)) {
-              keyStore.setCertificateEntry(s"ca-$id", cert)
+    certificates.foreach {
+      case cert if cert.ca => {
+        cert.certificate.foreach { certificate =>
+          val id = "ca-" + certificate.getSerialNumber.toString(16)
+          if (!keyStore.containsAlias(id)) {
+            keyStore.setCertificateEntry(id, certificate)
+          }
+        }
+      }
+      case cert => {
+        readPrivateKey(cert.domain, cert.privateKey, cert.password).foreach { encodedKeySpec: PKCS8EncodedKeySpec =>
+          val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
+            .orElse(Try(KeyFactory.getInstance("DSA")))
+            .map(_.generatePrivate(encodedKeySpec))
+            .get
+          val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
+          if (certificateChain.isEmpty) {
+            logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
+          } else {
+            logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
+            val domain = Try {
+              certificateChain.head
+                .getSubjectDN.getName
+                .split(",")
+                .map(_.trim)
+                .find(_.toLowerCase().startsWith("cn="))
+                .map(_.replace("CN=", "").replace("cn=", ""))
+                .getOrElse(cert.domain)
+            }.toOption.getOrElse(cert.domain)
+            keyStore.setKeyEntry(domain,
+              key,
+              cert.password.getOrElse("").toCharArray,
+              certificateChain.toArray[java.security.cert.Certificate])
+            certificateChain.tail.foreach { cert =>
+              val id = "ca-" + cert.getSerialNumber.toString(16)
+              if (!keyStore.containsAlias(id)) {
+                keyStore.setCertificateEntry(id, cert)
+              }
             }
           }
         }
@@ -327,7 +372,7 @@ object DynamicSSLEngineProvider {
     } get
   }
 
-  private def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
+  def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
 }
 
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
@@ -434,7 +479,7 @@ object FakeKeyStore {
       val PrivateKeyEntry  = "otoroshi-selfsigned"
     }
 
-    def DistinguishedName(host: String) = s"CN=$host, OU=Otoroshi Testing (self-signed), O=Otoroshi, C=FR"
+    def DistinguishedName(host: String) = s"CN=$host, OU=Otoroshi Certificates, O=Otoroshi, C=FR"
     def SubDN(host: String)             = s"CN=$host"
   }
 
@@ -471,7 +516,8 @@ object FakeKeyStore {
       chain =
         s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
       privateKey =
-        s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}"
+        s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
+      caRef = None
     )
   }
 

@@ -1,5 +1,7 @@
 package env
 
+import java.security.KeyPairGenerator
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.{ActorSystem, PoisonPill, Scheduler}
@@ -21,7 +23,8 @@ import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
 import security.{ClaimCrypto, IdGenerator}
-import ssl.{DynamicSSLEngineProvider, FakeKeyStore}
+import ssl.FakeKeyStore.KeystoreSettings
+import ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
 import storage.DataStores
 import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores
@@ -448,11 +451,21 @@ class Env(val configuration: Configuration,
         .findAll()(otoroshiExecutionContext, this)
         .map { certs =>
           if (certs.isEmpty) {
+            val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+            keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+            val keyPair1 = keyPairGenerator.generateKeyPair()
+            val keyPair2 = keyPairGenerator.generateKeyPair()
+            val keyPair3 = keyPairGenerator.generateKeyPair()
             logger.warn(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
-            FakeKeyStore.generateCert(s"*.${this.domain}").save()(otoroshiExecutionContext, this)
+            val id = IdGenerator.token(32)
+            val ca    = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
+            val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}", FiniteDuration(365, TimeUnit.DAYS), keyPair2, ca, keyPair1)
+            Cert(ca, keyPair1, None).enrich()(otoroshiExecutionContext, this).copy(id = id).save()(otoroshiExecutionContext, this)
+            Cert(cert1, keyPair1, Some(id)).enrich()(otoroshiExecutionContext, this).save()(otoroshiExecutionContext, this)
             if (env.toLowerCase() == "dev") {
               logger.warn(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
-              FakeKeyStore.generateCert(s"*.dev.${this.domain}").save()(otoroshiExecutionContext, this)
+              val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}", FiniteDuration(365, TimeUnit.DAYS), keyPair3, ca, keyPair1)
+              Cert(cert2, keyPair1, Some(id)).enrich()(otoroshiExecutionContext, this).save()(otoroshiExecutionContext, this)
             }
           }
         }(otoroshiExecutionContext)

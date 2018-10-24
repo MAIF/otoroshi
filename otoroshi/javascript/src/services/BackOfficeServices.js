@@ -911,3 +911,27 @@ export function selfSignedCert(host) {
     body: JSON.stringify({ host }),
   }).then(r => r.json());
 }
+
+export function caSignedCert(id, host) {
+  return fetch(`/bo/api/certificates/_caSigned`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id, host }),
+  }).then(r => r.json());
+}
+
+export function caCert(cn) {
+  return fetch(`/bo/api/certificates/_ca`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ cn }),
+  }).then(r => r.json());
+}
