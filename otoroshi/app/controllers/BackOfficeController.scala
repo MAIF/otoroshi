@@ -626,7 +626,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 val keyPair = keyPairGenerator.generateKeyPair()
                 val cert = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
-                Ok(Cert(cert, keyPair, Some(ca.id)).enrich().toJson)
+                Ok(Cert(cert, keyPair, ca).enrich().toJson)
               }
             }
             Ok(FakeKeyStore.generateCert(host).toJson)
@@ -680,7 +680,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 val keyPair = keyPairGenerator.generateKeyPair()
                 val cert = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
-                Ok(Cert(cert, keyPair, Some(ca.id)).enrich().toJson)
+                Ok(Cert(cert, keyPair, ca).enrich().toJson)
               }
             }
           }

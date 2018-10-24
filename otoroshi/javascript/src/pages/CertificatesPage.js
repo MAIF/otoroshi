@@ -332,9 +332,9 @@ export class CertificatesPage extends Component {
         deleteItem={BackOfficeServices.deleteCertificate}
         createItem={BackOfficeServices.createCertificate}
         navigateTo={item => {
-          window.location = `/bo/dashboard/certificates`;
+          window.location = `/bo/dashboard/certificates/edit/${item.id}`;
         }}
-        itemUrl={i => `/bo/dashboard/certificates/${i.id}`}
+        itemUrl={i => `/bo/dashboard/certificates/edit/${i.id}`}
         showActions={true}
         showLink={true}
         rowNavigation={true}
@@ -343,7 +343,6 @@ export class CertificatesPage extends Component {
         injectTopBar={() => (
           <div className="btn-group">
             <button type="button" onClick={this.createSelfSigned} style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Self signed cert.</button>
-            <button type="button" onClick={this.createCASigned}   style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> CA signed cert.</button>
             <button type="button" onClick={this.createCA}         style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Certificate Authority</button>
             <button type="button"                                 style={{ marginRight: 0 }} disabled className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Let's encrypt signed cert.</button>
           </div>
