@@ -41,6 +41,7 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   authorizedGroup: String,
                   enabled: Boolean = true,
                   readOnly: Boolean = false,
+                  allowClientIdOnly: Boolean = false,
                   throttlingQuota: Long = RemainingQuotas.MaxValue,
                   dailyQuota: Long = RemainingQuotas.MaxValue,
                   monthlyQuota: Long = RemainingQuotas.MaxValue,
@@ -84,15 +85,16 @@ object ApiKey {
   val _fmt: Format[ApiKey] = new Format[ApiKey] {
     override def writes(apk: ApiKey): JsValue = Json.obj(
       "clientId"        -> apk.clientId,
-      "clientSecret"    -> apk.clientSecret,
-      "clientName"      -> apk.clientName,
-      "authorizedGroup" -> apk.authorizedGroup,
-      "enabled"         -> apk.enabled,
-      "readOnly"        -> apk.readOnly,
-      "throttlingQuota" -> apk.throttlingQuota,
-      "dailyQuota"      -> apk.dailyQuota,
-      "monthlyQuota"    -> apk.monthlyQuota,
-      "metadata"        -> JsObject(apk.metadata.mapValues(JsString.apply))
+      "clientSecret"      -> apk.clientSecret,
+      "clientName"        -> apk.clientName,
+      "authorizedGroup"   -> apk.authorizedGroup,
+      "enabled"           -> apk.enabled,
+      "readOnly"          -> apk.readOnly,
+      "allowClientIdOnly" -> apk.allowClientIdOnly,
+      "throttlingQuota"   -> apk.throttlingQuota,
+      "dailyQuota"        -> apk.dailyQuota,
+      "monthlyQuota"      -> apk.monthlyQuota,
+      "metadata"          -> JsObject(apk.metadata.mapValues(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
@@ -103,6 +105,7 @@ object ApiKey {
           authorizedGroup = (json \ "authorizedGroup").as[String],
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
+          allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),

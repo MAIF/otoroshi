@@ -18,14 +18,9 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status}
+import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests}
 import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
 import utils.Metrics
@@ -638,7 +633,42 @@ class WebSocketHandler()(implicit env: Env) {
                             val authByCustomHeaders = req.headers
                               .get(env.Headers.OtoroshiClientId)
                               .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
-                            if (authByCustomHeaders.isDefined) {
+                            val authBySimpleApiKeyClientId = req.headers
+                              .get(env.Headers.OtoroshiSimpleApiKeyClientId)
+                            if (authBySimpleApiKeyClientId.isDefined) {
+                              val clientId = authBySimpleApiKeyClientId.get
+                              env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
+                                case None =>
+                                  Errors.craftResponseResult(
+                                    "Invalid API key",
+                                    BadGateway,
+                                    req,
+                                    Some(descriptor),
+                                    Some("errors.invalid.api.key")
+                                  ).asLeft[WSFlow]
+                                case Some(key) if !key.allowClientIdOnly => {
+                                  Errors.craftResponseResult(
+                                    "Bad API key",
+                                    BadGateway,
+                                    req,
+                                    Some(descriptor),
+                                    Some("errors.bad.api.key")
+                                  ).asLeft[WSFlow]
+                                }
+                                case Some(key) if key.allowClientIdOnly =>
+                                  key.withingQuotas().flatMap {
+                                    case true => callDownstream(config, Some(key))
+                                    case false =>
+                                      Errors.craftResponseResult(
+                                        "You performed too much requests",
+                                        TooManyRequests,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.too.much.requests")
+                                      ).asLeft[WSFlow]
+                                  }
+                              }
+                            } else if (authByCustomHeaders.isDefined) {
                               val (clientId, clientSecret) = authByCustomHeaders.get
                               env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
                                 case None =>

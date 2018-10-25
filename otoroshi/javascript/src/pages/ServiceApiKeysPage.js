@@ -352,6 +352,15 @@ export class ServiceApiKeysPage extends Component {
           'If the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs',
       },
     },
+    allowClientIdOnly: {
+      type: 'bool',
+      props: {
+        label: 'Allow pass by clientid only',
+        placeholder: 'Allow pass by clientid only',
+        help:
+          'Here you allow client to only pass client id in a specific header in order to grant access to the underlying api',
+      },
+    },
     metadata: {
       type: 'object',
       props: {
@@ -436,6 +445,7 @@ export class ServiceApiKeysPage extends Component {
     '---',
     'enabled',
     'readOnly',
+    'allowClientIdOnly',
     '---',
     'metadata',
     '>>>Service Group settings',

@@ -207,6 +207,7 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiGatewayParentRequest = configuration.getOptional[String]("otoroshi.headers.trace.parent").get
     lazy val OtoroshiAdminProfile         = configuration.getOptional[String]("otoroshi.headers.request.adminprofile").get
     lazy val OtoroshiClientId             = configuration.getOptional[String]("otoroshi.headers.request.clientid").get
+    lazy val OtoroshiSimpleApiKeyClientId = configuration.getOptional[String]("otoroshi.headers.request.simpleapiclientid").get
     lazy val OtoroshiClientSecret         = configuration.getOptional[String]("otoroshi.headers.request.clientsecret").get
     lazy val OtoroshiRequestId            = configuration.getOptional[String]("otoroshi.headers.request.id").get
     lazy val OtoroshiRequestTimestamp     = configuration.getOptional[String]("otoroshi.headers.request.timestamp").get

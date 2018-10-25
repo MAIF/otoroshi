@@ -110,6 +110,13 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       clientName = "apikey-test",
       authorizedGroup = "default"
     )
+    val apiKey2 = ApiKey(
+      clientId = "apikey-test-2",
+      clientSecret = "1234",
+      clientName = "apikey-test-2",
+      authorizedGroup = "default",
+      allowClientIdOnly = true
+    )
     val basicAuth = Base64.getUrlEncoder.encodeToString(s"apikey-test:1234".getBytes)
     val algorithm = Algorithm.HMAC256("1234")
     val bearerAuth = JWT
@@ -129,6 +136,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
       createOtoroshiApiKey(apiKey).futureValue
+      createOtoroshiApiKey(apiKey2).futureValue
     }
 
     "Prevent to access private by default service" in {
@@ -360,6 +368,41 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
 
       resp.status mustBe 200
       resp.body == basicTestExpectedBody mustBe true
+
+      deleteOtoroshiService(service).futureValue
+    }
+
+    "Allow access with simple client id (x-api-key)" in {
+      createOtoroshiService(service).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost,
+          "x-api-key" -> apiKey2.clientId
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 200
+      resp.body == basicTestExpectedBody mustBe true
+
+      deleteOtoroshiService(service).futureValue
+    }
+
+    "Not allow access with simple client id (x-api-key) for standard apikey" in {
+      createOtoroshiService(service).futureValue
+
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> serviceHost,
+          "x-api-key" -> apiKey.clientId
+        )
+        .get()
+        .futureValue
+
+      resp.status mustBe 400
 
       deleteOtoroshiService(service).futureValue
     }

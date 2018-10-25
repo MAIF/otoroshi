@@ -1202,7 +1202,48 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               val authByCustomHeaders = req.headers
                                 .get(env.Headers.OtoroshiClientId)
                                 .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
-                              if (authByCustomHeaders.isDefined) {
+                              val authBySimpleApiKeyClientId = req.headers
+                                .get(env.Headers.OtoroshiSimpleApiKeyClientId)
+                              if (authBySimpleApiKeyClientId.isDefined) {
+                                val clientId = authBySimpleApiKeyClientId.get
+                                env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
+                                  case None =>
+                                    Errors.craftResponseResult(
+                                      "Invalid API key",
+                                      BadRequest,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.invalid.api.key"),
+                                      duration = System.currentTimeMillis - start,
+                                      overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                    )
+                                  case Some(key) if !key.allowClientIdOnly => {
+                                    Errors.craftResponseResult(
+                                      "Bad API key",
+                                      BadRequest,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.bad.api.key"),
+                                      duration = System.currentTimeMillis - start,
+                                      overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                    )
+                                  }
+                                  case Some(key) if key.allowClientIdOnly =>
+                                    key.withingQuotas().flatMap {
+                                      case true => callDownstream(config, Some(key))
+                                      case false =>
+                                        Errors.craftResponseResult(
+                                          "You performed too much requests",
+                                          TooManyRequests,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.too.much.requests"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
+                                    }
+                                }
+                              } else if (authByCustomHeaders.isDefined) {
                                 val (clientId, clientSecret) = authByCustomHeaders.get
                                 env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
                                   case None =>
