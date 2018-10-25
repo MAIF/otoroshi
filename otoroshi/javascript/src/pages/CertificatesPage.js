@@ -101,6 +101,10 @@ class CertificateInfos extends Component {
 
 class Commands extends Component {
 
+  state = {
+
+  }
+
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
@@ -114,42 +118,85 @@ class Commands extends Component {
     }
   }
 
+  componentDidMount() {
+    const cert = this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----';
+    this.setState({ 
+      fullChainUrl: URL.createObjectURL(new Blob([this.props.rawValue.chain], { type: 'text/plain' })),
+      privateKeyUrl: URL.createObjectURL(new Blob([this.props.rawValue.privateKey], { type: 'text/plain' })),
+      fullPkUrl: URL.createObjectURL(new Blob([this.props.rawValue.chain + '\n' + this.props.rawValue.privateKey], { type: 'text/plain' })),
+      certUrl: URL.createObjectURL(new Blob([cert], { type: 'text/plain' })),
+    });
+  }
+
   render() {
     const certIsEmpty = !(this.props.rawValue.chain && this.props.rawValue.privateKey);
     const canRenew = this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-        {this.props.rawValue.ca && <button
-          type="button"
-          className="btn btn-sm btn-success"
-          onClick={e => {
-            this.createCASigned(e, this.props.rawValue.id);
-          }}>
-          <i className="glyphicon glyphicon-plus-sign" /> Create cert.
-        </button>}
-        {canRenew && <button
-          type="button"
-          className="btn btn-sm btn-success"
-          onClick={e => {
-            BackOfficeServices.renewCert(this.props.rawValue.id).then(cert => {
-              this.props.rawOnChange(cert);
-            });
-          }}>
-          <i className="glyphicon glyphicon-repeat" /> Renew
-        </button>}
-        {false && <button
-          type="button"
-          className="btn btn-sm btn-success"
-          onClick={e => {
-            const value = prompt('Certificate host ?');
-            if (value && value.trim() !== '') {
-              BackOfficeServices.selfSignedCert(value).then(cert => {
+        <div className="btn-group">
+          {this.props.rawValue.ca && <button
+            style={{ marginRight: 0 }}
+            type="button"
+            className="btn btn-sm btn-success"
+            onClick={e => {
+              this.createCASigned(e, this.props.rawValue.id);
+            }}>
+            <i className="glyphicon glyphicon-plus-sign" /> Create cert.
+          </button>}
+          {canRenew && <button
+            style={{ marginRight: 0 }}
+            type="button"
+            className="btn btn-sm btn-success"
+            onClick={e => {
+              BackOfficeServices.renewCert(this.props.rawValue.id).then(cert => {
                 this.props.rawOnChange(cert);
               });
-            }
-          }}>
-          <i className="fas fa-screwdriver" /> Generate self signed cert.
-        </button>}
+            }}>
+            <i className="glyphicon glyphicon-repeat" /> Renew
+          </button>}
+          {false && <button
+            style={{ marginRight: 0 }}
+            type="button"
+            className="btn btn-sm btn-success"
+            onClick={e => {
+              const value = prompt('Certificate host ?');
+              if (value && value.trim() !== '') {
+                BackOfficeServices.selfSignedCert(value).then(cert => {
+                  this.props.rawOnChange(cert);
+                });
+              }
+            }}>
+            <i className="fas fa-screwdriver" /> Generate self signed cert.
+          </button>}
+          <a
+            style={{ marginRight: 0 }}
+            href={this.state.certUrl}
+            download={`${this.props.rawValue.domain}.cer`}
+            className="btn btn-sm btn-success">
+            <i className="fa fa-download" /> Certificate Only
+          </a>
+          <a
+            style={{ marginRight: 0 }}
+            href={this.state.fullChainUrl}
+            download={`${this.props.rawValue.domain}.fullchain.cer`}
+            className="btn btn-sm btn-success">
+            <i className="fa fa-download" /> Full Chain
+          </a>
+          <a
+            style={{ marginRight: 0 }}
+            href={this.state.privateKeyUrl}
+            download={`${this.props.rawValue.domain}.key`}
+            className="btn btn-sm btn-success">
+            <i className="fa fa-download" /> Private Key
+          </a>
+          <a
+            style={{ marginRight: 0 }}
+            href={this.state.fullPkUrl}
+            download={`${this.props.rawValue.domain}.pem`}
+            className="btn btn-sm btn-success">
+            <i className="fa fa-download" /> Full Chain + Private Key
+          </a>
+        </div>
       </div>
     );
   }
@@ -344,7 +391,6 @@ export class CertificatesPage extends Component {
           <div className="btn-group">
             <button type="button" onClick={this.createSelfSigned} style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Self signed cert.</button>
             <button type="button" onClick={this.createCA}         style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Certificate Authority</button>
-            <button type="button"                                 style={{ marginRight: 0 }} disabled className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Let's encrypt signed cert.</button>
           </div>
         )}
       />
