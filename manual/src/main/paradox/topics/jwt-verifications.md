@@ -85,6 +85,16 @@ Using the `Verif. strategy` selector, you can choose `Verify, re-sign and transf
 <img src="../img/jwt-verif-transform.png" />
 @@@
 
+You can also use a mini expression language in `Set token fields`. You just have to add expressions in values like `${expression}`. Supported expressions are the following :
+
+* `${date}` => set the current date
+* `${date.format('dd/MM/yyyy')}` => set the current date formatted with the format you want
+* `${token.fieldName}` => get the value of the field named `fieldName`
+* `${token.fieldName.replace('a', 'b')}` => get the value of the field named `fieldName` and replace `a` with `b`
+* `${token.fieldName.replaceAll('[0-9]', '-')}` => get the value of the field named `fieldName` and replace digits with `-`
+
+you can of course use multiple expressions in one field like `my-value-is-${date}-with${token.user}`
+
 ## Global verifications
 
 You can  create global jwt verifiers and reference them in your services (from the `Type` selector). When you set the type of verification to `Reference to a global definition`, you can choose an existing global jwt verifier
