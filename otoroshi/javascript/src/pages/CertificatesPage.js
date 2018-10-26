@@ -300,6 +300,10 @@ export class CertificatesPage extends Component {
       type: 'text',
       props: { label: 'Certificate private key', rows: 6 },
     },
+    autoRenew: {
+      type: 'bool',
+      props: { label: 'Auto renew cert.' },
+    },
   };
 
   columns = [
@@ -317,7 +321,7 @@ export class CertificatesPage extends Component {
     { title: 'To', content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss') },
   ];
 
-  formFlow = ['id', 'commands', 'valid', 'chain', 'privateKey', 'infos'];
+  formFlow = ['id', 'commands', 'valid', 'chain', 'privateKey', 'autoRenew', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates (experimental)`);

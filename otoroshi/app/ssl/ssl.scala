@@ -36,7 +36,6 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-// TODO: doc + swagger
 case class Cert(
     id: String,
     chain: String,
@@ -46,7 +45,7 @@ case class Cert(
     selfSigned: Boolean = false,
     ca: Boolean = false,
     valid: Boolean = false,
-    autoRenew: Boolean,
+    autoRenew: Boolean = false,
     subject: String = "--",
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now()
