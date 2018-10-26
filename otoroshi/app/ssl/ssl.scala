@@ -21,7 +21,7 @@ import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
 import javax.net.ssl._
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, Interval}
 import play.api.Logger
 import play.api.libs.json._
 import play.core.ApplicationProvider
@@ -32,8 +32,8 @@ import sun.security.util.ObjectIdentifier
 import sun.security.x509._
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 // TODO: doc + swagger
@@ -46,16 +46,41 @@ case class Cert(
     selfSigned: Boolean = false,
     ca: Boolean = false,
     valid: Boolean = false,
+    autoRenew: Boolean,
     subject: String = "--",
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now()
 ) {
+  def renew(duration: FiniteDuration, caOpt: Option[Cert]): Cert = {
+    this match {
+      case original if original.ca && original.selfSigned => {
+        val keyPair: KeyPair = original.keyPair
+        val cert: X509Certificate = FakeKeyStore.createCA(original.subject, duration, keyPair)
+        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        certificate
+      }
+      case original if original.selfSigned => {
+        val keyPair: KeyPair = original.keyPair
+        val cert: X509Certificate = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, keyPair)
+        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        certificate
+      }
+      case original if original.caRef.isDefined && caOpt.isDefined && caOpt.get.id == original.caRef.get => {
+        val ca = caOpt.get
+        val keyPair: KeyPair = original.keyPair
+        val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain, duration, keyPair, ca.certificate.get, ca.keyPair)
+        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        certificate
+      }
+      case _ => this
+    }
+  }
   def password: Option[String]                          = None
   def save()(implicit ec: ExecutionContext, env: Env)   = {
     val current = this.enrich()
     env.datastores.certificatesDataStore.set(current)
   }
-  def enrich()(implicit ec: ExecutionContext, env: Env)   = {
+  def enrich()   = {
     val meta = this.metadata.get
     this.copy(
       domain = (meta \ "domain").asOpt[String].getOrElse("--"),
@@ -136,7 +161,8 @@ object Cert {
       id = IdGenerator.token(32),
       chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}",
       privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
-      caRef = caRef
+      caRef = caRef,
+      autoRenew = false
     )
   }
 
@@ -145,7 +171,8 @@ object Cert {
       id = IdGenerator.token(32),
       chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${ca.chain}",
       privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
-      caRef = Some(ca.id)
+      caRef = Some(ca.id),
+      autoRenew = false
     )
   }
 
@@ -159,6 +186,7 @@ object Cert {
       "selfSigned" -> cert.selfSigned,
       "ca"         -> cert.ca,
       "valid"      -> cert.valid,
+      "autoRenew"  -> cert.autoRenew,
       "subject"    -> cert.subject,
       "from"       -> cert.from.getMillis,
       "to"         -> cert.to.getMillis,
@@ -174,6 +202,7 @@ object Cert {
           selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
           ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
           valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
+          autoRenew = (json \ "autoRenew").asOpt[Boolean].getOrElse(false),
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now())
@@ -199,7 +228,27 @@ object Cert {
   def fromJsonSafe(value: JsValue): JsResult[Cert] = _fmt.reads(value)
 }
 
-trait CertificateDataStore extends BasicStore[Cert]
+trait CertificateDataStore extends BasicStore[Cert] {
+
+  def renewCertificates()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    def willBeInvalidSoon(cert: Cert): Boolean = {
+      val enriched = cert.enrich()
+      val globalInterval = new Interval(enriched.from, enriched.to)
+      val nowInterval = new Interval(DateTime.now(), enriched.to)
+      val percentage: Long = (nowInterval.toDurationMillis * 100) / globalInterval.toDurationMillis
+      percentage < 20
+    }
+    findAll().flatMap { certificates =>
+      val renewFor = FiniteDuration(365, TimeUnit.DAYS)
+      val renewableCas = certificates.filter(cert => cert.ca && cert.selfSigned).filter(willBeInvalidSoon).map(_.renew(renewFor, None))
+      val renewableCertificates = certificates.filter { cert =>
+        !cert.ca && (cert.selfSigned || cert.caRef.nonEmpty )
+      }.filter(willBeInvalidSoon).map(c => c.renew(renewFor, renewableCas.find(_.id == c.id)))
+      val certs = renewableCas ++ renewableCertificates
+      Future.sequence(certs.map(_.save())).map(_ => ())
+    }
+  }
+}
 
 object DynamicSSLEngineProvider {
 
@@ -528,7 +577,8 @@ object FakeKeyStore {
         s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
       privateKey =
         s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
-      caRef = None
+      caRef = None,
+      autoRenew = false
     )
   }
 
@@ -651,13 +701,17 @@ object FakeKeyStore {
 
 class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
 
+  // println(delegate.getClass.getName)
+  // sun.security.ssl.SSLEngineImpl
+  // sun.security.ssl.X509TrustManagerImpl
+  // javax.net.ssl.X509ExtendedTrustManager
   private val hostnameHolder = new AtomicReference[String]()
 
- private lazy val field: Field = {
-   val f = Option(classOf[SSLEngine].getDeclaredField("peerHost")).getOrElse(classOf[SSLEngine].getField("peerHost"))
-   f.setAccessible(true)
-   f
- }
+  private lazy val field: Field = {
+    val f = Option(classOf[SSLEngine].getDeclaredField("peerHost")).getOrElse(classOf[SSLEngine].getField("peerHost"))
+    f.setAccessible(true)
+    f
+  }
 
   def setEngineHostName(hostName: String): Unit = {
     DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")

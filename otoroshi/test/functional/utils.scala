@@ -25,6 +25,7 @@ import play.api.{BuiltInComponents, Configuration, Logger}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, Promise}
+import scala.util.control.NoStackTrace
 import scala.util.{Random, Try}
 
 trait AddConfiguration {

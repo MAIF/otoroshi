@@ -460,7 +460,7 @@ class Env(val configuration: Configuration,
           val keyPair2 = keyPairGenerator.generateKeyPair()
           val keyPair3 = keyPairGenerator.generateKeyPair()
           val ca = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
-          val caCert = Cert(ca, keyPair1, None).enrich()(otoroshiExecutionContext, this)
+          val caCert = Cert(ca, keyPair1, None).enrich()
           if (!foundOtoroshiCa) {
             logger.warn(s"Generating CA certificate for Otoroshi self signed certificates ...")
             caCert.copy(id = Cert.OtoroshiCA).save()(otoroshiExecutionContext, this)
@@ -468,12 +468,12 @@ class Env(val configuration: Configuration,
           if (!foundOtoroshiDomainCert) {
             logger.warn(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
             val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}", FiniteDuration(365, TimeUnit.DAYS), keyPair2, ca, keyPair1)
-            Cert(cert1, keyPair1, caCert).enrich()(otoroshiExecutionContext, this).save()(otoroshiExecutionContext, this)
+            Cert(cert1, keyPair1, caCert).enrich().save()(otoroshiExecutionContext, this)
           }
           if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
             logger.warn(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
             val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}", FiniteDuration(365, TimeUnit.DAYS), keyPair3, ca, keyPair1)
-            Cert(cert2, keyPair1, caCert).enrich()(otoroshiExecutionContext, this).save()(otoroshiExecutionContext, this)
+            Cert(cert2, keyPair1, caCert).enrich().save()(otoroshiExecutionContext, this)
           }
         }(otoroshiExecutionContext)
     }

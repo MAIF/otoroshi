@@ -1097,6 +1097,39 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def Certificate = Json.obj(
+    "description" -> "A SSL/TLS X509 certificate",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "id",
+      "chain",
+      "privateKey",
+      "caRef",
+      "domain",
+      "selfSigned",
+      "ca",
+      "valid",
+      "autoRenew",
+      "subject",
+      "from",
+      "to"
+    ),
+    "properties" -> Json.obj(
+      "id" -> SimpleStringType ~~> "Id of the certificate",
+      "chain" -> SimpleStringType ~~> "Certificate chain of trust in PEM format",
+      "privateKey" -> SimpleStringType ~~> "PKCS8 private key in PEM format",
+      "caRef" -> SimpleStringType ~~> "Reference for a CA certificate in otoroshi",
+      "autoRenew" -> SimpleStringType ~~> "Allow Otoroshi to renew the certificate (if self signed)",
+      "domain" -> SimpleStringType ~~> "Domain of the certificate (read only)",
+      "selfSigned" -> SimpleStringType ~~> "Certificate is self signed  read only)",
+      "ca" -> SimpleStringType ~~> "Certificate is a CA (read only)",
+      "valid" -> SimpleStringType ~~> "Certificate is valid (read only)",
+      "subject" -> SimpleStringType ~~> "Subject of the certificate (read only)",
+      "from" -> SimpleStringType ~~> "Start date of validity",
+      "to" -> SimpleStringType ~~> "End date of validity"
+    )
+  )
+
   def LdapAuthModuleConfig = Json.obj(
     "description" -> "Settings to authenticate users using a generic OAuth2 provider",
     "type"        -> "object",
@@ -1541,6 +1574,68 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def Certificates = Json.obj(
+    "get" -> Operation(
+      tag = "certificates",
+      summary = "Get all certificates",
+      description = "Get all certificates",
+      operationId = "allCerts",
+      goodResponse = GoodResponse(ArrayOf(Ref("Certificate")))
+    ),
+    "get" -> Operation(
+      tag = "certificates",
+      summary = "Get one certificate by id",
+      description = "Get one certificate by id",
+      operationId = "oneCert",
+      parameters = Json.arr(
+        PathParam("id", "The auth. config id")
+      ),
+      goodResponse = GoodResponse(Ref("Certificate"))
+    ),
+    "delete" -> Operation(
+      tag = "certificates",
+      summary = "Delete one certificate by id",
+      description = "Delete one certificate by id",
+      operationId = "deleteCert",
+      parameters = Json.arr(
+        PathParam("id", "The certificate id")
+      ),
+      goodResponse = GoodResponse(Ref("Deleted"))
+    ),
+    "put" -> Operation(
+      tag = "certificates",
+      summary = "Update one certificate by id",
+      description = "Update one certificate by id",
+      operationId = "putCert",
+      parameters = Json.arr(
+        PathParam("id", "The certificate id"),
+        BodyParam("The certificate to update", Ref("Certificate"))
+      ),
+      goodResponse = GoodResponse(Ref("Certificate"))
+    ),
+    "patch" -> Operation(
+      tag = "certificates",
+      summary = "Update one certificate by id",
+      description = "Update one certificate by id",
+      operationId = "patchCert",
+      parameters = Json.arr(
+        PathParam("id", "The certificate id"),
+        BodyParam("The certificate to update", Ref("Patch"))
+      ),
+      goodResponse = GoodResponse(Ref("Certificate"))
+    ),
+    "post" -> Operation(
+      tag = "certificates",
+      summary = "Create one certificate",
+      description = "Create one certificate",
+      operationId = "createCert",
+      parameters = Json.arr(
+        BodyParam("The certificate to create", Ref("Certificate"))
+      ),
+      goodResponse = GoodResponse(Ref("Certificate"))
+    )
+  )
+
   def ApiKeys = Json.obj(
     "get" -> Operation(
       tag = "apikeys",
@@ -1953,7 +2048,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("snowmonkey", "Everything about Otoroshi Snow Monkey"),
         Tag("health", "Everything about Otoroshi health status"),
         Tag("jwt-verifiers", "Everything about Otoroshi global JWT token verifiers"),
-        Tag("auth-config", "Everything about Otoroshi global auth. module config")
+        Tag("auth-config", "Everything about Otoroshi global auth. module config"),
+        Tag("certificates", "Everything about Otoroshi SSL/TLS certificates")
       ),
       "externalDocs" -> Json.obj(
         "description" -> "Find out more about Otoroshi",
@@ -1985,6 +2081,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "/api/groups"                                         -> GroupsManagement,
         "/api/verifiers"                                      -> JWTVerifiers,
         "/api/auths"                                          -> AuthConfigs,
+        "/api/certificates"                                   -> Certificates,
         "/api/snowmonkey/config"                              -> SnowMonkeyConfigApi,
         "/api/snowmonkey/outages"                             -> SnowMonkeyOutageApi,
         "/api/snowmonkey/_start"                              -> SnowMonkeyStartApi,
@@ -2087,6 +2184,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "CorsSettings"                -> CorsSettings,
         "InMemoryUser"                -> InMemoryUser,
         "LdapUser"                    -> LdapUser,
+        "Certificate"                 -> Certificate
       )
     )
   }

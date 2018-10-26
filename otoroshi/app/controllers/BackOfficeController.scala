@@ -654,7 +654,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               id = IdGenerator.token(32),
               chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}",
               privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
-              caRef = None
+              caRef = None,
+              autoRenew = false
             ).enrich()
             Ok(cert.toJson)
           }
@@ -697,7 +698,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def renew(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
-      case Some(original) if original.ca => {
+      case Some(original) if original.ca && original.selfSigned => {
         val keyPair: KeyPair = original.keyPair
         val cert: X509Certificate = FakeKeyStore.createCA(original.subject, FiniteDuration(365, TimeUnit.DAYS), keyPair)
         val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)

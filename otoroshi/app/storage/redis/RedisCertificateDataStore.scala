@@ -25,10 +25,14 @@ class RedisCertificateDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
 
   val lastUpdatedRef = new AtomicReference[String]("0")
   val cancelRef      = new AtomicReference[Cancellable](null)
+  val cancelRenewRef = new AtomicReference[Cancellable](null)
 
   def startSync(): Unit = {
     implicit val ec  = _env.otoroshiExecutionContext
     implicit val env = _env
+    cancelRenewRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour) {
+      _env.datastores.certificatesDataStore.renewCertificates()
+    })
     cancelRef.set(_env.otoroshiActorSystem.scheduler.schedule(2.seconds, 2.seconds) {
       for {
         certs <- findAll()
@@ -43,6 +47,7 @@ class RedisCertificateDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   }
 
   def stopSync(): Unit = {
+    Option(cancelRenewRef.get()).foreach(_.cancel())
     Option(cancelRef.get()).foreach(_.cancel())
   }
 
