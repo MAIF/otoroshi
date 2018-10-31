@@ -371,7 +371,7 @@ export class CertificatesPage extends Component {
       <Table
         parentProps={this.props}
         selfUrl="certificates"
-        defaultTitle="All certificates"
+        defaultTitle="All SSL/TLS certificates"
         defaultValue={() => ({ id: faker.random.alphaNumeric(64) })}
         itemName="certificate"
         formSchema={this.formSchema}
@@ -394,7 +394,7 @@ export class CertificatesPage extends Component {
         injectTopBar={() => (
           <div className="btn-group">
             <button type="button" onClick={this.createSelfSigned} style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Self signed cert.</button>
-            <button type="button" onClick={this.createCA}         style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Certificate Authority</button>
+            <button type="button" onClick={this.createCA}         style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Self signed  Certificate Authority</button>
           </div>
         )}
       />
