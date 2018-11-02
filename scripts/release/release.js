@@ -233,6 +233,8 @@ async function pushToBintray(location, version) {
 async function publishSbt(location, version) {
   await runScript(`
     cd $LOCATION/otoroshi
+    export JAVA_HOME=$JDK8_HOME
+    export PATH=\${JAVA_HOME}/bin:\${PATH}
     sbt publish
     cd $LOCATION
     `, 
@@ -276,37 +278,37 @@ async function installDependencies(location) {
 }
 
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
-  console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
-  const releaseDir = path.resolve(location, `./release-${to}`);
-  if (!fs.pathExistsSync(location)) {
-    const last = location.split('/').pop();
-    await runSystemCommand('git', ['clone', 'https://github.com/MAIF/otoroshi.git', last, '--depth=1'], path.resolve(location, '..'));
-  }
-  fs.mkdirpSync(releaseDir);
-  await installDependencies(location);
-  await changeVersion(location, from, to);
-  {
-    const filePath = path.resolve(location, './docs/index.html');
-    const content = fs.readFileSync(filePath, 'utf8');
-    console.log('Changing version in', filePath);
-    const newContent = content.replace(last, to);
-    fs.writeFileSync(filePath, newContent);
-  }
-  await buildVersion(to, location, releaseDir);
-  // await buildMacCLI(location, to);
-  await buildLinuxCLI(location, to);
-  if (!dryRun) {
-    await githubTag(location, to);
-    await pushToBintray(location, to);
-    await publishSbt(location, to);
-    await createGithubRelease(version);
+  //console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
+  //const releaseDir = path.resolve(location, `./release-${to}`);
+  //if (!fs.pathExistsSync(location)) {
+  //  const last = location.split('/').pop();
+  //  await runSystemCommand('git', ['clone', 'https://github.com/MAIF/otoroshi.git', last, '--depth=1'], path.resolve(location, '..'));
+  //}
+  //fs.mkdirpSync(releaseDir);
+  //await installDependencies(location);
+  //await changeVersion(location, from, to);
+  //{
+  //  const filePath = path.resolve(location, './docs/index.html');
+  //  const content = fs.readFileSync(filePath, 'utf8');
+  //  console.log('Changing version in', filePath);
+  //  const newContent = content.replace(last, to);
+  //  fs.writeFileSync(filePath, newContent);
+  //}
+  //await buildVersion(to, location, releaseDir);
+  //// await buildMacCLI(location, to);
+  //await buildLinuxCLI(location, to);
+  //if (!dryRun) {
+  //  await githubTag(location, to);
+  //  await pushToBintray(location, to);
+  //  await publishSbt(location, to);
+    await createGithubRelease(to);
     await publishDockerOtoroshi(location, to);
     await publishDockerCli(location, to);
     await publishDockerDemo(location, to);
     await changeVersion(location, to, next);
     await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
     await runSystemCommand('git', ['push', 'origin', 'master'], location);
-  }
+  //}
 }
 
 const dryRun = argv.dry || false;
