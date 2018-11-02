@@ -263,7 +263,7 @@ async function createGithubRelease(version) {
   });
 }
 
-async function installDependencies(location) {s
+async function installDependencies(location) {
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
   await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/clevercloud'));
