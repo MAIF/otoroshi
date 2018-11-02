@@ -3,7 +3,7 @@
 what you will need :
 
 * JDK 8
-* wget
+* curl
 * 5 minutes of free time
 
 If you don't/can't have these tools on your machine, you can start a sandboxed environment using here with the following command
