@@ -9,6 +9,7 @@ const argv = require('minimist')(process.argv.slice(2));
 
 const BINTRAY_API_KEY = process.env.BINTRAY_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const JDK8_HOME = process.env.JDK8_HOME;
 
 const files = [
   {
@@ -103,7 +104,7 @@ async function buildVersion(version, where, releaseDir) {
   await runScript(`
     cd ${where}/otoroshi/target/scala-2.12/
     java -jar otoroshi.jar &
-    sleep 10
+    sleep 20
     curl http://otoroshi.foo.bar:8080/api/swagger.json > ${releaseDir}/swagger.json
     cp ${releaseDir}/swagger.json ${where}/manual/src/main/paradox/code/
     ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
@@ -113,6 +114,8 @@ async function buildVersion(version, where, releaseDir) {
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
   // run test and build server
   await runScript(`
+    export JAVA_HOME=$JDK8_HOME
+    export PATH=${JAVA_HOME}/bin:${PATH}
     cd ${where}/otoroshi
     sbt ";test;dist;assembly"
   `, where);
@@ -313,6 +316,9 @@ const releaseNext = argv.next;
 const releaseLast = argv.last;
 const location = argv.location || __dirname;
 
+if (!JDK8_HOME) {
+  throw new Error('No JDK8_HOME defined !')
+}
 if (!releaseFrom) {
   throw new Error('No current version')
 }
