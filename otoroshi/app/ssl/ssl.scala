@@ -53,33 +53,34 @@ case class Cert(
   def renew(duration: FiniteDuration, caOpt: Option[Cert]): Cert = {
     this match {
       case original if original.ca && original.selfSigned => {
-        val keyPair: KeyPair = original.keyPair
+        val keyPair: KeyPair      = original.keyPair
         val cert: X509Certificate = FakeKeyStore.createCA(original.subject, duration, keyPair)
-        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert     = Cert(cert, keyPair, None).enrich().copy(id = original.id)
         certificate
       }
       case original if original.selfSigned => {
-        val keyPair: KeyPair = original.keyPair
+        val keyPair: KeyPair      = original.keyPair
         val cert: X509Certificate = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, keyPair)
-        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert     = Cert(cert, keyPair, None).enrich().copy(id = original.id)
         certificate
       }
       case original if original.caRef.isDefined && caOpt.isDefined && caOpt.get.id == original.caRef.get => {
-        val ca = caOpt.get
+        val ca               = caOpt.get
         val keyPair: KeyPair = original.keyPair
-        val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain, duration, keyPair, ca.certificate.get, ca.keyPair)
+        val cert: X509Certificate =
+          FakeKeyStore.createCertificateFromCA(original.domain, duration, keyPair, ca.certificate.get, ca.keyPair)
         val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
         certificate
       }
       case _ => this
     }
   }
-  def password: Option[String]                          = None
-  def save()(implicit ec: ExecutionContext, env: Env)   = {
+  def password: Option[String] = None
+  def save()(implicit ec: ExecutionContext, env: Env) = {
     val current = this.enrich()
     env.datastores.certificatesDataStore.set(current)
   }
-  def enrich()   = {
+  def enrich() = {
     val meta = this.metadata.get
     this.copy(
       domain = (meta \ "domain").asOpt[String].getOrElse("--"),
@@ -96,7 +97,7 @@ case class Cert(
   def toJson                                            = Cert.toJson(this)
   lazy val certificate: Option[X509Certificate] = Try {
     chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
-      val content: String = cert.replace(PemHeaders.EndCertificate, "")
+      val content: String                        = cert.replace(PemHeaders.EndCertificate, "")
       val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
       certificateFactory
         .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(content)))
@@ -126,9 +127,9 @@ case class Cert(
             false
           } else {
             keyStore.setKeyEntry(this.id,
-              key,
-              this.password.getOrElse("").toCharArray,
-              certificateChain.toArray[java.security.cert.Certificate])
+                                 key,
+                                 this.password.getOrElse("").toCharArray,
+                                 certificateChain.toArray[java.security.cert.Certificate])
             true
           }
       }
@@ -158,8 +159,10 @@ object Cert {
   def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String]): Cert = {
     Cert(
       id = IdGenerator.token(32),
-      chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}",
-      privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      chain =
+        s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}",
+      privateKey =
+        s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = caRef,
       autoRenew = false
     )
@@ -168,8 +171,10 @@ object Cert {
   def apply(cert: X509Certificate, keyPair: KeyPair, ca: Cert): Cert = {
     Cert(
       id = IdGenerator.token(32),
-      chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${ca.chain}",
-      privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
+        .encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${ca.chain}",
+      privateKey =
+        s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = Some(ca.id),
       autoRenew = false
     )
@@ -231,18 +236,22 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def renewCertificates()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     def willBeInvalidSoon(cert: Cert): Boolean = {
-      val enriched = cert.enrich()
-      val globalInterval = new Interval(enriched.from, enriched.to)
-      val nowInterval = new Interval(DateTime.now(), enriched.to)
+      val enriched         = cert.enrich()
+      val globalInterval   = new Interval(enriched.from, enriched.to)
+      val nowInterval      = new Interval(DateTime.now(), enriched.to)
       val percentage: Long = (nowInterval.toDurationMillis * 100) / globalInterval.toDurationMillis
       percentage < 20
     }
     findAll().flatMap { certificates =>
       val renewFor = FiniteDuration(365, TimeUnit.DAYS)
-      val renewableCas = certificates.filter(cert => cert.ca && cert.selfSigned).filter(willBeInvalidSoon).map(_.renew(renewFor, None))
-      val renewableCertificates = certificates.filter { cert =>
-        !cert.ca && (cert.selfSigned || cert.caRef.nonEmpty )
-      }.filter(willBeInvalidSoon).map(c => c.renew(renewFor, renewableCas.find(_.id == c.id)))
+      val renewableCas =
+        certificates.filter(cert => cert.ca && cert.selfSigned).filter(willBeInvalidSoon).map(_.renew(renewFor, None))
+      val renewableCertificates = certificates
+        .filter { cert =>
+          !cert.ca && (cert.selfSigned || cert.caRef.nonEmpty)
+        }
+        .filter(willBeInvalidSoon)
+        .map(c => c.renew(renewFor, renewableCas.find(_.id == c.id)))
       val certs = renewableCas ++ renewableCertificates
       Future.sequence(certs.map(_.save())).map(_ => ())
     }
@@ -292,7 +301,7 @@ object DynamicSSLEngineProvider {
 
     logger.debug("Setting up SSL Context ")
     val sslContext: SSLContext = SSLContext.getInstance("TLS")
-    val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq)//.filterNot(_.ca))
+    val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq) //.filterNot(_.ca))
     dumpPath.foreach { path =>
       logger.warn(s"Dumping keystore at $dumpPath")
       keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
@@ -354,8 +363,7 @@ object DynamicSSLEngineProvider {
           } else {
             logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
             val domain = Try {
-              certificateChain.head
-                .getSubjectDN.getName
+              certificateChain.head.getSubjectDN.getName
                 .split(",")
                 .map(_.trim)
                 .find(_.toLowerCase().startsWith("cn="))
@@ -363,9 +371,9 @@ object DynamicSSLEngineProvider {
                 .getOrElse(cert.domain)
             }.toOption.getOrElse(cert.domain)
             keyStore.setKeyEntry(domain,
-              key,
-              cert.password.getOrElse("").toCharArray,
-              certificateChain.toArray[java.security.cert.Certificate])
+                                 key,
+                                 cert.password.getOrElse("").toCharArray,
+                                 certificateChain.toArray[java.security.cert.Certificate])
             certificateChain.tail.foreach { cert =>
               val id = "ca-" + cert.getSerialNumber.toString(16)
               if (!keyStore.containsAlias(id)) {
@@ -439,9 +447,9 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
   override def createSSLEngine(): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
-    val engine = new CustomSSLEngine(context.createSSLEngine())
+    val engine        = new CustomSSLEngine(context.createSSLEngine())
     val sslParameters = new SSLParameters
-    val matchers = new java.util.ArrayList[SNIMatcher]()
+    val matchers      = new java.util.ArrayList[SNIMatcher]()
     matchers.add(new SNIMatcher(0) {
       override def matches(sniServerName: SNIServerName): Boolean = {
         sniServerName match {
@@ -482,7 +490,10 @@ object CertificateData {
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
     val cert = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
-    val domain: String = Option(cert.getSubjectDN.getName).flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN="))).map(_.replace("CN=", "")).getOrElse(cert.getSubjectDN.getName)
+    val domain: String = Option(cert.getSubjectDN.getName)
+      .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+      .map(_.replace("CN=", ""))
+      .getOrElse(cert.getSubjectDN.getName)
     Json.obj(
       "issuerDN"     -> cert.getIssuerDN.getName,
       "notAfter"     -> cert.getNotAfter.getTime,
@@ -499,20 +510,26 @@ object CertificateData {
       "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert),
       "constraints"  -> cert.getBasicConstraints,
       "ca"           -> (cert.getBasicConstraints != -1),
-      "cExtensions"  -> JsArray(Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
-        val ext: String = Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
-        Json.obj(
-          "oid" -> oid,
-          "value" -> ext
-        )
-      }),
-      "ncExtensions" -> JsArray(Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
-        val ext: String = Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
-        Json.obj(
-          "oid" -> oid,
-          "value" -> ext
-        )
-      })
+      "cExtensions" -> JsArray(
+        Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+          val ext: String =
+            Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
+          Json.obj(
+            "oid"   -> oid,
+            "value" -> ext
+          )
+        }
+      ),
+      "ncExtensions" -> JsArray(
+        Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+          val ext: String =
+            Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
+          Json.obj(
+            "oid"   -> oid,
+            "value" -> ext
+          )
+        }
+      )
     )
   }
 }
@@ -574,8 +591,8 @@ object FakeKeyStore {
       domain = host,
       chain =
         s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
-      privateKey =
-        s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
+      privateKey = s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded),
+                                                                 Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
       caRef = None,
       autoRenew = false
     )
@@ -617,7 +634,11 @@ object FakeKeyStore {
     newCert
   }
 
-  def createCertificateFromCA(host: String, duration: FiniteDuration, kp: KeyPair, ca: X509Certificate, caKeyPair: KeyPair): X509Certificate = {
+  def createCertificateFromCA(host: String,
+                              duration: FiniteDuration,
+                              kp: KeyPair,
+                              ca: X509Certificate,
+                              caKeyPair: KeyPair): X509Certificate = {
     val certInfo = new X509CertInfo()
 
     // Serial number and version
@@ -641,7 +662,7 @@ object FakeKeyStore {
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
     // Create a new certificate and sign it
-    val cert = new X509CertImpl(certInfo)
+    val cert                 = new X509CertImpl(certInfo)
     val issuerSigAlg: String = ca.getSigAlgName
     cert.sign(caKeyPair.getPrivate, issuerSigAlg)
 
@@ -677,9 +698,8 @@ object FakeKeyStore {
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
-
     val exts = new CertificateExtensions
-    val bce = new BasicConstraintsExtension(true, -1)
+    val bce  = new BasicConstraintsExtension(true, -1)
     exts.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(false, bce.getExtensionValue))
     certInfo.set(X509CertInfo.EXTENSIONS, exts)
 
@@ -723,9 +743,11 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
 
   override def getPeerPort: Int = delegate.getPeerPort
 
-  override def wrap(byteBuffers: Array[ByteBuffer], i: Int, i1: Int, byteBuffer: ByteBuffer): SSLEngineResult = delegate.wrap(byteBuffers, i, i1, byteBuffer)
+  override def wrap(byteBuffers: Array[ByteBuffer], i: Int, i1: Int, byteBuffer: ByteBuffer): SSLEngineResult =
+    delegate.wrap(byteBuffers, i, i1, byteBuffer)
 
-  override def unwrap(byteBuffer: ByteBuffer, byteBuffers: Array[ByteBuffer], i: Int, i1: Int): SSLEngineResult = delegate.unwrap(byteBuffer, byteBuffers, i, i1)
+  override def unwrap(byteBuffer: ByteBuffer, byteBuffers: Array[ByteBuffer], i: Int, i1: Int): SSLEngineResult =
+    delegate.unwrap(byteBuffer, byteBuffers, i, i1)
 
   override def getDelegatedTask: Runnable = delegate.getDelegatedTask
 

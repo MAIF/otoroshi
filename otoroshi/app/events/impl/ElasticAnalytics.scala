@@ -668,25 +668,25 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
         )
       )
     ).map { json =>
-        val pie = (json \ "aggregations" \ "codes" \ "buckets")
-          .asOpt[Seq[JsObject]]
-          .getOrElse(Seq.empty)
-          .map { o =>
-            Json.obj(
-              "name" -> s"${(o \ "key").as[JsValue]}",
-              "y"    -> (o \ "doc_count").asOpt[JsValue]
-            )
-          }
-        Json.obj(
-          "name"       -> "Pie Chart",
-          "colorPoint" -> true,
-          "series" -> Json.arr(
-            Json.obj(
-              "data" -> JsArray(pie)
-            )
+      val pie = (json \ "aggregations" \ "codes" \ "buckets")
+        .asOpt[Seq[JsObject]]
+        .getOrElse(Seq.empty)
+        .map { o =>
+          Json.obj(
+            "name" -> s"${(o \ "key").as[JsValue]}",
+            "y"    -> (o \ "doc_count").asOpt[JsValue]
+          )
+        }
+      Json.obj(
+        "name"       -> "Pie Chart",
+        "colorPoint" -> true,
+        "series" -> Json.arr(
+          Json.obj(
+            "data" -> JsArray(pie)
           )
         )
-      }
+      )
+    }
 
   private def dateFilters(mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime]): Seq[JsObject] = {
     val to = mayBeTo.getOrElse(DateTime.now())

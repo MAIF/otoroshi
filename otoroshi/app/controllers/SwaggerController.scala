@@ -1115,18 +1115,18 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "to"
     ),
     "properties" -> Json.obj(
-      "id" -> SimpleStringType ~~> "Id of the certificate",
-      "chain" -> SimpleStringType ~~> "Certificate chain of trust in PEM format",
+      "id"         -> SimpleStringType ~~> "Id of the certificate",
+      "chain"      -> SimpleStringType ~~> "Certificate chain of trust in PEM format",
       "privateKey" -> SimpleStringType ~~> "PKCS8 private key in PEM format",
-      "caRef" -> SimpleStringType ~~> "Reference for a CA certificate in otoroshi",
-      "autoRenew" -> SimpleStringType ~~> "Allow Otoroshi to renew the certificate (if self signed)",
-      "domain" -> SimpleStringType ~~> "Domain of the certificate (read only)",
+      "caRef"      -> SimpleStringType ~~> "Reference for a CA certificate in otoroshi",
+      "autoRenew"  -> SimpleStringType ~~> "Allow Otoroshi to renew the certificate (if self signed)",
+      "domain"     -> SimpleStringType ~~> "Domain of the certificate (read only)",
       "selfSigned" -> SimpleStringType ~~> "Certificate is self signed  read only)",
-      "ca" -> SimpleStringType ~~> "Certificate is a CA (read only)",
-      "valid" -> SimpleStringType ~~> "Certificate is valid (read only)",
-      "subject" -> SimpleStringType ~~> "Subject of the certificate (read only)",
-      "from" -> SimpleStringType ~~> "Start date of validity",
-      "to" -> SimpleStringType ~~> "End date of validity"
+      "ca"         -> SimpleStringType ~~> "Certificate is a CA (read only)",
+      "valid"      -> SimpleStringType ~~> "Certificate is valid (read only)",
+      "subject"    -> SimpleStringType ~~> "Subject of the certificate (read only)",
+      "from"       -> SimpleStringType ~~> "Start date of validity",
+      "to"         -> SimpleStringType ~~> "End date of validity"
     )
   )
 
@@ -2024,7 +2024,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     Json.obj(
       "swagger" -> "2.0",
       "info" -> Json.obj(
-        "version"     -> "1.3.1-dev",
+        "version"     -> "1.3.1",
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact" -> Json.obj(

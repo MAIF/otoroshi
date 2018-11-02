@@ -25,7 +25,7 @@ Otoroshi is an awesome reverse proxy built with Scala that handles all the calls
 ## Now some sh :)
 
 ```sh
-curl -L -o otoroshi.jar https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.1-dev/otoroshi.jar
+curl -L -o otoroshi.jar https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.1/otoroshi.jar
 curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.1-dev/otoroshicli
 # or if you use linux
 curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.1-dev/otoroshicli

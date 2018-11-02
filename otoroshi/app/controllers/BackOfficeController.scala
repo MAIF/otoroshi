@@ -625,13 +625,17 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                 keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 val keyPair = keyPairGenerator.generateKeyPair()
-                val cert = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
+                val cert = FakeKeyStore.createCertificateFromCA(host,
+                                                                FiniteDuration(365, TimeUnit.DAYS),
+                                                                keyPair,
+                                                                ca.certificate.get,
+                                                                ca.keyPair)
                 Ok(Cert(cert, keyPair, ca).enrich().toJson)
               }
             }
             Ok(FakeKeyStore.generateCert(host).toJson)
           }
-          case None       => BadRequest(Json.obj("error" -> s"No host provided"))
+          case None => BadRequest(Json.obj("error" -> s"No host provided"))
         }
       } recover {
         case e =>
@@ -649,17 +653,19 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
             keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
             val keyPair = keyPairGenerator.generateKeyPair()
-            val ca   = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), keyPair)
+            val ca      = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), keyPair)
             val cert = Cert(
               id = IdGenerator.token(32),
-              chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}",
-              privateKey = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+              chain =
+                s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}",
+              privateKey =
+                s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
               caRef = None,
               autoRenew = false
             ).enrich()
             Ok(cert.toJson)
           }
-          case None       => BadRequest(Json.obj("error" -> s"No host provided"))
+          case None => BadRequest(Json.obj("error" -> s"No host provided"))
         }
       } recover {
         case e =>
@@ -680,7 +686,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                 keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 val keyPair = keyPairGenerator.generateKeyPair()
-                val cert = FakeKeyStore.createCertificateFromCA(host, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
+                val cert = FakeKeyStore.createCertificateFromCA(host,
+                                                                FiniteDuration(365, TimeUnit.DAYS),
+                                                                keyPair,
+                                                                ca.certificate.get,
+                                                                ca.keyPair)
                 Ok(Cert(cert, keyPair, ca).enrich().toJson)
               }
             }
@@ -699,16 +709,17 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     env.datastores.certificatesDataStore.findById(id).flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
       case Some(original) if original.ca && original.selfSigned => {
-        val keyPair: KeyPair = original.keyPair
+        val keyPair: KeyPair      = original.keyPair
         val cert: X509Certificate = FakeKeyStore.createCA(original.subject, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert     = Cert(cert, keyPair, None).enrich().copy(id = original.id)
         certificate.save().map { _ =>
           Ok(certificate.toJson)
         }
       }
       case Some(original) if original.selfSigned => {
         val keyPair: KeyPair = original.keyPair
-        val cert: X509Certificate = FakeKeyStore.createSelfSignedCertificate(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair)
+        val cert: X509Certificate =
+          FakeKeyStore.createSelfSignedCertificate(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair)
         val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
         certificate.save().map { _ =>
           Ok(certificate.toJson)
@@ -719,7 +730,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
           case Some(ca) => {
             val keyPair: KeyPair = original.keyPair
-            val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair, ca.certificate.get, ca.keyPair)
+            val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain,
+                                                                             FiniteDuration(365, TimeUnit.DAYS),
+                                                                             keyPair,
+                                                                             ca.certificate.get,
+                                                                             ca.keyPair)
             val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
             certificate.save().map { _ =>
               Ok(certificate.toJson)

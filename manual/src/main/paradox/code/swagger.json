@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "1.3.1-dev",
+    "version" : "1.3.1",
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
     "contact" : {
@@ -49,6 +49,9 @@
   }, {
     "name" : "auth-config",
     "description" : "Everything about Otoroshi global auth. module config"
+  }, {
+    "name" : "certificates",
+    "description" : "Everything about Otoroshi SSL/TLS certificates"
   } ],
   "externalDocs" : {
     "description" : "Find out more about Otoroshi",
@@ -2241,6 +2244,201 @@
               }, {
                 "$ref" : "#/definitions/GenericOauth2ModuleConfig"
               } ]
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
+    "/api/certificates" : {
+      "get" : {
+        "deprecated" : false,
+        "tags" : [ "certificates" ],
+        "summary" : "Get one certificate by id",
+        "description" : "Get one certificate by id",
+        "operationId" : "oneCert",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The auth. config id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Certificate"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "certificates" ],
+        "summary" : "Delete one certificate by id",
+        "description" : "Delete one certificate by id",
+        "operationId" : "deleteCert",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The certificate id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Deleted"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "put" : {
+        "deprecated" : false,
+        "tags" : [ "certificates" ],
+        "summary" : "Update one certificate by id",
+        "description" : "Update one certificate by id",
+        "operationId" : "putCert",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The certificate id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Certificate"
+          },
+          "description" : "The certificate to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Certificate"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "patch" : {
+        "deprecated" : false,
+        "tags" : [ "certificates" ],
+        "summary" : "Update one certificate by id",
+        "description" : "Update one certificate by id",
+        "operationId" : "patchCert",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The certificate id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Patch"
+          },
+          "description" : "The certificate to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Certificate"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "post" : {
+        "deprecated" : false,
+        "tags" : [ "certificates" ],
+        "summary" : "Create one certificate",
+        "description" : "Create one certificate",
+        "operationId" : "createCert",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Certificate"
+          },
+          "description" : "The certificate to create"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Certificate"
             }
           }
         },
@@ -5256,6 +5454,73 @@
             "type" : "string"
           },
           "description" : "Metadata of the user"
+        }
+      }
+    },
+    "Certificate" : {
+      "description" : "A SSL/TLS X509 certificate",
+      "type" : "object",
+      "required" : [ "id", "chain", "privateKey", "caRef", "domain", "selfSigned", "ca", "valid", "autoRenew", "subject", "from", "to" ],
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Id of the certificate"
+        },
+        "chain" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Certificate chain of trust in PEM format"
+        },
+        "privateKey" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "PKCS8 private key in PEM format"
+        },
+        "caRef" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Reference for a CA certificate in otoroshi"
+        },
+        "autoRenew" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Allow Otoroshi to renew the certificate (if self signed)"
+        },
+        "domain" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Domain of the certificate (read only)"
+        },
+        "selfSigned" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Certificate is self signed  read only)"
+        },
+        "ca" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Certificate is a CA (read only)"
+        },
+        "valid" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Certificate is valid (read only)"
+        },
+        "subject" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Subject of the certificate (read only)"
+        },
+        "from" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "Start date of validity"
+        },
+        "to" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "End date of validity"
         }
       }
     }

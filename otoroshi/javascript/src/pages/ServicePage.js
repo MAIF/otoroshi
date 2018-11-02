@@ -386,11 +386,15 @@ export class ServicePage extends Component {
 
   createSelfSignedCert = () => {
     const line = this.state.service.line;
-    const value = this.state.service.subdomain + (line ? (line === 'prod' ? '' : '.' + line): '') + '.' + this.state.service.domain
+    const value =
+      this.state.service.subdomain +
+      (line ? (line === 'prod' ? '' : '.' + line) : '') +
+      '.' +
+      this.state.service.domain;
     BackOfficeServices.selfSignedCert(value).then(cert => {
       window.history.pushState({ cert: cert }, '', `/bo/dashboard/certificates/add`);
     });
-  }
+  };
 
   render() {
     if (!this.state.service) return null;
@@ -619,8 +623,19 @@ export class ServicePage extends Component {
                   }}>
                   {this.state.freeDomain ? 'exposed domain assistant' : 'exposed domain free input'}
                 </button>
-                {!this.state.neverSaved && <button type="button" onClick={this.createSelfSignedCert} className="btn btn-xs btn-info"><i className="glyphicon glyphicon-plus-sign"/> Create self signed cert.</button>}
-                {!this.state.neverSaved && <button type="button" disabled className="btn btn-xs btn-info"><i className="glyphicon glyphicon-plus-sign"/> Create Let's Encrypt cert.</button>}
+                {!this.state.neverSaved && (
+                  <button
+                    type="button"
+                    onClick={this.createSelfSignedCert}
+                    className="btn btn-xs btn-info">
+                    <i className="glyphicon glyphicon-plus-sign" /> Create self signed cert.
+                  </button>
+                )}
+                {!this.state.neverSaved && (
+                  <button type="button" disabled className="btn btn-xs btn-info">
+                    <i className="glyphicon glyphicon-plus-sign" /> Create Let's Encrypt cert.
+                  </button>
+                )}
               </div>
             </div>
             {this.state.service.env === 'prod' &&
@@ -1136,9 +1151,15 @@ export class ServicePage extends Component {
             />
             <CanaryCampaign serviceId={this.state.service.id} />
             <div className="form-group">
-              <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label"></label>
+              <label
+                htmlFor={`input-${this.props.label}`}
+                className="col-xs-12 col-sm-2 control-label"
+              />
               <div className="col-sm-10" style={{ paddingTop: 5 }}>
-                <button type="button" className="btn btn-success btn-xs" onClick={this.canaryToStandard}>
+                <button
+                  type="button"
+                  className="btn btn-success btn-xs"
+                  onClick={this.canaryToStandard}>
                   <i className="fa fa-twitter" /> Use canary targets as standard targets
                 </button>
               </div>

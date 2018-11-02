@@ -57,16 +57,8 @@ class CertificateInfos extends Component {
         <TextInput label="Subject" disabled={true} value={this.state.cert.subjectDN} />
         <TextInput label="Issuer" disabled={true} value={this.state.cert.issuerDN} />
         <TextInput label="Domain" disabled={true} value={this.state.cert.domain} />
-        <BooleanInput
-          label="Self signed"
-          disabled={true}
-          value={this.state.cert.selfSigned}
-        />
-        <BooleanInput
-          label="CA"
-          disabled={true}
-          value={this.state.cert.ca}
-        />
+        <BooleanInput label="Self signed" disabled={true} value={this.state.cert.selfSigned} />
+        <BooleanInput label="CA" disabled={true} value={this.state.cert.ca} />
         <TextInput
           label="Serial number"
           disabled={true}
@@ -100,10 +92,7 @@ class CertificateInfos extends Component {
 }
 
 class Commands extends Component {
-
-  state = {
-
-  }
+  state = {};
 
   createCASigned = (e, id) => {
     e.preventDefault();
@@ -116,58 +105,74 @@ class Commands extends Component {
         this.props.table().setState({ currentItem: cert, showAddForm: true });
       });
     }
-  }
+  };
 
   componentDidMount() {
-    const cert = this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----';
-    this.setState({ 
-      fullChainUrl: URL.createObjectURL(new Blob([this.props.rawValue.chain], { type: 'text/plain' })),
-      privateKeyUrl: URL.createObjectURL(new Blob([this.props.rawValue.privateKey], { type: 'text/plain' })),
-      fullPkUrl: URL.createObjectURL(new Blob([this.props.rawValue.chain + '\n' + this.props.rawValue.privateKey], { type: 'text/plain' })),
+    const cert =
+      this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----';
+    this.setState({
+      fullChainUrl: URL.createObjectURL(
+        new Blob([this.props.rawValue.chain], { type: 'text/plain' })
+      ),
+      privateKeyUrl: URL.createObjectURL(
+        new Blob([this.props.rawValue.privateKey], { type: 'text/plain' })
+      ),
+      fullPkUrl: URL.createObjectURL(
+        new Blob([this.props.rawValue.chain + '\n' + this.props.rawValue.privateKey], {
+          type: 'text/plain',
+        })
+      ),
       certUrl: URL.createObjectURL(new Blob([cert], { type: 'text/plain' })),
     });
   }
 
   render() {
     const certIsEmpty = !(this.props.rawValue.chain && this.props.rawValue.privateKey);
-    const canRenew = this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
+    const canRenew =
+      this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
         <div className="btn-group">
-          {this.props.rawValue.ca && <button
-            style={{ marginRight: 0 }}
-            type="button"
-            className="btn btn-sm btn-success"
-            onClick={e => {
-              this.createCASigned(e, this.props.rawValue.id);
-            }}>
-            <i className="glyphicon glyphicon-plus-sign" /> Create cert.
-          </button>}
-          {canRenew && <button
-            style={{ marginRight: 0 }}
-            type="button"
-            className="btn btn-sm btn-success"
-            onClick={e => {
-              BackOfficeServices.renewCert(this.props.rawValue.id).then(cert => {
-                this.props.rawOnChange(cert);
-              });
-            }}>
-            <i className="glyphicon glyphicon-repeat" /> Renew
-          </button>}
-          {false && <button
-            style={{ marginRight: 0 }}
-            type="button"
-            className="btn btn-sm btn-success"
-            onClick={e => {
-              const value = prompt('Certificate host ?');
-              if (value && value.trim() !== '') {
-                BackOfficeServices.selfSignedCert(value).then(cert => {
+          {this.props.rawValue.ca && (
+            <button
+              style={{ marginRight: 0 }}
+              type="button"
+              className="btn btn-sm btn-success"
+              onClick={e => {
+                this.createCASigned(e, this.props.rawValue.id);
+              }}>
+              <i className="glyphicon glyphicon-plus-sign" /> Create cert.
+            </button>
+          )}
+          {canRenew && (
+            <button
+              style={{ marginRight: 0 }}
+              type="button"
+              className="btn btn-sm btn-success"
+              onClick={e => {
+                BackOfficeServices.renewCert(this.props.rawValue.id).then(cert => {
                   this.props.rawOnChange(cert);
                 });
-              }
-            }}>
-            <i className="fas fa-screwdriver" /> Generate self signed cert.
-          </button>}
+              }}>
+              <i className="glyphicon glyphicon-repeat" /> Renew
+            </button>
+          )}
+          {false && (
+            <button
+              style={{ marginRight: 0 }}
+              type="button"
+              className="btn btn-sm btn-success"
+              onClick={e => {
+                const value = prompt('Certificate host ?');
+                if (value && value.trim() !== '') {
+                  BackOfficeServices.selfSignedCert(value).then(cert => {
+                    this.props.rawOnChange(cert);
+                  });
+                }
+              }}>
+              <i className="fas fa-screwdriver" /> Generate self signed cert.
+            </button>
+          )}
           <a
             style={{ marginRight: 0 }}
             href={this.state.certUrl}
@@ -269,7 +274,6 @@ class CertificateValid extends Component {
 }
 
 export class CertificatesPage extends Component {
-
   formSchema = {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     domain: {
@@ -280,8 +284,8 @@ export class CertificatesPage extends Component {
     commands: {
       type: Commands,
       props: {
-        setTitle: (t) => this.props.setTitle(t),
-        table: () => this.table
+        setTitle: t => this.props.setTitle(t),
+        table: () => this.table,
       },
     },
     infos: {
@@ -307,16 +311,39 @@ export class CertificatesPage extends Component {
   };
 
   columns = [
-    { title: 'Domain', content: item => !item.ca ? item.domain : '' },
+    { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
     { title: 'Subject', content: item => item.subject },
-    { title: 'Valid', content: item => {
-      const now = Date.now();
-      return (item.valid && (now > item.from && now < item.to)) ? 'yes' : 'no';
-    }, style: { textAlign: 'center', width: 70 }, notFilterable: true },
-    { title: 'CA', content: item => item.ca ? (
-      <button type="button" className="btn btn-primary btn-sm" onClick={e => this.createCASigned(e, item.id)}><i className="glyphicon glyphicon-plus-sign" /></button>
-    ) : 'no', style: { textAlign: 'center', width: 70 }, notFilterable: true },
-    { title: 'Self signed', content: item => item.selfSigned ? 'yes' : 'no', style: { textAlign: 'center', width: 100 }, notFilterable: true },
+    {
+      title: 'Valid',
+      content: item => {
+        const now = Date.now();
+        return item.valid && (now > item.from && now < item.to) ? 'yes' : 'no';
+      },
+      style: { textAlign: 'center', width: 70 },
+      notFilterable: true,
+    },
+    {
+      title: 'CA',
+      content: item =>
+        item.ca ? (
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={e => this.createCASigned(e, item.id)}>
+            <i className="glyphicon glyphicon-plus-sign" />
+          </button>
+        ) : (
+          'no'
+        ),
+      style: { textAlign: 'center', width: 70 },
+      notFilterable: true,
+    },
+    {
+      title: 'Self signed',
+      content: item => (item.selfSigned ? 'yes' : 'no'),
+      style: { textAlign: 'center', width: 100 },
+      notFilterable: true,
+    },
     { title: 'From', content: item => moment(item.from).format('DD/MM/YYYY HH:mm:ss') },
     { title: 'To', content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss') },
   ];
@@ -340,7 +367,7 @@ export class CertificatesPage extends Component {
         this.table.setState({ currentItem: cert, showAddForm: true });
       });
     }
-  }
+  };
 
   createCASigned = (e, id) => {
     e.preventDefault();
@@ -353,7 +380,7 @@ export class CertificatesPage extends Component {
         this.table.setState({ currentItem: cert, showAddForm: true });
       });
     }
-  }
+  };
 
   createCA = () => {
     const value = prompt('Certificate Authority CN');
@@ -364,7 +391,7 @@ export class CertificatesPage extends Component {
         this.table.setState({ currentItem: cert, showAddForm: true });
       });
     }
-  }
+  };
 
   render() {
     return (
@@ -390,11 +417,23 @@ export class CertificatesPage extends Component {
         showLink={true}
         rowNavigation={true}
         extractKey={item => item.id}
-        injectTable={table => this.table = table}
+        injectTable={table => (this.table = table)}
         injectTopBar={() => (
           <div className="btn-group">
-            <button type="button" onClick={this.createSelfSigned} style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Self signed cert.</button>
-            <button type="button" onClick={this.createCA}         style={{ marginRight: 0 }} className="btn btn-primary"><i className="glyphicon glyphicon-plus-sign"/> Self signed  Certificate Authority</button>
+            <button
+              type="button"
+              onClick={this.createSelfSigned}
+              style={{ marginRight: 0 }}
+              className="btn btn-primary">
+              <i className="glyphicon glyphicon-plus-sign" /> Self signed cert.
+            </button>
+            <button
+              type="button"
+              onClick={this.createCA}
+              style={{ marginRight: 0 }}
+              className="btn btn-primary">
+              <i className="glyphicon glyphicon-plus-sign" /> Self signed Certificate Authority
+            </button>
           </div>
         )}
       />

@@ -207,12 +207,13 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiGatewayParentRequest = configuration.getOptional[String]("otoroshi.headers.trace.parent").get
     lazy val OtoroshiAdminProfile         = configuration.getOptional[String]("otoroshi.headers.request.adminprofile").get
     lazy val OtoroshiClientId             = configuration.getOptional[String]("otoroshi.headers.request.clientid").get
-    lazy val OtoroshiSimpleApiKeyClientId = configuration.getOptional[String]("otoroshi.headers.request.simpleapiclientid").get
-    lazy val OtoroshiClientSecret         = configuration.getOptional[String]("otoroshi.headers.request.clientsecret").get
-    lazy val OtoroshiRequestId            = configuration.getOptional[String]("otoroshi.headers.request.id").get
-    lazy val OtoroshiRequestTimestamp     = configuration.getOptional[String]("otoroshi.headers.request.timestamp").get
-    lazy val OtoroshiAuthorization        = configuration.getOptional[String]("otoroshi.headers.request.authorization").get
-    lazy val OtoroshiBearer               = configuration.getOptional[String]("otoroshi.headers.request.bearer").get
+    lazy val OtoroshiSimpleApiKeyClientId =
+      configuration.getOptional[String]("otoroshi.headers.request.simpleapiclientid").get
+    lazy val OtoroshiClientSecret     = configuration.getOptional[String]("otoroshi.headers.request.clientsecret").get
+    lazy val OtoroshiRequestId        = configuration.getOptional[String]("otoroshi.headers.request.id").get
+    lazy val OtoroshiRequestTimestamp = configuration.getOptional[String]("otoroshi.headers.request.timestamp").get
+    lazy val OtoroshiAuthorization    = configuration.getOptional[String]("otoroshi.headers.request.authorization").get
+    lazy val OtoroshiBearer           = configuration.getOptional[String]("otoroshi.headers.request.bearer").get
     lazy val OtoroshiJWTAuthorization =
       configuration.getOptional[String]("otoroshi.headers.request.jwtAuthorization").get
     lazy val OtoroshiBasicAuthorization =
@@ -313,7 +314,7 @@ class Env(val configuration: Configuration,
     publicPatterns = Seq("/health")
   )
 
-  lazy val otoroshiVersion     = "1.3.1-dev"
+  lazy val otoroshiVersion     = "1.3.1"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -451,28 +452,36 @@ class Env(val configuration: Configuration,
       datastores.certificatesDataStore
         .findAll()(otoroshiExecutionContext, this)
         .map { certs =>
-          val foundOtoroshiCa = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
-          val foundOtoroshiDomainCert = certs.exists(c => c.domain == s"*.${this.domain}")
+          val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
+          val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
           val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
-          val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+          val keyPairGenerator           = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
           keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
           val keyPair1 = keyPairGenerator.generateKeyPair()
           val keyPair2 = keyPairGenerator.generateKeyPair()
           val keyPair3 = keyPairGenerator.generateKeyPair()
-          val ca = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
-          val caCert = Cert(ca, keyPair1, None).enrich()
+          val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
+          val caCert   = Cert(ca, keyPair1, None).enrich()
           if (!foundOtoroshiCa) {
             logger.warn(s"Generating CA certificate for Otoroshi self signed certificates ...")
             caCert.copy(id = Cert.OtoroshiCA).save()(otoroshiExecutionContext, this)
           }
           if (!foundOtoroshiDomainCert) {
             logger.warn(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
-            val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}", FiniteDuration(365, TimeUnit.DAYS), keyPair2, ca, keyPair1)
+            val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
+                                                             FiniteDuration(365, TimeUnit.DAYS),
+                                                             keyPair2,
+                                                             ca,
+                                                             keyPair1)
             Cert(cert1, keyPair1, caCert).enrich().save()(otoroshiExecutionContext, this)
           }
           if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
             logger.warn(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
-            val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}", FiniteDuration(365, TimeUnit.DAYS), keyPair3, ca, keyPair1)
+            val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}",
+                                                             FiniteDuration(365, TimeUnit.DAYS),
+                                                             keyPair3,
+                                                             ca,
+                                                             keyPair1)
             Cert(cert2, keyPair1, caCert).enrich().save()(otoroshiExecutionContext, this)
           }
         }(otoroshiExecutionContext)

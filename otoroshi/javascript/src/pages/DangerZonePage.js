@@ -409,8 +409,8 @@ export class DangerZonePage extends Component {
     },
     backOfficeAuthButtons: {
       type: BackOfficeAuthButtons,
-      props: {}
-    }
+      props: {},
+    },
   };
 
   formFlow = [
@@ -697,7 +697,6 @@ export class DangerZonePage extends Component {
     );
   }
 }
-
 
 class BackOfficeAuthButtons extends Component {
   render() {

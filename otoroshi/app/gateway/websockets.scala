@@ -18,7 +18,12 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  Message => PlayWSMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests}
 import play.api.mvc._
@@ -639,33 +644,39 @@ class WebSocketHandler()(implicit env: Env) {
                               val clientId = authBySimpleApiKeyClientId.get
                               env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
                                 case None =>
-                                  Errors.craftResponseResult(
-                                    "Invalid API key",
-                                    BadGateway,
-                                    req,
-                                    Some(descriptor),
-                                    Some("errors.invalid.api.key")
-                                  ).asLeft[WSFlow]
+                                  Errors
+                                    .craftResponseResult(
+                                      "Invalid API key",
+                                      BadGateway,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.invalid.api.key")
+                                    )
+                                    .asLeft[WSFlow]
                                 case Some(key) if !key.allowClientIdOnly => {
-                                  Errors.craftResponseResult(
-                                    "Bad API key",
-                                    BadGateway,
-                                    req,
-                                    Some(descriptor),
-                                    Some("errors.bad.api.key")
-                                  ).asLeft[WSFlow]
+                                  Errors
+                                    .craftResponseResult(
+                                      "Bad API key",
+                                      BadGateway,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.bad.api.key")
+                                    )
+                                    .asLeft[WSFlow]
                                 }
                                 case Some(key) if key.allowClientIdOnly =>
                                   key.withingQuotas().flatMap {
                                     case true => callDownstream(config, Some(key))
                                     case false =>
-                                      Errors.craftResponseResult(
-                                        "You performed too much requests",
-                                        TooManyRequests,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.too.much.requests")
-                                      ).asLeft[WSFlow]
+                                      Errors
+                                        .craftResponseResult(
+                                          "You performed too much requests",
+                                          TooManyRequests,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.too.much.requests")
+                                        )
+                                        .asLeft[WSFlow]
                                   }
                               }
                             } else if (authByCustomHeaders.isDefined) {

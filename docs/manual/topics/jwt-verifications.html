@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.3.0
+1.3.1
 </div>
 </div>
 <div class="nav-toc">
@@ -75,7 +75,6 @@
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
     <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
-    <li><a href="../integrations/auth0.html" class="page">Auth0</a></li>
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
@@ -85,6 +84,7 @@
     <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
     <li><a href="../topics/jwt-verifications.html" class="active page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -134,7 +134,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.3.0
+1.3.1
 </div>
 </div>
 <div class="nav-toc">
@@ -179,7 +179,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
     <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
-    <li><a href="../integrations/auth0.html" class="page">Auth0</a></li>
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
     <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
@@ -189,6 +188,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
     <li><a href="../topics/jwt-verifications.html" class="active page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -274,6 +274,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#transform-the-token" name="transform-the-token" class="anchor"><span class="anchor-link"></span></a>Transform the token</h3>
 <p>Using the <code>Verif. strategy</code> selector, you can choose <code>Verify, re-sign and transform jwt token</code>. This will verify if the token is signed using the settings from <code>jwt signing</code> section and the value of the fields provided in <code>Verify token fields</code>. Then the token will be re-signed using the settings provided in <code>Re-sign algo</code>. You can also change the location of the token using <code>Token location</code>, remove fields using <code>Remove token fields</code>, set fields value using <code>Set token fields</code> and even rename fields using <code>Rename token fields</code>.</p><div class="centered-img">
 <img src="../img/jwt-verif-transform.png" /></div>
+<p>You can also use a mini expression language in <code>Set token fields</code>. You just have to add expressions in values like <code>${expression}</code>. Supported expressions are the following :</p>
+<ul>
+  <li><code>${date}</code> =&gt; set the current date</li>
+  <li><code>${date.format(&#39;dd/MM/yyyy&#39;)}</code> =&gt; set the current date formatted with the format you want</li>
+  <li><code>${token.fieldName}</code> =&gt; get the value of the field named <code>fieldName</code></li>
+  <li><code>${token.fieldName.replace(&#39;a&#39;, &#39;b&#39;)}</code> =&gt; get the value of the field named <code>fieldName</code> and replace <code>a</code> with <code>b</code></li>
+  <li><code>${token.fieldName.replaceAll(&#39;[0-9]&#39;, &#39;-&#39;)}</code> =&gt; get the value of the field named <code>fieldName</code> and replace digits with <code>-</code></li>
+</ul>
+<p>you can of course use multiple expressions in one field like <code>my-value-is-${date}-with${token.user}</code></p>
 <h2><a href="#global-verifications" name="global-verifications" class="anchor"><span class="anchor-link"></span></a>Global verifications</h2>
 <p>You can create global jwt verifiers and reference them in your services (from the <code>Type</code> selector). When you set the type of verification to <code>Reference to a global definition</code>, you can choose an existing global jwt verifier</p><div class="centered-img">
 <img src="../img/jwt-verif-global-ref.png" /></div>
@@ -282,7 +291,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>you can them create, edit or delete verifiers</p><div class="centered-img">
 <img src="../img/jwt-verif-global-verifier.png" /></div>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../api.html">Admin REST API</a></p>
+<p><strong>Next:</strong> <a href="../topics/ssl.html">SSL/TLS termination with Otoroshi</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>

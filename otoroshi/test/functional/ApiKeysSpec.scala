@@ -378,7 +378,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"      -> serviceHost,
           "x-api-key" -> apiKey2.clientId
         )
         .get()
@@ -396,7 +396,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> serviceHost,
+          "Host"      -> serviceHost,
           "x-api-key" -> apiKey.clientId
         )
         .get()

@@ -84,7 +84,7 @@ object ApiKey {
 
   val _fmt: Format[ApiKey] = new Format[ApiKey] {
     override def writes(apk: ApiKey): JsValue = Json.obj(
-      "clientId"        -> apk.clientId,
+      "clientId"          -> apk.clientId,
       "clientSecret"      -> apk.clientSecret,
       "clientName"        -> apk.clientName,
       "authorizedGroup"   -> apk.authorizedGroup,
