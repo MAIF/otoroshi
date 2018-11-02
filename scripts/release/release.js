@@ -208,9 +208,9 @@ async function buildLinuxCLI(location, version) {
 
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `Prepare the release of Otoroshi version ${version}`], location);
-  await runSystemCommand('git', ['push', 'origin', 'master'], location);
+  //await runSystemCommand('git', ['push', 'origin', 'master'], location);
   await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, version], location);
-  await runSystemCommand('git', ['push', '--tags'], location);
+  //await runSystemCommand('git', ['push', '--tags'], location);
 }
 
 async function pushToBintray(location, version) {
@@ -277,8 +277,19 @@ async function installDependencies(location) {
   await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/rancher'));
 }
 
+async function keypress() {
+  process.stdin.setRawMode(true)
+  return new Promise(resolve => process.stdin.once('data', () => {
+    process.stdin.setRawMode(false)
+    resolve()
+  }))
+}
+
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
+  console.log(`Don't forget to set JAVA_HOME to JDK8_HOME and to docker login`);
+  console.log(`Press a key to continue ...`)
+  await keypress();
   const releaseDir = path.resolve(location, `./release-${to}`);
   if (!fs.pathExistsSync(location)) {
     const last = location.split('/').pop();
@@ -307,7 +318,11 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await publishDockerDemo(location, to);
     await changeVersion(location, to, next);
     await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
-    await runSystemCommand('git', ['push', 'origin', 'master'], location);
+    console.log('Now just push everything ...')
+    console.log(' * git push origin master')
+    console.log(' * git push --tags')
+    // await runSystemCommand('git', ['push', 'origin', 'master'], location);
+    // await runSystemCommand('git', ['push', '--tags'], location);
   }
 }
 

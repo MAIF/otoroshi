@@ -17,11 +17,11 @@ prepare_build () {
     sbt dist
     sbt assembly
     cd $LOCATION
-    cp ../../otoroshi/target/universal/otoroshi-1.3.1.zip ./otoroshi-dist.zip
+    cp ../../otoroshi/target/universal/otoroshi-1.3.2-dev.zip ./otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
   fi
   unzip otoroshi-dist.zip
-  mv otoroshi-1.3.1-dev otoroshi
+  mv otoroshi-1.3.1 otoroshi
   rm -rf otoroshi-dist.zip
   chmod +x ./otoroshi/bin/otoroshi
   mkdir -p ./otoroshi/imports
