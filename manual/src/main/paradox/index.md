@@ -20,7 +20,7 @@ You can download the latest build of Otoroshi as a [fat jar](https://dl.bintray.
 You can install and run Otoroshi with this little bash snippet
 
 ```sh
-wget -q --show-progress 'https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.1-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.1-dev/otoroshi.jar'
 # run the following line if you want to use the admin UI in your browser
 sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar" >> /etc/hosts
 # Java 8
