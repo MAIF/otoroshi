@@ -115,7 +115,7 @@ async function buildVersion(version, where, releaseDir) {
   // run test and build server
   await runScript(`
     export JAVA_HOME=$JDK8_HOME
-    export PATH=${JAVA_HOME}/bin:${PATH}
+    export PATH=\${JAVA_HOME}/bin:\${PATH}
     cd ${where}/otoroshi
     sbt ";test;dist;assembly"
   `, where);
