@@ -15,6 +15,7 @@ build () {
   cd $LOCATION/manual
   sbt ';clean;paradox'
   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
+  git add --all $LOCATION/docs
   mv $LOCATION/docs/main $LOCATION/docs/manual
 }
 
