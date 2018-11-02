@@ -9,6 +9,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
+import cluster.ClusterMode
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import events._
@@ -102,6 +103,8 @@ class Env(val configuration: Configuration,
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
+  lazy val clusterMode: ClusterMode = configuration.getOptional[String]("otoroshi.cluster.mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off)
+
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
   lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)
@@ -114,8 +117,8 @@ class Env(val configuration: Configuration,
   lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
   lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
-  lazy val exposeAdminApi: Boolean         = configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
-  lazy val exposeAdminDashboard: Boolean   = configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
+  lazy val exposeAdminApi: Boolean         = if (clusterMode.isWorker) false else configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
+  lazy val exposeAdminDashboard: Boolean   = if (clusterMode.isWorker) false else configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
   lazy val adminApiProxyHttps: Boolean     = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
     configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
