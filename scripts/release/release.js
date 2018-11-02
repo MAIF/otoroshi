@@ -2,6 +2,7 @@ const cmd = require('node-cmd');
 const { spawn } = require('child_process');
 const path = require('path');
 const _ = require('lodash');
+const moment = require('moment');
 const fs = require('fs-extra');
 const fetch = require('node-fetch');
 const { chunksToLinesAsync, chomp } = require('@rauschma/stringio');
@@ -84,6 +85,7 @@ async function changeVersion(where, from, to) {
 async function buildVersion(version, where, releaseDir) {
   // format code
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/fmt.sh')], where);
+  await runSystemCommand('git', ['commit', '-am', `Format code before release`], location);
   // clean
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'clean'], where);
   // build ui
@@ -110,8 +112,11 @@ async function buildVersion(version, where, releaseDir) {
     ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
     rm -f ./RUNNING_PID
   `, where);
+  await runSystemCommand('git', ['commit', '-am', `Update swagger file before release`], location);
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
+  await runSystemCommand('git', ['add', '--all'], location);
+  await runSystemCommand('git', ['commit', '-am', `Update site documentation before release`], location);
   // run test and build server
   await runScript(`
     export JAVA_HOME=$JDK8_HOME
@@ -208,9 +213,7 @@ async function buildLinuxCLI(location, version) {
 
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `Prepare the release of Otoroshi version ${version}`], location);
-  //await runSystemCommand('git', ['push', 'origin', 'master'], location);
   await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, version], location);
-  //await runSystemCommand('git', ['push', '--tags'], location);
 }
 
 async function pushToBintray(location, version) {
@@ -285,44 +288,74 @@ async function keypress() {
   }))
 }
 
+let steps = [];
+
+async function ensureStep(step, file, f) {
+  const found = _.find(steps, s => s.step === step && s.state === 'stop');
+  if (!!found) {
+    console.log(`Step ${step} already done ... moving along`);
+    return Promise.resolve('');
+  }
+  console.log(`
+===================================================================================================  
+== Step: ${step}
+===================================================================================================  
+  `);
+  fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'start' }) + '\n');
+  return f().then(() => {
+    fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'stop' }) + '\n');
+  }, e => {
+    fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'error', error: e.message }) + '\n');
+    throw new Error(e);
+  });
+}
+
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
   console.log(`Don't forget to set JAVA_HOME to JDK8_HOME and to docker login`);
   console.log(`Press a key to continue ...`)
   await keypress();
   const releaseDir = path.resolve(location, `./release-${to}`);
+  const releaseFile = path.resolve(releaseDir, 'release-steps');
   if (!fs.pathExistsSync(location)) {
     const last = location.split('/').pop();
     await runSystemCommand('git', ['clone', 'https://github.com/MAIF/otoroshi.git', last, '--depth=1'], path.resolve(location, '..'));
   }
   fs.mkdirpSync(releaseDir);
-  await installDependencies(location);
-  await changeVersion(location, from, to);
-  {
-    const filePath = path.resolve(location, './docs/index.html');
-    const content = fs.readFileSync(filePath, 'utf8');
-    console.log('Changing version in', filePath);
-    const newContent = content.replace(last, to);
-    fs.writeFileSync(filePath, newContent);
+  if (!fs.pathExistsSync(releaseFile)) {
+    fs.createFileSync(releaseFile);
+  } else {
+    steps = fs.readFileSync(releaseFile, 'utf8').split('\n').map(line => JSON.parse(line));
   }
-  await buildVersion(to, location, releaseDir);
-  // await buildMacCLI(location, to);
-  await buildLinuxCLI(location, to);
-  if (!dryRun) {
-    await githubTag(location, to);
-    await pushToBintray(location, to);
-    await publishSbt(location, to);
-    await createGithubRelease(to);
-    await publishDockerOtoroshi(location, to);
-    await publishDockerCli(location, to);
-    await publishDockerDemo(location, to);
-    await changeVersion(location, to, next);
+  
+  await ensureStep('INSTALL_DEPS', releaseFile, () => installDependencies(location));
+  await ensureStep('CHANGE_TO_RELEASE_VERSION', releaseFile, async () => {
+    {
+      const filePath = path.resolve(location, './docs/index.html');
+      const content = fs.readFileSync(filePath, 'utf8');
+      console.log('Changing version in', filePath);
+      const newContent = content.replace(last, to);
+      fs.writeFileSync(filePath, newContent);
+    }
+    await changeVersion(location, from, to);
     await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
-    console.log('Now just push everything ...')
-    console.log(' * git push origin master')
-    console.log(' * git push --tags')
-    // await runSystemCommand('git', ['push', 'origin', 'master'], location);
-    // await runSystemCommand('git', ['push', '--tags'], location);
+  });
+  await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir));
+  await ensureStep('BUILD_LINUX_CLI', releaseFile, () => buildLinuxCLI(location, to));
+  if (!dryRun) {
+    await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to));
+    await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
+    await ensureStep('PUSH_TO_BINTRAY', releaseFile, () => pushToBintray(location, to));
+    await ensureStep('PUBLISH_LIBRARIES', releaseFile, () => publishSbt(location, to));
+    await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
+    await ensureStep('PUBLISH_DOCKER_OTOROSHI_CLI', releaseFile, () => publishDockerCli(location, to));
+    await ensureStep('PUBLISH_DOCKER_OTOROSHI_DEMO', releaseFile, () => publishDockerDemo(location, to));
+    await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next));
+    await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
+      await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
+      await runSystemCommand('git', ['push', 'origin', 'master'], location);
+      await runSystemCommand('git', ['push', '--tags'], location);
+    });
   }
 }
 
