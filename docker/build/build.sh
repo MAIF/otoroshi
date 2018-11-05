@@ -100,29 +100,29 @@ case "${1}" in
   build-all)
     prepare_build
     build_jdk8 $2
-    build_jdk9 $2
-    build_jdk10 $2
+    #build_jdk9 $2
+    #build_jdk10 $2
     build_jdk11 $2
     build_jdk12 $2
-    build_graal $2
+    #build_graal $2
     cleanup
     ;;
   push-all)
     prepare_build
     build_jdk8 $2
-    build_jdk9 $2
-    build_jdk10 $2
+    #build_jdk9 $2
+    #build_jdk10 $2
     build_jdk11 $2
     build_jdk12 $2
-    build_graal $2
+    #build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
     docker push "maif/otoroshi:$2-jdk8"
-    docker push "maif/otoroshi:$2-jdk9"
-    docker push "maif/otoroshi:$2-jdk10"
+    #docker push "maif/otoroshi:$2-jdk9"
+    #docker push "maif/otoroshi:$2-jdk10"
     docker push "maif/otoroshi:$2-jdk11"
     docker push "maif/otoroshi:$2-jdk12"
-    docker push "maif/otoroshi:$2-graal"
+    #docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
     ;;
   build-and-push-snapshot)
