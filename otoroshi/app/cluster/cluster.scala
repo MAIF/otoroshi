@@ -32,6 +32,10 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
+object Cluster {
+  lazy val logger = Logger("otoroshi-cluster")
+}
+
 trait ClusterMode {
   def name: String
   def clusterActive: Boolean
@@ -108,8 +112,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   implicit lazy val ec = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-cluster-api")
-
   val sourceBodyParser = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
@@ -128,6 +130,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   }
 
   def createSession() = ApiAction.async(parse.json) { ctx =>
+    Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating session")
     env.clusterConfig.mode match {
       case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
@@ -153,7 +156,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           val increment = (jsItem \ "increment").asOpt[Long].getOrElse(0L)
           env.datastores.apiKeyDataStore.findById(id).flatMap {
             case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment).andThen {
-              case e => logger.debug(s"Increment of ${increment} for apikey ${apikey.clientName}")
+              case e => Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Increment of ${increment} for apikey ${apikey.clientName}")
             }
             case None => FastFuture.successful(())
           }
@@ -189,8 +192,6 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   implicit lazy val ec = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
-
-  lazy val logger = Logger("otoroshi-cluster-agent")
 
   private val pollRef = new AtomicReference[Cancellable]()
   private val pushRef = new AtomicReference[Cancellable]()
@@ -232,6 +233,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private def pullState(): Unit = {
     val memory: Memory = Memory()
     val count = counter.incrementAndGet() % (if (config.leader.urls.nonEmpty) config.leader.urls.size else 1)
+    val start = System.currentTimeMillis()
     env.Ws.url(config.leader.urls.apply(count) + "/api/cluster/state")
       .withHttpHeaders("Host" -> config.leader.host)
       .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
@@ -248,7 +250,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             memory.store.put(key, ByteString(value))
             memory.expirations.put(key, ttl)
           }).map { _ =>
-            logger.debug("Swapping store instance now !")
+            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] consumed state in ${System.currentTimeMillis() - start} ms.")
+            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Swapping store instance now !")
             env.datastores.asInstanceOf[SwappableInMemoryDataStores].redis.swap(memory)
           }
       }
@@ -289,8 +292,6 @@ class SwappableInMemoryDataStores(configuration: Configuration,
                          env: Env)
   extends DataStores {
 
-  lazy val logger = Logger("otoroshi-swappable-in-memory-datastores")
-
   lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
   lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
   lazy val actorSystem =
@@ -306,7 +307,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
-    logger.warn("Now using Swappable InMemory DataStores")
+    Cluster.logger.warn("Now using Swappable InMemory DataStores")
     redis.start()
     _certificateDataStore.startSync()
     FastFuture.successful(())
