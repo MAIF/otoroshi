@@ -332,7 +332,7 @@ class Env(val configuration: Configuration,
       datastores.globalConfigDataStore
         .isOtoroshiEmpty()
         .andThen {
-          case Success(true) => {
+          case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
             logger.warn(s"The main datastore seems to be empty, registering some basic services")
             val login    = configuration.getOptional[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
             val password = configuration.getOptional[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
