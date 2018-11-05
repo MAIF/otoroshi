@@ -12,7 +12,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
@@ -32,6 +32,10 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
+/**
+  * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
+  * java -Dhttp.port=9080 -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker -jar otoroshi.jar
+  */
 object Cluster {
   lazy val logger = Logger("otoroshi-cluster")
 }
@@ -82,10 +86,11 @@ case class LeaderConfig(urls: Seq[String] = Seq.empty, host: String = "otoroshi-
 case class ClusterConfig(mode: ClusterMode = ClusterMode.Off, leader: LeaderConfig = LeaderConfig(), worker: WorkerConfig = WorkerConfig())
 object ClusterConfig {
   def apply(configuration: Configuration): ClusterConfig = {
+    Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
     ClusterConfig(
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       leader = LeaderConfig(
-        urls = configuration.getOptional[Seq[String]]("worker.leader.urls").map(_.toSeq).getOrElse(Seq.empty),
+        urls = configuration.getOptional[Seq[String]]("worker.leader.urls").map(_.toSeq).getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
         host = configuration.getOptional[String]("worker.leader.host").getOrElse("otoroshi-api.foo.bar"),
         clientId = configuration.getOptional[String]("worker.leader.clientId").getOrElse("admin-api-apikey-id"),
         clientSecret = configuration.getOptional[String]("worker.leader.clientSecret").getOrElse("admin-api-apikey-secret"),
@@ -93,7 +98,7 @@ object ClusterConfig {
       ),
       worker = WorkerConfig(
         state = WorkerStateConfig(
-          pollEvery = configuration.getOptional[Long]("worker.state.pollEvery").getOrElse(10000L)
+          pollEvery = configuration.getOptional[Long]("worker.state.pollEvery").getOrElse(2000L)
         ),
         quotas = WorkerQuotasConfig(
           pushEvery = configuration.getOptional[Long]("worker.quotas.pushEvery").getOrElse(2000L)
@@ -198,9 +203,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val counter = new AtomicInteger(0)
   private val incrementsRef = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
+  private def otoroshiUrl: String = {
     val count = counter.incrementAndGet() % (if (config.leader.urls.nonEmpty) config.leader.urls.size else 1)
-    env.Ws.url(config.leader.urls.apply(count) + s"/api/cluster/sessions/$id")
+    config.leader.urls.zipWithIndex.find(t => t._2 == count).map(_._1).getOrElse(config.leader.urls.head)
+  }
+
+  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
+    env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
       .withHttpHeaders("Host" -> config.leader.host)
       .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
       .get()
@@ -214,8 +223,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   def createSession(user: PrivateAppsUser): Future[Unit] = {
-    val count = counter.incrementAndGet() % (if (config.leader.urls.nonEmpty) config.leader.urls.size else 1)
-    env.Ws.url(config.leader.urls.apply(count) + s"/api/cluster/sessions")
+    env.Ws.url(otoroshiUrl + s"/api/cluster/sessions")
       .withHttpHeaders("Host" -> config.leader.host)
       .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
       .post(user.toJson)
@@ -230,11 +238,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   // TODO: retry on errors
-  private def pullState(): Unit = {
+  private def pollState(): Unit = {
+    Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Polling state")
     val memory: Memory = Memory()
-    val count = counter.incrementAndGet() % (if (config.leader.urls.nonEmpty) config.leader.urls.size else 1)
     val start = System.currentTimeMillis()
-    env.Ws.url(config.leader.urls.apply(count) + "/api/cluster/state")
+    env.Ws.url(otoroshiUrl + "/api/cluster/state")
       .withHttpHeaders("Host" -> config.leader.host)
       .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
       .withMethod("GET")
@@ -259,13 +267,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   // TODO: retry on errors
   private def pushQuotas(): Unit = {
+    Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushing quotas")
     val old = incrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
-    val count = counter.incrementAndGet() % (if (config.leader.urls.nonEmpty) config.leader.urls.size else 1)
     val body = old.toSeq.map {
       case (key, inc) => ByteString(Json.stringify(Json.obj("key" -> key, "increment" -> inc.get())) + "\n")
     }.fold(ByteString.empty)(_ ++ _)
     val wsBody = InMemoryBody(body)
-    env.Ws.url(config.leader.urls.apply(count) + "/api/cluster/quotas")
+    env.Ws.url(otoroshiUrl + "/api/cluster/quotas")
       .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/x-ndjson")
       .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
       .withBody(wsBody)
@@ -274,7 +282,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
-      pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(pullState()))
+      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting agent ${config}")
+      pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(pollState()))
       pushRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(pushQuotas()))
     }
   }
