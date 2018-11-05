@@ -1,7 +1,11 @@
 package storage.leveldb
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import com.typesafe.config.ConfigFactory
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
@@ -12,6 +16,7 @@ import play.api.inject.ApplicationLifecycle
 import storage.{DataStoreHealth, DataStores}
 import storage.inmemory._
 import env.Env
+import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 import ssl.CertificateDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -94,4 +99,30 @@ class LevelDbDataStores(configuration: Configuration,
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
+  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+    Source
+      .fromFuture(
+        redis.keys(s"${env.storageRoot}:*")
+      )
+      .mapConcat(_.toList)
+      .grouped(group)
+      .mapAsync(1) {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+        case keys                 => {
+          Future.sequence(keys.map { key =>
+            redis.get(key).flatMap { value =>
+              val jsonValue = value.map(bs => JsString(bs.utf8String)).getOrElse(JsNull)
+              redis.ttl(key).map { ttl =>
+                Json.obj("key" -> key, "value" -> jsonValue, "ttl" -> ttl)
+              }
+            }
+          })
+        }
+      }
+      .mapConcat(_.toList)
+  }
+
+  override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    redis.set(key, value.utf8String, pxMilliseconds = px)
+  }
 }

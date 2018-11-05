@@ -9,7 +9,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
-import cluster.ClusterMode
+import cluster.{ClusterAgent, _}
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import events._
@@ -103,7 +103,8 @@ class Env(val configuration: Configuration,
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
-  lazy val clusterMode: ClusterMode = configuration.getOptional[String]("otoroshi.cluster.mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off)
+  lazy val clusterConfig: ClusterConfig = ClusterConfig(configuration.getOptional[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty))
+  lazy val clusterAgent: ClusterAgent = ClusterAgent(clusterConfig, this)
 
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
@@ -117,8 +118,8 @@ class Env(val configuration: Configuration,
   lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
   lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
-  lazy val exposeAdminApi: Boolean         = if (clusterMode.isWorker) false else configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
-  lazy val exposeAdminDashboard: Boolean   = if (clusterMode.isWorker) false else configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
+  lazy val exposeAdminApi: Boolean         = if (clusterConfig.mode.isWorker) false else configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
+  lazy val exposeAdminDashboard: Boolean   = if (clusterConfig.mode.isWorker) false else configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
   lazy val adminApiProxyHttps: Boolean     = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
     configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
@@ -246,6 +247,7 @@ class Env(val configuration: Configuration,
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
+      case _ if clusterConfig.mode == ClusterMode.Worker => new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
       case "redis"     => new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory"  => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle, this)
@@ -258,12 +260,13 @@ class Env(val configuration: Configuration,
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
   datastores.before(configuration, environment, lifecycle)
+  clusterAgent.start()
   lifecycle.addStopHook(() => {
 
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
-
+    clusterAgent.stop()
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
     FastFuture.successful(())

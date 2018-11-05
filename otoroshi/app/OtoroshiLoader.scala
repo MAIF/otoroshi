@@ -1,4 +1,5 @@
 import actions._
+import cluster.ClusterController
 import com.softwaremill.macwire._
 import controllers._
 import env.Env
@@ -59,6 +60,7 @@ package object modules {
     lazy val backOfficeController  = wire[BackOfficeController]
     lazy val privateAppsController = wire[PrivateAppsController]
     lazy val u2fController         = wire[U2FController]
+    lazy val clusterController     = wire[ClusterController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

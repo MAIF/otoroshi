@@ -156,6 +156,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                   user
                     .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
                     .map { paUser =>
+                      env.clusterAgent.createSession(paUser)
                       val redirectTo = ctx.request.session
                         .get("pa-redirect-after-login")
                         .getOrElse(

@@ -1,7 +1,11 @@
 package storage.redis
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import com.typesafe.config.ConfigFactory
 import env.Env
@@ -9,6 +13,7 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import ssl.CertificateDataStore
@@ -114,5 +119,31 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
     redis.info().map(_ => Healthy).recover {
       case _ => Unreachable
     }
+  }
+  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+    Source
+      .fromFuture(
+        redis.keys(s"${env.storageRoot}:*")
+      )
+      .mapConcat(_.toList)
+      .grouped(group)
+      .mapAsync(1) {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+        case keys                 => {
+          Future.sequence(keys.map { key =>
+            redis.get(key).flatMap { value =>
+              val jsonValue = value.map(bs => JsString(bs.utf8String)).getOrElse(JsNull)
+              redis.ttl(key).map { ttl =>
+                Json.obj("key" -> key, "value" -> jsonValue, "ttl" -> ttl)
+              }
+            }
+          })
+        }
+      }
+      .mapConcat(_.toList)
+  }
+
+  override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    redis.set(key, value.utf8String, pxMilliseconds = px)
   }
 }
