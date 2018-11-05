@@ -90,11 +90,11 @@ object ClusterConfig {
     ClusterConfig(
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       leader = LeaderConfig(
-        urls = configuration.getOptional[Seq[String]]("worker.leader.urls").map(_.toSeq).getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
-        host = configuration.getOptional[String]("worker.leader.host").getOrElse("otoroshi-api.foo.bar"),
-        clientId = configuration.getOptional[String]("worker.leader.clientId").getOrElse("admin-api-apikey-id"),
-        clientSecret = configuration.getOptional[String]("worker.leader.clientSecret").getOrElse("admin-api-apikey-secret"),
-        groupingBy = configuration.getOptional[Int]("worker.leader.groupingBy").getOrElse(50)
+        urls = configuration.getOptional[Seq[String]]("leader.urls").map(_.toSeq).getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
+        host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.foo.bar"),
+        clientId = configuration.getOptional[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
+        clientSecret = configuration.getOptional[String]("leader.clientSecret").getOrElse("admin-api-apikey-secret"),
+        groupingBy = configuration.getOptional[Int]("leader.groupingBy").getOrElse(50)
       ),
       worker = WorkerConfig(
         state = WorkerStateConfig(
@@ -179,6 +179,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Off => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Leader => {
+        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
         Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).map { item =>
           ByteString(Json.stringify(item) + "\n")
         }, None, Some("application/x-ndjson")))
