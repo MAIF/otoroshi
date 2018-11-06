@@ -13,7 +13,7 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.{JsNull, JsString, JsValue, Json}
+import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.CertificateDataStore
 import storage.{DataStoreHealth, DataStores}
@@ -38,8 +38,7 @@ class InMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis =
-    if (experimental) new InMemoryRedisExperimental(actorSystem, logger) else new InMemoryRedis(actorSystem)
+  lazy val redis = new InMemoryRedis(actorSystem)
 
   override def before(configuration: Configuration,
                       environment: Environment,
@@ -108,10 +107,10 @@ class InMemoryDataStores(configuration: Configuration,
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 => {
           Future.sequence(keys.map { key =>
-            redis.get(key).flatMap { value =>
-              val jsonValue = value.map(bs => JsString(bs.utf8String)).getOrElse(JsNull)
-              redis.ttl(key).map { ttl =>
-                Json.obj("key" -> key, "value" -> jsonValue, "ttl" -> ttl)
+            redis.rawGet(key).flatMap { value =>
+              val (what, jsonValue) = toJson(value.get)
+              redis.pttl(key).map { ttl =>
+                Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
               }
             }
           })
@@ -122,5 +121,20 @@ class InMemoryDataStores(configuration: Configuration,
 
   override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     redis.set(key, value.utf8String, pxMilliseconds = px)
+  }
+
+  private def toJson(value: Any): (String, JsValue) = {
+
+    import collection.JavaConverters._
+
+    value match {
+      case str: String => ("string", JsString(str))
+      case str: ByteString => ("string", JsString(str.utf8String))
+      case lng: Long => ("string", JsString(lng.toString))
+      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] => ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] => ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] => ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case e => throw new RuntimeException(s"Unkown type ${e.getClass.getName}")
+    }
   }
 }

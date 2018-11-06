@@ -125,30 +125,6 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
-    Source
-      .fromFuture(
-        redis.keys(s"${env.storageRoot}:*")
-      )
-      .mapConcat(_.toList)
-      .grouped(group)
-      .mapAsync(1) {
-        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys                 => {
-          Future.sequence(keys.map { key =>
-            redis.get(key).flatMap { value =>
-              val jsonValue = value.map(bs => JsString(bs.utf8String)).getOrElse(JsNull)
-              redis.ttl(key).map { ttl =>
-                Json.obj("key" -> key, "value" -> jsonValue, "ttl" -> ttl)
-              }
-            }
-          })
-        }
-      }
-      .mapConcat(_.toList)
-  }
-
-  override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    redis.set(key, value.utf8String, pxMilliseconds = px)
-  }
+  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = throw new RuntimeException("Cluster mode not supported for Mongo datastore")
+  override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = throw new RuntimeException("Cluster mode not supported for Mongo datastore")
 }

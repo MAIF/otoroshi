@@ -16,7 +16,7 @@ import play.api.inject.ApplicationLifecycle
 import storage.{DataStoreHealth, DataStores}
 import storage.inmemory._
 import env.Env
-import play.api.libs.json.{JsNull, JsString, JsValue, Json}
+import play.api.libs.json._
 import ssl.CertificateDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -111,9 +111,9 @@ class LevelDbDataStores(configuration: Configuration,
         case keys                 => {
           Future.sequence(keys.map { key =>
             redis.get(key).flatMap { value =>
-              val jsonValue = value.map(bs => JsString(bs.utf8String)).getOrElse(JsNull)
-              redis.ttl(key).map { ttl =>
-                Json.obj("key" -> key, "value" -> jsonValue, "ttl" -> ttl)
+              val (what, jsonValue) = toJson(value.get)
+              redis.pttl(key).map { ttl =>
+                Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
               }
             }
           })
@@ -124,5 +124,21 @@ class LevelDbDataStores(configuration: Configuration,
 
   override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     redis.set(key, value.utf8String, pxMilliseconds = px)
+  }
+
+  private def toJson(value: Any): (String, JsValue) = {
+
+    def strToTuple(str: String): (String, JsValue) = {
+      val parts = str.split("<#>")
+      (parts(0), JsString(parts(1)))
+    }
+
+    value match {
+      case str: ByteString if str.containsSlice(ByteString("<#>")) => ("hash",   JsObject(str.utf8String.split(";;;").map(strToTuple).toSeq))
+      case str: ByteString if str.containsSlice(ByteString(";;;")) => ("list",   JsArray(str.utf8String.split(";;;").toSeq.map(JsString.apply)))
+      case str: ByteString if str.containsSlice(ByteString(";;>")) => ("set",    JsArray(str.utf8String.split(";;>").toSeq.map(JsString.apply)))
+      case str: ByteString                                         => ("string", JsString(str.utf8String))
+      case e => throw new RuntimeException(s"Unkown type for ${value}")
+    }
   }
 }
