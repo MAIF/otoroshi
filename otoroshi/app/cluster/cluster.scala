@@ -283,13 +283,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   // TODO: retry on errors
   private def pollState(): Unit = {
-    Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Polling state")
+    Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
     val start = System.currentTimeMillis()
     env.Ws.url(otoroshiUrl + "/api/cluster/state")
       .withHttpHeaders("Host" -> config.leader.host)
       .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
       .withMethod("GET")
       .stream()
+      .filter(_.status == 200)
       .map { resp =>
         val store = new ConcurrentHashMap[String, Any]()
         val expirations = new ConcurrentHashMap[String, Long]()
@@ -309,14 +310,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms.")
             env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
           }
-      }
+      }.recover {
+      case e => Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to fetch state from Otoroshi leader cluster", e)
+    }
   }
 
   // TODO: retry on errors or update in map
   private def pushQuotas(): Unit = {
     val old = incrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
     if (old.nonEmpty) {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushing quotas")
+      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
       val body = old.toSeq.map {
         case (key, inc) => ByteString(Json.stringify(Json.obj("key" -> key, "increment" -> inc.get())) + "\n")
       }.fold(ByteString.empty)(_ ++ _)
