@@ -330,6 +330,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         .withMethod("PUT")
         .withBody(wsBody)
         .stream()
+        .filter(_.status == 200)
+        .recover {
+          case e => Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster", e)
+        }
     }
   }
 
