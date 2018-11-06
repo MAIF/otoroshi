@@ -247,7 +247,12 @@ class Env(val configuration: Configuration,
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
-      case _ if clusterConfig.mode == ClusterMode.Worker => new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
+      case _           if clusterConfig.mode == ClusterMode.Worker => new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
+      case "redis"     if clusterConfig.mode == ClusterMode.Leader => new RedisDataStores(configuration, environment, lifecycle, this)
+      case "inmemory"  if clusterConfig.mode == ClusterMode.Leader => new InMemoryDataStores(configuration, environment, lifecycle, this)
+      case "leveldb"   if clusterConfig.mode == ClusterMode.Leader => new LevelDbDataStores(configuration, environment, lifecycle, this)
+      case "cassandra" if clusterConfig.mode == ClusterMode.Leader => throw new RuntimeException("Cassandra datastore is not supported yet as Otoroshi leader datastore")
+      case "mongo"     if clusterConfig.mode == ClusterMode.Leader => throw new RuntimeException("Mongo datastore is not supported yet as Otoroshi leader datastore")
       case "redis"     => new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory"  => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle, this)
@@ -260,7 +265,6 @@ class Env(val configuration: Configuration,
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
   datastores.before(configuration, environment, lifecycle)
-  clusterAgent.start()
   lifecycle.addStopHook(() => {
 
     healthCheckerActor ! PoisonPill
@@ -332,7 +336,7 @@ class Env(val configuration: Configuration,
       datastores.globalConfigDataStore
         .isOtoroshiEmpty()
         .andThen {
-          case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
+          case Success(true) => { //if clusterConfig.mode != ClusterMode.Worker => {
             logger.warn(s"The main datastore seems to be empty, registering some basic services")
             val login    = configuration.getOptional[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
             val password = configuration.getOptional[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
@@ -454,43 +458,49 @@ class Env(val configuration: Configuration,
 
   timeout(1000.millis).andThen {
     case _ => {
-      datastores.globalConfigDataStore.migrate()(otoroshiExecutionContext, this)
-      datastores.certificatesDataStore
-        .findAll()(otoroshiExecutionContext, this)
-        .map { certs =>
-          val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
-          val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
-          val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
-          val keyPairGenerator           = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-          keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-          val keyPair1 = keyPairGenerator.generateKeyPair()
-          val keyPair2 = keyPairGenerator.generateKeyPair()
-          val keyPair3 = keyPairGenerator.generateKeyPair()
-          val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
-          val caCert   = Cert(ca, keyPair1, None).enrich()
-          if (!foundOtoroshiCa) {
-            logger.warn(s"Generating CA certificate for Otoroshi self signed certificates ...")
-            caCert.copy(id = Cert.OtoroshiCA).save()(otoroshiExecutionContext, this)
+      implicit val ec = otoroshiExecutionContext
+      implicit val ev = this
+      clusterAgent.startF()
+      for {
+        _ <- datastores.globalConfigDataStore.migrate()
+        _ <- datastores.certificatesDataStore
+          .findAll()
+          .map { certs =>
+            val foundOtoroshiCa = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
+            val foundOtoroshiDomainCert = certs.exists(c => c.domain == s"*.${this.domain}")
+            val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
+            val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+            keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+            val keyPair1 = keyPairGenerator.generateKeyPair()
+            val keyPair2 = keyPairGenerator.generateKeyPair()
+            val keyPair3 = keyPairGenerator.generateKeyPair()
+            val ca = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
+            val caCert = Cert(ca, keyPair1, None).enrich()
+            if (!foundOtoroshiCa) {
+              logger.warn(s"Generating CA certificate for Otoroshi self signed certificates ...")
+              caCert.copy(id = Cert.OtoroshiCA).save()
+            }
+            if (!foundOtoroshiDomainCert) {
+              logger.warn(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
+              val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
+                FiniteDuration(365, TimeUnit.DAYS),
+                keyPair2,
+                ca,
+                keyPair1)
+              Cert(cert1, keyPair1, caCert).enrich().save()
+            }
+            if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
+              logger.warn(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
+              val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}",
+                FiniteDuration(365, TimeUnit.DAYS),
+                keyPair3,
+                ca,
+                keyPair1)
+              Cert(cert2, keyPair1, caCert).enrich().save()
+            }
           }
-          if (!foundOtoroshiDomainCert) {
-            logger.warn(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
-            val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
-                                                             FiniteDuration(365, TimeUnit.DAYS),
-                                                             keyPair2,
-                                                             ca,
-                                                             keyPair1)
-            Cert(cert1, keyPair1, caCert).enrich().save()(otoroshiExecutionContext, this)
-          }
-          if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
-            logger.warn(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
-            val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}",
-                                                             FiniteDuration(365, TimeUnit.DAYS),
-                                                             keyPair3,
-                                                             ca,
-                                                             keyPair1)
-            Cert(cert2, keyPair1, caCert).enrich().save()(otoroshiExecutionContext, this)
-          }
-        }(otoroshiExecutionContext)
+        //_ <- clusterAgent.startF()
+      } yield ()
     }
   }(otoroshiExecutionContext)
 

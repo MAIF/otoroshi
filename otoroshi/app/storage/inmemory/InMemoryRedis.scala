@@ -43,6 +43,11 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  def rawGet(key: String): Future[Option[Any]] = {
+    val value = Option(store.get(key))
+    FastFuture.successful(value)
+  }
+
   override def get(key: String): Future[Option[ByteString]] = {
     val value = Option(store.get(key)).map(_.asInstanceOf[ByteString])
     FastFuture.successful(value)

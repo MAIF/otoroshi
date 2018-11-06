@@ -185,8 +185,8 @@ PATCH   /api/auths/:id                                        controllers.ApiCon
 GET     /api/auths                                            controllers.ApiController.findAllGlobalAuthModules()
 POST    /api/auths                                            controllers.ApiController.createGlobalAuthModule()
 
-GET     /api/cluster/session/:id                              cluster.ClusterController.isSessionValid(id)
-POST    /api/cluster/session                                  cluster.ClusterController.createSession()
+GET     /api/cluster/sessions/:id                              cluster.ClusterController.isSessionValid(id)
+POST    /api/cluster/sessions                                  cluster.ClusterController.createSession()
 PUT     /api/cluster/quotas                                   cluster.ClusterController.updateQuotas()
 GET     /api/cluster/state                                    cluster.ClusterController.internalState()
 

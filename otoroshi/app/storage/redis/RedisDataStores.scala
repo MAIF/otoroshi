@@ -13,7 +13,7 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.{JsNull, JsString, JsValue, Json}
+import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import ssl.CertificateDataStore
@@ -131,11 +131,12 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 => {
           Future.sequence(keys.map { key =>
-            redis.get(key).flatMap { value =>
-              val jsonValue = value.map(bs => JsString(bs.utf8String)).getOrElse(JsNull)
-              redis.ttl(key).map { ttl =>
-                Json.obj("key" -> key, "value" -> jsonValue, "ttl" -> ttl)
-              }
+            for {
+              w     <- redis.`type`(key)
+              ttl   <- redis.pttl(key)
+              value <- fetchValueForType(w, key)
+            } yield {
+              Json.obj("k" -> key, "v" -> value, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> w)
             }
           })
         }
@@ -145,5 +146,14 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
 
   override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     redis.set(key, value.utf8String, pxMilliseconds = px)
+  }
+
+  private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
+    typ match {
+      case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
+      case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "set" => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "string" => redis.get(key).map(a => JsString(a.get.utf8String))
+    }
   }
 }
