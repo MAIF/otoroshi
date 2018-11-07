@@ -520,6 +520,14 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit]
+  def updateIncrementableMetrics(id: String,
+                    calls: Long,
+                    dataIn: Long,
+                    dataOut: Long,
+                   config: models.GlobalConfig)(
+                     implicit ec: ExecutionContext,
+                     env: Env
+                   ): Future[Unit]
   def count()(implicit ec: ExecutionContext, env: Env): Future[Long]
   def dataInPerSecFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double]
   def dataOutPerSecFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double]
