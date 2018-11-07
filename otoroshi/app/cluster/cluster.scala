@@ -240,7 +240,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
               cachedRef.set(stateCache)
               cachedAt.set(System.currentTimeMillis())
               env.clusterConfig.leader.stateDumpPath.foreach(path => Files.write(stateCache.toArray, new File(path)))
-              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state in ${System.currentTimeMillis - start} ms.")
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms.")
             case Failure(e) =>
               Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
           }), None, Some("application/x-ndjson")))
@@ -398,7 +398,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   expirations.put(key, ttl)
                 }
               }).map { _ =>
-              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at $tryCount try.")
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount.")
               env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
             }
           }
@@ -434,7 +434,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .stream()
             .filter(_.status == 200)
             .andThen {
-              case Success(_) => Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at $tryCount try.")
+              case Success(_) => Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at try $tryCount.")
 
             }
         }.recover {
