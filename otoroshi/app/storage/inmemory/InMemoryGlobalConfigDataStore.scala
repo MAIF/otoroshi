@@ -186,7 +186,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- config.save()
       _ <- Future.sequence(
             admins.value.map(
-              v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").as[String]}", Json.stringify(v))
+              v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").asOpt[String].getOrElse((v \ "username").as[String])}", Json.stringify(v))
             )
           )
       _ <- Future.sequence(
@@ -201,6 +201,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
       _ <- Future.sequence(authConfigs.value.map(AuthModuleConfig.fromJsons).map(_.save()))
       _ <- Future.sequence(certificates.value.map(Cert.fromJsons).map(_.save()))
+      _ <- redisCli.keys(s"${env.storageRoot}:*").map(keys => println(s"keys: ${keys.size}"))
     } yield ()
   }
 

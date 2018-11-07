@@ -350,14 +350,20 @@ class Env(val configuration: Configuration,
                   logger.warn(s"Importing from URL: $url")
                   wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
                     val json = resp.json.as[JsObject]
-                    datastores.globalConfigDataStore.fullImport(json)(ec, this)
+                    datastores.globalConfigDataStore.fullImport(json)(ec, this).andThen {
+                      case Success(_) => logger.warn("Successful import !")
+                      case Failure(e) => logger.error("Error while importing inital data !", e)
+                    }(ec)
                   }
                 }
                 case Some(path) => {
                   logger.warn(s"Importing from: $path")
                   val source = Source.fromFile(path).getLines().mkString("\n")
                   val json   = Json.parse(source).as[JsObject]
-                  datastores.globalConfigDataStore.fullImport(json)(ec, this)
+                  datastores.globalConfigDataStore.fullImport(json)(ec, this).andThen {
+                    case Success(_) => logger.warn("Successful import !")
+                    case Failure(e) => logger.error("Error while importing inital data !", e)
+                  }(ec)
                 }
               }
             } else {
@@ -371,7 +377,10 @@ class Env(val configuration: Configuration,
                     )
                     .as[JsObject]
                   logger.warn(s"Importing from config file ${Json.prettyPrint(importJson)}")
-                  datastores.globalConfigDataStore.fullImport(importJson)(ec, this)
+                  datastores.globalConfigDataStore.fullImport(importJson)(ec, this).andThen {
+                    case Success(_) => logger.warn("Successful import !")
+                    case Failure(e) => logger.error("Error while importing inital data !", e)
+                  }(ec)
                 }
                 case _ => {
                   val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
