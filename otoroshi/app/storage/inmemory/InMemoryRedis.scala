@@ -188,7 +188,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
     }
     val seq    = store.get(key).asInstanceOf[java.util.List[ByteString]]
     val result = seq.asScala.slice(start.toInt, stop.toInt - start.toInt).asJava
-    seq.retainAll(result)
+    store.put(key, new java.util.concurrent.CopyOnWriteArrayList[ByteString](result))
     FastFuture.successful(true)
   }
 
@@ -252,8 +252,9 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
       store.putIfAbsent(key, emptySet())
     }
     val seq    = store.get(key).asInstanceOf[java.util.Set[ByteString]]
-    val newSeq = seq.asScala.filterNot(b => members.contains(b))
-    seq.retainAll(newSeq.asJava)
+    val newSeq = seq.asScala.filterNot(b => members.contains(b)).asJava
+    // seq.retainAll(newSeq.asJava)
+    store.put(key, new java.util.concurrent.CopyOnWriteArraySet[ByteString](newSeq))
     FastFuture.successful(members.size.toLong)
   }
 
