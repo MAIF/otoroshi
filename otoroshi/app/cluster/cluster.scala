@@ -1,5 +1,6 @@
 package cluster
 
+import java.io.File
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
@@ -12,6 +13,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
@@ -92,7 +94,15 @@ object ClusterMode {
 case class WorkerQuotasConfig(pushEvery: Long = 2000, retries: Int = 3)
 case class WorkerStateConfig(pollEvery: Long = 10000, retries: Int = 3)
 case class WorkerConfig(retries: Int = 3, state: WorkerStateConfig = WorkerStateConfig(), quotas: WorkerQuotasConfig = WorkerQuotasConfig())
-case class LeaderConfig(urls: Seq[String] = Seq.empty, host: String = "otoroshi-api.foo.bar", clientId: String = "admin-api-apikey-id", clientSecret: String = "admin-api-apikey-secret", groupingBy: Int = 50)
+case class LeaderConfig(
+  urls: Seq[String] = Seq.empty,
+  host: String = "otoroshi-api.foo.bar",
+  clientId: String = "admin-api-apikey-id",
+  clientSecret: String = "admin-api-apikey-secret",
+  groupingBy: Int = 50,
+  cacheStateFor: Long = 4000,
+  stateDumpPath: Option[String] = None
+)
 case class ClusterConfig(mode: ClusterMode = ClusterMode.Off, leader: LeaderConfig = LeaderConfig(), worker: WorkerConfig = WorkerConfig())
 object ClusterConfig {
   def apply(configuration: Configuration): ClusterConfig = {
@@ -104,7 +114,9 @@ object ClusterConfig {
         host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.foo.bar"),
         clientId = configuration.getOptional[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
         clientSecret = configuration.getOptional[String]("leader.clientSecret").getOrElse("admin-api-apikey-secret"),
-        groupingBy = configuration.getOptional[Int]("leader.groupingBy").getOrElse(50)
+        groupingBy = configuration.getOptional[Int]("leader.groupingBy").getOrElse(50),
+        cacheStateFor = configuration.getOptional[Long]("leader.cacheStateFor").getOrElse(4000L),
+        stateDumpPath = configuration.getOptional[String]("leader.stateDumpPath")
       ),
       worker = WorkerConfig(
         retries = configuration.getOptional[Int]("worker.retries").getOrElse(3),
@@ -207,19 +219,41 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
+  val cachedAt = new AtomicLong(0L)
+  val cachedRef = new AtomicReference[ByteString]()
+
   def internalState() = ApiAction { ctx =>
     env.clusterConfig.mode match {
       case Off => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Leader => {
         val start = System.currentTimeMillis()
-        // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
-        Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).alsoTo(Sink.onComplete {
-          case Success(_) => Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state in ${System.currentTimeMillis - start} ms.")
-          case Failure(e) => Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-        }).map { item =>
-          ByteString(Json.stringify(item) + "\n")
-        }, None, Some("application/x-ndjson")))
+        val cachedValue = cachedRef.get()
+
+        def sendAndCache() = {
+          // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
+          var stateCache = ByteString.empty
+          Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).map { item =>
+            ByteString(Json.stringify(item) + "\n")
+          }.alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
+            case Success(_) =>
+              cachedRef.set(stateCache)
+              cachedAt.set(System.currentTimeMillis())
+              env.clusterConfig.leader.stateDumpPath.foreach(path => Files.write(stateCache.toArray, new File(path)))
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state in ${System.currentTimeMillis - start} ms.")
+            case Failure(e) =>
+              Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
+          }), None, Some("application/x-ndjson")))
+        }
+
+        if (cachedValue == null) {
+          sendAndCache()
+        } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < start) {
+          sendAndCache()
+        } else {
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ...")
+          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+        }
       }
     }
   }
