@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore, RedisClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
@@ -97,6 +98,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _authConfigsDataStore       = new RedisAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new RedisCertificateDataStore(redis, env)
 
+  private lazy val _clusterStateDataStore      = new RedisClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore           = _serviceGroupDataStore
@@ -132,6 +136,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
         case keys                 => {
           Future.sequence(keys
               .filterNot { key =>
+                key == s"${env.storageRoot}:cluster:" ||
                 key == s"${env.storageRoot}:events:audit" ||
                 key == s"${env.storageRoot}:events:alerts" ||
                 key.startsWith(s"${env.storageRoot}:users:backoffice") ||

@@ -28,6 +28,7 @@ import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
 import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
 import { AuthModuleConfigsPage } from '../pages/AuthModuleConfigsPage';
 import { CertificatesPage } from '../pages/CertificatesPage';
+import { ClusterPage } from '../pages/ClusterPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -240,6 +241,11 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/certificates"
                           component={props => this.decorate(CertificatesPage, props)}
+                        />
+
+                        <Route
+                          path="/cluster"
+                          component={props => this.decorate(ClusterPage, props)}
                         />
 
                         <Route

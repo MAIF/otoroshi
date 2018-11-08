@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
@@ -80,6 +81,9 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore        = new InMemoryCertificateDataStore(redis, env)
 
+  private lazy val _clusterStateDataStore       = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
@@ -111,6 +115,7 @@ class LevelDbDataStores(configuration: Configuration,
         case keys                 => {
           Future.sequence(keys
               .filterNot { key =>
+                key == s"${env.storageRoot}:cluster:" ||
                 key == s"${env.storageRoot}:events:audit" ||
                 key == s"${env.storageRoot}:events:alerts" ||
                 key.startsWith(s"${env.storageRoot}:users:backoffice") ||

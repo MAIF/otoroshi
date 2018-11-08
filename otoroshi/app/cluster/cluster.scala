@@ -19,13 +19,16 @@ import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import models._
+import org.joda.time.DateTime
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{InMemoryBody, SourceBody, WSAuthScheme}
+import play.api.libs.ws.{SourceBody, WSAuthScheme}
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import play.api.{Configuration, Environment, Logger}
+import redis.RedisClientMasterSlaves
+import security.IdGenerator
 import ssl.CertificateDataStore
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
@@ -33,7 +36,7 @@ import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /**
   * # TODO:
@@ -91,9 +94,15 @@ object ClusterMode {
   }
 }
 
-case class WorkerQuotasConfig(pushEvery: Long = 2000, retries: Int = 3)
-case class WorkerStateConfig(pollEvery: Long = 10000, retries: Int = 3)
-case class WorkerConfig(retries: Int = 3, state: WorkerStateConfig = WorkerStateConfig(), quotas: WorkerQuotasConfig = WorkerQuotasConfig())
+case class WorkerQuotasConfig(timeout: Long = 2000, pushEvery: Long = 2000, retries: Int = 3)
+case class WorkerStateConfig(timeout: Long = 2000, pollEvery: Long = 10000, retries: Int = 3)
+case class WorkerConfig(
+  name: String = s"otoroshi-worker-${IdGenerator.token(16)}",
+  retries: Int = 3,
+  timeout: Long = 2000,
+  state: WorkerStateConfig = WorkerStateConfig(),
+  quotas: WorkerQuotasConfig = WorkerQuotasConfig()
+)
 case class LeaderConfig(
   urls: Seq[String] = Seq.empty,
   host: String = "otoroshi-api.foo.bar",
@@ -119,17 +128,96 @@ object ClusterConfig {
         stateDumpPath = configuration.getOptional[String]("leader.stateDumpPath")
       ),
       worker = WorkerConfig(
+        name = configuration.getOptional[String]("worker.name").getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
         retries = configuration.getOptional[Int]("worker.retries").getOrElse(3),
+        timeout = configuration.getOptional[Long]("worker.timeout").getOrElse(2000),
         state = WorkerStateConfig(
+          timeout = configuration.getOptional[Long]("worker.state.timeout").getOrElse(2000),
           retries = configuration.getOptional[Int]("worker.state.retries").getOrElse(3),
           pollEvery = configuration.getOptional[Long]("worker.state.pollEvery").getOrElse(10000L)
         ),
         quotas = WorkerQuotasConfig(
+          timeout = configuration.getOptional[Long]("worker.quotas.timeout").getOrElse(2000),
           retries = configuration.getOptional[Int]("worker.quotas.retries").getOrElse(3),
           pushEvery = configuration.getOptional[Long]("worker.quotas.pushEvery").getOrElse(2000L)
         )
       )
     )
+  }
+}
+
+case class WorkerStats() {
+  def asJson: JsValue = Json.obj()
+}
+
+case class MemberView(name: String, lastSeen: DateTime, timeout: Duration, stats: WorkerStats = WorkerStats()) {
+  def asJson: JsValue = Json.obj(
+    "name" -> name,
+    "lastSeen" -> lastSeen.getMillis,
+    "timeout" -> timeout.toMillis,
+    "stats" -> stats.asJson
+  )
+}
+
+object MemberView {
+  def fromJsonSafe(value: JsValue): JsResult[MemberView] = Try {
+    JsSuccess(
+      MemberView(
+        name = (value \ "name").as[String],
+        lastSeen = new DateTime((value \ "lastSeen").as[Long]),
+        timeout = Duration((value \ "timeout").as[Long], TimeUnit.MILLISECONDS),
+        stats = WorkerStats()
+      )
+    )
+  } recover {
+    case e => JsError(e.getMessage)
+  } get
+}
+
+trait ClusterStateDataStore {
+  def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]]
+}
+
+class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterStateDataStore {
+  override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    redisLike.set(s"${env.storageRoot}:cluster:members:${member.name}", Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
+  }
+  override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
+    redisLike
+      .keys(s"${env.storageRoot}:cluster:members:*")
+      .flatMap(
+        keys =>
+          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+          else redisLike.mget(keys: _*)
+      )
+      .map(
+        seq =>
+          seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
+            case JsSuccess(i, _) => i
+          }
+      )
+  }
+}
+
+class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) extends ClusterStateDataStore {
+  override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    redisLike.set(s"${env.storageRoot}:cluster:members:${member.name}", Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
+  }
+  override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
+    redisLike
+      .keys(s"${env.storageRoot}:cluster:members:*")
+      .flatMap(
+        keys =>
+          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+          else redisLike.mget(keys: _*)
+      )
+      .map(
+        seq =>
+          seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
+            case JsSuccess(i, _) => i
+          }
+      )
   }
 }
 
@@ -144,6 +232,18 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   val sourceBodyParser = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
+  }
+
+  def getClusterMembers() = ApiAction.async { ctx =>
+    env.clusterConfig.mode match {
+      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Leader => {
+        env.datastores.clusterStateDataStore.getMembers().map { members =>
+          Ok(JsArray(members.map(_.asJson)))
+        }
+      }
+    }
   }
 
   def isSessionValid(sessionId: String) = ApiAction.async { ctx =>
@@ -182,6 +282,13 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] updating quotas")
+        ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
+          env.datastores.clusterStateDataStore.registerWorkerMember(MemberView(
+            name = name,
+            lastSeen = DateTime.now(),
+            timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery, TimeUnit.MILLISECONDS)
+          ))
+        }
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
           ctx.request.body.via(Compression.gunzip()).via(Framing.delimiter(ByteString("\n"), 100000)).mapAsync(4) { item =>
             val jsItem = Json.parse(item.utf8String)
@@ -231,6 +338,14 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         val start = System.currentTimeMillis()
         val cachedValue = cachedRef.get()
 
+        ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
+          env.datastores.clusterStateDataStore.registerWorkerMember(MemberView(
+            name = name,
+            lastSeen = DateTime.now(),
+            timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery, TimeUnit.MILLISECONDS)
+          ))
+        }
+
         def sendAndCache() = {
           // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
           var stateCache = ByteString.empty
@@ -244,7 +359,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
               Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms.")
             case Failure(e) =>
               Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-          }), None, Some("application/x-ndjson")))
+          }), None, Some("application/x-ndjson"))).withHeaders("Content-Encoding" -> "gzip")
         }
 
         if (cachedValue == null) {
@@ -262,6 +377,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
 
 object ClusterAgent {
+
+  val OtoroshiWorkerNameHeader = "Otoroshi-Worker-Name"
+
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 }
 
@@ -292,8 +410,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
     Retry.retry(times = config.worker.retries, ctx = "leader-session-valid") { tryCount =>
       env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
-        .withHttpHeaders("Host" -> config.leader.host)
+        .withHttpHeaders("Host" -> config.leader.host, ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
         .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+        .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
         .get()
         .filter(_.status == 200)
         .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
@@ -307,8 +426,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def createSession(user: PrivateAppsUser): Future[Unit] = {
     Retry.retry(times = config.worker.retries, ctx = "leader-create-session") { tryCount =>
       env.Ws.url(otoroshiUrl + s"/api/cluster/sessions")
-        .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/json")
+        .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/json", ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
         .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+        .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
         .post(user.toJson)
         .filter(_.status == 201)
     }.map(_ => ())
@@ -378,8 +498,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       val start = System.currentTimeMillis()
       Retry.retry(times = config.worker.state.retries, ctx = "leader-fetch-state") { tryCount =>
         env.Ws.url(otoroshiUrl + "/api/cluster/state")
-          .withHttpHeaders("Host" -> config.leader.host)
+          .withHttpHeaders("Host" -> config.leader.host, "Accept" -> "application/x-ndjson", "Accept-Encoding" -> "gzip", ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
           .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+          .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
           .withMethod("GET")
           .stream()
           .filter(_.status == 200)
@@ -429,8 +550,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           }).fold(ByteString.empty)(_ ++ _)
           val wsBody = SourceBody(Source.single(body).via(Compression.gzip(5)))
           env.Ws.url(otoroshiUrl + "/api/cluster/quotas")
-            .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/x-ndjson")
+            .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/x-ndjson", "Content-Encoding" -> "gzip", ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
             .withMethod("PUT")
             .withBody(wsBody)
             .stream()
@@ -525,6 +647,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   private lazy val _jwtVerifDataStore          = new InMemoryGlobalJwtVerifierDataStore(redis, env)
   private lazy val _authConfigsDataStore       = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
+
+  private lazy val _clusterStateDataStore      = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

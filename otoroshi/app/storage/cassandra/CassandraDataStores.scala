@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
@@ -102,6 +103,9 @@ class CassandraDataStores(configuration: Configuration,
   private lazy val _jwtVerifDataStore           = new InMemoryGlobalJwtVerifierDataStore(redis, env)
   private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore        = new InMemoryCertificateDataStore(redis, env)
+
+  private lazy val _clusterStateDataStore       = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
