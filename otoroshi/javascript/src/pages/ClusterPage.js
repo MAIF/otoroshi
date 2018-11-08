@@ -10,14 +10,18 @@ export class ClusterPage extends Component {
       content: item => item.name,
     },
     {
+      title: 'Location',
+      content: item => item.location,
+    },
+    {
       title: 'Last seen at',
+      style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
       content: item => moment(item.lastSeen).format("DD-MM-YYYY hh:mm:ss.SSS"),
     },
     {
-      title: 'Timeout',
-      style: { textAlign: 'center', width: 100 },
-      notFilterable: true,
-      content: item => item.timeout,
+      title: 'Timeout at',
+      style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
+      content: item => moment(item.lastSeen + item.timeout).format("DD-MM-YYYY hh:mm:ss.SSS"),
     },
     {
       title: 'Health',
