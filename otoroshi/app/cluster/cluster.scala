@@ -1,6 +1,7 @@
 package cluster
 
 import java.io.File
+import java.net.InetAddress
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
@@ -150,9 +151,10 @@ case class WorkerStats() {
   def asJson: JsValue = Json.obj()
 }
 
-case class MemberView(name: String, lastSeen: DateTime, timeout: Duration, stats: WorkerStats = WorkerStats()) {
+case class MemberView(name: String, location: String, lastSeen: DateTime, timeout: Duration, stats: WorkerStats = WorkerStats()) {
   def asJson: JsValue = Json.obj(
     "name" -> name,
+    "location" -> location,
     "lastSeen" -> lastSeen.getMillis,
     "timeout" -> timeout.toMillis,
     "stats" -> stats.asJson
@@ -164,6 +166,7 @@ object MemberView {
     JsSuccess(
       MemberView(
         name = (value \ "name").as[String],
+        location = (value \ "location").as[String],
         lastSeen = new DateTime((value \ "lastSeen").as[Long]),
         timeout = Duration((value \ "timeout").as[Long], TimeUnit.MILLISECONDS),
         stats = WorkerStats()
@@ -286,6 +289,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
           env.datastores.clusterStateDataStore.registerWorkerMember(MemberView(
             name = name,
+            location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
             lastSeen = DateTime.now(),
             timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery, TimeUnit.MILLISECONDS)
           ))
@@ -342,6 +346,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
           env.datastores.clusterStateDataStore.registerWorkerMember(MemberView(
             name = name,
+            location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
             lastSeen = DateTime.now(),
             timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery, TimeUnit.MILLISECONDS)
           ))
@@ -380,6 +385,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 object ClusterAgent {
 
   val OtoroshiWorkerNameHeader = "Otoroshi-Worker-Name"
+  val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 }
@@ -411,7 +417,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
     Retry.retry(times = config.worker.retries, ctx = "leader-session-valid") { tryCount =>
       env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
-        .withHttpHeaders("Host" -> config.leader.host, ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
+        .withHttpHeaders(
+          "Host" -> config.leader.host,
+          ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
+          ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
+        )
         .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
         .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
         .get()
@@ -427,7 +437,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def createSession(user: PrivateAppsUser): Future[Unit] = {
     Retry.retry(times = config.worker.retries, ctx = "leader-create-session") { tryCount =>
       env.Ws.url(otoroshiUrl + s"/api/cluster/sessions")
-        .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/json", ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
+        .withHttpHeaders(
+          "Host" -> config.leader.host,
+          "Content-Type" -> "application/json",
+          ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
+          ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
+        )
         .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
         .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
         .post(user.toJson)
@@ -499,7 +514,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       val start = System.currentTimeMillis()
       Retry.retry(times = config.worker.state.retries, ctx = "leader-fetch-state") { tryCount =>
         env.Ws.url(otoroshiUrl + "/api/cluster/state")
-          .withHttpHeaders("Host" -> config.leader.host, "Accept" -> "application/x-ndjson", "Accept-Encoding" -> "gzip", ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
+          .withHttpHeaders(
+            "Host" -> config.leader.host,
+            "Accept" -> "application/x-ndjson",
+            "Accept-Encoding" -> "gzip",
+            ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
+            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
+          )
           .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
           .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
           .withMethod("GET")
@@ -551,7 +572,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           }).fold(ByteString.empty)(_ ++ _)
           val wsBody = SourceBody(Source.single(body).via(Compression.gzip(5)))
           env.Ws.url(otoroshiUrl + "/api/cluster/quotas")
-            .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/x-ndjson", "Content-Encoding" -> "gzip", ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name)
+            .withHttpHeaders(
+              "Host" -> config.leader.host,
+              "Content-Type" -> "application/x-ndjson",
+              "Content-Encoding" -> "gzip",
+              ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
+            )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
             .withMethod("PUT")

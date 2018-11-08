@@ -282,6 +282,12 @@ class Env(val configuration: Configuration,
       .orElse(configuration.getOptional[Int]("http.port"))
       .getOrElse(9999)
 
+  lazy val httpsPort =
+    configuration
+      .getOptional[Int]("play.server.https.port")
+      .orElse(configuration.getOptional[Int]("https.port"))
+      .getOrElse(9999)
+
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000
