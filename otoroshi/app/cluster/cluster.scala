@@ -239,8 +239,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
+        val time = Json.obj("time" -> DateTime.now().getMillis)
         env.datastores.clusterStateDataStore.getMembers().map { members =>
-          Ok(JsArray(members.map(_.asJson)))
+          Ok(JsArray(members.map(_.asJson.as[JsObject] ++ time)))
         }
       }
     }

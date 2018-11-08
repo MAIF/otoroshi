@@ -25,7 +25,7 @@ export class ClusterPage extends Component {
       content: item => item.timeout,
       notFilterable: true,
       cell: (a, item) => {
-        const value = Date.now() - item.lastSeen;
+        const value = item.time - item.lastSeen;
         if (value < (item.timeout / 2)) {
           return <div style={{ width: 16, height: 16, backgroundColor: 'green', borderRadius: '50%' }}></div>
         } else if (value < (3 * (item.timeout / 3))) {
