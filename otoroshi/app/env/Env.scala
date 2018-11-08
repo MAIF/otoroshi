@@ -78,7 +78,7 @@ class Env(val configuration: Configuration,
     val aa          = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
     val ala         = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
     val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
-    timeout(FiniteDuration(5, SECONDS)).andThen { case _ if isProd => ha ! StartHealthCheck() }
+    timeout(FiniteDuration(5, SECONDS)).andThen { case _ if isProd && clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck() }
     (aa, ala, ha)
   }
 

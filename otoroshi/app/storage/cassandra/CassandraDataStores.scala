@@ -123,5 +123,4 @@ class CassandraDataStores(configuration: Configuration,
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
   override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = throw new RuntimeException("Cluster mode not supported for Cassandra datastore")
-  override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = throw new RuntimeException("Cluster mode not supported for Cassandra datastore")
 }

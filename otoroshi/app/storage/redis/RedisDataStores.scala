@@ -131,8 +131,19 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 => {
           Future.sequence(keys
-              .filterNot(_ == s"${env.storageRoot}:events:audit")
-              .filterNot(_ == s"${env.storageRoot}:events:alerts")
+              .filterNot { key =>
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
               .map { key =>
             for {
               w     <- redis.`type`(key)
@@ -145,10 +156,6 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
         }
       }
       .mapConcat(_.toList)
-  }
-
-  override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    redis.set(key, value.utf8String, pxMilliseconds = px)
   }
 
   private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
