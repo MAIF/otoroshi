@@ -201,7 +201,6 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
       _ <- Future.sequence(authConfigs.value.map(AuthModuleConfig.fromJsons).map(_.save()))
       _ <- Future.sequence(certificates.value.map(Cert.fromJsons).map(_.save()))
-      _ <- redisCli.keys(s"${env.storageRoot}:*").map(keys => println(s"keys: ${keys.size}"))
     } yield ()
   }
 
