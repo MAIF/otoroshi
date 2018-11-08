@@ -227,6 +227,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Off => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Leader => {
+        
         val start = System.currentTimeMillis()
         val cachedValue = cachedRef.get()
 
@@ -239,7 +240,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             case Success(_) =>
               cachedRef.set(stateCache)
               cachedAt.set(System.currentTimeMillis())
-              env.clusterConfig.leader.stateDumpPath.foreach(path => Files.write(stateCache.toArray, new File(path)))
+              Future(env.clusterConfig.leader.stateDumpPath.foreach(path => Files.write(stateCache.toArray, new File(path))))
               Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms.")
             case Failure(e) =>
               Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
@@ -545,7 +546,6 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
   override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = throw new RuntimeException("Worker do not have to raw export !")
-  override def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = throw new RuntimeException("Worker do not have to raw set !")
 }
 
 class Memory(

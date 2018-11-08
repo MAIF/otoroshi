@@ -47,7 +47,6 @@ trait DataStores {
   def authConfigsDataStore: AuthConfigsDataStore
   def certificatesDataStore: CertificateDataStore
   def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed]
-  def rawSet(key: String, value: ByteString, px: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
 trait BasicStore[T] {
