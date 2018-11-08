@@ -130,7 +130,10 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 => {
-          Future.sequence(keys.map { key =>
+          Future.sequence(keys
+              .filterNot(_ == s"${env.storageRoot}:events:audit")
+              .filterNot(_ == s"${env.storageRoot}:events:alerts")
+              .map { key =>
             for {
               w     <- redis.`type`(key)
               ttl   <- redis.pttl(key)

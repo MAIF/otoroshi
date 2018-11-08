@@ -10,7 +10,7 @@ import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Framing, Sink, Source}
+import akka.stream.scaladsl.{Compression, Framing, Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import com.google.common.io.Files
@@ -23,7 +23,7 @@ import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{InMemoryBody, WSAuthScheme}
+import play.api.libs.ws.{InMemoryBody, SourceBody, WSAuthScheme}
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import play.api.{Configuration, Environment, Logger}
 import ssl.CertificateDataStore
@@ -183,7 +183,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Leader => {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] updating quotas")
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-          ctx.request.body.via(Framing.delimiter(ByteString("\n"), 100000)).mapAsync(4) { item =>
+          ctx.request.body.via(Compression.gunzip()).via(Framing.delimiter(ByteString("\n"), 100000)).mapAsync(4) { item =>
             val jsItem = Json.parse(item.utf8String)
             (jsItem \ "typ").asOpt[String] match {
               case Some("srvincr") => {
@@ -235,7 +235,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           var stateCache = ByteString.empty
           Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).map { item =>
             ByteString(Json.stringify(item) + "\n")
-          }.alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
+          }.via(Compression.gzip(5)).alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
             case Success(_) =>
               cachedRef.set(stateCache)
               cachedAt.set(System.currentTimeMillis())
@@ -386,6 +386,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             val store = new ConcurrentHashMap[String, Any]()
             val expirations = new ConcurrentHashMap[String, Long]()
             resp.bodyAsSource
+              .via(Compression.gunzip())
               .via(Framing.delimiter(ByteString("\n"), 100000))
               .map(bs => Json.parse(bs.utf8String))
               .runWith(Sink.foreach { item =>
@@ -425,7 +426,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           }.++(oldServiceIncr.toSeq.map {
             case (key, (calls, dataIn, dataOut)) => ByteString(Json.stringify(Json.obj("typ" -> "srvincr", "srv" -> key, "c" -> calls.get(), "di" -> dataIn.get(), "do" -> dataOut.get())) + "\n")
           }).fold(ByteString.empty)(_ ++ _)
-          val wsBody = InMemoryBody(body)
+          val wsBody = SourceBody(Source.single(body).via(Compression.gzip(5)))
           env.Ws.url(otoroshiUrl + "/api/cluster/quotas")
             .withHttpHeaders("Host" -> config.leader.host, "Content-Type" -> "application/x-ndjson")
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)

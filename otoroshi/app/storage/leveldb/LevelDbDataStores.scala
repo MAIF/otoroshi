@@ -109,7 +109,10 @@ class LevelDbDataStores(configuration: Configuration,
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
         case keys                 => {
-          Future.sequence(keys.map { key =>
+          Future.sequence(keys
+              .filterNot(_ == s"${env.storageRoot}:events:audit")
+              .filterNot(_ == s"${env.storageRoot}:events:alerts")
+              .map { key =>
             redis.get(key).flatMap { value =>
               val (what, jsonValue) = toJson(value.get)
               redis.pttl(key).map { ttl =>
