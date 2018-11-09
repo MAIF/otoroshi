@@ -263,8 +263,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           .map { members =>
             val payload: Int = Option(cachedRef.get()).map(_.size).getOrElse(0)
             val healths = members.map(healthOf)
-            val foundOrange = members.contains("orange")
-            val foundRed = members.contains("red")
+            val foundOrange = healths.contains("orange")
+            val foundRed = healths.contains("red")
             val health = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
             Json.obj(
               "workers" -> members.size,

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import * as BackOfficeServices from '../services/BackOfficeServices';
 import { converterBase2 } from 'byte-converter';
 import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines';
 
@@ -67,6 +67,7 @@ class Metric extends Component {
 export class ClusterTiles extends Component {
 
   state = {
+    show: false,
     firstDone: false,
     workers: 0,
     payload: '0 Kb',
@@ -74,8 +75,13 @@ export class ClusterTiles extends Component {
   };
 
   componentDidMount() {
-    this.evtSource = new EventSource(this.props.url);
-    this.evtSource.onmessage = e => this.onMessage(e);
+    BackOfficeServices.env().then(env => {
+      if (env.clusterRole === 'Leader') {
+        this.setState({ show: true });
+        this.evtSource = new EventSource(this.props.url);
+        this.evtSource.onmessage = e => this.onMessage(e);
+      }
+    })
   }
 
   componentWillUnmount() {
@@ -118,6 +124,9 @@ export class ClusterTiles extends Component {
   };
 
   render() {
+    if (!this.state.show) {
+      return null;
+    }
     if (!this.state.firstDone) {
       return null;
     }
