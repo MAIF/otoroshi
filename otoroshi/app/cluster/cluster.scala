@@ -337,7 +337,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           ))
         }
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-          ctx.request.body.via(Compression.gunzip()).via(Framing.delimiter(ByteString("\n"), 100000)).mapAsync(4) { item =>
+          ctx.request.body.via(Compression.gunzip()).via(Framing.delimiter(ByteString("\n"), 1024 * 1024)).mapAsync(4) { item =>
             val jsItem = Json.parse(item.utf8String)
             (jsItem \ "typ").asOpt[String] match {
               case Some("srvincr") => {
@@ -573,7 +573,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             val expirations = new ConcurrentHashMap[String, Long]()
             resp.bodyAsSource
               .via(Compression.gunzip())
-              .via(Framing.delimiter(ByteString("\n"), 100000))
+              .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
               .map(bs => Json.parse(bs.utf8String))
               .runWith(Sink.foreach { item =>
                 val key = (item \ "k").as[String]
@@ -586,7 +586,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 }
               }).map { _ =>
               Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount.")
-              env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+              if (!store.isEmpty) {
+                env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+              }
             }
           }
       }.recover {

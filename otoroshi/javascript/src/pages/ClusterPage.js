@@ -8,7 +8,7 @@ export class ClusterPage extends Component {
   columns = [
     {
       title: 'Worker name',
-      content: item => item.name,
+      content: item => item.name.toLowerCase(),
     },
     {
       title: 'Location',
