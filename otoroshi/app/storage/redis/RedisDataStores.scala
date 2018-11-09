@@ -160,6 +160,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
           })
         }
       }
+      .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
   }
 
@@ -168,7 +169,10 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
       case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
       case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
       case "set" => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
-      case "string" => redis.get(key).map(a => JsString(a.get.utf8String))
+      case "string" => redis.get(key).map {
+        case None => JsNull
+        case Some(a) => JsString(a.utf8String)
+      }
     }
   }
 }
