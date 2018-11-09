@@ -4,6 +4,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 
 export class ClusterPage extends Component {
+
   columns = [
     {
       title: 'Worker name',
@@ -18,11 +19,11 @@ export class ClusterPage extends Component {
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
       content: item => moment(item.lastSeen).format("DD-MM-YYYY hh:mm:ss.SSS"),
     },
-    {
-      title: 'Timeout at',
-      style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
-      content: item => moment(item.lastSeen + item.timeout).format("DD-MM-YYYY hh:mm:ss.SSS"),
-    },
+    //{
+    //  title: 'Timeout at',
+    //  style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
+    //  content: item => moment(item.lastSeen + item.timeout).format("DD-MM-YYYY hh:mm:ss.SSS"),
+    //},
     {
       title: 'Health',
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 100 },
@@ -31,10 +32,13 @@ export class ClusterPage extends Component {
       cell: (a, item) => {
         const value = item.time - item.lastSeen;
         if (value < (item.timeout / 2)) {
+          return <i className="fa fa-heartbeat" style={{ color: 'green' }} />
           return <div style={{ width: 16, height: 16, backgroundColor: 'green', borderRadius: '50%' }}></div>
         } else if (value < (3 * (item.timeout / 3))) {
+          return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />
           return <div style={{ width: 16, height: 16, backgroundColor: 'orange', borderRadius: '50%' }}></div>
         } else {
+          return <i className="fa fa-heartbeat" style={{ color: 'red' }} />
           return <div style={{ width: 16, height: 16, backgroundColor: 'red', borderRadius: '50%' }}></div>
         }
       }
@@ -50,6 +54,13 @@ export class ClusterPage extends Component {
   componentDidMount() {
     this.props.setTitle(`Cluster view`);
     this.interval = setInterval(this.update, 5000);
+    BackOfficeServices.env().then(env => {
+      if (env.clusterRole === 'Off') {
+        this.props.setTitle(`Cluster mode is not enabled`);
+      } else {
+        this.props.setTitle(`Cluster view (${env.clusterRole} cluster)`);
+      }
+    });
   }
 
   componentWillUnmount() {
