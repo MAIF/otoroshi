@@ -190,6 +190,7 @@ POST    /api/cluster/sessions                                 cluster.ClusterCon
 PUT     /api/cluster/quotas                                   cluster.ClusterController.updateQuotas()
 GET     /api/cluster/state                                    cluster.ClusterController.internalState()
 GET     /api/cluster/members                                  cluster.ClusterController.getClusterMembers()
+DELETE  /api/cluster/members                                  cluster.ClusterController.clearClusterMembers()
 GET     /api/cluster/live                                     cluster.ClusterController.liveCluster()
 
 GET     /api/stats/global                                     controllers.AnalyticsController.globalStats(from: Option[String], to: Option[String])

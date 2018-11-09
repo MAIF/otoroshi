@@ -69,6 +69,12 @@ export class ClusterPage extends Component {
     }
   }
 
+  clear = () => {
+    BackOfficeServices.clearClusterMembers().then(() => {
+      this.update();
+    });
+  }
+
   render() {
     return (
       <Table
@@ -83,6 +89,9 @@ export class ClusterPage extends Component {
         showLink={false}
         injectTable={t => this.table = t}
         extractKey={item => item.name}
+        injectTopBar={() => (
+          <button type="button" className="btn btn-danger" onClick={this.clear}><i className="glyphicon glyphicon-trash" /> Clear members</button>
+        )}
       />
     );
   }

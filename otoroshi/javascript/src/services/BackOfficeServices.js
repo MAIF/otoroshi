@@ -64,6 +64,16 @@ export function fetchClusterMembers() {
   }).then(r => r.json());
 }
 
+export function clearClusterMembers() {
+  return fetch(`/bo/api/proxy/api/cluster/members`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
 export function fetchSnowMonkeyOutages() {
   return fetch(`/bo/api/proxy/api/snowmonkey/outages`, {
     method: 'GET',
