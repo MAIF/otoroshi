@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import * as BackOfficeServices from '../services/BackOfficeServices';
 import { LiveStatTiles } from '../components/LiveStatTiles';
+import { ClusterTiles } from '../components/ClusterTiles';
 
 export class HomePage extends Component {
   render() {
@@ -17,6 +16,7 @@ export class HomePage extends Component {
           <img src="/assets/images/otoroshi-logo-color.png" className="logoOtoroshi" />
         </div>
         <LiveStatTiles url="/bo/api/proxy/api/live/global?every=2000" />
+        <ClusterTiles url="/bo/api/proxy/api/cluster/live?every=2000" />
       </div>
     );
   }

@@ -1,6 +1,7 @@
 package cluster
 
 import java.io.File
+import java.lang.management.ManagementFactory
 import java.net.InetAddress
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
@@ -35,14 +36,13 @@ import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
   * # TODO:
   *
-  * [ ] push stats increments (calls, duration, data in/ou) to leader
   * [ ] support cassandra
   * [ ] support mongo
   *
@@ -235,6 +235,48 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   val sourceBodyParser = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
+  }
+
+  def liveCluster() = ApiAction { ctx =>
+
+    def healthOf(member: MemberView): String = {
+      val value = System.currentTimeMillis() - member.lastSeen.getMillis
+      if (value < (member.timeout.toMillis / 2)) {
+        "green"
+      } else if (value < (3 * (member.timeout.toMillis / 4))) {
+        "orange"
+      } else {
+        "red"
+      }
+    }
+
+    env.clusterConfig.mode match {
+      case Off => NotFound(Json.obj("error" -> "Cluster API not available"))
+      case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
+      case Leader => {
+        val every = ctx.request.getQueryString("every").map(_.toInt).getOrElse(2000)
+        val source = Source
+          .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(every, TimeUnit.MILLISECONDS), NotUsed)
+          .mapAsync(1) { _ =>
+            env.datastores.clusterStateDataStore.getMembers()
+          }
+          .map { members =>
+            val payload: Int = Option(cachedRef.get()).map(_.size).getOrElse(0)
+            val healths = members.map(healthOf)
+            val foundOrange = members.contains("orange")
+            val foundRed = members.contains("red")
+            val health = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
+            Json.obj(
+              "workers" -> members.size,
+              "health" -> health,
+              "payload" -> payload
+            )
+          }
+          .map(Json.stringify)
+          .map(slug => s"data: $slug\n\n")
+        Ok.chunked(source).as("text/event-stream")
+      }
+    }
   }
 
   def getClusterMembers() = ApiAction.async { ctx =>
