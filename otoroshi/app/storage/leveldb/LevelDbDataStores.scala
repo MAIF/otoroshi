@@ -129,15 +129,19 @@ class LevelDbDataStores(configuration: Configuration,
                 (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
-            redis.get(key).flatMap { value =>
-              val (what, jsonValue) = toJson(value.get)
-              redis.pttl(key).map { ttl =>
-                Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
+            redis.get(key).flatMap {
+              case None => FastFuture.successful(JsNull)
+              case Some(value) => {
+                val (what, jsonValue) = toJson(value)
+                redis.pttl(key).map { ttl =>
+                  Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
+                }
               }
             }
           })
         }
       }
+      .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
   }
 
