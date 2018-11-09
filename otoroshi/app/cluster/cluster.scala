@@ -180,12 +180,25 @@ object MemberView {
 trait ClusterStateDataStore {
   def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]]
+  def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
 class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterStateDataStore {
+  
+  override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    redisLike
+      .keys(s"${env.storageRoot}:cluster:members:*")
+      .flatMap(
+        keys =>
+          if (keys.isEmpty) FastFuture.successful(0)
+          else redisLike.del(keys: _*)
+      )
+  }
+
   override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     redisLike.set(s"${env.storageRoot}:cluster:members:${member.name}", Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
   }
+  
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     redisLike
       .keys(s"${env.storageRoot}:cluster:members:*")
@@ -204,9 +217,21 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
 }
 
 class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) extends ClusterStateDataStore {
+  
+  override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    redisLike
+      .keys(s"${env.storageRoot}:cluster:members:*")
+      .flatMap(
+        keys =>
+          if (keys.isEmpty) FastFuture.successful(0)
+          else redisLike.del(keys: _*)
+      )
+  }
+  
   override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     redisLike.set(s"${env.storageRoot}:cluster:members:${member.name}", Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
   }
+  
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     redisLike
       .keys(s"${env.storageRoot}:cluster:members:*")
@@ -287,6 +312,19 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         val time = Json.obj("time" -> DateTime.now().getMillis)
         env.datastores.clusterStateDataStore.getMembers().map { members =>
           Ok(JsArray(members.map(_.asJson.as[JsObject] ++ time)))
+        }
+      }
+    }
+  }
+
+  def clearClusterMembers() = ApiAction.async { ctx =>
+    env.clusterConfig.mode match {
+      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Leader => {
+        val time = Json.obj("time" -> DateTime.now().getMillis)
+        env.datastores.clusterStateDataStore.clearMembers().map { members =>
+          Ok(Json.obj("done" -> true))
         }
       }
     }
