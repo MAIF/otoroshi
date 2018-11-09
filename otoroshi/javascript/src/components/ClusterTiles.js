@@ -44,22 +44,24 @@ class Metric extends Component {
   render() {
     const props = this.props;
     return (
-      <div
-        className="metric"
-        style={{
-          width: props.width || 300,
-        }}>
-        <div className="metric-text">
-          {!this.props.hideValueText && <span className="metric-text-value">{props.value}</span>}
-          <span className="metric-text-title">{props.legend}</span>
+      <a href={this.props.link}>
+        <div
+          className="metric"
+          style={{
+            width: props.width || 300,
+          }}>
+          <div className="metric-text">
+            {!this.props.hideValueText && <span className="metric-text-value">{props.value}</span>}
+            <span className="metric-text-title">{props.legend}</span>
+          </div>
+          <div className="metric-box">
+            <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
+              <SparklinesLine color="rgb(249, 176, 0)" />
+              <SparklinesSpots />
+            </Sparklines>
+          </div>
         </div>
-        <div className="metric-box">
-          <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
-            <SparklinesLine color="rgb(249, 176, 0)" />
-            <SparklinesSpots />
-          </Sparklines>
-        </div>
-      </div>
+      </a>
     );
   }
 }
@@ -140,9 +142,9 @@ export class ClusterTiles extends Component {
       <div>
         <h4 className="live-title">CLUSTER METRICS</h4>
         <div className="rowMetrics">
-          <Metric time={Date.now()} value={this.state.workers} legend="" />
-          <Metric time={Date.now()} value={this.state.payload} legend="" />
-          <Metric time={Date.now()} hideValueText value={healthValue} legend={<i className="fa fa-heartbeat" style={{ textShadow: 'none', fontSize: 60, color: this.state.health }} />} />
+          <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.workers} legend="" />
+          <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.payload} legend="" />
+          <Metric time={Date.now()} link="/bo/dashboard/cluster" hideValueText value={healthValue} legend={<i className="fa fa-heartbeat" style={{ textShadow: 'none', fontSize: 60, color: this.state.health }} />} />
         </div>
       </div>
     );
