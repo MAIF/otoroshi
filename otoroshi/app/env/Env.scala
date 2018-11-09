@@ -338,7 +338,11 @@ class Env(val configuration: Configuration,
     case _ =>
       implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
-      DynamicSSLEngineProvider.setCurrentEnv(this)
+      if (clusterConfig.mode == ClusterMode.Worker) {
+        clusterAgent.startF()
+      } else {
+        DynamicSSLEngineProvider.setCurrentEnv(this)
+      }
       datastores.globalConfigDataStore
         .isOtoroshiEmpty()
         .andThen {
@@ -475,7 +479,6 @@ class Env(val configuration: Configuration,
     case _ => {
       implicit val ec = otoroshiExecutionContext
       implicit val ev = this
-      clusterAgent.startF()
       for {
         _ <- datastores.globalConfigDataStore.migrate()
         _ <- datastores.certificatesDataStore
