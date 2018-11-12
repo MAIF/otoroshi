@@ -250,9 +250,12 @@ export class ServicePage extends Component {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    a.style.display = 'none';
     a.download = `service-${this.state.service.name}-${this.state.service.env}.json`;
     a.href = url;
+    document.body.appendChild(a);
     a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
   };
 
   changeTargetsValue = value => {
