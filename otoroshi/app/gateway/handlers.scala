@@ -279,11 +279,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                       env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                     }
+                    val finalRedirect = req.getQueryString("redirect").getOrElse(req.host)
                     val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                       .map(a => s":$a")
                       .getOrElse("") + controllers.routes.AuthController
                       .confidentialAppLogout()
-                      .url + s"?redirectTo=http://${req.host}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
+                      .url + s"?redirectTo=http://${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
                     logger.trace("should redirect to " + redirectTo)
                     Redirect(redirectTo)
                       .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
