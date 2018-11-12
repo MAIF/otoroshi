@@ -77,7 +77,7 @@ Create a new OAuth 2 config and add the following informations:
   "tokenUrl": "https://yourAuth0Domain/oauth/token",
   "userInfoUrl": "https://yourAuth0Domain/userinfo",
   "loginUrl": "https://yourAuth0Domain/authorize",
-  "logoutUrl": "https://yourAuth0Domain/logout",
+  "logoutUrl": "https://yourAuth0Domain/v2/logout?returnTo=${redirect}",
   "accessTokenField": "access_token",
   "nameField": "name",
   "emailField": "email",
