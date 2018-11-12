@@ -190,7 +190,7 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(
         keys =>
-          if (keys.isEmpty) FastFuture.successful(0)
+          if (keys.isEmpty) FastFuture.successful(0L)
           else redisLike.del(keys: _*)
       )
   }
@@ -223,7 +223,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(
         keys =>
-          if (keys.isEmpty) FastFuture.successful(0)
+          if (keys.isEmpty) FastFuture.successful(0L)
           else redisLike.del(keys: _*)
       )
   }
@@ -639,6 +639,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
+  // TODO: restack if error on push
   private def pushQuotas(): Unit = {
     if (isPushingQuotas.compareAndSet(false, true)) {
       val oldApiIncr = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
@@ -669,7 +670,6 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .filter(_.status == 200)
             .andThen {
               case Success(_) => Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at try $tryCount.")
-
             }
         }.recover {
           case e => Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster", e)
