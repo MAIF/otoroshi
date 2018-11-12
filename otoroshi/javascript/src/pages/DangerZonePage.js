@@ -563,11 +563,14 @@ export class DangerZonePage extends Component {
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
+      a.style.display = 'none';
       a.download = `${window.__isDev ? 'dev-' : ''}otoroshi-${moment().format(
         'YYYY-MM-DD-HH-mm-ss'
       )}.json`;
       a.href = url;
+      document.body.appendChild(a);
       a.click();
+      setTimeout(() => document.body.removeChild(a), 300);
     });
   };
 
