@@ -14,13 +14,17 @@ Create a new `Generic oauth2 provider` config and customize the following inform
   "tokenUrl": "http://yourOAuthServer/oauth/token",
   "userInfoUrl": "http://yourOAuthServer/userinfo",
   "loginUrl": "http://yourOAuthServer/login",
-  "logoutUrl": "http://yourOAuthServer/logout",
+  "logoutUrl": "http://yourOAuthServer/logout?redirectQueryParamName=${redirect}",
   "accessTokenField": "access_token",
   "nameField": "name",
   "emailField": "email",
   "callbackUrl": "http://privateapps.foo.bar/privateapps/generic/callback"
 }
 ```
+
+If used for BackOffice authentication, the callback url should be `http://otoroshi.foo.bar/backoffice/auth0/callback`.
+
+For `logoutUrl`, `redirectQueryParamName` is a parameter with a name specific to your OAuth2 provider (for example, in Auth0, this parameter is called `returnTo`, in Kecloak it is called `redirect_uri`).
 
 if you are using a [KeyCloak](https://www.keycloak.org/) server, you can configure it this way, assuming you are using the master realm and you created a new client with a client secret, callback urls set to `http://privateapps.foo.bar/*`.
 
@@ -32,7 +36,7 @@ if you are using a [KeyCloak](https://www.keycloak.org/) server, you can configu
   "tokenUrl": "http://keycloakHost/auth/realms/master/protocol/openid-connect/token",
   "userInfoUrl": "http://keycloakHost/auth/realms/master/protocol/openid-connect/userinfo",
   "loginUrl": "http://keycloakHost/auth/realms/master/protocol/openid-connect/auth",
-  "logoutUrl": "http://keycloakHost/auth/realms/master/protocol/openid-connect/logout",
+  "logoutUrl": "http://keycloakHost/auth/realms/master/protocol/openid-connect/logout?redirect_uri=${redirect}",
   "accessTokenField": "access_token",
   "nameField": "name",
   "emailField": "email",
