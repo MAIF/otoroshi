@@ -19,14 +19,14 @@ trait AuthModule {
   def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(
       implicit ec: ExecutionContext,
       env: Env
-  ): Future[Unit]
+  ): Future[Option[String]]
   def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Option[String]]
   def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext,
                                                                      env: Env): Future[Either[String, BackOfficeUser]]
 }

@@ -1,5 +1,6 @@
 package gateway
 
+import java.net.URLEncoder
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 
 import actions.{PrivateAppsAction, PrivateAppsActionContext}
@@ -274,20 +275,38 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
                 withAuthConfig(descriptor, req) { auth =>
-                  auth.authModule(globalConfig).paLogout(req, globalConfig, descriptor).map { _ =>
-                    val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
-                    cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
-                      env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                  auth.authModule(globalConfig).paLogout(req, globalConfig, descriptor).map {
+                    case None => {
+                      val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                      cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
+                        env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                      }
+                      val finalRedirect = req.getQueryString("redirect").getOrElse(req.host)
+                      val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
+                        .map(a => s":$a")
+                        .getOrElse("") + controllers.routes.AuthController
+                        .confidentialAppLogout()
+                        .url + s"?redirectTo=http://${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
+                      logger.trace("should redirect to " + redirectTo)
+                      Redirect(redirectTo)
+                        .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
                     }
-                    val finalRedirect = req.getQueryString("redirect").getOrElse(req.host)
-                    val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
-                      .map(a => s":$a")
-                      .getOrElse("") + controllers.routes.AuthController
-                      .confidentialAppLogout()
-                      .url + s"?redirectTo=http://${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
-                    logger.trace("should redirect to " + redirectTo)
-                    Redirect(redirectTo)
-                      .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
+                    case Some(logoutUrl) => {
+                      val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                      cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
+                        env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                      }
+                      val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.host}")
+                      val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
+                        .map(a => s":$a")
+                        .getOrElse("") + controllers.routes.AuthController
+                        .confidentialAppLogout()
+                        .url + s"?redirectTo=${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
+                      val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
+                      logger.trace("should redirect to " + actualRedirectUrl)
+                      Redirect(actualRedirectUrl)
+                        .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
+                    }
                   }
                 }
               }

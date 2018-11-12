@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
@@ -225,14 +226,20 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
             case None =>
               FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice Oauth is not configured", env)))
             case Some(oauth) =>
-              oauth.authModule(config).boLogout(ctx.request, config).flatMap { _ =>
-                ctx.user.delete().map { _ =>
-                  Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
-                  redirect match {
-                    case Some(url) => Redirect(url).removingFromSession("bousr", "bo-redirect-after-login")
-                    case None =>
-                      Redirect(routes.BackOfficeController.index()).removingFromSession("bousr",
-                                                                                        "bo-redirect-after-login")
+              oauth.authModule(config).boLogout(ctx.request, config).flatMap {
+                case None => {
+                  ctx.user.delete().map { _ =>
+                    Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+                    val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
+                    Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
+                  }
+                }
+                case Some(logoutUrl) => {
+                  val userRedirect = redirect.getOrElse(s"http://${request.host}/")
+                  val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
+                  ctx.user.delete().map { _ =>
+                    Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+                    Redirect(actualRedirectUrl).removingFromSession("bousr", "bo-redirect-after-login")
                   }
                 }
               }

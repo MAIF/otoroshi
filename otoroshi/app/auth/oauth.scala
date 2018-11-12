@@ -151,15 +151,19 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
   override def paLogout(request: RequestHeader,
                         config: GlobalConfig,
-                        descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    // TODO: implements if needed
-    ().asFuture
+                        descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Option[String]] = {
+    Option(authConfig.logoutUrl).filterNot(_.isEmpty).map {
+      case url if url.contains("?") => s"$url&client_id=${authConfig.clientId}"
+      case url => s"$url?client_id=${authConfig.clientId}"
+    }.asFuture
   }
 
   override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext,
-                                                                      env: Env): Future[Unit] = {
-    // TODO: implements if needed
-    ().asFuture
+                                                                      env: Env): Future[Option[String]] = {
+    Option(authConfig.logoutUrl).filterNot(_.isEmpty).map {
+      case url if url.contains("?") => s"$url&client_id=${authConfig.clientId}"
+      case url => s"$url?client_id=${authConfig.clientId}"
+    }.asFuture
   }
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(
