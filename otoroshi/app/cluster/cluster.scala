@@ -12,7 +12,7 @@ import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Compression, Framing, Sink, Source}
+import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import com.google.common.io.Files
@@ -113,12 +113,21 @@ case class LeaderConfig(
   cacheStateFor: Long = 4000,
   stateDumpPath: Option[String] = None
 )
-case class ClusterConfig(mode: ClusterMode = ClusterMode.Off, leader: LeaderConfig = LeaderConfig(), worker: WorkerConfig = WorkerConfig())
+case class ClusterConfig(
+  mode: ClusterMode = ClusterMode.Off, 
+  compression: Int = -1,
+  leader: LeaderConfig = LeaderConfig(), 
+  worker: WorkerConfig = WorkerConfig()
+) {
+  def gzip(): Flow[ByteString, ByteString, NotUsed] = if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
+  def gunzip(): Flow[ByteString, ByteString, NotUsed] = if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+}
 object ClusterConfig {
   def apply(configuration: Configuration): ClusterConfig = {
     // Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
     ClusterConfig(
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
+      compression = configuration.getOptional[Int]("compression").getOrElse(-1),
       leader = LeaderConfig(
         urls = configuration.getOptional[Seq[String]]("leader.urls").map(_.toSeq).getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
         host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.foo.bar"),
@@ -414,7 +423,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Leader => {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] updating quotas")
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-          ctx.request.body/*.via(Compression.gunzip())*/.via(Framing.delimiter(ByteString("\n"), 1024 * 1024)).mapAsync(4) { item =>
+          ctx.request.body.via(Compression.gunzip()).via(Framing.delimiter(ByteString("\n"), 1024 * 1024)).mapAsync(4) { item =>
             val jsItem = Json.parse(item.utf8String)
             (jsItem \ "typ").asOpt[String] match {
               case Some("globstats") => {
@@ -454,13 +463,16 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           }.runWith(Sink.ignore)
             .map(_ => Ok(Json.obj("done" -> true)))
             .recover {
-              case e => InternalServerError(Json.obj("error" -> e.getMessage))
+              case e => 
+                Cluster.logger.error("Error while updating quotas", e)
+                InternalServerError(Json.obj("error" -> e.getMessage))
             }
         }
       }
     }
   }
 
+  val caching = new AtomicBoolean(false)
   val cachedAt = new AtomicLong(0L)
   val cachedRef = new AtomicReference[ByteString]()
 
@@ -470,7 +482,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Leader => {
         
-        val start = System.currentTimeMillis()
         val cachedValue = cachedRef.get()
 
         ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
@@ -484,23 +495,33 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
         def sendAndCache() = {
           // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
-          var stateCache = ByteString.empty
-          Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).map { item =>
-            ByteString(Json.stringify(item) + "\n")
-          }.via(Compression.gzip(5)).alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
-            case Success(_) =>
-              cachedRef.set(stateCache)
-              cachedAt.set(System.currentTimeMillis())
-              Future(env.clusterConfig.leader.stateDumpPath.foreach(path => Files.write(stateCache.toArray, new File(path))))
-              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms.")
-            case Failure(e) =>
-              Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-          }), None, Some("application/x-ndjson"))).withHeaders("Content-Encoding" -> "gzip")
+          if (caching.compareAndSet(false, true)) {
+            val start = System.currentTimeMillis()
+            var stateCache = ByteString.empty
+            Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).map { item =>
+              ByteString(Json.stringify(item) + "\n")
+            }.via(Compression.gzip(5)).alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
+              case Success(_) =>
+                cachedRef.set(stateCache)
+                cachedAt.set(System.currentTimeMillis())
+                caching.compareAndSet(true, false)
+                env.clusterConfig.leader.stateDumpPath.foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+                Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms.")
+              case Failure(e) =>
+                Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
+            }), None, Some("application/x-ndjson")))//.withHeaders("Content-Encoding" -> "gzip")
+          } else {
+            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ...")
+            Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+          }
         }
 
         if (cachedValue == null) {
           sendAndCache()
-        } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < start) {
+        } else if (caching.get()) {
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ...")
+          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+        } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
           sendAndCache()
         } else {
           Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ...")
@@ -544,24 +565,22 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     config.leader.urls.zipWithIndex.find(t => t._2 == count).map(_._1).getOrElse(config.leader.urls.head)
   }
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
-    Retry.retry(times = config.worker.retries, ctx = "leader-session-valid") { tryCount =>
-      env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
-        .withHttpHeaders(
-          "Host" -> config.leader.host,
-          ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
-          ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
-        )
-        .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-        .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
-        .get()
-        .filter(_.status == 200)
-        .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
-    }.recover {
-      case e =>
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster")
-        None
-    }
+  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = Retry.retry(times = config.worker.retries, ctx = "leader-session-valid") { tryCount =>
+    env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
+      .withHttpHeaders(
+        "Host" -> config.leader.host,
+        ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
+        ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+      )
+      .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+      .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+      .get()
+      .filter(_.status == 200)
+      .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
+  }.recover {
+    case e =>
+      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster")
+      None
   }
 
   def createSession(user: PrivateAppsUser): Future[Unit] = {
@@ -571,7 +590,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           "Host" -> config.leader.host,
           "Content-Type" -> "application/json",
           ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
-          ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
+          ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
         )
         .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
         .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -582,7 +601,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def incrementApi(id: String, increment: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Increment API $id")
+      Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment API $id")
       if (!apiIncrementsRef.get().contains(id)) {
         apiIncrementsRef.get().putIfAbsent(id, new AtomicLong(0L))
       }
@@ -592,7 +611,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def incrementService(id: String, dataIn: Long, dataOut: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Increment Service $id")
+      Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment Service $id")
       if (!servicesIncrementsRef.get().contains("global")) {
         servicesIncrementsRef.get().putIfAbsent("global", (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
       }
@@ -640,16 +659,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   private def pollState(): Unit = {
     if (isPollingState.compareAndSet(false, true)) {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
+      Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
       val start = System.currentTimeMillis()
       Retry.retry(times = config.worker.state.retries, ctx = "leader-fetch-state") { tryCount =>
         env.Ws.url(otoroshiUrl + "/api/cluster/state")
           .withHttpHeaders(
             "Host" -> config.leader.host,
             "Accept" -> "application/x-ndjson",
-            "Accept-Encoding" -> "gzip",
+            //"Accept-Encoding" -> "gzip",
             ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
-            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
+            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}"
           )
           .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
           .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
@@ -698,7 +717,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start = System.currentTimeMillis()
         Retry.retry(times = config.worker.state.retries, ctx = "leader-push-quotas") { tryCount =>
-          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
+          Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
 
           (for {
             rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
@@ -716,19 +735,22 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             "dataOutRate"               -> dataOutRate,
             "concurrentHandledRequests" -> concurrentHandledRequests
           )) + "\n")) flatMap { stats =>
-            val body = oldApiIncr.toSeq.map {
+            val apiIncrSource = Source(oldApiIncr.toList.map {
               case (key, inc) => ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
-            }.++(oldServiceIncr.toSeq.map {
+            })
+            val serviceIncrSource = Source(oldServiceIncr.toList.map {
               case (key, (calls, dataIn, dataOut)) => ByteString(Json.stringify(Json.obj("typ" -> "srvincr", "srv" -> key, "c" -> calls.get(), "di" -> dataIn.get(), "do" -> dataOut.get())) + "\n")
-            }).:+(stats).fold(ByteString.empty)(_ ++ _)
-            val wsBody = SourceBody(Source.single(body))//.via(Compression.gzip(5)))
+            })
+            val globalSource = Source.single(stats)
+            val body = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(Compression.gzip(5))
+            val wsBody = SourceBody(body)
             env.Ws.url(otoroshiUrl + "/api/cluster/quotas")
               .withHttpHeaders(
                 "Host" -> config.leader.host,
                 "Content-Type" -> "application/x-ndjson",
-                //"Content-Encoding" -> "gzip",
+                // "Content-Encoding" -> "gzip",
                 ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().toString}:${env.port}/${env.httpsPort}"
+                ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
