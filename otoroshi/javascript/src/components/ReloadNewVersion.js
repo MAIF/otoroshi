@@ -57,7 +57,7 @@ export class ReloadNewVersion extends Component {
     if (this.state.unlogged) {
       return (
         <div className="loggedOutVeil">
-          <div className="newVersionPopup">
+          <div className="topbar-popup">
             Your session has expired and you're now logged out. You will be asked to login in 20
             seconds.
             <button
@@ -73,7 +73,7 @@ export class ReloadNewVersion extends Component {
       );
     }
     return (
-      <div className="newVersionPopup">
+      <div className="topbar-popup">
         A new version of Otoroshi has been deployed
         <button
           type="button"
