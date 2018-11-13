@@ -19,11 +19,47 @@ export class ClusterPage extends Component {
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
       content: item => moment(item.lastSeen).format("DD-MM-YYYY hh:mm:ss.SSS"),
     },
-    //{
-    //  title: 'Timeout at',
-    //  style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
-    //  content: item => moment(item.lastSeen + item.timeout).format("DD-MM-YYYY hh:mm:ss.SSS"),
-    //},
+    {
+      title: 'Rate',
+      style: { textAlign: 'center', width: 80 },
+      content: item => (item.stats.rate || 0.0).toFixed(2) + ' call/s',
+    },
+    {
+      title: 'Overhead',
+      style: { textAlign: 'center', width: 80 },
+      content: item => (item.stats.overhead || 0.0).toFixed(2) + ' ms',
+    },
+    {
+      title: 'Duration',
+      style: { textAlign: 'center', width: 80 },
+      content: item => (item.stats.duration || 0.0).toFixed(2) + ' ms',
+    },
+    {
+      title: 'Data in',
+      style: { textAlign: 'center', width: 80 },
+      content: item => {
+        const kb = ((item.stats.dataInRate || 0.0) / (1024));
+        const mb = ((item.stats.dataInRate || 0.0) / (1024 * 1024));
+        if (mb < 1.0) {
+          return kb.toFixed(2) + ' Kb/s'
+        } else {
+          return mb.toFixed(2) + ' Mb/s'
+        }
+      },
+    },
+    {
+      title: 'Data out',
+      style: { textAlign: 'center', width: 80 },
+      content: item => {
+        const kb = ((item.stats.dataOutRate || 0.0) / (1024));
+        const mb = ((item.stats.dataOutRate || 0.0) / (1024 * 1024));
+        if (mb < 1.0) {
+          return kb.toFixed(2) + ' Kb/s'
+        } else {
+          return mb.toFixed(2) + ' Mb/s'
+        }
+      },
+    },
     {
       title: 'Health',
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 100 },
@@ -33,13 +69,10 @@ export class ClusterPage extends Component {
         const value = item.time - item.lastSeen;
         if (value < (item.timeout / 2)) {
           return <i className="fa fa-heartbeat" style={{ color: 'green' }} />
-          return <div style={{ width: 16, height: 16, backgroundColor: 'green', borderRadius: '50%' }}></div>
         } else if (value < (3 * (item.timeout / 3))) {
           return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />
-          return <div style={{ width: 16, height: 16, backgroundColor: 'orange', borderRadius: '50%' }}></div>
         } else {
           return <i className="fa fa-heartbeat" style={{ color: 'red' }} />
-          return <div style={{ width: 16, height: 16, backgroundColor: 'red', borderRadius: '50%' }}></div>
         }
       }
     }
