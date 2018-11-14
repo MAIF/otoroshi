@@ -712,7 +712,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (isPushingQuotas.compareAndSet(false, true)) {
       val oldApiIncr = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
       val oldServiceIncr = servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
-      if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
+      //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start = System.currentTimeMillis()
         Retry.retry(times = config.worker.state.retries, ctx = "leader-push-quotas") { tryCount =>
           Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
@@ -765,9 +765,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         }.andThen {
           case _ => isPushingQuotas.compareAndSet(true, false)
         }
-      } else {
-        isPushingQuotas.compareAndSet(true, false)
-      }
+      //} else {
+      //  isPushingQuotas.compareAndSet(true, false)
+      //}
     } else {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Still pushing api quotas updates to Otoroshi leader cluster, retying later ...")
     }
