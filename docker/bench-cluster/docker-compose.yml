@@ -1,0 +1,98 @@
+version: '3'
+services:
+
+  client:
+    build: ./client
+    networks:
+      - bench
+    depends_on:
+      - otoroshi
+
+  otoroshi:
+    build: ./otoroshi
+    ports:
+      - 8091:8091
+    networks:
+      - bench
+    depends_on:
+      - backend
+
+  otoroshi-worker1:
+    build: ./otoroshi-worker
+    ports:
+      - 8092:8091
+    networks:
+      - bench
+    depends_on:
+      - backend
+
+  otoroshi-worker2:
+    build: ./otoroshi-worker
+    ports:
+      - 8093:8091
+    networks:
+      - bench
+    depends_on:
+      - backend
+
+  otoroshi-worker3:
+    build: ./otoroshi-worker
+    ports:
+      - 8094:8091
+    networks:
+      - bench
+    depends_on:
+      - backend
+
+  otoroshi-worker4:
+    build: ./otoroshi-worker
+    ports:
+      - 8095:8091
+    networks:
+      - bench
+    depends_on:
+      - backend
+
+  otoroshi-worker5:
+    build: ./otoroshi-worker
+    ports:
+      - 8096:8091
+    networks:
+      - bench
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    networks:
+      - bench
+    ports:
+      - 1026:1026
+
+
+  nginx:
+    image: nginx
+    expose:
+      - 8080
+    ports:
+      - 8889:8080
+    networks:
+      - bench
+    logging:
+      driver: none
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - otoroshi-worker1
+      - otoroshi-worker2
+      - otoroshi-worker3
+      - otoroshi-worker4
+      - otoroshi-worker5
+
+networks:
+  bench:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
