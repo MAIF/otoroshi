@@ -552,6 +552,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val counter = new AtomicInteger(0)
   private val isPollingState = new AtomicBoolean(false)
   private val isPushingQuotas = new AtomicBoolean(false)
+  private val firstSuccessfulStateFetchDone = new AtomicBoolean(false)
 
   /////////////
   private val apiIncrementsRef = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
@@ -563,7 +564,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     config.leader.urls.zipWithIndex.find(t => t._2 == count).map(_._1).getOrElse(config.leader.urls.head)
   }
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = Retry.retry(times = config.worker.retries, ctx = "leader-session-valid") { tryCount =>
+  def cannotServeRequests(): Boolean = {
+    !firstSuccessfulStateFetchDone.get()
+  }
+
+  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = Retry.retry(times = config.worker.retries, delay = 10, ctx = "leader-session-valid") { tryCount =>
     env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
       .withHttpHeaders(
         "Host" -> config.leader.host,
@@ -582,7 +587,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   def createSession(user: PrivateAppsUser): Future[Unit] = {
-    Retry.retry(times = config.worker.retries, ctx = "leader-create-session") { tryCount =>
+    Retry.retry(times = config.worker.retries, delay = 10, ctx = "leader-create-session") { tryCount =>
       env.Ws.url(otoroshiUrl + s"/api/cluster/sessions")
         .withHttpHeaders(
           "Host" -> config.leader.host,
@@ -659,7 +664,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (isPollingState.compareAndSet(false, true)) {
       Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
       val start = System.currentTimeMillis()
-      Retry.retry(times = config.worker.state.retries, ctx = "leader-fetch-state") { tryCount =>
+      Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 10, ctx = "leader-fetch-state") { tryCount =>
         env.Ws.url(otoroshiUrl + "/api/cluster/state")
           .withHttpHeaders(
             "Host" -> config.leader.host,
@@ -692,6 +697,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               }).map { _ =>
               Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount.")
               if (!store.isEmpty) {
+                firstSuccessfulStateFetchDone.compareAndSet(false, true)
                 env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
               }
             }
@@ -714,7 +720,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       val oldServiceIncr = servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
       //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start = System.currentTimeMillis()
-        Retry.retry(times = config.worker.state.retries, ctx = "leader-push-quotas") { tryCount =>
+        Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 10, ctx = "leader-push-quotas") { tryCount =>
           Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
 
           (for {
