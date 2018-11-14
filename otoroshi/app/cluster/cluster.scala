@@ -391,7 +391,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
+        Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
         env.datastores.privateAppsUserDataStore.findById(sessionId).map {
           case Some(user) => Ok(user.toJson)
           case None       => NotFound(Json.obj("error" -> "Session not found"))
@@ -405,7 +405,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating session")
+        Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] creating session")
         PrivateAppsUser.fmt.reads(ctx.request.body) match {
           case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad session format")))
           case JsSuccess(user, _) => user.save(Duration(System.currentTimeMillis() - user.expiredAt.getMillis, TimeUnit.MILLISECONDS)).map { session =>
@@ -421,7 +421,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] updating quotas")
+        Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
           ctx.request.body.via(Compression.gunzip()).via(Framing.delimiter(ByteString("\n"), 1024 * 1024)).mapAsync(4) { item =>
             val jsItem = Json.parse(item.utf8String)
@@ -451,9 +451,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 val id = (jsItem \ "apk").asOpt[String].getOrElse("--")
                 val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
                 env.datastores.apiKeyDataStore.findById(id).flatMap {
-                  case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment).andThen {
-                    case e => Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Increment of ${increment} for apikey ${apikey.clientName}")
-                  }
+                  case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment)
                   case None => FastFuture.successful(())
                 }
               }
