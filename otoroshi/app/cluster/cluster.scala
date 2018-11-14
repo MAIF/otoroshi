@@ -225,7 +225,7 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
           case JsSuccess(v, _) => 
-            val stats = if (member.stats == Json.obj()) v.stats else member.stats
+            val stats = if (member.stats.as[JsObject].value.isEmpty) v.stats else member.stats
             val newMember = member.copy(stats = stats)
             redisLike.set(key, Json.stringify(newMember.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
           case _ => redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
@@ -274,7 +274,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
           case JsSuccess(v, _) => 
-            val stats = if (member.stats == Json.obj()) v.stats else member.stats
+            val stats = if (member.stats.as[JsObject].value.isEmpty) v.stats else member.stats
             val newMember = member.copy(stats = stats)
             redisLike.set(key, Json.stringify(newMember.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
           case _ => redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())

@@ -17,7 +17,7 @@ export class ClusterPage extends Component {
     {
       title: 'Last seen at',
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
-      content: item => moment(item.lastSeen).format("DD-MM-YYYY hh:mm:ss.SSS"),
+      content: item => moment(item.lastSeen).format("DD-MM-YYYY HH:mm:ss.SSS"),
     },
     {
       title: 'Rate',
