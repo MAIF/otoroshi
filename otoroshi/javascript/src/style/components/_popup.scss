@@ -9,8 +9,14 @@
   color: white;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-around;
   padding-left: 10px;
+border-bottom-left-radius: 4px;
+  a,a:hover{
+    color : #856404;
+    text-decoration: underline;
+  }
+
 }
 
 .loggedOutVeil {
