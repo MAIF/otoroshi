@@ -835,11 +835,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
           } yield ByteString(Json.stringify(Json.obj(
             "typ"                       -> "globstats",
-            "rate"                      -> BigDecimal(rate).setScale(3, RoundingMode.HALF_EVEN),
-            "duration"                  -> BigDecimal(duration).setScale(3, RoundingMode.HALF_EVEN),
-            "overhead"                  -> BigDecimal(overhead).setScale(3, RoundingMode.HALF_EVEN),
-            "dataInRate"                -> BigDecimal(dataInRate).setScale(3, RoundingMode.HALF_EVEN),
-            "dataOutRate"               -> BigDecimal(dataOutRate).setScale(3, RoundingMode.HALF_EVEN),
+            "rate"                      -> BigDecimal(Option(rate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "duration"                  -> BigDecimal(Option(duration).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "overhead"                  -> BigDecimal(Option(overhead).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "dataInRate"                -> BigDecimal(Option(dataInRate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "dataOutRate"               -> BigDecimal(Option(dataOutRate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
             "concurrentHandledRequests" -> concurrentHandledRequests
           )) + "\n")) flatMap { stats =>
             val apiIncrSource = Source(oldApiIncr.toList.map {
