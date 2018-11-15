@@ -826,6 +826,17 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 20, ctx = "leader-push-quotas") { tryCount =>
           Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
 
+          env.datastores.serviceDescriptorDataStore.globalCallsPerSec().map { rate =>
+            Try {
+              BigDecimal(Option(rate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN)
+            } recover {
+              case e => {
+                Cluster.logger.error(s"fuuuuu, rate was '$rate'", e)
+              }
+            }
+          }
+
+
           (for {
             rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
             duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
@@ -881,6 +892,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 c2.addAndGet(counter2.get())
                 c3.addAndGet(counter3.get())
             }
+
+
             Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster", e)
         }.andThen {
           case _ => isPushingQuotas.compareAndSet(true, false)
