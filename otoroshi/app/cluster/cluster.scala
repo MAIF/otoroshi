@@ -556,7 +556,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           }.runWith(Sink.ignore)
             .andThen {
               case _ => 
-                Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
+                Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
                 env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
             }
             .map(_ => Ok(Json.obj("done" -> true)))
