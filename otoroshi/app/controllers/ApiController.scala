@@ -83,6 +83,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     stats.map(extractor).:+(value).fold(0.0)(_ + _) / (stats.size + 1)
   }
 
+  private def sumDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
+    stats.map(extractor).:+(value).fold(0.0)(_ + _)
+  }
+
   def globalLiveStats() = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
@@ -112,12 +116,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           "calls"                     -> calls,
           "dataIn"                    -> dataIn,
           "dataOut"                   -> dataOut,
-          "rate"                      -> avgDouble(rate, _.rate, membersStats),
+          "rate"                      -> sumDouble(rate, _.rate, membersStats),
           "duration"                  -> avgDouble(duration, _.duration, membersStats),
           "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-          "dataInRate"                -> avgDouble(dataInRate, _.dataInRate, membersStats),
-          "dataOutRate"               -> avgDouble(dataOutRate, _.dataOutRate, membersStats),
-          "concurrentHandledRequests" -> avgDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
+          "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
+          "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+          "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
         )
       )
   }
@@ -208,12 +212,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "calls"                     -> calls,
             "dataIn"                    -> dataIn,
             "dataOut"                   -> dataOut,
-            "rate"                      -> avgDouble(rate, _.rate, membersStats),
+            "rate"                      -> sumDouble(rate, _.rate, membersStats),
             "duration"                  -> avgDouble(duration, _.duration, membersStats),
             "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-            "dataInRate"                -> avgDouble(dataInRate, _.dataInRate, membersStats),
-            "dataOutRate"               -> avgDouble(dataOutRate, _.dataOutRate, membersStats),
-            "concurrentHandledRequests" -> avgDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
+            "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
+            "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
           )
       case serviceId =>
         for {
@@ -232,12 +236,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "calls"                     -> calls,
             "dataIn"                    -> dataIn,
             "dataOut"                   -> dataOut,
-            "rate"                      -> avgDouble(rate, _.rate, membersStats),
+            "rate"                      -> sumDouble(rate, _.rate, membersStats),
             "duration"                  -> avgDouble(duration, _.duration, membersStats),
             "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-            "dataInRate"                -> avgDouble(dataInRate, _.dataInRate, membersStats),
-            "dataOutRate"               -> avgDouble(dataOutRate, _.dataOutRate, membersStats),
-            "concurrentHandledRequests" -> avgDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
+            "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
+            "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
           )
     }
     every match {
