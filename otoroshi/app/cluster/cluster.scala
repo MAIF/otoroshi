@@ -825,18 +825,6 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         val start = System.currentTimeMillis()
         Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 20, ctx = "leader-push-quotas") { tryCount =>
           Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
-
-          env.datastores.serviceDescriptorDataStore.globalCallsPerSec().map { rate =>
-            Try {
-              BigDecimal(Option(rate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN)
-            } recover {
-              case e => {
-                Cluster.logger.error(s"fuuuuu, rate was '$rate'", e)
-              }
-            }
-          }
-
-
           (for {
             rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
             duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
@@ -846,11 +834,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
           } yield ByteString(Json.stringify(Json.obj(
             "typ"                       -> "globstats",
-            "rate"                      -> BigDecimal(Option(rate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "duration"                  -> BigDecimal(Option(duration).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "overhead"                  -> BigDecimal(Option(overhead).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "dataInRate"                -> BigDecimal(Option(dataInRate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "dataOutRate"               -> BigDecimal(Option(dataOutRate).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "rate"                      -> BigDecimal(Option(rate).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "duration"                  -> BigDecimal(Option(duration).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "overhead"                  -> BigDecimal(Option(overhead).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "dataInRate"                -> BigDecimal(Option(dataInRate).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "dataOutRate"               -> BigDecimal(Option(dataOutRate).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
             "concurrentHandledRequests" -> concurrentHandledRequests
           )) + "\n")) flatMap { stats =>
             val apiIncrSource = Source(oldApiIncr.toList.map {
