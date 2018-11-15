@@ -38,6 +38,7 @@ import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.math.BigDecimal.RoundingMode
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -834,11 +835,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
           } yield ByteString(Json.stringify(Json.obj(
             "typ"                       -> "globstats",
-            "rate"                      -> rate,
-            "duration"                  -> duration,
-            "overhead"                  -> overhead,
-            "dataInRate"                -> dataInRate,
-            "dataOutRate"               -> dataOutRate,
+            "rate"                      -> BigDecimal(rate).setScale(3, RoundingMode.HALF_EVEN),
+            "duration"                  -> BigDecimal(duration).setScale(3, RoundingMode.HALF_EVEN),
+            "overhead"                  -> BigDecimal(overhead).setScale(3, RoundingMode.HALF_EVEN),
+            "dataInRate"                -> BigDecimal(dataInRate).setScale(3, RoundingMode.HALF_EVEN),
+            "dataOutRate"               -> BigDecimal(dataOutRate).setScale(3, RoundingMode.HALF_EVEN),
             "concurrentHandledRequests" -> concurrentHandledRequests
           )) + "\n")) flatMap { stats =>
             val apiIncrSource = Source(oldApiIncr.toList.map {
