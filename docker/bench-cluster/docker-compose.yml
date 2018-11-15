@@ -10,12 +10,27 @@ services:
 
   otoroshi:
     build: ./otoroshi
+    environment:
+      - APP_STORAGE=redis
+      - REDIS_HOST=redis
     ports:
       - 8091:8091
     networks:
       - bench
     depends_on:
       - backend
+      - redis
+      - elastic
+
+  redis-master:
+    image: redis:4.0.8
+    expose:
+      - 6379
+    networks:
+      - bench
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data/otoroshi-leader-data:/data
 
   otoroshi-worker1:
     build: ./otoroshi-worker
@@ -88,6 +103,35 @@ services:
       - otoroshi-worker3
       - otoroshi-worker4
       - otoroshi-worker5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.3.0
+    environment:
+      SERVER_NAME: kibana.foo.bar
+      ELASTICSEARCH_URL: http://elastic:9200
+    expose:
+      - 5601
+    networks:
+      - bench
+    depends_on:
+      - elastic
+
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./data/es-data:/usr/share/elasticsearch/data
+    expose:
+      - 9200
+    networks:
+      - bench
 
 networks:
   bench:
