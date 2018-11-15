@@ -105,6 +105,7 @@ case class WorkerConfig(
   quotas: WorkerQuotasConfig = WorkerQuotasConfig()
 )
 case class LeaderConfig(
+  name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
   urls: Seq[String] = Seq.empty,
   host: String = "otoroshi-api.foo.bar",
   clientId: String = "admin-api-apikey-id",
@@ -129,6 +130,7 @@ object ClusterConfig {
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       compression = configuration.getOptional[Int]("compression").getOrElse(-1),
       leader = LeaderConfig(
+        name = configuration.getOptional[String]("leader.name").orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-leader-$i")).getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}"),
         urls = configuration.getOptional[Seq[String]]("leader.urls").map(_.toSeq).getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
         host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.foo.bar"),
         clientId = configuration.getOptional[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
@@ -138,7 +140,7 @@ object ClusterConfig {
         stateDumpPath = configuration.getOptional[String]("leader.stateDumpPath")
       ),
       worker = WorkerConfig(
-        name = configuration.getOptional[String]("worker.name").getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
+        name = configuration.getOptional[String]("worker.name").orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-worker-$i")).getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
         retries = configuration.getOptional[Int]("worker.retries").getOrElse(3),
         timeout = configuration.getOptional[Long]("worker.timeout").getOrElse(2000),
         state = WorkerStateConfig(
@@ -205,13 +207,16 @@ trait ClusterStateDataStore {
   def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]]
   def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def updateDataOut(out: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)]
 }
 
 class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterStateDataStore {
   
   override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
-      .keys(s"${env.storageRoot}:cluster:members:*")
+      .keys(s"${env.storageRoot}:cluster:workers:*")
       .flatMap(
         keys =>
           if (keys.isEmpty) FastFuture.successful(0L)
@@ -220,7 +225,7 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
   }
 
   override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    val key = s"${env.storageRoot}:cluster:members:${member.name}"
+    val key = s"${env.storageRoot}:cluster:workers:${member.name}"
     redisLike.get(key).flatMap {
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
@@ -238,7 +243,7 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
-        .keys(s"${env.storageRoot}:cluster:members:*")
+        .keys(s"${env.storageRoot}:cluster:workers:*")
         .flatMap(
           keys =>
             if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
@@ -253,6 +258,43 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
     } else {
       FastFuture.successful(Seq.empty)
     }
+  }
+
+  override def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    for {
+      _ <- redisLike.lpushLong(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", in)
+      _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+    } yield ()
+  }
+
+  override def updateDataOut(out: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    for {
+      _ <- redisLike.lpushLong(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", out)
+      _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+    } yield ()
+  }
+
+  override def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
+    for {
+      in <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100).map { values =>
+        if (values.isEmpty) 0L
+        else {
+          val items = values.map { v => v.utf8String.toLong }
+          val total = items.fold(0L)(_ + _)
+          (total / items.size).toLong
+        }
+      }
+      out <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100).map { values =>
+        if (values.isEmpty) 0L
+        else {
+          val items = values.map { v => v.utf8String.toLong }
+          val total = items.fold(0L)(_ + _)
+          (total / items.size).toLong
+        }
+      }
+    } yield (in, out)
   }
 }
 
@@ -260,7 +302,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
   
   override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
-      .keys(s"${env.storageRoot}:cluster:members:*")
+      .keys(s"${env.storageRoot}:cluster:workers:*")
       .flatMap(
         keys =>
           if (keys.isEmpty) FastFuture.successful(0L)
@@ -269,7 +311,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
   }
   
   override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    val key = s"${env.storageRoot}:cluster:members:${member.name}"
+    val key = s"${env.storageRoot}:cluster:workers:${member.name}"
     redisLike.get(key).flatMap {
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
@@ -287,7 +329,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
-        .keys(s"${env.storageRoot}:cluster:members:*")
+        .keys(s"${env.storageRoot}:cluster:workers:*")
         .flatMap(
           keys =>
             if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
@@ -302,6 +344,43 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     } else {
       FastFuture.successful(Seq.empty)
     }
+  }
+
+  override def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    for {
+      _ <- redisLike.lpush(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", in)
+      _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+    } yield ()
+  }
+
+  override def updateDataOut(out: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    for {
+      _ <- redisLike.lpush(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", out)
+      _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+    } yield ()
+  }
+
+  override def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
+    for {
+      in <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100).map { values =>
+        if (values.isEmpty) 0L
+        else {
+          val items = values.map { v => v.utf8String.toLong }
+          val total = items.fold(0L)(_ + _)
+          (total / items.size).toLong
+        }
+      }
+      out <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100).map { values =>
+        if (values.isEmpty) 0L
+        else {
+          val items = values.map { v => v.utf8String.toLong }
+          val total = items.fold(0L)(_ + _)
+          (total / items.size).toLong
+        }
+      }
+    } yield (in, out)
   }
 }
 
@@ -339,19 +418,25 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         val source = Source
           .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(every, TimeUnit.MILLISECONDS), NotUsed)
           .mapAsync(1) { _ =>
-            env.datastores.clusterStateDataStore.getMembers()
+            for {
+              members <- env.datastores.clusterStateDataStore.getMembers()
+              inOut   <- env.datastores.clusterStateDataStore.dataInAndOut()
+            } yield (members, inOut)
           }
-          .map { members =>
-            val payload: Int = Option(cachedRef.get()).map(_.size).getOrElse(0)
-            val healths = members.map(healthOf)
-            val foundOrange = healths.contains("orange")
-            val foundRed = healths.contains("red")
-            val health = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
-            Json.obj(
-              "workers" -> members.size,
-              "health" -> health,
-              "payload" -> payload
-            )
+          .map {
+            case (members, inOut) =>
+              val payloadIn: Long = inOut._1
+              val payloadOut: Long = inOut._2
+              val healths = members.map(healthOf)
+              val foundOrange = healths.contains("orange")
+              val foundRed = healths.contains("red")
+              val health = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
+              Json.obj(
+                "workers" -> members.size,
+                "health" -> health,
+                "payloadIn" -> payloadIn,
+                "payloadOut" -> payloadOut
+              )
           }
           .map(Json.stringify)
           .map(slug => s"data: $slug\n\n")
@@ -422,8 +507,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
+        val bytesCounter = new AtomicLong(0L)
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-          ctx.request.body.via(Compression.gunzip()).via(Framing.delimiter(ByteString("\n"), 1024 * 1024)).mapAsync(4) { item =>
+          ctx.request.body.map(bs => {
+            bytesCounter.addAndGet(bs.size)
+            bs
+          }).via(env.clusterConfig.gunzip()).via(Framing.delimiter(ByteString("\n"), 1024 * 1024)).mapAsync(4) { item =>
             val jsItem = Json.parse(item.utf8String)
             (jsItem \ "typ").asOpt[String] match {
               case Some("globstats") => {
@@ -459,6 +548,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             }
 
           }.runWith(Sink.ignore)
+            .andThen {
+              case _ => env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
+            }
             .map(_ => Ok(Json.obj("done" -> true)))
             .recover {
               case e => 
@@ -498,11 +590,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             var stateCache = ByteString.empty
             Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).map { item =>
               ByteString(Json.stringify(item) + "\n")
-            }.via(Compression.gzip(5)).alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
+            }.via(env.clusterConfig.gzip()).alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
               case Success(_) =>
                 cachedRef.set(stateCache)
                 cachedAt.set(System.currentTimeMillis())
                 caching.compareAndSet(true, false)
+                env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
                 env.clusterConfig.leader.stateDumpPath.foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
                 Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms.")
               case Failure(e) =>
@@ -568,7 +661,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     !firstSuccessfulStateFetchDone.get()
   }
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = Retry.retry(times = config.worker.retries, delay = 10, ctx = "leader-session-valid") { tryCount =>
+  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = Retry.retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
     env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
       .withHttpHeaders(
         "Host" -> config.leader.host,
@@ -587,7 +680,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   def createSession(user: PrivateAppsUser): Future[Unit] = {
-    Retry.retry(times = config.worker.retries, delay = 10, ctx = "leader-create-session") { tryCount =>
+    Retry.retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
       env.Ws.url(otoroshiUrl + s"/api/cluster/sessions")
         .withHttpHeaders(
           "Host" -> config.leader.host,
@@ -664,7 +757,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (isPollingState.compareAndSet(false, true)) {
       Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
       val start = System.currentTimeMillis()
-      Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 10, ctx = "leader-fetch-state") { tryCount =>
+      Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 20, ctx = "leader-fetch-state") { tryCount =>
         env.Ws.url(otoroshiUrl + "/api/cluster/state")
           .withHttpHeaders(
             "Host" -> config.leader.host,
@@ -682,10 +775,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             val store = new ConcurrentHashMap[String, Any]()
             val expirations = new ConcurrentHashMap[String, Long]()
             resp.bodyAsSource
-              .via(Compression.gunzip())
+              .via(env.clusterConfig.gunzip())
               .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
-              .map(bs => Json.parse(bs.utf8String))
-              .runWith(Sink.foreach { item =>
+              .runWith(Sink.foreach { bs =>
+                val item = Json.parse(bs.utf8String)
                 val key = (item \ "k").as[String]
                 val value = (item \ "v").as[JsValue]
                 val what = (item \ "w").as[String]
@@ -712,7 +805,6 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  // TODO: restack if error on push
   private def pushQuotas(): Unit = {
     implicit val _env = env
     if (isPushingQuotas.compareAndSet(false, true)) {
@@ -720,7 +812,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       val oldServiceIncr = servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
       //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start = System.currentTimeMillis()
-        Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 10, ctx = "leader-push-quotas") { tryCount =>
+        Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 20, ctx = "leader-push-quotas") { tryCount =>
           Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
 
           (for {
@@ -746,7 +838,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               case (key, (calls, dataIn, dataOut)) => ByteString(Json.stringify(Json.obj("typ" -> "srvincr", "srv" -> key, "c" -> calls.get(), "di" -> dataIn.get(), "do" -> dataOut.get())) + "\n")
             })
             val globalSource = Source.single(stats)
-            val body = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(Compression.gzip(5))
+            val body = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
             val wsBody = SourceBody(body)
             env.Ws.url(otoroshiUrl + "/api/cluster/quotas")
               .withHttpHeaders(
@@ -767,7 +859,18 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               }
           }
         }.recover {
-          case e => Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster", e)
+          case e => 
+            oldApiIncr.foreach {
+              case (key, c) => apiIncrementsRef.get().getOrElseUpdate(key, new AtomicLong(0L)).addAndGet(c.get())
+            }
+            oldServiceIncr.foreach {
+              case (key, (counter1, counter2, counter3)) =>
+                val (c1, c2, c3) = servicesIncrementsRef.get().getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
+                c1.addAndGet(counter1.get())
+                c2.addAndGet(counter2.get())
+                c3.addAndGet(counter3.get())
+            }
+            Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster", e)
         }.andThen {
           case _ => isPushingQuotas.compareAndSet(true, false)
         }

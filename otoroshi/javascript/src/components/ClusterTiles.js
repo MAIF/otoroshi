@@ -72,7 +72,7 @@ export class ClusterTiles extends Component {
     show: false,
     firstDone: false,
     workers: 0,
-    payload: '0 Kb',
+    payloadInOut: '0 Kb / O Kb',
     health: 'grey'
   };
 
@@ -115,11 +115,12 @@ export class ClusterTiles extends Component {
     const data = JSON.parse(e.data);
     data.workers = data.workers || 0;
     data.health = data.health || 'grey';
-    const [payloadIn, payloadUnit] = this.computeValue(data.payload);
+    const [payloadIn, payloadInUnit] = this.computeValue(data.payloadIn);
+    const [payloadOut, payloadOutUnit] = this.computeValue(data.payloadOut);
    
     this.setState({
       firstDone: true,
-      payload: `${payloadIn.prettify()} ${payloadUnit} payload`,
+      payload: `${payloadIn.prettify()} ${payloadInUnit} / ${payloadOut.prettify()} ${payloadOutUnit} payload`,
       workers: `${data.workers} workers`,
       health: data.health,
     });
