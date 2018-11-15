@@ -738,27 +738,28 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  private def fromJson(what: String, value: JsValue): Any = {
+  private def fromJson(what: String, value: JsValue): Option[Any] = {
 
     import collection.JavaConverters._
 
     what match {
-      case "string" => ByteString(value.as[String])
+      case "string" => Some(ByteString(value.as[String]))
       case "set" => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
-        list
+        Some(list)
       }
       case "list" => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
-        list
+        Some(list)
       }
       case "hash" => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
-        map
+        Some(map)
       }
+      case _ => None
     }
   }
 
@@ -792,7 +793,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val value = (item \ "v").as[JsValue]
                 val what = (item \ "w").as[String]
                 val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
-                store.put(key, fromJson(what, value))
+                fromJson(what, value).foreach(v => store.put(key, v))
                 if (ttl > -1L) {
                   expirations.put(key, ttl)
                 }
