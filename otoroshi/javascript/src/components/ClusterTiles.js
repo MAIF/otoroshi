@@ -156,7 +156,7 @@ export class ClusterTiles extends Component {
         <h4 className="live-title">CLUSTER METRICS</h4>
         <div className="rowMetrics">
           <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.workers} legend="" />
-          <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.payloadIn + this.state.payloadOut} legend="" />
+          <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.payload} legend="" />
           <Metric time={Date.now()} link="/bo/dashboard/cluster" hideValueText value={healthValue} legend={<i className="fa fa-heartbeat" style={{ textShadow: 'none', fontSize: 60, color: this.state.health }} />} />
         </div>
       </div>
