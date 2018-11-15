@@ -72,7 +72,9 @@ export class ClusterTiles extends Component {
     show: false,
     firstDone: false,
     workers: 0,
-    payloadInOut: '0 Kb / O Kb',
+    payload: '0 Kb / O Kb',
+    payloadIn: 0,
+    payloadOut: 0,
     health: 'grey'
   };
 
@@ -128,6 +130,8 @@ export class ClusterTiles extends Component {
    
     this.setState({
       firstDone: true,
+      payloadIn: data.payloadIn,
+      payloadOut: data.payloadOut,
       payload: `${payloadIn.prettify()} ${payloadInUnit} / ${payloadOut.prettify()} ${payloadOutUnit} payload`,
       workers: `${data.workers} workers`,
       health: data.health,
@@ -152,7 +156,7 @@ export class ClusterTiles extends Component {
         <h4 className="live-title">CLUSTER METRICS</h4>
         <div className="rowMetrics">
           <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.workers} legend="" />
-          <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.payload} legend="" />
+          <Metric time={Date.now()} link="/bo/dashboard/cluster" value={this.state.payloadIn + this.state.payloadOut} legend="" />
           <Metric time={Date.now()} link="/bo/dashboard/cluster" hideValueText value={healthValue} legend={<i className="fa fa-heartbeat" style={{ textShadow: 'none', fontSize: 60, color: this.state.health }} />} />
         </div>
       </div>

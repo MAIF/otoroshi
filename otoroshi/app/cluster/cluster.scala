@@ -538,7 +538,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 val dataIn = (jsItem \ "di").asOpt[Long].getOrElse(0L)
                 val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
                 env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
-                  case Some(_) => env.datastores.serviceDescriptorDataStore.updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
+                  case Some(_) => 
+                    Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] incr $id => $calls, $dataIn, $dataOut")
+                    env.datastores.serviceDescriptorDataStore.updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
                   case None => FastFuture.successful(())
                 }
               }
