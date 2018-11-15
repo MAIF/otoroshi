@@ -830,7 +830,7 @@ class AlertsActor(implicit env: Env) extends Actor {
     .groupedWithin(25, FiniteDuration(60, TimeUnit.SECONDS))
     .mapAsync(1) { evts =>
       val titles = evts
-        .map(_.toJson)
+        .map(_.toEnrichedJson)
         .map { jsonEvt =>
           val date = new DateTime((jsonEvt \ "@timestamp").as[Long])
           val id   = (jsonEvt \ "@id").as[String]
@@ -841,7 +841,7 @@ class AlertsActor(implicit env: Env) extends Actor {
         .mkString("<ul>", "\n", "</ul>")
 
       val email = evts
-        .map(_.toJson)
+        .map(_.toEnrichedJson)
         .map { jsonEvt =>
           val alert   = (jsonEvt \ "alert").asOpt[String].getOrElse("Unkown alert")
           val message = (jsonEvt \ "audit" \ "message").asOpt[String].getOrElse("No description message")
@@ -886,7 +886,7 @@ class AlertsActor(implicit env: Env) extends Actor {
     for {
       r <- env.datastores.globalConfigDataStore.singleton().flatMap { config =>
             config.kafkaConfig.foreach { kafkaConfig =>
-              kafkaWrapper.publish(evt.toJson)(env, kafkaConfig)
+              kafkaWrapper.publish(evt.toEnrichedJson)(env, kafkaConfig)
             }
             if (config.kafkaConfig.isEmpty) kafkaWrapper.close()
             Future.sequence(config.alertsWebhooks.map { webhook =>
@@ -894,7 +894,7 @@ class AlertsActor(implicit env: Env) extends Actor {
               env.Ws
                 .url(url)
                 .withHttpHeaders(webhook.headers.toSeq: _*)
-                .post(Json.obj("event" -> "ALERT", "payload" -> evt.toJson))
+                .post(Json.obj("event" -> "ALERT", "payload" -> evt.toEnrichedJson))
                 .andThen {
                   case Failure(e) => {
                     logger.error(s"Error while sending AlertEvent at '$url'", e)
@@ -973,7 +973,7 @@ object Alerts {
   lazy val logger = Logger("otoroshi-alerts")
 
   def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
-    logger.info("Alert " + Json.stringify(alert.toJson))
+    logger.info("Alert " + Json.stringify(alert.toEnrichedJson))
     alert.toAnalytics()
     if (env.isProd) {
       env.alertsActor ! alert

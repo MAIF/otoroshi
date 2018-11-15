@@ -20,7 +20,7 @@ class InMemoryAuditDataStore(redisCli: RedisLike) extends AuditDataStore {
   override def push(event: AuditEvent)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     for {
       config <- env.datastores.globalConfigDataStore.singleton()
-      n      <- redisCli.lpush(s"${env.storageRoot}:events:audit", Json.stringify(event.toJson))
+      n      <- redisCli.lpush(s"${env.storageRoot}:events:audit", Json.stringify(event.toEnrichedJson))
       -      <- redisCli.ltrim(s"${env.storageRoot}:events:audit", 0, config.maxLogsSize)
     } yield n
 }

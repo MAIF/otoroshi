@@ -99,22 +99,22 @@ configApp.get('/otoroshi.json', (req, res) => {
       "analyticsWebhooks": [],
       "alertsWebhooks": [],
       "alertsEmails": [],
-      "elasticWritesConfigs": [
-        {
-          "clusterUri": "http://elastic:9200",
-          "index": "otoroshi-events",
-          "type": "event",
-          "user": null,
-          "password": null
-        }
-      ],
-      "elasticReadsConfig": {
-        "clusterUri": "http://elastic:9200",
-        "index": "otoroshi-events",
-        "type": "event",
-        "user": null,
-        "password": null
-      },
+      // "elasticWritesConfigs": [
+      //   {
+      //     "clusterUri": "http://elastic:9200",
+      //     "index": "otoroshi-events",
+      //     "type": "event",
+      //     "user": null,
+      //     "password": null
+      //   }
+      // ],
+      // "elasticReadsConfig": {
+      //   "clusterUri": "http://elastic:9200",
+      //   "index": "otoroshi-events",
+      //   "type": "event",
+      //   "user": null,
+      //   "password": null
+      // },
       "endlessIpAddresses": [],
       "statsdConfig": null,
       "kafkaConfig": null,

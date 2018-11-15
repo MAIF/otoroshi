@@ -199,7 +199,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
       }
       .addHttpHeaders(config.headers.toSeq: _*)
     Source(event.toList)
-      .map(_.toJson)
+      .map(_.toEnrichedJson)
       .grouped(500)
       .map(_.map(bulkRequest))
       .mapAsync(10) { bulk =>

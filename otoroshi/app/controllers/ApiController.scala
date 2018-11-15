@@ -1089,7 +1089,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         )
         env.datastores.healthCheckDataStore
           .findAll(desc)
-          .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toJson))))
+          .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toEnrichedJson))))
       }
     }
   }

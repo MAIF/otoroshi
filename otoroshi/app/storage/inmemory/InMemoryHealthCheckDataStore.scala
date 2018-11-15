@@ -16,7 +16,7 @@ class InMemoryHealthCheckDataStore(redisCli: RedisLike, _env: Env) extends Healt
 
   override def push(evt: HealthCheckEvent)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     for {
-      n <- redisCli.lpush(key(evt.`@serviceId`), Json.stringify(evt.toJson))
+      n <- redisCli.lpush(key(evt.`@serviceId`), Json.stringify(evt.toEnrichedJson))
       _ <- redisCli.ltrim(key(evt.`@serviceId`), 0, collectionSize)
     } yield n
 
