@@ -278,22 +278,25 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
 
   override def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
     for {
-      in <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100).map { values =>
+      keysIn  <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:in")
+      keysOut <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:out")
+      in <- Future.sequence(keysIn.map(key => redisLike.lrange(key, 0, 100).map { values =>
         if (values.isEmpty) 0L
         else {
           val items = values.map { v => v.utf8String.toLong }
           val total = items.fold(0L)(_ + _)
           (total / items.size).toLong
         }
-      }
-      out <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100).map { values =>
+      })).map(a => a.fold(0L)(_ + _) / a.size)
+
+      out <- Future.sequence(keysOut.map(key => redisLike.lrange(key, 0, 100).map { values =>
         if (values.isEmpty) 0L
         else {
           val items = values.map { v => v.utf8String.toLong }
           val total = items.fold(0L)(_ + _)
           (total / items.size).toLong
         }
-      }
+      })).map(a => a.fold(0L)(_ + _) / a.size)
     } yield (in, out)
   }
 }
@@ -364,22 +367,25 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
 
   override def dataInAndOut()(implicit ec: ExecutionContext, env: Env): Future[(Long, Long)] = {
     for {
-      in <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100).map { values =>
+      keysIn  <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:in")
+      keysOut <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:out")
+      in <- Future.sequence(keysIn.map(key => redisLike.lrange(key, 0, 100).map { values =>
         if (values.isEmpty) 0L
         else {
           val items = values.map { v => v.utf8String.toLong }
           val total = items.fold(0L)(_ + _)
           (total / items.size).toLong
         }
-      }
-      out <- redisLike.lrange(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100).map { values =>
+      })).map(a => a.fold(0L)(_ + _) / a.size)
+
+      out <- Future.sequence(keysOut.map(key => redisLike.lrange(key, 0, 100).map { values =>
         if (values.isEmpty) 0L
         else {
           val items = values.map { v => v.utf8String.toLong }
           val total = items.fold(0L)(_ + _)
           (total / items.size).toLong
         }
-      }
+      })).map(a => a.fold(0L)(_ + _) / a.size)
     } yield (in, out)
   }
 }
