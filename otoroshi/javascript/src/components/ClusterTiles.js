@@ -73,8 +73,6 @@ export class ClusterTiles extends Component {
     firstDone: false,
     workers: 0,
     payload: '0 Kb / O Kb',
-    payloadIn: 0,
-    payloadOut: 0,
     health: 'grey'
   };
 
@@ -130,9 +128,7 @@ export class ClusterTiles extends Component {
    
     this.setState({
       firstDone: true,
-      payloadIn: data.payloadIn,
-      payloadOut: data.payloadOut,
-      payload: `${payloadIn.prettify()} ${payloadInUnit} / ${payloadOut.prettify()} ${payloadOutUnit} payload`,
+      payload: `${payloadIn.prettify()} ${payloadInUnit} / ${payloadOut.prettify()} ${payloadOutUnit}`,
       workers: `${data.workers} workers`,
       health: data.health,
     });

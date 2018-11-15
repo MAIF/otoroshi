@@ -194,8 +194,8 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
     val time        = System.currentTimeMillis()
     // Call everything in parallel
     // incrementCalls
-    val callsIncrementGlobalCalls  = redisCli.incr(serviceCallKey("global"))
-    val callsIncrementServiceCalls = redisCli.incr(serviceCallKey(id))
+    val callsIncrementGlobalCalls  = redisCli.incrby(serviceCallKey("global"), calls)
+    val callsIncrementServiceCalls = redisCli.incrby(serviceCallKey(id), calls)
     // incrementCallsDuration
     // incrementDataIn
     val dataInIncrementGlobal  = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
