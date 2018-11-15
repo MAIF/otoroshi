@@ -539,7 +539,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
                 env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
                   case Some(_) => 
-                    Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] incr $id => $calls, $dataIn, $dataOut")
                     env.datastores.serviceDescriptorDataStore.updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
                   case None => FastFuture.successful(())
                 }
@@ -725,7 +724,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         case (calls, dataInCounter, dataOutCounter) =>
           calls.incrementAndGet()
           dataInCounter.addAndGet(dataIn)
-          dataOutCounter.addAndGet(dataIn)
+          dataOutCounter.addAndGet(dataOut)
       }
       if (!servicesIncrementsRef.get().contains(id)) {
         servicesIncrementsRef.get().putIfAbsent(id, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
@@ -734,7 +733,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         case (calls, dataInCounter, dataOutCounter) =>
           calls.incrementAndGet()
           dataInCounter.addAndGet(dataIn)
-          dataOutCounter.addAndGet(dataIn)
+          dataOutCounter.addAndGet(dataOut)
       }
     }
   }
