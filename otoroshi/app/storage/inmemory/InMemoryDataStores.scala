@@ -129,9 +129,11 @@ class InMemoryDataStores(configuration: Configuration,
             redis.rawGet(key).flatMap {
               case None => FastFuture.successful(JsNull)
               case Some(value) => {
-                val (what, jsonValue) = toJson(value)
-                redis.pttl(key).map { ttl =>
-                  Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
+                toJson(value) match {
+                  case (_, JsNull) => FastFuture.successful(JsNull)
+                  case (what, jsonValue) => redis.pttl(key).map { ttl =>
+                    Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
+                  }
                 }
               }
             }
@@ -153,7 +155,7 @@ class InMemoryDataStores(configuration: Configuration,
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] => ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] => ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
       case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] => ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case e => throw new RuntimeException(s"Unkown type ${e.getClass.getName}")
+      case _ => ("none", JsNull)
     }
   }
 }
