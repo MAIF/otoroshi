@@ -166,6 +166,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
 
   private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
     typ match {
+      case "none" => FastFuture.successful(JsNull)
       case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
       case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
       case "set" => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
