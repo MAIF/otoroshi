@@ -94,8 +94,16 @@ export class ClusterTiles extends Component {
   }
 
   computeValue(value) {
-    let unit = 'Mb';
-    let computedValue = parseFloat(converterBase2(value, 'B', 'MB').toFixed(3));
+    let unit = 'b';
+    let computedValue = parseFloat(converterBase2(value, 'B', 'B').toFixed(3));
+    if (computedValue > 1024.0) {
+      computedValue = parseFloat(converterBase2(value, 'B', 'KB').toFixed(3));
+      unit = 'Kb';
+    }
+    if (computedValue > 1024.0) {
+      computedValue = parseFloat(converterBase2(value, 'B', 'MB').toFixed(3));
+      unit = 'Mb';
+    }
     if (computedValue > 1024.0) {
       computedValue = parseFloat(converterBase2(value, 'B', 'GB').toFixed(3));
       unit = 'Gb';

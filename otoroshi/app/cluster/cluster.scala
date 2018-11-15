@@ -512,7 +512,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
-        Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
+        // Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
         val bytesCounter = new AtomicLong(0L)
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
           ctx.request.body.map(bs => {
@@ -556,7 +556,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           }.runWith(Sink.ignore)
             .andThen {
               case _ => 
-                Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
+                Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
                 env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
             }
             .map(_ => Ok(Json.obj("done" -> true)))
