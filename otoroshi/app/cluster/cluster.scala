@@ -834,11 +834,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
           } yield ByteString(Json.stringify(Json.obj(
             "typ"                       -> "globstats",
-            "rate"                      -> BigDecimal(Option(rate).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "duration"                  -> BigDecimal(Option(duration).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "overhead"                  -> BigDecimal(Option(overhead).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "dataInRate"                -> BigDecimal(Option(dataInRate).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "dataOutRate"               -> BigDecimal(Option(dataOutRate).filterNot(_.isInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "rate"                      -> BigDecimal(Option(rate).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "duration"                  -> BigDecimal(Option(duration).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "overhead"                  -> BigDecimal(Option(overhead).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "dataInRate"                -> BigDecimal(Option(dataInRate).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
+            "dataOutRate"               -> BigDecimal(Option(dataOutRate).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
             "concurrentHandledRequests" -> concurrentHandledRequests
           )) + "\n")) flatMap { stats =>
             val apiIncrSource = Source(oldApiIncr.toList.map {
