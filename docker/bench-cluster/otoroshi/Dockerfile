@@ -12,4 +12,4 @@ COPY . /otoroshi
 
 EXPOSE 8091
 
-CMD ["java", "-Dhttp.port=8091", "-Dotoroshi.cluster.mode=leader", "-Dapp.importFrom=http://backend:8100/otoroshi.json", "-jar", "otoroshi.jar" ]
+CMD ["java", "-Xms1g", "-Xmx3g", "-Dhttp.port=8091", "-Dotoroshi.cluster.mode=leader", "-Dapp.importFrom=http://backend:8100/otoroshi.json", "-jar", "otoroshi.jar" ]

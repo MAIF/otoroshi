@@ -12,4 +12,4 @@ COPY . /otoroshi
 
 EXPOSE 8091
 
-CMD ["java", "-Dhttp.port=8091", "-Dotoroshi.cluster.mode=worker", "-Dotoroshi.cluster.leader.urls.0=http://otoroshi:8091", "-Dotoroshi.cluster.worker.state.pollEvery=5000", "-jar", "otoroshi.jar" ]
+CMD ["java", "-Xms1g", "-Xmx3g", "-Dhttp.port=8091", "-Dotoroshi.cluster.mode=worker", "-Dotoroshi.cluster.leader.urls.0=http://otoroshi:8091", "-Dotoroshi.cluster.worker.state.pollEvery=5000", "-jar", "otoroshi.jar" ]
