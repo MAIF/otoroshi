@@ -243,7 +243,8 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiTrackerId = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
   }
 
-  logger.warn(s"Listening commands on $adminApiExposedHost ($port) for env ${env}")
+  logger.warn(s"Admin API exposed on http://$adminApiExposedHost:$port")
+  logger.warn(s"Admin UI  exposed on http://$backOfficeHost:$port")
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
