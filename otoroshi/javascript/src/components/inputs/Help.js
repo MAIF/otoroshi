@@ -6,7 +6,7 @@ export class Help extends Component {
       return (
         <i
           ref={r => $(r).tooltip({ container: 'body' })}
-          className="fa fa-question-circle-o"
+          className="far fa-question-circle"
           data-toggle="tooltip"
           data-placement="top"
           title={this.props.text}

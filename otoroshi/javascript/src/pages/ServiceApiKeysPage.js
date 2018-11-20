@@ -181,7 +181,7 @@ class DailyRemainingQuotas extends Component {
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Consumed daily calls
           <i
-            className="fa fa-question-circle-o"
+            className="far fa-question-circle"
             data-toggle="tooltip"
             data-placement="top"
             title=""
@@ -204,7 +204,7 @@ class DailyRemainingQuotas extends Component {
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Remaining daily calls
           <i
-            className="fa fa-question-circle-o"
+            className="far fa-question-circle"
             data-toggle="tooltip"
             data-placement="top"
             title=""
@@ -227,7 +227,7 @@ class DailyRemainingQuotas extends Component {
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Consumed monthly calls
           <i
-            className="fa fa-question-circle-o"
+            className="far fa-question-circle"
             data-toggle="tooltip"
             data-placement="top"
             title=""
@@ -250,7 +250,7 @@ class DailyRemainingQuotas extends Component {
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
           Remaining monthly calls
           <i
-            className="fa fa-question-circle-o"
+            className="far fa-question-circle"
             data-toggle="tooltip"
             data-placement="top"
             title=""

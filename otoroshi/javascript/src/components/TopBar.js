@@ -96,7 +96,7 @@ export class TopBar extends Component {
         options.push({
           label: 'Services',
           value: 'Services',
-          env: <i className="fa fa-cubes" />,
+          env: <i className="fas fa-cubes" />,
           action: () => (window.location.href = '/bo/dashboard/services'),
         });
         options.push({
@@ -125,7 +125,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/jwt-verifiers'),
-          env: <span className="fa fa-key" />,
+          env: <span className="fas fa-key" />,
           label: 'Global Jwt Verifiers',
           value: 'Jwt-Verifiers',
         });
@@ -137,7 +137,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/certificates'),
-          env: <span className="fa fa-certificate" />,
+          env: <span className="fas fa-certificate" />,
           label: 'SSL Certificates',
           value: 'certificates',
         });
@@ -226,7 +226,7 @@ export class TopBar extends Component {
               {window.__apiReadOnly && (
                 <li>
                   <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
-                    <span className="fa fa-lock fa-lg" />
+                    <span className="fas fa-lock fa-lg" />
                   </a>
                 </li>
               )}
@@ -260,7 +260,7 @@ export class TopBar extends Component {
                   role="button"
                   aria-haspopup="true"
                   aria-expanded="false">
-                  <i className="fa fa-cog fa-2" aria-hidden="true" />
+                  <i className="fas fa-cog" aria-hidden="true" />
                 </a>
                 <ul className="dropdown-menu">
                   {/*<li>
@@ -277,13 +277,13 @@ export class TopBar extends Component {
                       <span className="glyphicon glyphicon-folder-open" /> All service groups
                     </a>
                     <a href="/bo/dashboard/jwt-verifiers">
-                      <span className="fa fa-key" /> Global Jwt Verifiers
+                      <span className="fas fa-key" /> Global Jwt Verifiers
                     </a>
                     <a href="/bo/dashboard/auth-configs">
                       <span className="glyphicon glyphicon-lock" /> Global auth. configs
                     </a>
                     <a href="/bo/dashboard/certificates">
-                      <span className="fa fa-certificate" /> SSL Certificates
+                      <span className="fas fa-certificate" /> SSL Certificates
                     </a>
                   </li>
                   <li>

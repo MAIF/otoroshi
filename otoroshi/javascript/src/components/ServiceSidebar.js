@@ -7,9 +7,9 @@ import { createTooltip } from '../tooltips';
   <ul className="nav nav-sidebar">
     <li>
       <h3 style={{ marginTop: 0 }}>
-        {nolink && <span><span className="fa fa-cube" /> {name}</span>}
+        {nolink && <span><span className="fas fa-cube" /> {name}</span>}
         {!nolink && <Link to={`/lines/${env}/services/${serviceId}`} style={{ color: '#f9b000' }}>
-          <span className="fa fa-cube" /> {name}
+          <span className="fas fa-cube" /> {name}
         </Link>}
       </h3>
     </li>
@@ -48,12 +48,12 @@ export class ServiceSidebar extends Component {
             {...createTooltip(`Back to the service descriptor of ${name}`)}>
             {nolink && (
               <span>
-                <span className="fa fa-cube" /> {name}
+                <span className="fas fa-cube" /> {name}
               </span>
             )}
             {!nolink && (
               <Link to={`/lines/${env}/services/${serviceId}`} style={{ color: '#f9b000' }}>
-                <span className="fa fa-cube" /> {name}
+                <span className="fas fa-cube" /> {name}
               </Link>
             )}
           </h3>
