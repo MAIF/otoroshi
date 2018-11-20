@@ -456,7 +456,7 @@ export class ServicePage extends Component {
                   true
                 )}
                 onClick={this.duplicateService}>
-                <i className="fa fa-files-o" aria-hidden="true" />
+                <i className="far fa-copy" aria-hidden="true" />
               </button>
               <button
                 className="btn btn-save"
@@ -471,7 +471,7 @@ export class ServicePage extends Component {
                 )}
                 {...propsDisabled}
                 onClick={this.saveChanges}>
-                <i className="fa fa-floppy-o" />
+                <i className="far fa-save" />
               </button>
             </div>
           </div>
@@ -1122,7 +1122,7 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label={
               <span>
-                Canary mode <i className="fa fa-twitter" />
+                Canary mode <i className="fab fa-twitter" />
               </span>
             }>
             <BooleanInput
@@ -1163,7 +1163,7 @@ export class ServicePage extends Component {
                   type="button"
                   className="btn btn-success btn-xs"
                   onClick={this.canaryToStandard}>
-                  <i className="fa fa-twitter" /> Use canary targets as standard targets
+                  <i className="fab fa-twitter" /> Use canary targets as standard targets
                 </button>
               </div>
             </div>
@@ -1443,7 +1443,7 @@ export class TemplateInput extends Component {
               style={{ marginLeft: 5 }}
               title="Save template"
               onClick={this.saveTemplate}>
-              <i className="fa fa-floppy-o" />
+              <i className="far fa-save" />
             </button>
             <button
               type="button"
@@ -1482,13 +1482,13 @@ export class PublicUiButton extends Component {
     if (isAlreadyPublic) {
       return (
         <button type="button" disabled className="btn btn-success btn-xs">
-          <i className="fa fa-unlock" /> Service is already a 'public ui' ...
+          <i className="fas fa-unlock" /> Service is already a 'public ui' ...
         </button>
       );
     } else {
       return (
         <button type="button" className="btn btn-success btn-xs" onClick={this.makePublic}>
-          <i className="fa fa-unlock" /> Make service a 'public ui'
+          <i className="fas fa-unlock" /> Make service a 'public ui'
         </button>
       );
     }
@@ -1507,7 +1507,7 @@ export class PrivateApiButton extends Component {
     if (isAlreadyPrivateApi) {
       return (
         <button type="button" disabled className="btn btn-danger btn-xs" style={{ marginLeft: 5 }}>
-          <i className="fa fa-lock" /> Service is already a 'private api' ...
+          <i className="fas fa-lock" /> Service is already a 'private api' ...
         </button>
       );
     } else {
@@ -1517,7 +1517,7 @@ export class PrivateApiButton extends Component {
           className="btn btn-danger btn-xs"
           style={{ marginLeft: 5 }}
           onClick={this.makePublic}>
-          <i className="fa fa-lock" /> Make service a 'private api'
+          <i className="fas fa-lock" /> Make service a 'private api'
         </button>
       );
     }

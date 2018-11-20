@@ -37,9 +37,9 @@ export class U2FRegisterPage extends Component {
       notFilterable: true,
       cell: (v, item) =>
         item.type && item.type === 'U2F' ? (
-          <i className="fa fa-key" />
+          <i className="fas fa-key" />
         ) : (
-          <i className="fa fa-user-o" />
+          <i className="far fa-user" />
         ),
       props: { width: 30, textAlign: 'center' },
     },

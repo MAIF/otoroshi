@@ -63,7 +63,7 @@ export class ServicesPage extends Component {
         item.publicPatterns.indexOf('/.*') > -1 ? (
           <i className="glyphicon glyphicon-remove-sign" />
         ) : (
-          <i className="fa fa-globe fa-lg" aria-hidden="true" />
+          <i className="fas fa-globe-americas fa-lg" aria-hidden="true" />
         ),
     },
     {
@@ -74,9 +74,9 @@ export class ServicesPage extends Component {
       content: item => item.enforceSecureCommunication,
       cell: (v, item) =>
         item.enforceSecureCommunication ? (
-          <i className="fa fa-lock fa-lg" />
+          <i className="fas fa-lock fa-lg" />
         ) : (
-          <i className="fa fa-unlock-alt fa-lg" />
+          <i className="fas fa-unlock-alt fa-lg" />
         ),
     },
     {
@@ -90,9 +90,9 @@ export class ServicesPage extends Component {
       cell: (v, item) =>
         item.targets.map(i => i.scheme).filter(i => i.toLowerCase() === 'https').length ===
         item.targets.length ? (
-          <i className="fa fa-lock fa-lg" />
+          <i className="fas fa-lock fa-lg" />
         ) : (
-          <i className="fa fa-unlock-alt fa-lg" />
+          <i className="fas fa-unlock-alt fa-lg" />
         ),
     },
   ];

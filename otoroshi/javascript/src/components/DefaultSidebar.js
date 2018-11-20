@@ -15,7 +15,7 @@ export function DefaultSidebar(props) {
     <ul className="nav nav-sidebar">
       <li>
         <h3 style={{ marginTop: 0 }}>
-          <i className="fa fa-cubes" /> Services
+          <i className="fas fa-cubes" /> Services
         </h3>
       </li>
       <li key="all">
