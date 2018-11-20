@@ -9,7 +9,7 @@ All the features supported by **Otoroshi** are listed below
 * Gorgeous React Web UI
 * Full end-to-end streaming of HTTP requests and responses
 * Completely non blocking and async internals
-* @ref:[Offical Docker image](./getotoroshi/fromdocker.md)
+* @ref:[Official Docker image](./getotoroshi/fromdocker.md)
 * @ref:[Multi backend datastore support](./firstrun/datastore.md)
     * Redis
     * LevelDB
