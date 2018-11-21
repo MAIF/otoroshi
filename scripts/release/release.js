@@ -338,6 +338,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
       fs.writeFileSync(filePath, newContent);
     }
     await changeVersion(location, from, to);
+    await changeVersion(location, last, to);
     await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
   });
   await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir));
