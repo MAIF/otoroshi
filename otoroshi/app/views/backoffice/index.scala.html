@@ -1,6 +1,6 @@
 @import models.BackOfficeUser
 
-@(auth0Enabled: Boolean, userOpt: Option[BackOfficeUser], request: Request[AnyContent], _env: env.Env)
+@(thridPartyLoginEnabled: Boolean, userOpt: Option[BackOfficeUser], request: Request[AnyContent], _env: env.Env)
 
 @unauthmain(s"Otoroshi Dashboard", _env) {
     <div class="jumbotron">
@@ -17,7 +17,7 @@
         }
         @if(userOpt.isEmpty) {
            <p>
-           @if(auth0Enabled) {
+           @if(thridPartyLoginEnabled) {
                 <a class="btn btn-lg" href="@routes.AuthController.backOfficeLogin()" role="button">Login using third-party</a>
             }
             <a class="btn btn-lg" href="@routes.U2FController.loginPage()" role="button">Login</a></p>
