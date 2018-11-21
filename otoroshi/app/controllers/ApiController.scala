@@ -12,6 +12,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
+import cluster.StatsView
 import env.Env
 import events._
 import models._
@@ -78,6 +79,14 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     }
   }
 
+  private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
+    stats.map(extractor).:+(value).fold(0.0)(_ + _) / (stats.size + 1)
+  }
+
+  private def sumDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
+    stats.map(extractor).:+(value).fold(0.0)(_ + _)
+  }
+
   def globalLiveStats() = ApiAction.async { ctx =>
     Audit.send(
       AdminApiEvent(
@@ -100,20 +109,19 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
       dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
       concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-      //concurrentProcessedRequests <- env.datastores.requestsDataStore.asyncGetProcessedRequests()
+      membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
     } yield
       Ok(
         Json.obj(
           "calls"                     -> calls,
           "dataIn"                    -> dataIn,
           "dataOut"                   -> dataOut,
-          "rate"                      -> rate,
-          "duration"                  -> duration,
-          "overhead"                  -> overhead,
-          "dataInRate"                -> dataInRate,
-          "dataOutRate"               -> dataOutRate,
-          "concurrentHandledRequests" -> concurrentHandledRequests
-          //"concurrentProcessedRequests" -> concurrentProcessedRequests
+          "rate"                      -> sumDouble(rate, _.rate, membersStats),
+          "duration"                  -> avgDouble(duration, _.duration, membersStats),
+          "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
+          "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
+          "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+          "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
         )
       )
   }
@@ -198,19 +206,18 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
           dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
           concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-          //concurrentProcessedRequests <- env.datastores.requestsDataStore.asyncGetProcessedRequests()
+          membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
         } yield
           Json.obj(
             "calls"                     -> calls,
             "dataIn"                    -> dataIn,
             "dataOut"                   -> dataOut,
-            "rate"                      -> rate,
-            "duration"                  -> duration,
-            "overhead"                  -> overhead,
-            "dataInRate"                -> dataInRate,
-            "dataOutRate"               -> dataOutRate,
-            "concurrentHandledRequests" -> concurrentHandledRequests
-            //"concurrentProcessedRequests" -> concurrentProcessedRequests
+            "rate"                      -> sumDouble(rate, _.rate, membersStats),
+            "duration"                  -> avgDouble(duration, _.duration, membersStats),
+            "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
+            "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
+            "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
           )
       case serviceId =>
         for {
@@ -223,19 +230,18 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor(serviceId)
           dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor(serviceId)
           concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-          //concurrentProcessedRequests <- env.datastores.requestsDataStore.asyncGetProcessedRequests()
+          membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
         } yield
           Json.obj(
             "calls"                     -> calls,
             "dataIn"                    -> dataIn,
             "dataOut"                   -> dataOut,
-            "rate"                      -> rate,
-            "duration"                  -> duration,
-            "overhead"                  -> overhead,
-            "dataInRate"                -> dataInRate,
-            "dataOutRate"               -> dataOutRate,
-            "concurrentHandledRequests" -> concurrentHandledRequests
-            //"concurrentProcessedRequests" -> concurrentProcessedRequests
+            "rate"                      -> sumDouble(rate, _.rate, membersStats),
+            "duration"                  -> avgDouble(duration, _.duration, membersStats),
+            "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
+            "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
+            "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
           )
     }
     every match {
@@ -1083,7 +1089,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         )
         env.datastores.healthCheckDataStore
           .findAll(desc)
-          .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toJson))))
+          .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toEnrichedJson))))
       }
     }
   }

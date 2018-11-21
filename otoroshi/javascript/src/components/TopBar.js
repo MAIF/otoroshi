@@ -142,6 +142,12 @@ export class TopBar extends Component {
           value: 'certificates',
         });
         options.push({
+          action: () => (window.location.href = '/bo/dashboard/cluster'),
+          env: <span className="fa fa-network-wired" />,
+          label: 'Cluster view',
+          value: 'cluster-view',
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
           env: (
             <span>
@@ -289,6 +295,12 @@ export class TopBar extends Component {
                   <li>
                     <a href="/bo/dashboard/clever">
                       <span className="glyphicon glyphicon-list-alt" /> Clever apps
+                    </a>
+                  </li>
+                  <li role="separator" className="divider" />
+                  <li>
+                    <a href="/bo/dashboard/cluster">
+                      <span className="fa fa-network-wired" /> Cluster view
                     </a>
                   </li>
                   <li role="separator" className="divider" />

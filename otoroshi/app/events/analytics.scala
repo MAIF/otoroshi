@@ -7,6 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
+import cluster.ClusterMode
 import env.Env
 import events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
 import models._
@@ -43,8 +44,8 @@ class AnalyticsActor(implicit env: Env) extends Actor {
         logger.debug("SEND_TO_ANALYTICS_HOOK: " + config.analyticsWebhooks)
         config.kafkaConfig.foreach { kafkaConfig =>
           evts.foreach {
-            case evt: AuditEvent => kafkaWrapperAudit.publish(evt.toJson)(env, kafkaConfig)
-            case evt             => kafkaWrapperAnalytics.publish(evt.toJson)(env, kafkaConfig)
+            case evt: AuditEvent => kafkaWrapperAudit.publish(evt.toEnrichedJson)(env, kafkaConfig)
+            case evt             => kafkaWrapperAnalytics.publish(evt.toEnrichedJson)(env, kafkaConfig)
           }
           if (config.kafkaConfig.isEmpty) {
             kafkaWrapperAnalytics.close()
@@ -134,10 +135,20 @@ trait AnalyticEvent {
   def `@serviceId`: String
 
   def toJson(implicit _env: Env): JsValue
+  def toEnrichedJson(implicit _env: Env): JsValue = {
+    toJson(_env).as[JsObject] ++ Json.obj(
+      "cluster-mode" -> _env.clusterConfig.mode.name,
+      "cluster-name" -> (_env.clusterConfig.mode match {
+        case ClusterMode.Worker => _env.clusterConfig.worker.name
+        case ClusterMode.Leader => _env.clusterConfig.leader.name
+        case _ => "none"
+      })
+    )
+  }
 
   def toAnalytics()(implicit env: Env): Unit = {
     if (true) env.analyticsActor ! this
-    Logger("otoroshi-analytics").info(s"${this.`@type`} ${Json.stringify(toJson)}")
+    // Logger("otoroshi-analytics").info(s"${this.`@type`} ${Json.stringify(toJson)}")
   }
 }
 

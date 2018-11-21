@@ -72,6 +72,7 @@
   <logger name="otoroshi-http-handler-debug" level="WARN" />
   <logger name="otoroshi-ssl-trust-manager" level="WARN" />
   <logger name="otoroshi-ssl-provider" level="WARN" />
+  <logger name="otoroshi-cluster" level="WARN" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />

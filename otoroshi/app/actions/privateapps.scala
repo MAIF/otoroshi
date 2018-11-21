@@ -2,6 +2,7 @@ package actions
 
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
+import cluster.ClusterMode
 import env.Env
 import models.PrivateAppsUser
 import play.api.mvc._
@@ -31,6 +32,12 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
             // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
             env.datastores.privateAppsUserDataStore.findById(id).flatMap {
               case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))
+              case None if env.clusterConfig.mode == ClusterMode.Worker => {
+                env.clusterAgent.isSessionValid(id).flatMap {
+                  case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))
+                  case None => block(PrivateAppsActionContext(request, None, globalConfig))
+                }
+              }
               case None       => block(PrivateAppsActionContext(request, None, globalConfig))
             }
           } getOrElse {

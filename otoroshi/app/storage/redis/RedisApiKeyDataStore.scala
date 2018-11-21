@@ -115,22 +115,23 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       )
   }
 
-  override def updateQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
+  override def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+    env.clusterAgent.incrementApi(apiKey.clientId, increment)
     for {
-      _        <- redisCli.incrby(totalCallsKey(apiKey.clientId), 1L)
-      secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), 1L)
+      _        <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
+      secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
       secTtl <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith {
                  case _ => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
                }
-      dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), 1L)
+      dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
       dailyTtl <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
                    case _ => redisCli.expire(dailyQuotaKey(apiKey.clientId), toDayEnd / 1000)
                  }
-      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), 1L)
+      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
       monthlyTtl <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
                      case _ => redisCli.expire(monthlyQuotaKey(apiKey.clientId), toMonthEnd / 1000)
                    }

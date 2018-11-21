@@ -1,14 +1,20 @@
 package storage.mongo
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
 import ssl.CertificateDataStore
@@ -101,6 +107,9 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore        = new InMemoryCertificateDataStore(redis, env)
 
+  private lazy val _clusterStateDataStore       = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
@@ -120,4 +129,5 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
+  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = throw new RuntimeException("Cluster mode not supported for Mongo datastore")
 }

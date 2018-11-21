@@ -75,7 +75,7 @@ class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
             .replace("@messageType", evt.`@type`)
       )
       .getOrElse(webhook.url)
-    val postResponse = env.Ws.url(url).withHttpHeaders(headers: _*).post(JsArray(event.map(_.toJson)))
+    val postResponse = env.Ws.url(url).withHttpHeaders(headers: _*).post(JsArray(event.map(_.toEnrichedJson)))
     postResponse.andThen {
       case Success(resp) => {
         logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")

@@ -135,6 +135,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       redisCli.ltrim(dataOutForServiceStatsKey("global"), 0, maxQueueSize)
       redisCli.expire(dataOutForServiceStatsKey("global"), 10)
     }
+    env.clusterAgent.incrementService(id, dataIn, dataOut)
     // now wait for all
     for {
       // incrementCalls
@@ -179,6 +180,55 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
               )
             )
             .getOrElse(FastFuture.successful(()))
+    } yield ()
+  }
+
+  override def updateIncrementableMetrics(id: String,
+                            calls: Long,
+                             dataIn: Long,
+                             dataOut: Long,
+                              config: models.GlobalConfig)(
+                              implicit ec: ExecutionContext,
+                              env: Env
+                            ): Future[Unit] = {
+    val time        = System.currentTimeMillis()
+    // Call everything in parallel
+    // incrementCalls
+    val callsIncrementGlobalCalls  = redisCli.incrby(serviceCallKey("global"), calls)
+    val callsIncrementServiceCalls = redisCli.incrby(serviceCallKey(id), calls)
+    // incrementCallsDuration
+    // incrementDataIn
+    val dataInIncrementGlobal  = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
+    val dataInIncrementService = redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ())
+    // incrementDataOut
+    val dataOutIncrementGlobal  = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
+    val dataOutIncrementService = redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ())
+    // now wait for all
+    for {
+      // incrementCalls
+      globalCalls  <- callsIncrementGlobalCalls
+      serviceCalls <- callsIncrementServiceCalls
+      // incrementDataIn
+      _ <- dataInIncrementGlobal
+      _ <- dataInIncrementService
+      // incrementDataOut
+      _ <- dataOutIncrementGlobal
+      _ <- dataOutIncrementService
+      _ <- config.statsdConfig
+        .map(
+          _ =>
+            FastFuture.successful(
+              (
+                env.statsd.meter(s"global.calls", globalCalls.toDouble)(config.statsdConfig),
+                env.statsd.meter(s"services.${id}.calls", serviceCalls.toDouble)(config.statsdConfig),
+                env.statsd.meter(s"global.data-in", dataIn.toDouble)(config.statsdConfig),
+                env.statsd.meter(s"global.data-out", dataOut.toDouble)(config.statsdConfig),
+                env.statsd.meter(s"services.${id}.data-in", dataIn.toDouble)(config.statsdConfig),
+                env.statsd.meter(s"services.${id}.data-out", dataOut.toDouble)(config.statsdConfig),
+              )
+            )
+        )
+        .getOrElse(FastFuture.successful(()))
     } yield ()
   }
 

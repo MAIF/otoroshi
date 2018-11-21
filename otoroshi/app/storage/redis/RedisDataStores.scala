@@ -1,14 +1,20 @@
 package storage.redis
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore, RedisClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import ssl.CertificateDataStore
@@ -92,6 +98,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _authConfigsDataStore       = new RedisAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new RedisCertificateDataStore(redis, env)
 
+  private lazy val _clusterStateDataStore      = new RedisClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore           = _serviceGroupDataStore
@@ -113,6 +122,59 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover {
       case _ => Unreachable
+    }
+  }
+  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+    Source
+      .fromFuture(
+        redis.keys(s"${env.storageRoot}:*")
+      )
+      .mapConcat(_.toList)
+      .grouped(group)
+      .mapAsync(1) {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+        case keys                 => {
+          Future.sequence(keys
+              .filterNot { key =>
+                key == s"${env.storageRoot}:cluster:" ||
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
+              .map { key =>
+            for {
+              w     <- redis.`type`(key)
+              ttl   <- redis.pttl(key)
+              value <- fetchValueForType(w, key)
+            } yield value match {
+              case JsNull => JsNull
+              case _ => Json.obj("k" -> key, "v" -> value, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> w)
+            }
+          })
+        }
+      }
+      .map(_.filterNot(_ == JsNull))
+      .mapConcat(_.toList)
+  }
+
+  private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
+    typ match {
+      case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
+      case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "set" => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "string" => redis.get(key).map {
+        case None => JsNull
+        case Some(a) => JsString(a.utf8String)
+      }
+      case _ => FastFuture.successful(JsNull)
     }
   }
 }

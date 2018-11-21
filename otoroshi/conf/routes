@@ -185,6 +185,14 @@ PATCH   /api/auths/:id                                        controllers.ApiCon
 GET     /api/auths                                            controllers.ApiController.findAllGlobalAuthModules()
 POST    /api/auths                                            controllers.ApiController.createGlobalAuthModule()
 
+GET     /api/cluster/sessions/:id                             cluster.ClusterController.isSessionValid(id)
+POST    /api/cluster/sessions                                 cluster.ClusterController.createSession()
+PUT     /api/cluster/quotas                                   cluster.ClusterController.updateQuotas()
+GET     /api/cluster/state                                    cluster.ClusterController.internalState()
+GET     /api/cluster/members                                  cluster.ClusterController.getClusterMembers()
+DELETE  /api/cluster/members                                  cluster.ClusterController.clearClusterMembers()
+GET     /api/cluster/live                                     cluster.ClusterController.liveCluster()
+
 GET     /api/stats/global                                     controllers.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 

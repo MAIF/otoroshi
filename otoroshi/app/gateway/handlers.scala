@@ -167,7 +167,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val cookies   = request.cookies.map(_.value).map(ByteString.apply)
     val headers   = request.headers.toSimpleMap.values.map(ByteString.apply)
     // logger.info(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
-    if (url.size > (4 * 1024)) {
+    if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
+      Some(clusterError("Waiting for first Otoroshi leader sync."))
+    } else if (url.size > (4 * 1024)) {
       Some(tooBig("URL should be smaller than 4 Kb"))
     } else if (cookies.exists(_.size > (16 * 1024))) {
       Some(tooBig("Cookies should be smaller than 16 Kb"))
@@ -321,6 +323,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
       }
     }
+  }
+
+  def clusterError(message: String) = actionBuilder.async { req =>
+    Errors.craftResponseResult(message, InternalServerError, req, None, Some("errors.no.state.yet"))
   }
 
   def tooBig(message: String) = actionBuilder.async { req =>

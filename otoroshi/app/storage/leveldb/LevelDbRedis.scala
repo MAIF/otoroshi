@@ -68,7 +68,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
   override def get(key: String): Future[Option[ByteString]] = Future.successful {
     getValueAt(key).map(ByteString.apply)
   }
-
+  
   override def set(key: String,
                    value: String,
                    exSeconds: Option[Long] = None,
@@ -222,12 +222,16 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
   private def getSetAt(key: String): Set[ByteString] =
     getValueAt(key)
       .map { set =>
-        set.split(";;;").toSet.map((s: String) => ByteString(s))
+        if (set.contains(";;;")) {
+          set.split(";;;").toSet.map((s: String) => ByteString(s))
+        } else {
+          set.split(";;>").toSet.map((s: String) => ByteString(s))
+        }
       }
       .getOrElse(Set.empty[ByteString])
 
   private def setSetAt(key: String, set: Set[ByteString]): Unit =
-    db.put(bytes(key), bytes(set.map(_.utf8String).mkString(";;;")))
+    db.put(bytes(key), bytes(set.map(_.utf8String).mkString(";;>")))
 
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
 

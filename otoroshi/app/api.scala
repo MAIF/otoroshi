@@ -3,6 +3,7 @@ package otoroshi.api
 import actions._
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import cluster.ClusterController
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
@@ -90,6 +91,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val backOfficeController  = wire[BackOfficeController]
   lazy val privateAppsController = wire[PrivateAppsController]
   lazy val u2fController         = wire[U2FController]
+  lazy val clusterController     = wire[ClusterController]
 
   override lazy val assets: Assets = wire[Assets]
 

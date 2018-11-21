@@ -1,14 +1,20 @@
 package storage.inmemory
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.CertificateDataStore
 import storage.{DataStoreHealth, DataStores}
@@ -33,8 +39,7 @@ class InMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis =
-    if (experimental) new InMemoryRedisExperimental(actorSystem, logger) else new InMemoryRedis(actorSystem)
+  lazy val redis = new InMemoryRedis(actorSystem)
 
   override def before(configuration: Configuration,
                       environment: Environment,
@@ -73,6 +78,9 @@ class InMemoryDataStores(configuration: Configuration,
   private lazy val _authConfigsDataStore       = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
 
+  private lazy val _clusterStateDataStore      = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
@@ -92,4 +100,62 @@ class InMemoryDataStores(configuration: Configuration,
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
+  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+    Source
+      .fromFuture(
+        redis.keys(s"${env.storageRoot}:*")
+      )
+      .mapConcat(_.toList)
+      .grouped(group)
+      .mapAsync(1) {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+        case keys                 => {
+          Future.sequence(keys
+              .filterNot { key =>
+                key == s"${env.storageRoot}:cluster:" ||
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
+              .map { key =>
+            redis.rawGet(key).flatMap {
+              case None => FastFuture.successful(JsNull)
+              case Some(value) => {
+                toJson(value) match {
+                  case (_, JsNull) => FastFuture.successful(JsNull)
+                  case (what, jsonValue) => redis.pttl(key).map { ttl =>
+                    Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
+                  }
+                }
+              }
+            }
+          })
+        }
+      }
+      .map(_.filterNot(_ == JsNull))
+      .mapConcat(_.toList)
+  }
+
+  private def toJson(value: Any): (String, JsValue) = {
+
+    import collection.JavaConverters._
+
+    value match {
+      case str: String => ("string", JsString(str))
+      case str: ByteString => ("string", JsString(str.utf8String))
+      case lng: Long => ("string", JsString(lng.toString))
+      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] => ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] => ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] => ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case _ => ("none", JsNull)
+    }
+  }
 }
