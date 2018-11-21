@@ -22,15 +22,19 @@ or you can also try Otoroshi online with Google Cloud Shell if you're a user of 
 
 Otoroshi is an awesome reverse proxy built with Scala that handles all the calls to and between your microservices without service locator and lets you change configuration dynamically at runtime.
 
+## I like sh but I really want to see the UI
+
+As Otoroshi uses Otoroshi to serve its own admin UI and admin API, you won't be able to access the admin UI on `http://localhost:8080`. Otoroshi needs a domain name to know that you want to access the admin UI. By default, the admin UI is exposed on `http://otoroshi.foo.bar:8080`. Of course you can @ref:[configure](./firstrun/configfile.md#common-configuration) the domain of the subdomain. To configure access to the admin, just go to the [UI section of the quickstart](#what-about-the-ui).
+
 ## Now some sh :)
 
 ```sh
 curl -L -o otoroshi.jar https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.2-dev/otoroshi.jar
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.1-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.2-dev/otoroshicli
 # or if you use linux
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.1-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.2-dev/otoroshicli
 # or if you use windows
-curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.1-dev/otoroshicli.exe
+curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.2-dev/otoroshicli.exe
 
 chmod +x otoroshicli
 
@@ -119,11 +123,11 @@ If you want to use Docker, just follow these instructions
 export OTOROSHI_PORT=8080
 export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.1-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.2-dev/otoroshicli
 # or if you use linux
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.1-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.2-dev/otoroshicli
 # or if you use windows
-curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.1-dev/otoroshicli.exe
+curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.2-dev/otoroshicli.exe
 
 chmod +x otoroshicli 
 

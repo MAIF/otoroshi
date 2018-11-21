@@ -5,6 +5,6 @@ If you want to download the last version of Otoroshi and its CLI, you can grab t
 Go to https://github.com/MAIF/otoroshi/releases or get it from our bintray repository :
 
 * https://dl.bintray.com/maif/binaries/otoroshi.jar/1.3.2-dev/otoroshi.jar
-* https://dl.bintray.com/maif/binaries/otoroshi-dist/1.3.1-dev/otoroshi-dist.zip
+* https://dl.bintray.com/maif/binaries/otoroshi-dist/1.3.2-dev/otoroshi-dist.zip
 
 and get the last version of the `otoroshi-dist.zip` file or `otoroshi.jar` file
