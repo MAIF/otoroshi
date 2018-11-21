@@ -68,9 +68,9 @@ function runScript(script, where, env = {}) {
   return echoReadable(source.stdout);
 }
 
-async function changeVersion(where, from, to) {
+async function changeVersion(where, from, to, exclude = []) {
   return new Promise(s => {
-    files.map(file => {
+    files.filter(f => !(exclude.indexOf(f.file) > -1)).map(file => {
       const filePath = path.resolve(where, file.file);
       const content = fs.readFileSync(filePath, 'utf8');
       console.log('Changing version in', filePath);
@@ -351,7 +351,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
     await ensureStep('PUBLISH_DOCKER_OTOROSHI_CLI', releaseFile, () => publishDockerCli(location, to));
     await ensureStep('PUBLISH_DOCKER_OTOROSHI_DEMO', releaseFile, () => publishDockerDemo(location, to));
-    await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next));
+    await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
       await runSystemCommand('git', ['push', 'origin', 'master'], location);

@@ -21,7 +21,7 @@ export class ClusterPage extends Component {
     },
     {
       title: 'Rate',
-      style: { textAlign: 'center', width: 80 },
+      style: { textAlign: 'center', width: 120 },
       content: item => (item.stats.rate || 0.0).toFixed(2) + ' call/s',
     },
     {

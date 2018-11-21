@@ -8,5 +8,6 @@ In this sections, you will find informations about various topics supported by O
 * [Service mesh](./service-mesh.md)
 * [JWT Tokens verification](./jwt-verifications.md)
 * [SSL/TLS termination with Otoroshi](./ssl.md)
+* [Otoroshi Clustering](./clustering.md)
 
 @@@
