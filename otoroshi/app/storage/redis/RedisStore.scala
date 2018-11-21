@@ -209,7 +209,7 @@ trait RedisStore[T] extends BasicStore[T] {
 object Redis {
   lazy val logger = Logger("otoroshi-redis")
   def showSlowCommandWarning(command: String) =
-    logger.warn(
+    logger.debug(
       s"$command can be very slow as it's performing in n calls to redis for n keys. You might not want to use $command for good performances"
     )
 }

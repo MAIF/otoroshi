@@ -237,7 +237,7 @@ class AdminClearanceChecker()(implicit env: Env) {
     user.authorizedGroup match {
       case None => f
       case Some(groupId) => {
-        logger.warn(s"User ${user.email} is only authorized for group: $groupId => ${req.path}")
+        logger.debug(s"User ${user.email} is only authorized for group: $groupId => ${req.path}")
         req.path match {
           case uri if uri.startsWith("/bo/dashboard")             => f
           case r"/bo/api/lines/[^/]+/$serviceId@([^/]+)/docframe" => callIfServiceIsInGroup(groupId, serviceId)(f)

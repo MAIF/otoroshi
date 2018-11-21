@@ -166,7 +166,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
     val cookies   = request.cookies.map(_.value).map(ByteString.apply)
     val headers   = request.headers.toSimpleMap.values.map(ByteString.apply)
-    // logger.info(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
+    // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
     if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
       Some(clusterError("Waiting for first Otoroshi leader sync."))
     } else if (url.size > (4 * 1024)) {
@@ -356,7 +356,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def redirectToHttps() = actionBuilder { req =>
     val domain   = req.domain
     val protocol = getProtocolFor(req)
-    logger.info(
+    logger.trace(
       s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
     )
     Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
@@ -365,7 +365,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def redirectToMainDomain() = actionBuilder { req =>
     val domain: String = env.redirections.foldLeft(req.domain)((domain, item) => domain.replace(item, env.domain))
     val protocol       = getProtocolFor(req)
-    logger.warn(
+    logger.debug(
       s"redirectToMainDomain from $protocol://${req.domain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
     )
     Redirect(s"$protocol://$domain${req.relativeUri}")
@@ -989,7 +989,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   val (resp, remainingQuotas) = tuple
                                   // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
                                   val headers = resp.headers.mapValues(_.head)
-                                  // logger.warn(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
+                                  // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                   // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                   // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
                                   if (env.notDev && descriptor.enforceSecureCommunication
@@ -1573,7 +1573,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 if (env.isProd && !isSecured && desc.forceHttps) {
                                   val theDomain = req.domain
                                   val protocol  = getProtocolFor(req)
-                                  logger.info(
+                                  logger.trace(
                                     s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                                   )
                                   //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))

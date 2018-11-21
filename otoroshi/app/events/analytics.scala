@@ -106,14 +106,14 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
 
   override def receive: Receive = {
     case Terminated(ref) =>
-      logger.warn("Restarting analytics actor child")
+      logger.debug("Restarting analytics actor child")
       context.watch(context.actorOf(AnalyticsActor.props(env), childName))
     case evt => context.child(childName).map(_ ! evt)
   }
 
   override def preStart(): Unit =
     if (context.child(childName).isEmpty) {
-      logger.info(s"Starting new child $childName")
+      logger.debug(s"Starting new child $childName")
       val ref = context.actorOf(AnalyticsActor.props(env), childName)
       context.watch(ref)
     }
@@ -148,7 +148,7 @@ trait AnalyticEvent {
 
   def toAnalytics()(implicit env: Env): Unit = {
     if (true) env.analyticsActor ! this
-    // Logger("otoroshi-analytics").info(s"${this.`@type`} ${Json.stringify(toJson)}")
+    // Logger("otoroshi-analytics").debug(s"${this.`@type`} ${Json.stringify(toJson)}")
   }
 }
 

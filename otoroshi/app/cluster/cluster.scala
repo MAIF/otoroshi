@@ -939,7 +939,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
-    Cluster.logger.warn("Now using Swappable InMemory DataStores")
+    Cluster.logger.info("Now using Swappable InMemory DataStores")
     redis.start()
     FastFuture.successful(())
   }

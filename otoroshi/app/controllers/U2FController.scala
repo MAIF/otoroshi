@@ -52,7 +52,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
             val label           = (user \ "label").as[String]
             val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
             if (BCrypt.checkpw(pass, password)) {
-              logger.info(s"Login successful for simple admin '$username'")
+              logger.debug(s"Login successful for simple admin '$username'")
               BackOfficeUser(IdGenerator.token(64),
                              username,
                              username,
@@ -135,7 +135,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
         import collection.JavaConverters._
         env.datastores.u2FAdminDataStore.getUserRegistration(u).flatMap { it =>
           val registerRequestData = u2f.startRegistration(appId, it.map(_._1).asJava)
-          logger.info(s"registerRequestData ${Json.prettyPrint(Json.parse(registerRequestData.toJson))}")
+          logger.debug(s"registerRequestData ${Json.prettyPrint(Json.parse(registerRequestData.toJson))}")
           env.datastores.u2FAdminDataStore
             .addRequest(registerRequestData.getRequestId, registerRequestData.toJson)
             .map {
@@ -174,7 +174,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                   "transports"         -> JsArray(attestation.getTransports.asScala.toSeq.map(t => JsString(t.name()))),
                   "registration"       -> Json.parse(registration.toJsonWithAttestationCert)
                 )
-                logger.info(s"$username => ${Json.prettyPrint(jsonAttestation)}")
+                logger.debug(s"$username => ${Json.prettyPrint(jsonAttestation)}")
                 Ok(
                   Json.obj(
                     "username"    -> username,
@@ -197,7 +197,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
         import collection.JavaConverters._
         env.datastores.u2FAdminDataStore.getUserRegistration(u).flatMap { it =>
           val authenticateRequestData = u2f.startAuthentication(appId, it.map(_._1).asJava)
-          logger.info(s"authenticateRequestData ${Json.prettyPrint(Json.parse(authenticateRequestData.toJson))}")
+          logger.debug(s"authenticateRequestData ${Json.prettyPrint(Json.parse(authenticateRequestData.toJson))}")
           env.datastores.u2FAdminDataStore
             .addRequest(authenticateRequestData.getRequestId, authenticateRequestData.toJson)
             .map {
@@ -234,7 +234,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
                 if (BCrypt.checkpw(pass, password)) {
                   env.datastores.u2FAdminDataStore.registerUser(username, password, label, registration).flatMap { _ =>
-                    logger.info(s"Login successful for user '$username'")
+                    logger.debug(s"Login successful for user '$username'")
                     BackOfficeUser(
                       IdGenerator.token(64),
                       username,

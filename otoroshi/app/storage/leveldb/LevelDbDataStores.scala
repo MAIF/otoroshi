@@ -30,7 +30,7 @@ class LevelDbDataStores(configuration: Configuration,
 
   lazy val logger = Logger("otoroshi-leveldb-datastores")
 
-  logger.info(s"path at $dbPath")
+  logger.debug(s"path at $dbPath")
 
   lazy val dbPath: String       = configuration.getOptional[String]("app.leveldb.path").getOrElse("./leveldb")
   lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.leveldb.windowSize").getOrElse(99)
@@ -47,7 +47,7 @@ class LevelDbDataStores(configuration: Configuration,
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
-    logger.warn("Now using LevelDB DataStores")
+    logger.info("Now using LevelDB DataStores")
     redis.start()
     _certificateDataStore.startSync()
     FastFuture.successful(())

@@ -872,7 +872,7 @@ class AlertsActor(implicit env: Env) extends Actor {
                 )
               )
               .andThen {
-                case Success(res) => logger.info("Alert email sent")
+                case Success(res) => logger.debug("Alert email sent")
                 case Failure(e)   => logger.error("Error while sending alert email", e)
               }
               .fast
@@ -948,14 +948,14 @@ class AlertsActorSupervizer(env: Env) extends Actor {
 
   override def receive: Receive = {
     case Terminated(ref) =>
-      logger.warn("Restarting alert actor child")
+      logger.debug("Restarting alert actor child")
       context.watch(context.actorOf(AlertsActor.props(env), childName))
     case evt => context.child(childName).map(_ ! evt)
   }
 
   override def preStart(): Unit =
     if (context.child(childName).isEmpty) {
-      logger.info(s"Starting new child $childName")
+      logger.debug(s"Starting new child $childName")
       val ref = context.actorOf(AlertsActor.props(env), childName)
       context.watch(ref)
     }
@@ -973,7 +973,7 @@ object Alerts {
   lazy val logger = Logger("otoroshi-alerts")
 
   def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
-    logger.info("Alert " + Json.stringify(alert.toEnrichedJson))
+    logger.trace("Alert " + Json.stringify(alert.toEnrichedJson))
     alert.toAnalytics()
     if (env.isProd) {
       env.alertsActor ! alert

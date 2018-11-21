@@ -66,7 +66,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
-    logger.warn("Now using Redis DataStores")
+    logger.info("Now using Redis DataStores")
     _certificateDataStore.startSync()
     FastFuture.successful(())
   }

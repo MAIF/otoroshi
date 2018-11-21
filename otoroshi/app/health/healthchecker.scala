@@ -107,14 +107,14 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
   override def receive: Receive = {
     case CheckFirstService(startedAt, services) if services.isEmpty => {
       val myself = self
-      logger.info(
+      logger.trace(
         s"HealthCheck round started at $startedAt finished after ${System.currentTimeMillis() - startedAt.getMillis} ms. Starting a new one soon ..."
       )
       env.timeout(Duration(60000, TimeUnit.MILLISECONDS)).map(_ => myself ! ReStartHealthCheck())
     }
     case CheckFirstService(startedAt, services) if services.nonEmpty && services.size == 1 => {
       val myself = self
-      // logger.info(s"CheckFirstService 1")
+      // logger.trace(s"CheckFirstService 1")
       checkService(services.head).andThen {
         case Success(_) => myself ! CheckFirstService(startedAt, Seq.empty[ServiceDescriptor])
         case Failure(error) => {
@@ -125,7 +125,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
     }
     case CheckFirstService(startedAt, services) if services.nonEmpty => {
       val myself = self
-      // logger.info(s"CheckFirstService n")
+      // logger.trace(s"CheckFirstService n")
       checkService(services.head).andThen {
         case Success(_) => myself ! CheckFirstService(startedAt, services.tail)
         case Failure(error) => {
@@ -137,7 +137,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
     case StartHealthCheck() => {
       val myself = self
       val date   = DateTime.now()
-      logger.info(s"StartHealthCheck at $date")
+      logger.trace(s"StartHealthCheck at $date")
       env.datastores.serviceDescriptorDataStore.findAll().andThen {
         case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
         case Failure(error) => myself ! ReStartHealthCheck()
@@ -146,12 +146,12 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
     case ReStartHealthCheck() => {
       val myself = self
       val date   = DateTime.now()
-      logger.info(s"StartHealthCheck at $date")
+      logger.trace(s"StartHealthCheck at $date")
       env.datastores.serviceDescriptorDataStore.findAll().andThen {
         case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
         case Failure(error) => myself ! ReStartHealthCheck()
       }
     }
-    case e => logger.info(s"Received unknown message $e")
+    case e => logger.trace(s"Received unknown message $e")
   }
 }

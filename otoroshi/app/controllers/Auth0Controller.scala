@@ -300,7 +300,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                           )
                         }
                         case Right(user) => {
-                          logger.info(s"Login successful for user '${user.email}'")
+                          logger.debug(s"Login successful for user '${user.email}'")
                           user
                             .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
                             .map { boUser =>

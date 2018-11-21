@@ -249,7 +249,7 @@ class WebSocketHandler()(implicit env: Env) {
   }
 
   def proxyWebSocket() = WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
-    logger.info("[WEBSOCKET] proxy ws call !!!")
+    logger.trace("[WEBSOCKET] proxy ws call !!!")
 
     // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
     val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
@@ -438,7 +438,7 @@ class WebSocketHandler()(implicit env: Env) {
                               cbDuration: Long,
                               callAttempts: Int
                           ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-                            logger.info("[WEBSOCKET] Call downstream !!!")
+                            logger.trace("[WEBSOCKET] Call downstream !!!")
                             val snowflake = env.snowflakeGenerator.nextIdStr()
                             val state     = IdGenerator.extendedToken(128)
                             val rawUri    = req.relativeUri.substring(1)
@@ -509,7 +509,7 @@ class WebSocketHandler()(implicit env: Env) {
                             // meterIn.mark(requestHeader.length)
                             // counterIn.addAndGet(requestHeader.length)
                             // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
-                            logger.info(
+                            logger.trace(
                               s"[WEBSOCKET] calling '$url' with headers \n ${headersIn.map(_.toString()) mkString ("\n")}"
                             )
                             val overhead = System.currentTimeMillis() - start
@@ -909,7 +909,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 if (env.isProd && !isSecured && desc.forceHttps) {
                                   val theDomain = req.domain
                                   val protocol  = getWsProtocolFor(req)
-                                  logger.info(
+                                  logger.trace(
                                     s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to wss://$theDomain${req.relativeUri}"
                                   )
                                   FastFuture.successful(
@@ -1073,7 +1073,7 @@ class WebSocketProxyActor(url: String,
 
   override def preStart() =
     try {
-      logger.info("[WEBSOCKET] initializing client call ...")
+      logger.trace("[WEBSOCKET] initializing client call ...")
       val _headers = headers.toList.filterNot(t => avoid.contains(t._1)).map(tuple => RawHeader(tuple._1, tuple._2))
       val request = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))(
         (r, header) => r.copy(extraHeaders = r.extraHeaders :+ header)
@@ -1093,7 +1093,7 @@ class WebSocketProxyActor(url: String,
             source
           )(Keep.both)
           .alsoTo(Sink.onComplete { _ =>
-            logger.info(s"[WEBSOCKET] target stopped")
+            logger.trace(s"[WEBSOCKET] target stopped")
             Option(queueRef.get()).foreach(_.complete())
             out ! PoisonPill
           })
@@ -1103,11 +1103,11 @@ class WebSocketProxyActor(url: String,
         case Success(r) => {
           implicit val ec  = env.otoroshiExecutionContext
           implicit val mat = env.otoroshiMaterializer
-          logger.info(
+          logger.trace(
             s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
           )
           r.response.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bs =>
-            logger.info(s"[WEBSOCKET] connected to target with response '${bs.utf8String}'")
+            logger.trace(s"[WEBSOCKET] connected to target with response '${bs.utf8String}'")
           }
         }
         case Failure(e) => logger.error(s"[WEBSOCKET] error", e)
@@ -1117,7 +1117,7 @@ class WebSocketProxyActor(url: String,
     }
 
   override def postStop() = {
-    logger.info(s"[WEBSOCKET] client stopped")
+    logger.trace(s"[WEBSOCKET] client stopped")
     Option(queueRef.get()).foreach(_.complete())
     out ! PoisonPill
   }

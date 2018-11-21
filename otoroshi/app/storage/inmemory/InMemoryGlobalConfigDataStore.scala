@@ -146,7 +146,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
     if (ref == null) {
       lastConfigCache.set(time)
-      logger.warn("Fetching GlobalConfig for the first time")
+      logger.debug("Fetching GlobalConfig for the first time")
       actualCall()
     } else {
       if ((lastConfigCache.get() + 6000) < time) {
@@ -261,7 +261,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
           redisCli.get(migrationKey).flatMap {
             case Some(_) => FastFuture.successful(())
             case None => {
-              logger.warn("OAuth config migration - Saving global configuration before migration")
+              logger.info("OAuth config migration - Saving global configuration before migration")
               for {
                 _ <- redisCli.setBS(s"${_env.storageRoot}:migrations:globalconfig:before130", configBS)
                 backofficeAuth0Config = (json \ "backofficeAuth0Config").asOpt[JsValue].flatMap { config =>
@@ -288,7 +288,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                     case _ => None
                   }
                 }
-                _ = logger.warn("OAuth config migration - creating global oauth configuration for private apps")
+                _ = logger.info("OAuth config migration - creating global oauth configuration for private apps")
                 _ <- privateAppsAuth0Config
                       .map(
                         c =>
@@ -309,7 +309,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                         )
                       )
                       .getOrElse(FastFuture.successful(()))
-                _ = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
+                _ = logger.info("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
                 _ <- backofficeAuth0Config
                       .map(
                         c =>
@@ -330,13 +330,13 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                         )
                       )
                       .getOrElse(FastFuture.successful(()))
-                _      = logger.warn("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
+                _      = logger.info("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
                 config <- env.datastores.globalConfigDataStore.findById("global").map(_.get)
                 configWithBackOffice = backofficeAuth0Config
                   .map(_ => config.copy(backOfficeAuthRef = Some("otoroshi-backoffice")))
                   .getOrElse(config)
                 _ <- configWithBackOffice.save()
-                _ = logger.warn("OAuth config migration - migration done !")
+                _ = logger.info("OAuth config migration - migration done !")
               } yield ()
             }
           }

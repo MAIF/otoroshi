@@ -40,7 +40,6 @@ class InMemorySimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends Simpl
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    // logger.warn(password)
     val group: JsValue = authorizedGroup match {
       case Some(g) => JsString(g)
       case None    => JsNull

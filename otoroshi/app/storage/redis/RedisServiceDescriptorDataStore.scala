@@ -356,7 +356,7 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     }
     sersWithMatchingRoot ++ sersWithoutMatchingRoot
     // val sers = (sersWithMatchingRoot ++ sersWithoutMatchingRoot)
-    // logger.warn(s"for query $query, services are :\n\n${sers.map(a => "  * " + a.name).mkString("\n")}\n\n")
+    // logger.debug(s"for query $query, services are :\n\n${sers.map(a => "  * " + a.name).mkString("\n")}\n\n")
     // sers
   }
 

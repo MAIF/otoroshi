@@ -243,8 +243,8 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiTrackerId = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
   }
 
-  logger.warn(s"Admin API exposed on http://$adminApiExposedHost:$port")
-  logger.warn(s"Admin UI  exposed on http://$backOfficeHost:$port")
+  logger.info(s"Admin API exposed on http://$adminApiExposedHost:$port")
+  logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
@@ -348,11 +348,11 @@ class Env(val configuration: Configuration,
         .isOtoroshiEmpty()
         .andThen {
           case Success(true) if clusterConfig.mode == ClusterMode.Worker => {
-            logger.warn(s"The main datastore seems to be empty, registering default config")
+            logger.info(s"The main datastore seems to be empty, registering default config")
             defaultConfig.save()(ec, this)
           }
           case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
-            logger.warn(s"The main datastore seems to be empty, registering some basic services")
+            logger.info(s"The main datastore seems to be empty, registering some basic services")
             val login    = configuration.getOptional[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
             val password = configuration.getOptional[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
             val headers: Seq[(String, String)] = configuration
@@ -362,21 +362,21 @@ class Env(val configuration: Configuration,
             if (configuration.has("app.importFrom")) {
               configuration.getOptional[String]("app.importFrom") match {
                 case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
-                  logger.warn(s"Importing from URL: $url")
+                  logger.info(s"Importing from URL: $url")
                   wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
                     val json = resp.json.as[JsObject]
                     datastores.globalConfigDataStore.fullImport(json)(ec, this).andThen {
-                      case Success(_) => logger.warn("Successful import !")
+                      case Success(_) => logger.info("Successful import !")
                       case Failure(e) => logger.error("Error while importing inital data !", e)
                     }(ec)
                   }
                 }
                 case Some(path) => {
-                  logger.warn(s"Importing from: $path")
+                  logger.info(s"Importing from: $path")
                   val source = Source.fromFile(path).getLines().mkString("\n")
                   val json   = Json.parse(source).as[JsObject]
                   datastores.globalConfigDataStore.fullImport(json)(ec, this).andThen {
-                    case Success(_) => logger.warn("Successful import !")
+                    case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing inital data !", e)
                   }(ec)
                 }
@@ -391,9 +391,9 @@ class Env(val configuration: Configuration,
                         .render(ConfigRenderOptions.concise())
                     )
                     .as[JsObject]
-                  logger.warn(s"Importing from config file ${Json.prettyPrint(importJson)}")
+                  logger.info(s"Importing from config file ${Json.prettyPrint(importJson)}")
                   datastores.globalConfigDataStore.fullImport(importJson)(ec, this).andThen {
-                    case Success(_) => logger.warn("Successful import !")
+                    case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing inital data !", e)
                   }(ec)
                 }
@@ -403,7 +403,7 @@ class Env(val configuration: Configuration,
                                                   "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
                                                   "default-apikey",
                                                   "default")
-                  logger.warn(
+                  logger.info(
                     s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
                   )
                   for {
@@ -427,7 +427,7 @@ class Env(val configuration: Configuration,
         .map { _ =>
           datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
             case Some(s) if !s.publicPatterns.contains("/health") =>
-              logger.warn("Updating BackOffice service to handle health check ...")
+              logger.info("Updating BackOffice service to handle health check ...")
               s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
             case _ =>
           }
@@ -466,7 +466,7 @@ class Env(val configuration: Configuration,
                     )
                   )
                   if (latestVersionClean > cleanVersion) {
-                    logger.warn(
+                    logger.info(
                       s"A new version of Otoroshi ($latestVersion, your version is $otoroshiVersion) is available. You can download it on https://maif.github.io/otoroshi/ or at https://github.com/MAIF/otoroshi/releases/tag/$latestVersion"
                     )
                   }
@@ -500,11 +500,11 @@ class Env(val configuration: Configuration,
             val ca = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
             val caCert = Cert(ca, keyPair1, None).enrich()
             if (!foundOtoroshiCa) {
-              logger.warn(s"Generating CA certificate for Otoroshi self signed certificates ...")
+              logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
               caCert.copy(id = Cert.OtoroshiCA).save()
             }
             if (!foundOtoroshiDomainCert) {
-              logger.warn(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
+              logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
               val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
                 FiniteDuration(365, TimeUnit.DAYS),
                 keyPair2,
@@ -513,7 +513,7 @@ class Env(val configuration: Configuration,
               Cert(cert1, keyPair1, caCert).enrich().save()
             }
             if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
-              logger.warn(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
+              logger.info(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
               val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}",
                 FiniteDuration(365, TimeUnit.DAYS),
                 keyPair3,

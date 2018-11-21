@@ -128,10 +128,10 @@ class StatsdActor(env: Env) extends Actor {
       datadogclient.foreach(_.shutdown())
       event.config.datadog match {
         case true =>
-          logger.warn("Running statsd for DataDog")
+          logger.debug("Running statsd for DataDog")
           datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
         case false =>
-          logger.warn("Running statsd")
+          logger.debug("Running statsd")
           statsdclient = Some(new StatsDClient(event.config.host, event.config.port, "otoroshi"))
       }
       self ! event
@@ -142,10 +142,10 @@ class StatsdActor(env: Env) extends Actor {
       datadogclient.foreach(_.shutdown())
       event.config.datadog match {
         case true =>
-          logger.warn("Reconfiguring statsd for DataDog")
+          logger.debug("Reconfiguring statsd for DataDog")
           datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
         case false =>
-          logger.warn("Reconfiguring statsd")
+          logger.debug("Reconfiguring statsd")
           statsdclient = Some(new StatsDClient(event.config.host, event.config.port, "otoroshi"))
       }
       self ! event

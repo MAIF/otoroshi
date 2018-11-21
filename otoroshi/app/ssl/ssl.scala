@@ -303,7 +303,7 @@ object DynamicSSLEngineProvider {
     val sslContext: SSLContext = SSLContext.getInstance("TLS")
     val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq) //.filterNot(_.ca))
     dumpPath.foreach { path =>
-      logger.warn(s"Dumping keystore at $dumpPath")
+      logger.debug(s"Dumping keystore at $dumpPath")
       keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
     }
     val keyManagerFactory: KeyManagerFactory =

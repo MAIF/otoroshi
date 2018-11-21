@@ -26,7 +26,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   lazy val logger = Logger("otoroshi-mongo-redis")
 
   def initIndexes(): Future[Unit] = {
-    logger.warn("Creating mongo indexes if needed ...")
+    logger.info("Creating mongo indexes if needed ...")
     for {
       coll <- database.map(_.collection[BSONCollection]("values"))
       _    <- coll.create().recover { case _ => () }
@@ -37,7 +37,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
                     "expireAfterSeconds" -> 0
                   ))
           )
-      _ = Logger.warn("Mongo indexes created !")
+      _ = Logger.info("Mongo indexes created !")
     } yield ()
   }
 

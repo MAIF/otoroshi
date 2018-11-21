@@ -174,7 +174,7 @@ class SnowMonkey(implicit env: Env) {
                         event
                       )
                     )
-                    logger.warn(
+                    logger.info(
                       s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
                         .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
                     )
@@ -214,7 +214,7 @@ class SnowMonkey(implicit env: Env) {
                         event
                       )
                     )
-                    logger.warn(
+                    logger.info(
                       s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
                         .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
                     )
@@ -287,7 +287,6 @@ class SnowMonkey(implicit env: Env) {
         )
       )
     } else if (config.snowMonkeyConfig.enabled && betweenDates(config.snowMonkeyConfig)) {
-      // logger.warn(Json.prettyPrint(config.snowMonkeyConfig.asJson))
       introduceSnowMonkeyDefinedChaos(reqNumber, config.snowMonkeyConfig, desc, hasBody)(f)
     } else {
       if (desc.chaosConfig.enabled) {

@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extends RedisLike {
 
-  logger.warn("Using experimental InMemory store")
+  logger.info("Using experimental InMemory store")
 
   import actorSystem.dispatcher
 

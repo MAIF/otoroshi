@@ -121,7 +121,7 @@ class KafkaEventProducer(_env: env.Env, config: KafkaConfig, topicFunction: Kafk
 
   lazy val topic = topicFunction(config)
 
-  logger.info(s"Initializing kafka event store on topic ${topic}")
+  logger.debug(s"Initializing kafka event store on topic ${topic}")
 
   private lazy val producerSettings                             = KafkaSettings.producerSettings(_env, config)
   private lazy val producer: KafkaProducer[Array[Byte], String] = producerSettings.createKafkaProducer

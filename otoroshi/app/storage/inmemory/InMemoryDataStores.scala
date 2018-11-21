@@ -44,7 +44,7 @@ class InMemoryDataStores(configuration: Configuration,
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
-    logger.warn("Now using InMemory DataStores")
+    logger.info("Now using InMemory DataStores")
     redis.start()
     _certificateDataStore.startSync()
     FastFuture.successful(())

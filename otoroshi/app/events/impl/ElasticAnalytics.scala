@@ -123,7 +123,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
       implicit val ec: ExecutionContext = executionContext
       val strTpl                        = ElasticTemplates.indexTemplate
       val tpl: JsValue                  = Json.parse(strTpl.replace("$$$INDEX$$$", index))
-      logger.warn(
+      logger.info(
         s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/${config.index}/${config.`type`}"
       )
       logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")

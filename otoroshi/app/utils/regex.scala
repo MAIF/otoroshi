@@ -20,7 +20,7 @@ object RegexPool {
   def apply(originalPattern: String): Regex = {
     if (!pool.containsKey(originalPattern)) {
       val processedPattern: String = originalPattern.replace(".", "\\.").replaceAll("\\*", ".*")
-      logger.info(s"Compiling pattern : `$processedPattern`")
+      logger.trace(s"Compiling pattern : `$processedPattern`")
       pool.putIfAbsent(originalPattern, Regex(originalPattern, Pattern.compile(processedPattern)))
     }
     pool.get(originalPattern)
@@ -28,7 +28,7 @@ object RegexPool {
 
   def regex(originalPattern: String): Regex = {
     if (!pool.containsKey(originalPattern)) {
-      logger.info(s"Compiling pattern : `$originalPattern`")
+      logger.trace(s"Compiling pattern : `$originalPattern`")
       pool.putIfAbsent(originalPattern, Regex(originalPattern, Pattern.compile(originalPattern)))
     }
     pool.get(originalPattern)

@@ -113,7 +113,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def robotTxt = Action { req =>
-    logger.warn(s"Rendering robot.txt on http://${req.host}/robot.txt")
+    logger.debug(s"Rendering robot.txt on http://${req.host}/robot.txt")
     Ok("""User-agent: *
     |Disallow: /""".stripMargin)
   }

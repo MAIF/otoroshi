@@ -53,7 +53,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   lazy val redis = new MongoRedis(actorSystem, connection, dbName)
 
   override def before(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle) = {
-    logger.warn(s"Now using Mongo DataStores dbName:$dbName, uri:$parsedUri")
+    logger.info(s"Now using Mongo DataStores dbName:$dbName, uri:$parsedUri")
     redis.start()
     if (configuration.getOptional[Boolean]("app.mongo.testMode").getOrElse(false)) {
       logger.warn("Flushing DB as in test mode")
@@ -73,7 +73,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
       connection
         .askClose()(10.seconds)
         .map { _ =>
-          logger.info("Mongo connections are stopped")
+          logger.debug("Mongo connections are stopped")
         }
         .andThen {
           case Failure(reason) =>
