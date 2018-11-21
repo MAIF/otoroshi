@@ -286,18 +286,20 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
         else {
           val items = values.map { v => v.utf8String.toLong }
           val total = items.fold(0L)(_ + _)
-          (total / items.size).toLong
+          val itemSize = if (items.isEmpty) 1 else items.size
+          (total / itemSize).toLong
         }
-      })).map(a => a.fold(0L)(_ + _) / a.size)
+      })).map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else  a.size))
 
       out <- Future.sequence(keysOut.map(key => redisLike.lrange(key, 0, 100).map { values =>
         if (values.isEmpty) 0L
         else {
           val items = values.map { v => v.utf8String.toLong }
           val total = items.fold(0L)(_ + _)
-          (total / items.size).toLong
+          val itemSize = if (items.isEmpty) 1 else items.size
+          (total / itemSize).toLong
         }
-      })).map(a => a.fold(0L)(_ + _) / a.size)
+      })).map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else  a.size))
     } yield (in, out)
   }
 }
@@ -429,6 +431,11 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
               members <- env.datastores.clusterStateDataStore.getMembers()
               inOut   <- env.datastores.clusterStateDataStore.dataInAndOut()
             } yield (members, inOut)
+          }
+          .recover {
+            case e =>
+              Cluster.logger.error("Error", e)
+              (Seq.empty[MemberView], (0L, 0L))
           }
           .map {
             case (members, inOut) =>
