@@ -51,13 +51,7 @@ Otoroshi is capable of managing throttling at a global level. Here you can confi
 
 One on the major features of Otoroshi is being able of generating internal events. Those events are not stored in Otoroshi's datastore but can be sent using `WebHooks`. You can configure those `WebHooks` from the `Danger Zone`.
 
-Otoroshi is also capable of reading some analytics and displays it from another MAIF product called `Omoïkane`. As Omoikane is not publicly available yet, we provide a connector that stores events in an [Elastic](https://www.elastic.co/) cluster. You can provide the URL of this connector in the `Analytics source URL` setting (it looks like `http://omoikane.foo.bar:8080/api/v1/events`) but also use it as `WebHook` target in the `Analytics hook URL` (it looks like `http://omoikane.foo.bar:8080/api/v1/events`).
-
-@@@ div { .centered-img }
-<img src="../img/danger-zone-4-analytics.png" />
-@@@
-
-For more information about analytics and what it does, just go to the @ref:[detailed chapter](../integrations/analytics.md)
+Otoroshi is also capable of reading some analytics and displays it from another MAIF product called `Omoïkane`. As Omoikane is not publicly available yet, is capable of storing events in an [Elastic](https://www.elastic.co/) cluster. For more information about analytics and what it does, just go to the @ref:[detailed chapter](../integrations/analytics.md)
 
 ## Kafka settings
 

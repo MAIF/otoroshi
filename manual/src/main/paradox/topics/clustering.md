@@ -16,7 +16,7 @@ Otoroshi clustering only uses http internally (right now) to make communications
 otoroshi {
   cluster {
     mode = "leader" # can be "off", "leader", "worker"
-    compression = -1 # from -1 (disabled) to 9
+    compression = 4 # compression of the data sent between leader cluster and worker cluster. From -1 (disabled) to 9
     leader {
       name = ${?CLUSTER_LEADER_NAME}   # name of the instance, if none, it will be generated
       urls = ["http://127.0.0.1:8080"] # urls to contact the leader cluster
@@ -80,7 +80,7 @@ otoroshi {
 ```
 
 @@@ warning
-You have to set full/same the cluster configuration on any instance (worker/leader) with only names and mode changed for each instance.
+You **must** have the same cluster configuration on every Otoroshi instance (worker/leader) with only names and mode changed for each instance. Some things in leader/worker are computed using configuration of their counterpart worker/leader.
 @@@
 
 ## Cluster UI
