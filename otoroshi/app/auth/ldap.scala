@@ -318,7 +318,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                         name = user.name,
                         email = user.email,
                         profile = user.asJson,
-                        authorizedGroup = None
+                        authorizedGroup = None,
+                        simpleLogin = false
                       )
                     )
                   case None => Left(s"You're not authorized here")

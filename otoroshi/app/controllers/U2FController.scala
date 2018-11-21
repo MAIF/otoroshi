@@ -60,7 +60,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                                "name"  -> label,
                                "email" -> username
                              ),
-                             authorizedGroup).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map {
+                             authorizedGroup,
+                             true).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map {
                 boUser =>
                   env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
                     case false => {
@@ -242,7 +243,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                         "name"  -> label,
                         "email" -> username
                       ),
-                      authorizedGroup
+                      authorizedGroup,
+                      false
                     ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                       env.datastores.u2FAdminDataStore.hasAlreadyLoggedIn(username).map {
                         case false => {

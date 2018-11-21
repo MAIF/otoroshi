@@ -273,7 +273,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     name = (user \ authConfig.nameField).asOpt[String].getOrElse("No Name"),
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                     profile = user,
-                    authorizedGroup = None
+                    authorizedGroup = None,
+                    simpleLogin = false
                   )
                 )
               }

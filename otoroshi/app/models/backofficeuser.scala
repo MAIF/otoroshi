@@ -15,6 +15,7 @@ case class BackOfficeUser(randomId: String,
                           email: String,
                           profile: JsValue,
                           authorizedGroup: Option[String],
+                          simpleLogin: Boolean,
                           createdAt: DateTime = DateTime.now(),
                           expiredAt: DateTime = DateTime.now()) {
 
