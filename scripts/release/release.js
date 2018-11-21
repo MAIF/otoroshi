@@ -1,3 +1,4 @@
+// node release.js --from=1.3.2-dev --to=1.4.0 --next=1.4.1-dev --last=1.3.1 --location=/path/to/otoroshi
 const cmd = require('node-cmd');
 const { spawn } = require('child_process');
 const path = require('path');
