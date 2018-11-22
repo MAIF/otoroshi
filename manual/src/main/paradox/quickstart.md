@@ -30,11 +30,11 @@ As Otoroshi uses Otoroshi to serve its own admin UI and admin API, you won't be 
 
 ```sh
 curl -L -o otoroshi.jar https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.1-dev/otoroshi.jar
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.2-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.4.1-dev/otoroshicli
 # or if you use linux
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.2-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.1-dev/otoroshicli
 # or if you use windows
-curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.2-dev/otoroshicli.exe
+curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.4.1-dev/otoroshicli.exe
 
 chmod +x otoroshicli
 
@@ -123,11 +123,11 @@ If you want to use Docker, just follow these instructions
 export OTOROSHI_PORT=8080
 export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.3.2-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.1-dev/otoroshicli
 # or if you use linux
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.3.2-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.4.1-dev/otoroshicli
 # or if you use windows
-curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.3.2-dev/otoroshicli.exe
+curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.4.1-dev/otoroshicli.exe
 
 chmod +x otoroshicli 
 
