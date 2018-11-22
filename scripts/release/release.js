@@ -70,6 +70,7 @@ function runScript(script, where, env = {}) {
 }
 
 async function changeVersion(where, from, to, exclude = []) {
+  console.log(`Changing version from '${from}' to '${to}'`)
   return new Promise(s => {
     files.filter(f => !(exclude.indexOf(f.file) > -1)).map(file => {
       const filePath = path.resolve(where, file.file);
