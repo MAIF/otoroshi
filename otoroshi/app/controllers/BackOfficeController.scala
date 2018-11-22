@@ -155,7 +155,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       val thridPartyLoginEnabled = config.backOfficeAuthRef.nonEmpty
       ctx.user match {
         case Some(user) => Redirect("/bo/dashboard")
-        case None if config.u2fLoginOnly => Ok(views.html.backoffice.index(false, ctx.user, ctx.request, env))
+        case None if config.u2fLoginOnly => Redirect(routes.U2FController.loginPage())
         case None if thridPartyLoginEnabled => Ok(views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
         case None if !thridPartyLoginEnabled => Redirect(routes.U2FController.loginPage())
       }
