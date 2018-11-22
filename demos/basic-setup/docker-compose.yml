@@ -36,7 +36,7 @@ services:
       - postgres-prod
 
   otoroshi-instance-1:
-    image: maif/otoroshi:1.4.0
+    image: maif/otoroshi:1.4.1-dev
     networks:
       - basicsetup
     environment:
