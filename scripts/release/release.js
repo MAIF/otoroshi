@@ -123,7 +123,7 @@ async function buildVersion(version, where, releaseDir) {
     export JAVA_HOME=$JDK8_HOME
     export PATH=\${JAVA_HOME}/bin:\${PATH}
     cd ${where}/otoroshi
-    sbt ";test;dist;assembly"
+    sbt ";dist;assembly"
   `, where);
   // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
@@ -326,7 +326,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   if (!fs.pathExistsSync(releaseFile)) {
     fs.createFileSync(releaseFile);
   } else {
-    steps = fs.readFileSync(releaseFile, 'utf8').split('\n').map(line => JSON.parse(line));
+    steps = fs.readFileSync(releaseFile, 'utf8').split('\n').map(a => a.trim()).filter(a => a !== '').map(line => JSON.parse(line));
   }
   
   await ensureStep('INSTALL_DEPS', releaseFile, () => installDependencies(location));
