@@ -185,8 +185,6 @@ export class ServicePage extends Component {
   componentDidMount() {
     this.load();
     this.mountShortcuts();
-    window.getState = () => this.state;
-    window.setState = this.setState.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
