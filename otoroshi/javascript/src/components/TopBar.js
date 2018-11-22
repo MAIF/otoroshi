@@ -20,6 +20,13 @@ function extractEnv(value = '') {
 
 // http://yokai.com/otoroshi/
 export class TopBar extends Component {
+
+  state = {
+    env: {
+      clusterRole: 'off'
+    }
+  };
+
   searchServicesOptions = query => {
     return fetch(`/bo/api/search/services`, {
       method: 'POST',
@@ -141,12 +148,14 @@ export class TopBar extends Component {
           label: 'SSL Certificates',
           value: 'certificates',
         });
-        options.push({
-          action: () => (window.location.href = '/bo/dashboard/cluster'),
-          env: <span className="fa fa-network-wired" />,
-          label: 'Cluster view',
-          value: 'cluster-view',
-        });
+        if (this.state.env.clusterRole === 'Leader') {
+          options.push({
+            action: () => (window.location.href = '/bo/dashboard/cluster'),
+            env: <span className="fa fa-network-wired" />,
+            label: 'Cluster view',
+            value: 'cluster-view',
+          });
+        }
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
           env: (
@@ -177,7 +186,7 @@ export class TopBar extends Component {
     } else if (env === 'dev') {
       return 'label-info';
     } else {
-      return 'yellow';
+      return 'label-default';
     }
   }
 
@@ -197,6 +206,7 @@ export class TopBar extends Component {
       this.mounted = true;
       document.addEventListener('keydown', this.listenToSlash, false);
     }
+    BackOfficeServices.env().then(env => this.setState({ env }));
   }
 
   componentWillUnmount() {
@@ -298,12 +308,12 @@ export class TopBar extends Component {
                     </a>
                   </li>
                   <li role="separator" className="divider" />
-                  <li>
+                  {this.state.env.clusterRole === 'Leader' && <li>
                     <a href="/bo/dashboard/cluster">
                       <span className="fa fa-network-wired" /> Cluster view
                     </a>
-                  </li>
-                  <li role="separator" className="divider" />
+                  </li>}
+                  {this.state.env.clusterRole === 'Leader' && <li role="separator" className="divider" />}
                   <li>
                     <a href="/bo/dashboard/stats">
                       <i className="glyphicon glyphicon-signal" /> Global Analytics
@@ -422,13 +432,14 @@ export class TopBar extends Component {
                     return matched.map(i => i.original);
                   }}
                   optionRenderer={p => {
+                    const env = (p.env && _.isString(p.env)) ? (p.env.length > 4 ? p.env.substring(0, 4) + '.' : p.env) : null;
                     return (
                       <div style={{ display: 'flex' }}>
                         <div style={{ width: 60 }}>
                           {p.env &&
                             _.isString(p.env) && (
                               <span className={`label ${this.color(p.env)}`}>
-                                {p.env.replace('experiments', 'exps.')}
+                                {env}
                               </span>
                             )}
                           {p.env && !_.isString(p.env) && p.env}
