@@ -14,9 +14,8 @@ class InMemoryBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
     extends BackOfficeUserDataStore
     with RedisLikeStore[BackOfficeUser] {
 
-  private val _fmt                                      = Json.format[BackOfficeUser]
   override def redisLike(implicit env: Env): RedisLike  = redisCli
-  override def fmt: Format[BackOfficeUser]              = _fmt
+  override def fmt: Format[BackOfficeUser]              = BackOfficeUser.fmt
   override def key(id: String): Key                     = Key.Empty / _env.storageRoot / "users" / "backoffice" / id
   override def extractId(value: BackOfficeUser): String = value.randomId
 

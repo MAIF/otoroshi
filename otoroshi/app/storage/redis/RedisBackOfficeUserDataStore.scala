@@ -15,9 +15,8 @@ class RedisBackOfficeUserDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     extends BackOfficeUserDataStore
     with RedisStore[BackOfficeUser] {
 
-  private val _fmt                                                = Json.format[BackOfficeUser]
   override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
-  override def fmt: Format[BackOfficeUser]                        = _fmt
+  override def fmt: Format[BackOfficeUser]                        = BackOfficeUser.fmt
   override def key(id: String): Key                               = Key(s"${_env.storageRoot}:users:backoffice:$id")
   override def extractId(value: BackOfficeUser): String           = value.randomId
 

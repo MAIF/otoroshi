@@ -1,7 +1,6 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture._
-
 import env.Env
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -9,6 +8,7 @@ import storage.BasicStore
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 case class BackOfficeUser(randomId: String,
                           name: String,
@@ -26,6 +26,40 @@ case class BackOfficeUser(randomId: String,
 
   def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.backOfficeUserDataStore.delete(randomId)
+}
+
+object BackOfficeUser {
+
+  val fmt = new Format[BackOfficeUser] {
+
+    override def reads(json: JsValue): JsResult[BackOfficeUser] = Try {
+      JsSuccess(
+        BackOfficeUser(
+          randomId = (json \ "randomId").as[String],
+          name = (json \ "name").as[String],
+          email = (json \ "email").as[String],
+          profile = (json \ "profile").asOpt[JsValue].getOrElse(Json.obj()),
+          authorizedGroup = (json \ "authorizedGroup").asOpt[String],
+          simpleLogin = (json \ "simpleLogin").asOpt[Boolean].getOrElse(true),
+          createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+          expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+
+    override def writes(o: BackOfficeUser): JsValue = Json.obj(
+      "randomId" -> o.randomId,
+      "name" -> o.name,
+      "email" -> o.email,
+      "profile" -> o.profile,
+      "authorizedGroup" -> o.authorizedGroup.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "simpleLogin" -> o.simpleLogin,
+      "createdAt" -> o.createdAt.getMillis,
+      "expiredAt" -> o.expiredAt.getMillis,
+    )
+  }
 }
 
 trait BackOfficeUserDataStore extends BasicStore[BackOfficeUser] {
