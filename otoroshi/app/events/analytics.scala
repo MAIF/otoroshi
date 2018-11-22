@@ -141,7 +141,7 @@ trait AnalyticEvent {
       "cluster-name" -> (_env.clusterConfig.mode match {
         case ClusterMode.Worker => _env.clusterConfig.worker.name
         case ClusterMode.Leader => _env.clusterConfig.leader.name
-        case _ => "none"
+        case _                  => "none"
       })
     )
   }

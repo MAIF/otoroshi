@@ -107,8 +107,8 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore        = new InMemoryCertificateDataStore(redis, env)
 
-  private lazy val _clusterStateDataStore       = new InMemoryClusterStateDataStore(redis, env)
-  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+  private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -129,5 +129,8 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = throw new RuntimeException("Cluster mode not supported for Mongo datastore")
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] =
+    throw new RuntimeException("Cluster mode not supported for Mongo datastore")
 }

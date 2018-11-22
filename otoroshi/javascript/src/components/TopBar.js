@@ -20,11 +20,10 @@ function extractEnv(value = '') {
 
 // http://yokai.com/otoroshi/
 export class TopBar extends Component {
-
   state = {
     env: {
-      clusterRole: 'off'
-    }
+      clusterRole: 'off',
+    },
   };
 
   searchServicesOptions = query => {
@@ -308,12 +307,16 @@ export class TopBar extends Component {
                     </a>
                   </li>
                   <li role="separator" className="divider" />
-                  {this.state.env.clusterRole === 'Leader' && <li>
-                    <a href="/bo/dashboard/cluster">
-                      <span className="fa fa-network-wired" /> Cluster view
-                    </a>
-                  </li>}
-                  {this.state.env.clusterRole === 'Leader' && <li role="separator" className="divider" />}
+                  {this.state.env.clusterRole === 'Leader' && (
+                    <li>
+                      <a href="/bo/dashboard/cluster">
+                        <span className="fa fa-network-wired" /> Cluster view
+                      </a>
+                    </li>
+                  )}
+                  {this.state.env.clusterRole === 'Leader' && (
+                    <li role="separator" className="divider" />
+                  )}
                   <li>
                     <a href="/bo/dashboard/stats">
                       <i className="glyphicon glyphicon-signal" /> Global Analytics
@@ -432,15 +435,16 @@ export class TopBar extends Component {
                     return matched.map(i => i.original);
                   }}
                   optionRenderer={p => {
-                    const env = (p.env && _.isString(p.env)) ? (p.env.length > 4 ? p.env.substring(0, 4) + '.' : p.env) : null;
+                    const env =
+                      p.env && _.isString(p.env)
+                        ? p.env.length > 4 ? p.env.substring(0, 4) + '.' : p.env
+                        : null;
                     return (
                       <div style={{ display: 'flex' }}>
                         <div style={{ width: 60 }}>
                           {p.env &&
                             _.isString(p.env) && (
-                              <span className={`label ${this.color(p.env)}`}>
-                                {env}
-                              </span>
+                              <span className={`label ${this.color(p.env)}`}>{env}</span>
                             )}
                           {p.env && !_.isString(p.env) && p.env}
                         </div>

@@ -113,7 +113,8 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
       )
   }
 
-  override def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] = {
+  override def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(implicit ec: ExecutionContext,
+                                                                  env: Env): Future[RemainingQuotas] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()

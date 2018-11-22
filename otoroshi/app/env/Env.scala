@@ -78,7 +78,9 @@ class Env(val configuration: Configuration,
     val aa          = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
     val ala         = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
     val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
-    timeout(FiniteDuration(5, SECONDS)).andThen { case _ if isProd && clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck() }
+    timeout(FiniteDuration(5, SECONDS)).andThen {
+      case _ if isProd && clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck()
+    }
     (aa, ala, ha)
   }
 
@@ -103,7 +105,9 @@ class Env(val configuration: Configuration,
 
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
-  lazy val clusterConfig: ClusterConfig = ClusterConfig(configuration.getOptional[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty))
+  lazy val clusterConfig: ClusterConfig = ClusterConfig(
+    configuration.getOptional[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty)
+  )
   lazy val clusterAgent: ClusterAgent = ClusterAgent(clusterConfig, this)
 
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
@@ -118,9 +122,13 @@ class Env(val configuration: Configuration,
   lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
   lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
-  lazy val exposeAdminApi: Boolean         = if (clusterConfig.mode.isWorker) false else configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
-  lazy val exposeAdminDashboard: Boolean   = if (clusterConfig.mode.isWorker) false else configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
-  lazy val adminApiProxyHttps: Boolean     = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
+  lazy val exposeAdminApi: Boolean =
+    if (clusterConfig.mode.isWorker) false
+    else configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
+  lazy val exposeAdminDashboard: Boolean =
+    if (clusterConfig.mode.isWorker) false
+    else configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
+  lazy val adminApiProxyHttps: Boolean = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
     configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
   lazy val redirectToDev: Boolean = env
@@ -248,12 +256,18 @@ class Env(val configuration: Configuration,
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
-      case _           if clusterConfig.mode == ClusterMode.Worker => new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
-      case "redis"     if clusterConfig.mode == ClusterMode.Leader => new RedisDataStores(configuration, environment, lifecycle, this)
-      case "inmemory"  if clusterConfig.mode == ClusterMode.Leader => new InMemoryDataStores(configuration, environment, lifecycle, this)
-      case "leveldb"   if clusterConfig.mode == ClusterMode.Leader => new LevelDbDataStores(configuration, environment, lifecycle, this)
-      case "cassandra" if clusterConfig.mode == ClusterMode.Leader => throw new RuntimeException("Cassandra datastore is not supported yet as Otoroshi leader datastore")
-      case "mongo"     if clusterConfig.mode == ClusterMode.Leader => throw new RuntimeException("Mongo datastore is not supported yet as Otoroshi leader datastore")
+      case _ if clusterConfig.mode == ClusterMode.Worker =>
+        new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
+      case "redis" if clusterConfig.mode == ClusterMode.Leader =>
+        new RedisDataStores(configuration, environment, lifecycle, this)
+      case "inmemory" if clusterConfig.mode == ClusterMode.Leader =>
+        new InMemoryDataStores(configuration, environment, lifecycle, this)
+      case "leveldb" if clusterConfig.mode == ClusterMode.Leader =>
+        new LevelDbDataStores(configuration, environment, lifecycle, this)
+      case "cassandra" if clusterConfig.mode == ClusterMode.Leader =>
+        throw new RuntimeException("Cassandra datastore is not supported yet as Otoroshi leader datastore")
+      case "mongo" if clusterConfig.mode == ClusterMode.Leader =>
+        throw new RuntimeException("Mongo datastore is not supported yet as Otoroshi leader datastore")
       case "redis"     => new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory"  => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle, this)
@@ -365,20 +379,24 @@ class Env(val configuration: Configuration,
                   logger.info(s"Importing from URL: $url")
                   wsClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
                     val json = resp.json.as[JsObject]
-                    datastores.globalConfigDataStore.fullImport(json)(ec, this).andThen {
-                      case Success(_) => logger.info("Successful import !")
-                      case Failure(e) => logger.error("Error while importing inital data !", e)
-                    }(ec)
+                    datastores.globalConfigDataStore
+                      .fullImport(json)(ec, this)
+                      .andThen {
+                        case Success(_) => logger.info("Successful import !")
+                        case Failure(e) => logger.error("Error while importing inital data !", e)
+                      }(ec)
                   }
                 }
                 case Some(path) => {
                   logger.info(s"Importing from: $path")
                   val source = Source.fromFile(path).getLines().mkString("\n")
                   val json   = Json.parse(source).as[JsObject]
-                  datastores.globalConfigDataStore.fullImport(json)(ec, this).andThen {
-                    case Success(_) => logger.info("Successful import !")
-                    case Failure(e) => logger.error("Error while importing inital data !", e)
-                  }(ec)
+                  datastores.globalConfigDataStore
+                    .fullImport(json)(ec, this)
+                    .andThen {
+                      case Success(_) => logger.info("Successful import !")
+                      case Failure(e) => logger.error("Error while importing inital data !", e)
+                    }(ec)
                 }
               }
             } else {
@@ -392,10 +410,12 @@ class Env(val configuration: Configuration,
                     )
                     .as[JsObject]
                   logger.info(s"Importing from config file ${Json.prettyPrint(importJson)}")
-                  datastores.globalConfigDataStore.fullImport(importJson)(ec, this).andThen {
-                    case Success(_) => logger.info("Successful import !")
-                    case Failure(e) => logger.error("Error while importing inital data !", e)
-                  }(ec)
+                  datastores.globalConfigDataStore
+                    .fullImport(importJson)(ec, this)
+                    .andThen {
+                      case Success(_) => logger.info("Successful import !")
+                      case Failure(e) => logger.error("Error while importing inital data !", e)
+                    }(ec)
                 }
                 case _ => {
                   val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
@@ -487,41 +507,41 @@ class Env(val configuration: Configuration,
       for {
         _ <- datastores.globalConfigDataStore.migrate()
         _ <- datastores.certificatesDataStore
-          .findAll()
-          .map { certs =>
-            val foundOtoroshiCa = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
-            val foundOtoroshiDomainCert = certs.exists(c => c.domain == s"*.${this.domain}")
-            val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
-            val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-            keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-            val keyPair1 = keyPairGenerator.generateKeyPair()
-            val keyPair2 = keyPairGenerator.generateKeyPair()
-            val keyPair3 = keyPairGenerator.generateKeyPair()
-            val ca = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
-            val caCert = Cert(ca, keyPair1, None).enrich()
-            if (!foundOtoroshiCa) {
-              logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
-              caCert.copy(id = Cert.OtoroshiCA).save()
-            }
-            if (!foundOtoroshiDomainCert) {
-              logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
-              val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
-                FiniteDuration(365, TimeUnit.DAYS),
-                keyPair2,
-                ca,
-                keyPair1)
-              Cert(cert1, keyPair1, caCert).enrich().save()
-            }
-            if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
-              logger.info(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
-              val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}",
-                FiniteDuration(365, TimeUnit.DAYS),
-                keyPair3,
-                ca,
-                keyPair1)
-              Cert(cert2, keyPair1, caCert).enrich().save()
-            }
-          }
+              .findAll()
+              .map { certs =>
+                val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
+                val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
+                val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
+                val keyPairGenerator           = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+                keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+                val keyPair1 = keyPairGenerator.generateKeyPair()
+                val keyPair2 = keyPairGenerator.generateKeyPair()
+                val keyPair3 = keyPairGenerator.generateKeyPair()
+                val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
+                val caCert   = Cert(ca, keyPair1, None).enrich()
+                if (!foundOtoroshiCa) {
+                  logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
+                  caCert.copy(id = Cert.OtoroshiCA).save()
+                }
+                if (!foundOtoroshiDomainCert) {
+                  logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
+                  val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
+                                                                   FiniteDuration(365, TimeUnit.DAYS),
+                                                                   keyPair2,
+                                                                   ca,
+                                                                   keyPair1)
+                  Cert(cert1, keyPair1, caCert).enrich().save()
+                }
+                if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
+                  logger.info(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
+                  val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}",
+                                                                   FiniteDuration(365, TimeUnit.DAYS),
+                                                                   keyPair3,
+                                                                   ca,
+                                                                   keyPair1)
+                  Cert(cert2, keyPair1, caCert).enrich().save()
+                }
+              }
         //_ <- clusterAgent.startF()
       } yield ()
     }

@@ -35,10 +35,10 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
               case None if env.clusterConfig.mode == ClusterMode.Worker => {
                 env.clusterAgent.isSessionValid(id).flatMap {
                   case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))
-                  case None => block(PrivateAppsActionContext(request, None, globalConfig))
+                  case None       => block(PrivateAppsActionContext(request, None, globalConfig))
                 }
               }
-              case None       => block(PrivateAppsActionContext(request, None, globalConfig))
+              case None => block(PrivateAppsActionContext(request, None, globalConfig))
             }
           } getOrElse {
             cookieOpt match {

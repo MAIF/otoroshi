@@ -98,8 +98,8 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _authConfigsDataStore       = new RedisAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new RedisCertificateDataStore(redis, env)
 
-  private lazy val _clusterStateDataStore      = new RedisClusterStateDataStore(redis, env)
-  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+  private lazy val _clusterStateDataStore                   = new RedisClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
@@ -124,7 +124,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
       case _ => Unreachable
     }
   }
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -133,8 +135,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys                 => {
-          Future.sequence(keys
+        case keys => {
+          Future.sequence(
+            keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
                 key == s"${env.storageRoot}:events:audit" ||
@@ -150,15 +153,21 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
                 (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
-            for {
-              w     <- redis.`type`(key)
-              ttl   <- redis.pttl(key)
-              value <- fetchValueForType(w, key)
-            } yield value match {
-              case JsNull => JsNull
-              case _ => Json.obj("k" -> key, "v" -> value, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> w)
-            }
-          })
+                for {
+                  w     <- redis.`type`(key)
+                  ttl   <- redis.pttl(key)
+                  value <- fetchValueForType(w, key)
+                } yield
+                  value match {
+                    case JsNull => JsNull
+                    case _ =>
+                      Json.obj("k" -> key,
+                               "v" -> value,
+                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                               "w" -> w)
+                  }
+              }
+          )
         }
       }
       .map(_.filterNot(_ == JsNull))
@@ -169,11 +178,12 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
     typ match {
       case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
       case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
-      case "set" => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
-      case "string" => redis.get(key).map {
-        case None => JsNull
-        case Some(a) => JsString(a.utf8String)
-      }
+      case "set"  => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "string" =>
+        redis.get(key).map {
+          case None    => JsNull
+          case Some(a) => JsString(a.utf8String)
+        }
       case _ => FastFuture.successful(JsNull)
     }
   }

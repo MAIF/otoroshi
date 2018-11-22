@@ -26,7 +26,8 @@ trait AuthModule {
   ): Future[Either[String, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Option[String]]
+  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext,
+                                                             env: Env): Future[Option[String]]
   def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext,
                                                                      env: Env): Future[Either[String, BackOfficeUser]]
 }

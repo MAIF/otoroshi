@@ -32,32 +32,33 @@ object BackOfficeUser {
 
   val fmt = new Format[BackOfficeUser] {
 
-    override def reads(json: JsValue): JsResult[BackOfficeUser] = Try {
-      JsSuccess(
-        BackOfficeUser(
-          randomId = (json \ "randomId").as[String],
-          name = (json \ "name").as[String],
-          email = (json \ "email").as[String],
-          profile = (json \ "profile").asOpt[JsValue].getOrElse(Json.obj()),
-          authorizedGroup = (json \ "authorizedGroup").asOpt[String],
-          simpleLogin = (json \ "simpleLogin").asOpt[Boolean].getOrElse(true),
-          createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
-          expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+    override def reads(json: JsValue): JsResult[BackOfficeUser] =
+      Try {
+        JsSuccess(
+          BackOfficeUser(
+            randomId = (json \ "randomId").as[String],
+            name = (json \ "name").as[String],
+            email = (json \ "email").as[String],
+            profile = (json \ "profile").asOpt[JsValue].getOrElse(Json.obj()),
+            authorizedGroup = (json \ "authorizedGroup").asOpt[String],
+            simpleLogin = (json \ "simpleLogin").asOpt[Boolean].getOrElse(true),
+            createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+            expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
 
     override def writes(o: BackOfficeUser): JsValue = Json.obj(
-      "randomId" -> o.randomId,
-      "name" -> o.name,
-      "email" -> o.email,
-      "profile" -> o.profile,
+      "randomId"        -> o.randomId,
+      "name"            -> o.name,
+      "email"           -> o.email,
+      "profile"         -> o.profile,
       "authorizedGroup" -> o.authorizedGroup.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "simpleLogin" -> o.simpleLogin,
-      "createdAt" -> o.createdAt.getMillis,
-      "expiredAt" -> o.expiredAt.getMillis,
+      "simpleLogin"     -> o.simpleLogin,
+      "createdAt"       -> o.createdAt.getMillis,
+      "expiredAt"       -> o.expiredAt.getMillis,
     )
   }
 }

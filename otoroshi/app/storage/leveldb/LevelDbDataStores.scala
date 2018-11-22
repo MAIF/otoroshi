@@ -81,8 +81,8 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore        = new InMemoryCertificateDataStore(redis, env)
 
-  private lazy val _clusterStateDataStore       = new InMemoryClusterStateDataStore(redis, env)
-  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+  private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -103,7 +103,9 @@ class LevelDbDataStores(configuration: Configuration,
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -112,8 +114,9 @@ class LevelDbDataStores(configuration: Configuration,
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys                 => {
-          Future.sequence(keys
+        case keys => {
+          Future.sequence(
+            keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
                 key == s"${env.storageRoot}:events:audit" ||
@@ -129,16 +132,20 @@ class LevelDbDataStores(configuration: Configuration,
                 (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
-            redis.get(key).flatMap {
-              case None => FastFuture.successful(JsNull)
-              case Some(value) => {
-                val (what, jsonValue) = toJson(value)
-                redis.pttl(key).map { ttl =>
-                  Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
+                redis.get(key).flatMap {
+                  case None => FastFuture.successful(JsNull)
+                  case Some(value) => {
+                    val (what, jsonValue) = toJson(value)
+                    redis.pttl(key).map { ttl =>
+                      Json.obj("k" -> key,
+                               "v" -> jsonValue,
+                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                               "w" -> what)
+                    }
+                  }
                 }
               }
-            }
-          })
+          )
         }
       }
       .map(_.filterNot(_ == JsNull))
@@ -153,11 +160,14 @@ class LevelDbDataStores(configuration: Configuration,
     }
 
     value match {
-      case str: ByteString if str.containsSlice(ByteString("<#>")) => ("hash",   JsObject(str.utf8String.split(";;;").map(strToTuple).toSeq))
-      case str: ByteString if str.containsSlice(ByteString(";;;")) => ("list",   JsArray(str.utf8String.split(";;;").toSeq.map(JsString.apply)))
-      case str: ByteString if str.containsSlice(ByteString(";;>")) => ("set",    JsArray(str.utf8String.split(";;>").toSeq.map(JsString.apply)))
-      case str: ByteString                                         => ("string", JsString(str.utf8String))
-      case e => throw new RuntimeException(s"Unkown type for ${value}")
+      case str: ByteString if str.containsSlice(ByteString("<#>")) =>
+        ("hash", JsObject(str.utf8String.split(";;;").map(strToTuple).toSeq))
+      case str: ByteString if str.containsSlice(ByteString(";;;")) =>
+        ("list", JsArray(str.utf8String.split(";;;").toSeq.map(JsString.apply)))
+      case str: ByteString if str.containsSlice(ByteString(";;>")) =>
+        ("set", JsArray(str.utf8String.split(";;>").toSeq.map(JsString.apply)))
+      case str: ByteString => ("string", JsString(str.utf8String))
+      case e               => throw new RuntimeException(s"Unkown type for ${value}")
     }
   }
 }

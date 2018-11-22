@@ -75,7 +75,11 @@ object Retry {
         }(ec)
     }
 
-  def retry[T](times: Int, delay: Long = 0, factor: Long = 2L, ctx: String, counter: AtomicInteger = new AtomicInteger(0))(
+  def retry[T](times: Int,
+               delay: Long = 0,
+               factor: Long = 2L,
+               ctx: String,
+               counter: AtomicInteger = new AtomicInteger(0))(
       f: Int => Future[T]
   )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
     val promise = Promise[T]()

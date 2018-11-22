@@ -154,9 +154,10 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     env.datastores.globalConfigDataStore.singleton().map { config =>
       val thridPartyLoginEnabled = config.backOfficeAuthRef.nonEmpty
       ctx.user match {
-        case Some(user) => Redirect("/bo/dashboard")
+        case Some(user)                  => Redirect("/bo/dashboard")
         case None if config.u2fLoginOnly => Redirect(routes.U2FController.loginPage())
-        case None if thridPartyLoginEnabled => Ok(views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
+        case None if thridPartyLoginEnabled =>
+          Ok(views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
         case None if !thridPartyLoginEnabled => Redirect(routes.U2FController.loginPage())
       }
     }

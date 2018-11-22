@@ -68,7 +68,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
   override def get(key: String): Future[Option[ByteString]] = Future.successful {
     getValueAt(key).map(ByteString.apply)
   }
-  
+
   override def set(key: String,
                    value: String,
                    exSeconds: Option[Long] = None,

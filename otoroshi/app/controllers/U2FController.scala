@@ -61,18 +61,17 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                                "email" -> username
                              ),
                              authorizedGroup,
-                             true).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map {
-                boUser =>
-                  env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
-                    case false => {
-                      env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
-                      Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
-                    }
-                    case true => {
-                      Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
-                    }
+                             true).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
+                env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
+                  case false => {
+                    env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
+                    Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
                   }
-                  Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
+                  case true => {
+                    Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                  }
+                }
+                Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
               }
             } else {
               Unauthorized(Json.obj("error" -> "not authorized")).asFuture

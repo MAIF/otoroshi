@@ -220,11 +220,12 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
     implicit val request = ctx.request
     val redirect         = request.getQueryString("redirect")
     ctx.user.simpleLogin match {
-      case true => ctx.user.delete().map { _ =>
-        Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
-        val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
-        Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
-      }
+      case true =>
+        ctx.user.delete().map { _ =>
+          Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+          val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
+          Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
+        }
       case false => {
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
           config.backOfficeAuthRef match {
@@ -252,7 +253,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                       }
                     }
                     case Some(logoutUrl) => {
-                      val userRedirect = redirect.getOrElse(s"http://${request.host}/")
+                      val userRedirect      = redirect.getOrElse(s"http://${request.host}/")
                       val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
                       ctx.user.delete().map { _ =>
                         Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))

@@ -4,7 +4,6 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 
 export class ClusterPage extends Component {
-
   columns = [
     {
       title: 'Worker name',
@@ -17,7 +16,7 @@ export class ClusterPage extends Component {
     {
       title: 'Last seen at',
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
-      content: item => moment(item.lastSeen).format("DD-MM-YYYY HH:mm:ss.SSS"),
+      content: item => moment(item.lastSeen).format('DD-MM-YYYY HH:mm:ss.SSS'),
     },
     {
       title: 'Rate',
@@ -38,12 +37,12 @@ export class ClusterPage extends Component {
       title: 'Data in',
       style: { textAlign: 'center', width: 80 },
       content: item => {
-        const kb = ((item.stats.dataInRate || 0.0) / (1024));
-        const mb = ((item.stats.dataInRate || 0.0) / (1024 * 1024));
+        const kb = (item.stats.dataInRate || 0.0) / 1024;
+        const mb = (item.stats.dataInRate || 0.0) / (1024 * 1024);
         if (mb < 1.0) {
-          return kb.toFixed(2) + ' Kb/s'
+          return kb.toFixed(2) + ' Kb/s';
         } else {
-          return mb.toFixed(2) + ' Mb/s'
+          return mb.toFixed(2) + ' Mb/s';
         }
       },
     },
@@ -51,12 +50,12 @@ export class ClusterPage extends Component {
       title: 'Data out',
       style: { textAlign: 'center', width: 80 },
       content: item => {
-        const kb = ((item.stats.dataOutRate || 0.0) / (1024));
-        const mb = ((item.stats.dataOutRate || 0.0) / (1024 * 1024));
+        const kb = (item.stats.dataOutRate || 0.0) / 1024;
+        const mb = (item.stats.dataOutRate || 0.0) / (1024 * 1024);
         if (mb < 1.0) {
-          return kb.toFixed(2) + ' Kb/s'
+          return kb.toFixed(2) + ' Kb/s';
         } else {
-          return mb.toFixed(2) + ' Mb/s'
+          return mb.toFixed(2) + ' Mb/s';
         }
       },
     },
@@ -67,22 +66,22 @@ export class ClusterPage extends Component {
       notFilterable: true,
       cell: (a, item) => {
         const value = item.time - item.lastSeen;
-        if (value < (item.timeout / 2)) {
-          return <i className="fa fa-heartbeat" style={{ color: 'green' }} />
-        } else if (value < (3 * (item.timeout / 3))) {
-          return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />
+        if (value < item.timeout / 2) {
+          return <i className="fa fa-heartbeat" style={{ color: 'green' }} />;
+        } else if (value < 3 * (item.timeout / 3)) {
+          return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />;
         } else {
-          return <i className="fa fa-heartbeat" style={{ color: 'red' }} />
+          return <i className="fa fa-heartbeat" style={{ color: 'red' }} />;
         }
-      }
-    }
+      },
+    },
   ];
 
   update = () => {
     if (this.table) {
       this.table.update();
     }
-  }
+  };
 
   componentDidMount() {
     this.props.setTitle(`Cluster view`);
@@ -106,7 +105,7 @@ export class ClusterPage extends Component {
     BackOfficeServices.clearClusterMembers().then(() => {
       this.update();
     });
-  }
+  };
 
   render() {
     return (
@@ -120,10 +119,12 @@ export class ClusterPage extends Component {
         fetchItems={BackOfficeServices.fetchClusterMembers}
         showActions={false}
         showLink={false}
-        injectTable={t => this.table = t}
+        injectTable={t => (this.table = t)}
         extractKey={item => item.name}
         injectTopBar={() => (
-          <button type="button" className="btn btn-danger" onClick={this.clear}><i className="glyphicon glyphicon-trash" /> Clear members</button>
+          <button type="button" className="btn btn-danger" onClick={this.clear}>
+            <i className="glyphicon glyphicon-trash" /> Clear members
+          </button>
         )}
       />
     );

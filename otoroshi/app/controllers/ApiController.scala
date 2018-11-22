@@ -113,15 +113,17 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     } yield
       Ok(
         Json.obj(
-          "calls"                     -> calls,
-          "dataIn"                    -> dataIn,
-          "dataOut"                   -> dataOut,
-          "rate"                      -> sumDouble(rate, _.rate, membersStats),
-          "duration"                  -> avgDouble(duration, _.duration, membersStats),
-          "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-          "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
-          "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
-          "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
+          "calls"       -> calls,
+          "dataIn"      -> dataIn,
+          "dataOut"     -> dataOut,
+          "rate"        -> sumDouble(rate, _.rate, membersStats),
+          "duration"    -> avgDouble(duration, _.duration, membersStats),
+          "overhead"    -> avgDouble(overhead, _.overhead, membersStats),
+          "dataInRate"  -> sumDouble(dataInRate, _.dataInRate, membersStats),
+          "dataOutRate" -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+          "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble,
+                                                   _.concurrentHandledRequests.toDouble,
+                                                   membersStats).toLong
         )
       )
   }
@@ -209,15 +211,17 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
         } yield
           Json.obj(
-            "calls"                     -> calls,
-            "dataIn"                    -> dataIn,
-            "dataOut"                   -> dataOut,
-            "rate"                      -> sumDouble(rate, _.rate, membersStats),
-            "duration"                  -> avgDouble(duration, _.duration, membersStats),
-            "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-            "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
-            "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
-            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
+            "calls"       -> calls,
+            "dataIn"      -> dataIn,
+            "dataOut"     -> dataOut,
+            "rate"        -> sumDouble(rate, _.rate, membersStats),
+            "duration"    -> avgDouble(duration, _.duration, membersStats),
+            "overhead"    -> avgDouble(overhead, _.overhead, membersStats),
+            "dataInRate"  -> sumDouble(dataInRate, _.dataInRate, membersStats),
+            "dataOutRate" -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble,
+                                                     _.concurrentHandledRequests.toDouble,
+                                                     membersStats).toLong
           )
       case serviceId =>
         for {
@@ -233,15 +237,17 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
         } yield
           Json.obj(
-            "calls"                     -> calls,
-            "dataIn"                    -> dataIn,
-            "dataOut"                   -> dataOut,
-            "rate"                      -> sumDouble(rate, _.rate, membersStats),
-            "duration"                  -> avgDouble(duration, _.duration, membersStats),
-            "overhead"                  -> avgDouble(overhead, _.overhead, membersStats),
-            "dataInRate"                -> sumDouble(dataInRate, _.dataInRate, membersStats),
-            "dataOutRate"               -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
-            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
+            "calls"       -> calls,
+            "dataIn"      -> dataIn,
+            "dataOut"     -> dataOut,
+            "rate"        -> sumDouble(rate, _.rate, membersStats),
+            "duration"    -> avgDouble(duration, _.duration, membersStats),
+            "overhead"    -> avgDouble(overhead, _.overhead, membersStats),
+            "dataInRate"  -> sumDouble(dataInRate, _.dataInRate, membersStats),
+            "dataOutRate" -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
+            "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble,
+                                                     _.concurrentHandledRequests.toDouble,
+                                                     membersStats).toLong
           )
     }
     every match {

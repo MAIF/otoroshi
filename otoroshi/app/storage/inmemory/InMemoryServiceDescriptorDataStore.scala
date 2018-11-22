@@ -184,14 +184,14 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
   }
 
   override def updateIncrementableMetrics(id: String,
-                            calls: Long,
-                             dataIn: Long,
-                             dataOut: Long,
-                              config: models.GlobalConfig)(
-                              implicit ec: ExecutionContext,
-                              env: Env
-                            ): Future[Unit] = {
-    val time        = System.currentTimeMillis()
+                                          calls: Long,
+                                          dataIn: Long,
+                                          dataOut: Long,
+                                          config: models.GlobalConfig)(
+      implicit ec: ExecutionContext,
+      env: Env
+  ): Future[Unit] = {
+    val time = System.currentTimeMillis()
     // Call everything in parallel
     // incrementCalls
     val callsIncrementGlobalCalls  = redisCli.incrby(serviceCallKey("global"), calls)
@@ -215,20 +215,20 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       _ <- dataOutIncrementGlobal
       _ <- dataOutIncrementService
       _ <- config.statsdConfig
-        .map(
-          _ =>
-            FastFuture.successful(
-              (
-                env.statsd.meter(s"global.calls", globalCalls.toDouble)(config.statsdConfig),
-                env.statsd.meter(s"services.${id}.calls", serviceCalls.toDouble)(config.statsdConfig),
-                env.statsd.meter(s"global.data-in", dataIn.toDouble)(config.statsdConfig),
-                env.statsd.meter(s"global.data-out", dataOut.toDouble)(config.statsdConfig),
-                env.statsd.meter(s"services.${id}.data-in", dataIn.toDouble)(config.statsdConfig),
-                env.statsd.meter(s"services.${id}.data-out", dataOut.toDouble)(config.statsdConfig),
+            .map(
+              _ =>
+                FastFuture.successful(
+                  (
+                    env.statsd.meter(s"global.calls", globalCalls.toDouble)(config.statsdConfig),
+                    env.statsd.meter(s"services.${id}.calls", serviceCalls.toDouble)(config.statsdConfig),
+                    env.statsd.meter(s"global.data-in", dataIn.toDouble)(config.statsdConfig),
+                    env.statsd.meter(s"global.data-out", dataOut.toDouble)(config.statsdConfig),
+                    env.statsd.meter(s"services.${id}.data-in", dataIn.toDouble)(config.statsdConfig),
+                    env.statsd.meter(s"services.${id}.data-out", dataOut.toDouble)(config.statsdConfig),
+                  )
               )
             )
-        )
-        .getOrElse(FastFuture.successful(()))
+            .getOrElse(FastFuture.successful(()))
     } yield ()
   }
 

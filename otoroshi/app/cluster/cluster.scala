@@ -42,17 +42,17 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.{Failure, Success, Try}
 
 /**
-  * # TODO:
-  *
-  * [ ] support cassandra
-  * [ ] support mongo
-  *
-  * # Test
-  *
-  * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
-  * java -Dhttp.port=9080 -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker -jar otoroshi.jar
-  *
-  */
+ * # TODO:
+ *
+ * [ ] support cassandra
+ * [ ] support mongo
+ *
+ * # Test
+ *
+ * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
+ * java -Dhttp.port=9080 -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker -jar otoroshi.jar
+ *
+ */
 object Cluster {
   lazy val logger = Logger("otoroshi-cluster")
 }
@@ -66,63 +66,65 @@ trait ClusterMode {
 
 object ClusterMode {
   case object Off extends ClusterMode {
-    def name: String = "Off"
+    def name: String           = "Off"
     def clusterActive: Boolean = false
-    def isWorker: Boolean = false
-    def isLeader: Boolean = false
+    def isWorker: Boolean      = false
+    def isLeader: Boolean      = false
   }
   case object Leader extends ClusterMode {
-    def name: String = "Leader"
+    def name: String           = "Leader"
     def clusterActive: Boolean = true
-    def isWorker: Boolean = false
-    def isLeader: Boolean = true
+    def isWorker: Boolean      = false
+    def isLeader: Boolean      = true
   }
   case object Worker extends ClusterMode {
-    def name: String = "Worker"
+    def name: String           = "Worker"
     def clusterActive: Boolean = true
-    def isWorker: Boolean = true
-    def isLeader: Boolean = false
+    def isWorker: Boolean      = true
+    def isLeader: Boolean      = false
   }
   val values: Seq[ClusterMode] =
     Seq(Off, Leader, Worker)
   def apply(name: String): Option[ClusterMode] = name match {
-    case "Off"             => Some(Off)
-    case "Leader"          => Some(Leader)
-    case "Worker"          => Some(Worker)
-    case "off"             => Some(Off)
-    case "leader"          => Some(Leader)
-    case "worker"          => Some(Worker)
-    case _                 => None
+    case "Off"    => Some(Off)
+    case "Leader" => Some(Leader)
+    case "Worker" => Some(Worker)
+    case "off"    => Some(Off)
+    case "leader" => Some(Leader)
+    case "worker" => Some(Worker)
+    case _        => None
   }
 }
 
 case class WorkerQuotasConfig(timeout: Long = 2000, pushEvery: Long = 2000, retries: Int = 3)
 case class WorkerStateConfig(timeout: Long = 2000, pollEvery: Long = 10000, retries: Int = 3)
 case class WorkerConfig(
-  name: String = s"otoroshi-worker-${IdGenerator.token(16)}",
-  retries: Int = 3,
-  timeout: Long = 2000,
-  state: WorkerStateConfig = WorkerStateConfig(),
-  quotas: WorkerQuotasConfig = WorkerQuotasConfig()
+    name: String = s"otoroshi-worker-${IdGenerator.token(16)}",
+    retries: Int = 3,
+    timeout: Long = 2000,
+    state: WorkerStateConfig = WorkerStateConfig(),
+    quotas: WorkerQuotasConfig = WorkerQuotasConfig()
 )
 case class LeaderConfig(
-  name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
-  urls: Seq[String] = Seq.empty,
-  host: String = "otoroshi-api.foo.bar",
-  clientId: String = "admin-api-apikey-id",
-  clientSecret: String = "admin-api-apikey-secret",
-  groupingBy: Int = 50,
-  cacheStateFor: Long = 4000,
-  stateDumpPath: Option[String] = None
+    name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
+    urls: Seq[String] = Seq.empty,
+    host: String = "otoroshi-api.foo.bar",
+    clientId: String = "admin-api-apikey-id",
+    clientSecret: String = "admin-api-apikey-secret",
+    groupingBy: Int = 50,
+    cacheStateFor: Long = 4000,
+    stateDumpPath: Option[String] = None
 )
 case class ClusterConfig(
-  mode: ClusterMode = ClusterMode.Off, 
-  compression: Int = -1,
-  leader: LeaderConfig = LeaderConfig(), 
-  worker: WorkerConfig = WorkerConfig()
+    mode: ClusterMode = ClusterMode.Off,
+    compression: Int = -1,
+    leader: LeaderConfig = LeaderConfig(),
+    worker: WorkerConfig = WorkerConfig()
 ) {
-  def gzip(): Flow[ByteString, ByteString, NotUsed] = if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
-  def gunzip(): Flow[ByteString, ByteString, NotUsed] = if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+  def gzip(): Flow[ByteString, ByteString, NotUsed] =
+    if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
+  def gunzip(): Flow[ByteString, ByteString, NotUsed] =
+    if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
 }
 object ClusterConfig {
   def apply(configuration: Configuration): ClusterConfig = {
@@ -131,8 +133,14 @@ object ClusterConfig {
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       compression = configuration.getOptional[Int]("compression").getOrElse(-1),
       leader = LeaderConfig(
-        name = configuration.getOptional[String]("leader.name").orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-leader-$i")).getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}"),
-        urls = configuration.getOptional[Seq[String]]("leader.urls").map(_.toSeq).getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
+        name = configuration
+          .getOptional[String]("leader.name")
+          .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-leader-$i"))
+          .getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}"),
+        urls = configuration
+          .getOptional[Seq[String]]("leader.urls")
+          .map(_.toSeq)
+          .getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
         host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.foo.bar"),
         clientId = configuration.getOptional[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
         clientSecret = configuration.getOptional[String]("leader.clientSecret").getOrElse("admin-api-apikey-secret"),
@@ -141,7 +149,10 @@ object ClusterConfig {
         stateDumpPath = configuration.getOptional[String]("leader.stateDumpPath")
       ),
       worker = WorkerConfig(
-        name = configuration.getOptional[String]("worker.name").orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-worker-$i")).getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
+        name = configuration
+          .getOptional[String]("worker.name")
+          .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-worker-$i"))
+          .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
         retries = configuration.getOptional[Int]("worker.retries").getOrElse(3),
         timeout = configuration.getOptional[Long]("worker.timeout").getOrElse(2000),
         state = WorkerStateConfig(
@@ -160,21 +171,25 @@ object ClusterConfig {
 }
 
 case class StatsView(
-  rate: Double,
-  duration: Double,
-  overhead: Double,
-  dataInRate: Double,
-  dataOutRate: Double,
-  concurrentHandledRequests: Long
+    rate: Double,
+    duration: Double,
+    overhead: Double,
+    dataInRate: Double,
+    dataOutRate: Double,
+    concurrentHandledRequests: Long
 )
 
-case class MemberView(name: String, location: String, lastSeen: DateTime, timeout: Duration, stats: JsObject = Json.obj()) {
+case class MemberView(name: String,
+                      location: String,
+                      lastSeen: DateTime,
+                      timeout: Duration,
+                      stats: JsObject = Json.obj()) {
   def asJson: JsValue = Json.obj(
-    "name" -> name,
+    "name"     -> name,
     "location" -> location,
     "lastSeen" -> lastSeen.getMillis,
-    "timeout" -> timeout.toMillis,
-    "stats" -> stats
+    "timeout"  -> timeout.toMillis,
+    "stats"    -> stats
   )
   def statsView: StatsView = {
     StatsView(
@@ -189,19 +204,20 @@ case class MemberView(name: String, location: String, lastSeen: DateTime, timeou
 }
 
 object MemberView {
-  def fromJsonSafe(value: JsValue): JsResult[MemberView] = Try {
-    JsSuccess(
-      MemberView(
-        name = (value \ "name").as[String],
-        location = (value \ "location").as[String],
-        lastSeen = new DateTime((value \ "lastSeen").as[Long]),
-        timeout = Duration((value \ "timeout").as[Long], TimeUnit.MILLISECONDS),
-        stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj())
+  def fromJsonSafe(value: JsValue): JsResult[MemberView] =
+    Try {
+      JsSuccess(
+        MemberView(
+          name = (value \ "name").as[String],
+          location = (value \ "location").as[String],
+          lastSeen = new DateTime((value \ "lastSeen").as[Long]),
+          timeout = Duration((value \ "timeout").as[Long], TimeUnit.MILLISECONDS),
+          stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj())
+        )
       )
-    )
-  } recover {
-    case e => JsError(e.getMessage)
-  } get
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
 }
 
 trait ClusterStateDataStore {
@@ -214,7 +230,7 @@ trait ClusterStateDataStore {
 }
 
 class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterStateDataStore {
-  
+
   override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
       .keys(s"${env.storageRoot}:cluster:workers:*")
@@ -230,17 +246,23 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
     redisLike.get(key).flatMap {
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
-          case JsSuccess(v, _) => 
-            val stats = if (member.stats.as[JsObject].value.isEmpty) v.stats else member.stats
+          case JsSuccess(v, _) =>
+            val stats     = if (member.stats.as[JsObject].value.isEmpty) v.stats else member.stats
             val newMember = member.copy(stats = stats)
-            redisLike.set(key, Json.stringify(newMember.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
-          case _ => redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
+            redisLike
+              .set(key, Json.stringify(newMember.asJson), pxMilliseconds = Some(member.timeout.toMillis))
+              .map(_ => ())
+          case _ =>
+            redisLike
+              .set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis))
+              .map(_ => ())
         }
       }
-      case None => redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
+      case None =>
+        redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
     }
   }
-  
+
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
@@ -254,7 +276,7 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
           seq =>
             seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
               case JsSuccess(i, _) => i
-            }
+          }
         )
     } else {
       FastFuture.successful(Seq.empty)
@@ -265,7 +287,8 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
     for {
       _ <- redisLike.lpushLong(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", in)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100)
-      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in",
+                             env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
     } yield ()
   }
 
@@ -273,7 +296,8 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
     for {
       _ <- redisLike.lpushLong(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", out)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100)
-      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out",
+                             env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
     } yield ()
   }
 
@@ -281,31 +305,49 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
     for {
       keysIn  <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:in")
       keysOut <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:out")
-      in <- Future.sequence(keysIn.map(key => redisLike.lrange(key, 0, 100).map { values =>
-        if (values.isEmpty) 0L
-        else {
-          val items = values.map { v => v.utf8String.toLong }
-          val total = items.fold(0L)(_ + _)
-          val itemSize = if (items.isEmpty) 1 else items.size
-          (total / itemSize).toLong
-        }
-      })).map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else  a.size))
+      in <- Future
+             .sequence(
+               keysIn.map(
+                 key =>
+                   redisLike.lrange(key, 0, 100).map { values =>
+                     if (values.isEmpty) 0L
+                     else {
+                       val items = values.map { v =>
+                         v.utf8String.toLong
+                       }
+                       val total    = items.fold(0L)(_ + _)
+                       val itemSize = if (items.isEmpty) 1 else items.size
+                       (total / itemSize).toLong
+                     }
+                 }
+               )
+             )
+             .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
 
-      out <- Future.sequence(keysOut.map(key => redisLike.lrange(key, 0, 100).map { values =>
-        if (values.isEmpty) 0L
-        else {
-          val items = values.map { v => v.utf8String.toLong }
-          val total = items.fold(0L)(_ + _)
-          val itemSize = if (items.isEmpty) 1 else items.size
-          (total / itemSize).toLong
-        }
-      })).map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else  a.size))
+      out <- Future
+              .sequence(
+                keysOut.map(
+                  key =>
+                    redisLike.lrange(key, 0, 100).map { values =>
+                      if (values.isEmpty) 0L
+                      else {
+                        val items = values.map { v =>
+                          v.utf8String.toLong
+                        }
+                        val total    = items.fold(0L)(_ + _)
+                        val itemSize = if (items.isEmpty) 1 else items.size
+                        (total / itemSize).toLong
+                      }
+                  }
+                )
+              )
+              .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
     } yield (in, out)
   }
 }
 
 class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) extends ClusterStateDataStore {
-  
+
   override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
       .keys(s"${env.storageRoot}:cluster:workers:*")
@@ -315,23 +357,29 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
           else redisLike.del(keys: _*)
       )
   }
-  
+
   override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     val key = s"${env.storageRoot}:cluster:workers:${member.name}"
     redisLike.get(key).flatMap {
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
-          case JsSuccess(v, _) => 
-            val stats = if (member.stats.as[JsObject].value.isEmpty) v.stats else member.stats
+          case JsSuccess(v, _) =>
+            val stats     = if (member.stats.as[JsObject].value.isEmpty) v.stats else member.stats
             val newMember = member.copy(stats = stats)
-            redisLike.set(key, Json.stringify(newMember.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
-          case _ => redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
+            redisLike
+              .set(key, Json.stringify(newMember.asJson), pxMilliseconds = Some(member.timeout.toMillis))
+              .map(_ => ())
+          case _ =>
+            redisLike
+              .set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis))
+              .map(_ => ())
         }
       }
-      case None => redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
+      case None =>
+        redisLike.set(key, Json.stringify(member.asJson), pxMilliseconds = Some(member.timeout.toMillis)).map(_ => ())
     }
   }
-  
+
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
@@ -345,7 +393,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
           seq =>
             seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
               case JsSuccess(i, _) => i
-            }
+          }
         )
     } else {
       FastFuture.successful(Seq.empty)
@@ -356,7 +404,8 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     for {
       _ <- redisLike.lpush(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", in)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", 0, 100)
-      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:in",
+                             env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
     } yield ()
   }
 
@@ -364,7 +413,8 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     for {
       _ <- redisLike.lpush(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", out)
       _ <- redisLike.ltrim(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", 0, 100)
-      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out", env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
+      _ <- redisLike.pexpire(s"${env.storageRoot}:cluster:leader:${env.clusterConfig.leader.name}:data:out",
+                             env.clusterConfig.worker.timeout * env.clusterConfig.worker.retries)
     } yield ()
   }
 
@@ -372,34 +422,52 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
     for {
       keysIn  <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:in")
       keysOut <- redisLike.keys(s"${env.storageRoot}:cluster:leader:*:data:out")
-      in <- Future.sequence(keysIn.map(key => redisLike.lrange(key, 0, 100).map { values =>
-        if (values.isEmpty) 0L
-        else {
-          val items = values.map { v => v.utf8String.toLong }
-          val total = items.fold(0L)(_ + _)
-          (total / items.size).toLong
-        }
-      })).map(a => a.fold(0L)(_ + _) / a.size)
+      in <- Future
+             .sequence(
+               keysIn.map(
+                 key =>
+                   redisLike.lrange(key, 0, 100).map { values =>
+                     if (values.isEmpty) 0L
+                     else {
+                       val items = values.map { v =>
+                         v.utf8String.toLong
+                       }
+                       val total = items.fold(0L)(_ + _)
+                       (total / items.size).toLong
+                     }
+                 }
+               )
+             )
+             .map(a => a.fold(0L)(_ + _) / a.size)
 
-      out <- Future.sequence(keysOut.map(key => redisLike.lrange(key, 0, 100).map { values =>
-        if (values.isEmpty) 0L
-        else {
-          val items = values.map { v => v.utf8String.toLong }
-          val total = items.fold(0L)(_ + _)
-          (total / items.size).toLong
-        }
-      })).map(a => a.fold(0L)(_ + _) / a.size)
+      out <- Future
+              .sequence(
+                keysOut.map(
+                  key =>
+                    redisLike.lrange(key, 0, 100).map { values =>
+                      if (values.isEmpty) 0L
+                      else {
+                        val items = values.map { v =>
+                          v.utf8String.toLong
+                        }
+                        val total = items.fold(0L)(_ + _)
+                        (total / items.size).toLong
+                      }
+                  }
+                )
+              )
+              .map(a => a.fold(0L)(_ + _) / a.size)
     } yield (in, out)
   }
 }
 
 class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
-  implicit env: Env
+    implicit env: Env
 ) extends AbstractController(cc) {
 
   import cluster.ClusterMode.{Leader, Off, Worker}
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
   val sourceBodyParser = BodyParser("ClusterController BodyParser") { _ =>
@@ -407,7 +475,6 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   }
 
   def liveCluster() = ApiAction { ctx =>
-
     def healthOf(member: MemberView): String = {
       val value = System.currentTimeMillis() - member.lastSeen.getMillis
       if (value < (member.timeout.toMillis / 2)) {
@@ -420,7 +487,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
 
     env.clusterConfig.mode match {
-      case Off => NotFound(Json.obj("error" -> "Cluster API not available"))
+      case Off    => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Leader => {
         val every = ctx.request.getQueryString("every").map(_.toInt).getOrElse(2000)
@@ -439,16 +506,16 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           }
           .map {
             case (members, inOut) =>
-              val payloadIn: Long = inOut._1
+              val payloadIn: Long  = inOut._1
               val payloadOut: Long = inOut._2
-              val healths = members.map(healthOf)
-              val foundOrange = healths.contains("orange")
-              val foundRed = healths.contains("red")
-              val health = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
+              val healths          = members.map(healthOf)
+              val foundOrange      = healths.contains("orange")
+              val foundRed         = healths.contains("red")
+              val health           = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
               Json.obj(
-                "workers" -> members.size,
-                "health" -> health,
-                "payloadIn" -> payloadIn,
+                "workers"    -> members.size,
+                "health"     -> health,
+                "payloadIn"  -> payloadIn,
                 "payloadOut" -> payloadOut
               )
           }
@@ -461,7 +528,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def getClusterMembers() = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
-      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         val time = Json.obj("time" -> DateTime.now().getMillis)
@@ -474,7 +541,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def clearClusterMembers() = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
-      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         val time = Json.obj("time" -> DateTime.now().getMillis)
@@ -487,7 +554,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def isSessionValid(sessionId: String) = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
-      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
@@ -501,15 +568,17 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def createSession() = ApiAction.async(parse.json) { ctx =>
     env.clusterConfig.mode match {
-      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] creating session")
         PrivateAppsUser.fmt.reads(ctx.request.body) match {
           case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad session format")))
-          case JsSuccess(user, _) => user.save(Duration(System.currentTimeMillis() - user.expiredAt.getMillis, TimeUnit.MILLISECONDS)).map { session =>
-            Created(session.toJson)
-          }
+          case JsSuccess(user, _) =>
+            user.save(Duration(System.currentTimeMillis() - user.expiredAt.getMillis, TimeUnit.MILLISECONDS)).map {
+              session =>
+                Created(session.toJson)
+            }
         }
       }
     }
@@ -517,60 +586,73 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def updateQuotas() = ApiAction.async(sourceBodyParser) { ctx =>
     env.clusterConfig.mode match {
-      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         // Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
         val bytesCounter = new AtomicLong(0L)
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-          ctx.request.body.map(bs => {
-            bytesCounter.addAndGet(bs.size)
-            bs
-          }).via(env.clusterConfig.gunzip()).via(Framing.delimiter(ByteString("\n"), 1024 * 1024)).mapAsync(4) { item =>
-            val jsItem = Json.parse(item.utf8String)
-            (jsItem \ "typ").asOpt[String] match {
-              case Some("globstats") => {
-                ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
-                  env.datastores.clusterStateDataStore.registerWorkerMember(MemberView(
-                    name = name,
-                    location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-                    lastSeen = DateTime.now(),
-                    timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery, TimeUnit.MILLISECONDS),
-                    stats = jsItem.as[JsObject]
-                  ))
-                }.getOrElse(FastFuture.successful(()))
-              }
-              case Some("srvincr") => {
-                val id = (jsItem \ "srv").asOpt[String].getOrElse("--")
-                val calls = (jsItem \ "c").asOpt[Long].getOrElse(0L)
-                val dataIn = (jsItem \ "di").asOpt[Long].getOrElse(0L)
-                val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
-                env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
-                  case Some(_) => 
-                    env.datastores.serviceDescriptorDataStore.updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
-                  case None => FastFuture.successful(())
+          ctx.request.body
+            .map(bs => {
+              bytesCounter.addAndGet(bs.size)
+              bs
+            })
+            .via(env.clusterConfig.gunzip())
+            .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
+            .mapAsync(4) { item =>
+              val jsItem = Json.parse(item.utf8String)
+              (jsItem \ "typ").asOpt[String] match {
+                case Some("globstats") => {
+                  ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerNameHeader)
+                    .map { name =>
+                      env.datastores.clusterStateDataStore.registerWorkerMember(
+                        MemberView(
+                          name = name,
+                          location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+                          lastSeen = DateTime.now(),
+                          timeout =
+                            Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+                                     TimeUnit.MILLISECONDS),
+                          stats = jsItem.as[JsObject]
+                        )
+                      )
+                    }
+                    .getOrElse(FastFuture.successful(()))
                 }
-              }
-              case Some("apkincr") => {
-                val id = (jsItem \ "apk").asOpt[String].getOrElse("--")
-                val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
-                env.datastores.apiKeyDataStore.findById(id).flatMap {
-                  case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment)
-                  case None => FastFuture.successful(())
+                case Some("srvincr") => {
+                  val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
+                  val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
+                  val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
+                  val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
+                  env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
+                    case Some(_) =>
+                      env.datastores.serviceDescriptorDataStore
+                        .updateIncrementableMetrics(id, calls, dataIn, dataOut, config)
+                    case None => FastFuture.successful(())
+                  }
                 }
+                case Some("apkincr") => {
+                  val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
+                  val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
+                  env.datastores.apiKeyDataStore.findById(id).flatMap {
+                    case Some(apikey) => env.datastores.apiKeyDataStore.updateQuotas(apikey, increment)
+                    case None         => FastFuture.successful(())
+                  }
+                }
+                case _ => FastFuture.successful(())
               }
-              case _ => FastFuture.successful(())
-            }
 
-          }.runWith(Sink.ignore)
+            }
+            .runWith(Sink.ignore)
             .andThen {
-              case _ => 
+              case _ =>
                 Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
                 env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
             }
             .map(_ => Ok(Json.obj("done" -> true)))
             .recover {
-              case e => 
+              case e =>
                 Cluster.logger.error("Error while updating quotas", e)
                 InternalServerError(Json.obj("error" -> e.getMessage))
             }
@@ -579,47 +661,67 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
-  val caching = new AtomicBoolean(false)
-  val cachedAt = new AtomicLong(0L)
+  val caching   = new AtomicBoolean(false)
+  val cachedAt  = new AtomicLong(0L)
   val cachedRef = new AtomicReference[ByteString]()
 
   def internalState() = ApiAction { ctx =>
     env.clusterConfig.mode match {
-      case Off => NotFound(Json.obj("error" -> "Cluster API not available"))
+      case Off    => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Leader => {
-        
+
         val cachedValue = cachedRef.get()
 
         ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
-          env.datastores.clusterStateDataStore.registerWorkerMember(MemberView(
-            name = name,
-            location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-            lastSeen = DateTime.now(),
-            timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery, TimeUnit.MILLISECONDS)
-          ))
+          env.datastores.clusterStateDataStore.registerWorkerMember(
+            MemberView(
+              name = name,
+              location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+              lastSeen = DateTime.now(),
+              timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
+                                 TimeUnit.MILLISECONDS)
+            )
+          )
         }
 
         def sendAndCache() = {
           // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
           if (caching.compareAndSet(false, true)) {
-            val start = System.currentTimeMillis()
+            val start      = System.currentTimeMillis()
             var stateCache = ByteString.empty
-            Ok.sendEntity(HttpEntity.Streamed(env.datastores.rawExport(env.clusterConfig.leader.groupingBy).map { item =>
-              ByteString(Json.stringify(item) + "\n")
-            }.via(env.clusterConfig.gzip()).alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs)).alsoTo(Sink.onComplete {
-              case Success(_) =>
-                cachedRef.set(stateCache)
-                cachedAt.set(System.currentTimeMillis())
-                caching.compareAndSet(true, false)
-                env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-                env.clusterConfig.leader.stateDumpPath.foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-                Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms.")
-              case Failure(e) =>
-                Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-            }), None, Some("application/x-ndjson")))//.withHeaders("Content-Encoding" -> "gzip")
+            Ok.sendEntity(
+              HttpEntity.Streamed(
+                env.datastores
+                  .rawExport(env.clusterConfig.leader.groupingBy)
+                  .map { item =>
+                    ByteString(Json.stringify(item) + "\n")
+                  }
+                  .via(env.clusterConfig.gzip())
+                  .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
+                  .alsoTo(Sink.onComplete {
+                    case Success(_) =>
+                      cachedRef.set(stateCache)
+                      cachedAt.set(System.currentTimeMillis())
+                      caching.compareAndSet(true, false)
+                      env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+                      env.clusterConfig.leader.stateDumpPath
+                        .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+                      Cluster.logger.debug(
+                        s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms."
+                      )
+                    case Failure(e) =>
+                      Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state",
+                                           e)
+                  }),
+                None,
+                Some("application/x-ndjson")
+              )
+            ) //.withHeaders("Content-Encoding" -> "gzip")
           } else {
-            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ...")
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
+            )
             Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
           }
         }
@@ -627,12 +729,16 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         if (cachedValue == null) {
           sendAndCache()
         } else if (caching.get()) {
-          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ...")
+          Cluster.logger.debug(
+            s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
+          )
           Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
         } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
           sendAndCache()
         } else {
-          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ...")
+          Cluster.logger.debug(
+            s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
+          )
           Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
         }
       }
@@ -640,10 +746,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   }
 }
 
-
 object ClusterAgent {
 
-  val OtoroshiWorkerNameHeader = "Otoroshi-Worker-Name"
+  val OtoroshiWorkerNameHeader     = "Otoroshi-Worker-Name"
   val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
@@ -653,20 +758,22 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   import scala.concurrent.duration._
 
-  implicit lazy val ec = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec    = env.otoroshiExecutionContext
+  implicit lazy val mat   = env.otoroshiMaterializer
   implicit lazy val sched = env.otoroshiScheduler
 
-  private val pollRef = new AtomicReference[Cancellable]()
-  private val pushRef = new AtomicReference[Cancellable]()
-  private val counter = new AtomicInteger(0)
-  private val isPollingState = new AtomicBoolean(false)
-  private val isPushingQuotas = new AtomicBoolean(false)
+  private val pollRef                       = new AtomicReference[Cancellable]()
+  private val pushRef                       = new AtomicReference[Cancellable]()
+  private val counter                       = new AtomicInteger(0)
+  private val isPollingState                = new AtomicBoolean(false)
+  private val isPushingQuotas               = new AtomicBoolean(false)
   private val firstSuccessfulStateFetchDone = new AtomicBoolean(false)
 
   /////////////
   private val apiIncrementsRef = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
-  private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
+  private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
+    new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
+  )
   /////////////
 
   private def otoroshiUrl: String = {
@@ -678,38 +785,47 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     !firstSuccessfulStateFetchDone.get()
   }
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = Retry.retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
-    env.Ws.url(otoroshiUrl + s"/api/cluster/sessions/$id")
-      .withHttpHeaders(
-        "Host" -> config.leader.host,
-        ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
-        ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
-      )
-      .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-      .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
-      .get()
-      .filter(_.status == 200)
-      .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
-  }.recover {
-    case e =>
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster")
-      None
-  }
+  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] =
+    Retry
+      .retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
+        env.Ws
+          .url(otoroshiUrl + s"/api/cluster/sessions/$id")
+          .withHttpHeaders(
+            "Host"                                    -> config.leader.host,
+            ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+          )
+          .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+          .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+          .get()
+          .filter(_.status == 200)
+          .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
+      }
+      .recover {
+        case e =>
+          Cluster.logger.debug(
+            s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
+          )
+          None
+      }
 
   def createSession(user: PrivateAppsUser): Future[Unit] = {
-    Retry.retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
-      env.Ws.url(otoroshiUrl + s"/api/cluster/sessions")
-        .withHttpHeaders(
-          "Host" -> config.leader.host,
-          "Content-Type" -> "application/json",
-          ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
-          ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
-        )
-        .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-        .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
-        .post(user.toJson)
-        .filter(_.status == 201)
-    }.map(_ => ())
+    Retry
+      .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
+        env.Ws
+          .url(otoroshiUrl + s"/api/cluster/sessions")
+          .withHttpHeaders(
+            "Host"                                    -> config.leader.host,
+            "Content-Type"                            -> "application/json",
+            ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+          )
+          .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+          .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+          .post(user.toJson)
+          .filter(_.status == 201)
+      }
+      .map(_ => ())
   }
 
   def incrementApi(id: String, increment: Long): Unit = {
@@ -775,63 +891,83 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (isPollingState.compareAndSet(false, true)) {
       Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
       val start = System.currentTimeMillis()
-      Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 20, ctx = "leader-fetch-state") { tryCount =>
-        env.Ws.url(otoroshiUrl + "/api/cluster/state")
-          .withHttpHeaders(
-            "Host" -> config.leader.host,
-            "Accept" -> "application/x-ndjson",
-            //"Accept-Encoding" -> "gzip",
-            ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
-            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}"
-          )
-          .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-          .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
-          .withMethod("GET")
-          .stream()
-          .filter(_.status == 200)
-          .flatMap { resp =>
-            val store = new ConcurrentHashMap[String, Any]()
-            val expirations = new ConcurrentHashMap[String, Long]()
-            resp.bodyAsSource
-              .via(env.clusterConfig.gunzip())
-              .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
-              .runWith(Sink.foreach { bs =>
-                val item = Json.parse(bs.utf8String)
-                val key = (item \ "k").as[String]
-                val value = (item \ "v").as[JsValue]
-                val what = (item \ "w").as[String]
-                val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
-                fromJson(what, value).foreach(v => store.put(key, v))
-                if (ttl > -1L) {
-                  expirations.put(key, ttl)
+      Retry
+        .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
+               delay = 20,
+               ctx = "leader-fetch-state") { tryCount =>
+          env.Ws
+            .url(otoroshiUrl + "/api/cluster/state")
+            .withHttpHeaders(
+              "Host"   -> config.leader.host,
+              "Accept" -> "application/x-ndjson",
+              //"Accept-Encoding" -> "gzip",
+              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}"
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
+            .withMethod("GET")
+            .stream()
+            .filter(_.status == 200)
+            .flatMap { resp =>
+              val store       = new ConcurrentHashMap[String, Any]()
+              val expirations = new ConcurrentHashMap[String, Long]()
+              resp.bodyAsSource
+                .via(env.clusterConfig.gunzip())
+                .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
+                .runWith(Sink.foreach { bs =>
+                  val item  = Json.parse(bs.utf8String)
+                  val key   = (item \ "k").as[String]
+                  val value = (item \ "v").as[JsValue]
+                  val what  = (item \ "w").as[String]
+                  val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+                  fromJson(what, value).foreach(v => store.put(key, v))
+                  if (ttl > -1L) {
+                    expirations.put(key, ttl)
+                  }
+                })
+                .map { _ =>
+                  Cluster.logger.debug(
+                    s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount."
+                  )
+                  if (!store.isEmpty) {
+                    firstSuccessfulStateFetchDone.compareAndSet(false, true)
+                    env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+                  }
                 }
-              }).map { _ =>
-              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount.")
-              if (!store.isEmpty) {
-                firstSuccessfulStateFetchDone.compareAndSet(false, true)
-                env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
-              }
             }
-          }
-      }.recover {
-        case e => Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to fetch state from Otoroshi leader cluster", e)
-      }.andThen {
-        case _ => isPollingState.compareAndSet(true, false)
-      }
+        }
+        .recover {
+          case e =>
+            Cluster.logger.error(
+              s"[${env.clusterConfig.mode.name}] Error while trying to fetch state from Otoroshi leader cluster",
+              e
+            )
+        }
+        .andThen {
+          case _ => isPollingState.compareAndSet(true, false)
+        }
     } else {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Still fetching state from Otoroshi leader cluster, retying later ...")
+      Cluster.logger.debug(
+        s"[${env.clusterConfig.mode.name}] Still fetching state from Otoroshi leader cluster, retying later ..."
+      )
     }
   }
 
   private def pushQuotas(): Unit = {
     implicit val _env = env
     if (isPushingQuotas.compareAndSet(false, true)) {
-      val oldApiIncr = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
+      val oldApiIncr     = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
       val oldServiceIncr = servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
       //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
-        val start = System.currentTimeMillis()
-        Retry.retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries, delay = 20, ctx = "leader-push-quotas") { tryCount =>
-          Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster")
+      val start = System.currentTimeMillis()
+      Retry
+        .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
+               delay = 20,
+               ctx = "leader-push-quotas") { tryCount =>
+          Cluster.logger.trace(
+            s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
+          )
           (for {
             rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
             duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
@@ -839,30 +975,66 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
             dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
             concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-          } yield ByteString(Json.stringify(Json.obj(
-            "typ"                       -> "globstats",
-            "rate"                      -> BigDecimal(Option(rate).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "duration"                  -> BigDecimal(Option(duration).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "overhead"                  -> BigDecimal(Option(overhead).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "dataInRate"                -> BigDecimal(Option(dataInRate).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "dataOutRate"               -> BigDecimal(Option(dataOutRate).filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity).getOrElse(0.0)).setScale(3, RoundingMode.HALF_EVEN),
-            "concurrentHandledRequests" -> concurrentHandledRequests
-          )) + "\n")) flatMap { stats =>
+          } yield
+            ByteString(
+              Json.stringify(
+                Json.obj(
+                  "typ" -> "globstats",
+                  "rate" -> BigDecimal(
+                    Option(rate)
+                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                      .getOrElse(0.0)
+                  ).setScale(3, RoundingMode.HALF_EVEN),
+                  "duration" -> BigDecimal(
+                    Option(duration)
+                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                      .getOrElse(0.0)
+                  ).setScale(3, RoundingMode.HALF_EVEN),
+                  "overhead" -> BigDecimal(
+                    Option(overhead)
+                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                      .getOrElse(0.0)
+                  ).setScale(3, RoundingMode.HALF_EVEN),
+                  "dataInRate" -> BigDecimal(
+                    Option(dataInRate)
+                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                      .getOrElse(0.0)
+                  ).setScale(3, RoundingMode.HALF_EVEN),
+                  "dataOutRate" -> BigDecimal(
+                    Option(dataOutRate)
+                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                      .getOrElse(0.0)
+                  ).setScale(3, RoundingMode.HALF_EVEN),
+                  "concurrentHandledRequests" -> concurrentHandledRequests
+                )
+              ) + "\n"
+            )) flatMap { stats =>
             val apiIncrSource = Source(oldApiIncr.toList.map {
-              case (key, inc) => ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
+              case (key, inc) =>
+                ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
             })
             val serviceIncrSource = Source(oldServiceIncr.toList.map {
-              case (key, (calls, dataIn, dataOut)) => ByteString(Json.stringify(Json.obj("typ" -> "srvincr", "srv" -> key, "c" -> calls.get(), "di" -> dataIn.get(), "do" -> dataOut.get())) + "\n")
+              case (key, (calls, dataIn, dataOut)) =>
+                ByteString(
+                  Json.stringify(
+                    Json.obj("typ" -> "srvincr",
+                             "srv" -> key,
+                             "c"   -> calls.get(),
+                             "di"  -> dataIn.get(),
+                             "do"  -> dataOut.get())
+                  ) + "\n"
+                )
             })
             val globalSource = Source.single(stats)
-            val body = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
-            val wsBody = SourceBody(body)
-            env.Ws.url(otoroshiUrl + "/api/cluster/quotas")
+            val body         = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
+            val wsBody       = SourceBody(body)
+            env.Ws
+              .url(otoroshiUrl + "/api/cluster/quotas")
               .withHttpHeaders(
-                "Host" -> config.leader.host,
+                "Host"         -> config.leader.host,
                 "Content-Type" -> "application/x-ndjson",
                 // "Content-Encoding" -> "gzip",
-                ClusterAgent.OtoroshiWorkerNameHeader -> config.worker.name,
+                ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
                 ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
@@ -872,32 +1044,43 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .stream()
               .filter(_.status == 200)
               .andThen {
-                case Success(_) => Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at try $tryCount.")
+                case Success(_) =>
+                  Cluster.logger.debug(
+                    s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at try $tryCount."
+                  )
               }
           }
-        }.recover {
-          case e => 
+        }
+        .recover {
+          case e =>
             oldApiIncr.foreach {
               case (key, c) => apiIncrementsRef.get().getOrElseUpdate(key, new AtomicLong(0L)).addAndGet(c.get())
             }
             oldServiceIncr.foreach {
               case (key, (counter1, counter2, counter3)) =>
-                val (c1, c2, c3) = servicesIncrementsRef.get().getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
+                val (c1, c2, c3) = servicesIncrementsRef
+                  .get()
+                  .getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
                 c1.addAndGet(counter1.get())
                 c2.addAndGet(counter2.get())
                 c3.addAndGet(counter3.get())
             }
 
-
-            Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster", e)
-        }.andThen {
+            Cluster.logger.error(
+              s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
+              e
+            )
+        }
+        .andThen {
           case _ => isPushingQuotas.compareAndSet(true, false)
         }
       //} else {
       //  isPushingQuotas.compareAndSet(true, false)
       //}
     } else {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Still pushing api quotas updates to Otoroshi leader cluster, retying later ...")
+      Cluster.logger.debug(
+        s"[${env.clusterConfig.mode.name}] Still pushing api quotas updates to Otoroshi leader cluster, retying later ..."
+      )
     }
   }
 
@@ -919,10 +1102,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 }
 
 class SwappableInMemoryDataStores(configuration: Configuration,
-                         environment: Environment,
-                         lifecycle: ApplicationLifecycle,
-                         env: Env)
-  extends DataStores {
+                                  environment: Environment,
+                                  lifecycle: ApplicationLifecycle,
+                                  env: Env)
+    extends DataStores {
 
   lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
   lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
@@ -975,8 +1158,8 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   private lazy val _authConfigsDataStore       = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
 
-  private lazy val _clusterStateDataStore      = new InMemoryClusterStateDataStore(redis, env)
-  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+  private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -997,16 +1180,20 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = throw new RuntimeException("Worker do not have to raw export !")
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] =
+    throw new RuntimeException("Worker do not have to raw export !")
 }
 
 class Memory(
-  val store: ConcurrentHashMap[String, Any],
-  val expirations: ConcurrentHashMap[String, Long]
+    val store: ConcurrentHashMap[String, Any],
+    val expirations: ConcurrentHashMap[String, Long]
 )
 
 object Memory {
-  def apply(store: ConcurrentHashMap[String, Any], expirations: ConcurrentHashMap[String, Long]) = new Memory(store, expirations)
+  def apply(store: ConcurrentHashMap[String, Any], expirations: ConcurrentHashMap[String, Long]) =
+    new Memory(store, expirations)
 }
 
 class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLike {
@@ -1018,12 +1205,14 @@ class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLi
 
   val patterns: ConcurrentHashMap[String, Pattern] = new ConcurrentHashMap[String, Pattern]()
 
-  private lazy val _storeHolder = new AtomicReference[Memory](Memory(
-    store = new ConcurrentHashMap[String, Any],
-    expirations = new ConcurrentHashMap[String, Long]
-  ))
+  private lazy val _storeHolder = new AtomicReference[Memory](
+    Memory(
+      store = new ConcurrentHashMap[String, Any],
+      expirations = new ConcurrentHashMap[String, Long]
+    )
+  )
 
-  @inline private def store: ConcurrentHashMap[String, Any] = _storeHolder.get().store
+  @inline private def store: ConcurrentHashMap[String, Any]        = _storeHolder.get().store
   @inline private def expirations: ConcurrentHashMap[String, Long] = _storeHolder.get().expirations
 
   private val cancel = actorSystem.scheduler.schedule(0.millis, 100.millis) {
@@ -1275,4 +1464,3 @@ class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLi
 
   def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 }
-

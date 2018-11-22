@@ -197,7 +197,11 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       _ <- config.save()
       _ <- Future.sequence(
             admins.value.map(
-              v => redisCli.set(s"${env.storageRoot}:u2f:users:${(v \ "randomId").asOpt[String].getOrElse((v \ "username").as[String])}", Json.stringify(v))
+              v =>
+                redisCli.set(
+                  s"${env.storageRoot}:u2f:users:${(v \ "randomId").asOpt[String].getOrElse((v \ "username").as[String])}",
+                  Json.stringify(v)
+              )
             )
           )
       _ <- Future.sequence(

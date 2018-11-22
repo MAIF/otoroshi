@@ -46,7 +46,7 @@ export class UpdateOtoroshiVersion extends Component {
           </button>
         </div>
       );
-     }
+    }
     return null;
   }
 }

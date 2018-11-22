@@ -854,7 +854,9 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        matchingHeaders = Map("User-Agent" -> "^.*(bot|Bot|BOT|bots|Bots|robot|Robot|index|spider|Craw|crawl|wget|Slurp|slurp|BingPreview|Mediapartners-Google|Feedfetcher-Google|APIs-Google|grabber|Grabber).*$")
+        matchingHeaders = Map(
+          "User-Agent" -> "^.*(bot|Bot|BOT|bots|Bots|robot|Robot|index|spider|Craw|crawl|wget|Slurp|slurp|BingPreview|Mediapartners-Google|Feedfetcher-Google|APIs-Google|grabber|Grabber).*$"
+        )
       )
       val service2 = ServiceDescriptor(
         id = "match-test-bot-2",
@@ -890,7 +892,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host"  -> "bot.foo.bar",
+            "Host"       -> "bot.foo.bar",
             "User-Agent" -> userAgent
           )
           .get()

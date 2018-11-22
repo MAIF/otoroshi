@@ -78,8 +78,8 @@ class InMemoryDataStores(configuration: Configuration,
   private lazy val _authConfigsDataStore       = new InMemoryAuthConfigsDataStore(redis, env)
   private lazy val _certificateDataStore       = new InMemoryCertificateDataStore(redis, env)
 
-  private lazy val _clusterStateDataStore      = new InMemoryClusterStateDataStore(redis, env)
-  override def clusterStateDataStore: ClusterStateDataStore                     = _clusterStateDataStore
+  private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
+  override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -100,7 +100,9 @@ class InMemoryDataStores(configuration: Configuration,
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -109,8 +111,9 @@ class InMemoryDataStores(configuration: Configuration,
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys                 => {
-          Future.sequence(keys
+        case keys => {
+          Future.sequence(
+            keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
                 key == s"${env.storageRoot}:events:audit" ||
@@ -126,18 +129,23 @@ class InMemoryDataStores(configuration: Configuration,
                 (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
-            redis.rawGet(key).flatMap {
-              case None => FastFuture.successful(JsNull)
-              case Some(value) => {
-                toJson(value) match {
-                  case (_, JsNull) => FastFuture.successful(JsNull)
-                  case (what, jsonValue) => redis.pttl(key).map { ttl =>
-                    Json.obj("k" -> key, "v" -> jsonValue, "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)), "w" -> what)
+                redis.rawGet(key).flatMap {
+                  case None => FastFuture.successful(JsNull)
+                  case Some(value) => {
+                    toJson(value) match {
+                      case (_, JsNull) => FastFuture.successful(JsNull)
+                      case (what, jsonValue) =>
+                        redis.pttl(key).map { ttl =>
+                          Json.obj("k" -> key,
+                                   "v" -> jsonValue,
+                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                   "w" -> what)
+                        }
+                    }
                   }
                 }
               }
-            }
-          })
+          )
         }
       }
       .map(_.filterNot(_ == JsNull))
@@ -149,12 +157,15 @@ class InMemoryDataStores(configuration: Configuration,
     import collection.JavaConverters._
 
     value match {
-      case str: String => ("string", JsString(str))
+      case str: String     => ("string", JsString(str))
       case str: ByteString => ("string", JsString(str.utf8String))
-      case lng: Long => ("string", JsString(lng.toString))
-      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] => ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] => ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] => ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case lng: Long       => ("string", JsString(lng.toString))
+      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
+        ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] =>
+        ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] =>
+        ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
       case _ => ("none", JsNull)
     }
   }
