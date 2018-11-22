@@ -214,7 +214,7 @@ async function buildLinuxCLI(location, version) {
 
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `Prepare the release of Otoroshi version ${version}`], location);
-  await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, version], location);
+  await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, 'v' + version], location);
 }
 
 async function pushToBintray(location, version) {
