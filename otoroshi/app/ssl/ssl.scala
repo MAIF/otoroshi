@@ -444,10 +444,16 @@ object DynamicSSLEngineProvider {
 
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
 
+  lazy val cipherSuites = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
+  lazy val protocols = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+
   override def createSSLEngine(): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
-    val engine        = new CustomSSLEngine(context.createSSLEngine())
+    val rawEngine     = context.createSSLEngine()
+    cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
+    protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
+    val engine        = new CustomSSLEngine(rawEngine)
     val sslParameters = new SSLParameters
     val matchers      = new java.util.ArrayList[SNIMatcher]()
     matchers.add(new SNIMatcher(0) {

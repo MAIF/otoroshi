@@ -357,6 +357,12 @@ class Env(val configuration: Configuration,
         clusterAgent.startF()
       } else {
         DynamicSSLEngineProvider.setCurrentEnv(this)
+        configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty).foreach { s =>
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: $s")
+        }
+        configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach { p =>
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: $p")
+        }
       }
       datastores.globalConfigDataStore
         .isOtoroshiEmpty()

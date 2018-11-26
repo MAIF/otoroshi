@@ -1496,7 +1496,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     .map(a => s":$a")
                                     .getOrElse("") + controllers.routes.AuthController
                                     .confidentialAppLoginPage()
-                                    .url + s"?desc=${descriptor.id}&redirect=http://${req.host}${req.relativeUri}"
+                                    .url + s"?desc=${descriptor.id}&redirect=${protocol}://${req.host}${req.relativeUri}"
                                   logger.trace("should redirect to " + redirectTo)
                                   descriptor.authConfigRef match {
                                     case None =>
