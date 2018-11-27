@@ -358,10 +358,10 @@ class Env(val configuration: Configuration,
       } else {
         DynamicSSLEngineProvider.setCurrentEnv(this)
         configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty).foreach { s =>
-          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: $s")
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
         }
         configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach { p =>
-          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: $p")
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}}")
         }
       }
       datastores.globalConfigDataStore
@@ -515,37 +515,33 @@ class Env(val configuration: Configuration,
         _ <- datastores.certificatesDataStore
               .findAll()
               .map { certs =>
-                val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
+                //val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
                 val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
                 val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
                 val keyPairGenerator           = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                 keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-                val keyPair1 = keyPairGenerator.generateKeyPair()
+                //val keyPair1 = keyPairGenerator.generateKeyPair()
                 val keyPair2 = keyPairGenerator.generateKeyPair()
                 val keyPair3 = keyPairGenerator.generateKeyPair()
-                val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
-                val caCert   = Cert(ca, keyPair1, None).enrich()
-                if (!foundOtoroshiCa) {
-                  logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
-                  caCert.copy(id = Cert.OtoroshiCA).save()
-                }
+                //val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
+                //val caCert   = Cert(ca, keyPair1, None).enrich()
+                //if (!foundOtoroshiCa) {
+                //  logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
+                //  caCert.copy(id = Cert.OtoroshiCA).save()
+                //}
                 if (!foundOtoroshiDomainCert) {
                   logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
-                  val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
+                  val cert1 = FakeKeyStore.createSelfSignedCertificate(s"*.${this.domain}",
                                                                    FiniteDuration(365, TimeUnit.DAYS),
-                                                                   keyPair2,
-                                                                   ca,
-                                                                   keyPair1)
-                  Cert(cert1, keyPair1, caCert).enrich().save()
+                                                                   keyPair2)
+                  Cert(cert1, keyPair2, None).enrich().save()
                 }
                 if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
                   logger.info(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
-                  val cert2 = FakeKeyStore.createCertificateFromCA(s"*.dev.${this.domain}",
+                  val cert2 = FakeKeyStore.createSelfSignedCertificate(s"*.dev.${this.domain}",
                                                                    FiniteDuration(365, TimeUnit.DAYS),
-                                                                   keyPair3,
-                                                                   ca,
-                                                                   keyPair1)
-                  Cert(cert2, keyPair1, caCert).enrich().save()
+                                                                   keyPair3)
+                  Cert(cert2, keyPair3, None).enrich().save()
                 }
               }
         //_ <- clusterAgent.startF()

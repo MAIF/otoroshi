@@ -451,6 +451,8 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine     = context.createSSLEngine()
+    val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
+    val rawEnabledProtocols = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
     val engine        = new CustomSSLEngine(rawEngine)
@@ -470,6 +472,8 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
       }
     })
     sslParameters.setSNIMatchers(matchers)
+    cipherSuites.orElse(Some(rawEnabledCipherSuites)).foreach(s => sslParameters.setCipherSuites(s.toArray))
+    protocols.orElse(Some(rawEnabledProtocols)).foreach(p => sslParameters.setProtocols(p.toArray))
     engine.setSSLParameters(sslParameters)
     engine
   }
@@ -813,3 +817,39 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
 
   override def setSSLParameters(var1: SSLParameters): Unit = delegate.setSSLParameters(var1)
 }
+
+/**
+FROM ubuntu:18.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  autoconf \
+  bison \
+  build-essential \
+  ca-certificates \
+  curl \
+  gzip \
+  libreadline-dev \
+  patch \
+  pkg-config \
+  sed \
+  zlib1g-dev
+
+RUN mkdir -p /build/openssl
+RUN mkdir -p /build/curl
+
+RUN curl -s https://www.openssl.org/source/openssl-1.1.1a.tar.gz | tar -C /build/openssl -xzf - && \
+    cd /build/openssl/openssl-1.1.1a && \
+    ./Configure \
+      --prefix=/opt/openssl/openssl-1.1.1 \
+      enable-crypto-mdebug enable-crypto-mdebug-backtrace \
+      linux-x86_64 && \
+    make && make install_sw
+
+ENV LD_LIBRARY_PATH /opt/openssl/openssl-1.1.1/lib
+
+RUN curl -s https://curl.haxx.se/download/curl-7.62.0.tar.gz | tar -C /build/curl -xzf - && \
+    cd /build/curl/curl-7.62.0 && \
+    env PKG_CONFIG_PATH=/opt/openssl/openssl-1.1.1/lib/pkgconfig ./configure --with-ssl --prefix=/opt/curl/curl-7.62 && make && make install
+
+CMD ["/opt/curl/curl-7.62/bin/curl", "--tlsv1.3", "https://enabled.tls13.com/"]
+**/ 
