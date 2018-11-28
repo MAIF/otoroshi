@@ -252,7 +252,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
   override def fetchHits(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+  ): Future[Option[JsValue]] = {
     query(
       Json.obj(
         "size" -> 0,
@@ -268,7 +268,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
         )
       }
       .map(Some.apply)
-
+  }
+  
   override def events(eventType: String,
                       service: Option[String],
                       from: Option[DateTime],
@@ -285,9 +286,15 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
         "from" -> pageFrom,
         "query" -> Json.obj(
           "bool" -> Json.obj(
-            "must" -> (dateFilters(from, to) ++ gatewayEventFilters ++ service
-              .map(id => Json.obj("term" -> Json.obj("@serviceId" -> id)))
-              .toSeq)
+            "minimum_should_match" -> 1,
+            "should" -> (
+              service.map(id => Json.obj("term" -> Json.obj("@serviceId" -> id))).toSeq ++
+              service.map(id => Json.obj("term" -> Json.obj("@serviceId.raw" -> id))).toSeq
+            ),
+            "must" -> (
+              dateFilters(from, to) ++ 
+              gatewayEventFilters
+            )
           )
         ),
         "sort" -> Json.obj(
