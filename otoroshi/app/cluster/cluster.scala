@@ -785,29 +785,34 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     !firstSuccessfulStateFetchDone.get()
   }
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] =
-    Retry
-      .retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
-        env.Ws
-          .url(otoroshiUrl + s"/api/cluster/sessions/$id")
-          .withHttpHeaders(
-            "Host"                                    -> config.leader.host,
-            ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
-          )
-          .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-          .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
-          .get()
-          .filter(_.status == 200)
-          .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
-      }
-      .recover {
-        case e =>
-          Cluster.logger.debug(
-            s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
-          )
-          None
-      }
+  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
+          env.Ws
+            .url(otoroshiUrl + s"/api/cluster/sessions/$id")
+            .withHttpHeaders(
+              "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .get()
+            .filter(_.status == 200)
+            .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
+        }
+        .recover {
+          case e =>
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
+            )
+            None
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
 
   def createSession(user: PrivateAppsUser): Future[Unit] = {
     Retry

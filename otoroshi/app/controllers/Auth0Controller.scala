@@ -10,6 +10,7 @@ import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
 import gateway.Errors
 import models.ServiceDescriptor
+import cluster.ClusterMode
 import play.api.Logger
 import play.api.mvc._
 import security.IdGenerator
