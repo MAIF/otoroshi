@@ -211,7 +211,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
             analyticsService
-              .events("GatewayEvent", Some("U0rwpKwNNutLfUcGKtxUCFdio5mqsT2AsROC0lAPPIn2fjwgfImKhUNXINCqS7iH"), fromDate, toDate, paginationPage, paginationPageSize)
+              .events("GatewayEvent", Some(desc.id), fromDate, toDate, paginationPage, paginationPageSize)
               .map(_.getOrElse(Json.obj()))
               .map { r =>
                 logger.debug(s"$r")
