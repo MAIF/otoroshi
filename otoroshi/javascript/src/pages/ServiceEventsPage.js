@@ -4,6 +4,7 @@ import { ServiceSidebar } from '../components/ServiceSidebar';
 import { converterBase2 } from 'byte-converter';
 import { Table } from '../components/inputs';
 import moment from 'moment';
+import queryString from 'query-string';
 
 import { OtoDatePicker } from '../components/datepicker';
 
@@ -12,6 +13,7 @@ export class ServiceEventsPage extends Component {
     service: null,
     from: moment().subtract(1, 'hours'),
     to: moment(),
+    limit: 500
   };
 
   columns = [
@@ -125,10 +127,13 @@ export class ServiceEventsPage extends Component {
   }
 
   fetchEvents = () => {
+    const query = queryString.parse(window.location.search);
+    const limit = query.limit || this.state.limit;
     return BackOfficeServices.fetchServiceEvents(
       this.state.service.id,
       this.state.from,
-      this.state.to
+      this.state.to,
+      limit
     ).then(d => d, err => console.error(err));
   };
 
@@ -143,12 +148,16 @@ export class ServiceEventsPage extends Component {
     return (
       <div>
         <div className="row" style={{ marginBottom: 30 }}>
-          <div className="">
+          <div className="" style={{ display: 'flex' }}>
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
               from={this.state.from}
               to={this.state.to}
             />
+            <div className="input-group" style={{ marginLeft: 10 }}>
+              <div className="input-group-addon">Limit</div>
+              <input type="number" style={{ width: 100 }} className="form-control" value={this.state.limit} onChange={e => this.setState({ limit: e.target.value }, () => this.table.update())} />
+            </div>
           </div>
         </div>
         <Table

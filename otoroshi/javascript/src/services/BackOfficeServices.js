@@ -179,9 +179,9 @@ export function resetRemainingQuotas(groupId, clientId) {
   }).then(r => r.json());
 }
 
-export function fetchServiceEvents(serviceId, from, to) {
+export function fetchServiceEvents(serviceId, from, to, limit = 500) {
   return fetch(
-    `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}`,
+    `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`,
     {
       method: 'GET',
       credentials: 'include',
