@@ -11,6 +11,7 @@ package object future {
 
     implicit final class EnhancedObject[A](any: A) {
       def asFuture: Future[A] = FastFuture.successful(any)
+      def future: Future[A] = FastFuture.successful(any)
     }
 
     implicit final class EnhancedFuture[A](future: Future[A]) {

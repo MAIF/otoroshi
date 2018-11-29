@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { TextInput, NumberInput, SelectInput, CodeInput } from './inputs';
+import { TextInput, NumberInput, SelectInput, CodeInput, BooleanInput } from './inputs';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -311,6 +311,12 @@ export class BasicModuleConfig extends Component {
           suffix="seconds"
           onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
         />
+        <BooleanInput
+          label="Basic auth."
+          value={settings.basicAuth}
+          help="..."
+          onChange={v => changeTheValue(path + '.basicAuth', v)}
+        />
         <div className="form-group">
           <label htmlFor={`input-users`} className="col-sm-2 control-label">
             Users
@@ -431,6 +437,12 @@ export class LdapModuleConfig extends Component {
           help="..."
           suffix="seconds"
           onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
+        />
+        <BooleanInput
+          label="Basic auth."
+          value={settings.basicAuth}
+          help="..."
+          onChange={v => changeTheValue(path + '.basicAuth', v)}
         />
         <TextInput
           label="LDAP Server URL"
