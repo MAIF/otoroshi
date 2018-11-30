@@ -32,7 +32,7 @@ import storage.inmemory.InMemoryDataStores
 import storage.leveldb.LevelDbDataStores
 import storage.mongo.MongoDataStores
 import storage.redis.RedisDataStores
-import utils.http.AkkWsClient
+import utils.http._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -167,7 +167,7 @@ class Env(val configuration: Configuration,
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
-  lazy val (gatewayClient, gatewayClientHttp2) = {
+  lazy val gatewayClient = {
     val parser: WSConfigParser = new WSConfigParser(configuration.underlying, environment.classLoader)
     val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
       keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
@@ -186,11 +186,13 @@ class Env(val configuration: Configuration,
       config.copy(
         wsClientConfig = wsClientConfig
       )
-    )(
-      otoroshiMaterializer
-    )
+    )(otoroshiMaterializer)
 
-    (ahcClient, new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer))
+    WsClientChooser(
+      ahcClient, 
+      new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer),
+      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false)
+    )
   }
 
   lazy val statsd = new StatsdWrapper(otoroshiActorSystem, this)

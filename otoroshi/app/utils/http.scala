@@ -22,6 +22,23 @@ import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
 import scala.xml.Elem
 
+object WsClientChooser {
+  def apply(standardClient: WSClient, akkaClient: AkkWsClient, fullAkka: Boolean): WsClientChooser = new WsClientChooser(standardClient, akkaClient, fullAkka)
+}
+
+class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, fullAkka: Boolean) {
+  def url(protocol: String, url: String): WSRequest = { // TODO: handle idle timeout and other timeout per request here 
+    protocol.toLowerCase() match {
+      case "ahttp" => new AkkWsClientRequest(akkaClient, url.replace("ahttp://", "http://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+      case "ahttps" => new AkkWsClientRequest(akkaClient, url.replace("ahttps://", "https://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+      case "http2" => new AkkWsClientRequest(akkaClient, url.replace("http2://", "http://"), HttpProtocols.`HTTP/2.0`)(akkaClient.mat)
+      case "http2s" => new AkkWsClientRequest(akkaClient, url.replace("http2s://", "https://"), HttpProtocols.`HTTP/2.0`)(akkaClient.mat)
+      case _ if !fullAkka => standardClient.url(url)
+      case _ if fullAkka => new AkkWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+    }
+  }
+}
+
 class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, materializer: Materializer) extends WSClient {
 
   val ec = system.dispatcher
@@ -30,15 +47,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
 
   override def underlying[T]: T = client.asInstanceOf[T]
 
-  def forProtocol(protocol: String, url: String, standardClient: WSClient): WSRequest = {
-    protocol.toLowerCase() match {
-      case "http2" => new AkkWsClientRequest(this, url.replace("http2://", "http://"), HttpProtocols.`HTTP/2.0`)
-      case "http2s" => new AkkWsClientRequest(this, url.replace("http2s://", "https://"), HttpProtocols.`HTTP/2.0`)
-      case _ => standardClient.url(url)
-    }
-  }
-
-  def url(url: String): WSRequest = throw new RuntimeException("Not supported bro !!!")
+  def url(url: String): WSRequest = new AkkWsClientRequest(this, url)
 
   override def close(): Unit = Await.ready(Http().shutdownAllConnectionPools(), 10.seconds)
 
@@ -58,7 +67,6 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
     .withIdleTimeout(config.idleTimeout)
 
   private[utils] def executeRequest[T](request: HttpRequest): Future[HttpResponse] = {
-    println(s"${request}")
     client.singleRequest(request, connectionContext, connectionPoolSettings)
   }
 }
@@ -144,6 +152,7 @@ case class AkkWsClientRequest(
       case InMemoryBody(bytes) => (HttpEntity(ct, bytes), headers)
       case SourceBody(bytes) => (HttpEntity(ct, bytes), headers)
     }
+    // TODO: fix illegal headers messages
     val akkaHeaders = updatedHeaders.flatMap { case (key, values) =>
       values.map(value => HttpHeader.parse(key, value))
     }.flatMap {
