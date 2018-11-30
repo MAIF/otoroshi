@@ -119,6 +119,7 @@ case class LdapAuthModuleConfig(
     "id"            -> this.id,
     "name"          -> this.name,
     "desc"          -> this.desc,
+    "basicAuth"     -> this.basicAuth,
     "sessionMaxAge" -> this.sessionMaxAge,
     "serverUrl"     -> this.serverUrl,
     "searchBase"    -> this.searchBase,
@@ -282,7 +283,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
         def unauthorized() = Results
           .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
-          .withHeaders("WWW-Authenticate" -> authConfig.cookieSuffix(descriptor))
+          .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
           .addingToSession(
             "pa-redirect-after-login" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)

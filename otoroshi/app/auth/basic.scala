@@ -103,6 +103,7 @@ case class BasicAuthModuleConfig(
     "id"            -> this.id,
     "name"          -> this.name,
     "desc"          -> this.desc,
+    "basicAuth"     -> this.basicAuth,
     "sessionMaxAge" -> this.sessionMaxAge,
     "users"         -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
   )
@@ -172,8 +173,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       if (authConfig.basicAuth) {
 
         def unauthorized() = Results
-          .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
-          .withHeaders("WWW-Authenticate" -> authConfig.cookieSuffix(descriptor))
+          .Unauthorized("")
+          .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
           .addingToSession(
             "pa-redirect-after-login" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
