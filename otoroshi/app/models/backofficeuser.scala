@@ -26,6 +26,8 @@ case class BackOfficeUser(randomId: String,
 
   def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.backOfficeUserDataStore.delete(randomId)
+
+  def toJson: JsValue = BackOfficeUser.fmt.writes(this)
 }
 
 object BackOfficeUser {

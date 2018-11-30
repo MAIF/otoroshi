@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { TextInput, NumberInput, SelectInput, CodeInput } from './inputs';
+import { TextInput, NumberInput, SelectInput, CodeInput, BooleanInput } from './inputs';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -36,7 +36,6 @@ export class Oauth2ModuleConfig extends Component {
   }
 
   changeTheValue = (name, value) => {
-    console.log('changeTheValue', name, value);
     if (this.props.onChange) {
       const clone = _.cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
@@ -51,7 +50,6 @@ export class Oauth2ModuleConfig extends Component {
     const settings = this.props.value || this.props.settings;
     const path = this.props.path || '';
     const changeTheValue = this.changeTheValue;
-    console.log(settings);
     if (this.state.error) {
       return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
     }
@@ -196,10 +194,23 @@ export class User extends Component {
             const value2 = prompt('Re-type password');
             if (value1 && value2 && value1 === value2) {
               this.props.hashPassword(this.props.user.email, value1);
+            } else {
+              windows.alert('Passwords does not match !');
             }
           }}
           style={{ marginLeft: 5 }}>
           Set password
+        </button>
+        <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={e => {
+            const password = faker.random.alphaNumeric(16);
+            window.alert(`The generated password is: ${password}`);
+            this.props.hashPassword(this.props.user.email, password);
+          }}
+          style={{ marginLeft: 5 }}>
+          Generate password
         </button>
         <button
           type="button"
@@ -226,7 +237,6 @@ export class BasicModuleConfig extends Component {
   }
 
   changeTheValue = (name, value) => {
-    console.log('changeTheValue', name, value);
     if (this.props.onChange) {
       const clone = _.cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
@@ -311,6 +321,12 @@ export class BasicModuleConfig extends Component {
           suffix="seconds"
           onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
         />
+        <BooleanInput
+          label="Basic auth."
+          value={settings.basicAuth}
+          help="..."
+          onChange={v => changeTheValue(path + '.basicAuth', v)}
+        />
         <div className="form-group">
           <label htmlFor={`input-users`} className="col-sm-2 control-label">
             Users
@@ -385,7 +401,6 @@ export class LdapModuleConfig extends Component {
   }
 
   changeTheValue = (name, value) => {
-    console.log('changeTheValue', name, value);
     if (this.props.onChange) {
       const clone = _.cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
@@ -400,7 +415,6 @@ export class LdapModuleConfig extends Component {
     const settings = this.props.value || this.props.settings;
     const path = this.props.path || '';
     const changeTheValue = this.changeTheValue;
-    console.log(settings);
     if (this.state.error) {
       return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
     }
@@ -431,6 +445,12 @@ export class LdapModuleConfig extends Component {
           help="..."
           suffix="seconds"
           onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
+        />
+        <BooleanInput
+          label="Basic auth."
+          value={settings.basicAuth}
+          help="..."
+          onChange={v => changeTheValue(path + '.basicAuth', v)}
         />
         <TextInput
           label="LDAP Server URL"
