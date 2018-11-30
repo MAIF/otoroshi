@@ -32,6 +32,7 @@ import storage.inmemory.InMemoryDataStores
 import storage.leveldb.LevelDbDataStores
 import storage.mongo.MongoDataStores
 import storage.redis.RedisDataStores
+import utils.http.AkkWsClient
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -166,27 +167,30 @@ class Env(val configuration: Configuration,
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
-  lazy val gatewayClient = {
-    val parser = new WSConfigParser(configuration.underlying, environment.classLoader)
-    val config = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
+  lazy val (gatewayClient, gatewayClientHttp2) = {
+    val parser: WSConfigParser = new WSConfigParser(configuration.underlying, environment.classLoader)
+    val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
       keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
-    AhcWSClient(
+    val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
+      compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      idleTimeout =
+        configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+      connectionTimeout = configuration
+        .getOptional[Int]("app.proxy.connectionTimeout")
+        .map(_.millis)
+        .getOrElse((2 * 60 * 1000).millis)
+    )
+    val ahcClient: AhcWSClient = AhcWSClient(
       config.copy(
-        wsClientConfig = config.wsClientConfig.copy(
-          compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
-          idleTimeout =
-            configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
-          connectionTimeout = configuration
-            .getOptional[Int]("app.proxy.connectionTimeout")
-            .map(_.millis)
-            .getOrElse((2 * 60 * 1000).millis)
-        )
+        wsClientConfig = wsClientConfig
       )
     )(
       otoroshiMaterializer
     )
+
+    (ahcClient, new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer))
   }
 
   lazy val statsd = new StatsdWrapper(otoroshiActorSystem, this)
