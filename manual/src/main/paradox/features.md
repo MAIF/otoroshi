@@ -3,7 +3,7 @@
 All the features supported by **Otoroshi** are listed below
 
 * Dynamic changes at runtime without full reload 
-* Can proxy any HTTP server (HTTP2 is not supported yet, but will be soon enough)
+* Can proxy any HTTP server (HTTP2 targets are not supported yet, but will be soon enough)
 * Can proxy websockets
 * Full featured admin Rest Api to control Otoroshi the way you want. Included, Swagger descriptor
 * Gorgeous React Web UI
@@ -62,20 +62,15 @@ All the features supported by **Otoroshi** are listed below
 * @ref:[Support full JSON import of the reverse proxy state](./usage/8-importsexports.md#full-import)
 * @ref:[Support initial internal state import from JSON local file](./firstrun/configfile.md#db-configuration)
 * @ref:[Support initial internal state import from JSON file over HTTP](./firstrun/configfile.md#db-configuration)
-* Enforce request URL max size
-* Enforce request headers max size
-* Enforce request cookies max size
 * @ref:[Enforce incoming JWT token verification and transformation](./topics/jwt-verifications.md)
 * @ref:[Introduce HTTP level chaos engineering pratices with the Snow Monkey](./topics/snow-monkey.md)
 * @ref:[Native support for service mesh architectures](./topics/service-mesh.md)
 * @ref:[Global live metrics](./setup/index.md#first-login)
 * @ref:[Send metrics to a StatsD/Datadog agent](./integrations/statsd.md)
 * @ref:[Advanced CleverCloud integration (create services from CleverCloud apps)](./integrations/clevercloud.md)
-* Embedded documentation
-* Global services map and top 10
-* @ref:[Support admin login with Auth0](./integrations/auth0.md)
+* @ref:[Support admin login with any auth. module](./usage/0-auth.md)
 * @ref:[Support admin login with FIDO U2F device](./setup/admin.md#create-admin-user-with-u2f-device-login)
-* Support runtime changes of internal log levels
+* @ref:[Dynamic SSL termination](./topics/ssl.md)
 * @ref:[Rust CLI running on MacOS, Linux and Windows](./cli.md)
 * @ref:[Connectors to various HTTP services providers](./connectors/index.md)
     * [generic connector API](https://github.com/MAIF/otoroshi/tree/master/connectors/common)
