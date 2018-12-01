@@ -3,7 +3,7 @@
 All the features supported by **Otoroshi** are listed below
 
 * Dynamic changes at runtime without full reload 
-* Can proxy any HTTP server (HTTP2 targets are not supported yet, but will be soon enough)
+* Can proxy any HTTP/HTTP2 server
 * Can proxy websockets
 * Full featured admin Rest Api to control Otoroshi the way you want. Included, Swagger descriptor
 * Gorgeous React Web UI
