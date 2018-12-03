@@ -294,6 +294,12 @@ class WebSocketHandler()(implicit env: Env) {
                                        None,
                                        Some("errors.service.not.found"))
                   .asLeft[WSFlow]
+              case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
+                FastFuture.successful(
+                  Results.Status(rawDesc.redirection.code)
+                    .withHeaders("Location" -> rawDesc.redirection.formattedTo(req))
+                ).asLeft[WSFlow]
+              }
               case Some(rawDesc) =>
                 passWithReadOnly(rawDesc.readOnly, req) {
                   applyJwtVerifier(rawDesc, req) { jwtInjection =>

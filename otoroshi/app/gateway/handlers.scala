@@ -583,7 +583,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 case Some(desc) if !desc.enabled =>
                   Errors
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
-                case Some(rawDesc) =>
+                case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
+                  FastFuture.successful(
+                    Results.Status(rawDesc.redirection.code)
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req))
+                  )
+                }
+                case Some(rawDesc) => {
                   passWithReadOnly(rawDesc.readOnly, req) {
                     applyJwtVerifier(rawDesc, req) { jwtInjection =>
                       applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -1731,6 +1737,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       }
                     }
                   }
+                }
               }
           }
         }

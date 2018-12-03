@@ -5,8 +5,10 @@ import auth._
 import env.Env
 import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.RequestHeader
 import security.IdGenerator
 import storage.BasicStore
+import utils.ReplaceAllWith
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -266,6 +268,79 @@ object Canary {
   }
 }
 
+
+object RedirectionExpressionLanguage {
+
+  import kaleidoscope._
+  import utils.RequestImplicits._
+
+  lazy val logger = Logger("otoroshi-redirection-el")
+
+  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
+
+  def apply(value: String, req: RequestHeader): String = {
+    value match {
+      case v if v.contains("${") =>
+        Try {
+          expressionReplacer.replaceOn(value) { expression =>
+            expression match {
+              case "req.path"     => req.path
+              case "req.uri"      => req.relativeUri
+              case "req.host"     => req.host
+              case "req.domain"   => req.domain
+              case "req.method"   => req.method
+              case "req.protocol" => req.theProtocol
+              case r"req.headers.$field@(.*)" => req.headers.get(field).getOrElse(s"no-header-$field")
+              case r"req.query.$field@(.*)" => req.getQueryString(field).getOrElse(s"no-query-$field")
+              case _              => "bad-expr"
+            }
+          }
+        } recover {
+          case e =>
+            logger.error(s"Error while parsing expression, returning raw value: $value", e)
+            value
+        } get
+      case _ => value
+    }
+  }
+}
+
+case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: String = "https://www.otoroshi.io") {
+  def toJson = RedirectionSettings.format.writes(this)
+  def hasValidCode = RedirectionSettings.validRedirectionCodes.contains(code)
+  def formattedTo(request: RequestHeader): String = RedirectionExpressionLanguage(to, request)
+}
+
+object RedirectionSettings {
+
+  lazy val logger = Logger("otoroshi-redirection-settings")
+
+  val validRedirectionCodes = Seq(301, 308, 302, 303, 307)
+
+  implicit val format = new Format[RedirectionSettings] {
+    override def reads(json: JsValue): JsResult[RedirectionSettings] =
+      Try {
+        RedirectionSettings(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          code = (json \ "code").asOpt[Int].getOrElse(303),
+          to = (json \ "to").asOpt[String].getOrElse("https://www.otoroshi.io")
+        )
+      } map {
+        case sd => JsSuccess(sd)
+      } recover {
+        case t =>
+          logger.error("Error while reading RedirectionSettings", t)
+          JsError(t.getMessage)
+      } get
+
+    override def writes(o: RedirectionSettings): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "code" -> o.code,
+      "to" -> o.to
+    )
+  }
+}
+
 case class ServiceDescriptor(
     id: String,
     groupId: String = "default",
@@ -308,7 +383,8 @@ case class ServiceDescriptor(
       "${config.app.claim.sharedKey}"
     ),
     authConfigRef: Option[String] = None,
-    cors: CorsSettings = CorsSettings(false)
+    cors: CorsSettings = CorsSettings(false),
+    redirection: RedirectionSettings = RedirectionSettings(false)
 ) {
 
   def toHost: String = subdomain match {
@@ -426,7 +502,8 @@ object ServiceDescriptor {
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
-          cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false))
+          cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
+          redirection = RedirectionSettings.format.reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull)).getOrElse(RedirectionSettings(false))
         )
       } map {
         case sd => JsSuccess(sd)
@@ -475,6 +552,7 @@ object ServiceDescriptor {
       "jwtVerifier"                -> sd.jwtVerifier.asJson,
       "secComSettings"             -> sd.secComSettings.asJson,
       "cors"                       -> sd.cors.asJson,
+      "redirection"                -> sd.redirection.toJson,
       "authConfigRef"              -> sd.authConfigRef
     )
   }

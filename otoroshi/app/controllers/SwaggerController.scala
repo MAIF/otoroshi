@@ -364,6 +364,21 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def RedirectionSettings = Json.obj(
+    "description" -> "The configuration for redirection per service",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "enabled",
+      "to",
+      "code"
+    ),
+    "properties" -> Json.obj(
+      "enabled"          -> SimpleBooleanType ~~> "Whether or not redirection is enabled",
+      "to"               -> SimpleStringType ~~> "The location for redirection",
+      "code"             -> SimpleIntType ~~> "The http redirect code",
+    )
+  )
+
   def ElasticConfig = Json.obj(
     "description" -> "The configuration for elastic access",
     "type"        -> "object",
@@ -469,7 +484,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
       "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
       "authConfigRef"              -> SimpleStringType ~~> "A reference to a global auth module config",
-      "cors"                       -> Ref("CorsSettings")
+      "cors"                       -> Ref("CorsSettings"),
+      "redirection"                -> Ref("RedirectionSettings")
     )
   )
 
@@ -2182,6 +2198,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "InMemoryAuthModuleConfig"    -> InMemoryAuthModuleConfig,
         "LdapAuthModuleConfig"        -> LdapAuthModuleConfig,
         "CorsSettings"                -> CorsSettings,
+        "RedirectionSettings"         -> RedirectionSettings,
         "InMemoryUser"                -> InMemoryUser,
         "LdapUser"                    -> LdapUser,
         "Certificate"                 -> Certificate

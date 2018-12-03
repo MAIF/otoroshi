@@ -666,6 +666,49 @@ export class ServicePage extends Component {
               />
             )}
           </Collapse>
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Redirection">
+            <BooleanInput
+              label="Enable redirection"
+              value={this.state.service.redirection.enabled}
+              help="..."
+              onChange={v => this.changeTheValue('redirection.enabled', v)}
+            />
+            <SelectInput
+              label="Http redirection code"
+              value={this.state.service.redirection.code}
+              onChange={e => this.changeTheValue('redirection.code', e)}
+              possibleValues={[
+                { 
+                  label: '301: Moved Permanently',
+                  value: 301
+                },
+                { 
+                  label: '302: Found',
+                  value: 302
+                },
+                { 
+                  label: '303: See Other',
+                  value: 303
+                },
+                { 
+                  label: '307: Temporary Redirect',
+                  value: 307
+                },
+                { 
+                  label: '308: Permanent Redirect',
+                  value: 308
+                }
+              ]}
+              help="..."
+            />
+            <TextInput
+              label="Redirect to"
+              placeholder="Redirection location"
+              value={this.state.service.redirection.to}
+              help="..."
+              onChange={e => this.changeTheValue('redirection.to', e)}
+            />
+          </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
             initCollapsed={false}

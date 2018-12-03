@@ -19,5 +19,17 @@ object RequestImplicits {
         Try(Uri(uri).toRelative.toString()).getOrElse(uri)
       })
     }
+    def theProtocol: String = {
+      requestHeader.headers
+        .get("X-Forwarded-Proto")
+        .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
+        .map(_ == "https")
+        .orElse(Some(requestHeader.secure))
+        .map {
+          case true  => "https"
+          case false => "http"
+        }
+        .getOrElse("http")
+    }
   }
 }
