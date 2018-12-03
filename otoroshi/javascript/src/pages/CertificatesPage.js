@@ -108,8 +108,7 @@ class Commands extends Component {
   };
 
   componentDidMount() {
-    const cert =
-      this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----';
+    const cert = this.props.rawValue.chain ? (this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----') : '';
     this.setState({
       fullChainUrl: URL.createObjectURL(
         new Blob([this.props.rawValue.chain], { type: 'text/plain' })

@@ -290,12 +290,6 @@ object DynamicSSLEngineProvider {
 
     val optEnv = Option(currentEnv.get)
 
-    val tm: Array[TrustManager] =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
-        case true  => Array[TrustManager](noCATrustManager)
-        case false => null
-      } orNull
-
     val dumpPath: Option[String] =
       optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
 
@@ -313,6 +307,12 @@ object DynamicSSLEngineProvider {
     val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
       m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
     )
+    val tm: Array[TrustManager] =
+      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+        case true  => Array[TrustManager](noCATrustManager)
+        case false => createTrustStore(keyStore)
+      } orNull
+
     sslContext.init(keyManagers, tm, null)
     logger.debug(s"SSL Context init done ! (${keyStore.size()})")
     SSLContext.setDefault(sslContext)
@@ -387,6 +387,13 @@ object DynamicSSLEngineProvider {
     keyStore
   }
 
+  def createTrustStore(keyStore: KeyStore): Array[TrustManager] = {
+    logger.debug(s"Creating keystore ...")
+    val tmf = TrustManagerFactory.getInstance("SunX509")
+    tmf.init(keyStore)
+    tmf.getTrustManagers
+  }
+
   def readCertificateChain(id: String, certificateChain: String, log: Boolean = true): Seq[X509Certificate] = {
     if (log) logger.debug(s"Reading cert chain for $id")
     val matcher: Matcher                       = CERT_PATTERN.matcher(certificateChain)
@@ -458,13 +465,20 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     val engine        = new CustomSSLEngine(rawEngine)
     val sslParameters = new SSLParameters
     val matchers      = new java.util.ArrayList[SNIMatcher]()
+
+    // TODO: if config.mutualAuth {
+    // TODO:   engine.setNeedClientAuth(true)
+    // TODO:   sslParameters.setNeedClientAuth(true)
+    // TODO: }
+
     matchers.add(new SNIMatcher(0) {
       override def matches(sniServerName: SNIServerName): Boolean = {
         sniServerName match {
           case hn: SNIHostName =>
             val hostName = hn.getAsciiName
-            DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
+            DynamicSSLEngineProvider.logger.info(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
+            // sslParameters.setNeedClientAuth(true), post set does not work here :(
           case _ =>
             DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
         }
@@ -852,4 +866,24 @@ RUN curl -s https://curl.haxx.se/download/curl-7.62.0.tar.gz | tar -C /build/cur
     env PKG_CONFIG_PATH=/opt/openssl/openssl-1.1.1/lib/pkgconfig ./configure --with-ssl --prefix=/opt/curl/curl-7.62 && make && make install
 
 CMD ["/opt/curl/curl-7.62/bin/curl", "--tlsv1.3", "https://enabled.tls13.com/"]
-**/ 
+**/
+
+/**
+# https://blog.codeship.com/how-to-set-up-mutual-tls-authentication/
+openssl genrsa -aes256 -out ca/ca.key 4096
+# chmod 400 ca/ca.key
+# with CN=CA-ROOT
+openssl req -new -x509 -sha256 -days 730 -key ca/ca.key -out ca/ca.crt
+# chmod 444 ca/ca.crt
+openssl genrsa -out server/app.foo.bar.key 2048
+# chmod 400 server/app.foo.bar.key
+# new with only CN=app.foo.bar
+openssl req -new -key server/app.foo.bar.key -sha256 -out server/app.foo.bar.csr
+openssl x509 -req -days 365 -sha256 -in server/app.foo.bar.csr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 1 -out server/app.foo.bar.crt
+# chmod 444 server/app.foo.bar.crt
+openssl verify -CAfile ca/ca.crt server/app.foo.bar.crt
+openssl genrsa -out client/clientkey 2048
+openssl req -new -key client/clientkey -out client/clientcsr
+openssl x509 -req -days 365 -sha256 -in client/clientcsr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 2 -out client/clientcrt
+openssl pkcs12 -export -clcerts -in client/clientcrt -inkey client/clientkey -out client/clientp12
+**/
