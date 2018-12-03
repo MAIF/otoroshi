@@ -17,6 +17,9 @@ export class Collapse extends Component {
   }
 
   render() {
+    if (this.props.notVisible) {
+      return null;
+    }
     if (this.state.collapsed) {
       return (
         <div>

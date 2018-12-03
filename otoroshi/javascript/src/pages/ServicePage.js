@@ -666,9 +666,9 @@ export class ServicePage extends Component {
               />
             )}
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Redirection">
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={!this.state.service.redirection.enabled} label="Redirection">
             <BooleanInput
-              label="Enable redirection"
+              label="Redirection enabled"
               value={this.state.service.redirection.enabled}
               help="..."
               onChange={v => this.changeTheValue('redirection.enabled', v)}
@@ -710,6 +710,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
             label="Service targets">
@@ -780,7 +781,11 @@ export class ServicePage extends Component {
               }${this.state.service.root}`}
             />
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="URL Patterns">
+          <Collapse 
+            notVisible={this.state.service.redirection.enabled} 
+            collapsed={this.state.allCollapsed} 
+            initCollapsed={false} 
+            label="URL Patterns">
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
@@ -812,6 +817,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Otoroshi exchange protocol">
@@ -835,7 +841,11 @@ export class ServicePage extends Component {
               changeTheValue={this.changeTheValue}
             />
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="Authentication">
+          <Collapse 
+            notVisible={this.state.service.redirection.enabled} 
+            collapsed={this.state.allCollapsed} 
+            initCollapsed={true} 
+            label="Authentication">
             <BooleanInput
               label="Enforce user authentication"
               value={this.state.service.privateApp}
@@ -904,7 +914,11 @@ export class ServicePage extends Component {
               </div>
             </div>
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={true} label="CORS support">
+          <Collapse 
+            notVisible={this.state.service.redirection.enabled} 
+            collapsed={this.state.allCollapsed} 
+            initCollapsed={true} 
+            label="CORS support">
             <BooleanInput
               label="Enabled"
               value={this.state.service.cors.enabled}
@@ -957,6 +971,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="JWT tokens verification">
@@ -1037,6 +1052,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Client settings">
@@ -1111,6 +1127,7 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Additional settings">
@@ -1161,6 +1178,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label={
@@ -1212,6 +1230,7 @@ export class ServicePage extends Component {
             </div>
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="HealthCheck settings">
@@ -1229,6 +1248,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Faults injection">
@@ -1253,6 +1273,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
+            notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Custom errors template">
