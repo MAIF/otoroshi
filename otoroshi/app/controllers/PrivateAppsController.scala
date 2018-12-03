@@ -16,10 +16,12 @@ class PrivateAppsController(env: Env, PrivateAppsAction: PrivateAppsAction, cc: 
   def redirect = PrivateAppsAction { ctx =>
     implicit val request = ctx.request
     Redirect(
-      request.session
-        .get("pa-redirect-after-login")
-        .getOrElse(routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps))
-    ).removingFromSession("pa-redirect-after-login")
+      //request.session
+      //  .get("pa-redirect-after-login")
+      //  .getOrElse(
+          routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+      //  )
+    )//.removingFromSession("pa-redirect-after-login")
   }
 
   def error(message: Option[String] = None) = PrivateAppsAction { ctx =>

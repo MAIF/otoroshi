@@ -120,7 +120,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     Redirect(
       loginUrl
     ).addingToSession(
-        "pa-redirect-after-login" -> redirect.getOrElse(
+        s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
         )
       )

@@ -94,7 +94,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                           }
                           FastFuture.successful(
                             Redirect(setCookiesRedirect)
-                              .removingFromSession("pa-redirect-after-login")
+                              .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                               .withCookies(env.createPrivateSessionCookies(host, user.randomId, descriptor, auth): _*)
                           )
                       }
@@ -160,7 +160,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                     .map { paUser =>
                       env.clusterAgent.createSession(paUser)
                       val redirectTo = ctx.request.session
-                        .get("pa-redirect-after-login")
+                        .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                         .getOrElse(
                           routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
                         )
@@ -178,7 +178,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                             .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
                       }
                       Redirect(setCookiesRedirect)
-                        .removingFromSession("pa-redirect-after-login")
+                        .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                         .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
                     }
                 }

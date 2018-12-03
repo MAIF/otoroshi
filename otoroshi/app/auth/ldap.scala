@@ -285,7 +285,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
           .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
           .addingToSession(
-            "pa-redirect-after-login" -> redirect.getOrElse(
+            s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
             )
           ).future
@@ -306,7 +306,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         Results
           .Ok(views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, env))
           .addingToSession(
-            "pa-redirect-after-login" -> redirect.getOrElse(
+            s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
             )
           ).future
@@ -363,7 +363,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
           .withHeaders("WWW-Authenticate" -> "otoroshi-admin-realm")
           .addingToSession(
-            "pa-redirect-after-login" -> redirect.getOrElse(
+            "bo-redirect-after-login" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
             )
           ).future
