@@ -476,6 +476,9 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     if (clientAuth) {
       engine.setNeedClientAuth(true)
       sslParameters.setNeedClientAuth(true)
+    } else {
+      engine.setWantClientAuth(true)
+      sslParameters.setWantClientAuth(true)
     }
 
     matchers.add(new SNIMatcher(0) {
@@ -974,7 +977,13 @@ case class ClientCertificateValidationSettings(
             None
           ).map(Left.apply)
         }
-        case None => f.map(r => Right(r))
+        case None => Errors.craftResponseResult(
+          "You're not authorized here !",
+          Results.Forbidden,
+          request,
+          None,
+          None
+        ).map(Left.apply)
       }
     } else {
       f.map(r => Right(r))

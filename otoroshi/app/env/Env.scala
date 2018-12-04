@@ -11,7 +11,6 @@ import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
 import cluster.{ClusterAgent, _}
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
-import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
@@ -22,7 +21,6 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
-import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
 import security.{ClaimCrypto, IdGenerator}
 import ssl.FakeKeyStore.KeystoreSettings
 import ssl.{Cert, ClientCertificateValidationSettings, DynamicSSLEngineProvider, FakeKeyStore}
@@ -116,7 +114,8 @@ class Env(val configuration: Configuration,
       configuration.getOptional[String]("otoroshi.ssl.fromOutside.certValidator.path").getOrElse("/certificates/_validate"),
       configuration.getOptional[Map[String, String]]("otoroshi.ssl.fromOutside.certValidator.headers").getOrElse(Map.empty),
     ) match {
-      case (enabled, clientAuthEnabled, Some(url), Some(host), Some(ttl), Some(timeout), method, path, headers) => ClientCertificateValidationSettings(enabled && clientAuthEnabled, url, host, ttl, method, path, timeout, headers)
+      case (enabled, clientAuthEnabled, Some(url), Some(host), Some(ttl), Some(timeout), method, path, headers) =>
+        ClientCertificateValidationSettings(enabled, url, host, ttl, method, path, timeout, headers)
       case _ => ClientCertificateValidationSettings(false, "--", "--", 60000, "POST", "/certificates/_validate", 10000, Map.empty)
     }
   }
