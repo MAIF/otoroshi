@@ -18,7 +18,7 @@ import storage.{DataStoreHealth, DataStores}
 import storage.inmemory._
 import env.Env
 import play.api.libs.json._
-import ssl.CertificateDataStore
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -106,6 +106,9 @@ class CassandraDataStores(configuration: Configuration,
 
   private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
+
+  private lazy val _clientCertificateValidationDataStore                   = new InMemoryClientCertificateValidationDataStore(redis, env)
+  override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore = _clientCertificateValidationDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

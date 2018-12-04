@@ -17,7 +17,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
-import ssl.CertificateDataStore
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
 import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -100,6 +100,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
 
   private lazy val _clusterStateDataStore                   = new RedisClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
+
+  private lazy val _clientCertificateValidationDataStore                   = new RedisClientCertificateValidationDataStore(redis, env)
+  override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore = _clientCertificateValidationDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

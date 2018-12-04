@@ -590,6 +590,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   )
                 }
                 case Some(rawDesc) => {
+                  env.clientCertificateValidator.validateClientCertificates(req) {
                   passWithReadOnly(rawDesc.readOnly, req) {
                     applyJwtVerifier(rawDesc, req) { jwtInjection =>
                       applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -1736,6 +1737,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                         }
                       }
                     }
+                  }
                   }
                 }
               }

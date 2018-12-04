@@ -14,20 +14,26 @@ import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
 
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
 import env.Env
+import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
 import javax.net.ssl._
+import org.apache.commons.codec.binary.Hex
 import org.joda.time.{DateTime, Interval}
 import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.{RequestHeader, Result, Results}
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
+import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import storage.BasicStore
+import storage.{BasicStore, RedisLike}
 import sun.security.util.ObjectIdentifier
 import sun.security.x509._
 
@@ -453,6 +459,7 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
 
   lazy val cipherSuites = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
   lazy val protocols = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+  lazy val clientAuth = appProvider.get.get.configuration.getOptional[Boolean]("otoroshi.ssl.fromOutside.clientAuth").getOrElse(false)
 
   override def createSSLEngine(): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
@@ -466,19 +473,19 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     val sslParameters = new SSLParameters
     val matchers      = new java.util.ArrayList[SNIMatcher]()
 
-    // TODO: if config.mutualAuth {
-    // TODO:   engine.setNeedClientAuth(true)
-    // TODO:   sslParameters.setNeedClientAuth(true)
-    // TODO: }
+    if (clientAuth) {
+      engine.setNeedClientAuth(true)
+      sslParameters.setNeedClientAuth(true)
+    }
 
     matchers.add(new SNIMatcher(0) {
       override def matches(sniServerName: SNIServerName): Boolean = {
         sniServerName match {
           case hn: SNIHostName =>
             val hostName = hn.getAsciiName
-            DynamicSSLEngineProvider.logger.info(s"createSSLEngine - for $hostName")
+            DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
-            // sslParameters.setNeedClientAuth(true), post set does not work here :(
+            // sslParameters.setNeedClientAuth(true), // client auth here. post set does not work here :(
           case _ =>
             DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
         }
@@ -832,6 +839,163 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   override def setSSLParameters(var1: SSLParameters): Unit = delegate.setSSLParameters(var1)
 }
 
+sealed trait ClientCertificateValidationDataStore {
+  def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]]
+  def setValidation(key: String,  value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+}
+
+class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env) extends ClientCertificateValidationDataStore {
+  def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
+  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
+  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
+  def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
+}
+
+class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlaves, env: Env) extends ClientCertificateValidationDataStore {
+  def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
+  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
+  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
+  def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
+}
+
+object ClientCertificateValidationSettings {
+  val logger = Logger("otoroshi-client-cert-validator")
+  val digester = MessageDigest.getInstance("SHA-1")
+}
+
+case class ClientCertificateValidationSettings(
+  enabled: Boolean = false,
+  url: String,
+  host: String,
+  cacheTTL: Long,
+  method: String,
+  path: String,
+  timeout: Long,
+  headers: Map[String, String] = Map.empty
+) {
+
+  /*
+  TEST CODE
+
+  const express = require('express');
+  const bodyParser = require('body-parser');
+  const x509 = require('x509');
+
+  const app = express();
+
+  app.use(bodyParser.text());
+
+  app.post('/certificates/_validate', (req, res) => {
+    console.log('need to validate the following certificate chain');
+    const cert = x509.parseCert(req.body);
+    console.log(cert);
+    if (cert.subject.emailAddress === 'john.doe@foo.bar') {
+      res.send({ valid: true });
+    } else {
+      res.send({ valid: false });
+    }
+  });
+
+  app.listen(3000, () => console.log('certificate validation server'));
+  */
+
+  import play.api.http.websocket.{Message => PlayWSMessage}
+  import scala.concurrent.duration._
+
+  private def validateCertificateChain(chain: Seq[X509Certificate])(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    val payload = chain.map { cert =>
+      s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+    }.mkString("\n")
+    val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "text/plain", "Accept" -> "application/json")
+    env.wsClient.url(url + path)
+      .withHttpHeaders(finalHeaders: _*)
+      .withMethod(method)
+      .withBody(payload)
+      .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
+      .execute()
+      .map { resp =>
+        resp.status match {
+          case 200 => (resp.json.as[JsObject] \ "valid").asOpt[Boolean]
+          case _ => None
+        }
+      }.recover {
+        case e =>
+          ClientCertificateValidationSettings.logger.error("Error while validating client certificate chain", e)
+          None
+      }
+  }
+
+  private def getLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    env.datastores.clientCertificateValidationDataStore.getValidation(key)
+  }
+
+  private def setGoodLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    env.datastores.clientCertificateValidationDataStore.setValidation(key, true, cacheTTL).map(_ => ())
+  }
+
+  private def setBadLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    env.datastores.clientCertificateValidationDataStore.setValidation(key, false, cacheTTL).map(_ => ())
+  }
+
+  private def computeKeyFromChain(chain: Seq[X509Certificate]): String = {
+    chain.map { c =>
+      Hex.encodeHexString(ClientCertificateValidationSettings.digester.digest(c.getEncoded())).toLowerCase()
+    }.mkString("-")
+  }
+
+  private def isCertificateChainValid(chain: Seq[X509Certificate])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    val key = computeKeyFromChain(chain)
+    getLocalValidation(key).flatMap {
+      case Some(true) => FastFuture.successful(true)
+      case Some(false) => FastFuture.successful(false)
+      case None => {
+        validateCertificateChain(chain).flatMap {
+          case Some(false) => setBadLocalValidation(key).map(_ => false)
+          case Some(true) => setGoodLocalValidation(key).map(_ => true)
+          case None => setBadLocalValidation(key).map(_ => false)
+        }
+      }
+    }
+  }
+
+  private def internalValidateClientCertificates[A](request: RequestHeader)(
+    f: => Future[A]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    if (enabled) {
+      request.clientCertificateChain match {
+        case Some(chain) => isCertificateChainValid(chain).flatMap {
+          case true => f.map(Right.apply)
+          case false => Errors.craftResponseResult(
+            "You're not authorized here !",
+            Results.Forbidden,
+            request,
+            None,
+            None
+          ).map(Left.apply)
+        }
+        case None => f.map(r => Right(r))
+      }
+    } else {
+      f.map(r => Right(r))
+    }
+  }
+
+  def validateClientCertificates(req: RequestHeader)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    internalValidateClientCertificates(req)(f).map {
+      case Left(badResult)   => badResult
+      case Right(goodResult) => goodResult
+    }
+  }
+
+  def wsValidateClientCertificates(req: RequestHeader)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    internalValidateClientCertificates(req)(f).map {
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Right(goodResult) => goodResult
+    }
+  }
+}
+
 /**
 FROM ubuntu:18.04
 
@@ -877,13 +1041,14 @@ openssl req -new -x509 -sha256 -days 730 -key ca/ca.key -out ca/ca.crt
 # chmod 444 ca/ca.crt
 openssl genrsa -out server/app.foo.bar.key 2048
 # chmod 400 server/app.foo.bar.key
-# new with only CN=app.foo.bar
+# with CN=*.foo.bar
 openssl req -new -key server/app.foo.bar.key -sha256 -out server/app.foo.bar.csr
 openssl x509 -req -days 365 -sha256 -in server/app.foo.bar.csr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 1 -out server/app.foo.bar.crt
 # chmod 444 server/app.foo.bar.crt
 openssl verify -CAfile ca/ca.crt server/app.foo.bar.crt
-openssl genrsa -out client/clientkey 2048
-openssl req -new -key client/clientkey -out client/clientcsr
-openssl x509 -req -days 365 -sha256 -in client/clientcsr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 2 -out client/clientcrt
-openssl pkcs12 -export -clcerts -in client/clientcrt -inkey client/clientkey -out client/clientp12
+openssl genrsa -out client/client.key 2048
+# with CN and other stuff about the actual device/user
+openssl req -new -key client/client.key -out client/client.csr
+openssl x509 -req -days 365 -sha256 -in client/client.csr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 2 -out client/client.crt
+openssl pkcs12 -export -clcerts -in client/client.crt -inkey client/client.key -out client/client.p12
 **/

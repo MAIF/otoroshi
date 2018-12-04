@@ -301,6 +301,7 @@ class WebSocketHandler()(implicit env: Env) {
                 ).asLeft[WSFlow]
               }
               case Some(rawDesc) =>
+                env.clientCertificateValidator.wsValidateClientCertificates(req) {
                 passWithReadOnly(rawDesc.readOnly, req) {
                   applyJwtVerifier(rawDesc, req) { jwtInjection =>
                     applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -1043,6 +1044,7 @@ class WebSocketHandler()(implicit env: Env) {
                         }
                     }
                   }
+                }
                 }
             }
         }

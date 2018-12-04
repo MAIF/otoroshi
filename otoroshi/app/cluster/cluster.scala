@@ -31,7 +31,7 @@ import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import ssl.CertificateDataStore
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
 
@@ -1165,6 +1165,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
 
   private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
+
+  private lazy val _clientCertificateValidationDataStore                   = new InMemoryClientCertificateValidationDataStore(redis, env)
+  override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore = _clientCertificateValidationDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
