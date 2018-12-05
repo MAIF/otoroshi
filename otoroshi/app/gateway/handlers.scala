@@ -288,7 +288,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                         .map(a => s":$a")
                         .getOrElse("") + controllers.routes.AuthController
                         .confidentialAppLogout()
-                        .url + s"?redirectTo=http://${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
+                        .url + s"?redirectTo=${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
                       logger.trace("should redirect to " + redirectTo)
                       Redirect(redirectTo)
                         .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
@@ -519,7 +519,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     // req.clientCertificateChain.foreach { chain =>
     //   chain.foreach(c => logger.debug(s"incoming cert chain: $c"))
     // }
-    // req.clientCertificateChain.getOrElse(logger.debug("no cert chain"))
+    //req.clientCertificateChain.getOrElse(logger.debug("no cert chain"))
     val reqNumber           = reqCounter.incrementAndGet()
     val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured           = getSecuredFor(req)
