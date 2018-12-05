@@ -495,9 +495,13 @@ class WebSocketHandler()(implicit env: Env) {
                                 "Host"                               -> host,
                                 env.Headers.OtoroshiRequestId        -> snowflake,
                                 env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                              ) ++ (if (descriptor.enforceSecureCommunication) {
+                              ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
                                       Map(
                                         env.Headers.OtoroshiState -> state,
+                                        env.Headers.OtoroshiClaim -> claim
+                                      )
+                                    } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
+                                      Map(
                                         env.Headers.OtoroshiClaim -> claim
                                       )
                                     } else {

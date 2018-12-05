@@ -831,9 +831,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   "Host"                               -> host,
                                   env.Headers.OtoroshiRequestId        -> snowflake,
                                   env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                                ) ++ (if (descriptor.enforceSecureCommunication) {
+                                ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
                                         Map(
                                           env.Headers.OtoroshiState -> state,
+                                          env.Headers.OtoroshiClaim -> claim
+                                        )
+                                      } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
+                                        Map(
                                           env.Headers.OtoroshiClaim -> claim
                                         )
                                       } else {
@@ -1003,7 +1007,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                   // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                   // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
-                                  if (env.notDev && descriptor.enforceSecureCommunication
+                                  if (env.notDev && (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                                       && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
                                       && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                     if (resp.status == 404 && headers
