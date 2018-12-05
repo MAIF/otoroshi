@@ -102,24 +102,6 @@ class Env(val configuration: Configuration,
     case a => None
   }
 
-  lazy val clientCertificateValidator: ClientCertificateValidationSettings = {
-    (
-      configuration.getOptional[Boolean]("otoroshi.ssl.fromOutside.certValidator.enabled").getOrElse(false),
-      configuration.getOptional[Boolean]("otoroshi.ssl.fromOutside.clientAuth").getOrElse(false),
-      configuration.getOptional[String]("otoroshi.ssl.fromOutside.certValidator.url"),
-      configuration.getOptional[String]("otoroshi.ssl.fromOutside.certValidator.host"),
-      configuration.getOptional[Long]("otoroshi.ssl.fromOutside.certValidator.ttl"),
-      configuration.getOptional[Long]("otoroshi.ssl.fromOutside.certValidator.timeout"),
-      configuration.getOptional[String]("otoroshi.ssl.fromOutside.certValidator.method").getOrElse("POST"),
-      configuration.getOptional[String]("otoroshi.ssl.fromOutside.certValidator.path").getOrElse("/certificates/_validate"),
-      configuration.getOptional[Map[String, String]]("otoroshi.ssl.fromOutside.certValidator.headers").getOrElse(Map.empty),
-    ) match {
-      case (enabled, clientAuthEnabled, Some(url), Some(host), Some(ttl), Some(timeout), method, path, headers) =>
-        ClientCertificateValidationSettings(enabled, url, host, ttl, method, path, timeout, headers)
-      case _ => ClientCertificateValidationSettings(false, "--", "--", 60000, "POST", "/certificates/_validate", 10000, Map.empty)
-    }
-  }
-
   lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
 
   lazy val clusterConfig: ClusterConfig = ClusterConfig(

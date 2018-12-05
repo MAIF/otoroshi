@@ -967,3 +967,57 @@ export function renewCert(id) {
     body: '',
   }).then(r => r.json());
 }
+
+export function findAllClientValidators() {
+  return fetch('/bo/api/proxy/api/client-validators', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findClientValidatorById(id) {
+  return fetch(`/bo/api/proxy/api/client-validators/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteClientValidator(ak) {
+  return fetch(`/bo/api/proxy/api/client-validators/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createClientValidator(ak) {
+  return fetch(`/bo/api/proxy/api/client-validators`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateClientValidator(ak) {
+  return fetch(`/bo/api/proxy/api/client-validators/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}

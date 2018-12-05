@@ -178,6 +178,13 @@ PATCH   /api/verifiers/:id                                    controllers.ApiCon
 GET     /api/verifiers                                        controllers.ApiController.findAllGlobalJwtVerifiers()
 POST    /api/verifiers                                        controllers.ApiController.createGlobalJwtVerifier()
 
+GET     /api/client-validators/:id                            ssl.ClientValidatorsController.findClientValidatorById(id)
+DELETE  /api/client-validators/:id                            ssl.ClientValidatorsController.deleteClientValidator(id)
+PUT     /api/client-validators/:id                            ssl.ClientValidatorsController.updateClientValidator(id)
+PATCH   /api/client-validators/:id                            ssl.ClientValidatorsController.patchClientValidator(id)
+GET     /api/client-validators                                ssl.ClientValidatorsController.findAllClientValidators()
+POST    /api/client-validators                                ssl.ClientValidatorsController.createClientValidator()
+
 GET     /api/auths/:id                                        controllers.ApiController.findGlobalAuthModuleById(id)
 DELETE  /api/auths/:id                                        controllers.ApiController.deleteGlobalAuthModule(id)
 PUT     /api/auths/:id                                        controllers.ApiController.updateGlobalAuthModule(id)

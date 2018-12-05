@@ -14,6 +14,7 @@ import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
 
+import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
@@ -24,16 +25,18 @@ import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
 import javax.net.ssl._
+import models._
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.{DateTime, Interval}
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc._
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import storage.{BasicStore, RedisLike}
+import storage.redis.RedisStore
+import storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.ObjectIdentifier
 import sun.security.x509._
 
@@ -842,39 +845,92 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   override def setSSLParameters(var1: SSLParameters): Unit = delegate.setSSLParameters(var1)
 }
 
-sealed trait ClientCertificateValidationDataStore {
+sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidationSettings] {
   def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]]
   def setValidation(key: String,  value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
-class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env) extends ClientCertificateValidationDataStore {
+class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env) extends ClientCertificateValidationDataStore with RedisLikeStore[ClientCertificateValidationSettings] {
+
   def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
   override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
   override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
+
+  override def fmt: Format[ClientCertificateValidationSettings] = ClientCertificateValidationSettings.fmt
+  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def key(id: String): models.Key = models.Key(s"${env.storageRoot}:certificates:validators:$id")
+  override def extractId(value: ClientCertificateValidationSettings): String = value.id
 }
 
-class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlaves, env: Env) extends ClientCertificateValidationDataStore {
+class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlaves, env: Env) extends ClientCertificateValidationDataStore with RedisStore[ClientCertificateValidationSettings] {
   def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
   override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
   override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
+
+  override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
+  override def fmt: Format[ClientCertificateValidationSettings] = ClientCertificateValidationSettings.fmt
+  override def key(id: String): models.Key = models.Key(s"${env.storageRoot}:certificates:validators:$id")
+  override def extractId(value: ClientCertificateValidationSettings): String = value.id
 }
 
 object ClientCertificateValidationSettings {
   val logger = Logger("otoroshi-client-cert-validator")
   val digester = MessageDigest.getInstance("SHA-1")
+  val fmt = new Format[ClientCertificateValidationSettings] {
+
+    override def reads(json: JsValue): JsResult[ClientCertificateValidationSettings] = Try {
+      JsSuccess(
+        ClientCertificateValidationSettings(
+          id = (json \ "id").as[String],
+          name = (json \ "name").as[String],
+          description = (json \ "description").asOpt[String].getOrElse("--"),
+          url = (json \ "url").as[String],
+          host = (json \ "host").as[String],
+          goodTtl = (json \ "goodTtl").asOpt[Long].getOrElse(10 * 60000L),
+          badTtl = (json \ "badTtl").asOpt[Long].getOrElse(1 * 60000L),
+          method = (json \ "method").asOpt[String].getOrElse("POST"),
+          path = (json \ "path").asOpt[String].getOrElse("/certificates/_validate"),
+          timeout = (json \ "timeout").asOpt[Long].getOrElse(10000L),
+          headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+
+    override def writes(o: ClientCertificateValidationSettings): JsValue = Json.obj(
+      "id" -> o.id,
+      "name" -> o.name,
+      "description" -> o.description,
+      "url" -> o.url,
+      "host" -> o.host,
+      "goodTtl" -> o.goodTtl,
+      "badTtl" -> o.badTtl,
+      "method" -> o.method,
+      "path" -> o.path,
+      "timeout" -> o.timeout,
+      "headers" -> o.headers,
+    )
+  }
+
+  def fromJson(json: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], ClientCertificateValidationSettings] =
+    ClientCertificateValidationSettings.fmt.reads(json).asEither
 }
 
 case class ClientCertificateValidationSettings(
-  enabled: Boolean = false,
+  id: String,
+  name: String,
+  description: String,
   url: String,
   host: String,
-  cacheTTL: Long,
-  method: String,
-  path: String,
-  timeout: Long,
+  goodTtl: Long = 10L * 60000L,
+  badTtl: Long = 1L * 60000L,
+  method: String = "POST",
+  path: String = "/certificates/_validate",
+  timeout: Long = 10000L,
   headers: Map[String, String] = Map.empty
 ) {
 
@@ -888,11 +944,14 @@ case class ClientCertificateValidationSettings(
   const app = express();
 
   app.use(bodyParser.text());
+  app.use(bodyParser.json());
 
   app.post('/certificates/_validate', (req, res) => {
     console.log('need to validate the following certificate chain');
-    const cert = x509.parseCert(req.body);
-    console.log(cert);
+    const service = req.body.service;
+    const identity = req.body.apikey || req.body.user || { email: 'nobody@foo.bar' };
+    const cert = x509.parseCert(req.body.chain);
+    console.log(identity, service, cert);
     if (cert.subject.emailAddress === 'john.doe@foo.bar') {
       res.send({ valid: true });
     } else {
@@ -904,13 +963,31 @@ case class ClientCertificateValidationSettings(
   */
 
   import play.api.http.websocket.{Message => PlayWSMessage}
+
   import scala.concurrent.duration._
 
-  private def validateCertificateChain(chain: Seq[X509Certificate])(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
-    val payload = chain.map { cert =>
+  def asJson: JsValue = ClientCertificateValidationSettings.fmt.writes(this)
+
+  private def validateCertificateChain(chain: Seq[X509Certificate], desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    val certPayload = chain.map { cert =>
       s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
     }.mkString("\n")
-    val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "text/plain", "Accept" -> "application/json")
+    val payload = Json.obj(
+      "apikey" -> apikey.map(_.toJson.as[JsObject] - "clientSecret").getOrElse(JsNull).as[JsValue],
+      "user" -> user.map(_.toJson).getOrElse(JsNull).as[JsValue],
+      "service" -> Json.obj(
+        "id" -> desc.id,
+        "name" -> desc.name,
+        "groupId" -> desc.groupId,
+        "domain" -> desc.domain,
+        "env" -> desc.env,
+        "subdomain" -> desc.subdomain,
+        "root" -> desc.root,
+        "metadata" -> desc.metadata
+      ),
+      "chain" -> certPayload
+    )
+    val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "application/json", "Accept" -> "application/json")
     env.wsClient.url(url + path)
       .withHttpHeaders(finalHeaders: _*)
       .withMethod(method)
@@ -934,11 +1011,11 @@ case class ClientCertificateValidationSettings(
   }
 
   private def setGoodLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    env.datastores.clientCertificateValidationDataStore.setValidation(key, true, cacheTTL).map(_ => ())
+    env.datastores.clientCertificateValidationDataStore.setValidation(key, true, goodTtl).map(_ => ())
   }
 
   private def setBadLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    env.datastores.clientCertificateValidationDataStore.setValidation(key, false, cacheTTL).map(_ => ())
+    env.datastores.clientCertificateValidationDataStore.setValidation(key, false, badTtl).map(_ => ())
   }
 
   private def computeKeyFromChain(chain: Seq[X509Certificate]): String = {
@@ -947,13 +1024,13 @@ case class ClientCertificateValidationSettings(
     }.mkString("-")
   }
 
-  private def isCertificateChainValid(chain: Seq[X509Certificate])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    val key = computeKeyFromChain(chain)
+  private def isCertificateChainValid(chain: Seq[X509Certificate], desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    val key = computeKeyFromChain(chain) + "-" + apikey.map(_.clientId).orElse(user.map(_.randomId)).getOrElse("none") + "-" + desc.id
     getLocalValidation(key).flatMap {
       case Some(true) => FastFuture.successful(true)
       case Some(false) => FastFuture.successful(false)
       case None => {
-        validateCertificateChain(chain).flatMap {
+        validateCertificateChain(chain, desc, apikey, user).flatMap {
           case Some(false) => setBadLocalValidation(key).map(_ => false)
           case Some(true) => setGoodLocalValidation(key).map(_ => true)
           case None => setBadLocalValidation(key).map(_ => false)
@@ -962,22 +1039,13 @@ case class ClientCertificateValidationSettings(
     }
   }
 
-  private def internalValidateClientCertificates[A](request: RequestHeader)(
+  private def internalValidateClientCertificates[A](request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(
     f: => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    if (enabled) {
-      request.clientCertificateChain match {
-        case Some(chain) => isCertificateChainValid(chain).flatMap {
-          case true => f.map(Right.apply)
-          case false => Errors.craftResponseResult(
-            "You're not authorized here !",
-            Results.Forbidden,
-            request,
-            None,
-            None
-          ).map(Left.apply)
-        }
-        case None => Errors.craftResponseResult(
+    request.clientCertificateChain match {
+      case Some(chain) => isCertificateChainValid(chain, desc, apikey, user).flatMap {
+        case true => f.map(Right.apply)
+        case false => Errors.craftResponseResult(
           "You're not authorized here !",
           Results.Forbidden,
           request,
@@ -985,24 +1053,104 @@ case class ClientCertificateValidationSettings(
           None
         ).map(Left.apply)
       }
-    } else {
-      f.map(r => Right(r))
+      case None => Errors.craftResponseResult(
+        "You're not authorized here !",
+        Results.Forbidden,
+        request,
+        None,
+        None
+      ).map(Left.apply)
     }
   }
 
-  def validateClientCertificates(req: RequestHeader)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    internalValidateClientCertificates(req)(f).map {
+  def validateClientCertificates(req: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    internalValidateClientCertificates(req, desc, apikey, user)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
   }
 
-  def wsValidateClientCertificates(req: RequestHeader)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    internalValidateClientCertificates(req)(f).map {
+  def wsValidateClientCertificates(req: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    internalValidateClientCertificates(req, desc, apikey, user)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
   }
+}
+
+class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)(
+  implicit env: Env
+) extends AbstractController(cc) {
+
+  import gnieh.diffson.playJson._
+  import utils.future.Implicits._
+
+  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val mat = env.otoroshiMaterializer
+
+  def findAllClientValidators() = ApiAction.async { ctx =>
+    env.datastores.clientCertificateValidationDataStore.findAll().map(all => Ok(JsArray(all.map(_.asJson))))
+  }
+
+  def findClientValidatorById(id: String) = ApiAction.async { ctx =>
+    env.datastores.clientCertificateValidationDataStore.findById(id).map {
+      case Some(verifier) => Ok(verifier.asJson)
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"ClientCertificateValidationSettings with id $id not found")
+        )
+    }
+  }
+
+  def createClientValidator() = ApiAction.async(parse.json) { ctx =>
+    ClientCertificateValidationSettings.fromJson(ctx.request.body) match {
+      case Left(_) => BadRequest(Json.obj("error" -> "Bad ClientValidator format")).asFuture
+      case Right(newVerifier) =>
+        env.datastores.clientCertificateValidationDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
+    }
+  }
+
+  def updateClientValidator(id: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.clientCertificateValidationDataStore.findById(id).flatMap {
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"ClientValidator with id $id not found")
+        ).asFuture
+      case Some(verifier) => {
+        ClientCertificateValidationSettings.fromJson(ctx.request.body) match {
+          case Left(_) => BadRequest(Json.obj("error" -> "Bad ClientValidator format")).asFuture
+          case Right(newVerifier) => {
+            env.datastores.clientCertificateValidationDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
+          }
+        }
+      }
+    }
+  }
+
+  def patchClientValidator(id: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.clientCertificateValidationDataStore.findById(id).flatMap {
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"ClientValidator with id $id not found")
+        ).asFuture
+      case Some(verifier) => {
+        val currentJson = verifier.asJson
+        val patch       = JsonPatch(ctx.request.body)
+        val newVerifier = patch(currentJson)
+        ClientCertificateValidationSettings.fromJson(newVerifier) match {
+          case Left(_) => BadRequest(Json.obj("error" -> "Bad ClientValidator format")).asFuture
+          case Right(newVerifier) => {
+            env.datastores.clientCertificateValidationDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
+          }
+        }
+      }
+    }
+  }
+
+  def deleteClientValidator(id: String) = ApiAction.async { ctx =>
+    env.datastores.clientCertificateValidationDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+  }
+
 }
 
 /**

@@ -845,6 +845,40 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled} 
             collapsed={this.state.allCollapsed} 
             initCollapsed={true} 
+            label="Client Validation">
+            <SelectInput
+              label="Client validator"
+              value={this.state.service.clientValidatorRef}
+              onChange={e => this.changeTheValue('clientValidatorRef', e)}
+              valuesFrom="/bo/api/proxy/api/client-validators"
+              transformer={a => ({ value: a.id, label: a.name })}
+              help="..."
+            />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                {!this.state.service.clientValidatorRef && (
+                  <a href={`/bo/dashboard/client-validators/add`} className="btn btn-sm btn-primary">
+                    <i className="glyphicon glyphicon-plus" /> Create a new client validator.
+                  </a>
+                )}
+                {this.state.service.authConfigRef && (
+                  <a
+                    href={`/bo/dashboard/client-validators/edit/${this.state.service.clientValidatorRef}`}
+                    className="btn btn-sm btn-success">
+                    <i className="glyphicon glyphicon-edit" /> Edit the client validator.
+                  </a>
+                )}
+                <a href={`/bo/dashboard/clientValidatorRef`} className="btn btn-sm btn-primary">
+                  <i className="glyphicon glyphicon-link" /> all client validators.
+                </a>
+              </div>
+            </div>
+          </Collapse>            
+          <Collapse 
+            notVisible={this.state.service.redirection.enabled} 
+            collapsed={this.state.allCollapsed} 
+            initCollapsed={true} 
             label="Authentication">
             <BooleanInput
               label="Enforce user authentication"

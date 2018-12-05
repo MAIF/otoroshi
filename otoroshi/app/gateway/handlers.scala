@@ -594,7 +594,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   )
                 }
                 case Some(rawDesc) => {
-                  env.clientCertificateValidator.validateClientCertificates(req) {
                   passWithReadOnly(rawDesc.readOnly, req) {
                     applyJwtVerifier(rawDesc, req) { jwtInjection =>
                       applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -653,6 +652,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             def callDownstream(config: GlobalConfig,
                                                apiKey: Option[ApiKey] = None,
                                                paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
+                              desc.validateClientCertificates(req, apiKey, paUsr) {
                               passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
                                 if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                   val cbStart = System.currentTimeMillis()
@@ -769,6 +769,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   val target = descriptor.targets.apply(index.toInt)
                                   actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
                                 }
+                              }
                               }
                             }
 
@@ -1745,7 +1746,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                         }
                       }
                     }
-                  }
                   }
                 }
               }

@@ -13,6 +13,7 @@ import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import router.Routes
+import ssl.ClientValidatorsController
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -61,6 +62,7 @@ package object modules {
     lazy val privateAppsController = wire[PrivateAppsController]
     lazy val u2fController         = wire[U2FController]
     lazy val clusterController     = wire[ClusterController]
+    lazy val clientValidatorController     = wire[ClientValidatorsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

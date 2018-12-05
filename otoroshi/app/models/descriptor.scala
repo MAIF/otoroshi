@@ -1,11 +1,13 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl.Flow
 import auth._
 import env.Env
+import gateway.Errors
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.RequestHeader
+import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import storage.BasicStore
 import utils.ReplaceAllWith
@@ -385,7 +387,8 @@ case class ServiceDescriptor(
     ),
     authConfigRef: Option[String] = None,
     cors: CorsSettings = CorsSettings(false),
-    redirection: RedirectionSettings = RedirectionSettings(false)
+    redirection: RedirectionSettings = RedirectionSettings(false),
+    clientValidatorRef: Option[String] = None
 ) {
 
   def toHost: String = subdomain match {
@@ -446,6 +449,38 @@ case class ServiceDescriptor(
   def theLine: String       = if (env == "prod") "" else s".$env"
   def theDomain             = if (s"$subdomain$theLine".isEmpty) domain else s".$$subdomain$theLine"
   def exposedDomain: String = s"$theScheme://$subdomain$theLine$theDomain"
+
+  def validateClientCertificates(req: RequestHeader, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    clientValidatorRef.map { ref =>
+      env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
+        case Some(validator) => validator.validateClientCertificates(req, this, apikey, user)(f)
+        case None => Errors.craftResponseResult(
+          "Validator not found",
+          Results.InternalServerError,
+          req,
+          None,
+          None
+        )
+      }
+    } getOrElse f
+  }
+
+  import play.api.http.websocket.{Message => PlayWSMessage}
+
+  def wsValidateClientCertificates(req: RequestHeader, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    clientValidatorRef.map { ref =>
+      env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
+        case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user)(f)
+        case None => Errors.craftResponseResult(
+          "Validator not found",
+          Results.InternalServerError,
+          req,
+          None,
+          None
+        ).map(Left.apply)
+      }
+    } getOrElse f
+  }
 }
 
 object ServiceDescriptor {
@@ -504,6 +539,7 @@ object ServiceDescriptor {
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
+          clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
           redirection = RedirectionSettings.format.reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull)).getOrElse(RedirectionSettings(false))
         )
@@ -556,7 +592,8 @@ object ServiceDescriptor {
       "secComSettings"             -> sd.secComSettings.asJson,
       "cors"                       -> sd.cors.asJson,
       "redirection"                -> sd.redirection.toJson,
-      "authConfigRef"              -> sd.authConfigRef
+      "authConfigRef"              -> sd.authConfigRef,
+      "clientValidatorRef"     -> sd.clientValidatorRef
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

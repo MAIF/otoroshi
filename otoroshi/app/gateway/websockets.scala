@@ -301,7 +301,6 @@ class WebSocketHandler()(implicit env: Env) {
                 ).asLeft[WSFlow]
               }
               case Some(rawDesc) =>
-                env.clientCertificateValidator.wsValidateClientCertificates(req) {
                 passWithReadOnly(rawDesc.readOnly, req) {
                   applyJwtVerifier(rawDesc, req) { jwtInjection =>
                     applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -359,6 +358,7 @@ class WebSocketHandler()(implicit env: Env) {
                               apiKey: Option[ApiKey] = None,
                               paUsr: Option[PrivateAppsUser] = None
                           ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                            desc.wsValidateClientCertificates(req, apiKey, paUsr) {
                             passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
                               if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                 val cbStart = System.currentTimeMillis()
@@ -435,6 +435,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 val target = descriptor.targets.apply(index.toInt)
                                 actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                               }
+                            }
                             }
                           }
 
@@ -1048,7 +1049,6 @@ class WebSocketHandler()(implicit env: Env) {
                         }
                     }
                   }
-                }
                 }
             }
         }

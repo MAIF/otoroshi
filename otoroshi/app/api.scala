@@ -19,6 +19,7 @@ import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
+import ssl.ClientValidatorsController
 import storage.DataStores
 
 import scala.concurrent.ExecutionContext
@@ -92,6 +93,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val privateAppsController = wire[PrivateAppsController]
   lazy val u2fController         = wire[U2FController]
   lazy val clusterController     = wire[ClusterController]
+  lazy val clientValidatorController     = wire[ClientValidatorsController]
 
   override lazy val assets: Assets = wire[Assets]
 
