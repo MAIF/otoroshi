@@ -8,6 +8,8 @@ export class ClientValidatorsPage extends Component {
   columns = [
     { title: 'Name', content: item => item.name },
     { title: 'Description', content: item => item.description },
+    { title: 'Host', content: item => item.host },
+    { title: 'Cache', content: item => !item.noCache ? 'yes' : 'no', style: { width: 100, textAlign: 'center' } },
   ];
 
   formSchema = {
@@ -74,7 +76,7 @@ export class ClientValidatorsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Global Client Validators`);
+    this.props.setTitle(`Global Client Validators (experimental)`);
   }
 
   gotoValidator = verifier => {

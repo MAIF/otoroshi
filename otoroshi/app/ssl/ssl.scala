@@ -919,6 +919,12 @@ class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlave
   override def extractId(value: ClientCertificateValidator): String = value.id
 }
 
+// https://tools.ietf.org/html/rfc5280
+// https://tools.ietf.org/html/rfc2585
+// https://tools.ietf.org/html/rfc2560
+// https://en.wikipedia.org/wiki/Public_key_infrastructure
+// https://en.wikipedia.org/wiki/Validation_authority
+// https://en.wikipedia.org/wiki/Online_Certificate_Status_Protocol
 object ClientCertificateValidator {
   val logger = Logger("otoroshi-client-cert-validator")
   val digester = MessageDigest.getInstance("SHA-1")
