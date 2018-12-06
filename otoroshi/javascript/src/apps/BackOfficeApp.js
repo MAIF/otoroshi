@@ -303,15 +303,15 @@ class BackOfficeAppContainer extends Component {
                           component={props => this.decorate(JwtVerifiersPage, props)}
                         />
                         <Route
-                          path="/client-validators/:taction/:titem"
+                          path="/validation-authorities/:taction/:titem"
                           component={props => this.decorate(ClientValidatorsPage, props)}
                         />
                         <Route
-                          path="/client-validators/:taction"
+                          path="/validation-authorities/:taction"
                           component={props => this.decorate(ClientValidatorsPage, props)}
                         />
                         <Route
-                          path="/client-validators"
+                          path="/validation-authorities"
                           component={props => this.decorate(ClientValidatorsPage, props)}
                         />
                         <Route

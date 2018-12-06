@@ -142,10 +142,10 @@ export class TopBar extends Component {
           value: 'auth-configs',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/client-validators'),
-          env: <span className="fas fa-user-secret" />,
-          label: 'Client validators',
-          value: 'Client-Validators',
+          action: () => (window.location.href = '/bo/dashboard/validation-authorities'),
+          env: <span className="fas fa-gavel" />,
+          label: 'Validation authorities',
+          value: 'validation-authorities',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/certificates'),
@@ -306,8 +306,8 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/certificates">
                       <span className="fas fa-certificate" /> SSL Certificates
                     </a>
-                    <a href="/bo/dashboard/client-validators">
-                      <span className="fas fa-user-secret" /> Client validators
+                    <a href="/bo/dashboard/validation-authorities">
+                      <span className="fas fa-gavel" /> Validation authorities
                     </a>
                   </li>
                   <li>

@@ -845,9 +845,9 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled} 
             collapsed={this.state.allCollapsed} 
             initCollapsed={true} 
-            label="Client Validation">
+            label="Validation authority">
             <SelectInput
-              label="Client validator"
+              label="Validation authority"
               value={this.state.service.clientValidatorRef}
               onChange={e => this.changeTheValue('clientValidatorRef', e)}
               valuesFrom="/bo/api/proxy/api/client-validators"
@@ -858,19 +858,19 @@ export class ServicePage extends Component {
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 {!this.state.service.clientValidatorRef && (
-                  <a href={`/bo/dashboard/client-validators/add`} className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-plus" /> Create a new client validator.
+                  <a href={`/bo/dashboard/validation-authorities/add`} className="btn btn-sm btn-primary">
+                    <i className="glyphicon glyphicon-plus" /> Create a new validation authority.
                   </a>
                 )}
                 {this.state.service.authConfigRef && (
                   <a
-                    href={`/bo/dashboard/client-validators/edit/${this.state.service.clientValidatorRef}`}
+                    href={`/bo/dashboard/validation-authorities/edit/${this.state.service.clientValidatorRef}`}
                     className="btn btn-sm btn-success">
-                    <i className="glyphicon glyphicon-edit" /> Edit the client validator.
+                    <i className="glyphicon glyphicon-edit" /> Edit the validation authority.
                   </a>
                 )}
                 <a href={`/bo/dashboard/clientValidatorRef`} className="btn btn-sm btn-primary">
-                  <i className="glyphicon glyphicon-link" /> all client validators.
+                  <i className="glyphicon glyphicon-link" /> all validation authorities.
                 </a>
               </div>
             </div>

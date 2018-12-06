@@ -66,22 +66,22 @@ export class ClientValidatorsPage extends Component {
     'description',
     'url',
     'host',
-    'noCache',
-    'goodTtl',
-    'badTtl',
     'method',
     'path',
     'timeout',
     'headers',
+    'noCache',
+    'goodTtl',
+    'badTtl',
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Global Client Validators (experimental)`);
+    this.props.setTitle(`Validation authorities (experimental)`);
   }
 
   gotoValidator = verifier => {
     this.props.history.push({
-      pathname: `client-validators/edit/${verifier.id}`,
+      pathname: `validation-authorities/edit/${verifier.id}`,
     });
   };
 
@@ -90,14 +90,14 @@ export class ClientValidatorsPage extends Component {
       <div>
         <Table
           parentProps={this.props}
-          selfUrl="client-validators"
-          defaultTitle="All global client validators"
+          selfUrl="validation-authorities"
+          defaultTitle="Validation authorities"
           defaultValue={() => ({
             id: faker.random.alphaNumeric(64),
-            name: 'Client Validator',
-            description: 'A new client Validator',
+            name: 'Validation authority',
+            description: 'A new validation authority',
             url: 'http://127.0.0.1:3000',
-            host: 'client-validator.foo.bar',
+            host: 'validation.foo.bar',
             goodTtl: 600000,
             badTtl: 60000,
             method: 'POST',
@@ -106,7 +106,7 @@ export class ClientValidatorsPage extends Component {
             noCache: false,
             headers: {}
           })}
-          itemName="Client validator"
+          itemName="Validation authority"
           formSchema={this.formSchema}
           formFlow={this.formFlow}
           columns={this.columns}
@@ -116,7 +116,7 @@ export class ClientValidatorsPage extends Component {
           deleteItem={BackOfficeServices.deleteClientValidator}
           createItem={BackOfficeServices.createClientValidator}
           navigateTo={this.gotoValidator}
-          itemUrl={i => `/bo/dashboard/client-validators/edit/${i.id}`}
+          itemUrl={i => `/bo/dashboard/validation-authorities/edit/${i.id}`}
           showActions={true}
           showLink={false}
           rowNavigation={true}
