@@ -2,6 +2,7 @@ package utils.http
 
 import java.io.File
 import java.net.URI
+import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
@@ -13,9 +14,12 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import com.typesafe.sslconfig.ssl.SSLParametersConfig
+import javax.net.ssl.SSLContext
 import play.api.libs.json.JsValue
 import play.api.libs.ws.{BodyReadable, BodyWritable, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
+import ssl.{ClientAuth, DynamicSSLEngineProvider}
 
 import scala.collection.immutable
 import scala.collection.immutable.TreeMap
@@ -54,22 +58,33 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
   override def close(): Unit = Await.ready(Http().shutdownAllConnectionPools(), 10.seconds)
 
   private[utils] val wsClientConfig: WSClientConfig = config
-  private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(config.ssl)
-  private[utils] val connectionContext: HttpsConnectionContext = client.createClientHttpsContext(akkaSSLConfig)
+  private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(config.ssl
+    .withSslParametersConfig(config.ssl.sslParametersConfig.withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.want))
+    .withDefault(true))
+
+  private[utils] val lastSslContext = new AtomicReference[SSLContext](null)
+  private[utils] val connectionContextHolder = new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
+
   client.validateAndWarnAboutLooseSettings()
 
   private[utils] val clientConnectionSettings: ClientConnectionSettings = ClientConnectionSettings(system)
     .withConnectingTimeout(FiniteDuration(config.connectionTimeout._1, config.connectionTimeout._2))
-    .withIdleTimeout(config.idleTimeout)
+    .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
     .withUserAgentHeader(config.userAgent.map(`User-Agent`(_)))
 
   private[utils] val connectionPoolSettings: ConnectionPoolSettings = ConnectionPoolSettings(system)
     .withConnectionSettings(clientConnectionSettings)
     .withMaxRetries(0)
-    .withIdleTimeout(config.idleTimeout)
+    .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
 
   private[utils] def executeRequest[T](request: HttpRequest): Future[HttpResponse] = {
-    client.singleRequest(request, connectionContext, connectionPoolSettings)
+    val currentSslContext = DynamicSSLEngineProvider.current
+    if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
+      lastSslContext.set(currentSslContext)
+      val connectionContext: HttpsConnectionContext = client.createClientHttpsContext(akkaSSLConfig)
+      connectionContextHolder.set(connectionContext)
+    }
+    client.singleRequest(request, connectionContextHolder.get(), connectionPoolSettings)
   }
 }
 

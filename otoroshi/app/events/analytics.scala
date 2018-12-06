@@ -58,7 +58,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             c =>
               new ElasticWritesAnalytics(c,
                                          env.environment,
-                                         env.wsClient,
+                                         env.Ws,
                                          env.otoroshiExecutionContext,
                                          env.otoroshiActorSystem)
           )
@@ -376,7 +376,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         c =>
           new ElasticReadsAnalytics(c,
                                     env.environment,
-                                    env.wsClient,
+                                    env.Ws,
                                     env.otoroshiExecutionContext,
                                     env.otoroshiActorSystem)
       )

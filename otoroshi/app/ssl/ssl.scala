@@ -3,6 +3,7 @@ package ssl
 import java.io._
 import java.lang.reflect.Field
 import java.math.BigInteger
+import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
@@ -316,6 +317,7 @@ object DynamicSSLEngineProvider {
 
   private lazy val currentContext = new AtomicReference[SSLContext](setupContext())
   private val currentEnv          = new AtomicReference[Env](null)
+  private val defaultSslContext   = SSLContext.getDefault
 
   def setCurrentEnv(env: Env): Unit = {
     currentEnv.set(env)
@@ -324,6 +326,13 @@ object DynamicSSLEngineProvider {
   private def setupContext(): SSLContext = {
 
     val optEnv = Option(currentEnv.get)
+
+    val cacertPath = optEnv.flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+      .map(path => path.replace("${JAVA_HOME}", System.getProperty("java.home")).replace("$JAVA_HOME", System.getProperty("java.home")))
+      .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
+
+    val cacertPassword = optEnv.flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+      .getOrElse("changeit")
 
     val dumpPath: Option[String] =
       optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
@@ -345,7 +354,7 @@ object DynamicSSLEngineProvider {
     val tm: Array[TrustManager] =
       optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
-        case false => createTrustStore(keyStore)
+        case false => createTrustStore(keyStore, cacertPath, cacertPassword)
       } orNull
 
     sslContext.init(keyManagers, tm, null)
@@ -353,6 +362,8 @@ object DynamicSSLEngineProvider {
     SSLContext.setDefault(sslContext)
     sslContext
   }
+
+  def current = currentContext.get()
 
   def getHostNames(): Seq[String] = {
     certificates.values.map(_.domain).toSet.toSeq
@@ -422,11 +433,15 @@ object DynamicSSLEngineProvider {
     keyStore
   }
 
-  def createTrustStore(keyStore: KeyStore): Array[TrustManager] = {
-    logger.debug(s"Creating keystore ...")
+  def createTrustStore(keyStore: KeyStore, cacertPath: String, cacertPassword: String): Array[TrustManager] = {
+    logger.debug(s"Creating truststore ...")
     val tmf = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
-    tmf.getTrustManagers
+    val javaKs = KeyStore.getInstance("JKS")
+    javaKs.load(new FileInputStream(cacertPath), cacertPassword.toCharArray)
+    val tmf2 = TrustManagerFactory.getInstance("SunX509")
+    tmf2.init(javaKs)
+    Array[TrustManager](new FakeTrustManager((tmf.getTrustManagers ++ tmf2.getTrustManagers).map(_.asInstanceOf[X509TrustManager]).toSeq))
   }
 
   def readCertificateChain(id: String, certificateChain: String, log: Boolean = true): Seq[X509Certificate] = {
@@ -1028,7 +1043,7 @@ case class ClientCertificateValidator(
       "chain" -> certPayload
     )
     val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "application/json", "Accept" -> "application/json")
-    env.wsClient.url(url + path)
+    env.Ws.url(url + path)
       .withHttpHeaders(finalHeaders: _*)
       .withMethod(method)
       .withBody(payload)
@@ -1191,6 +1206,47 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
     env.datastores.clientCertificateValidationDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
   }
 
+}
+
+class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrustManager {
+
+  def checkClientTrusted(var1: Array[X509Certificate], var2: String): Unit = {
+    managers.find(m => Try(m.checkClientTrusted(var1, var2)).isSuccess)
+  }
+
+  def checkServerTrusted(var1: Array[X509Certificate], var2: String): Unit = {
+    managers.find(m => Try(m.checkServerTrusted(var1, var2)).isSuccess)
+  }
+
+  def getAcceptedIssuers: Array[X509Certificate] = managers.flatMap(_.getAcceptedIssuers).toArray
+
+  def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit = {
+    managers.find {
+      case m: X509ExtendedTrustManager => Try(m.checkClientTrusted(var1, var2, var3)).isSuccess
+      case m: X509TrustManager => Try(m.checkClientTrusted(var1, var2)).isSuccess
+    }
+  }
+
+  def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit = {
+    managers.find {
+      case m: X509ExtendedTrustManager => Try(m.checkServerTrusted(var1, var2, var3)).isSuccess
+      case m: X509TrustManager => Try(m.checkServerTrusted(var1, var2)).isSuccess
+    }
+  }
+
+  def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit = {
+    managers.find {
+      case m: X509ExtendedTrustManager => Try(m.checkClientTrusted(var1, var2, var3)).isSuccess
+      case m: X509TrustManager => Try(m.checkClientTrusted(var1, var2)).isSuccess
+    }
+  }
+
+  def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit = {
+    managers.find {
+      case m: X509ExtendedTrustManager => Try(m.checkServerTrusted(var1, var2, var3)).isSuccess
+      case m: X509TrustManager => Try(m.checkServerTrusted(var1, var2)).isSuccess
+    }
+  }
 }
 
 /**
