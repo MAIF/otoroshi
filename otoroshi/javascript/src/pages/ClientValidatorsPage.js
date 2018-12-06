@@ -28,6 +28,10 @@ export class ClientValidatorsPage extends Component {
       type: 'string',
       props: { label: 'Host', placeholder: 'validator.foo.bar' },
     },
+    noCache: {
+      type: 'bool',
+      props: { label: 'Do not cache validations' },
+    },
     goodTtl: {
       type: 'number',
       props: { label: 'Good validation TTL', placeholder: '600000', suffix: 'milliseconds' },
@@ -60,6 +64,7 @@ export class ClientValidatorsPage extends Component {
     'description',
     'url',
     'host',
+    'noCache',
     'goodTtl',
     'badTtl',
     'method',
@@ -96,6 +101,7 @@ export class ClientValidatorsPage extends Component {
             method: 'POST',
             path: '/certificates/_validate',
             timeout: 10000,
+            noCache: false,
             headers: {}
           })}
           itemName="Client validator"

@@ -937,6 +937,7 @@ object ClientCertificateValidator {
           method = (json \ "method").asOpt[String].getOrElse("POST"),
           path = (json \ "path").asOpt[String].getOrElse("/certificates/_validate"),
           timeout = (json \ "timeout").asOpt[Long].getOrElse(10000L),
+          noCache = (json \ "noCache").asOpt[Boolean].getOrElse(false),
           headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       )
@@ -955,6 +956,7 @@ object ClientCertificateValidator {
       "method" -> o.method,
       "path" -> o.path,
       "timeout" -> o.timeout,
+      "noCache" -> o.noCache,
       "headers" -> o.headers,
     )
   }
@@ -984,6 +986,7 @@ case class ClientCertificateValidator(
   method: String = "POST",
   path: String = "/certificates/_validate",
   timeout: Long = 10000L,
+  noCache: Boolean,
   headers: Map[String, String] = Map.empty
 ) {
 
@@ -1081,14 +1084,21 @@ case class ClientCertificateValidator(
 
   private def isCertificateChainValid(chain: Seq[X509Certificate], desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key = computeKeyFromChain(chain) + "-" + apikey.map(_.clientId).orElse(user.map(_.randomId)).getOrElse("none") + "-" + desc.id
-    getLocalValidation(key).flatMap {
-      case Some(true) => FastFuture.successful(true)
-      case Some(false) => FastFuture.successful(false)
-      case None => {
-        validateCertificateChain(chain, desc, apikey, user).flatMap {
-          case Some(false) => setBadLocalValidation(key).map(_ => false)
-          case Some(true) => setGoodLocalValidation(key).map(_ => true)
-          case None => setBadLocalValidation(key).map(_ => false)
+    if (noCache) {
+      validateCertificateChain(chain, desc, apikey, user).map {
+        case Some(bool) => bool
+        case None => false
+      }
+    } else {
+      getLocalValidation(key).flatMap {
+        case Some(true) => FastFuture.successful(true)
+        case Some(false) => FastFuture.successful(false)
+        case None => {
+          validateCertificateChain(chain, desc, apikey, user).flatMap {
+            case Some(false) => setBadLocalValidation(key).map(_ => false)
+            case Some(true) => setGoodLocalValidation(key).map(_ => true)
+            case None => setBadLocalValidation(key).map(_ => false)
+          }
         }
       }
     }
