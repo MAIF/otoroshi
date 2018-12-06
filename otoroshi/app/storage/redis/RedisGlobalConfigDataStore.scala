@@ -11,7 +11,7 @@ import play.api.Logger
 import play.api.libs.json._
 import redis.RedisClientMasterSlaves
 import security.Auth0Config
-import ssl.Cert
+import ssl.{Cert, ClientCertificateValidator}
 import utils.JsonImplicits._
 
 import scala.concurrent.duration._
@@ -191,6 +191,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     val jwtVerifiers       = (export \ "jwtVerifiers").asOpt[JsArray].getOrElse(Json.arr())
     val authConfigs        = (export \ "authConfigs").asOpt[JsArray].getOrElse(Json.arr())
     val certificates       = (export \ "certificates").asOpt[JsArray].getOrElse(Json.arr())
+    val clientValidators   = (export \ "clientValidators").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli.flushall()
@@ -216,6 +217,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
       _ <- Future.sequence(authConfigs.value.map(AuthModuleConfig.fromJsons).map(_.save()))
       _ <- Future.sequence(certificates.value.map(Cert.fromJsons).map(_.save()))
+      _ <- Future.sequence(clientValidators.value.map(ClientCertificateValidator.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -243,6 +245,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       jwtVerifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
       authConfigs  <- env.datastores.authConfigsDataStore.findAll()
       certificates <- env.datastores.certificatesDataStore.findAll()
+      clientValidators <- env.datastores.clientCertificateValidationDataStore.findAll()
     } yield
       Json.obj(
         "label"   -> "Otoroshi export",
@@ -263,7 +266,8 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
         "errorTemplates"     -> JsArray(tmplts.map(_.toJson)),
         "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
         "authConfigs"        -> JsArray(authConfigs.map(_.asJson)),
-        "certificates"       -> JsArray(certificates.map(_.toJson))
+        "certificates"       -> JsArray(certificates.map(_.toJson)),
+        "clientValidators"   -> JsArray(clientValidators.map(_.asJson))
       )
   }
 

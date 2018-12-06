@@ -23,7 +23,7 @@ import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import security.{ClaimCrypto, IdGenerator}
 import ssl.FakeKeyStore.KeystoreSettings
-import ssl.{Cert, ClientCertificateValidationSettings, DynamicSSLEngineProvider, FakeKeyStore}
+import ssl.{Cert, ClientCertificateValidator, DynamicSSLEngineProvider, FakeKeyStore}
 import storage.DataStores
 import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores

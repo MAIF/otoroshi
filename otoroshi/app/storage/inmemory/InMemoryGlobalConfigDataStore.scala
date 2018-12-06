@@ -9,7 +9,7 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import security.Auth0Config
-import ssl.Cert
+import ssl.{Cert, ClientCertificateValidator}
 import storage.{RedisLike, RedisLikeStore}
 import utils.JsonImplicits._
 
@@ -180,6 +180,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val jwtVerifiers       = (export \ "jwtVerifiers").asOpt[JsArray].getOrElse(Json.arr())
     val authConfigs        = (export \ "authConfigs").asOpt[JsArray].getOrElse(Json.arr())
     val certificates       = (export \ "certificates").asOpt[JsArray].getOrElse(Json.arr())
+    val clientValidators   = (export \ "clientValidators").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli.flushall()
@@ -205,6 +206,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(jwtVerifiers.value.map(GlobalJwtVerifier.fromJsons).map(_.save()))
       _ <- Future.sequence(authConfigs.value.map(AuthModuleConfig.fromJsons).map(_.save()))
       _ <- Future.sequence(certificates.value.map(Cert.fromJsons).map(_.save()))
+      _ <- Future.sequence(clientValidators.value.map(ClientCertificateValidator.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -219,19 +221,20 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
           .render(ConfigRenderOptions.concise())
       )
     for {
-      config       <- env.datastores.globalConfigDataStore.singleton()
-      descs        <- env.datastores.serviceDescriptorDataStore.findAll()
-      apikeys      <- env.datastores.apiKeyDataStore.findAll()
-      groups       <- env.datastores.serviceGroupDataStore.findAll()
-      tmplts       <- env.datastores.errorTemplateDataStore.findAll()
-      calls        <- env.datastores.serviceDescriptorDataStore.globalCalls()
-      dataIn       <- env.datastores.serviceDescriptorDataStore.globalDataIn()
-      dataOut      <- env.datastores.serviceDescriptorDataStore.globalDataOut()
-      admins       <- env.datastores.u2FAdminDataStore.findAll()
-      simpleAdmins <- env.datastores.simpleAdminDataStore.findAll()
-      jwtVerifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
-      authConfigs  <- env.datastores.authConfigsDataStore.findAll()
-      certificates <- env.datastores.certificatesDataStore.findAll()
+      config           <- env.datastores.globalConfigDataStore.singleton()
+      descs            <- env.datastores.serviceDescriptorDataStore.findAll()
+      apikeys          <- env.datastores.apiKeyDataStore.findAll()
+      groups           <- env.datastores.serviceGroupDataStore.findAll()
+      tmplts           <- env.datastores.errorTemplateDataStore.findAll()
+      calls            <- env.datastores.serviceDescriptorDataStore.globalCalls()
+      dataIn           <- env.datastores.serviceDescriptorDataStore.globalDataIn()
+      dataOut          <- env.datastores.serviceDescriptorDataStore.globalDataOut()
+      admins           <- env.datastores.u2FAdminDataStore.findAll()
+      simpleAdmins     <- env.datastores.simpleAdminDataStore.findAll()
+      jwtVerifiers     <- env.datastores.globalJwtVerifierDataStore.findAll()
+      authConfigs      <- env.datastores.authConfigsDataStore.findAll()
+      certificates     <- env.datastores.certificatesDataStore.findAll()
+      clientValidators <- env.datastores.clientCertificateValidationDataStore.findAll()
     } yield
       Json.obj(
         "label"   -> "Otoroshi export",
@@ -252,7 +255,8 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         "errorTemplates"     -> JsArray(tmplts.map(_.toJson)),
         "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
         "authConfigs"        -> JsArray(authConfigs.map(_.asJson)),
-        "certificates"       -> JsArray(certificates.map(_.toJson))
+        "certificates"       -> JsArray(certificates.map(_.toJson)),
+        "clientValidators"   -> JsArray(clientValidators.map(_.asJson))
       )
   }
 
