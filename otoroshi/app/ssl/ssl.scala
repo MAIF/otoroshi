@@ -1015,9 +1015,9 @@ case class ClientCertificateValidator(
     const cert = x509.parseCert(req.body.chain);
     console.log(identity, service, cert);
     if (cert.subject.emailAddress === 'john.doe@foo.bar') {
-      res.send({ valid: true });
+      res.send({ status: "good" });
     } else {
-      res.send({ valid: false });
+      res.send({ status: "revoked" });
     }
   });
 
@@ -1059,8 +1059,8 @@ case class ClientCertificateValidator(
       .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
       .execute()
       .map { resp =>
-        resp.status match {
-          case 200 => (resp.json.as[JsObject] \ "valid").asOpt[Boolean]
+        resp.status match { // TODO: can be good | revoked | unknown
+          case 200 => (resp.json.as[JsObject] \ "status").asOpt[String].map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
           case _ => None
         }
       }.recover {
