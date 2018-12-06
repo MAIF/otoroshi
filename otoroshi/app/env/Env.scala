@@ -193,6 +193,28 @@ class Env(val configuration: Configuration,
     )
   }
 
+  lazy val internalClient = {
+    val parser: WSConfigParser = new WSConfigParser(configuration.underlying, environment.classLoader)
+    val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
+      keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
+      //setHttpClientCodecMaxChunkSize(1024 * 100)
+    )
+    val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
+      compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      idleTimeout =
+        configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+      connectionTimeout = configuration
+        .getOptional[Int]("app.proxy.connectionTimeout")
+        .map(_.millis)
+        .getOrElse((2 * 60 * 1000).millis)
+    )
+    WsClientChooser(
+      wsClient,
+      new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer),
+      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false)
+    )
+  }
+
   lazy val statsd = new StatsdWrapper(otoroshiActorSystem, this)
 
   lazy val mode   = environment.mode
@@ -208,7 +230,7 @@ class Env(val configuration: Configuration,
   def rootScheme               = if (isDev) "http://" else s"${exposedRootScheme}://"
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
 
-  def Ws = wsClient
+  def Ws = internalClient
 
   lazy val snowflakeSeed      = configuration.getOptional[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator = IdGenerator(snowflakeSeed)
@@ -356,6 +378,8 @@ class Env(val configuration: Configuration,
   timeout(300.millis).andThen {
     case _ =>
       implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
+
+      println(configuration.getOptional[Seq[String]]("akka.ssl-config.disabledKeyAlgorithms"))
 
       if (clusterConfig.mode == ClusterMode.Worker) {
         clusterAgent.startF()

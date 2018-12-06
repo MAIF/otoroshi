@@ -9,19 +9,17 @@ import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
-import com.typesafe.sslconfig.ssl.SSLParametersConfig
 import javax.net.ssl.SSLContext
 import play.api.libs.json.JsValue
 import play.api.libs.ws.{BodyReadable, BodyWritable, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
-import ssl.{ClientAuth, DynamicSSLEngineProvider}
+import ssl.DynamicSSLEngineProvider
 
-import scala.collection.immutable
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
@@ -32,8 +30,14 @@ object WsClientChooser {
   def apply(standardClient: WSClient, akkaClient: AkkWsClient, fullAkka: Boolean): WsClientChooser = new WsClientChooser(standardClient, akkaClient, fullAkka)
 }
 
-class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, fullAkka: Boolean) {
-  def url(protocol: String, url: String): WSRequest = { // TODO: handle idle timeout and other timeout per request here 
+class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, fullAkka: Boolean) extends WSClient {
+
+  def url(url: String): WSRequest = {
+    val protocol = scala.util.Try(url.split(":\\/\\/").apply(0)).getOrElse("http")
+    urlWithProtocol(protocol, url)
+  }
+
+  def urlWithProtocol(protocol: String, url: String): WSRequest = { // TODO: handle idle timeout and other timeout per request here
     protocol.toLowerCase() match {
       case "ahttp" => new AkkWsClientRequest(akkaClient, url.replace("ahttp://", "http://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
       case "ahttps" => new AkkWsClientRequest(akkaClient, url.replace("ahttps://", "https://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
@@ -43,6 +47,10 @@ class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, fullAkk
       case _ if fullAkka => new AkkWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
     }
   }
+
+  override def underlying[T]: T = standardClient.underlying[T]
+
+  override def close(): Unit = ()
 }
 
 class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, materializer: Materializer) extends WSClient {
@@ -59,8 +67,8 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
 
   private[utils] val wsClientConfig: WSClientConfig = config
   private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(config.ssl
-    .withSslParametersConfig(config.ssl.sslParametersConfig.withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.want))
-    .withDefault(true))
+    .withSslParametersConfig(config.ssl.sslParametersConfig.withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need))
+    .withDefault(false))
 
   private[utils] val lastSslContext = new AtomicReference[SSLContext](null)
   private[utils] val connectionContextHolder = new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
@@ -81,7 +89,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
     val currentSslContext = DynamicSSLEngineProvider.current
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
-      val connectionContext: HttpsConnectionContext = client.createClientHttpsContext(akkaSSLConfig)
+      val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext)
       connectionContextHolder.set(connectionContext)
     }
     client.singleRequest(request, connectionContextHolder.get(), connectionPoolSettings)

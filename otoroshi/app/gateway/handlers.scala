@@ -990,7 +990,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               //}
                               val upstreamStart = System.currentTimeMillis()
                               env.gatewayClient
-                                .url(target.scheme, url)
+                                .urlWithProtocol(target.scheme, url)
                                 //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
                                 .withRequestTimeout(6.hour) // we should monitor leaks
                                 .withMethod(req.method)
