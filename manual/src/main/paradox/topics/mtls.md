@@ -29,7 +29,7 @@ mkdir server
 mkdir client
 
 # create a certificate authority key, use password as pass phrase
-openssl genrsa -aes256 -out ./ca/ca-backend.key 4096
+openssl genrsa -out ./ca/ca-backend.key 2048
 # remove pass phrase
 openssl rsa -in ./ca/ca-backend.key -out ./ca/ca-backend.key
 # generate the certificate authority cert
@@ -37,7 +37,7 @@ openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-backend.key -out ./ca/ca-b
 
 
 # create a certificate authority key, use password as pass phrase
-openssl genrsa -aes256 -out ./ca/ca-frontend.key 4096
+openssl genrsa -out ./ca/ca-frontend.key 2048
 # remove pass phrase
 openssl rsa -in ./ca/ca-frontend.key -out ./ca/ca-frontend.key
 # generate the certificate authority cert
@@ -173,7 +173,7 @@ const https = require('https');
 const options = { 
   key: fs.readFileSync('./server/_.backend.lol.key'), 
   cert: fs.readFileSync('./server/_.backend.lol.cer'), 
-  ca: fs.readFileSync('./ca/ca-frontend.cer'), 
+  ca: fs.readFileSync('./ca/ca-backend.cer'), 
   requestCert: true, 
   rejectUnauthorized: true
 }; 
@@ -286,3 +286,40 @@ The use case is the following :
 @@@ div { .centered-img }
 <img src="../img/mtls-arch-2.jpg" />
 @@@
+
+```js
+const fs = require('fs'); 
+const https = require('https'); 
+
+const options = { 
+  key: fs.readFileSync('./server/_.backend.lol.key'), 
+  cert: fs.readFileSync('./server/_.backend.lol.cer'), 
+  ca: fs.readFileSync('./ca/ca-frontend.cer'), 
+  requestCert: true, 
+  rejectUnauthorized: true
+}; 
+
+function decodeBody(req) {
+  return new Promis((success, failure) => {
+    const body = [];
+    request.on('data', (chunk) => {
+      body.push(chunk);
+    }).on('end', () => {
+      const bodyStr = Buffer.concat(body).toString();
+      success(JSON.parse(bodyStr));
+    });
+  });
+}
+
+https.createServer(options, (req, res) => { 
+  decodeBody(req).then(body => {
+    const user = body.user;
+    const chain = body.chain;
+  });
+  console.log('Client certificate CN: ', req.socket.getPeerCertificate().subject.CN);
+  res.writeHead(200, {
+    'Content-Type': 'application/json'
+  }); 
+  res.end(JSON.stringify({ message: 'Hello World!' }) + "\n"); 
+}).listen(8444);
+```
