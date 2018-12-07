@@ -22,8 +22,8 @@ for this demo you will have to edit your `/etc/hosts` file to add the following 
 But first we need to generate some certificates to make the demo work
 
 ```sh
-mkdir mtls-demo-1
-cd mtls-demo-1
+mkdir mtls-demo
+cd mtls-demo
 mkdir ca
 mkdir server
 mkdir client
@@ -33,7 +33,7 @@ openssl genrsa -aes256 -out ./ca/ca-backend.key 4096
 # remove pass phrase
 openssl rsa -in ./ca/ca-backend.key -out ./ca/ca-backend.key
 # generate the certificate authority cert
-openssl req -nodes -new -x509 -sha256 -days 730 -key ./ca/ca-backend.key -out ./ca/ca-backend.cer -subj "/CN=otoroshi-mtls-demo-1-backend"
+openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-backend.key -out ./ca/ca-backend.cer -subj "/CN=otoroshi-mtls-demo-backend"
 
 
 # create a certificate authority key, use password as pass phrase
@@ -41,7 +41,7 @@ openssl genrsa -aes256 -out ./ca/ca-frontend.key 4096
 # remove pass phrase
 openssl rsa -in ./ca/ca-frontend.key -out ./ca/ca-frontend.key
 # generate the certificate authority cert
-openssl req -nodes -new -x509 -sha256 -days 730 -key ./ca/ca-frontend.key -out ./ca/ca-frontend.cer -subj "/CN=otoroshi-mtls-demo-1-frontend"
+openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-frontend.key -out ./ca/ca-frontend.cer -subj "/CN=otoroshi-mtls-demo-frontend"
 
 
 # now create the backend cert key, use password as pass phrase
@@ -49,7 +49,7 @@ openssl genrsa -out ./server/_.backend.lol.key 2048
 # remove pass phrase
 openssl rsa -in ./server/_.backend.lol.key -out ./server/_.backend.lol.key
 # generate the csr for the certificate
-openssl req -nodes -new -key ./server/_.backend.lol.key -sha256 -out ./server/_.backend.lol.csr -subj "/CN=*.backend.lol"
+openssl req -new -key ./server/_.backend.lol.key -sha256 -out ./server/_.backend.lol.csr -subj "/CN=*.backend.lol"
 # generate the certificate
 openssl x509 -req -days 365 -sha256 -in ./server/_.backend.lol.csr -CA ./ca/ca-backend.cer -CAkey ./ca/ca-backend.key -set_serial 1 -out ./server/_.backend.lol.cer
 # verify the certificate, should output './server/_.backend.lol.cer: OK'
@@ -61,7 +61,7 @@ openssl genrsa -out ./server/_.frontend.lol.key 2048
 # remove pass phrase
 openssl rsa -in ./server/_.frontend.lol.key -out ./server/_.frontend.lol.key
 # generate the csr for the certificate
-openssl req -nodes -new -key ./server/_.frontend.lol.key -sha256 -out ./server/_.frontend.lol.csr -subj "/CN=*.frontend.lol"
+openssl req -new -key ./server/_.frontend.lol.key -sha256 -out ./server/_.frontend.lol.csr -subj "/CN=*.frontend.lol"
 # generate the certificate
 openssl x509 -req -days 365 -sha256 -in ./server/_.frontend.lol.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 1 -out ./server/_.frontend.lol.cer
 # verify the certificate, should output './server/_.frontend.lol.cer: OK'
@@ -73,7 +73,7 @@ openssl genrsa -out ./client/_.backend.lol.key 2048
 # remove pass phrase
 openssl rsa -in ./client/_.backend.lol.key -out ./client/_.backend.lol.key
 # generate the csr for the certificate
-openssl req -nodes -new -key ./client/_.backend.lol.key -out ./client/_.backend.lol.csr -subj "/CN=*.backend.lol"
+openssl req -new -key ./client/_.backend.lol.key -out ./client/_.backend.lol.csr -subj "/CN=*.backend.lol"
 # generate the certificate
 openssl x509 -req -days 365 -sha256 -in ./client/_.backend.lol.csr -CA ./ca/ca-backend.cer -CAkey ./ca/ca-backend.key -set_serial 2 -out ./client/_.backend.lol.cer
 # generate a pkcs12 version of the cert and key, use password as password
@@ -85,7 +85,7 @@ openssl genrsa -out ./client/_.frontend.lol.key 2048
 # remove pass phrase
 openssl rsa -in ./client/_.frontend.lol.key -out ./client/_.frontend.lol.key
 # generate the csr for the certificate
-openssl req -nodes -new -key ./client/_.frontend.lol.key -out ./client/_.frontend.lol.csr -subj "/CN=api.frontend.lol"
+openssl req -new -key ./client/_.frontend.lol.key -out ./client/_.frontend.lol.csr -subj "/CN=*.frontend.lol"
 # generate the certificate
 openssl x509 -req -days 365 -sha256 -in ./client/_.frontend.lol.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 2 -out ./client/_.frontend.lol.cer
 # generate a pkcs12 version of the cert and key, use password as password
@@ -278,10 +278,6 @@ you should get an error because no client cert. is passed with the request. But 
 curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://api.frontend.lol:8443/
 # the output should be: {"message":"Hello World!"}
 ```
-
-### End-to-end test
-
-
 
 ## Going further
 
