@@ -238,7 +238,7 @@ object Cert {
           domain = (json \ "domain").as[String],
           chain = (json \ "chain").as[String],
           caRef = (json \ "caRef").asOpt[String],
-          privateKey = (json \ "privateKey").as[String],
+          privateKey = (json \ "privateKey").asOpt[String].getOrElse(""),
           selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
           ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
           valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
@@ -394,6 +394,23 @@ object DynamicSSLEngineProvider {
           val id = "ca-" + certificate.getSerialNumber.toString(16)
           if (!keyStore.containsAlias(id)) {
             keyStore.setCertificateEntry(id, certificate)
+          }
+        }
+      }
+      case cert if cert.privateKey.trim.isEmpty  => {
+        cert.certificate.foreach { certificate =>
+          val id = "trusted-" + certificate.getSerialNumber.toString(16)
+          val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
+          val domain = Try {
+              certificateChain.head.getSubjectDN.getName
+                .split(",")
+                .map(_.trim)
+                .find(_.toLowerCase().startsWith("cn="))
+                .map(_.replace("CN=", "").replace("cn=", ""))
+                .getOrElse(cert.domain)
+            }.toOption.getOrElse(cert.domain)
+          if (!keyStore.containsAlias(domain)) {
+            keyStore.setCertificateEntry(domain, certificate)
           }
         }
       }
@@ -944,6 +961,7 @@ object ClientCertificateValidator {
           path = (json \ "path").asOpt[String].getOrElse("/certificates/_validate"),
           timeout = (json \ "timeout").asOpt[Long].getOrElse(10000L),
           noCache = (json \ "noCache").asOpt[Boolean].getOrElse(false),
+          alwaysValid = (json \ "alwaysValid").asOpt[Boolean].getOrElse(false),
           headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       )
@@ -963,6 +981,7 @@ object ClientCertificateValidator {
       "path" -> o.path,
       "timeout" -> o.timeout,
       "noCache" -> o.noCache,
+      "alwaysValid" -> o.alwaysValid,
       "headers" -> o.headers,
     )
   }
@@ -993,6 +1012,7 @@ case class ClientCertificateValidator(
   path: String = "/certificates/_validate",
   timeout: Long = 10000L,
   noCache: Boolean,
+  alwaysValid: Boolean,
   headers: Map[String, String] = Map.empty
 ) {
 
@@ -1114,6 +1134,7 @@ case class ClientCertificateValidator(
     f: => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     request.clientCertificateChain match {
+      case Some(chain) if alwaysValid => f.map(Right.apply)
       case Some(chain) => isCertificateChainValid(chain, desc, apikey, user).flatMap {
         case true => f.map(Right.apply)
         case false => Errors.craftResponseResult(

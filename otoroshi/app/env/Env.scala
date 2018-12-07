@@ -379,8 +379,6 @@ class Env(val configuration: Configuration,
     case _ =>
       implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
-      println(configuration.getOptional[Seq[String]]("akka.ssl-config.disabledKeyAlgorithms"))
-
       if (clusterConfig.mode == ClusterMode.Worker) {
         clusterAgent.startF()
       } else {

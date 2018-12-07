@@ -68,7 +68,7 @@ All the features supported by **Otoroshi** are listed below
 * @ref:[Global live metrics](./setup/index.md#first-login)
 * @ref:[Send metrics to a StatsD/Datadog agent](./integrations/statsd.md)
 * @ref:[Advanced CleverCloud integration (create services from CleverCloud apps)](./integrations/clevercloud.md)
-* @ref:[Support admin login with any auth. module](./usage/0-auth.md)
+* @ref:[Support admin login with any auth. module](./usage/9-auth.md)
 * @ref:[Support admin login with FIDO U2F device](./setup/admin.md#create-admin-user-with-u2f-device-login)
 * @ref:[Dynamic SSL termination](./topics/ssl.md)
 * @ref:[Rust CLI running on MacOS, Linux and Windows](./cli.md)

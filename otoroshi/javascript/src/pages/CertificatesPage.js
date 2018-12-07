@@ -209,11 +209,14 @@ class Commands extends Component {
 class CertificateValid extends Component {
   state = {
     loading: false,
-    valid: false,
+    valid: null,
     error: null,
   };
 
   update = cert => {
+    if (!cert.privateKey || (cert.privateKey.trim() === '')) {
+      return;
+    }
     this.setState({ loading: true }, () => {
       BackOfficeServices.certValid(cert)
         .then(payload => {
@@ -256,12 +259,12 @@ class CertificateValid extends Component {
       <div className="form-group">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
-          {this.state.valid && (
+          {(this.state.valid === true) && (
             <div className="alert alert-success" role="alert">
               Your certificate is valid
             </div>
           )}
-          {!this.state.valid && (
+          {(this.state.valid === false) && (
             <div className="alert alert-danger" role="alert">
               Your certificate is not valid
             </div>

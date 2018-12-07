@@ -114,9 +114,14 @@ export class Form extends Component {
         return <hr key={idx} />;
       }
     } else {
-      const { type, disabled, props = {} } = this.props.schema[name];
+      const { display, type, disabled, props = {} } = this.props.schema[name];
       // console.log('generate', name, 'of type', type, 'from', this.props.schema);
       let component = null;
+      if (display) {
+        if (!display(this.props.value)) {
+          return null;
+        }
+      }
       if (type) {
         if (type === 'array') {
           component = (

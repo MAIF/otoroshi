@@ -9,6 +9,7 @@ export class ClientValidatorsPage extends Component {
     { title: 'Name', content: item => item.name },
     { title: 'Description', content: item => item.description },
     { title: 'Host', content: item => item.host },
+    { title: 'Always valid', content: item => item.alwaysValid ? 'yes' : 'no', style: { width: 100, textAlign: 'center' } },
     { title: 'Cache', content: item => !item.noCache ? 'yes' : 'no', style: { width: 100, textAlign: 'center' } },
   ];
 
@@ -22,40 +23,53 @@ export class ClientValidatorsPage extends Component {
       type: 'string',
       props: { label: 'Description', placeholder: 'Description of the validator' },
     },
+    alwaysValid: {
+      type: 'bool',
+      props: { label: 'All cert. valid' },
+    },
     url: {
       type: 'string',
+      display: value => !value.alwaysValid,
       props: { label: 'URL', placeholder: 'http://127.0.0.1:3000' },
     },
     host: {
       type: 'string',
+      display: value => !value.alwaysValid,
       props: { label: 'Host', placeholder: 'validator.foo.bar' },
     },
     noCache: {
       type: 'bool',
+      display: value => !value.alwaysValid,
       props: { label: 'Do not cache validations' },
     },
     goodTtl: {
       type: 'number',
+      display: value => !value.alwaysValid,
       props: { label: 'Good validation TTL', placeholder: '600000', suffix: 'milliseconds' },
     },
     badTtl: {
       type: 'number',
+      display: value => !value.alwaysValid,
       props: { label: 'Bad validation  TTL', placeholder: '60000', suffix: 'milliseconds' },
     },
     method: {
       type: 'string',
+      display: value => !value.alwaysValid,
       props: { label: 'HTTP method', placeholder: 'POST' },
     },
     path: {
       type: 'string',
+      display: value => !value.alwaysValid,
       props: { label: 'HTTP Path', placeholder: '/certificates/_validate' },
     },
     timeout: {
       type: 'number',
+      display: value => !value.alwaysValid,
       props: { label: 'Call timeout', placeholder: '10000', suffix: 'milliseconds' },
     },
     headers: {
       type: 'object',
+      display: value => !value.alwaysValid,
       props: { label: 'HTTP headers' },
     },
   };
@@ -64,6 +78,7 @@ export class ClientValidatorsPage extends Component {
     'id',
     'name',
     'description',
+    'alwaysValid',
     'url',
     'host',
     'method',

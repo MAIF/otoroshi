@@ -2,6 +2,12 @@
 
 Otoroshi can be used as an SSL/TLS termination. It is enabled by default but you can customise HTTPS port with `https.port` config. and env. var `HTTPS_PORT`. You can create upload any certificate you want in the Otoroshi UI or using the API. Just go to `settings (cog icon) / SSL certificates`.
 
+@@@ note { title="TLS 1.3 support" }
+Otoroshi does support TLS 1.3 when used in combination with JDK 11
+
+<img src="../img/tls13.png" />
+@@@
+
 @@@ div { .centered-img }
 <img src="../img/ssl.png" />
 @@@
