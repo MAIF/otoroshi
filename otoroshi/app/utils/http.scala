@@ -15,7 +15,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import javax.net.ssl.SSLContext
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{BodyReadable, BodyWritable, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
 import ssl.DynamicSSLEngineProvider
@@ -121,6 +121,31 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
   override def json: JsValue = throw new RuntimeException("Not supported on this WSClient !!!")
 }
 
+case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: String, rawbody: ByteString) extends WSResponse {
+
+  lazy val allHeaders: Map[String, Seq[String]] = {
+    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq
+    TreeMap(headers: _*)(CaseInsensitiveOrdered)
+  }
+
+  def status: Int = httpResponse.status.intValue()
+  def statusText: String = httpResponse.status.defaultMessage()
+  def headers: Map[String, Seq[String]] = allHeaders
+  def underlying[T]: T = httpResponse.asInstanceOf[T]
+  def bodyAsSource: Source[ByteString, _] = Source.single(rawbody)
+  override def header(name: String): Option[String] = headerValues(name).headOption
+  override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
+  override def contentType: String = header("Content-Type").getOrElse("application/octet-stream")
+  def body: String = rawbody.utf8String
+  def bodyAsBytes: ByteString = rawbody
+  override def xml: Elem = scala.xml.XML.loadString(rawbody.utf8String)
+  override def json: JsValue = Json.parse(rawbody.utf8String)
+
+  override def body[T: BodyReadable]: T = throw new RuntimeException("Not supported on this WSClient !!!")
+  def cookies: Seq[WSCookie] = throw new RuntimeException("Not supported on this WSClient !!!")
+  def cookie(name: String): Option[WSCookie] = throw new RuntimeException("Not supported on this WSClient !!!")
+}
+
 object CaseInsensitiveOrdered extends Ordering[String] {
   def compare(x: String, y: String): Int = {
     val xl = x.length
@@ -138,6 +163,8 @@ case class AkkWsClientRequest(
   headers: Map[String, Seq[String]] = Map.empty[String, Seq[String]],
   requestTimeout: Option[Int] = None
 )(implicit materializer: Materializer) extends WSRequest {
+
+  implicit val ec = client.ec
 
   override type Self = WSRequest
 
@@ -162,6 +189,20 @@ case class AkkWsClientRequest(
 
   def stream(): Future[WSResponse] = {
     client.executeRequest(buildRequest()).map(resp => AkkWsClientStreamedResponse(resp, rawUrl))(client.ec)
+    // execute()
+  }
+
+  override def execute(method: String): Future[WSResponse] = {
+    withMethod(method).execute()
+  }
+
+  override def execute(): Future[WSResponse] = {
+    client.executeRequest(buildRequest()).flatMap { response: HttpResponse =>
+      response.entity.toStrict(FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2))
+        .map(a => (response, a))
+    }.map {
+      case (response: HttpResponse, body: HttpEntity.Strict) => AkkWsClientRawResponse(response, rawUrl, body.data)
+    }
   }
 
   private def realContentType: Option[ContentType] = {
@@ -243,8 +284,6 @@ case class AkkWsClientRequest(
   override def delete(): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
   override def head(): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
   override def options(): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def execute(method: String): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def execute(): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
   override def url: String = throw new RuntimeException("Not supported on this WSClient !!!")
   override def uri: URI = throw new RuntimeException("Not supported on this WSClient !!!")
   override def contentType: Option[String] = throw new RuntimeException("Not supported on this WSClient !!!")

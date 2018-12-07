@@ -33,7 +33,7 @@ openssl genrsa -out ./ca/ca-backend.key 2048
 # remove pass phrase
 openssl rsa -in ./ca/ca-backend.key -out ./ca/ca-backend.key
 # generate the certificate authority cert
-openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-backend.key -out ./ca/ca-backend.cer -subj "/CN=otoroshi-mtls-demo-backend"
+openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-backend.key -out ./ca/ca-backend.cer -subj "/CN=MTLSB"
 
 
 # create a certificate authority key, use password as pass phrase
@@ -41,7 +41,7 @@ openssl genrsa -out ./ca/ca-frontend.key 2048
 # remove pass phrase
 openssl rsa -in ./ca/ca-frontend.key -out ./ca/ca-frontend.key
 # generate the certificate authority cert
-openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-frontend.key -out ./ca/ca-frontend.cer -subj "/CN=otoroshi-mtls-demo-frontend"
+openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-frontend.key -out ./ca/ca-frontend.cer -subj "/CN=MTLSF"
 
 
 # now create the backend cert key, use password as pass phrase

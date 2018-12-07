@@ -520,7 +520,11 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
 
   lazy val cipherSuites = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
   lazy val protocols = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
-  lazy val clientAuth = appProvider.get.get.configuration.getOptional[String]("otoroshi.ssl.fromOutside.clientAuth").flatMap(ClientAuth.apply).getOrElse(ClientAuth.None)
+  lazy val clientAuth = {
+    val auth = appProvider.get.get.configuration.getOptional[String]("otoroshi.ssl.fromOutside.clientAuth").flatMap(ClientAuth.apply).getOrElse(ClientAuth.None)
+    DynamicSSLEngineProvider.logger.info(s"Otoroshi client auth: ${auth}")
+    auth
+  }
 
   override def createSSLEngine(): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
@@ -551,7 +555,6 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
             val hostName = hn.getAsciiName
             DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
-            // sslParameters.setNeedClientAuth(true), // client auth here. post set does not work here :(
           case _ =>
             DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
         }
