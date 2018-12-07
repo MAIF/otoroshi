@@ -4,7 +4,7 @@ const https = require('https');
 const options = { 
   key: fs.readFileSync('./server/_.backend.lol.key'), 
   cert: fs.readFileSync('./server/_.backend.lol.cer'), 
-  ca: fs.readFileSync('./ca/ca.cer'), 
+  ca: fs.readFileSync('./ca/ca-backend.cer'), 
   requestCert: true, 
   rejectUnauthorized: true
 }; 

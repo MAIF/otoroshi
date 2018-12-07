@@ -27,12 +27,21 @@ cd mtls-demo-1
 mkdir ca
 mkdir server
 mkdir client
+
 # create a certificate authority key, use password as pass phrase
-openssl genrsa -aes256 -out ./client/client.key 4096
+openssl genrsa -aes256 -out ./ca/ca-backend.key 4096
 # remove pass phrase
-openssl rsa -in ./client/client.key -out ./ca/ca.key
+openssl rsa -in ./ca/ca-backend.key -out ./ca/ca-backend.key
 # generate the certificate authority cert
-openssl req -nodes -new -x509 -sha256 -days 730 -key ./ca/ca.key -out ./ca/ca.cer -subj "/CN=otoroshi-mtls-demo-1"
+openssl req -nodes -new -x509 -sha256 -days 730 -key ./ca/ca-backend.key -out ./ca/ca-backend.cer -subj "/CN=otoroshi-mtls-demo-1-backend"
+
+
+# create a certificate authority key, use password as pass phrase
+openssl genrsa -aes256 -out ./ca/ca-frontend.key 4096
+# remove pass phrase
+openssl rsa -in ./ca/ca-frontend.key -out ./ca/ca-frontend.key
+# generate the certificate authority cert
+openssl req -nodes -new -x509 -sha256 -days 730 -key ./ca/ca-frontend.key -out ./ca/ca-frontend.cer -subj "/CN=otoroshi-mtls-demo-1-frontend"
 
 
 # now create the backend cert key, use password as pass phrase
@@ -42,9 +51,9 @@ openssl rsa -in ./server/_.backend.lol.key -out ./server/_.backend.lol.key
 # generate the csr for the certificate
 openssl req -nodes -new -key ./server/_.backend.lol.key -sha256 -out ./server/_.backend.lol.csr -subj "/CN=*.backend.lol"
 # generate the certificate
-openssl x509 -req -days 365 -sha256 -in ./server/_.backend.lol.csr -CA ./ca/ca.cer -CAkey ./ca/ca.key -set_serial 1 -out ./server/_.backend.lol.cer
+openssl x509 -req -days 365 -sha256 -in ./server/_.backend.lol.csr -CA ./ca/ca-backend.cer -CAkey ./ca/ca-backend.key -set_serial 1 -out ./server/_.backend.lol.cer
 # verify the certificate, should output './server/_.backend.lol.cer: OK'
-openssl verify -CAfile ./ca/ca.cer ./server/_.backend.lol.cer
+openssl verify -CAfile ./ca/ca-backend.cer ./server/_.backend.lol.cer
 
 
 # now create the frontend cert key, use password as pass phrase
@@ -54,9 +63,9 @@ openssl rsa -in ./server/_.frontend.lol.key -out ./server/_.frontend.lol.key
 # generate the csr for the certificate
 openssl req -nodes -new -key ./server/_.frontend.lol.key -sha256 -out ./server/_.frontend.lol.csr -subj "/CN=*.frontend.lol"
 # generate the certificate
-openssl x509 -req -days 365 -sha256 -in ./server/_.frontend.lol.csr -CA ./ca/ca.cer -CAkey ./ca/ca.key -set_serial 1 -out ./server/_.frontend.lol.cer
+openssl x509 -req -days 365 -sha256 -in ./server/_.frontend.lol.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 1 -out ./server/_.frontend.lol.cer
 # verify the certificate, should output './server/_.frontend.lol.cer: OK'
-openssl verify -CAfile ./ca/ca.cer ./server/_.frontend.lol.cer
+openssl verify -CAfile ./ca/ca-frontend.cer ./server/_.frontend.lol.cer
 
 
 # now create the client cert key for backend, use password as pass phrase
@@ -66,7 +75,7 @@ openssl rsa -in ./client/_.backend.lol.key -out ./client/_.backend.lol.key
 # generate the csr for the certificate
 openssl req -nodes -new -key ./client/_.backend.lol.key -out ./client/_.backend.lol.csr -subj "/CN=*.backend.lol"
 # generate the certificate
-openssl x509 -req -days 365 -sha256 -in ./client/_.backend.lol.csr -CA ./ca/ca.cer -CAkey ./ca/ca.key -set_serial 2 -out ./client/_.backend.lol.cer
+openssl x509 -req -days 365 -sha256 -in ./client/_.backend.lol.csr -CA ./ca/ca-backend.cer -CAkey ./ca/ca-backend.key -set_serial 2 -out ./client/_.backend.lol.cer
 # generate a pkcs12 version of the cert and key, use password as password
 openssl pkcs12 -export -clcerts -in client/_.backend.lol.cer -inkey client/_.backend.lol.key -out client/_.backend.lol.p12
 
@@ -76,9 +85,9 @@ openssl genrsa -out ./client/_.frontend.lol.key 2048
 # remove pass phrase
 openssl rsa -in ./client/_.frontend.lol.key -out ./client/_.frontend.lol.key
 # generate the csr for the certificate
-openssl req -nodes -new -key ./client/_.frontend.lol.key -out ./client/_.frontend.lol.csr -subj "/CN=*.frontend.lol"
+openssl req -nodes -new -key ./client/_.frontend.lol.key -out ./client/_.frontend.lol.csr -subj "/CN=api.frontend.lol"
 # generate the certificate
-openssl x509 -req -days 365 -sha256 -in ./client/_.frontend.lol.csr -CA ./ca/ca.cer -CAkey ./ca/ca.key -set_serial 2 -out ./client/_.frontend.lol.cer
+openssl x509 -req -days 365 -sha256 -in ./client/_.frontend.lol.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 2 -out ./client/_.frontend.lol.cer
 # generate a pkcs12 version of the cert and key, use password as password
 openssl pkcs12 -export -clcerts -in client/_.frontend.lol.cer -inkey client/_.frontend.lol.key -out client/_.frontend.lol.p12
 ```
@@ -88,9 +97,12 @@ once it's done, you should have something like
 ```sh
 $ tree
 .
+├── backend.js
 ├── ca
-│   ├── ca.cer
-│   └── ca.key
+│   ├── ca-backend.cer
+│   ├── ca-backend.key
+│   ├── ca-frontend.cer
+│   └── ca-frontend.key
 ├── client
 │   ├── _.backend.lol.cer
 │   ├── _.backend.lol.csr
@@ -108,7 +120,7 @@ $ tree
     ├── _.frontend.lol.csr
     └── _.frontend.lol.key
 
-3 directories, 16 files
+3 directories, 18 files
 ```
 
 ### The backend service 
@@ -128,7 +140,7 @@ const https = require('https');
 const options = { 
   key: fs.readFileSync('./server/_.backend.lol.key'), 
   cert: fs.readFileSync('./server/_.backend.lol.cer'), 
-  ca: fs.readFileSync('./ca/ca.cer'), 
+  ca: fs.readFileSync('./ca/ca-backend.cer'), 
 }; 
 
 https.createServer(options, (req, res) => { 
@@ -161,7 +173,7 @@ const https = require('https');
 const options = { 
   key: fs.readFileSync('./server/_.backend.lol.key'), 
   cert: fs.readFileSync('./server/_.backend.lol.cer'), 
-  ca: fs.readFileSync('./ca/ca.cer'), 
+  ca: fs.readFileSync('./ca/ca-frontend.cer'), 
   requestCert: true, 
   rejectUnauthorized: true
 }; 
@@ -210,6 +222,7 @@ and test it
 
 ```sh
 curl http://api.frontend.lol:8080/
+# the following error should be returned: {"Otoroshi-Error":"Something went wrong, you should try later. Thanks for your understanding."}
 ```
 
 @@@ warning
@@ -217,6 +230,54 @@ As seen before, the target of the otoroshi service is `ahttps://api.backend.lol:
 @@@
 
 you should get an error due to the fact that Otoroshi doesn't know about the server certificate or the client certificate expected by the server.
+
+We have to add the client certificate for `https://api.backend.lol` to Otoroshi. Go to http://otoroshi.foo.bar:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./client/_.backend.lol.cer` and `./client/_.backend.lol.key` respectively in `Certificate full chain` and `Certificate private key`.
+
+@@@ div { .centered-img }
+<img src="../img/mtls-cert-client-backend-1.png" />
+@@@
+
+and retry the following curl command 
+
+```sh
+curl http://api.frontend.lol:8080/
+# the output should be: {"message":"Hello World!"}
+```
+
+now we have to expose `https://api.frontend.lol:8443` using otoroshi. Go to http://otoroshi.foo.bar:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.lol.cer` and `./server/_.frontend.lol.key` respectively in `Certificate full chain` and `Certificate private key`.
+
+and try the following command
+
+```sh
+curl -k https://api.frontend.lol:8443/
+# the output should be: {"message":"Hello World!"}
+```
+
+now we have to enforce the fact that we want client certificate for `api.frontend.lol`. To do that, we have to create a `Validation authority` in otoroshi and use it on the `api.frontend.lol` service. Go to http://otoroshi.foo.bar:8080/bo/dashboard/validation-authorities and create a new item. A validation authority is supposed to be a remote service that will say if the client certificate is valid. Here we don't really care if the certificate is valid or not, but we want to enforce the fact that there is a client certificate. So just check the `All cert. valid button`.
+
+@@@ div { .centered-img }
+<img src="../img/mtls-va-1.png" />
+@@@
+
+now go back on your `api.frontend.lol` service, in the `Validation authority` section and select the authority you just created.
+
+@@@ div { .centered-img }
+<img src="../img/mtls-va-ref-1.png" />
+@@@
+
+now if you retry 
+
+```sh
+curl -k https://api.frontend.lol:8443/
+# the output should be: {"Otoroshi-Error":"You're not authorized here !"}
+```
+
+you should get an error because no client cert. is passed with the request. But if you pass the `./client/_.frontend.lol.p12` client cert in your curl call
+
+```sh
+curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://api.frontend.lol:8443/
+# the output should be: {"message":"Hello World!"}
+```
 
 ### End-to-end test
 
