@@ -16,6 +16,7 @@ import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import javax.net.ssl.SSLContext
+import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{BodyReadable, BodyWritable, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
@@ -33,6 +34,7 @@ object WsClientChooser {
 
 class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, ahcCreator: SSLConfigSettings => WSClient, fullAkka: Boolean) extends WSClient {
 
+  private[utils] val logger = Logger("otoroshi-WsClientChooser")
   private[utils] val lastSslConfig = new AtomicReference[SSLConfigSettings](null)
   private[utils] val connectionContextHolder = new AtomicReference[WSClient](null)
 
@@ -40,6 +42,7 @@ class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, ahcCrea
     val currentSslContext = DynamicSSLEngineProvider.sslConfigSettings
     if (currentSslContext != null && !currentSslContext.equals(lastSslConfig.get())) {
       lastSslConfig.set(currentSslContext)
+      logger.debug("Building new client instance")
       val client = ahcCreator(currentSslContext)
       connectionContextHolder.set(client)
     }

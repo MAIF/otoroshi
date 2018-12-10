@@ -364,7 +364,7 @@ object DynamicSSLEngineProvider {
     dumpPath match {
       case Some(path) => {
         currentSslConfigSettings.set(SSLConfigSettings()
-          .withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+          //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
           .withKeyManagerConfig(KeyManagerConfig().withKeyStoreConfigs(
             List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
           ))
@@ -374,7 +374,7 @@ object DynamicSSLEngineProvider {
       }
       case None => {
         currentSslConfigSettings.set(SSLConfigSettings()
-          .withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+          //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
           .withKeyManagerConfig(KeyManagerConfig().withKeyStoreConfigs(
             certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
           ))
@@ -544,7 +544,9 @@ object DynamicSSLEngineProvider {
 }
 
 class OtoroshiHostnameVerifier() extends HostnameVerifier {
-  override def verify(s: String, sslSession: SSLSession): Boolean = true
+  override def verify(s: String, sslSession: SSLSession): Boolean = {
+    true
+  }
 }
 
 

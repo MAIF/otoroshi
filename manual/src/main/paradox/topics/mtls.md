@@ -14,7 +14,7 @@ for this demo you will have to edit your `/etc/hosts` file to add the following 
 
 ```
 127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar 
-127.0.0.1    api.backend.lol api.frontend.lol www.backend.lol www.frontend.lol
+127.0.0.1    api.backend.lol api.frontend.lol www.backend.lol www.frontend.lol validation.backend.lol
 ```
 
 ### Create certificates
@@ -358,7 +358,6 @@ openssl pkcs12 -export -clcerts -in client/device-2 -inkey client/device-2.key -
 
 ```js
 const fs = require('fs'); 
-const http = require('http'); 
 const https = require('https'); 
 
 const users = [
@@ -416,15 +415,15 @@ function decodeBody(request) {
 
 function call(req, res) {
   decodeBody(req).then(body => {
-    const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
-    const fingerprint = body.fingerprints[0];
-    const device = devices.filter(d => d.certificateFingerPrint === fingerprint)[0];
-    const user = users.filter(d => d.email === email)[0];
+    const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here should not be null if used with an otoroshi auth. module, for fake it for the demo
+    const fingerprint = body.fingerprints[0]; // here we use cert fingerprint for the example, but there are more subtle way to do it based on subject ;)
+    const device = devices.filter(d => d.certificateFingerPrint === fingerprint)[0]; // try to fond the device used for the call
+    const user = users.filter(d => d.email === email)[0]; // try to find the user that made the call
     res.writeHead(200, {
       'Content-Type': 'application/json'
     }); 
     if (user && device) {
-      const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0];
+      const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0]; // search if the device is owned by the user
       if (userOwnsDevice) {
         console.log(`Call from user ${user.email} with device ${device.hardware} authorized`)
         res.end(JSON.stringify({ status: 'good' }) + "\n"); 
@@ -439,8 +438,25 @@ function call(req, res) {
   });
 }
 
-http.createServer(call).listen(8447);
 https.createServer(options, call).listen(8445);
+```
+
+```json
+{
+  "id": "r7m8j31rh66hhdia3ormfm0wfevu1kvg0zgaxsp3oxb6ivf7fy8kvygmvnrlxv81",
+  "name": "Actual validation authority",
+  "description": "Actual validation authority",
+  "url": "ahc:https://validation.backend.lol:8445",
+  "host": "validation.backend.lol",
+  "goodTtl": 600000,
+  "badTtl": 60000,
+  "method": "POST",
+  "path": "/certificates/_validate",
+  "timeout": 10000,
+  "noCache": false,
+  "alwaysValid": false,
+  "headers": {}
+}
 ```
 
 ### Testing 
