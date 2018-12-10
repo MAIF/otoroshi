@@ -20,6 +20,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
+import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -36,6 +37,7 @@ import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
+import ssl.DynamicSSLEngineProvider.certificates
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.ObjectIdentifier
@@ -298,7 +300,7 @@ object DynamicSSLEngineProvider {
 
   type KeyStoreError = String
 
-  private val EMPTY_PASSWORD = Array.emptyCharArray
+  private val EMPTY_PASSWORD: Array[Char] = Array.emptyCharArray
 
   val logger = Logger("otoroshi-ssl-provider")
 
@@ -316,6 +318,7 @@ object DynamicSSLEngineProvider {
   private val certificates = new TrieMap[String, Cert]()
 
   private lazy val currentContext = new AtomicReference[SSLContext](setupContext())
+  private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
   private val currentEnv          = new AtomicReference[Env](null)
   private val defaultSslContext   = SSLContext.getDefault
 
@@ -358,12 +361,36 @@ object DynamicSSLEngineProvider {
       } orNull
 
     sslContext.init(keyManagers, tm, null)
+    dumpPath match {
+      case Some(path) => {
+        currentSslConfigSettings.set(SSLConfigSettings()
+          .withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+          .withKeyManagerConfig(KeyManagerConfig().withKeyStoreConfigs(
+            List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
+          ))
+          .withTrustManagerConfig(TrustManagerConfig().withTrustStoreConfigs(
+            certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+          )))
+      }
+      case None => {
+        currentSslConfigSettings.set(SSLConfigSettings()
+          .withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+          .withKeyManagerConfig(KeyManagerConfig().withKeyStoreConfigs(
+            certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
+          ))
+          .withTrustManagerConfig(TrustManagerConfig().withTrustStoreConfigs(
+            certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+          )))
+      }
+    }
     logger.debug(s"SSL Context init done ! (${keyStore.size()})")
     SSLContext.setDefault(sslContext)
     sslContext
   }
 
   def current = currentContext.get()
+
+  def sslConfigSettings: SSLConfigSettings = currentSslConfigSettings.get()
 
   def getHostNames(): Seq[String] = {
     certificates.values.map(_.domain).toSet.toSeq
@@ -515,6 +542,11 @@ object DynamicSSLEngineProvider {
 
   def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
 }
+
+class OtoroshiHostnameVerifier() extends HostnameVerifier {
+  override def verify(s: String, sslSession: SSLSession): Boolean = true
+}
+
 
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
 
@@ -1072,7 +1104,8 @@ case class ClientCertificateValidator(
         "root" -> desc.root,
         "metadata" -> desc.metadata
       ),
-      "chain" -> certPayload
+      "chain" -> certPayload,
+      "fingerprints" -> JsArray(chain.map(computeFingerPrint).map(JsString.apply))
     )
     val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "application/json", "Accept" -> "application/json")
     env.Ws.url(url + path)
@@ -1105,10 +1138,12 @@ case class ClientCertificateValidator(
     env.datastores.clientCertificateValidationDataStore.setValidation(key, false, badTtl).map(_ => ())
   }
 
+  private def computeFingerPrint(cert: X509Certificate): String = {
+    Hex.encodeHexString(ClientCertificateValidator.digester.digest(cert.getEncoded())).toLowerCase()
+  }
+
   private def computeKeyFromChain(chain: Seq[X509Certificate]): String = {
-    chain.map { c =>
-      Hex.encodeHexString(ClientCertificateValidator.digester.digest(c.getEncoded())).toLowerCase()
-    }.mkString("-")
+    chain.map(computeFingerPrint).mkString("-")
   }
 
   private def isCertificateChainValid(chain: Seq[X509Certificate], desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {

@@ -14,6 +14,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import javax.net.ssl.SSLContext
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{BodyReadable, BodyWritable, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
@@ -27,10 +28,23 @@ import scala.util.Try
 import scala.xml.Elem
 
 object WsClientChooser {
-  def apply(standardClient: WSClient, akkaClient: AkkWsClient, fullAkka: Boolean): WsClientChooser = new WsClientChooser(standardClient, akkaClient, fullAkka)
+  def apply(standardClient: WSClient, akkaClient: AkkWsClient, ahcCreator: SSLConfigSettings => WSClient, fullAkka: Boolean): WsClientChooser = new WsClientChooser(standardClient, akkaClient, ahcCreator, fullAkka)
 }
 
-class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, fullAkka: Boolean) extends WSClient {
+class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, ahcCreator: SSLConfigSettings => WSClient, fullAkka: Boolean) extends WSClient {
+
+  private[utils] val lastSslConfig = new AtomicReference[SSLConfigSettings](null)
+  private[utils] val connectionContextHolder = new AtomicReference[WSClient](null)
+
+  private def getAhcInstance(): WSClient = {
+    val currentSslContext = DynamicSSLEngineProvider.sslConfigSettings
+    if (currentSslContext != null && !currentSslContext.equals(lastSslConfig.get())) {
+      lastSslConfig.set(currentSslContext)
+      val client = ahcCreator(currentSslContext)
+      connectionContextHolder.set(client)
+    }
+    connectionContextHolder.get()
+  }
 
   def url(url: String): WSRequest = {
     val protocol = scala.util.Try(url.split(":\\/\\/").apply(0)).getOrElse("http")
@@ -39,12 +53,21 @@ class WsClientChooser(standardClient: WSClient, akkaClient: AkkWsClient, fullAkk
 
   def urlWithProtocol(protocol: String, url: String): WSRequest = { // TODO: handle idle timeout and other timeout per request here
     protocol.toLowerCase() match {
-      case "ahttp" => new AkkWsClientRequest(akkaClient, url.replace("ahttp://", "http://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
-      case "ahttps" => new AkkWsClientRequest(akkaClient, url.replace("ahttps://", "https://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
-      case "http2" => new AkkWsClientRequest(akkaClient, url.replace("http2://", "http://"), HttpProtocols.`HTTP/2.0`)(akkaClient.mat)
-      case "http2s" => new AkkWsClientRequest(akkaClient, url.replace("http2s://", "https://"), HttpProtocols.`HTTP/2.0`)(akkaClient.mat)
+
+      case "http" => standardClient.url(url)
+      case "https" => standardClient.url(url)
+
+      case "ahc:http" => getAhcInstance().url(url.replace("ahc:http://", "http://"))
+      case "ahc:https" => getAhcInstance().url(url.replace("ahc:https://", "https://"))
+
+      case "ahttp" => new AkkaWsClientRequest(akkaClient, url.replace("ahttp://", "http://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+      case "ahttps" => new AkkaWsClientRequest(akkaClient, url.replace("ahttps://", "https://"), HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+      case "http2" => new AkkaWsClientRequest(akkaClient, url.replace("http2://", "http://"), HttpProtocols.`HTTP/2.0`)(akkaClient.mat)
+      case "http2s" => new AkkaWsClientRequest(akkaClient, url.replace("http2s://", "https://"), HttpProtocols.`HTTP/2.0`)(akkaClient.mat)
+
+      case _ if fullAkka => new AkkaWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+
       case _ if !fullAkka => standardClient.url(url)
-      case _ if fullAkka => new AkkWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
     }
   }
 
@@ -61,7 +84,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
 
   override def underlying[T]: T = client.asInstanceOf[T]
 
-  def url(url: String): WSRequest = new AkkWsClientRequest(this, url)
+  def url(url: String): WSRequest = new AkkaWsClientRequest(this, url)
 
   override def close(): Unit = Await.ready(Http().shutdownAllConnectionPools(), 10.seconds)
 
@@ -96,7 +119,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
   }
 }
 
-case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl: String) extends WSResponse {
+case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl: String, mat: Materializer) extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq
@@ -154,7 +177,7 @@ object CaseInsensitiveOrdered extends Ordering[String] {
   }
 }
 
-case class AkkWsClientRequest(
+case class AkkaWsClientRequest(
   client: AkkWsClient,
   rawUrl: String,
   protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
@@ -170,7 +193,7 @@ case class AkkWsClientRequest(
 
   def withFollowRedirects(follow: Boolean): Self = this
 
-  def withMethod(method: String): AkkWsClientRequest = {
+  def withMethod(method: String): AkkaWsClientRequest = {
     copy(_method = HttpMethods.getForKeyCaseInsensitive(method).getOrElse(HttpMethod.custom(method)))
   }
 
@@ -188,7 +211,7 @@ case class AkkWsClientRequest(
   override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers:_*)
 
   def stream(): Future[WSResponse] = {
-    client.executeRequest(buildRequest()).map(resp => AkkWsClientStreamedResponse(resp, rawUrl))(client.ec)
+    client.executeRequest(buildRequest()).map(resp => AkkWsClientStreamedResponse(resp, rawUrl, client.mat))(client.ec)
     // execute()
   }
 

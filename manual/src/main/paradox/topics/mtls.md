@@ -14,7 +14,7 @@ for this demo you will have to edit your `/etc/hosts` file to add the following 
 
 ```
 127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar 
-127.0.0.1    api.backend.lol api.frontend.lol 
+127.0.0.1    api.backend.lol api.frontend.lol www.backend.lol www.frontend.lol
 ```
 
 ### Create certificates
@@ -212,7 +212,7 @@ java -jar otoroshi.jar
 [info] otoroshi-env - Generating a self signed SSL certificate for https://*.foo.bar ...
 ```
 
-and log into otoroshi with the tuple `admin@otoroshi.io / xxxxxxxxxxxx` displayed in the logs. Once logged in, create a new public service exposed on `http://api.frontend.lol` that targets `ahttps://api.backend.lol:8444/`.
+and log into otoroshi with the tuple `admin@otoroshi.io / xxxxxxxxxxxx` displayed in the logs. Once logged in, create a new public service exposed on `http://api.frontend.lol` that targets `ahc:https://api.backend.lol:8444/`.
 
 @@@ div { .centered-img }
 <img src="../img/mtls-service-1.png" />
@@ -226,7 +226,7 @@ curl http://api.frontend.lol:8080/
 ```
 
 @@@ warning
-As seen before, the target of the otoroshi service is `ahttps://api.backend.lol:8444/`. `ahttps://` is not a type and is intended. This tells otoroshi to use its experimental `akka-http client` with dynamic tls support to fetch this resource.
+As seen before, the target of the otoroshi service is `ahc:https://api.backend.lol:8444/`. `ahc:https://` is not a type and is intended. This tells otoroshi to use its experimental `http client` with dynamic tls support to fetch this resource.
 @@@
 
 you should get an error due to the fact that Otoroshi doesn't know about the server certificate or the client certificate expected by the server.
@@ -279,6 +279,57 @@ curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://a
 # the output should be: {"message":"Hello World!"}
 ```
 
+### End to end test
+
+Now we can try to write a small nodejs client that uses our client certificates. Create a `client.js` file with the following code
+
+```js
+const fs = require('fs'); 
+const https = require('https'); 
+
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
+
+const options = { 
+  hostname: 'api.frontend.lol', 
+  port: 8443, 
+  path: '/', 
+  method: 'GET', 
+  key: fs.readFileSync('./client/_.frontend.lol.key'), 
+  cert: fs.readFileSync('./client/_.frontend.lol.cer'), 
+  ca: fs.readFileSync('./ca/ca-frontend.cer'), 
+}; 
+
+const req = https.request(options, (res) => { 
+  console.log('statusCode', res.statusCode);
+  console.log('headers', res.headers);
+  console.log('body:');
+  res.on('data', (data) => { 
+    process.stdout.write(data); 
+  }); 
+}); 
+
+req.end(); 
+
+req.on('error', (e) => { 
+  console.error(e); 
+});
+```
+
+and run the following command
+
+```sh
+$ node client.js
+# statusCode 200
+# headers { date: 'Mon, 10 Dec 2018 16:01:11 GMT',
+#   connection: 'close',
+#   'transfer-encoding': 'chunked',
+#   'content-type': 'application/json' }
+# body:
+# {"message":"Hello World!"}
+```
+
+And that's it 
+
 ## Going further
 
 The use case is the following :
@@ -287,20 +338,72 @@ The use case is the following :
 <img src="../img/mtls-arch-2.jpg" />
 @@@
 
+### Generate client certificates for devices
+
+```sh
+openssl genrsa -out ./client/device-1.key 2048
+openssl rsa -in ./client/device-1.key -out ./client/device-1.key
+openssl req -new -key ./client/device-1.key -out ./client/device-1.csr -subj "/CN=mbp-123456789"
+openssl x509 -req -days 365 -sha256 -in ./client/device-1.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 3 -out ./client/device-1
+openssl pkcs12 -export -clcerts -in client/device-1 -inkey client/device-1.key -out client/device-1.p12
+
+openssl genrsa -out ./client/device-2.key 2048
+openssl rsa -in ./client/device-2.key -out ./client/device-2.key
+openssl req -new -key ./client/device-2.key -out ./client/device-2.csr -subj "/CN=nuc-987654321"
+openssl x509 -req -days 365 -sha256 -in ./client/device-2.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 4 -out ./client/device-2
+openssl pkcs12 -export -clcerts -in client/device-2 -inkey client/device-2.key -out client/device-2.p12
+```
+
+### Setup actual validation
+
 ```js
 const fs = require('fs'); 
+const http = require('http'); 
 const https = require('https'); 
+
+const users = [
+  {
+    "name": "Mathieu",
+    "email": "mathieu@foo.bar",
+    "certificateFingerprint": "",
+    "ownedDevices": [
+      "mbp-123456789",
+      "nuc-987654321",
+    ]
+  }
+];
+
+const devices = [
+  {
+    "serialNumber": "mbp-123456789",
+    "hardware": "Macbook Pro 2018 13 inc. with TouchBar, 2.6 GHz, 16 Gb",
+    "acquiredAt": "2018-10-01",
+    "certificateFingerPrint": "d3b38e04a8ca1e40b965ab6c73b95b21edb27cbd"
+  },
+  {
+    "serialNumber": "nuc-987654321",
+    "hardware": "Intel NUC i7 3.0 GHz, 32 Gb",
+    "acquiredAt": "2018-09-01",
+    "certificateFingerPrint": "856140ce54a1655de6b3aae90b255f8c94234c99"
+  },
+  {
+    "serialNumber": "iphone-1234",
+    "hardware": "Iphone XS, 256 Gb",
+    "acquiredAt": "2018-12-01",
+    "certificateFingerPrint": "58430fe752b158f16fadaaf061bd03f0c9641a2f"
+  }
+];
 
 const options = { 
   key: fs.readFileSync('./server/_.backend.lol.key'), 
   cert: fs.readFileSync('./server/_.backend.lol.cer'), 
-  ca: fs.readFileSync('./ca/ca-frontend.cer'), 
+  ca: fs.readFileSync('./ca/ca-backend.cer'), 
   requestCert: true, 
   rejectUnauthorized: true
 }; 
 
-function decodeBody(req) {
-  return new Promis((success, failure) => {
+function decodeBody(request) {
+  return new Promise((success, failure) => {
     const body = [];
     request.on('data', (chunk) => {
       body.push(chunk);
@@ -311,15 +414,48 @@ function decodeBody(req) {
   });
 }
 
-https.createServer(options, (req, res) => { 
+function call(req, res) {
   decodeBody(req).then(body => {
-    const user = body.user;
-    const chain = body.chain;
+    const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
+    const fingerprint = body.fingerprints[0];
+    const device = devices.filter(d => d.certificateFingerPrint === fingerprint)[0];
+    const user = users.filter(d => d.email === email)[0];
+    res.writeHead(200, {
+      'Content-Type': 'application/json'
+    }); 
+    if (user && device) {
+      const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0];
+      if (userOwnsDevice) {
+        console.log(`Call from user ${user.email} with device ${device.hardware} authorized`)
+        res.end(JSON.stringify({ status: 'good' }) + "\n"); 
+      } else {
+        console.log(`Call from user ${user.email} with device ${device.hardware} unauthorized because user doesn't owns the hardware`)
+        res.end(JSON.stringify({ status: 'unauthorized' }) + "\n"); 
+      }
+    } else {
+      console.log(`Call unauthorized`)
+      res.end(JSON.stringify({ status: 'unauthorized' }) + "\n"); 
+    }
   });
-  console.log('Client certificate CN: ', req.socket.getPeerCertificate().subject.CN);
-  res.writeHead(200, {
-    'Content-Type': 'application/json'
-  }); 
-  res.end(JSON.stringify({ message: 'Hello World!' }) + "\n"); 
-}).listen(8444);
+}
+
+http.createServer(call).listen(8447);
+https.createServer(options, call).listen(8445);
 ```
+
+### Testing 
+
+```sh
+curl -k --cert-type pkcs12 --cert ./client/device-1.p12:password https://www.frontend.lol:8443/
+# output: <h1>Hello World !!!</h1>
+curl -k --cert-type pkcs12 --cert ./client/device-2.p12:password https://www.frontend.lol:8443/
+# output: <h1>Hello World !!!</h1>
+curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://api.frontend.lol:8443/
+# output: {"Otoroshi-Error":"You're not authorized here !"}
+```
+
+### Going further
+
+* Add auth module with a keycloak + yubikey.
+* check actual identity in validator
+* add device cert in each device cert store.

@@ -14,8 +14,9 @@ const options = {
 }; 
 
 const req = https.request(options, (res) => { 
-  console.log('statusCode:', res.statusCode);
-  console.log('headers:', res.headers);
+  console.log('statusCode', res.statusCode);
+  console.log('headers', res.headers);
+  console.log('body:');
   res.on('data', (data) => { 
     process.stdout.write(data); 
   }); 

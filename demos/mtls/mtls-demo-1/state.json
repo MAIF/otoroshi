@@ -262,7 +262,7 @@
       "targets": [
         {
           "host": "api.backend.lol:8444",
-          "scheme": "ahttps"
+          "scheme": "ahc:https"
         }
       ],
       "root": "/",
@@ -365,11 +365,142 @@
       },
       "authConfigRef": null,
       "clientValidatorRef": "s7m8j31rh66hhdia3ormfm0wfevu1kvg0zgaxsp3oxb6ivf7fy8kvygmvnrlxv81"
+    },
+    {
+      "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
+      "groupId": "default",
+      "name": "my-other-service",
+      "env": "prod",
+      "domain": "frontend.lol",
+      "subdomain": "www",
+      "targets": [
+        {
+          "host": "www.backend.lol:8446",
+          "scheme": "ahc:https"
+        }
+      ],
+      "root": "/",
+      "matchingRoot": null,
+      "localHost": "localhost:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "userFacing": false,
+      "privateApp": false,
+      "forceHttps": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "strictlyPrivate": false,
+      "enforceSecureCommunication": false,
+      "sendStateChallenge": true,
+      "sendOtoroshiHeadersBack": false,
+      "readOnly": false,
+      "secComExcludedPatterns": [],
+      "securityExcludedPatterns": [],
+      "publicPatterns": [
+        "/.*"
+      ],
+      "privatePatterns": [],
+      "additionalHeaders": {},
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 1,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "metadata": {},
+      "chaosConfig": {
+        "enabled": false,
+        "largeRequestFaultConfig": {
+          "ratio": 0.2,
+          "additionalRequestSize": 0
+        },
+        "largeResponseFaultConfig": {
+          "ratio": 0.2,
+          "additionalResponseSize": 0
+        },
+        "latencyInjectionFaultConfig": {
+          "ratio": 0.2,
+          "from": 0,
+          "to": 0
+        },
+        "badResponsesFaultConfig": {
+          "ratio": 0.2,
+          "responses": []
+        }
+      },
+      "jwtVerifier": {
+        "type": "ref",
+        "id": null,
+        "enabled": false,
+        "excludedPatterns": []
+      },
+      "secComSettings": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "${config.app.claim.sharedKey}"
+      },
+      "cors": {
+        "enabled": false,
+        "allowOrigin": "*",
+        "exposeHeaders": [],
+        "allowHeaders": [],
+        "allowMethods": [],
+        "excludedPatterns": [],
+        "maxAge": null,
+        "allowCredentials": true
+      },
+      "redirection": {
+        "enabled": false,
+        "code": 303,
+        "to": "https://www.otoroshi.io"
+      },
+      "authConfigRef": "2m3whapdn599wqpuuvpyi1ylztogcpue3k1jiyo1mww4wq0m5ww9xgedw13rii9z",
+      "clientValidatorRef": "r7m8j31rh66hhdia3ormfm0wfevu1kvg0zgaxsp3oxb6ivf7fy8kvygmvnrlxv81"
     }
   ],
   "errorTemplates": [],
   "jwtVerifiers": [],
-  "authConfigs": [],
+  "authConfigs": [
+    {
+      "type": "basic",
+      "id": "2m3whapdn599wqpuuvpyi1ylztogcpue3k1jiyo1mww4wq0m5ww9xgedw13rii9z",
+      "name": "mtls",
+      "desc": "mtls user auth",
+      "basicAuth": false,
+      "sessionMaxAge": 3600000,
+      "users": [
+        {
+          "name": "Mathieu",
+          "password": "$2a$10$HlpxIV407.I156tJ1T7bv.7/V9ttt3mzaVR0p.8PbZ5BGMNkIkgBu",
+          "email": "mathieu@foo.bar",
+          "metadata": {}
+        }
+      ]
+    }
+  ],
   "certificates": [
     {
       "id": "TnMo3rWHGCrZW9ex99n0S9H0bRBzOAVI",
@@ -428,6 +559,22 @@
       "timeout": 10000,
       "noCache": false,
       "alwaysValid": true,
+      "headers": {}
+    },
+    {
+      "id": "r7m8j31rh66hhdia3ormfm0wfevu1kvg0zgaxsp3oxb6ivf7fy8kvygmvnrlxv81",
+      "name": "Actual validation authority",
+      "description": "Actual validation authority",
+      "url": "ahc:https://127.0.0.1:8445",
+      "rurl": "http://127.0.0.1:8447",
+      "host": "validation.foo.bar",
+      "goodTtl": 600000,
+      "badTtl": 60000,
+      "method": "POST",
+      "path": "/certificates/_validate",
+      "timeout": 10000,
+      "noCache": false,
+      "alwaysValid": false,
       "headers": {}
     }
   ]

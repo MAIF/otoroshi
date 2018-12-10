@@ -11,6 +11,7 @@ import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
 import cluster.{ClusterAgent, _}
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
@@ -189,6 +190,23 @@ class Env(val configuration: Configuration,
     WsClientChooser(
       ahcClient, 
       new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer),
+      sslconfig => {
+        val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
+          compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+          idleTimeout =
+            configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+          connectionTimeout = configuration
+            .getOptional[Int]("app.proxy.connectionTimeout")
+            .map(_.millis)
+            .getOrElse((2 * 60 * 1000).millis),
+          ssl = sslconfig
+        )
+        AhcWSClient(
+          config.copy(
+            wsClientConfig = wsClientConfig
+          )
+        )(otoroshiMaterializer)
+      },
       configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false)
     )
   }
@@ -211,6 +229,23 @@ class Env(val configuration: Configuration,
     WsClientChooser(
       wsClient,
       new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer),
+      sslconfig => {
+        val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
+          compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+          idleTimeout =
+            configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+          connectionTimeout = configuration
+            .getOptional[Int]("app.proxy.connectionTimeout")
+            .map(_.millis)
+            .getOrElse((2 * 60 * 1000).millis),
+          ssl = sslconfig
+        )
+        AhcWSClient(
+          config.copy(
+            wsClientConfig = wsClientConfig
+          )
+        )(otoroshiMaterializer)
+      },
       configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false)
     )
   }
@@ -307,7 +342,7 @@ class Env(val configuration: Configuration,
 
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
-
+    new java.io.File("./otoroshi.jks").deleteOnExit()
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
