@@ -470,6 +470,18 @@ curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://a
 # output: {"Otoroshi-Error":"You're not authorized here !"}
 ```
 
+@@@ div { .centered-img }
+<img src="../img/mtls-ff-1.png" />
+@@@
+
+@@@ div { .centered-img }
+<img src="../img/mtls-ff-2.png" />
+@@@
+
+@@@ div { .centered-img }
+<img src="../img/mtls-ff-3.png" />
+@@@
+
 ### Going further
 
 * Add auth module with a keycloak + yubikey.
