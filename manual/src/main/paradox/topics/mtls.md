@@ -330,7 +330,7 @@ $ node client.js
 
 And that's it 
 
-## Going further
+## Validating client certificates based on user identity
 
 The use case is the following :
 
