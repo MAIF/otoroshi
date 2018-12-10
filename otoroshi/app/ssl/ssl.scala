@@ -522,7 +522,7 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
   lazy val protocols = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
   lazy val clientAuth = {
     val auth = appProvider.get.get.configuration.getOptional[String]("otoroshi.ssl.fromOutside.clientAuth").flatMap(ClientAuth.apply).getOrElse(ClientAuth.None)
-    DynamicSSLEngineProvider.logger.info(s"Otoroshi client auth: ${auth}")
+    DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
     auth
   }
 

@@ -517,9 +517,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
     // val meterOut            = Metrics.metrics.meter("GatewayDataOut")
     // req.clientCertificateChain.foreach { chain =>
-    //   chain.foreach(c => logger.debug(s"incoming cert chain: $c"))
+    //   chain.foreach(c => logger.info(s"incoming cert chain: $c"))
     // }
-    //req.clientCertificateChain.getOrElse(logger.debug("no cert chain"))
+    // req.clientCertificateChain.getOrElse(logger.info("no cert chain"))
     val reqNumber           = reqCounter.incrementAndGet()
     val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured           = getSecuredFor(req)

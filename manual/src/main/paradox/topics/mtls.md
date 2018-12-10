@@ -29,7 +29,7 @@ mkdir server
 mkdir client
 
 # create a certificate authority key, use password as pass phrase
-openssl genrsa -out ./ca/ca-backend.key 2048
+openssl genrsa -out ./ca/ca-backend.key 4096
 # remove pass phrase
 openssl rsa -in ./ca/ca-backend.key -out ./ca/ca-backend.key
 # generate the certificate authority cert
