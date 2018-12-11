@@ -2,3 +2,4 @@ logs
 RUNNING_PID
 keystore.jks
 otoroshi.jks
+node_modules

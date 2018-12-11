@@ -369,7 +369,7 @@
     {
       "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
       "groupId": "default",
-      "name": "my-other-service",
+      "name": "my-web-service",
       "env": "prod",
       "domain": "frontend.lol",
       "subdomain": "www",

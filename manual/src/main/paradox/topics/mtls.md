@@ -338,7 +338,11 @@ The use case is the following :
 <img src="../img/mtls-arch-2.jpg" />
 @@@
 
+the idea here is to provide a unique client certificate per device that can access Otoroshi and use a validation authority to check if the user is allowed to access the underlying app with a specific device.
+
 ### Generate client certificates for devices
+
+To do that we are going to create two client certificates, one per device (let say for a laptop and a desktop computer). We are going to use the device serial number as common name of the certificate to be able to identify the device behind the certificate.
 
 ```sh
 openssl genrsa -out ./client/device-1.key 2048
@@ -356,15 +360,38 @@ openssl pkcs12 -export -clcerts -in client/device-2 -inkey client/device-2.key -
 
 ### Setup actual validation
 
+now we are going to write an validation authority (with mTLS too) that is going to respond on `https://validation.backend.lol:8445`. The server has access to a list of apps, users and devices to check if everything is correct. In this implementation, the lists are hardcoded, but you can write your own implementation that will fetch data from your corporate LDAP, CA, etc. Create a `validation.js` file and add the following content. Don't forget to do `yarn add x509` before running the server with `node validation.js`
+
 ```js
 const fs = require('fs'); 
 const https = require('https'); 
+const x509 = require('x509');
+
+const apps = [
+  {
+    "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
+    "name": "my-web-service",
+    "description": "A service that says hello",
+    "host": "www.frontend.lol"
+  }
+];
 
 const users = [
   {
     "name": "Mathieu",
     "email": "mathieu@foo.bar",
-    "certificateFingerprint": "",
+    "appRights": [
+      {
+        "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
+        "profile": "user",
+        "forbidden": false
+      },
+      {
+        "id": "PqgOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
+        "profile": "none",
+        "forbidden": true
+      },
+    ],
     "ownedDevices": [
       "mbp-123456789",
       "nuc-987654321",
@@ -377,19 +404,16 @@ const devices = [
     "serialNumber": "mbp-123456789",
     "hardware": "Macbook Pro 2018 13 inc. with TouchBar, 2.6 GHz, 16 Gb",
     "acquiredAt": "2018-10-01",
-    "certificateFingerPrint": "d3b38e04a8ca1e40b965ab6c73b95b21edb27cbd"
   },
   {
     "serialNumber": "nuc-987654321",
     "hardware": "Intel NUC i7 3.0 GHz, 32 Gb",
     "acquiredAt": "2018-09-01",
-    "certificateFingerPrint": "856140ce54a1655de6b3aae90b255f8c94234c99"
   },
   {
     "serialNumber": "iphone-1234",
     "hardware": "Iphone XS, 256 Gb",
     "acquiredAt": "2018-12-01",
-    "certificateFingerPrint": "58430fe752b158f16fadaaf061bd03f0c9641a2f"
   }
 ];
 
@@ -415,20 +439,24 @@ function decodeBody(request) {
 
 function call(req, res) {
   decodeBody(req).then(body => {
-    const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here should not be null if used with an otoroshi auth. module, for fake it for the demo
-    const fingerprint = body.fingerprints[0]; // here we use cert fingerprint for the example, but there are more subtle way to do it based on subject ;)
-    const device = devices.filter(d => d.certificateFingerPrint === fingerprint)[0]; // try to fond the device used for the call
-    const user = users.filter(d => d.email === email)[0]; // try to find the user that made the call
+    const service = body.service;
+    const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
+    const commonName = x509.getSubject(body.chain).commonName
+    const device = devices.filter(d => d.serialNumber === commonName)[0];
+    const user = users.filter(d => d.email === email)[0];
+    const app = apps.filter(d => d.id === service.id)[0];
     res.writeHead(200, {
       'Content-Type': 'application/json'
     }); 
-    if (user && device) {
-      const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0]; // search if the device is owned by the user
-      if (userOwnsDevice) {
-        console.log(`Call from user ${user.email} with device ${device.hardware} authorized`)
-        res.end(JSON.stringify({ status: 'good' }) + "\n"); 
+    if (user && device && app) {
+      const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0];
+      const rights = user.appRights.filter(d => d.id === app.id)[0];
+      const hasRightToUseApp = !rights.forbidden
+      if (userOwnsDevice && hasRightToUseApp) {
+        console.log(`Call from user "${user.email}" with device "${device.hardware}" on app "${app.name}" with profile "${rights.profile}" authorized`)
+        res.end(JSON.stringify({ status: 'good', profile: rights.profile }) + "\n"); 
       } else {
-        console.log(`Call from user ${user.email} with device ${device.hardware} unauthorized because user doesn't owns the hardware`)
+        console.log(`Call from user "${user.email}" with device "${device.hardware}" on app "${app.name}" unauthorized because user doesn't owns the hardware or has no rights`)
         res.end(JSON.stringify({ status: 'unauthorized' }) + "\n"); 
       }
     } else {
@@ -440,6 +468,8 @@ function call(req, res) {
 
 https.createServer(options, call).listen(8445);
 ```
+
+the corresponding authority validation can be created in Otoroshi like 
 
 ```json
 {
@@ -459,24 +489,56 @@ https.createServer(options, call).listen(8445);
 }
 ```
 
+but you don't need to create it right now.
+
+### Setup Otoroshi
+
+You can start Otoroshi and import data from the `state.json` file in the demo folder. The login tuple is `admin@otoroshi.io / password`. The `state.json` file contains everything you need for the demo, like certificates, service descriptors, auth. modules, etc ...
+
+```sh
+java -Dapp.importFrom=$(pwd)/state.json -Dapp.privateapps.port=8080 -jar otoroshi.jar
+
+[info] otoroshi-env - Admin API exposed on http://otoroshi-api.foo.bar:8080
+[info] otoroshi-env - Admin UI  exposed on http://otoroshi.foo.bar:8080
+[info] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[info] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[info] otoroshi-env - Importing from: /pwd/state.json
+[info] play.api.Play - Application started (Prod)
+[info] otoroshi-env - Successful import !
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+[info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:8443
+```
+
 ### Testing 
+
+You can test the service with curl like
 
 ```sh
 curl -k --cert-type pkcs12 --cert ./client/device-1.p12:password https://www.frontend.lol:8443/
 # output: <h1>Hello World !!!</h1>
 curl -k --cert-type pkcs12 --cert ./client/device-2.p12:password https://www.frontend.lol:8443/
 # output: <h1>Hello World !!!</h1>
-curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://api.frontend.lol:8443/
+curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://www.frontend.lol:8443/
 # output: {"Otoroshi-Error":"You're not authorized here !"}
 ```
+
+as expected, the first two call works as their common name is known by the validation server. The last one fails as it's not known.
+
+### Validate user identity
+
+Now let's try to setup firefox to provide the client certificate. Open firefox settings, go to `privacy settings and security` and click on `display certificates` at the bottom of the page. Here you can add the frontend CA (`./ca/ca-frontend.cer`) in the `Authorities` tab, check the 'authorize this CA to identify websites', and then in the `certificates` tab, import one of the devices `.p12` file (like `./client/device-1.p12`). Firefox ask for the files password (it should be `password`). Now restart firefox.
 
 @@@ div { .centered-img }
 <img src="../img/mtls-ff-1.png" />
 @@@
 
+Next, go to the `my-web-service` service in otoroshi (log in with `admin@otoroshi.io / password`) and activate `Enforce user login` in the Authentication section. It means that now, you'll have to log in when you'll go to https://www.frontend.lol:8443. Then, in Firefox, go to https://www.frontend.lol:8443/, firefox will ask which client certificate to use. Select the one you imported (in the process, maybe firefox will warn you that the certificate of the site is auto signed, just ignore it and continue ;) )
+
 @@@ div { .centered-img }
 <img src="../img/mtls-ff-2.png" />
 @@@
+
+then, you'll see a login screen from otoroshi. You can log in with `mathieu@foo.bar / password` and then you should see the hello world message.
 
 @@@ div { .centered-img }
 <img src="../img/mtls-ff-3.png" />
@@ -484,6 +546,4 @@ curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://a
 
 ### Going further
 
-* Add auth module with a keycloak + yubikey.
-* check actual identity in validator
-* add device cert in each device cert store.
+You can try to add an auth. module with a keycloak instance and yubikey as strong second factor authentication instead of the basic one we used previously.
