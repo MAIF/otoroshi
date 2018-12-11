@@ -634,11 +634,11 @@ export class ServicePage extends Component {
                     <i className="glyphicon glyphicon-plus-sign" /> Create self signed cert.
                   </button>
                 )}
-                {!this.state.neverSaved && (
+                {/*!this.state.neverSaved && (
                   <button type="button" disabled className="btn btn-xs btn-info">
                     <i className="glyphicon glyphicon-plus-sign" /> Create Let's Encrypt cert.
                   </button>
-                )}
+                )*/}
               </div>
             </div>
             {this.state.service.env === 'prod' &&

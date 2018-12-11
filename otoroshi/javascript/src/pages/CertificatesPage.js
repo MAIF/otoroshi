@@ -327,16 +327,14 @@ export class CertificatesPage extends Component {
     {
       title: 'CA',
       content: item =>
-        item.ca ? (
+        item.ca ?  'yes' : 'no', /*(
           <button
             type="button"
             className="btn btn-primary btn-sm"
             onClick={e => this.createCASigned(e, item.id)}>
             <i className="glyphicon glyphicon-plus-sign" />
           </button>
-        ) : (
-          'no'
-        ),
+        )*/
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
     },
@@ -429,13 +427,13 @@ export class CertificatesPage extends Component {
               className="btn btn-primary">
               <i className="glyphicon glyphicon-plus-sign" /> Self signed cert.
             </button>
-            <button
+            {/*<button
               type="button"
               onClick={this.createCA}
               style={{ marginRight: 0 }}
               className="btn btn-primary">
               <i className="glyphicon glyphicon-plus-sign" /> Self signed Certificate Authority
-            </button>
+            </button>*/}
           </div>
         )}
       />
