@@ -452,9 +452,7 @@ function call(req, res) {
     const user = users.filter(d => d.email === email)[0];
     // search for a known application
     const app = apps.filter(d => d.id === service.id)[0];
-    res.writeHead(200, {
-      'Content-Type': 'application/json'
-    }); 
+    res.writeHead(200, { 'Content-Type': 'application/json' }); 
     if (user && device && app) {
       // check if the user actually owns the device
       const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0];
@@ -466,6 +464,7 @@ function call(req, res) {
         console.log(`Call from user "${user.email}" with device "${device.hardware}" on app "${app.name}" with profile "${rights.profile}" authorized`)
         res.end(JSON.stringify({ status: 'good', profile: rights.profile }) + "\n"); 
       } else {
+        // nope !!! nope, nope nope
         console.log(`Call from user "${user.email}" with device "${device.hardware}" on app "${app.name}" unauthorized because user doesn't owns the hardware or has no rights`)
         res.end(JSON.stringify({ status: 'unauthorized' }) + "\n"); 
       }
@@ -500,6 +499,42 @@ the corresponding authority validation can be created in Otoroshi like
 ```
 
 but you don't need to create it right now.
+
+Typically, a validation authority server is a server with a route on `POST /certificates/_validate` that accepts `application/json` and returns `application/json` with a body like
+
+```json
+{
+  "apikey": nullable {
+    "clientId": String,
+    "clientName": String,
+    "authorizedGroup": String,
+    "enabled": Boolean,
+    "readOnly": Boolean,
+    "allowClientIdOnly": Boolean,
+    "throttlingQuota": Long,
+    "dailyQuota": Long,
+    "monthlyQuota": Long,
+    "metadata": Map[String, String]
+  },
+  "user": nullable {
+    "email": String,
+    "name": String,
+  },
+  "service": {
+    "id": String,
+    "name": String,
+    "groupId": String,
+    "domain": String,
+    "env": String,
+    "subdomain": String,
+    "root": String,
+    "metadata": String
+  },
+  "chain": PemFormattedCertificateChainString,
+  "fingerprints": Array[String]
+}
+```
+
 
 ### Setup Otoroshi
 

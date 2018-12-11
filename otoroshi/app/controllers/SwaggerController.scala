@@ -379,6 +379,41 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def ValidationAuthority = Json.obj(
+    "description" -> "Settings to access a validation authority server",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "id",
+      "name",
+      "description",
+      "url",
+      "host",
+      "goodTtl",
+      "badTtl",
+      "method",
+      "path",
+      "timeout",
+      "noCache",
+      "alwaysValid",
+      "headers"
+    ),
+    "properties" -> Json.obj(
+      "id" ->          SimpleStringType ~~>  "The id of the settings",
+      "name" ->        SimpleStringType ~~>  "The name of the settings",
+      "description" -> SimpleStringType ~~>  "The description of the settings",
+      "url" ->         SimpleStringType ~~>  "The URL of the server",
+      "host" ->        SimpleStringType ~~>  "The host of the server",
+      "goodTtl" ->     SimpleLongType ~~>    "The TTL for valid access response caching",
+      "badTtl" ->      SimpleLongType ~~>    "The TTL for invalid access response caching",
+      "method" ->      SimpleStringType ~~>  "The HTTP method",
+      "path" ->        SimpleStringType ~~>  "The URL path",
+      "timeout" ->     SimpleLongType ~~>    "The call timeout",
+      "noCache" ->     SimpleBooleanType ~~> "Avoid caching responses",
+      "alwaysValid" -> SimpleBooleanType ~~> "Bypass http calls, every certificates are valids",
+      "headers" ->     SimpleObjectType ~~>  "HTTP call headers"
+    )
+  )
+
   def ElasticConfig = Json.obj(
     "description" -> "The configuration for elastic access",
     "type"        -> "object",
@@ -1652,6 +1687,68 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def ValidationAuthoritiesApi = Json.obj(
+    "get" -> Operation(
+      tag = "validation-authorities",
+      summary = "Get all validation authoritiess",
+      description = "Get all validation authoritiess",
+      operationId = "findAllClientValidators",
+      goodResponse = GoodResponse(ArrayOf(Ref("ValidationAuthority")))
+    ),
+    "get" -> Operation(
+      tag = "validation-authorities",
+      summary = "Get one validation authorities by id",
+      description = "Get one validation authorities by id",
+      operationId = "findClientValidatorById",
+      parameters = Json.arr(
+        PathParam("id", "The auth. config id")
+      ),
+      goodResponse = GoodResponse(Ref("ValidationAuthority"))
+    ),
+    "delete" -> Operation(
+      tag = "validation-authorities",
+      summary = "Delete one validation authorities by id",
+      description = "Delete one validation authorities by id",
+      operationId = "deleteClientValidator",
+      parameters = Json.arr(
+        PathParam("id", "The validation authorities id")
+      ),
+      goodResponse = GoodResponse(Ref("Deleted"))
+    ),
+    "put" -> Operation(
+      tag = "validation-authorities",
+      summary = "Update one validation authorities by id",
+      description = "Update one validation authorities by id",
+      operationId = "updateClientValidator",
+      parameters = Json.arr(
+        PathParam("id", "The validation authorities id"),
+        BodyParam("The validation authorities to update", Ref("ValidationAuthority"))
+      ),
+      goodResponse = GoodResponse(Ref("ValidationAuthority"))
+    ),
+    "patch" -> Operation(
+      tag = "validation-authorities",
+      summary = "Update one validation authorities by id",
+      description = "Update one validation authorities by id",
+      operationId = "patchClientValidator",
+      parameters = Json.arr(
+        PathParam("id", "The validation authorities id"),
+        BodyParam("The validation authorities to update", Ref("Patch"))
+      ),
+      goodResponse = GoodResponse(Ref("ValidationAuthority"))
+    ),
+    "post" -> Operation(
+      tag = "validation-authorities",
+      summary = "Create one validation authorities",
+      description = "Create one validation authorities",
+      operationId = "createClientValidator",
+      parameters = Json.arr(
+        BodyParam("The validation authorities to create", Ref("ValidationAuthority"))
+      ),
+      goodResponse = GoodResponse(Ref("ValidationAuthority"))
+    )
+  )
+
   def ApiKeys = Json.obj(
     "get" -> Operation(
       tag = "apikeys",
@@ -2066,6 +2163,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("jwt-verifiers", "Everything about Otoroshi global JWT token verifiers"),
         Tag("auth-config", "Everything about Otoroshi global auth. module config"),
         Tag("certificates", "Everything about Otoroshi SSL/TLS certificates")
+        Tag("validation-authorities", "Everything about Otoroshi validation authorities")
       ),
       "externalDocs" -> Json.obj(
         "description" -> "Find out more about Otoroshi",
@@ -2098,6 +2196,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "/api/verifiers"                                      -> JWTVerifiers,
         "/api/auths"                                          -> AuthConfigs,
         "/api/certificates"                                   -> Certificates,
+        "/api/client-validators"                              -> ValidationAuthoritiesApi,
         "/api/snowmonkey/config"                              -> SnowMonkeyConfigApi,
         "/api/snowmonkey/outages"                             -> SnowMonkeyOutageApi,
         "/api/snowmonkey/_start"                              -> SnowMonkeyStartApi,
@@ -2202,6 +2301,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "InMemoryUser"                -> InMemoryUser,
         "LdapUser"                    -> LdapUser,
         "Certificate"                 -> Certificate
+        "ValidationAuthority"         -> ValidationAuthority
       )
     )
   }
