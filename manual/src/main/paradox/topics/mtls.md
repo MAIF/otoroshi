@@ -526,13 +526,27 @@ as expected, the first two call works as their common name is known by the valid
 
 ### Validate user identity
 
-Now let's try to setup firefox to provide the client certificate. Open firefox settings, go to `privacy settings and security` and click on `display certificates` at the bottom of the page. Here you can add the frontend CA (`./ca/ca-frontend.cer`) in the `Authorities` tab, check the 'authorize this CA to identify websites', and then in the `certificates` tab, import one of the devices `.p12` file (like `./client/device-1.p12`). Firefox ask for the files password (it should be `password`). Now restart firefox.
+Now let's try to setup firefox to provide the client certificate. Open firefox settings, go to `privacy settings and security` and click on `display certificates` at the bottom of the page. Here you can add the frontend CA (`./ca/ca-frontend.cer`) in the `Authorities` tab, check the 'authorize this CA to identify websites', and then in the `certificates` tab, import one of the devices `.p12` file (like `./client/device-1.p12`). Firefox will ask for the files password (it should be `password`).
 
 @@@ div { .centered-img }
 <img src="../img/mtls-ff-1.png" />
 @@@
 
-Next, go to the `my-web-service` service in otoroshi (log in with `admin@otoroshi.io / password`) and activate `Enforce user login` in the Authentication section. It means that now, you'll have to log in when you'll go to https://www.frontend.lol:8443. Then, in Firefox, go to https://www.frontend.lol:8443/, firefox will ask which client certificate to use. Select the one you imported (in the process, maybe firefox will warn you that the certificate of the site is auto signed, just ignore it and continue ;) )
+Now restart firefox.
+
+Next, go to the `my-web-service` service in otoroshi (log in with `admin@otoroshi.io / password`) and activate `Enforce user login` in the Authentication section. It means that now, you'll have to log in when you'll go to https://www.frontend.lol:8443. With authentication activated on otoroshi, the user identity will be sent to the validation authority, so you can change the following line in the file `validation.js`
+
+```js
+const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
+```
+
+to
+
+```js
+const email = body.user.email;
+```
+
+Then, in Firefox, go to https://www.frontend.lol:8443/, firefox will ask which client certificate to use. Select the one you imported (in the process, maybe firefox will warn you that the certificate of the site is auto signed, just ignore it and continue ;) )
 
 @@@ div { .centered-img }
 <img src="../img/mtls-ff-2.png" />
@@ -544,6 +558,6 @@ then, you'll see a login screen from otoroshi. You can log in with `mathieu@foo.
 <img src="../img/mtls-ff-3.png" />
 @@@
 
-### Going further
+### Going further with user authentication
 
-You can try to add an auth. module with a keycloak instance and yubikey as strong second factor authentication instead of the basic one we used previously.
+For stronger user authentication, you can try to use an auth. module baked by a keycloak instance with yubikey as a strong second factor authentication instead of the basic auth. module we used previously in this article.
