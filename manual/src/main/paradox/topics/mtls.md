@@ -367,6 +367,7 @@ const fs = require('fs');
 const https = require('https'); 
 const x509 = require('x509');
 
+// list of knwon app
 const apps = [
   {
     "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
@@ -376,6 +377,7 @@ const apps = [
   }
 ];
 
+// list of known users
 const users = [
   {
     "name": "Mathieu",
@@ -399,6 +401,7 @@ const users = [
   }
 ];
 
+// list of known devices
 const devices = [
   {
     "serialNumber": "mbp-123456789",
@@ -425,7 +428,7 @@ const options = {
   rejectUnauthorized: true
 }; 
 
-function decodeBody(request) {
+function readBody(request) {
   return new Promise((success, failure) => {
     const body = [];
     request.on('data', (chunk) => {
@@ -438,21 +441,28 @@ function decodeBody(request) {
 }
 
 function call(req, res) {
-  decodeBody(req).then(body => {
+  readBody(req).then(body => {
     const service = body.service;
     const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
+    // common name should be device serial number
     const commonName = x509.getSubject(body.chain).commonName
+    // search for a known device
     const device = devices.filter(d => d.serialNumber === commonName)[0];
+    // search for a known user
     const user = users.filter(d => d.email === email)[0];
+    // search for a known application
     const app = apps.filter(d => d.id === service.id)[0];
     res.writeHead(200, {
       'Content-Type': 'application/json'
     }); 
     if (user && device && app) {
+      // check if the user actually owns the device
       const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0];
+      // check if the user has rights to access the app
       const rights = user.appRights.filter(d => d.id === app.id)[0];
       const hasRightToUseApp = !rights.forbidden
       if (userOwnsDevice && hasRightToUseApp) {
+        // yeah !!!!
         console.log(`Call from user "${user.email}" with device "${device.hardware}" on app "${app.name}" with profile "${rights.profile}" authorized`)
         res.end(JSON.stringify({ status: 'good', profile: rights.profile }) + "\n"); 
       } else {
