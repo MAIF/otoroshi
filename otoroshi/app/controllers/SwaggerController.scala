@@ -2162,7 +2162,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("health", "Everything about Otoroshi health status"),
         Tag("jwt-verifiers", "Everything about Otoroshi global JWT token verifiers"),
         Tag("auth-config", "Everything about Otoroshi global auth. module config"),
-        Tag("certificates", "Everything about Otoroshi SSL/TLS certificates")
+        Tag("certificates", "Everything about Otoroshi SSL/TLS certificates"),
         Tag("validation-authorities", "Everything about Otoroshi validation authorities")
       ),
       "externalDocs" -> Json.obj(
