@@ -2300,7 +2300,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "RedirectionSettings"         -> RedirectionSettings,
         "InMemoryUser"                -> InMemoryUser,
         "LdapUser"                    -> LdapUser,
-        "Certificate"                 -> Certificate
+        "Certificate"                 -> Certificate,
         "ValidationAuthority"         -> ValidationAuthority
       )
     )
