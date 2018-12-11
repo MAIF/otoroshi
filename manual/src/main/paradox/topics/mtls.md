@@ -367,7 +367,7 @@ const fs = require('fs');
 const https = require('https'); 
 const x509 = require('x509');
 
-// list of knwon app
+// list of knwon apps
 const apps = [
   {
     "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
