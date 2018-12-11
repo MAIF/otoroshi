@@ -160,7 +160,7 @@ node ./backend.js
 now you can try your server with
 
 ```sh
-curl -k https://api.backend.lol:8444/
+curl --cacert ./ca/ca-backend.cer https://api.backend.lol:8444/
 # will print {"message":"Hello World!"}
 ```
 
@@ -190,7 +190,7 @@ https.createServer(options, (req, res) => {
 you can test your new server with
 
 ```sh
-curl -k --cert-type pkcs12 --cert ./client/_.backend.lol.p12:password https://api.backend.lol:8444/
+curl --cacert ./ca/ca-backend.cer --cert-type pkcs12 --cert ./client/_.backend.lol.p12:password https://api.backend.lol:8444/
 # will print {"message":"Hello World!"}
 ```
 
@@ -249,7 +249,7 @@ now we have to expose `https://api.frontend.lol:8443` using otoroshi. Go to http
 and try the following command
 
 ```sh
-curl -k https://api.frontend.lol:8443/
+curl --cacert ./ca/ca-frontend.cer https://api.frontend.lol:8443/
 # the output should be: {"message":"Hello World!"}
 ```
 
@@ -268,14 +268,14 @@ now go back on your `api.frontend.lol` service, in the `Validation authority` se
 now if you retry 
 
 ```sh
-curl -k https://api.frontend.lol:8443/
+curl --cacert ./ca/ca-frontend.cer https://api.frontend.lol:8443/
 # the output should be: {"Otoroshi-Error":"You're not authorized here !"}
 ```
 
 you should get an error because no client cert. is passed with the request. But if you pass the `./client/_.frontend.lol.p12` client cert in your curl call
 
 ```sh
-curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://api.frontend.lol:8443/
+curl --cacert ./ca/ca-frontend.cer --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://api.frontend.lol:8443/
 # the output should be: {"message":"Hello World!"}
 ```
 
@@ -524,11 +524,11 @@ java -Dapp.importFrom=$(pwd)/state.json -Dapp.privateapps.port=8080 -jar otorosh
 You can test the service with curl like
 
 ```sh
-curl -k --cert-type pkcs12 --cert ./client/device-1.p12:password https://www.frontend.lol:8443/
+curl --cacert ./ca/ca-frontend.cer --cert-type pkcs12 --cert ./client/device-1.p12:password https://www.frontend.lol:8443/
 # output: <h1>Hello World !!!</h1>
-curl -k --cert-type pkcs12 --cert ./client/device-2.p12:password https://www.frontend.lol:8443/
+curl --cacert ./ca/ca-frontend.cer --cert-type pkcs12 --cert ./client/device-2.p12:password https://www.frontend.lol:8443/
 # output: <h1>Hello World !!!</h1>
-curl -k --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://www.frontend.lol:8443/
+curl --cacert ./ca/ca-frontend.cer --cert-type pkcs12 --cert ./client/_.frontend.lol.p12:password https://www.frontend.lol:8443/
 # output: {"Otoroshi-Error":"You're not authorized here !"}
 ```
 
