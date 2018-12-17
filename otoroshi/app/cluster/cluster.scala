@@ -1089,12 +1089,15 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
+  def warnAboutHttpLeaderUrls(): Unit = {
+    config.leader.urls.filter(_.toLowerCase.startsWith("http://")) foreach {
+      case url => Cluster.logger.warn(s"A leader url uses unsecured transport, you should use https instead: $url")
+    }
+  }
+
   def startF(): Future[Unit] = FastFuture.successful(start())
 
   def start(): Unit = {
-    config.leader.urls.filter(_.toLowerCase.startsWith("http://")) foreach {
-      case url => Cluster.logger.warn(s"You have a leader url that uses unsecured http protocol, you should use https instead: $url")
-    }
     if (config.mode == ClusterMode.Worker) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
       pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(pollState()))

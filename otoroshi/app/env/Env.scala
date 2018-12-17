@@ -414,6 +414,7 @@ class Env(val configuration: Configuration,
     case _ =>
       implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
+      clusterAgent.warnAboutHttpLeaderUrls()
       if (clusterConfig.mode == ClusterMode.Worker) {
         clusterAgent.startF()
       } else {
