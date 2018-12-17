@@ -12,4 +12,4 @@ target
 /pc.stdout.log
 /leveldb
 /.ensime
-
+/.bloop
