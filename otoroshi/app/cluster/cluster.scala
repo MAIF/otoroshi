@@ -1090,7 +1090,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   def warnAboutHttpLeaderUrls(): Unit = {
-    config.leader.urls.filter(_.toLowerCase.startsWith("http://")) foreach {
+    config.leader.urls.filter(_.toLowerCase.contains("http://")) foreach {
       case url => Cluster.logger.warn(s"A leader url uses unsecured transport, you should use https instead: $url")
     }
   }

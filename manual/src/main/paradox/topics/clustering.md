@@ -8,10 +8,14 @@ Otoroshi clustering only uses http internally (right now) to make communications
 
 @@@ div { .centered-img }
 <img src="../img/cluster-6.png" />
+
+*Fig. 1: Simplified view*
 @@@
 
 @@@ div { .centered-img }
 <img src="../img/cluster-5.jpg" />
+
+*Fig. 2: Deployment view*
 @@@
 
 ## Cluster configuration
