@@ -2,9 +2,13 @@
 
 Otoroshi can work as a cluster by default as you can spin many Otoroshi servers using the same datastore or datastore cluster. In that case any instance is capable of serving services, Otoroshi admin UI, Otoroshi admin API, etc.
 
-But sometimes, this is not enough. So Otoroshi provides an additional clustering model named `Leader / Workers` where there is a leader cluster, composed of Otoroshi instances backed by a datastore like Redis, Cassandra or Mongo, that is in charge of all `writes` to the datastore through Otoroshi admin UI and API, and a worker cluster composed of Otoroshi instances backed by a super fast in memory datastore, with the sole purpose of routing traffic based on data synced with the leader cluster
+But sometimes, this is not enough. So Otoroshi provides an additional clustering model named `Leader / Workers` where there is a leader cluster ([control plane](https://en.wikipedia.org/wiki/Control_plane)), composed of Otoroshi instances backed by a datastore like Redis, Cassandra or Mongo, that is in charge of all `writes` to the datastore through Otoroshi admin UI and API, and a worker cluster ([data plane](https://en.wikipedia.org/wiki/Forwarding_plane)) composed of Otoroshi instances backed by a super fast in memory datastore, with the sole purpose of routing traffic based on data synced with the leader cluster
 
-Otoroshi clustering only uses http internally (right now) to make communications between leaders and workers instances so it is fully compatible with PaSS providers like [Clever-Cloud](https://www.clever-cloud.com/en/) that only provide one external port for http traffic.
+Otoroshi clustering only uses http internally (right now) to make communications between leaders and workers instances so it is fully compatible with PaaS providers like [Clever-Cloud](https://www.clever-cloud.com/en/) that only provide one external port for http traffic.
+
+@@@ div { .centered-img }
+<img src="../img/cluster-6.png" />
+@@@
 
 @@@ div { .centered-img }
 <img src="../img/cluster-5.jpg" />
@@ -78,6 +82,10 @@ otoroshi {
   }
 }
 ```
+
+@@@ warning
+You **should** use HTTPS exposition for the Otoroshi API that will be used for data sync as sensitive informations are exchanged between control plane and data plane.
+@@@
 
 @@@ warning
 You **must** have the same cluster configuration on every Otoroshi instance (worker/leader) with only names and mode changed for each instance. Some things in leader/worker are computed using configuration of their counterpart worker/leader.

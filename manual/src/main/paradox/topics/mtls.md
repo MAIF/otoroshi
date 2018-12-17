@@ -440,6 +440,13 @@ function readBody(request) {
   });
 }
 
+function chainIsValid(chain) {
+  // validate cert dates
+  // validate cert against clr
+  // validate whatever you want here
+  return true;
+}
+
 function call(req, res) {
   readBody(req).then(body => {
     const service = body.service;
@@ -453,7 +460,7 @@ function call(req, res) {
     // search for a known application
     const app = apps.filter(d => d.id === service.id)[0];
     res.writeHead(200, { 'Content-Type': 'application/json' }); 
-    if (user && device && app) {
+    if (chainIsValid(body.chain.map(x509.parseCert)) && user && device && app) {
       // check if the user actually owns the device
       const userOwnsDevice = user.ownedDevices.filter(d => d === device.serialNumber)[0];
       // check if the user has rights to access the app
