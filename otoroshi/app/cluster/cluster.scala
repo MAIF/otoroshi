@@ -1094,6 +1094,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
+      config.leader.urls.filter(_.toLowerCase.startsWith("http://")) foreach {
+        case url => Cluster.logger.warn(s"You have a leader url that uses unsecured http protocol, you should use https instead: $url")
+      }
       pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(pollState()))
       pushRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(pushQuotas()))
     }
