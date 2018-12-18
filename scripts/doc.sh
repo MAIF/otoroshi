@@ -18,6 +18,13 @@ build () {
   mv $LOCATION/docs/main $LOCATION/docs/manual
 }
 
+buildDev () {
+  cd $LOCATION/manual
+  sbt ';clean;paradox'
+  cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
+  mv $LOCATION/docs/main $LOCATION/docs/manual-dev
+}
+
 case "${1}" in
   all)
     build_schemas
@@ -32,6 +39,9 @@ case "${1}" in
     ;;
   build)
     build
+    ;;
+  buildDev)
+    buildDev
     ;;
   cleanbuild)
     clean
