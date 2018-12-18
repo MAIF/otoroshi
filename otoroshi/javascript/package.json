@@ -16,7 +16,7 @@
   "dependencies": {
     "antd": "2.13.10",
     "bcryptjs": "2.4.3",
-    "bootstrap": "3.3.7",
+    "bootstrap": "3.4.0",
     "browser-update": "2.1.11",
     "byte-converter": "0.1.4",
     "es-symbol": "1.1.2",
