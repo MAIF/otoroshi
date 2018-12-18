@@ -226,7 +226,7 @@ curl http://api.frontend.lol:8080/
 ```
 
 @@@ warning
-As seen before, the target of the otoroshi service is `ahc:https://api.backend.lol:8444/`. `ahc:https://` is not a type and is intended. This tells otoroshi to use its experimental `http client` with dynamic tls support to fetch this resource.
+As seen before, the target of the otoroshi service is `ahc:https://api.backend.lol:8444/`. `ahc:https://` is not a typo and is intended. This tells otoroshi to use its experimental `http client` with dynamic tls support to fetch this resource.
 @@@
 
 you should get an error due to the fact that Otoroshi doesn't know about the server certificate or the client certificate expected by the server.
