@@ -27,6 +27,7 @@ import play.api.http.websocket.{
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests}
 import play.api.mvc._
+import play.api.libs.json.Json
 import security.{IdGenerator, OtoroshiClaim}
 import utils.Metrics
 import utils.future.Implicits._
@@ -487,6 +488,15 @@ class WebSocketHandler()(implicit env: Env) {
                               .withClaim("locale", paUsr.flatMap(_.field("locale")))
                               .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
                               .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
+                              .withClaim("metadata", paUsr.flatMap(_.otoroshiData)
+                                  .orElse(apiKey.map(_.metadata))
+                                  .map(m => Json.stringify(Json.toJson(m))))
+                                .withClaim("user", paUsr.map(u => Json.stringify(u.toJson)))
+                                .withClaim("apikey", apiKey.map(ak => Json.stringify(Json.obj(
+                                  "clientId" -> ak.clientId,
+                                  "clientName" -> ak.clientName,
+                                  "metadata" -> ak.metadata
+                                ))))
                               .serialize(desc.secComSettings)(env)
                             logger.trace(s"Claim is : $claim")
                             val headersIn: Seq[(String, String)] =
@@ -1016,7 +1026,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                          Some("errors.service.under.construction"))
                                     .asLeft[WSFlow]
                                 } else if (isUp) {
-                                  if (descriptor.isPrivate && !descriptor.isExcludedFromSecurity(req.path)) {
+                                  if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor.isExcludedFromSecurity(req.path)) {
                                     if (descriptor.isUriPublic(req.path)) {
                                       passWithAuth0(globalConfig)
                                     } else {

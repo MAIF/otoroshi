@@ -48,6 +48,11 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+/**
+ * git over http works with otoroshi
+ * ssh and other => http tunneling like https://github.com/mathieuancelin/node-httptunnel or https://github.com/larsbrinkhoff/httptunnel or https://github.com/luizluca/bridge
+ */
+
 sealed trait ClientAuth {
   def name: String
 }
