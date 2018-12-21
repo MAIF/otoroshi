@@ -172,7 +172,7 @@ export class U2FLoginPage extends Component {
           </div>
         </form>
         <p>
-          <img src="/__otoroshi_assets/images/otoroshi-logo-xmas.png" style={{ width: 300 }} />
+          <img src={this.props.otoroshiLogo} style={{ width: 300 }} />
         </p>
       </div>
     );

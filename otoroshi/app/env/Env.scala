@@ -16,6 +16,7 @@ import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
 import models._
+import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import play.api._
 import play.api.inject.ApplicationLifecycle
@@ -53,6 +54,18 @@ class Env(val configuration: Configuration,
           val circuitBeakersHolder: CircuitBreakersHolder) {
 
   val logger = Logger("otoroshi-env")
+
+  private lazy val xmasStart = DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
+  private lazy val xmasStop  = DateTime.now().withMonthOfYear(12).dayOfMonth().withMaximumValue().plusDays(1).withMillisOfDay(1)
+
+  def otoroshiLogo: String = {
+    val now = DateTime.now()
+    if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {
+      "/__otoroshi_assets/images/otoroshi-logo-xmas.png"
+    } else {
+      "/__otoroshi_assets/images/otoroshi-logo-color.png"
+    }
+  }
 
   val otoroshiActorSystem: ActorSystem = ActorSystem(
     "otoroshi-actor-system",

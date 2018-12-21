@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
-import { WithEnv } from '../components/WithEnv';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 
@@ -199,12 +198,12 @@ export class U2FRegisterPage extends Component {
   render() {
     return (
       <div>
-        <WithEnv predicate={e => e.changePassword}>
+        {this.props.env && this.props.env.changePassword && (
           <div class="alert alert-danger" role="alert">
             You are using the default admin account with the default password. You should create a
             new admin account.
           </div>
-        </WithEnv>
+        )}
         <form className="form-horizontal">
           <div className="form-group">
             <label className="col-sm-2 control-label">Label</label>

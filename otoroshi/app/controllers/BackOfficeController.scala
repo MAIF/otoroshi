@@ -132,6 +132,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         }.nonEmpty
         Ok(
           Json.obj(
+            "otoroshiLogo"       -> env.otoroshiLogo,
             "clusterRole"        -> env.clusterConfig.mode.name,
             "snowMonkeyRunning"  -> config.snowMonkeyConfig.enabled,
             "changePassword"     -> changePassword,

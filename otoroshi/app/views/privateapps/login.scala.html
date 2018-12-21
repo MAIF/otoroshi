@@ -31,7 +31,7 @@
                 closable: false,
                 theme: {
                     labeledSubmitButton: false,
-                    logo: "/assets/images/otoroshi-logo-xmas.png",
+                    logo: "@(_env.otoroshiLogo)",
                     primaryColor: "#f9b000",
                     connectionName: {
                         primaryColor: "#f9b000", 
@@ -40,7 +40,7 @@
                 languageDictionary: {
                     title: "Otoroshi apps."
                 },
-                icon: "/assets/images/otoroshi-logo-xmas.png"
+                icon: "@(_env.otoroshiLogo)"
             });
             lock.show();
         });

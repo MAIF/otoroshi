@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, SelectInput, SimpleBooleanInput } from '../components/inputs';
 import { ServiceSidebar } from '../components/ServiceSidebar';
-import { WithEnv } from '../components/WithEnv';
 import faker from 'faker';
 
 const Both = ({ label, rawValue }) => (
@@ -20,12 +19,11 @@ const Both = ({ label, rawValue }) => (
   </div>
 );
 
-const CurlCommand = ({ label, rawValue }) => (
+const CurlCommand = ({ label, rawValue, env }) => (
   <div className="form-group">
     <label className="col-sm-2 control-label">{label}</label>
     <div className="col-sm-10">
-      <WithEnv>
-        {env => (
+        {env && (
           <input
             onChange={e => ''}
             type="text"
@@ -37,7 +35,6 @@ const CurlCommand = ({ label, rawValue }) => (
             }' http://xxxxxx --include`}
           />
         )}
-      </WithEnv>
     </div>
   </div>
 );
@@ -316,7 +313,7 @@ export class ServiceApiKeysPage extends Component {
       },
     },
     both: { type: Both, props: { label: 'Both' } },
-    curlCommand: { type: CurlCommand, props: { label: 'Curl Command' } },
+    curlCommand: { type: CurlCommand, props: { label: 'Curl Command', env: this.props.env } },
     basicAuth: { type: BasicAuthToken, props: { label: 'Basic Auth. Header' } },
     clientName: {
       type: 'string',

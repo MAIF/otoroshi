@@ -13,7 +13,7 @@ export class HomePage extends Component {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <img src="/assets/images/otoroshi-logo-xmas.png" className="logoOtoroshi" />
+          {this.props.env && <img src={this.props.env.otoroshiLogo} className="logoOtoroshi" />}
         </div>
         <LiveStatTiles url="/bo/api/proxy/api/live/global?every=2000" />
         <ClusterTiles url="/bo/api/proxy/api/cluster/live?every=2000" />

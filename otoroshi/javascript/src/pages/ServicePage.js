@@ -19,7 +19,6 @@ import faker from 'faker';
 import deepSet from 'set-value';
 import { Collapse } from '../components/inputs/Collapse';
 import { createTooltip } from '../tooltips';
-import { WithEnv } from '../components/WithEnv';
 import Select from 'react-select';
 import { ChaosConfigWithSkin } from '../components/ChaosConfig';
 import { JwtVerifier, LocationSettings } from '../components/JwtVerifier';
@@ -723,8 +722,8 @@ export class ServicePage extends Component {
               help="If you work locally with Otoroshi, you may want to use that feature to redirect one specific service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests"
               onChange={v => this.changeTheValue('redirectToLocal', v)}
               after={() => {
-                return (
-                  <WithEnv predicate={env => env.clevercloud}>
+                if (this.props.env && this.props.env.clevercloud) {
+                  return (
                     <CleverSelector
                       onChange={url => {
                         const targets = [...this.state.service.targets];
@@ -738,8 +737,10 @@ export class ServicePage extends Component {
                         });
                       }}
                     />
-                  </WithEnv>
-                );
+                  );
+                } else {
+                  return null;
+                }
               }}
             />
             {!this.state.service.redirectToLocal && (
@@ -1439,7 +1440,7 @@ export class TemplateInput extends Component {
               ${message}
             </p>
             ${comeBack ? '<p class="lead">try to come back later 😉</p>' : ''}
-            <p><img class="logo" src="/__otoroshi_assets/images/otoroshi-logo-xmas.png" style="width: 300px;"></p>
+            <p><img class="logo" src="/__otoroshi_assets/images/otoroshi-logo-color.png" style="width: 300px;"></p>
         </div>
       </div>
   </body>

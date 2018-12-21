@@ -110,9 +110,9 @@ export function init(node) {
   ReactDOM.render(<BackOfficeApp />, node);
 }
 
-export function login(node) {
+export function login(node, otoroshiLogo) {
   setupOutdatedBrowser();
-  ReactDOM.render(<U2FLoginPage />, node);
+  ReactDOM.render(<U2FLoginPage otoroshiLogo={otoroshiLogo} />, node);
 }
 
 export function genericLogin(opts, node) {

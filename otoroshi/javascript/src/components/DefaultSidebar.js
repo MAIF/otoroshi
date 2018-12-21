@@ -1,7 +1,6 @@
 import React from 'react';
 
 import { createTooltip } from '../tooltips';
-import { WithEnv } from './WithEnv';
 
 export function DefaultSidebar(props) {
   const pathname = window.location.pathname;
@@ -46,7 +45,7 @@ export function DefaultSidebar(props) {
           <i className="glyphicon glyphicon-plus" /> Add service
         </a>
       </li>
-      <WithEnv predicate={env => env.clevercloud}>
+      {props.env && props.env.clevercloud && (
         <li>
           <a
             href="/bo/dashboard/clever"
@@ -57,7 +56,7 @@ export function DefaultSidebar(props) {
             <i className="glyphicon glyphicon-plus" /> Add service from a CleverApp
           </a>
         </li>
-      </WithEnv>
+      )}
     </ul>
   );
 }

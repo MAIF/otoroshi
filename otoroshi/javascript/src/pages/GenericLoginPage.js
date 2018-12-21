@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 
 export class GenericLoginPage extends Component {
+
   state = {
     username: '',
     password: '',
@@ -77,7 +78,7 @@ export class GenericLoginPage extends Component {
           </div>
         </form>
         <p>
-          <img src="/__otoroshi_assets/images/otoroshi-logo-xmas.png" style={{ width: 300 }} />
+          <img src={this.props.otoroshiLogo} style={{ width: 300 }} />
         </p>
       </div>
     );

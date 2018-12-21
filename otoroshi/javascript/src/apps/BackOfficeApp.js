@@ -37,7 +37,6 @@ import { UpdateOtoroshiVersion } from '../components/UpdateOtoroshiVersion';
 import { DefaultSidebar } from '../components/DefaultSidebar';
 import { DynamicSidebar } from '../components/DynamicSidebar';
 import { DynamicTitle } from '../components/DynamicTitle';
-import { WithEnv } from '../components/WithEnv';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
@@ -50,6 +49,7 @@ class BackOfficeAppContainer extends Component {
       groups: [],
       lines: [],
       catchedError: null,
+      env: null,
     };
   }
 
@@ -78,6 +78,7 @@ class BackOfficeAppContainer extends Component {
         .setAttribute('class', 'navbar-toggle menu collapsed');
       // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
+    BackOfficeServices.env().then(env => this.setState({ env }));
     BackOfficeServices.fetchLines().then(lines => {
       BackOfficeServices.findAllGroups().then(groups => {
         this.setState({ lines, groups });
@@ -116,15 +117,10 @@ class BackOfficeAppContainer extends Component {
     return (
       <div>
         <ReloadNewVersion />
-        <WithEnv>
-          {env => {
-            return [
-              <UpdateOtoroshiVersion env={env} />,
-              <TopBar {...this.props} changePassword={env.changePassword} />,
-            ];
-          }}
-        </WithEnv>
-        {/*<WithEnv>{env => <TopBar {...this.props} changePassword={env.changePassword} />}</WithEnv>*/}
+        {this.state.env && [
+          <UpdateOtoroshiVersion env={this.state.env} />,
+          <TopBar {...this.props} changePassword={this.state.env.changePassword} />,
+        ]}
         <div className="container-fluid">
           <div className="row">
             <div className="col-sm-2 sidebar" id="sidebar">
@@ -144,21 +140,17 @@ class BackOfficeAppContainer extends Component {
                     </li>
                   </ul>
                   <DynamicSidebar />
-                  <DefaultSidebar lines={this.state.lines} addService={this.addService} />
-                  <WithEnv>
-                    {env => {
-                      return [
-                        <span onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
-                          {env.snowMonkeyRunning &&
-                            window.location.pathname !== '/bo/dashboard/snowmonkey' && (
-                              <div className="screen">
-                                <p>Snow monkey is running...</p>
-                              </div>
-                            )}
-                        </span>,
-                      ];
-                    }}
-                  </WithEnv>
+                  <DefaultSidebar lines={this.state.lines} addService={this.addService} env={this.state.env} />
+                  {this.state.env && (
+                    <span onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
+                      {this.state.env.snowMonkeyRunning &&
+                        window.location.pathname !== '/bo/dashboard/snowmonkey' && (
+                          <div className="screen">
+                            <p>Snow monkey is running...</p>
+                          </div>
+                        )}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -169,7 +161,7 @@ class BackOfficeAppContainer extends Component {
                   <div className="row">
                     {!this.state.catchedError && (
                       <Switch>
-                        <Route exact path="/" component={props => this.decorate(HomePage, props)} />
+                        <Route exact path="/" component={props => this.decorate(HomePage, { ...props, env: this.state.env })} />
                         <Route
                           path="/lines/:lineId/services/:serviceId/stats"
                           component={props => this.decorate(ServiceLiveStatsPage, props)}
@@ -192,19 +184,19 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
-                          component={props => this.decorate(ServiceApiKeysPage, props)}
+                          component={props => this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })}
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId/apikeys/:taction"
-                          component={props => this.decorate(ServiceApiKeysPage, props)}
+                          component={props => this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })}
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId/apikeys"
-                          component={props => this.decorate(ServiceApiKeysPage, props)}
+                          component={props => this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })}
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId"
-                          component={props => this.decorate(ServicePage, props)}
+                          component={props => this.decorate(ServicePage, { ...props, env: this.state.env })}
                         />
                         <Route
                           path="/services/:taction"
@@ -331,6 +323,7 @@ class BackOfficeAppContainer extends Component {
                           component={props =>
                             this.decorate(U2FRegisterPage, {
                               ...props,
+                              env: this.state.env
                             })
                           }
                         />
@@ -347,7 +340,7 @@ class BackOfficeAppContainer extends Component {
                           width: '100%',
                           height: '70vh',
                         }}>
-                        <img src="/assets/images/otoroshi-logo-xmas.png" className="logoOtoroshi" />
+                        <img src={this.state.env.otoroshiLogo} className="logoOtoroshi" />
                         <div style={{ fontSize: 20, marginBottom: 20, marginTop: 20 }}>
                           Ooops, an error occured
                         </div>
