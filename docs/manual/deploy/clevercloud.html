@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Clever Cloud · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.2
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="active page">Clever Cloud</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.2
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="active page">Clever Cloud</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../deploy/index.html">Deploy to production</a></li>
+  <li>Clever Cloud</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#clever-cloud" name="clever-cloud" class="anchor"><span class="anchor-link"></span></a>Clever Cloud</h1>
+<p>Now you want to use Otoroshi on Clever Cloud. Otoroshi has been designed and created to run on Clever Cloud and a lot of choices were made because of how Clever Cloud works.</p>
+<h2><a href="#create-an-otoroshi-instance-on-clevercloud" name="create-an-otoroshi-instance-on-clevercloud" class="anchor"><span class="anchor-link"></span></a>Create an Otoroshi instance on CleverCloud</h2>
+<p>First, fork our project template on Github at <a href="https://github.com/MAIF/otoroshi-jar-clevercloud-template">https://github.com/MAIF/otoroshi-jar-clevercloud-template</a>.</p>
+<p>If you want to customize the build script, edit <code>./clevercloud/build.sh</code></p>
+<p>If you want to customize the configuration <a href="../firstrun/env.html">use env. variables</a>, you can use <a href="#example-of-clevercloud-env-variables">the example provided below</a></p>
+<p>Create a new CleverCloud app based on your fork.</p><div class="centered-img">
+<img src="../img/deploy-cc-jar-0.png" /></div>
+<p>Then choose what kind of app your want to create, for Otoroshi, choose <code>Java + Jar</code></p><div class="centered-img">
+<img src="../img/deploy-cc-jar-1.png" /></div>
+<p>Next, set up choose instance size and auto-scalling. Otoroshi can run on small instances, especially if you just want to test it.</p><div class="centered-img">
+<img src="../img/deploy-cc-2.png" /></div>
+<p>Finally, choose a name for your app</p><div class="centered-img">
+<img src="../img/deploy-cc-3.png" /></div>
+<p>Now you just need to customize environnment variables and add the custom build script as pre buid hook :</p>
+<p><code>CC_PRE_BUILD_HOOK=./clevercloud/build.sh</code></p>
+<p>at this point, you can also add other env. variables to configure Otoroshi like in <a href="#example-of-clevercloud-env-variables">the example provided below</a></p><div class="centered-img">
+<img src="../img/deploy-cc-4-bis.png" /></div>
+<p>You can also use expert mode :</p><div class="centered-img">
+<img src="../img/deploy-cc-4.png" /></div>
+<p>Now, your app is ready, don&rsquo;t forget to add a custom domains name on the CleverCloud app matching the Otoroshi app domain. For instance if you used domain names in env. variables like <code>changeme</code>, <code>changeme-admin-internal-api</code>, <code>changeme-api</code> on the <code>cleverapps.io</code> domain, declare <code>changeme.cleverapps.io</code>, <code>changeme-api.cleverapps.io</code>, <code>changeme-admin-internal-api.cleverapps.io</code>.</p>
+<p>You will find the login/password tuple for first login in the app. logs.</p>
+<h2><a href="#build-and-deploy-otoroshi-from-its-source-code" name="build-and-deploy-otoroshi-from-its-source-code" class="anchor"><span class="anchor-link"></span></a>Build and deploy Otoroshi from its source code</h2>
+<p>First, fork our project template on Github at <a href="https://github.com/MAIF/otoroshi-clevercloud-template">https://github.com/MAIF/otoroshi-clevercloud-template</a>.</p>
+<p>If you want to customize the build script, edit <code>./clevercloud/build.sh</code></p>
+<p>If you want to customize the configuration file, edit <code>./clevercloud/prod.conf</code> or <a href="../firstrun/env.html">use env. variables</a></p>
+<p>Create a new Clever Cloud app based on your fork.</p><div class="centered-img">
+<img src="../img/deploy-cc-0.png" /></div>
+<p>Then, you need to choose what kind of app your want to create, for Otoroshi, choose <code>Java or Scala + Play 2</code></p><div class="centered-img">
+<img src="../img/deploy-cc-1.png" /></div>
+<p>Then, you will be asked to choose what kind of machine you want to use. <code>M</code> instances are a good choice but you can use a less powerful ones. You can also activate auto-scaling or multi-instances to provie high availibility.</p><div class="centered-img">
+<img src="../img/deploy-cc-2.png" /></div>
+<p>Then choose a name for your app :</p><div class="centered-img">
+<img src="../img/deploy-cc-3.png" /></div>
+<p>Now you just need to customize environnment variables and add the custom build script as pre build hook :</p>
+<p><code>CC_PRE_BUILD_HOOK=./clevercloud/build.sh</code></p>
+<p>at this point, you can also add other env. variables to configure Otoroshi like in <a href="#example-of-clevercloud-env-variables">the example provided below</a></p><div class="centered-img">
+<img src="../img/deploy-cc-4-bis.png" /></div>
+<p>You can also use expert mode :</p><div class="centered-img">
+<img src="../img/deploy-cc-4.png" /></div>
+<p>Now, your app is ready, don&rsquo;t forget to add a custom domains name on the CleverCloud app matching the Otoroshi app domain. For instance if you used domain names in env. variables like <code>changeme</code>, <code>changeme-admin-internal-api</code>, <code>changeme-api</code> on the <code>cleverapps.io</code> domain, declare <code>changeme.cleverapps.io</code>, <code>changeme-api.cleverapps.io</code>, <code>changeme-admin-internal-api.cleverapps.io</code>.</p>
+<p>You will find the login/password tuple for first login in the app. logs.</p>
+<h2><a href="#example-of-clevercloud-env-variables" name="example-of-clevercloud-env-variables" class="anchor"><span class="anchor-link"></span></a>Example of CleverCloud env. variables</h2>
+<p>You can add more env variables to customize your Otoroshi instance like the following. Use the expert mode to copy/paste all the values in one shot :</p>
+<pre><code>APP_ENV=prod
+APP_STORAGE=inmemory
+APP_DOMAIN=cleverapps.io
+APP_ROOT_SCHEME=https
+APP_BACKOFFICE_SUBDOMAIN=changeme
+ADMIN_API_TARGET_SUBDOMAIN=changeme-admin-internal-api
+ADMIN_API_EXPOSED_SUBDOMAIN=changeme-api
+ADMIN_API_GROUP=psIZ0hI6eAQ2vp7DQoFfdUSfdmamtlkbXwYCe9WQHGBZMO6o5Kn1r2VVSmI61IVX
+ADMIN_API_CLIENT_ID=pWkwudAifrflg8Bh
+ADMIN_API_CLIENT_SECRET=ip53UuY5BFiM3wXkVUhhYrVdbsDYsANCNdRMnW3pU4I268ylsF6xxkvusS6Wv4AW
+ADMIN_API_SERVICE_ID=GVQUWMZHaEYr1tCTNe9CdXOVE4DQnu1VUAx7YyXDlo5XupY3laZlWUnGyDt1vfGx
+CACHE_DEPENDENCIES=true
+CC_PRE_BUILD_HOOK=./clevercloud/build.sh
+CLAIM_SHAREDKEY=Tx1uQXW11pLNlZ25S4A08Uf8HbWDPxZ3KGSSm0B1s90gRk10PNy4d1HKY4Dnvvv5
+ENABLE_METRICS=true
+JAVA_VERSION=8
+PORT=8080
+PLAY_CRYPTO_SECRET=7rNFga4AComd6ey09W9PaHqllLmPHb8WHBhlRe9xjTHOPlN15BCeSQf610cmLU1w
+SESSION_SECURE_ONLY=true
+SESSION_MAX_AGE=259200000
+SESSION_DOMAIN=changeme.cleverapps.io
+SESSION_NAME=otoroshi-session
+USER_AGENT=otoroshi
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../deploy/other.html">Others</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../deploy/clevercloud.html#clever-cloud" class="header">Clever Cloud</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html#create-an-otoroshi-instance-on-clevercloud" class="header">Create an Otoroshi instance on CleverCloud</a></li>
+    <li><a href="../deploy/clevercloud.html#build-and-deploy-otoroshi-from-its-source-code" class="header">Build and deploy Otoroshi from its source code</a></li>
+    <li><a href="../deploy/clevercloud.html#example-of-clevercloud-env-variables" class="header">Example of CleverCloud env. variables</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2018</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
