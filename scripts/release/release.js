@@ -117,6 +117,7 @@ async function buildVersion(version, where, releaseDir) {
   await runSystemCommand('git', ['commit', '-am', `Update swagger file before release`], location);
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
+  await runSystemCommand('zip', ['-r', path.resolve(releaseDir, `otoroshi-manual-${version}.zip`), path.resolve(where, 'docs/manual'), '-x', '*.DS_Store'], where);
   await runSystemCommand('git', ['add', '--all'], location);
   await runSystemCommand('git', ['commit', '-am', `Update site documentation before release`], location);
   // run test and build server
