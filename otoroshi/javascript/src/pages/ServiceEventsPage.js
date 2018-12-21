@@ -13,7 +13,7 @@ export class ServiceEventsPage extends Component {
     service: null,
     from: moment().subtract(1, 'hours'),
     to: moment(),
-    limit: 500
+    limit: 500,
   };
 
   columns = [
@@ -156,7 +156,13 @@ export class ServiceEventsPage extends Component {
             />
             <div className="input-group" style={{ marginLeft: 10 }}>
               <div className="input-group-addon">Limit</div>
-              <input type="number" style={{ width: 100 }} className="form-control" value={this.state.limit} onChange={e => this.setState({ limit: e.target.value }, () => this.table.update())} />
+              <input
+                type="number"
+                style={{ width: 100 }}
+                className="form-control"
+                value={this.state.limit}
+                onChange={e => this.setState({ limit: e.target.value }, () => this.table.update())}
+              />
             </div>
           </div>
         </div>

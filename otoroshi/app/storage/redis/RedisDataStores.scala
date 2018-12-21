@@ -101,8 +101,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _clusterStateDataStore                   = new RedisClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore                   = new RedisClientCertificateValidationDataStore(redis, env)
-  override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore = _clientCertificateValidationDataStore
+  private lazy val _clientCertificateValidationDataStore = new RedisClientCertificateValidationDataStore(redis, env)
+  override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
+    _clientCertificateValidationDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

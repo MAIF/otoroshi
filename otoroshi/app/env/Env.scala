@@ -188,7 +188,7 @@ class Env(val configuration: Configuration,
     )(otoroshiMaterializer)
 
     WsClientChooser(
-      ahcClient, 
+      ahcClient,
       new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer),
       sslconfig => {
         val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
@@ -533,8 +533,7 @@ class Env(val configuration: Configuration,
                   v.replace(".", "").replace("-dev", "").replace("v", "").toDouble - 0.5
                 case v => v.replace(".", "").replace("-dev", "").replace("v", "").replace("-snapshot", "").toDouble
               }
-              Ws
-                .url("https://updates.otoroshi.io/api/versions/latest")
+              Ws.url("https://updates.otoroshi.io/api/versions/latest")
                 .withRequestTimeout(10.seconds)
                 .withHttpHeaders(
                   "Otoroshi-Version" -> otoroshiVersion,
@@ -594,15 +593,15 @@ class Env(val configuration: Configuration,
                 if (!foundOtoroshiDomainCert) {
                   logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
                   val cert1 = FakeKeyStore.createSelfSignedCertificate(s"*.${this.domain}",
-                                                                   FiniteDuration(365, TimeUnit.DAYS),
-                                                                   keyPair2)
+                                                                       FiniteDuration(365, TimeUnit.DAYS),
+                                                                       keyPair2)
                   Cert(cert1, keyPair2, None).enrich().save()
                 }
                 if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
                   logger.info(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
                   val cert2 = FakeKeyStore.createSelfSignedCertificate(s"*.dev.${this.domain}",
-                                                                   FiniteDuration(365, TimeUnit.DAYS),
-                                                                   keyPair3)
+                                                                       FiniteDuration(365, TimeUnit.DAYS),
+                                                                       keyPair3)
                   Cert(cert2, keyPair3, None).enrich().save()
                 }
               }

@@ -373,9 +373,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "code"
     ),
     "properties" -> Json.obj(
-      "enabled"          -> SimpleBooleanType ~~> "Whether or not redirection is enabled",
-      "to"               -> SimpleStringType ~~> "The location for redirection",
-      "code"             -> SimpleIntType ~~> "The http redirect code",
+      "enabled" -> SimpleBooleanType ~~> "Whether or not redirection is enabled",
+      "to"      -> SimpleStringType ~~> "The location for redirection",
+      "code"    -> SimpleIntType ~~> "The http redirect code",
     )
   )
 
@@ -398,19 +398,19 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "headers"
     ),
     "properties" -> Json.obj(
-      "id" ->          SimpleStringType ~~>  "The id of the settings",
-      "name" ->        SimpleStringType ~~>  "The name of the settings",
-      "description" -> SimpleStringType ~~>  "The description of the settings",
-      "url" ->         SimpleStringType ~~>  "The URL of the server",
-      "host" ->        SimpleStringType ~~>  "The host of the server",
-      "goodTtl" ->     SimpleLongType ~~>    "The TTL for valid access response caching",
-      "badTtl" ->      SimpleLongType ~~>    "The TTL for invalid access response caching",
-      "method" ->      SimpleStringType ~~>  "The HTTP method",
-      "path" ->        SimpleStringType ~~>  "The URL path",
-      "timeout" ->     SimpleLongType ~~>    "The call timeout",
-      "noCache" ->     SimpleBooleanType ~~> "Avoid caching responses",
+      "id"          -> SimpleStringType ~~> "The id of the settings",
+      "name"        -> SimpleStringType ~~> "The name of the settings",
+      "description" -> SimpleStringType ~~> "The description of the settings",
+      "url"         -> SimpleStringType ~~> "The URL of the server",
+      "host"        -> SimpleStringType ~~> "The host of the server",
+      "goodTtl"     -> SimpleLongType ~~> "The TTL for valid access response caching",
+      "badTtl"      -> SimpleLongType ~~> "The TTL for invalid access response caching",
+      "method"      -> SimpleStringType ~~> "The HTTP method",
+      "path"        -> SimpleStringType ~~> "The URL path",
+      "timeout"     -> SimpleLongType ~~> "The call timeout",
+      "noCache"     -> SimpleBooleanType ~~> "Avoid caching responses",
       "alwaysValid" -> SimpleBooleanType ~~> "Bypass http calls, every certificates are valids",
-      "headers" ->     SimpleObjectType ~~>  "HTTP call headers"
+      "headers"     -> SimpleObjectType ~~> "HTTP call headers"
     )
   )
 

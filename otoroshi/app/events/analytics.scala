@@ -374,11 +374,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     FastFuture.successful(
       globalConfig.elasticReadsConfig.map(
         c =>
-          new ElasticReadsAnalytics(c,
-                                    env.environment,
-                                    env.Ws,
-                                    env.otoroshiExecutionContext,
-                                    env.otoroshiActorSystem)
+          new ElasticReadsAnalytics(c, env.environment, env.Ws, env.otoroshiExecutionContext, env.otoroshiActorSystem)
       )
     )
   }

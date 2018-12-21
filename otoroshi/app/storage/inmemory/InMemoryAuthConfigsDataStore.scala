@@ -33,15 +33,20 @@ class InMemoryAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
 
   override def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit] = {
     redisCli
-      .set(s"${_env.storageRoot}:auth:tokens:$token:user", Json.stringify(user), pxMilliseconds = Some(5.minutes.toMillis))
+      .set(s"${_env.storageRoot}:auth:tokens:$token:user",
+           Json.stringify(user),
+           pxMilliseconds = Some(5.minutes.toMillis))
       .map(_ => ())
   }
 
   override def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]] = {
-    redisCli.get(s"${_env.storageRoot}:auth:tokens:$token:user").map { bs =>
-      bs.map(a => Json.parse(a.utf8String))
-    }.andThen {
-      case _ => redisCli.del(s"${_env.storageRoot}:auth:tokens:$token:user")
-    }
+    redisCli
+      .get(s"${_env.storageRoot}:auth:tokens:$token:user")
+      .map { bs =>
+        bs.map(a => Json.parse(a.utf8String))
+      }
+      .andThen {
+        case _ => redisCli.del(s"${_env.storageRoot}:auth:tokens:$token:user")
+      }
   }
 }

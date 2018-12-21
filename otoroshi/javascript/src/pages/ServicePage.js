@@ -666,7 +666,10 @@ export class ServicePage extends Component {
               />
             )}
           </Collapse>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={!this.state.service.redirection.enabled} label="Redirection">
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={!this.state.service.redirection.enabled}
+            label="Redirection">
             <BooleanInput
               label="Redirection enabled"
               value={this.state.service.redirection.enabled}
@@ -678,26 +681,26 @@ export class ServicePage extends Component {
               value={this.state.service.redirection.code}
               onChange={e => this.changeTheValue('redirection.code', e)}
               possibleValues={[
-                { 
+                {
                   label: '301: Moved Permanently',
-                  value: 301
+                  value: 301,
                 },
-                { 
+                {
                   label: '302: Found',
-                  value: 302
+                  value: 302,
                 },
-                { 
+                {
                   label: '303: See Other',
-                  value: 303
+                  value: 303,
                 },
-                { 
+                {
                   label: '307: Temporary Redirect',
-                  value: 307
+                  value: 307,
                 },
-                { 
+                {
                   label: '308: Permanent Redirect',
-                  value: 308
-                }
+                  value: 308,
+                },
               ]}
               help="..."
             />
@@ -781,10 +784,10 @@ export class ServicePage extends Component {
               }${this.state.service.root}`}
             />
           </Collapse>
-          <Collapse 
-            notVisible={this.state.service.redirection.enabled} 
-            collapsed={this.state.allCollapsed} 
-            initCollapsed={false} 
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={false}
             label="URL Patterns">
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
@@ -841,10 +844,10 @@ export class ServicePage extends Component {
               changeTheValue={this.changeTheValue}
             />
           </Collapse>
-          <Collapse 
-            notVisible={this.state.service.redirection.enabled} 
-            collapsed={this.state.allCollapsed} 
-            initCollapsed={true} 
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="Validation authority">
             <SelectInput
               label="Validation authority"
@@ -858,13 +861,17 @@ export class ServicePage extends Component {
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 {!this.state.service.clientValidatorRef && (
-                  <a href={`/bo/dashboard/validation-authorities/add`} className="btn btn-sm btn-primary">
+                  <a
+                    href={`/bo/dashboard/validation-authorities/add`}
+                    className="btn btn-sm btn-primary">
                     <i className="glyphicon glyphicon-plus" /> Create a new validation authority.
                   </a>
                 )}
                 {this.state.service.authConfigRef && (
                   <a
-                    href={`/bo/dashboard/validation-authorities/edit/${this.state.service.clientValidatorRef}`}
+                    href={`/bo/dashboard/validation-authorities/edit/${
+                      this.state.service.clientValidatorRef
+                    }`}
                     className="btn btn-sm btn-success">
                     <i className="glyphicon glyphicon-edit" /> Edit the validation authority.
                   </a>
@@ -874,11 +881,11 @@ export class ServicePage extends Component {
                 </a>
               </div>
             </div>
-          </Collapse>            
-          <Collapse 
-            notVisible={this.state.service.redirection.enabled} 
-            collapsed={this.state.allCollapsed} 
-            initCollapsed={true} 
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="Authentication">
             <BooleanInput
               label="Enforce user authentication"
@@ -948,10 +955,10 @@ export class ServicePage extends Component {
               </div>
             </div>
           </Collapse>
-          <Collapse 
-            notVisible={this.state.service.redirection.enabled} 
-            collapsed={this.state.allCollapsed} 
-            initCollapsed={true} 
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="CORS support">
             <BooleanInput
               label="Enabled"

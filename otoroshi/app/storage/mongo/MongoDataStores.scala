@@ -17,7 +17,12 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
+import ssl.{
+  CertificateDataStore,
+  ClientCertificateValidationDataStore,
+  InMemoryClientCertificateValidationDataStore,
+  RedisClientCertificateValidationDataStore
+}
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores}
 
@@ -110,8 +115,9 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore                   = new InMemoryClientCertificateValidationDataStore(redis, env)
-  override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore = _clientCertificateValidationDataStore
+  private lazy val _clientCertificateValidationDataStore = new InMemoryClientCertificateValidationDataStore(redis, env)
+  override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
+    _clientCertificateValidationDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

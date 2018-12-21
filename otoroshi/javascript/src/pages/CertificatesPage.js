@@ -108,7 +108,10 @@ class Commands extends Component {
   };
 
   componentDidMount() {
-    const cert = this.props.rawValue.chain ? (this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----') : '';
+    const cert = this.props.rawValue.chain
+      ? this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] +
+        '-----END CERTIFICATE-----'
+      : '';
     this.setState({
       fullChainUrl: URL.createObjectURL(
         new Blob([this.props.rawValue.chain], { type: 'text/plain' })
@@ -214,7 +217,7 @@ class CertificateValid extends Component {
   };
 
   update = cert => {
-    if (!cert.privateKey || (cert.privateKey.trim() === '')) {
+    if (!cert.privateKey || cert.privateKey.trim() === '') {
       return;
     }
     this.setState({ loading: true }, () => {
@@ -259,12 +262,12 @@ class CertificateValid extends Component {
       <div className="form-group">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
-          {(this.state.valid === true) && (
+          {this.state.valid === true && (
             <div className="alert alert-success" role="alert">
               Your certificate is valid
             </div>
           )}
-          {(this.state.valid === false) && (
+          {this.state.valid === false && (
             <div className="alert alert-danger" role="alert">
               Your certificate is not valid
             </div>
@@ -327,14 +330,16 @@ export class CertificatesPage extends Component {
     {
       title: 'CA',
       content: item =>
-        item.ca ?  'yes' : 'no', /*(
+        item.ca
+          ? 'yes'
+          : 'no' /*(
           <button
             type="button"
             className="btn btn-primary btn-sm"
             onClick={e => this.createCASigned(e, item.id)}>
             <i className="glyphicon glyphicon-plus-sign" />
           </button>
-        )*/
+        )*/,
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
     },

@@ -589,7 +589,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
                 case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
                   FastFuture.successful(
-                    Results.Status(rawDesc.redirection.code)
+                    Results
+                      .Status(rawDesc.redirection.code)
                       .withHeaders("Location" -> rawDesc.redirection.formattedTo(req))
                   )
                 }
@@ -653,123 +654,123 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                apiKey: Option[ApiKey] = None,
                                                paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
                               desc.validateClientCertificates(req, apiKey, paUsr) {
-                              passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
-                                if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
-                                  val cbStart = System.currentTimeMillis()
-                                  val counter = new AtomicInteger(0)
-                                  env.circuitBeakersHolder
-                                    .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
-                                    .call(
-                                      descriptor,
-                                      bodyAlreadyConsumed,
-                                      s"${req.method} ${req.relativeUri}",
-                                      counter,
-                                      (t, attempts) =>
-                                        actuallyCallDownstream(t,
-                                                               apiKey,
-                                                               paUsr,
-                                                               System.currentTimeMillis - cbStart,
-                                                               counter.get())
-                                    ) recoverWith {
-                                    case BodyAlreadyConsumedException =>
-                                      Errors.craftResponseResult(
-                                        s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.request.timeout"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                        cbDuration = System.currentTimeMillis - cbStart,
-                                        callAttempts = counter.get()
-                                      )
-                                    case RequestTimeoutException =>
-                                      Errors.craftResponseResult(
-                                        s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.request.timeout"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                        cbDuration = System.currentTimeMillis - cbStart,
-                                        callAttempts = counter.get()
-                                      )
-                                    case _: scala.concurrent.TimeoutException =>
-                                      Errors.craftResponseResult(
-                                        s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.request.timeout"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                        cbDuration = System.currentTimeMillis - cbStart,
-                                        callAttempts = counter.get()
-                                      )
-                                    case AllCircuitBreakersOpenException =>
-                                      Errors.craftResponseResult(
-                                        s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.circuit.breaker.open"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                        cbDuration = System.currentTimeMillis - cbStart,
-                                        callAttempts = counter.get()
-                                      )
-                                    case error
-                                        if error != null && error.getMessage != null && error.getMessage
-                                          .toLowerCase()
-                                          .contains("connection refused") =>
-                                      Errors.craftResponseResult(
-                                        s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.connection.refused"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                        cbDuration = System.currentTimeMillis - cbStart,
-                                        callAttempts = counter.get()
-                                      )
-                                    case error if error != null && error.getMessage != null =>
-                                      logger.error(s"Something went wrong, you should try later", error)
-                                      Errors.craftResponseResult(
-                                        s"Something went wrong, you should try later. Thanks for your understanding.",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.proxy.error"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                        cbDuration = System.currentTimeMillis - cbStart,
-                                        callAttempts = counter.get()
-                                      )
-                                    case error =>
-                                      logger.error(s"Something went wrong, you should try later", error)
-                                      Errors.craftResponseResult(
-                                        s"Something went wrong, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.proxy.error"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                        cbDuration = System.currentTimeMillis - cbStart,
-                                        callAttempts = counter.get()
-                                      )
+                                passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
+                                  if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
+                                    val cbStart = System.currentTimeMillis()
+                                    val counter = new AtomicInteger(0)
+                                    env.circuitBeakersHolder
+                                      .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
+                                      .call(
+                                        descriptor,
+                                        bodyAlreadyConsumed,
+                                        s"${req.method} ${req.relativeUri}",
+                                        counter,
+                                        (t, attempts) =>
+                                          actuallyCallDownstream(t,
+                                                                 apiKey,
+                                                                 paUsr,
+                                                                 System.currentTimeMillis - cbStart,
+                                                                 counter.get())
+                                      ) recoverWith {
+                                      case BodyAlreadyConsumedException =>
+                                        Errors.craftResponseResult(
+                                          s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.request.timeout"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          cbDuration = System.currentTimeMillis - cbStart,
+                                          callAttempts = counter.get()
+                                        )
+                                      case RequestTimeoutException =>
+                                        Errors.craftResponseResult(
+                                          s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.request.timeout"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          cbDuration = System.currentTimeMillis - cbStart,
+                                          callAttempts = counter.get()
+                                        )
+                                      case _: scala.concurrent.TimeoutException =>
+                                        Errors.craftResponseResult(
+                                          s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.request.timeout"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          cbDuration = System.currentTimeMillis - cbStart,
+                                          callAttempts = counter.get()
+                                        )
+                                      case AllCircuitBreakersOpenException =>
+                                        Errors.craftResponseResult(
+                                          s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.circuit.breaker.open"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          cbDuration = System.currentTimeMillis - cbStart,
+                                          callAttempts = counter.get()
+                                        )
+                                      case error
+                                          if error != null && error.getMessage != null && error.getMessage
+                                            .toLowerCase()
+                                            .contains("connection refused") =>
+                                        Errors.craftResponseResult(
+                                          s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.connection.refused"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          cbDuration = System.currentTimeMillis - cbStart,
+                                          callAttempts = counter.get()
+                                        )
+                                      case error if error != null && error.getMessage != null =>
+                                        logger.error(s"Something went wrong, you should try later", error)
+                                        Errors.craftResponseResult(
+                                          s"Something went wrong, you should try later. Thanks for your understanding.",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.proxy.error"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          cbDuration = System.currentTimeMillis - cbStart,
+                                          callAttempts = counter.get()
+                                        )
+                                      case error =>
+                                        logger.error(s"Something went wrong, you should try later", error)
+                                        Errors.craftResponseResult(
+                                          s"Something went wrong, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.proxy.error"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          cbDuration = System.currentTimeMillis - cbStart,
+                                          callAttempts = counter.get()
+                                        )
+                                    }
+                                  } else {
+                                    val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
+                                                                      descriptor.targets.size
+                                                                    else 1)
+                                    // Round robin loadbalancing is happening here !!!!!
+                                    val target = descriptor.targets.apply(index.toInt)
+                                    actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
                                   }
-                                } else {
-                                  val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
-                                                                    descriptor.targets.size
-                                                                  else 1)
-                                  // Round robin loadbalancing is happening here !!!!!
-                                  val target = descriptor.targets.apply(index.toInt)
-                                  actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
                                 }
-                              }
                               }
                             }
 
@@ -817,15 +818,23 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 .withClaim("locale", paUsr.flatMap(_.field("locale")))
                                 .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
                                 .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
-                                .withClaim("metadata", paUsr.flatMap(_.otoroshiData)
-                                  .orElse(apiKey.map(_.metadata))
-                                  .map(m => Json.stringify(Json.toJson(m))))
+                                .withClaim("metadata",
+                                           paUsr
+                                             .flatMap(_.otoroshiData)
+                                             .orElse(apiKey.map(_.metadata))
+                                             .map(m => Json.stringify(Json.toJson(m))))
                                 .withClaim("user", paUsr.map(u => Json.stringify(u.toJson)))
-                                .withClaim("apikey", apiKey.map(ak => Json.stringify(Json.obj(
-                                  "clientId" -> ak.clientId,
-                                  "clientName" -> ak.clientName,
-                                  "metadata" -> ak.metadata
-                                ))))
+                                .withClaim("apikey",
+                                           apiKey.map(
+                                             ak =>
+                                               Json.stringify(
+                                                 Json.obj(
+                                                   "clientId"   -> ak.clientId,
+                                                   "clientName" -> ak.clientName,
+                                                   "metadata"   -> ak.metadata
+                                                 )
+                                             )
+                                           ))
                                 .serialize(desc.secComSettings)(env)
                               logger.trace(s"Claim is : $claim")
                               val headersIn: Seq[(String, String)] =
@@ -1719,7 +1728,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     )
                                   }
                                 } else if (isUp) {
-                                  if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor.isExcludedFromSecurity(req.path)) {
+                                  if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
+                                        .isExcludedFromSecurity(req.path)) {
                                     if (descriptor.isUriPublic(req.path)) {
                                       passWithAuth0(globalConfig)
                                     } else {

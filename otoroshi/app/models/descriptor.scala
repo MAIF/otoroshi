@@ -270,7 +270,6 @@ object Canary {
   }
 }
 
-
 object RedirectionExpressionLanguage {
 
   import kaleidoscope._
@@ -286,15 +285,15 @@ object RedirectionExpressionLanguage {
         Try {
           expressionReplacer.replaceOn(value) { expression =>
             expression match {
-              case "req.path"     => req.path
-              case "req.uri"      => req.relativeUri
-              case "req.host"     => req.host
-              case "req.domain"   => req.domain
-              case "req.method"   => req.method
-              case "req.protocol" => req.theProtocol
+              case "req.path"                 => req.path
+              case "req.uri"                  => req.relativeUri
+              case "req.host"                 => req.host
+              case "req.domain"               => req.domain
+              case "req.method"               => req.method
+              case "req.protocol"             => req.theProtocol
               case r"req.headers.$field@(.*)" => req.headers.get(field).getOrElse(s"no-header-$field")
-              case r"req.query.$field@(.*)" => req.getQueryString(field).getOrElse(s"no-query-$field")
-              case _              => "bad-expr"
+              case r"req.query.$field@(.*)"   => req.getQueryString(field).getOrElse(s"no-query-$field")
+              case _                          => "bad-expr"
             }
           }
         } recover {
@@ -308,8 +307,8 @@ object RedirectionExpressionLanguage {
 }
 
 case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: String = "https://www.otoroshi.io") {
-  def toJson = RedirectionSettings.format.writes(this)
-  def hasValidCode = RedirectionSettings.validRedirectionCodes.contains(code)
+  def toJson                                      = RedirectionSettings.format.writes(this)
+  def hasValidCode                                = RedirectionSettings.validRedirectionCodes.contains(code)
   def formattedTo(request: RequestHeader): String = RedirectionExpressionLanguage(to, request)
 }
 
@@ -337,8 +336,8 @@ object RedirectionSettings {
 
     override def writes(o: RedirectionSettings): JsValue = Json.obj(
       "enabled" -> o.enabled,
-      "code" -> o.code,
-      "to" -> o.to
+      "code"    -> o.code,
+      "to"      -> o.to
     )
   }
 }
@@ -450,34 +449,46 @@ case class ServiceDescriptor(
   def theDomain             = if (s"$subdomain$theLine".isEmpty) domain else s".$$subdomain$theLine"
   def exposedDomain: String = s"$theScheme://$subdomain$theLine$theDomain"
 
-  def validateClientCertificates(req: RequestHeader, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def validateClientCertificates(
+      req: RequestHeader,
+      apikey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None
+  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     clientValidatorRef.map { ref =>
       env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
         case Some(validator) => validator.validateClientCertificates(req, this, apikey, user)(f)
-        case None => Errors.craftResponseResult(
-          "Validator not found",
-          Results.InternalServerError,
-          req,
-          None,
-          None
-        )
+        case None =>
+          Errors.craftResponseResult(
+            "Validator not found",
+            Results.InternalServerError,
+            req,
+            None,
+            None
+          )
       }
     } getOrElse f
   }
 
   import play.api.http.websocket.{Message => PlayWSMessage}
 
-  def wsValidateClientCertificates(req: RequestHeader, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  def wsValidateClientCertificates(req: RequestHeader,
+                                   apikey: Option[ApiKey] = None,
+                                   user: Option[PrivateAppsUser] = None)(
+      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     clientValidatorRef.map { ref =>
       env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
         case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user)(f)
-        case None => Errors.craftResponseResult(
-          "Validator not found",
-          Results.InternalServerError,
-          req,
-          None,
-          None
-        ).map(Left.apply)
+        case None =>
+          Errors
+            .craftResponseResult(
+              "Validator not found",
+              Results.InternalServerError,
+              req,
+              None,
+              None
+            )
+            .map(Left.apply)
       }
     } getOrElse f
   }
@@ -541,7 +552,9 @@ object ServiceDescriptor {
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
-          redirection = RedirectionSettings.format.reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull)).getOrElse(RedirectionSettings(false))
+          redirection = RedirectionSettings.format
+            .reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(RedirectionSettings(false))
         )
       } map {
         case sd => JsSuccess(sd)
@@ -593,7 +606,7 @@ object ServiceDescriptor {
       "cors"                       -> sd.cors.asJson,
       "redirection"                -> sd.redirection.toJson,
       "authConfigRef"              -> sd.authConfigRef,
-      "clientValidatorRef"     -> sd.clientValidatorRef
+      "clientValidatorRef"         -> sd.clientValidatorRef
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

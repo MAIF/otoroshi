@@ -269,7 +269,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       }
       .map(Some.apply)
   }
-  
+
   override def events(eventType: String,
                       service: Option[String],
                       from: Option[DateTime],
@@ -288,11 +288,11 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
           "bool" -> Json.obj(
             "minimum_should_match" -> 1,
             "should" -> (
-              service.map(id => Json.obj("term" -> Json.obj("@serviceId" -> id))).toSeq ++
+              service.map(id => Json.obj("term" -> Json.obj("@serviceId"     -> id))).toSeq ++
               service.map(id => Json.obj("term" -> Json.obj("@serviceId.raw" -> id))).toSeq
             ),
             "must" -> (
-              dateFilters(from, to) ++ 
+              dateFilters(from, to) ++
               gatewayEventFilters
             )
           )

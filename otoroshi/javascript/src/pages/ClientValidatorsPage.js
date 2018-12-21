@@ -4,13 +4,20 @@ import { Table } from '../components/inputs';
 import faker from 'faker';
 
 export class ClientValidatorsPage extends Component {
-
   columns = [
     { title: 'Name', content: item => item.name },
     { title: 'Description', content: item => item.description },
     { title: 'Host', content: item => item.host },
-    { title: 'Always valid', content: item => item.alwaysValid ? 'yes' : 'no', style: { width: 100, textAlign: 'center' } },
-    { title: 'Cache', content: item => !item.noCache ? 'yes' : 'no', style: { width: 100, textAlign: 'center' } },
+    {
+      title: 'Always valid',
+      content: item => (item.alwaysValid ? 'yes' : 'no'),
+      style: { width: 100, textAlign: 'center' },
+    },
+    {
+      title: 'Cache',
+      content: item => (!item.noCache ? 'yes' : 'no'),
+      style: { width: 100, textAlign: 'center' },
+    },
   ];
 
   formSchema = {
@@ -119,7 +126,7 @@ export class ClientValidatorsPage extends Component {
             path: '/certificates/_validate',
             timeout: 10000,
             noCache: false,
-            headers: {}
+            headers: {},
           })}
           itemName="Validation authority"
           formSchema={this.formSchema}

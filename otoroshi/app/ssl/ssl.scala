@@ -20,7 +20,13 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
+import com.typesafe.sslconfig.ssl.{
+  KeyManagerConfig,
+  KeyStoreConfig,
+  SSLConfigSettings,
+  TrustManagerConfig,
+  TrustStoreConfig
+}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -52,7 +58,6 @@ import scala.util.Try
  * git over http works with otoroshi
  * ssh and other => http tunneling like https://github.com/mathieuancelin/node-httptunnel or https://github.com/larsbrinkhoff/httptunnel or https://github.com/luizluca/bridge
  */
-
 sealed trait ClientAuth {
   def name: String
 }
@@ -74,7 +79,7 @@ object ClientAuth {
       case "none" => Some(None)
       case "want" => Some(Want)
       case "need" => Some(Need)
-      case _ => scala.None
+      case _      => scala.None
     }
   }
 }
@@ -322,10 +327,10 @@ object DynamicSSLEngineProvider {
   )
   private val certificates = new TrieMap[String, Cert]()
 
-  private lazy val currentContext = new AtomicReference[SSLContext](setupContext())
+  private lazy val currentContext           = new AtomicReference[SSLContext](setupContext())
   private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
-  private val currentEnv          = new AtomicReference[Env](null)
-  private val defaultSslContext   = SSLContext.getDefault
+  private val currentEnv                    = new AtomicReference[Env](null)
+  private val defaultSslContext             = SSLContext.getDefault
 
   def setCurrentEnv(env: Env): Unit = {
     currentEnv.set(env)
@@ -335,11 +340,18 @@ object DynamicSSLEngineProvider {
 
     val optEnv = Option(currentEnv.get)
 
-    val cacertPath = optEnv.flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
-      .map(path => path.replace("${JAVA_HOME}", System.getProperty("java.home")).replace("$JAVA_HOME", System.getProperty("java.home")))
+    val cacertPath = optEnv
+      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+      .map(
+        path =>
+          path
+            .replace("${JAVA_HOME}", System.getProperty("java.home"))
+            .replace("$JAVA_HOME", System.getProperty("java.home"))
+      )
       .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
 
-    val cacertPassword = optEnv.flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+    val cacertPassword = optEnv
+      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
       .getOrElse("changeit")
 
     val dumpPath: Option[String] =
@@ -368,24 +380,36 @@ object DynamicSSLEngineProvider {
     sslContext.init(keyManagers, tm, null)
     dumpPath match {
       case Some(path) => {
-        currentSslConfigSettings.set(SSLConfigSettings()
+        currentSslConfigSettings.set(
+          SSLConfigSettings()
           //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
-          .withKeyManagerConfig(KeyManagerConfig().withKeyStoreConfigs(
-            List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
-          ))
-          .withTrustManagerConfig(TrustManagerConfig().withTrustStoreConfigs(
-            certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
-          )))
+            .withKeyManagerConfig(
+              KeyManagerConfig().withKeyStoreConfigs(
+                List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
+              )
+            )
+            .withTrustManagerConfig(
+              TrustManagerConfig().withTrustStoreConfigs(
+                certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+              )
+            )
+        )
       }
       case None => {
-        currentSslConfigSettings.set(SSLConfigSettings()
+        currentSslConfigSettings.set(
+          SSLConfigSettings()
           //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
-          .withKeyManagerConfig(KeyManagerConfig().withKeyStoreConfigs(
-            certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
-          ))
-          .withTrustManagerConfig(TrustManagerConfig().withTrustStoreConfigs(
-            certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
-          )))
+            .withKeyManagerConfig(
+              KeyManagerConfig().withKeyStoreConfigs(
+                certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
+              )
+            )
+            .withTrustManagerConfig(
+              TrustManagerConfig().withTrustStoreConfigs(
+                certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+              )
+            )
+        )
       }
     }
     logger.debug(s"SSL Context init done ! (${keyStore.size()})")
@@ -429,18 +453,18 @@ object DynamicSSLEngineProvider {
           }
         }
       }
-      case cert if cert.privateKey.trim.isEmpty  => {
+      case cert if cert.privateKey.trim.isEmpty => {
         cert.certificate.foreach { certificate =>
-          val id = "trusted-" + certificate.getSerialNumber.toString(16)
+          val id                                     = "trusted-" + certificate.getSerialNumber.toString(16)
           val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
           val domain = Try {
-              certificateChain.head.getSubjectDN.getName
-                .split(",")
-                .map(_.trim)
-                .find(_.toLowerCase().startsWith("cn="))
-                .map(_.replace("CN=", "").replace("cn=", ""))
-                .getOrElse(cert.domain)
-            }.toOption.getOrElse(cert.domain)
+            certificateChain.head.getSubjectDN.getName
+              .split(",")
+              .map(_.trim)
+              .find(_.toLowerCase().startsWith("cn="))
+              .map(_.replace("CN=", "").replace("cn=", ""))
+              .getOrElse(cert.domain)
+          }.toOption.getOrElse(cert.domain)
           if (!keyStore.containsAlias(domain)) {
             keyStore.setCertificateEntry(domain, certificate)
           }
@@ -490,7 +514,9 @@ object DynamicSSLEngineProvider {
     javaKs.load(new FileInputStream(cacertPath), cacertPassword.toCharArray)
     val tmf2 = TrustManagerFactory.getInstance("SunX509")
     tmf2.init(javaKs)
-    Array[TrustManager](new FakeTrustManager((tmf.getTrustManagers ++ tmf2.getTrustManagers).map(_.asInstanceOf[X509TrustManager]).toSeq))
+    Array[TrustManager](
+      new FakeTrustManager((tmf.getTrustManagers ++ tmf2.getTrustManagers).map(_.asInstanceOf[X509TrustManager]).toSeq)
+    )
   }
 
   def readCertificateChain(id: String, certificateChain: String, log: Boolean = true): Seq[X509Certificate] = {
@@ -554,13 +580,17 @@ class OtoroshiHostnameVerifier() extends HostnameVerifier {
   }
 }
 
-
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
 
-  lazy val cipherSuites = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
-  lazy val protocols = appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+  lazy val cipherSuites =
+    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
+  lazy val protocols =
+    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
   lazy val clientAuth = {
-    val auth = appProvider.get.get.configuration.getOptional[String]("otoroshi.ssl.fromOutside.clientAuth").flatMap(ClientAuth.apply).getOrElse(ClientAuth.None)
+    val auth = appProvider.get.get.configuration
+      .getOptional[String]("otoroshi.ssl.fromOutside.clientAuth")
+      .flatMap(ClientAuth.apply)
+      .getOrElse(ClientAuth.None)
     DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
     auth
   }
@@ -568,9 +598,9 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
   override def createSSLEngine(): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
-    val rawEngine     = context.createSSLEngine()
+    val rawEngine              = context.createSSLEngine()
     val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
-    val rawEnabledProtocols = rawEngine.getEnabledProtocols.toSeq
+    val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
     val engine        = new CustomSSLEngine(rawEngine)
@@ -949,32 +979,42 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
 
 sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidator] {
   def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]]
-  def setValidation(key: String,  value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
-class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env) extends ClientCertificateValidationDataStore with RedisLikeStore[ClientCertificateValidator] {
+class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
+    extends ClientCertificateValidationDataStore
+    with RedisLikeStore[ClientCertificateValidator] {
 
   def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
-  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
-  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
+  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] =
+    redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
+  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext,
+                                                                     env: Env): Future[Boolean] =
+    redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
 
-  override def fmt: Format[ClientCertificateValidator] = ClientCertificateValidator.fmt
-  override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): models.Key = models.Key(s"${env.storageRoot}:certificates:validators:$id")
+  override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
+  override def redisLike(implicit env: Env): RedisLike              = redisCli
+  override def key(id: String): models.Key                          = models.Key(s"${env.storageRoot}:certificates:validators:$id")
   override def extractId(value: ClientCertificateValidator): String = value.id
 }
 
-class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlaves, env: Env) extends ClientCertificateValidationDataStore with RedisStore[ClientCertificateValidator] {
+class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlaves, env: Env)
+    extends ClientCertificateValidationDataStore
+    with RedisStore[ClientCertificateValidator] {
   def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
-  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
-  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
+  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] =
+    redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
+  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext,
+                                                                     env: Env): Future[Boolean] =
+    redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
 
-  override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
-  override def fmt: Format[ClientCertificateValidator] = ClientCertificateValidator.fmt
-  override def key(id: String): models.Key = models.Key(s"${env.storageRoot}:certificates:validators:$id")
+  override def _redis(implicit env: Env): RedisClientMasterSlaves   = redisCli
+  override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
+  override def key(id: String): models.Key                          = models.Key(s"${env.storageRoot}:certificates:validators:$id")
   override def extractId(value: ClientCertificateValidator): String = value.id
 }
 
@@ -985,46 +1025,47 @@ class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlave
 // https://en.wikipedia.org/wiki/Validation_authority
 // https://en.wikipedia.org/wiki/Online_Certificate_Status_Protocol
 object ClientCertificateValidator {
-  val logger = Logger("otoroshi-client-cert-validator")
+  val logger   = Logger("otoroshi-client-cert-validator")
   val digester = MessageDigest.getInstance("SHA-1")
   val fmt = new Format[ClientCertificateValidator] {
 
-    override def reads(json: JsValue): JsResult[ClientCertificateValidator] = Try {
-      JsSuccess(
-        ClientCertificateValidator(
-          id = (json \ "id").as[String],
-          name = (json \ "name").as[String],
-          description = (json \ "description").asOpt[String].getOrElse("--"),
-          url = (json \ "url").as[String],
-          host = (json \ "host").as[String],
-          goodTtl = (json \ "goodTtl").asOpt[Long].getOrElse(10 * 60000L),
-          badTtl = (json \ "badTtl").asOpt[Long].getOrElse(1 * 60000L),
-          method = (json \ "method").asOpt[String].getOrElse("POST"),
-          path = (json \ "path").asOpt[String].getOrElse("/certificates/_validate"),
-          timeout = (json \ "timeout").asOpt[Long].getOrElse(10000L),
-          noCache = (json \ "noCache").asOpt[Boolean].getOrElse(false),
-          alwaysValid = (json \ "alwaysValid").asOpt[Boolean].getOrElse(false),
-          headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+    override def reads(json: JsValue): JsResult[ClientCertificateValidator] =
+      Try {
+        JsSuccess(
+          ClientCertificateValidator(
+            id = (json \ "id").as[String],
+            name = (json \ "name").as[String],
+            description = (json \ "description").asOpt[String].getOrElse("--"),
+            url = (json \ "url").as[String],
+            host = (json \ "host").as[String],
+            goodTtl = (json \ "goodTtl").asOpt[Long].getOrElse(10 * 60000L),
+            badTtl = (json \ "badTtl").asOpt[Long].getOrElse(1 * 60000L),
+            method = (json \ "method").asOpt[String].getOrElse("POST"),
+            path = (json \ "path").asOpt[String].getOrElse("/certificates/_validate"),
+            timeout = (json \ "timeout").asOpt[Long].getOrElse(10000L),
+            noCache = (json \ "noCache").asOpt[Boolean].getOrElse(false),
+            alwaysValid = (json \ "alwaysValid").asOpt[Boolean].getOrElse(false),
+            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
 
     override def writes(o: ClientCertificateValidator): JsValue = Json.obj(
-      "id" -> o.id,
-      "name" -> o.name,
+      "id"          -> o.id,
+      "name"        -> o.name,
       "description" -> o.description,
-      "url" -> o.url,
-      "host" -> o.host,
-      "goodTtl" -> o.goodTtl,
-      "badTtl" -> o.badTtl,
-      "method" -> o.method,
-      "path" -> o.path,
-      "timeout" -> o.timeout,
-      "noCache" -> o.noCache,
+      "url"         -> o.url,
+      "host"        -> o.host,
+      "goodTtl"     -> o.goodTtl,
+      "badTtl"      -> o.badTtl,
+      "method"      -> o.method,
+      "path"        -> o.path,
+      "timeout"     -> o.timeout,
+      "noCache"     -> o.noCache,
       "alwaysValid" -> o.alwaysValid,
-      "headers" -> o.headers,
+      "headers"     -> o.headers,
     )
   }
 
@@ -1043,19 +1084,19 @@ object ClientCertificateValidator {
 }
 
 case class ClientCertificateValidator(
-  id: String,
-  name: String,
-  description: String,
-  url: String,
-  host: String,
-  goodTtl: Long = 10L * 60000L,
-  badTtl: Long = 1L * 60000L,
-  method: String = "POST",
-  path: String = "/certificates/_validate",
-  timeout: Long = 10000L,
-  noCache: Boolean,
-  alwaysValid: Boolean,
-  headers: Map[String, String] = Map.empty
+    id: String,
+    name: String,
+    description: String,
+    url: String,
+    host: String,
+    goodTtl: Long = 10L * 60000L,
+    badTtl: Long = 1L * 60000L,
+    method: String = "POST",
+    path: String = "/certificates/_validate",
+    timeout: Long = 10000L,
+    noCache: Boolean,
+    alwaysValid: Boolean,
+    headers: Map[String, String] = Map.empty
 ) {
 
   /*
@@ -1084,7 +1125,7 @@ case class ClientCertificateValidator(
   });
 
   app.listen(3000, () => console.log('certificate validation server'));
-  */
+   */
 
   import play.api.http.websocket.{Message => PlayWSMessage}
 
@@ -1094,28 +1135,38 @@ case class ClientCertificateValidator(
 
   def asJson: JsValue = ClientCertificateValidator.fmt.writes(this)
 
-  private def validateCertificateChain(chain: Seq[X509Certificate], desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
-    val certPayload = chain.map { cert =>
-      s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
-    }.mkString("\n")
+  private def validateCertificateChain(
+      chain: Seq[X509Certificate],
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    val certPayload = chain
+      .map { cert =>
+        s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+      }
+      .mkString("\n")
     val payload = Json.obj(
       "apikey" -> apikey.map(_.toJson.as[JsObject] - "clientSecret").getOrElse(JsNull).as[JsValue],
-      "user" -> user.map(_.toJson).getOrElse(JsNull).as[JsValue],
+      "user"   -> user.map(_.toJson).getOrElse(JsNull).as[JsValue],
       "service" -> Json.obj(
-        "id" -> desc.id,
-        "name" -> desc.name,
-        "groupId" -> desc.groupId,
-        "domain" -> desc.domain,
-        "env" -> desc.env,
+        "id"        -> desc.id,
+        "name"      -> desc.name,
+        "groupId"   -> desc.groupId,
+        "domain"    -> desc.domain,
+        "env"       -> desc.env,
         "subdomain" -> desc.subdomain,
-        "root" -> desc.root,
-        "metadata" -> desc.metadata
+        "root"      -> desc.root,
+        "metadata"  -> desc.metadata
       ),
-      "chain" -> certPayload,
+      "chain"        -> certPayload,
       "fingerprints" -> JsArray(chain.map(computeFingerPrint).map(JsString.apply))
     )
-    val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "application/json", "Accept" -> "application/json")
-    env.Ws.url(url + path)
+    val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host,
+                                                                   "Content-Type" -> "application/json",
+                                                                   "Accept"       -> "application/json")
+    env.Ws
+      .url(url + path)
       .withHttpHeaders(finalHeaders: _*)
       .withMethod(method)
       .withBody(payload)
@@ -1123,10 +1174,14 @@ case class ClientCertificateValidator(
       .execute()
       .map { resp =>
         resp.status match { // TODO: can be good | revoked | unknown
-          case 200 => (resp.json.as[JsObject] \ "status").asOpt[String].map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
+          case 200 =>
+            (resp.json.as[JsObject] \ "status")
+              .asOpt[String]
+              .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
           case _ => None
         }
-      }.recover {
+      }
+      .recover {
         case e =>
           ClientCertificateValidator.logger.error("Error while validating client certificate chain", e)
           None
@@ -1153,61 +1208,89 @@ case class ClientCertificateValidator(
     chain.map(computeFingerPrint).mkString("-")
   }
 
-  private def isCertificateChainValid(chain: Seq[X509Certificate], desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    val key = computeKeyFromChain(chain) + "-" + apikey.map(_.clientId).orElse(user.map(_.randomId)).getOrElse("none") + "-" + desc.id
+  private def isCertificateChainValid(
+      chain: Seq[X509Certificate],
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None
+  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    val key = computeKeyFromChain(chain) + "-" + apikey
+      .map(_.clientId)
+      .orElse(user.map(_.randomId))
+      .getOrElse("none") + "-" + desc.id
     if (noCache) {
       validateCertificateChain(chain, desc, apikey, user).map {
         case Some(bool) => bool
-        case None => false
+        case None       => false
       }
     } else {
       getLocalValidation(key).flatMap {
-        case Some(true) => FastFuture.successful(true)
+        case Some(true)  => FastFuture.successful(true)
         case Some(false) => FastFuture.successful(false)
         case None => {
           validateCertificateChain(chain, desc, apikey, user).flatMap {
             case Some(false) => setBadLocalValidation(key).map(_ => false)
-            case Some(true) => setGoodLocalValidation(key).map(_ => true)
-            case None => setBadLocalValidation(key).map(_ => false)
+            case Some(true)  => setGoodLocalValidation(key).map(_ => true)
+            case None        => setBadLocalValidation(key).map(_ => false)
           }
         }
       }
     }
   }
 
-  private def internalValidateClientCertificates[A](request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(
-    f: => Future[A]
+  private def internalValidateClientCertificates[A](request: RequestHeader,
+                                                    desc: ServiceDescriptor,
+                                                    apikey: Option[ApiKey] = None,
+                                                    user: Option[PrivateAppsUser] = None)(
+      f: => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     request.clientCertificateChain match {
       case Some(chain) if alwaysValid => f.map(Right.apply)
-      case Some(chain) => isCertificateChainValid(chain, desc, apikey, user).flatMap {
-        case true => f.map(Right.apply)
-        case false => Errors.craftResponseResult(
-          "You're not authorized here !",
-          Results.Forbidden,
-          request,
-          None,
-          None
-        ).map(Left.apply)
-      }
-      case None => Errors.craftResponseResult(
-        "You're not authorized here !!!",
-        Results.Forbidden,
-        request,
-        None,
-        None
-      ).map(Left.apply)
+      case Some(chain) =>
+        isCertificateChainValid(chain, desc, apikey, user).flatMap {
+          case true => f.map(Right.apply)
+          case false =>
+            Errors
+              .craftResponseResult(
+                "You're not authorized here !",
+                Results.Forbidden,
+                request,
+                None,
+                None
+              )
+              .map(Left.apply)
+        }
+      case None =>
+        Errors
+          .craftResponseResult(
+            "You're not authorized here !!!",
+            Results.Forbidden,
+            request,
+            None,
+            None
+          )
+          .map(Left.apply)
     }
   }
 
-  def validateClientCertificates(req: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def validateClientCertificates(
+      req: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None
+  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     internalValidateClientCertificates(req, desc, apikey, user)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
   }
 
-  def wsValidateClientCertificates(req: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey] = None, user: Option[PrivateAppsUser] = None)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  def wsValidateClientCertificates(req: RequestHeader,
+                                   desc: ServiceDescriptor,
+                                   apikey: Option[ApiKey] = None,
+                                   user: Option[PrivateAppsUser] = None)(
+      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     internalValidateClientCertificates(req, desc, apikey, user)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
@@ -1216,13 +1299,13 @@ case class ClientCertificateValidator(
 }
 
 class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)(
-  implicit env: Env
+    implicit env: Env
 ) extends AbstractController(cc) {
 
   import gnieh.diffson.playJson._
   import utils.future.Implicits._
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
   def findAllClientValidators() = ApiAction.async { ctx =>
@@ -1305,28 +1388,28 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
   def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit = {
     managers.find {
       case m: X509ExtendedTrustManager => Try(m.checkClientTrusted(var1, var2, var3)).isSuccess
-      case m: X509TrustManager => Try(m.checkClientTrusted(var1, var2)).isSuccess
+      case m: X509TrustManager         => Try(m.checkClientTrusted(var1, var2)).isSuccess
     }
   }
 
   def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit = {
     managers.find {
       case m: X509ExtendedTrustManager => Try(m.checkServerTrusted(var1, var2, var3)).isSuccess
-      case m: X509TrustManager => Try(m.checkServerTrusted(var1, var2)).isSuccess
+      case m: X509TrustManager         => Try(m.checkServerTrusted(var1, var2)).isSuccess
     }
   }
 
   def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit = {
     managers.find {
       case m: X509ExtendedTrustManager => Try(m.checkClientTrusted(var1, var2, var3)).isSuccess
-      case m: X509TrustManager => Try(m.checkClientTrusted(var1, var2)).isSuccess
+      case m: X509TrustManager         => Try(m.checkClientTrusted(var1, var2)).isSuccess
     }
   }
 
   def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit = {
     managers.find {
       case m: X509ExtendedTrustManager => Try(m.checkServerTrusted(var1, var2, var3)).isSuccess
-      case m: X509TrustManager => Try(m.checkServerTrusted(var1, var2)).isSuccess
+      case m: X509TrustManager         => Try(m.checkServerTrusted(var1, var2)).isSuccess
     }
   }
 }

@@ -159,10 +159,9 @@ export class Oauth2ModuleConfig extends Component {
 }
 
 export class User extends Component {
-
   state = {
-    rawUser: JSON.stringify(this.props.user.metadata)
-  }
+    rawUser: JSON.stringify(this.props.user.metadata),
+  };
 
   render() {
     return (
@@ -188,14 +187,18 @@ export class User extends Component {
           type="text"
           placeholder="User metadata"
           className="form-control"
-          value={this.state.rawUser !== JSON.stringify(this.props.user.metadata) ? this.state.rawUser : JSON.stringify(this.props.user.metadata)}
+          value={
+            this.state.rawUser !== JSON.stringify(this.props.user.metadata)
+              ? this.state.rawUser
+              : JSON.stringify(this.props.user.metadata)
+          }
           onChange={e => {
             try {
               const finalValue = JSON.parse(e.target.value);
-              this.setState({ rawUser: JSON.stringify(finalValue) })
-              this.props.onChange(this.props.user.email, 'metadata', finalValue)
-            } catch(err) {
-              this.setState({ rawUser: e.target.value })
+              this.setState({ rawUser: JSON.stringify(finalValue) });
+              this.props.onChange(this.props.user.email, 'metadata', finalValue);
+            } catch (err) {
+              this.setState({ rawUser: e.target.value });
             }
           }}
         />

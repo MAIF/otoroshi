@@ -235,8 +235,9 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")
     Option(base64)
-      .map(decodeBase64).map(_.split(":").toSeq).
-      flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
+      .map(decodeBase64)
+      .map(_.split(":").toSeq)
+      .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
   }
 
   def bindUser(username: String, password: String, descriptor: ServiceDescriptor): Either[String, PrivateAppsUser] = {
@@ -281,25 +282,30 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
-        def unauthorized() = Results
-          .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
-          .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
-          .addingToSession(
-            s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-              routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+        def unauthorized() =
+          Results
+            .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+            .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
+            .addingToSession(
+              s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
+                routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+              )
             )
-          ).future
+            .future
 
         req.headers.get("Authorization") match {
-          case Some(auth) if auth.startsWith("Basic ") => extractUsernamePassword(auth) match {
-            case None => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
-            case Some((username, password)) => bindUser(username, password, descriptor) match {
-              case Left(_) => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
-              case Right(user) => env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token")
-              }
+          case Some(auth) if auth.startsWith("Basic ") =>
+            extractUsernamePassword(auth) match {
+              case None => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
+              case Some((username, password)) =>
+                bindUser(username, password, descriptor) match {
+                  case Left(_) => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
+                  case Right(user) =>
+                    env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
+                      Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token")
+                    }
+                }
             }
-          }
           case _ => unauthorized()
         }
       } else {
@@ -309,7 +315,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
             )
-          ).future
+          )
+          .future
       }
     }
   }
@@ -326,10 +333,14 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
-        case Some(token) => env.datastores.authConfigsDataStore.getUserForToken(token).map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt)).map {
-          case Some(user) => Right(user)
-          case None => Left("No user found")
-        }
+        case Some(token) =>
+          env.datastores.authConfigsDataStore
+            .getUserForToken(token)
+            .map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt))
+            .map {
+              case Some(user) => Right(user)
+              case None       => Left("No user found")
+            }
         case _ => FastFuture.successful(Left("Forbidden access"))
       }
     } else {
@@ -340,7 +351,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             case (Some(username), Some(password), Some(token)) => {
               env.datastores.authConfigsDataStore.validateLoginToken(token).map {
                 case false => Left("Bad token")
-                case true => bindUser(username, password, descriptor)
+                case true  => bindUser(username, password, descriptor)
               }
             }
             case _ => {
@@ -359,25 +370,30 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
-        def unauthorized() = Results
-          .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
-          .withHeaders("WWW-Authenticate" -> "otoroshi-admin-realm")
-          .addingToSession(
-            "bo-redirect-after-login" -> redirect.getOrElse(
-              routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+        def unauthorized() =
+          Results
+            .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+            .withHeaders("WWW-Authenticate" -> "otoroshi-admin-realm")
+            .addingToSession(
+              "bo-redirect-after-login" -> redirect.getOrElse(
+                routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+              )
             )
-          ).future
+            .future
 
         req.headers.get("Authorization") match {
-          case Some(auth) if auth.startsWith("Basic ") => extractUsernamePassword(auth) match {
-            case None => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
-            case Some((username, password)) => bindAdminUser(username, password) match {
-              case Left(_) => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
-              case Right(user) => env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                Results.Redirect(s"/backoffice/auth0/callback?token=$token")
-              }
+          case Some(auth) if auth.startsWith("Basic ") =>
+            extractUsernamePassword(auth) match {
+              case None => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
+              case Some((username, password)) =>
+                bindAdminUser(username, password) match {
+                  case Left(_) => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
+                  case Right(user) =>
+                    env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
+                      Results.Redirect(s"/backoffice/auth0/callback?token=$token")
+                    }
+                }
             }
-          }
           case _ => unauthorized()
         }
       } else {
@@ -387,7 +403,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             "bo-redirect-after-login" -> redirect.getOrElse(
               routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
             )
-          ).future
+          )
+          .future
       }
     }
   }
@@ -401,10 +418,14 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
-        case Some(token) => env.datastores.authConfigsDataStore.getUserForToken(token).map(_.flatMap(a => BackOfficeUser.fmt.reads(a).asOpt)).map {
-          case Some(user) => Right(user)
-          case None => Left("No user found")
-        }
+        case Some(token) =>
+          env.datastores.authConfigsDataStore
+            .getUserForToken(token)
+            .map(_.flatMap(a => BackOfficeUser.fmt.reads(a).asOpt))
+            .map {
+              case Some(user) => Right(user)
+              case None       => Left("No user found")
+            }
         case _ => FastFuture.successful(Left("Forbidden access"))
       }
     } else {
@@ -415,7 +436,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             case (Some(username), Some(password), Some(token)) => {
               env.datastores.authConfigsDataStore.validateLoginToken(token).map {
                 case false => Left("Bad token")
-                case true => bindAdminUser(username, password)
+                case true  => bindAdminUser(username, password)
               }
             }
             case _ => {

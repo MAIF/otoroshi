@@ -296,10 +296,13 @@ class WebSocketHandler()(implicit env: Env) {
                                        Some("errors.service.not.found"))
                   .asLeft[WSFlow]
               case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
-                FastFuture.successful(
-                  Results.Status(rawDesc.redirection.code)
-                    .withHeaders("Location" -> rawDesc.redirection.formattedTo(req))
-                ).asLeft[WSFlow]
+                FastFuture
+                  .successful(
+                    Results
+                      .Status(rawDesc.redirection.code)
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req))
+                  )
+                  .asLeft[WSFlow]
               }
               case Some(rawDesc) =>
                 passWithReadOnly(rawDesc.readOnly, req) {
@@ -360,83 +363,83 @@ class WebSocketHandler()(implicit env: Env) {
                               paUsr: Option[PrivateAppsUser] = None
                           ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                             desc.wsValidateClientCertificates(req, apiKey, paUsr) {
-                            passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
-                              if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
-                                val cbStart = System.currentTimeMillis()
-                                val counter = new AtomicInteger(0)
-                                env.circuitBeakersHolder
-                                  .get(descriptor.id, () => new ServiceDescriptorCircuitBreaker())
-                                  .callWS(
-                                    descriptor,
-                                    s"WS ${req.method} ${req.relativeUri}",
-                                    counter,
-                                    (t, attempts) =>
-                                      actuallyCallDownstream(t,
-                                                             apiKey,
-                                                             paUsr,
-                                                             System.currentTimeMillis - cbStart,
-                                                             attempts)
-                                  ) recoverWith {
-                                  case _: scala.concurrent.TimeoutException =>
-                                    Errors
-                                      .craftResponseResult(
-                                        s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.request.timeout")
-                                      )
-                                      .asLeft[WSFlow]
-                                  case RequestTimeoutException =>
-                                    Errors
-                                      .craftResponseResult(
-                                        s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.request.timeout")
-                                      )
-                                      .asLeft[WSFlow]
-                                  case AllCircuitBreakersOpenException =>
-                                    Errors
-                                      .craftResponseResult(
-                                        s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.circuit.breaker.open")
-                                      )
-                                      .asLeft[WSFlow]
-                                  case error if error.getMessage.toLowerCase().contains("connection refused") =>
-                                    Errors
-                                      .craftResponseResult(
-                                        s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.connection.refused")
-                                      )
-                                      .asLeft[WSFlow]
-                                  case error =>
-                                    Errors
-                                      .craftResponseResult(
-                                        s"Something went wrong, you should try later. Thanks for your understanding. ${error.getMessage}",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.proxy.error")
-                                      )
-                                      .asLeft[WSFlow]
+                              passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
+                                if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
+                                  val cbStart = System.currentTimeMillis()
+                                  val counter = new AtomicInteger(0)
+                                  env.circuitBeakersHolder
+                                    .get(descriptor.id, () => new ServiceDescriptorCircuitBreaker())
+                                    .callWS(
+                                      descriptor,
+                                      s"WS ${req.method} ${req.relativeUri}",
+                                      counter,
+                                      (t, attempts) =>
+                                        actuallyCallDownstream(t,
+                                                               apiKey,
+                                                               paUsr,
+                                                               System.currentTimeMillis - cbStart,
+                                                               attempts)
+                                    ) recoverWith {
+                                    case _: scala.concurrent.TimeoutException =>
+                                      Errors
+                                        .craftResponseResult(
+                                          s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.request.timeout")
+                                        )
+                                        .asLeft[WSFlow]
+                                    case RequestTimeoutException =>
+                                      Errors
+                                        .craftResponseResult(
+                                          s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.request.timeout")
+                                        )
+                                        .asLeft[WSFlow]
+                                    case AllCircuitBreakersOpenException =>
+                                      Errors
+                                        .craftResponseResult(
+                                          s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.circuit.breaker.open")
+                                        )
+                                        .asLeft[WSFlow]
+                                    case error if error.getMessage.toLowerCase().contains("connection refused") =>
+                                      Errors
+                                        .craftResponseResult(
+                                          s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.connection.refused")
+                                        )
+                                        .asLeft[WSFlow]
+                                    case error =>
+                                      Errors
+                                        .craftResponseResult(
+                                          s"Something went wrong, you should try later. Thanks for your understanding. ${error.getMessage}",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.proxy.error")
+                                        )
+                                        .asLeft[WSFlow]
+                                  }
+                                } else {
+                                  val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
+                                                                    descriptor.targets.size
+                                                                  else 1)
+                                  // Round robin loadbalancing is happening here !!!!!
+                                  val target = descriptor.targets.apply(index.toInt)
+                                  actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                                 }
-                              } else {
-                                val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
-                                                                  descriptor.targets.size
-                                                                else 1)
-                                // Round robin loadbalancing is happening here !!!!!
-                                val target = descriptor.targets.apply(index.toInt)
-                                actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                               }
-                            }
                             }
                           }
 
@@ -488,15 +491,23 @@ class WebSocketHandler()(implicit env: Env) {
                               .withClaim("locale", paUsr.flatMap(_.field("locale")))
                               .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
                               .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
-                              .withClaim("metadata", paUsr.flatMap(_.otoroshiData)
-                                  .orElse(apiKey.map(_.metadata))
-                                  .map(m => Json.stringify(Json.toJson(m))))
-                                .withClaim("user", paUsr.map(u => Json.stringify(u.toJson)))
-                                .withClaim("apikey", apiKey.map(ak => Json.stringify(Json.obj(
-                                  "clientId" -> ak.clientId,
-                                  "clientName" -> ak.clientName,
-                                  "metadata" -> ak.metadata
-                                ))))
+                              .withClaim("metadata",
+                                         paUsr
+                                           .flatMap(_.otoroshiData)
+                                           .orElse(apiKey.map(_.metadata))
+                                           .map(m => Json.stringify(Json.toJson(m))))
+                              .withClaim("user", paUsr.map(u => Json.stringify(u.toJson)))
+                              .withClaim("apikey",
+                                         apiKey.map(
+                                           ak =>
+                                             Json.stringify(
+                                               Json.obj(
+                                                 "clientId"   -> ak.clientId,
+                                                 "clientName" -> ak.clientName,
+                                                 "metadata"   -> ak.metadata
+                                               )
+                                           )
+                                         ))
                               .serialize(desc.secComSettings)(env)
                             logger.trace(s"Claim is : $claim")
                             val headersIn: Seq[(String, String)] =
@@ -1026,7 +1037,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                          Some("errors.service.under.construction"))
                                     .asLeft[WSFlow]
                                 } else if (isUp) {
-                                  if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor.isExcludedFromSecurity(req.path)) {
+                                  if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
+                                        .isExcludedFromSecurity(req.path)) {
                                     if (descriptor.isUriPublic(req.path)) {
                                       passWithAuth0(globalConfig)
                                     } else {
