@@ -10,7 +10,7 @@
 @@@
 
 @@@ div { .centered-img }
-<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
+<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo-xmas.png" width="300"></img>
 @@@
 
 ## Installation
@@ -72,7 +72,7 @@ The sources of Otoroshi are available on [Github](https://github.com/MAIF/otoros
 
 ## Logo
 
-You can find the official Otoroshi logo [on GitHub](https://github.com/MAIF/otoroshi/blob/master/resources/otoroshi-logo-xmas.png). The Otoroshi logo has been created by François Galioto ([@fgalioto](https://twitter.com/fgalioto))
+You can find the official Otoroshi logo [on GitHub](https://github.com/MAIF/otoroshi/blob/master/resources/otoroshi-logo.png). The Otoroshi logo has been created by François Galioto ([@fgalioto](https://twitter.com/fgalioto))
 
 ## Changelog
 
