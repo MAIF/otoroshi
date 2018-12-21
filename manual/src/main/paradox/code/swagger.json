@@ -52,6 +52,9 @@
   }, {
     "name" : "certificates",
     "description" : "Everything about Otoroshi SSL/TLS certificates"
+  }, {
+    "name" : "validation-authorities",
+    "description" : "Everything about Otoroshi validation authorities"
   } ],
   "externalDocs" : {
     "description" : "Find out more about Otoroshi",
@@ -2447,6 +2450,201 @@
         } ]
       }
     },
+    "/api/client-validators" : {
+      "get" : {
+        "deprecated" : false,
+        "tags" : [ "validation-authorities" ],
+        "summary" : "Get one validation authorities by id",
+        "description" : "Get one validation authorities by id",
+        "operationId" : "findClientValidatorById",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The auth. config id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/ValidationAuthority"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "deprecated" : false,
+        "tags" : [ "validation-authorities" ],
+        "summary" : "Delete one validation authorities by id",
+        "description" : "Delete one validation authorities by id",
+        "operationId" : "deleteClientValidator",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The validation authorities id"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Deleted"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "put" : {
+        "deprecated" : false,
+        "tags" : [ "validation-authorities" ],
+        "summary" : "Update one validation authorities by id",
+        "description" : "Update one validation authorities by id",
+        "operationId" : "updateClientValidator",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The validation authorities id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/ValidationAuthority"
+          },
+          "description" : "The validation authorities to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/ValidationAuthority"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "patch" : {
+        "deprecated" : false,
+        "tags" : [ "validation-authorities" ],
+        "summary" : "Update one validation authorities by id",
+        "description" : "Update one validation authorities by id",
+        "operationId" : "patchClientValidator",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "type" : "string",
+          "description" : "The validation authorities id"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Patch"
+          },
+          "description" : "The validation authorities to update"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/ValidationAuthority"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      },
+      "post" : {
+        "deprecated" : false,
+        "tags" : [ "validation-authorities" ],
+        "summary" : "Create one validation authorities",
+        "description" : "Create one validation authorities",
+        "operationId" : "createClientValidator",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/ValidationAuthority"
+          },
+          "description" : "The validation authorities to create"
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue :)"
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist"
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/ValidationAuthority"
+            }
+          }
+        },
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ]
+      }
+    },
     "/api/snowmonkey/config" : {
       "get" : {
         "deprecated" : false,
@@ -3883,6 +4081,9 @@
               },
               "cors" : {
                 "$ref" : "#/definitions/CorsSettings"
+              },
+              "redirection" : {
+                "$ref" : "#/definitions/RedirectionSettings"
               }
             }
           },
@@ -4289,6 +4490,9 @@
         },
         "cors" : {
           "$ref" : "#/definitions/CorsSettings"
+        },
+        "redirection" : {
+          "$ref" : "#/definitions/RedirectionSettings"
         }
       }
     },
@@ -5398,6 +5602,29 @@
         }
       }
     },
+    "RedirectionSettings" : {
+      "description" : "The configuration for redirection per service",
+      "type" : "object",
+      "required" : [ "enabled", "to", "code" ],
+      "properties" : {
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Whether or not redirection is enabled"
+        },
+        "to" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The location for redirection"
+        },
+        "code" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "The http redirect code"
+        }
+      }
+    },
     "InMemoryUser" : {
       "description" : "A user",
       "type" : "object",
@@ -5521,6 +5748,86 @@
           "type" : "string",
           "example" : "a string value",
           "description" : "End date of validity"
+        }
+      }
+    },
+    "ValidationAuthority" : {
+      "description" : "Settings to access a validation authority server",
+      "type" : "object",
+      "required" : [ "id", "name", "description", "url", "host", "goodTtl", "badTtl", "method", "path", "timeout", "noCache", "alwaysValid", "headers" ],
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The id of the settings"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The name of the settings"
+        },
+        "description" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The description of the settings"
+        },
+        "url" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The URL of the server"
+        },
+        "host" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The host of the server"
+        },
+        "goodTtl" : {
+          "type" : "integer",
+          "format" : "int64",
+          "example" : 123,
+          "description" : "The TTL for valid access response caching"
+        },
+        "badTtl" : {
+          "type" : "integer",
+          "format" : "int64",
+          "example" : 123,
+          "description" : "The TTL for invalid access response caching"
+        },
+        "method" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The HTTP method"
+        },
+        "path" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The URL path"
+        },
+        "timeout" : {
+          "type" : "integer",
+          "format" : "int64",
+          "example" : 123,
+          "description" : "The call timeout"
+        },
+        "noCache" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Avoid caching responses"
+        },
+        "alwaysValid" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Bypass http calls, every certificates are valids"
+        },
+        "headers" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "HTTP call headers"
         }
       }
     }
