@@ -831,6 +831,12 @@ export class ServicePage extends Component {
               help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
               onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
             />
+            <BooleanInput
+              label="Send challenge"
+              value={this.state.service.sendStateChallenge}
+              help="When disbaled, Otoroshi will not check if target service respond with sent random value."
+              onChange={v => this.changeTheValue('sendStateChallenge', v)}
+            />
             <ArrayInput
               label="Excluded patterns"
               placeholder="URI pattern"
