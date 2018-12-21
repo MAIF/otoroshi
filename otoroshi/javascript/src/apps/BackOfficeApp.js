@@ -140,7 +140,11 @@ class BackOfficeAppContainer extends Component {
                     </li>
                   </ul>
                   <DynamicSidebar />
-                  <DefaultSidebar lines={this.state.lines} addService={this.addService} env={this.state.env} />
+                  <DefaultSidebar
+                    lines={this.state.lines}
+                    addService={this.addService}
+                    env={this.state.env}
+                  />
                   {this.state.env && (
                     <span onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
                       {this.state.env.snowMonkeyRunning &&
@@ -161,7 +165,13 @@ class BackOfficeAppContainer extends Component {
                   <div className="row">
                     {!this.state.catchedError && (
                       <Switch>
-                        <Route exact path="/" component={props => this.decorate(HomePage, { ...props, env: this.state.env })} />
+                        <Route
+                          exact
+                          path="/"
+                          component={props =>
+                            this.decorate(HomePage, { ...props, env: this.state.env })
+                          }
+                        />
                         <Route
                           path="/lines/:lineId/services/:serviceId/stats"
                           component={props => this.decorate(ServiceLiveStatsPage, props)}
@@ -184,19 +194,27 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
-                          component={props => this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })}
+                          component={props =>
+                            this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId/apikeys/:taction"
-                          component={props => this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })}
+                          component={props =>
+                            this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId/apikeys"
-                          component={props => this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })}
+                          component={props =>
+                            this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/lines/:lineId/services/:serviceId"
-                          component={props => this.decorate(ServicePage, { ...props, env: this.state.env })}
+                          component={props =>
+                            this.decorate(ServicePage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/services/:taction"
@@ -323,7 +341,7 @@ class BackOfficeAppContainer extends Component {
                           component={props =>
                             this.decorate(U2FRegisterPage, {
                               ...props,
-                              env: this.state.env
+                              env: this.state.env,
                             })
                           }
                         />

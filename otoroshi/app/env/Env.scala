@@ -56,7 +56,8 @@ class Env(val configuration: Configuration,
   val logger = Logger("otoroshi-env")
 
   private lazy val xmasStart = DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
-  private lazy val xmasStop  = DateTime.now().withMonthOfYear(12).dayOfMonth().withMaximumValue().plusDays(1).withMillisOfDay(1)
+  private lazy val xmasStop =
+    DateTime.now().withMonthOfYear(12).dayOfMonth().withMaximumValue().plusDays(1).withMillisOfDay(1)
 
   def otoroshiLogo: String = {
     val now = DateTime.now()

@@ -45,18 +45,19 @@ export function DefaultSidebar(props) {
           <i className="glyphicon glyphicon-plus" /> Add service
         </a>
       </li>
-      {props.env && props.env.clevercloud && (
-        <li>
-          <a
-            href="/bo/dashboard/clever"
-            className={rootClassName('clever')}
-            {...createTooltip(
-              'Create a new service descriptor based on an existing Clever Cloud application'
-            )}>
-            <i className="glyphicon glyphicon-plus" /> Add service from a CleverApp
-          </a>
-        </li>
-      )}
+      {props.env &&
+        props.env.clevercloud && (
+          <li>
+            <a
+              href="/bo/dashboard/clever"
+              className={rootClassName('clever')}
+              {...createTooltip(
+                'Create a new service descriptor based on an existing Clever Cloud application'
+              )}>
+              <i className="glyphicon glyphicon-plus" /> Add service from a CleverApp
+            </a>
+          </li>
+        )}
     </ul>
   );
 }

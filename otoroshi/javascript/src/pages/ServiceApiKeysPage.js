@@ -23,18 +23,18 @@ const CurlCommand = ({ label, rawValue, env }) => (
   <div className="form-group">
     <label className="col-sm-2 control-label">{label}</label>
     <div className="col-sm-10">
-        {env && (
-          <input
-            onChange={e => ''}
-            type="text"
-            className="form-control"
-            value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-              rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-              rawValue.clientSecret
-            }' http://xxxxxx --include`}
-          />
-        )}
+      {env && (
+        <input
+          onChange={e => ''}
+          type="text"
+          className="form-control"
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
+        />
+      )}
     </div>
   </div>
 );

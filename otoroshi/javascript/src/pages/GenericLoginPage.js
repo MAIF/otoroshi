@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 
 export class GenericLoginPage extends Component {
-
   state = {
     username: '',
     password: '',
