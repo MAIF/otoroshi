@@ -233,9 +233,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p><a href="https://travis-ci.org/MAIF/otoroshi"><img src="https://travis-ci.org/MAIF/otoroshi.svg?branch=master" alt="Build Status" /></a> <a href="https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"><img src="https://badges.gitter.im/MAIF/otoroshi.svg" alt="Join the chat at https://gitter.im/MAIF/otoroshi" /></a> <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.1/otoroshi.jar"> <img src="https://img.shields.io/github/release/MAIF/otoroshi.svg" alt="Download" /> </a></p></div><div class="centered-img">
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo-xmas.png" width="300"></img></div>
 <h2><a href="#installation" name="installation" class="anchor"><span class="anchor-link"></span></a>Installation</h2>
-<p>You can download the latest build of Otoroshi as a <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.1-dev/otoroshi.jar">fat jar</a>, as a <a href="https://dl.bintray.com/maif/binaries/otoroshi-dist/1.4.1-dev/otoroshi-dist.zip">zip package</a> or as a <a href="getotoroshi/fromdocker.html">docker image</a>.</p>
+<p>You can download the latest build of Otoroshi as a <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.1/otoroshi.jar">fat jar</a>, as a <a href="https://dl.bintray.com/maif/binaries/otoroshi-dist/1.4.1/otoroshi-dist.zip">zip package</a> or as a <a href="getotoroshi/fromdocker.html">docker image</a>.</p>
 <p>You can install and run Otoroshi with this little bash snippet</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.1-dev/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.1/otoroshi.jar&#39;
 # run the following line if you want to use the admin UI in your browser
 sudo echo &quot;127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar&quot; &gt;&gt; /etc/hosts
 # Java 8
@@ -244,7 +244,7 @@ java -jar otoroshi.jar
 java --add-modules java.xml.bind -jar otoroshi.jar
 </code></pre>
 <p>or using docker</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1.4.1-dev
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1.4.1
 </code></pre>
 <p>now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a>, <strong>log in with the credential generated in the logs</strong> and explore by yourself, if you want better instructions, just go to the <a href="quickstart.html">Quick Start</a> or directly to the <a href="getotoroshi/index.html">installation instructions</a></p>
 <p>You can also try Otoroshi online with Google Cloud Shell if you&rsquo;re a user of the Google Cloud Platform</p><div class="centered-img">

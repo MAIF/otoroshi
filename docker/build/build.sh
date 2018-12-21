@@ -62,7 +62,6 @@ build_graal () {
   docker tag otoroshi-graal "maif/otoroshi:$1-graal"
 }
 
-# sh ./build.sh build-all 1.4.1-dev-$(date +%s)
 echo "Docker images for otoroshi version $2"
 
 case "${1}" in
@@ -127,21 +126,21 @@ case "${1}" in
     ;;
   build-and-push-snapshot)
     NBR=`date +%s`
-    echo "Will build version 1.4.1-dev-$NBR"
-    cp ../../otoroshi/target/universal/otoroshi-1.4.1-dev.zip otoroshi-dist.zip
+    echo "Will build version 1.4.2-dev-$NBR"
+    cp ../../otoroshi/target/universal/otoroshi-1.4.2-dev.zip otoroshi-dist.zip
     prepare_build
     docker build --no-cache -t otoroshi .
-    docker tag otoroshi "maif/otoroshi:1.4.1-dev-$NBR"
+    docker tag otoroshi "maif/otoroshi:1.4.2-dev-$NBR"
     cleanup
-    docker push "maif/otoroshi:1.4.1-dev-$NBR"
+    docker push "maif/otoroshi:1.4.2-dev-$NBR"
     ;;
   build-snapshot)
     NBR=`date +%s`
-    echo "Will build version 1.4.1-dev-$NBR"
-    cp ../../otoroshi/target/universal/otoroshi-1.4.1-dev.zip otoroshi-dist.zip
+    echo "Will build version 1.4.2-dev-$NBR"
+    cp ../../otoroshi/target/universal/otoroshi-1.4.2-dev.zip otoroshi-dist.zip
     prepare_build
     docker build --no-cache -t otoroshi .
-    docker tag otoroshi "maif/otoroshi:1.4.1-dev-$NBR"
+    docker tag otoroshi "maif/otoroshi:1.4.2-dev-$NBR"
     cleanup
     ;;
   *)
