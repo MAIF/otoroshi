@@ -76,7 +76,7 @@ async function changeVersion(where, from, to, exclude = []) {
       const filePath = path.resolve(where, file.file);
       const content = fs.readFileSync(filePath, 'utf8');
       console.log('Changing version in', filePath);
-      const replace = file.replace || ((f, t, s) => s.replace(new Regex(f.replace(new RegExp('\\.', 'g'), '\\.'), 'g'), t));
+      const replace = file.replace || ((f, t, s) => s.replace(new RegExp(f.replace(new RegExp('\\.', 'g'), '\\.'), 'g'), t));
       const newContent = replace(from, to, content);
       fs.writeFileSync(filePath, newContent);
     });

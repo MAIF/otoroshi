@@ -12,8 +12,8 @@ COPY . /otoroshi
 
 RUN apt-get update -y \
   && apt-get install  -y curl \
-  && wget https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.2-dev/otoroshi.jar \
-  && wget https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.2-dev/otoroshicli \
+  && wget https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.2/otoroshi.jar \
+  && wget https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.2/otoroshicli \
   && chmod +x otoroshicli \
   && chown -R otoroshi:otoroshi /otoroshi
 
