@@ -7,7 +7,7 @@ Otoroshi provides a command line tool to command Otoroshi instances.
 First, download the Otoroshi CLI depending on your operating system :
 
 ```sh
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.1-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.1/otoroshicli
 # or if you use linux
 curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.4.1-dev/otoroshicli
 # or if you use windows
