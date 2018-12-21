@@ -348,7 +348,7 @@ class BackOfficeAppContainer extends Component {
                           height: '70vh',
                         }}>
                         <img
-                          src="/assets/images/otoroshi-logo-color.png"
+                          src="/assets/images/otoroshi-logo-xmas.png"
                           className="logoOtoroshi"
                         />
                         <div style={{ fontSize: 20, marginBottom: 20, marginTop: 20 }}>

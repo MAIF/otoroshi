@@ -77,7 +77,7 @@ export class GenericLoginPage extends Component {
           </div>
         </form>
         <p>
-          <img src="/__otoroshi_assets/images/otoroshi-logo-color.png" style={{ width: 300 }} />
+          <img src="/__otoroshi_assets/images/otoroshi-logo-xmas.png" style={{ width: 300 }} />
         </p>
       </div>
     );

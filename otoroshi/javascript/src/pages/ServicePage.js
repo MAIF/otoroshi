@@ -1432,7 +1432,7 @@ export class TemplateInput extends Component {
               ${message}
             </p>
             ${comeBack ? '<p class="lead">try to come back later 😉</p>' : ''}
-            <p><img class="logo" src="/__otoroshi_assets/images/otoroshi-logo-color.png" style="width: 300px;"></p>
+            <p><img class="logo" src="/__otoroshi_assets/images/otoroshi-logo-xmas.png" style="width: 300px;"></p>
         </div>
       </div>
   </body>
