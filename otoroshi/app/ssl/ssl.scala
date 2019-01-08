@@ -20,13 +20,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{
-  KeyManagerConfig,
-  KeyStoreConfig,
-  SSLConfigSettings,
-  TrustManagerConfig,
-  TrustStoreConfig
-}
+import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -46,7 +40,7 @@ import security.IdGenerator
 import ssl.DynamicSSLEngineProvider.certificates
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
-import sun.security.util.ObjectIdentifier
+import sun.security.util.{DerValue, ObjectIdentifier}
 import sun.security.x509._
 
 import scala.collection.concurrent.TrieMap
@@ -649,6 +643,7 @@ object CertificateData {
 
   import collection.JavaConverters._
 
+  private val logger = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
   private val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
 
@@ -659,10 +654,12 @@ object CertificateData {
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
     val cert = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
-    val domain: String = Option(cert.getSubjectDN.getName)
+    val altNames = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
+    val rawDomain: String = Option(cert.getSubjectDN.getName)
       .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
       .map(_.replace("CN=", ""))
       .getOrElse(cert.getSubjectDN.getName)
+    val domain: String = altNames.headOption.getOrElse(rawDomain)
     Json.obj(
       "issuerDN"     -> cert.getIssuerDN.getName,
       "notAfter"     -> cert.getNotAfter.getTime,
@@ -673,12 +670,14 @@ object CertificateData {
       "signature"    -> new String(encoder.encode(cert.getSignature)),
       "subjectDN"    -> cert.getSubjectDN.getName,
       "domain"       -> domain,
+      "rawDomain"    -> rawDomain,
       "version"      -> cert.getVersion,
       "type"         -> cert.getType,
       "publicKey"    -> new String(encoder.encode(cert.getPublicKey.getEncoded)),
       "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert),
       "constraints"  -> cert.getBasicConstraints,
       "ca"           -> (cert.getBasicConstraints != -1),
+      "subAltNames"  -> JsArray(altNames.map(JsString.apply)),
       "cExtensions" -> JsArray(
         Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
           val ext: String =
@@ -768,6 +767,10 @@ object FakeKeyStore {
   }
 
   def createSelfSignedCertificate(host: String, duration: FiniteDuration, keyPair: KeyPair): X509Certificate = {
+
+    import sun.security.x509.DNSName
+    import sun.security.x509.GeneralNameInterface
+
     val certInfo = new X509CertInfo()
 
     // Serial number and version
@@ -789,6 +792,12 @@ object FakeKeyStore {
     certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic))
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
+
+    val extensions = new CertificateExtensions()
+    val generalNames = new GeneralNames()
+    generalNames.add(new GeneralName(new DNSName(host)))
+    extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
+    certInfo.set(X509CertInfo.EXTENSIONS, extensions)
 
     // Create a new certificate and sign it
     val cert = new X509CertImpl(certInfo)
@@ -830,6 +839,12 @@ object FakeKeyStore {
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
+    val extensions = new CertificateExtensions()
+    val generalNames = new GeneralNames()
+    generalNames.add(new GeneralName(new DNSName(host)))
+    extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
+    certInfo.set(X509CertInfo.EXTENSIONS, extensions)
+
     // Create a new certificate and sign it
     val cert                 = new X509CertImpl(certInfo)
     val issuerSigAlg: String = ca.getSigAlgName
@@ -868,8 +883,7 @@ object FakeKeyStore {
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
     val exts = new CertificateExtensions
-    val bce  = new BasicConstraintsExtension(true, -1)
-    exts.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(false, bce.getExtensionValue))
+    exts.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(true, -1))
     certInfo.set(X509CertInfo.EXTENSIONS, exts)
 
     // Create a new certificate and sign it
