@@ -155,7 +155,7 @@ class ScriptCompiler(env: Env) {
           ))
       }
     }(scriptExec).andThen{
-      case _ if env.isDev => logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
+      case _ => logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
     }(scriptExec)
   }
 }
@@ -188,7 +188,7 @@ class ScriptManager(env: Env) {
         logger.debug(s"Updating script ${script.name}")
         env.scriptCompiler.compile(script.code).map {
           case Left(err) =>
-            logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
+            if (env.isDev) logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
             compiling.remove(script.id)
           case Right(trans) => {
             cache.put(script.id, (script.hash, trans))
