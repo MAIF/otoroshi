@@ -48,6 +48,7 @@ export class CodeInput extends Component {
             showGutter={true}
             highlightActiveLine={true}
             enableBasicAutocompletion={true}
+            enableLiveAutocompletion={true}
             tabSize={2}
             annotations={this.props.annotations || []}
           />

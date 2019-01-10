@@ -83,7 +83,7 @@ export class ScriptsPage extends Component {
 
   columns = [
     { title: 'Name', content: item => item.name },
-    { title: 'Description', noMobile: true, content: item => item.description },
+    { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
   formFlow = ['id', 'name', 'desc', 'compilation', 'code'];
