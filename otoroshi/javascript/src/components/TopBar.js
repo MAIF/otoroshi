@@ -161,10 +161,10 @@ export class TopBar extends Component {
             value: 'cluster-view',
           });
         }
-        if (this.state.env.scriptsEnabled === true) {
+        if (this.state.env.scriptingEnabled === true) {
           options.push({
             action: () => (window.location.href = '/bo/dashboard/scripts'),
-            env: <span className="fa fa-script" />,
+            env: <span className="fa fa-book-dead" />,
             label: 'Scripts',
             value: 'scripts',
           });
@@ -317,9 +317,9 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/validation-authorities">
                       <span className="fas fa-gavel" /> Validation authorities
                     </a>
-                    {this.state.env.scriptsEnabled === true && (
+                    {this.state.env.scriptingEnabled === true && (
                       <a href="/bo/dashboard/scripts">
-                        <span className="fas fa-script" /> Scripts
+                        <span className="fas fa-book-dead" /> Scripts
                       </a>
                     )}
                   </li>

@@ -4,7 +4,51 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import faker from 'faker';
 
+class CompilationTools extends Component {
+
+  state = {
+    compiling: false,
+    error: null,
+  };
+
+  compile = () => {
+    this.setState({ compiling: true });
+    BackOfficeServices.compileScript(this.props.rawValue).then(res => {
+      if (res.error) {
+        this.setState({ error: res.error, compiling: false });
+        this.props.setAnnotations([
+          {
+            row: res.error.line, 
+            column: res.error.column, 
+            type: 'error', 
+            text: res.error.message
+          }
+        ]);
+      } else {
+        this.setState({ error: null, compiling: false });
+        this.props.setAnnotations([]);
+      }
+    });
+  };
+
+  render() {
+    return (
+      <div className="form-group">
+        <label className="col-xs-12 col-sm-2 control-label"></label>
+        <div className="col-sm-10">
+          <button type="button" className={`btn btn-${this.state.error ? 'danger' : 'success'}`} onClick={this.compile}>{this.state.compiling ? 'Compiling ...': 'Compile'}</button>
+          {!!this.state.error && <div className="alert alert-danger" role="alert">{this.state.error.message}</div>}
+        </div>
+      </div>
+    );
+  }
+}
+
 export class ScriptsPage extends Component {
+
+  state = {
+    annotations: []
+  }
 
   formSchema = {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
@@ -18,8 +62,23 @@ export class ScriptsPage extends Component {
     },
     code: {
       type: 'code',
-      props: { label: 'Script code', placeholder: 'Code the Script', props: { mode: 'scala' } },
+      props: { 
+        label: 'Script code', 
+        placeholder: 'Code the Script', 
+        mode: 'scala',
+        annotations: this.state.annotations,
+        height: '500px'
+      },
     },
+    compilation: {
+      type: CompilationTools,
+      props: { 
+        setAnnotations: (annotations) => {
+          console.log('set annotations', annotations)
+          this.setState({ annotations })
+        }
+      }
+    }
   };
 
   columns = [
@@ -27,10 +86,10 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.description },
   ];
 
-  formFlow = ['id', 'name', 'description', 'code'];
+  formFlow = ['id', 'name', 'desc', 'compilation', 'code'];
 
   componentDidMount() {
-    this.props.setTitle(`All Scripts`);
+    this.props.setTitle(`All Scripts (experimental)`);
   }
 
   render() {
@@ -39,7 +98,51 @@ export class ScriptsPage extends Component {
         parentProps={this.props}
         selfUrl="scripts"
         defaultTitle="All Scripts"
-        defaultValue={() => ({ id: faker.random.alphaNumeric(64) })}
+        defaultValue={() => ({ 
+          id: faker.random.alphaNumeric(64),
+          name: 'My Script',
+          desc: 'A script',
+          code: `import akka.stream.Materializer
+import env.Env
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script._
+import play.api.Logger
+
+import scala.concurrent.{ExecutionContext, Future}
+
+class MyTransformer extends RequestTransformer {
+
+  val logger = Logger("my-transformer")
+
+  override def transformRequest(
+    snowflake: String,
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey],
+    user: Option[PrivateAppsUser]
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpRequest] = {
+    logger.info(s"Request incoming with id: $snowflake")
+    Future.successful(otoroshiRequest.copy(
+      headers = otoroshiRequest.headers + ("Hello" -> "World1")
+    ))
+  }
+
+  override def transformResponse(
+    snowflake: String,
+    rawResponse: HttpResponse,
+    otoroshiResponse: HttpResponse,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey],
+    user: Option[PrivateAppsUser]
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpResponse] = {
+    logger.info(s"Request outgoing with id: $snowflake")
+    Future.successful(otoroshiResponse.copy(
+      headers = otoroshiResponse.headers + ("Hello" -> "World2")
+    ))
+  }
+}`
+        })}
         itemName="script"
         formSchema={this.formSchema}
         formFlow={this.formFlow}

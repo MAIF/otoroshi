@@ -200,6 +200,7 @@ GET     /api/cluster/members                                  cluster.ClusterCon
 DELETE  /api/cluster/members                                  cluster.ClusterController.clearClusterMembers()
 GET     /api/cluster/live                                     cluster.ClusterController.liveCluster()
 
+GET     /api/scripts/_list                                    otoroshi.script.ScriptApiController.findAllScriptsList()
 GET     /api/scripts/:id                                      otoroshi.script.ScriptApiController.findScriptById(id)
 PUT     /api/scripts/:id                                      otoroshi.script.ScriptApiController.updateScript(id)
 PATCH   /api/scripts/:id                                      otoroshi.script.ScriptApiController.patchScript(id)

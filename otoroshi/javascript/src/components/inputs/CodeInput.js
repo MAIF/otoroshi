@@ -13,13 +13,18 @@ export class CodeInput extends Component {
 
   onChange = e => {
     if (e && e.preventDefault) e.preventDefault();
-    try {
-      const parsed = JSON.parse(e);
-      this.setState({ value: null }, () => {
-        this.props.onChange(e);
-      });
-    } catch (ex) {
+    if (this.props.mode === 'json') {
+      try {
+        const parsed = JSON.parse(e);
+        this.setState({ value: null }, () => {
+          this.props.onChange(e);
+        });
+      } catch (ex) {
+        this.setState({ value: e });
+      }
+    } else {
       this.setState({ value: e });
+      this.props.onChange(e);
     }
   };
 
@@ -38,8 +43,9 @@ export class CodeInput extends Component {
             value={code}
             name="scriptParam"
             editorProps={{ $blockScrolling: true }}
-            height="300px"
+            height={this.props.height || "300px"}
             width="100%"
+            annotations={this.props.annotations || []}
           />
         </div>
       </div>

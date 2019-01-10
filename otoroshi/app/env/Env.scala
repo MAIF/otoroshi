@@ -357,6 +357,8 @@ class Env(val configuration: Configuration,
   lazy val scriptCompiler = new ScriptCompiler(this)
   lazy val scriptManager  = new ScriptManager(this).start()
 
+  if (scriptingEnabled) logger.warn("Scripting is enabled on this Otoroshi instance !")
+
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
   datastores.before(configuration, environment, lifecycle)

@@ -14,7 +14,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
-import javax.script.{Invocable, ScriptEngine, ScriptEngineManager}
+import javax.script._
 import models._
 import play.api.Logger
 import play.api.libs.json._
@@ -26,7 +26,8 @@ import storage.{BasicStore, RedisLike, RedisLikeStore}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
 
 case class HttpRequest(
     url: String,
@@ -91,25 +92,48 @@ object DefaultRequestTransformer extends RequestTransformer
 
 class ScriptCompiler(env: Env) {
 
+  private val logger = Logger("otoroshi-script-compiler")
   private val scriptExec    = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
-  private val engineManager = new ScriptEngineManager(env.environment.classLoader)
-  private val scriptEngine  = engineManager.getEngineByName("scala")
-  private val engine        = scriptEngine.asInstanceOf[ScriptEngine with Invocable]
 
-  def compile(script: String): Future[Either[String, RequestTransformer]] = {
+  def compile(script: String): Future[Either[JsValue, RequestTransformer]] = {
+    val start = System.currentTimeMillis()
     Future.apply {
       try {
-        Right(engine.eval(script).asInstanceOf[RequestTransformer])
+        val engineManager = new ScriptEngineManager(env.environment.classLoader)
+        val scriptEngine  = engineManager.getEngineByName("scala")
+        val engine        = scriptEngine.asInstanceOf[ScriptEngine with Invocable]
+        val ctx = new SimpleScriptContext
+        val res = engine.eval(script, ctx).asInstanceOf[RequestTransformer]
+        ctx.getErrorWriter.flush()
+        ctx.getWriter.flush()
+        Right(res)
       } catch {
-        case ex: Throwable => Left(ex.getMessage)
+        case ex: ScriptException =>
+          val message = ex.getMessage.replace("in " + ex.getFileName, "")
+          Left(Json.obj(
+            "line" -> ex.getLineNumber,
+            "column" -> ex.getColumnNumber,
+            "file" -> ex.getFileName,
+            "rawMessage" -> ex.getMessage,
+            "message" -> message
+          ))
+        case ex: Throwable =>
+          logger.error(s"Compilation error", ex)
+          Left(Json.obj(
+            "line" -> 0,
+            "column" -> 0,
+            "file" -> "none",
+            "rawMessage" -> ex.getMessage,
+            "message" -> ex.getMessage
+          ))
       }
+    }(scriptExec).andThen{
+      case _ =>  logger.info(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
     }(scriptExec)
   }
 }
 
 class ScriptManager(env: Env) {
-
-  import scala.concurrent.duration._
 
   private implicit val ec = env.otoroshiExecutionContext
   private implicit val _env = env
@@ -186,7 +210,10 @@ object Implicits {
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpRequest] = {
       env.scriptingEnabled match {
         case true => desc.transformerRef match {
-          case Some(ref) => env.scriptManager.getScript(ref).transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)
+          case Some(ref) =>
+            val script = env.scriptManager.getScript(ref)
+            println(s"script: $script")
+            script.transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
           case None => FastFuture.successful(otoroshiRequest)
         }
         case false => FastFuture.successful(otoroshiRequest)
@@ -203,7 +230,7 @@ object Implicits {
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpResponse] = {
       env.scriptingEnabled match {
         case true => desc.transformerRef match {
-          case Some(ref) => env.scriptManager.getScript(ref).transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)
+          case Some(ref) => env.scriptManager.getScript(ref).transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
           case None => FastFuture.successful(otoroshiResponse)
         }
         case false => FastFuture.successful(otoroshiResponse)
@@ -221,7 +248,7 @@ object Implicits {
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
       env.scriptingEnabled match {
         case true => desc.transformerRef match {
-          case Some(ref) => env.scriptManager.getScript(ref).transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)
+          case Some(ref) => env.scriptManager.getScript(ref).transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
           case None => body
         }
         case false => body
@@ -239,7 +266,7 @@ object Implicits {
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
       env.scriptingEnabled match {
         case true => desc.transformerRef match {
-          case Some(ref) => env.scriptManager.getScript(ref).transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)
+          case Some(ref) => env.scriptManager.getScript(ref).transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
           case None => body
         }
         case false => body
@@ -340,6 +367,16 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
   def findAllScripts() = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
       env.datastores.scriptDataStore.findAll().map(all => Ok(JsArray(all.map(_.toJson))))
+    }
+  }
+
+  def findAllScriptsList() = ApiAction.async { ctx =>
+    OnlyIfScriptingEnabled {
+      env.datastores.scriptDataStore.findAll().map { all =>
+        Ok(JsArray(all.map { script =>
+          Json.obj("id" -> script.id, "name" -> script.name)
+        }))
+      }
     }
   }
 

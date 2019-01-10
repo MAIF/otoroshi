@@ -874,7 +874,7 @@ export class ServicePage extends Component {
                     <i className="glyphicon glyphicon-plus" /> Create a new validation authority.
                   </a>
                 )}
-                {this.state.service.authConfigRef && (
+                {this.state.service.clientValidatorRef && (
                   <a
                     href={`/bo/dashboard/validation-authorities/edit/${
                       this.state.service.clientValidatorRef
@@ -883,7 +883,7 @@ export class ServicePage extends Component {
                     <i className="glyphicon glyphicon-edit" /> Edit the validation authority.
                   </a>
                 )}
-                <a href={`/bo/dashboard/clientValidatorRef`} className="btn btn-sm btn-primary">
+                <a href={`/bo/dashboard/validation-authorities`} className="btn btn-sm btn-primary">
                   <i className="glyphicon glyphicon-link" /> all validation authorities.
                 </a>
               </div>
@@ -1338,6 +1338,44 @@ export class ServicePage extends Component {
               </div>
             )}
           </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Request transformation">
+            <SelectInput
+              label="Validation authority"
+              value={this.state.service.transformerRef}
+              onChange={e => this.changeTheValue('transformerRef', e)}
+              valuesFrom="/bo/api/proxy/api/scripts/_list"
+              transformer={a => ({ value: a.id, label: a.name })}
+              help="..."
+            />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                {!this.state.service.transformerRef && (
+                  <a
+                    href={`/bo/dashboard/scripts/add`}
+                    className="btn btn-sm btn-primary">
+                    <i className="glyphicon glyphicon-plus" /> Create a new script.
+                  </a>
+                )}
+                {this.state.service.transformerRef && (
+                  <a
+                    href={`/bo/dashboard/scripts/edit/${
+                      this.state.service.transformerRef
+                    }`}
+                    className="btn btn-sm btn-success">
+                    <i className="glyphicon glyphicon-edit" /> Edit the script.
+                  </a>
+                )}
+                <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
+                  <i className="glyphicon glyphicon-link" /> all scripts.
+                </a>
+              </div>
+            </div>
+          </Collapse>
         </form>
       </div>
     );
@@ -1353,6 +1391,7 @@ export class TemplateInput extends Component {
     template40x: {
       type: 'code',
       props: {
+        mode: 'html',
         label: '40x template',
         placeholder: '',
         help: 'This template will be displayed for any 40x http response',
@@ -1361,6 +1400,7 @@ export class TemplateInput extends Component {
     template50x: {
       type: 'code',
       props: {
+        mode: 'html',
         label: '50x template',
         placeholder: '',
         help: 'This template will be displayed for any 50x http response',
@@ -1369,6 +1409,7 @@ export class TemplateInput extends Component {
     templateBuild: {
       type: 'code',
       props: {
+        mode: 'html',
         label: 'Build mode template',
         placeholder: '',
         help: 'This template will be displayed when the service will be in build mode',
@@ -1377,6 +1418,7 @@ export class TemplateInput extends Component {
     templateMaintenance: {
       type: 'code',
       props: {
+        mode: 'html',
         label: 'Maintenance mode template',
         placeholder: '',
         help: 'This template will be displayed when the service will be in maintenance mode',
@@ -1385,6 +1427,7 @@ export class TemplateInput extends Component {
     messages: {
       type: 'object',
       props: {
+        mode: 'json',
         label: 'Custom messages',
         placeholderKey: 'Message ID',
         placeholderValue: 'Custom message',
