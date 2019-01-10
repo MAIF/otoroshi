@@ -118,11 +118,22 @@ class ScriptCompiler(env: Env) {
         val engineManager = new ScriptEngineManager(env.environment.classLoader)
         val scriptEngine  = engineManager.getEngineByName("scala")
         val engine        = scriptEngine.asInstanceOf[ScriptEngine with Invocable]
-        val ctx = new SimpleScriptContext
-        val res = engine.eval(script, ctx).asInstanceOf[RequestTransformer]
-        ctx.getErrorWriter.flush()
-        ctx.getWriter.flush()
-        Right(res)
+        if (scriptEngine == null) {
+          // dev mode
+          Left(Json.obj(
+            "line" -> 0,
+            "column" -> 0,
+            "file" -> "",
+            "rawMessage" -> "",
+            "message" -> "You are in dev mode, Scala script engine does not work inside sbt :("
+          ))
+        } else {
+          val ctx = new SimpleScriptContext
+          val res = engine.eval(script, ctx).asInstanceOf[RequestTransformer]
+          ctx.getErrorWriter.flush()
+          ctx.getWriter.flush()
+          Right(res)
+        }
       } catch {
         case ex: ScriptException =>
           val message = ex.getMessage.replace("in " + ex.getFileName, "")
