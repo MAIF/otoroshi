@@ -18,6 +18,7 @@ import health.{HealthCheckerActor, StartHealthCheck}
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.script.{ScriptCompiler, ScriptManager}
 import play.api._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
@@ -352,6 +353,10 @@ class Env(val configuration: Configuration,
     }
   }
 
+  lazy val scriptingEnabled = configuration.getOptional[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
+  lazy val scriptCompiler = new ScriptCompiler(this)
+  lazy val scriptManager  = new ScriptManager(this).start()
+
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
   datastores.before(configuration, environment, lifecycle)
@@ -360,6 +365,7 @@ class Env(val configuration: Configuration,
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
+    scriptManager.stop()
     clusterAgent.stop()
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)

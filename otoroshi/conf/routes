@@ -200,6 +200,15 @@ GET     /api/cluster/members                                  cluster.ClusterCon
 DELETE  /api/cluster/members                                  cluster.ClusterController.clearClusterMembers()
 GET     /api/cluster/live                                     cluster.ClusterController.liveCluster()
 
+GET     /api/scripts/:id                                      otoroshi.script.ScriptApiController.findScriptById(id)
+PUT     /api/scripts/:id                                      otoroshi.script.ScriptApiController.updateScript(id)
+PATCH   /api/scripts/:id                                      otoroshi.script.ScriptApiController.patchScript(id)
+DELETE  /api/scripts/:id                                      otoroshi.script.ScriptApiController.deleteScript(id)
+POST    /api/scripts/_compile                                 otoroshi.script.ScriptApiController.compileScript()
+POST    /api/scripts                                          otoroshi.script.ScriptApiController.createScript()
+GET     /api/scripts                                          otoroshi.script.ScriptApiController.findAllScripts()
+
+
 GET     /api/stats/global                                     controllers.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 

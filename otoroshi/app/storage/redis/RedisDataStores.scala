@@ -5,14 +5,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import auth.AuthConfigsDataStore
-import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore, RedisClusterStateDataStore}
+import cluster.{ClusterStateDataStore, RedisClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
+import otoroshi.script.{RedisScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
@@ -104,6 +104,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _clientCertificateValidationDataStore = new RedisClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
+
+  private lazy val _scriptDataStore = new RedisScriptDataStore(redis, env)
+  override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

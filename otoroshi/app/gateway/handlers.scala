@@ -4,6 +4,7 @@ import java.net.URLEncoder
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 
 import actions.{PrivateAppsAction, PrivateAppsActionContext}
+import akka.NotUsed
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.util.FastFuture
@@ -37,6 +38,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
+import otoroshi.script.Implicits._
 
 case class ProxyDone(status: Int, upstreamLatency: Long, headersOut: Seq[Header])
 
@@ -885,7 +887,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     bs
                                   })
                               }
-                              val body = if (currentReqHasBody) SourceBody(lazySource) else EmptyBody // Stream IN
                               // val requestHeader = ByteString(
                               //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
                               //     .map(h => s"${h._1}: ${h._2}")
@@ -1006,23 +1007,64 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               //.andThen {
                               //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
                               //}
+                              val queryString = req.queryString.mapValues(_.last)
+                              val rawRequest = otoroshi.script.HttpRequest(
+                                url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
+                                method = req.method,
+                                headers = req.headers.toSimpleMap,
+                                query = queryString
+                              )
+                              val otoroshiRequest = otoroshi.script.HttpRequest(
+                                url = url,
+                                method = req.method,
+                                headers = headersIn.toMap,
+                                query = queryString
+                              )
                               val upstreamStart = System.currentTimeMillis()
-                              env.gatewayClient
-                                .urlWithProtocol(target.scheme, url)
-                                //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
-                                .withRequestTimeout(6.hour) // we should monitor leaks
-                                .withMethod(req.method)
-                                // .withQueryString(queryString: _*)
-                                .withHttpHeaders(headersIn: _*)
-                                .withBody(body)
-                                .withFollowRedirects(false)
-                                .stream()
-                                .fast
-                                .flatMap(resp => quotas.fast.map(q => (resp, q)))
+                              descriptor.transformRequest(
+                                snowflake = snowflake,
+                                rawRequest = rawRequest,
+                                otoroshiRequest = otoroshiRequest,
+                                desc = descriptor,
+                                apiKey = apiKey,
+                                user = paUsr
+                              ).flatMap { httpRequest =>
+                                val body = if (currentReqHasBody) SourceBody(descriptor.transformRequestBody(
+                                  body = lazySource,
+                                  snowflake = snowflake,
+                                  rawRequest = rawRequest,
+                                  otoroshiRequest = otoroshiRequest,
+                                  desc = descriptor,
+                                  apiKey = apiKey,
+                                  user = paUsr
+                                )) else EmptyBody // Stream IN
+                                env.gatewayClient
+                                  .urlWithProtocol(target.scheme, httpRequest.url)
+                                  .withRequestTimeout(6.hour) // we should monitor leaks
+                                  .withMethod(httpRequest.method)
+                                  .withHttpHeaders(httpRequest.headers.toSeq: _*)
+                                  .withBody(body)
+                                  .withFollowRedirects(false)
+                                  .stream()
+                                // env.gatewayClient
+                                //   .urlWithProtocol(target.scheme, url)
+                                //   //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
+                                //   .withRequestTimeout(6.hour) // we should monitor leaks
+                                //   .withMethod(req.method)
+                                //   // .withQueryString(queryString: _*)
+                                //   .withHttpHeaders(headersIn: _*)
+                                //   .withBody(body)
+                                //   .withFollowRedirects(false)
+                                //   .stream()
+                              }.flatMap(resp => quotas.fast.map(q => (resp, q)))
                                 .flatMap { tuple =>
                                   val (resp, remainingQuotas) = tuple
                                   // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
                                   val headers = resp.headers.mapValues(_.head)
+                                  val rawResponse = otoroshi.script.HttpResponse(
+                                    status = resp.status,
+                                    headers = headers
+                                  )
                                   // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                   // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                   // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
@@ -1095,7 +1137,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     }
                                   } else {
                                     val upstreamLatency = System.currentTimeMillis() - upstreamStart
-                                    val headersOut = headers.toSeq
+                                    val _headersOut: Seq[(String, String)] = headers.toSeq
                                       .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
                                       if (descriptor.sendOtoroshiHeadersBack) {
                                         Seq(
@@ -1121,59 +1163,85 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               Seq.empty[(String, String)]
                                             }) ++ descriptor.cors
                                       .asHeaders(req)
-                                    val contentType    = headers.getOrElse("Content-Type", MimeTypes.TEXT)
-                                    val contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
-                                    // meterOut.mark(responseHeader.length)
-                                    // counterOut.addAndGet(responseHeader.length)
 
-                                    val finalStream = resp.bodyAsSource
-                                      .concat(snowMonkeyContext.trailingResponseBodyStream)
-                                      .alsoTo(Sink.onComplete {
-                                        case Success(_) =>
-                                          // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
-                                          promise.trySuccess(
-                                            ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply))
-                                          )
-                                        case Failure(e) =>
-                                          logger.error(
-                                            s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
-                                            e
-                                          )
-                                          promise.trySuccess(
-                                            ProxyDone(resp.status, upstreamLatency, headersOut.map(Header.apply))
-                                          )
-                                      })
-                                      .map { bs =>
-                                        // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
-                                        // meterOut.mark(bs.length)
-                                        counterOut.addAndGet(bs.length)
-                                        bs
-                                      }
 
-                                    if (req.version == "HTTP/1.0") {
-                                      logger.warn(
-                                        s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
-                                      )
-                                      finalStream
-                                        .via(
-                                          MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt,
-                                                           str => logger.warn(str))
-                                        )
-                                        .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
-                                        .fast
-                                        .map { body =>
-                                          Status(resp.status)(body)
-                                            .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                            .as(contentType)
-                                            .withCookies(withTrackingCookies: _*)
+                                    val otoroshiResponse = otoroshi.script.HttpResponse(
+                                      status = resp.status,
+                                      headers = _headersOut.toMap
+                                    )
+                                    descriptor.transformResponse(
+                                      snowflake = snowflake,
+                                      rawResponse = rawResponse,
+                                      otoroshiResponse = otoroshiResponse,
+                                      desc = descriptor,
+                                      apiKey = apiKey,
+                                      user = paUsr
+                                    ).flatMap { httpResponse =>
+
+                                      val headersOut = httpResponse.headers.toSeq
+                                      val contentType = httpResponse.headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                                      // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
+                                      // meterOut.mark(responseHeader.length)
+                                      // counterOut.addAndGet(responseHeader.length)
+
+                                      val theStream: Source[ByteString, _] = resp.bodyAsSource
+                                        .concat(snowMonkeyContext.trailingResponseBodyStream)
+                                        .alsoTo(Sink.onComplete {
+                                          case Success(_) =>
+                                            // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
+                                            promise.trySuccess(
+                                              ProxyDone(httpResponse.status, upstreamLatency, headersOut.map(Header.apply))
+                                            )
+                                          case Failure(e) =>
+                                            logger.error(
+                                              s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
+                                              e
+                                            )
+                                            promise.trySuccess(
+                                              ProxyDone(httpResponse.status, upstreamLatency, headersOut.map(Header.apply))
+                                            )
+                                        })
+                                        .map { bs =>
+                                          // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
+                                          // meterOut.mark(bs.length)
+                                          counterOut.addAndGet(bs.length)
+                                          bs
                                         }
-                                    } else if (globalConfig.streamEntityOnly) { // only temporary
-                                      // stream out
-                                      val entity =
-                                        if (resp.headers
-                                              .get("Transfer-Encoding")
-                                              .flatMap(_.lastOption)
-                                              .contains("chunked")) {
+
+                                      val finalStream = descriptor.transformResponseBody(
+                                        snowflake = snowflake,
+                                        rawResponse = rawResponse,
+                                        otoroshiResponse = otoroshiResponse,
+                                        desc = descriptor,
+                                        apiKey = apiKey,
+                                        user = paUsr,
+                                        body = theStream
+                                      )
+
+                                      if (req.version == "HTTP/1.0") {
+                                        logger.warn(
+                                          s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
+                                        )
+                                        finalStream
+                                          .via(
+                                            MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt,
+                                              str => logger.warn(str))
+                                          )
+                                          .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
+                                          .fast
+                                          .map { body =>
+                                            Status(httpResponse.status)(body)
+                                              .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                              .as(contentType)
+                                              .withCookies(withTrackingCookies: _*)
+                                          }
+                                      } else if (globalConfig.streamEntityOnly) { // only temporary
+                                        // stream out
+                                        val entity =
+                                        if (httpResponse.headers
+                                          .get("Transfer-Encoding")
+                                          //.flatMap(_.lastOption)
+                                          .contains("chunked")) {
                                           HttpEntity.Chunked(
                                             finalStream
                                               .map(i => play.api.http.HttpChunk.Chunk(i))
@@ -1185,50 +1253,51 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         } else {
                                           HttpEntity.Streamed(
                                             finalStream,
-                                            resp.headers
+                                            httpResponse.headers
                                               .get("Content-Length")
-                                              .flatMap(_.lastOption)
+                                              //.flatMap(_.lastOption)
                                               .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
                                             Some(contentType) // contentTypeOpt
                                           )
                                         }
-                                      FastFuture.successful(
-                                        Status(resp.status)
-                                          .sendEntity(entity)
-                                          .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                          .as(contentType)
-                                          .withCookies(withTrackingCookies: _*)
-                                      )
-                                    } else {
-                                      val response = resp.headers
-                                        .get("Transfer-Encoding")
-                                        .flatMap(_.lastOption)
-                                        .filter(_ == "chunked")
-                                        .map { _ =>
-                                          // stream out
-                                          Status(resp.status)
-                                            .chunked(finalStream)
-                                            .withHeaders(headersOut: _*)
+                                        FastFuture.successful(
+                                          Status(httpResponse.status)
+                                            .sendEntity(entity)
+                                            .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                            .as(contentType)
                                             .withCookies(withTrackingCookies: _*)
-                                          // .as(contentType)
-                                        } getOrElse {
-                                        // stream out
-                                        Status(resp.status)
-                                          .sendEntity(
-                                            HttpEntity.Streamed(
-                                              finalStream,
-                                              resp.headers
-                                                .get("Content-Length")
-                                                .flatMap(_.lastOption)
-                                                .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
-                                              resp.headers.get("Content-Type").flatMap(_.lastOption)
+                                        )
+                                      } else {
+                                        val response = httpResponse.headers
+                                          .get("Transfer-Encoding")
+                                          //.flatMap(_.lastOption)
+                                          .filter(_ == "chunked")
+                                          .map { _ =>
+                                            // stream out
+                                            Status(httpResponse.status)
+                                              .chunked(finalStream)
+                                              .withHeaders(headersOut: _*)
+                                              .withCookies(withTrackingCookies: _*)
+                                            // .as(contentType)
+                                          } getOrElse {
+                                          // stream out
+                                          Status(httpResponse.status)
+                                            .sendEntity(
+                                              HttpEntity.Streamed(
+                                                finalStream,
+                                                httpResponse.headers
+                                                  .get("Content-Length")
+                                                  //.flatMap(_.lastOption)
+                                                  .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
+                                                httpResponse.headers.get("Content-Type")
+                                              )
                                             )
-                                          )
-                                          .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                          .withCookies(withTrackingCookies: _*)
-                                          .as(contentType)
+                                            .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                            .withCookies(withTrackingCookies: _*)
+                                            .as(contentType)
+                                        }
+                                        FastFuture.successful(response)
                                       }
-                                      FastFuture.successful(response)
                                     }
                                   }
                                 }

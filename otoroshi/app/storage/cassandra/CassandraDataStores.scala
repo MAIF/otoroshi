@@ -17,6 +17,7 @@ import play.api.{Configuration, Environment, Logger}
 import storage.{DataStoreHealth, DataStores}
 import storage.inmemory._
 import env.Env
+import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
 import play.api.libs.json._
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
 
@@ -110,6 +111,9 @@ class CassandraDataStores(configuration: Configuration,
   private lazy val _clientCertificateValidationDataStore = new InMemoryClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
+
+  private lazy val _scriptDataStore = new InMemoryScriptDataStore(redis, env)
+  override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

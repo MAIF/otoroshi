@@ -9,6 +9,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import env._
 import gateway._
+import otoroshi.script.ScriptApiController
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
@@ -94,6 +95,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val u2fController             = wire[U2FController]
   lazy val clusterController         = wire[ClusterController]
   lazy val clientValidatorController = wire[ClientValidatorsController]
+  lazy val scriptApiController       = wire[ScriptApiController]
 
   override lazy val assets: Assets = wire[Assets]
 

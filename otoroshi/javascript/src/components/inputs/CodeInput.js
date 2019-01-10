@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { Help } from './Help';
 import AceEditor from 'react-ace';
 import 'brace/mode/html';
+import 'brace/mode/scala';
+import 'brace/mode/javascript';
 import 'brace/theme/monokai';
 
 export class CodeInput extends Component {
@@ -30,7 +32,7 @@ export class CodeInput extends Component {
         </label>
         <div className="col-sm-10">
           <AceEditor
-            mode="javascript"
+            mode={this.props.mode || "javascript"}
             theme="monokai"
             onChange={this.onChange}
             value={code}
