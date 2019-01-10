@@ -11,6 +11,10 @@ class CompilationTools extends Component {
     error: null,
   };
 
+  componentDidMount() {
+    this.props.setSaveAndCompile(this.compile);
+  }
+
   compile = () => {
     this.setState({ compiling: true });
     BackOfficeServices.compileScript(this.props.rawValue).then(res => {
@@ -66,15 +70,25 @@ export class ScriptsPage extends Component {
         label: 'Script code', 
         placeholder: 'Code the Script', 
         mode: 'scala',
-        annotations: this.state.annotations,
+        annotations: () => this.state.annotations,
+        saveAndCompile: () => {
+          if (this.saveAndCompile) {
+            this.saveAndCompile();
+          }
+          if (this.table) {
+            this.table.updateItemAndStay();
+          }
+        },
         height: '500px'
       },
     },
     compilation: {
       type: CompilationTools,
       props: { 
+        setSaveAndCompile: (f) => {
+          this.saveAndCompile = f;
+        },
         setAnnotations: (annotations) => {
-          console.log('set annotations', annotations)
           this.setState({ annotations })
         }
       }
@@ -98,6 +112,7 @@ export class ScriptsPage extends Component {
         parentProps={this.props}
         selfUrl="scripts"
         defaultTitle="All Scripts"
+        injectTable={(t) => this.table = t}
         defaultValue={() => ({ 
           id: faker.random.alphaNumeric(64),
           name: 'My Script',

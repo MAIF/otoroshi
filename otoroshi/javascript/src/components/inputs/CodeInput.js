@@ -5,6 +5,8 @@ import 'brace/mode/html';
 import 'brace/mode/scala';
 import 'brace/mode/javascript';
 import 'brace/theme/monokai';
+import 'brace/ext/language_tools';
+import 'brace/ext/searchbox';
 
 export class CodeInput extends Component {
   state = {
@@ -47,10 +49,19 @@ export class CodeInput extends Component {
             width="100%"
             showGutter={true}
             highlightActiveLine={true}
+            tabSize={2}
             enableBasicAutocompletion={true}
             enableLiveAutocompletion={true}
-            tabSize={2}
-            annotations={this.props.annotations || []}
+            annotations={this.props.annotations() || []}
+            commands={[{  
+              name: 'saveAndCompile',
+              bindKey: { win: 'Ctrl-S', mac: 'Command-S'},
+              exec: () => {
+                if (this.props.saveAndCompile) {
+                  this.props.saveAndCompile();
+                }
+              }
+            }]}
           />
         </div>
       </div>
