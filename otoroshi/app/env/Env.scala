@@ -353,9 +353,9 @@ class Env(val configuration: Configuration,
     }
   }
 
-  lazy val scriptingEnabled = configuration.getOptional[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
-  lazy val scriptCompiler = new ScriptCompiler(this)
-  lazy val scriptManager  = new ScriptManager(this).start()
+  val scriptingEnabled = configuration.getOptional[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
+  val scriptCompiler = new ScriptCompiler(this)
+  val scriptManager  = new ScriptManager(this).start()
 
   if (scriptingEnabled) logger.warn("Scripting is enabled on this Otoroshi instance !")
 

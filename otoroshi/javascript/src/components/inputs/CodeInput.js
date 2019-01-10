@@ -45,6 +45,10 @@ export class CodeInput extends Component {
             editorProps={{ $blockScrolling: true }}
             height={this.props.height || "300px"}
             width="100%"
+            showGutter={true}
+            highlightActiveLine={true}
+            enableBasicAutocompletion={true}
+            tabSize={2}
             annotations={this.props.annotations || []}
           />
         </div>

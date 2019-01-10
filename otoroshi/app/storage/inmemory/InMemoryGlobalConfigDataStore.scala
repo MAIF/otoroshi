@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigRenderOptions
 import env.Env
 import models._
 import org.joda.time.DateTime
+import otoroshi.script.Script
 import play.api.Logger
 import play.api.libs.json._
 import security.Auth0Config
@@ -181,6 +182,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val authConfigs        = (export \ "authConfigs").asOpt[JsArray].getOrElse(Json.arr())
     val certificates       = (export \ "certificates").asOpt[JsArray].getOrElse(Json.arr())
     val clientValidators   = (export \ "clientValidators").asOpt[JsArray].getOrElse(Json.arr())
+    val scripts            = (export \ "scripts").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli.flushall()
@@ -207,6 +209,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(authConfigs.value.map(AuthModuleConfig.fromJsons).map(_.save()))
       _ <- Future.sequence(certificates.value.map(Cert.fromJsons).map(_.save()))
       _ <- Future.sequence(clientValidators.value.map(ClientCertificateValidator.fromJsons).map(_.save()))
+      _ <- Future.sequence(scripts.value.map(Script.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -235,6 +238,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       authConfigs      <- env.datastores.authConfigsDataStore.findAll()
       certificates     <- env.datastores.certificatesDataStore.findAll()
       clientValidators <- env.datastores.clientCertificateValidationDataStore.findAll()
+      scripts          <- env.datastores.scriptDataStore.findAll()
     } yield
       Json.obj(
         "label"   -> "Otoroshi export",
@@ -256,7 +260,8 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
         "authConfigs"        -> JsArray(authConfigs.map(_.asJson)),
         "certificates"       -> JsArray(certificates.map(_.toJson)),
-        "clientValidators"   -> JsArray(clientValidators.map(_.asJson))
+        "clientValidators"   -> JsArray(clientValidators.map(_.asJson)),
+        "scripts"            -> JsArray(scripts.map(_.toJson))
       )
   }
 

@@ -36,7 +36,7 @@ class CompilationTools extends Component {
       <div className="form-group">
         <label className="col-xs-12 col-sm-2 control-label"></label>
         <div className="col-sm-10">
-          <button type="button" className={`btn btn-${this.state.error ? 'danger' : 'success'}`} onClick={this.compile}>{this.state.compiling ? 'Compiling ...': 'Compile'}</button>
+          <button type="button" className={`btn btn-${this.state.error ? 'danger' : 'success'}`} onClick={this.compile}><i className="fas fa-cogs" /> {this.state.compiling ? 'Compiling ...': 'Compile'}</button>
           {!!this.state.error && <div className="alert alert-danger" role="alert">{this.state.error.message}</div>}
         </div>
       </div>
@@ -107,6 +107,8 @@ import env.Env
 import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.script._
 import play.api.Logger
+import play.api.mvc.{Result, Results}
+import scala.util._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -121,11 +123,11 @@ class MyTransformer extends RequestTransformer {
     desc: ServiceDescriptor,
     apiKey: Option[ApiKey],
     user: Option[PrivateAppsUser]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpRequest] = {
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     logger.info(s"Request incoming with id: $snowflake")
-    Future.successful(otoroshiRequest.copy(
+    Future.successful(Right(otoroshiRequest.copy(
       headers = otoroshiRequest.headers + ("Hello" -> "World1")
-    ))
+    )))
   }
 
   override def transformResponse(
@@ -135,13 +137,16 @@ class MyTransformer extends RequestTransformer {
     desc: ServiceDescriptor,
     apiKey: Option[ApiKey],
     user: Option[PrivateAppsUser]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpResponse] = {
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     logger.info(s"Request outgoing with id: $snowflake")
-    Future.successful(otoroshiResponse.copy(
+    Future.successful(Right(otoroshiResponse.copy(
       headers = otoroshiResponse.headers + ("Hello" -> "World2")
-    ))
+    )))
   }
-}`
+}
+
+new MyTransformer()
+`
         })}
         itemName="script"
         formSchema={this.formSchema}

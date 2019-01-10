@@ -6,7 +6,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 import actions.ApiAction
-import akka.NotUsed
 import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -25,9 +24,9 @@ import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 case class HttpRequest(
     url: String,
@@ -48,8 +47,8 @@ trait RequestTransformer {
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpRequest] = {
-    FastFuture.successful(otoroshiRequest)
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    FastFuture.successful(Right(otoroshiRequest))
   }
 
   def transformResponse(
@@ -59,8 +58,8 @@ trait RequestTransformer {
      desc: ServiceDescriptor,
      apiKey: Option[ApiKey] = None,
      user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpResponse] = {
-    FastFuture.successful(otoroshiResponse)
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+    FastFuture.successful(Right(otoroshiResponse))
   }
 
   def transformRequestBody(
@@ -128,7 +127,7 @@ class ScriptCompiler(env: Env) {
           ))
       }
     }(scriptExec).andThen{
-      case _ =>  logger.info(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
+      case _ =>  logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
     }(scriptExec)
   }
 }
@@ -158,11 +157,14 @@ class ScriptManager(env: Env) {
     compiling.putIfAbsent(script.id, ()) match {
       case Some(_) => // do nothing as something is compiling
       case None => {
+        logger.debug(s"Updating script ${script.name}")
         env.scriptCompiler.compile(script.code).map {
           case Left(err) =>
             logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
+            compiling.remove(script.id)
           case Right(trans) => {
             cache.put(script.id, (script.hash, trans))
+            compiling.remove(script.id)
           }
         }
       }
@@ -180,8 +182,11 @@ class ScriptManager(env: Env) {
   }
 
   private def updateScriptCache(): Unit = {
+    logger.debug(s"updateScriptCache")
     env.datastores.scriptDataStore.findAll().map { scripts =>
-      scripts.foreach(compileAndUpdate)
+      scripts.foreach(compileAndUpdateIfNeeded)
+      val ids = scripts.map(_.id)
+      cache.keySet.filterNot(id => ids.contains(id)).foreach(id => cache.remove(id))
     }
   }
 
@@ -192,7 +197,16 @@ class ScriptManager(env: Env) {
         logger.error(s"Script with id `$ref` does not exists ...")
         // do nothing as the script does not exists
     }
-    cache.get(ref).map(_._2).getOrElse(DefaultRequestTransformer)
+    cache.get(ref).flatMap(a => Option(a._2)).getOrElse(DefaultRequestTransformer)
+  }
+
+  def preCompileScript(script: Script)(implicit ec: ExecutionContext): Unit = {
+    compileAndUpdateIfNeeded(script)
+  }
+
+  def removeScript(id: String): Unit = {
+    cache.remove(id)
+    compiling.remove(id)
   }
 }
 
@@ -207,16 +221,15 @@ object Implicits {
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpRequest] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
         case true => desc.transformerRef match {
           case Some(ref) =>
             val script = env.scriptManager.getScript(ref)
-            println(s"script: $script")
             script.transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
-          case None => FastFuture.successful(otoroshiRequest)
+          case None => FastFuture.successful(Right(otoroshiRequest))
         }
-        case false => FastFuture.successful(otoroshiRequest)
+        case false => FastFuture.successful(Right(otoroshiRequest))
       }
     }
 
@@ -227,13 +240,13 @@ object Implicits {
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[HttpResponse] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer):Future[Either[Result, HttpResponse]] = {
       env.scriptingEnabled match {
         case true => desc.transformerRef match {
           case Some(ref) => env.scriptManager.getScript(ref).transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
-          case None => FastFuture.successful(otoroshiResponse)
+          case None => FastFuture.successful(Right(otoroshiResponse))
         }
-        case false => FastFuture.successful(otoroshiResponse)
+        case false => FastFuture.successful(Right(otoroshiResponse))
       }
     }
 
@@ -409,7 +422,10 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       Script.fromJsonSafe(ctx.request.body) match {
         case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
         case Right(script) =>
-          env.datastores.scriptDataStore.set(script).map(_ => Ok(script.toJson))
+          env.datastores.scriptDataStore.set(script).map { _ =>
+            env.scriptManager.preCompileScript(script)
+            Ok(script.toJson)
+          }
       }
     }
   }
@@ -425,7 +441,10 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
           Script.fromJsonSafe(ctx.request.body) match {
             case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
             case Right(script) => {
-              env.datastores.scriptDataStore.set(script).map(_ => Ok(script.toJson))
+              env.datastores.scriptDataStore.set(script).map { _ =>
+                env.scriptManager.preCompileScript(script)
+                Ok(script.toJson)
+              }
             }
           }
         }
@@ -447,7 +466,10 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
           Script.fromJsonSafe(newScript) match {
             case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
             case Right(newScript) => {
-              env.datastores.scriptDataStore.set(newScript).map(_ => Ok(newScript.toJson))
+              env.datastores.scriptDataStore.set(newScript).map { _ =>
+                env.scriptManager.preCompileScript(newScript)
+                Ok(newScript.toJson)
+              }
             }
           }
         }
@@ -457,10 +479,12 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def deleteScript(id: String) = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
-      env.datastores.scriptDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+      env.datastores.scriptDataStore.delete(id).map { _ =>
+        env.scriptManager.removeScript(id)
+        Ok(Json.obj("done" -> true))
+      }
     }
   }
-
 }
 
 
