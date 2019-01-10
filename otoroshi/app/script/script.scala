@@ -155,7 +155,7 @@ class ScriptCompiler(env: Env) {
           ))
       }
     }(scriptExec).andThen{
-      case _ =>  logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
+      case _ if env.isDev => logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
     }(scriptExec)
   }
 }
