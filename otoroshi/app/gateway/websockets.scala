@@ -35,6 +35,7 @@ import utils.future.Implicits._
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
+import otoroshi.script.Implicits._
 
 class WebSocketHandler()(implicit env: Env) {
 
@@ -631,14 +632,41 @@ class WebSocketHandler()(implicit env: Env) {
                                 }
                               }
                             }
-                            FastFuture.successful(
-                              Right(
-                                ActorFlow.actorRef(
-                                  out =>
-                                    WebSocketProxyActor.props(url, env.otoroshiMaterializer, out, env, http, headersIn)
-                                )
-                              )
+
+                            val queryString = req.queryString.mapValues(_.last)
+                            val rawRequest = otoroshi.script.HttpRequest(
+                              url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
+                              method = req.method,
+                              headers = req.headers.toSimpleMap,
+                              query = queryString
                             )
+                            val otoroshiRequest = otoroshi.script.HttpRequest(
+                              url = url,
+                              method = req.method,
+                              headers = headersIn.toMap,
+                              query = queryString
+                            )
+                            val upstreamStart = System.currentTimeMillis()
+                            descriptor.transformRequest(
+                              snowflake = snowflake,
+                              rawRequest = rawRequest,
+                              otoroshiRequest = otoroshiRequest,
+                              desc = descriptor,
+                              apiKey = apiKey,
+                              user = paUsr
+                            ).flatMap { 
+                              case Left(badResult) => FastFuture.successful(badResult).asLeft[WSFlow]
+                              case Right(httpRequest) => {
+                                FastFuture.successful(
+                                  Right(
+                                    ActorFlow.actorRef(
+                                      out =>
+                                        WebSocketProxyActor.props(httpRequest.url, env.otoroshiMaterializer, out, env, http, httpRequest.headers.toSeq)
+                                    )
+                                  )
+                                )
+                              }
+                            }
                           }
 
                           def passWithApiKey(
@@ -1069,7 +1097,7 @@ class WebSocketHandler()(implicit env: Env) {
                             }
                           }
                         }
-                    }
+                      }
                   }
                 }
             }

@@ -28,27 +28,44 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class HttpRequest(
-    url: String,
-    method: String,
-    headers: Map[String, String],
-    query: Map[String, String]
-  ) {
+case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String]) {
   lazy val host: String = headers.getOrElse("Host", "")
 }
 case class HttpResponse(status: Int, headers: Map[String, String])
 
 trait RequestTransformer {
 
+  def transformRequestSync(
+    snowflake: String,
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey] = None,
+    user: Option[PrivateAppsUser] = None
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
+    Right(otoroshiRequest)
+  }
+
   def transformRequest(
-      snowflake: String,
-      rawRequest: HttpRequest,
-      otoroshiRequest: HttpRequest,
-      desc: ServiceDescriptor,
-      apiKey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
+    snowflake: String,
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey] = None,
+    user: Option[PrivateAppsUser] = None
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    FastFuture.successful(Right(otoroshiRequest))
+    FastFuture.successful(transformRequestSync(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat))
+  }
+
+  def transformResponseSync(
+    snowflake: String,
+    rawResponse: HttpResponse,
+    otoroshiResponse: HttpResponse,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey] = None,
+    user: Option[PrivateAppsUser] = None
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpResponse] = {
+    Right(otoroshiResponse)
   }
 
   def transformResponse(
@@ -59,7 +76,7 @@ trait RequestTransformer {
      apiKey: Option[ApiKey] = None,
      user: Option[PrivateAppsUser] = None
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
-    FastFuture.successful(Right(otoroshiResponse))
+    FastFuture.successful(transformResponseSync(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat))
   }
 
   def transformRequestBody(

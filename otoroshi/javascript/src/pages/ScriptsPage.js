@@ -109,39 +109,24 @@ import otoroshi.script._
 import play.api.Logger
 import play.api.mvc.{Result, Results}
 import scala.util._
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class MyTransformer extends RequestTransformer {
 
   val logger = Logger("my-transformer")
 
-  override def transformRequest(
+  override def transformRequestSync(
     snowflake: String,
     rawRequest: HttpRequest,
     otoroshiRequest: HttpRequest,
     desc: ServiceDescriptor,
     apiKey: Option[ApiKey],
     user: Option[PrivateAppsUser]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
     logger.info(s"Request incoming with id: $snowflake")
-    Future.successful(Right(otoroshiRequest.copy(
-      headers = otoroshiRequest.headers + ("Hello" -> "World1")
-    )))
-  }
-
-  override def transformResponse(
-    snowflake: String,
-    rawResponse: HttpResponse,
-    otoroshiResponse: HttpResponse,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey],
-    user: Option[PrivateAppsUser]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
-    logger.info(s"Request outgoing with id: $snowflake")
-    Future.successful(Right(otoroshiResponse.copy(
-      headers = otoroshiResponse.headers + ("Hello" -> "World2")
-    )))
+    Right(otoroshiRequest.copy(
+      headers = otoroshiRequest.headers + ("Hello" -> "World")
+    ))
   }
 }
 
