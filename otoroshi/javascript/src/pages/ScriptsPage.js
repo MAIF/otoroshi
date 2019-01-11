@@ -22,7 +22,7 @@ class CompilationTools extends Component {
         this.setState({ error: res.error, compiling: false });
         this.props.setAnnotations([
           {
-            row: res.error.line, 
+            row: res.error.line === 0 ? 0 : res.error.line - 1, 
             column: res.error.column, 
             type: 'error', 
             text: res.error.message
@@ -126,6 +126,9 @@ import play.api.mvc.{Result, Results}
 import scala.util._
 import scala.concurrent.{ExecutionContext, Future}
 
+/**
+ * Your own request transformer
+ */
 class MyTransformer extends RequestTransformer {
 
   val logger = Logger("my-transformer")
@@ -139,12 +142,14 @@ class MyTransformer extends RequestTransformer {
     user: Option[PrivateAppsUser]
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
     logger.info(s"Request incoming with id: $snowflake")
+    // Here add a new header to the request between otoroshi and the target
     Right(otoroshiRequest.copy(
       headers = otoroshiRequest.headers + ("Hello" -> "World")
     ))
   }
 }
 
+// don't forget to return an instance of the transformer to make it work
 new MyTransformer()
 `
         })}

@@ -1344,7 +1344,7 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Request transformation">
             <SelectInput
-              label="Validation authority"
+              label="Request transformer"
               value={this.state.service.transformerRef}
               onChange={e => this.changeTheValue('transformerRef', e)}
               valuesFrom="/bo/api/proxy/api/scripts/_list"
