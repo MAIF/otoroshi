@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "com.yubico"               % "u2flib-server-attestation" % "0.16.0",
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
   "com.propensive"           %% "kaleidoscope"             % "0.1.0",
-  "com.auth0"                % "jwks-rsa"                  % "0.7.0",
+  "com.auth0"                % "jwks-rsa"                  % "0.7.0", // https://github.com/auth0/jwks-rsa-java
   // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "javax.xml.bind"         % "jaxb-api"              % "2.3.0",
   "com.sun.xml.bind"       % "jaxb-core"             % "2.3.0",
