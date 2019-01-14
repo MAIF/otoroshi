@@ -13,16 +13,12 @@ import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
+import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
-import ssl.{
-  CertificateDataStore,
-  ClientCertificateValidationDataStore,
-  InMemoryClientCertificateValidationDataStore,
-  RedisClientCertificateValidationDataStore
-}
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores}
 
@@ -118,6 +114,9 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _clientCertificateValidationDataStore = new InMemoryClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
+
+  private lazy val _scriptDataStore = new InMemoryScriptDataStore(redis, env)
+  override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

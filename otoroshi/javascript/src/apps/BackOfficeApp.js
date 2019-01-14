@@ -29,6 +29,7 @@ import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
 import { AuthModuleConfigsPage } from '../pages/AuthModuleConfigsPage';
 import { CertificatesPage } from '../pages/CertificatesPage';
 import { ClusterPage } from '../pages/ClusterPage';
+import { ScriptsPage } from '../pages/ScriptsPage';
 import { ClientValidatorsPage } from '../pages/ClientValidatorsPage';
 
 import { TopBar } from '../components/TopBar';
@@ -336,6 +337,19 @@ class BackOfficeAppContainer extends Component {
                           path="/auth-configs"
                           component={props => this.decorate(AuthModuleConfigsPage, props)}
                         />
+                        <Route
+                          path="/scripts/:taction/:titem"
+                          component={props => this.decorate(ScriptsPage, props)}
+                        />
+                        <Route
+                          path="/scripts/:taction"
+                          component={props => this.decorate(ScriptsPage, props)}
+                        />
+                        <Route
+                          path="/scripts"
+                          component={props => this.decorate(ScriptsPage, props)}
+                        />
+
                         <Route
                           path="/admins"
                           component={props =>

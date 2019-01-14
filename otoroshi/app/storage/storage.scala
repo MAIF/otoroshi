@@ -14,6 +14,7 @@ import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import auth.AuthConfigsDataStore
 import cluster.ClusterStateDataStore
+import otoroshi.script.ScriptDataStore
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 
 import scala.concurrent.duration.Duration
@@ -49,6 +50,7 @@ trait DataStores {
   def certificatesDataStore: CertificateDataStore
   def clusterStateDataStore: ClusterStateDataStore
   def clientCertificateValidationDataStore: ClientCertificateValidationDataStore
+  def scriptDataStore: ScriptDataStore
   def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed]
 }
 

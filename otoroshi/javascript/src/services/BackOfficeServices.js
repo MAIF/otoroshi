@@ -1021,3 +1021,70 @@ export function updateClientValidator(ak) {
     body: JSON.stringify(ak),
   }).then(r => r.json());
 }
+
+
+export function findAllScripts() {
+  return fetch('/bo/api/proxy/api/scripts', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findScriptById(id) {
+  return fetch(`/bo/api/proxy/api/scripts/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteScript(ak) {
+  return fetch(`/bo/api/proxy/api/scripts/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createScript(ak) {
+  return fetch(`/bo/api/proxy/api/scripts`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function compileScript(ak) {
+  return fetch(`/bo/api/proxy/api/scripts/_compile`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateScript(ak) {
+  return fetch(`/bo/api/proxy/api/scripts/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}

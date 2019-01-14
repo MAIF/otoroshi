@@ -2,7 +2,11 @@ import React, { Component } from 'react';
 import { Help } from './Help';
 import AceEditor from 'react-ace';
 import 'brace/mode/html';
+import 'brace/mode/scala';
+import 'brace/mode/javascript';
 import 'brace/theme/monokai';
+import 'brace/ext/language_tools';
+import 'brace/ext/searchbox';
 
 export class CodeInput extends Component {
   state = {
@@ -11,13 +15,18 @@ export class CodeInput extends Component {
 
   onChange = e => {
     if (e && e.preventDefault) e.preventDefault();
-    try {
-      const parsed = JSON.parse(e);
-      this.setState({ value: null }, () => {
-        this.props.onChange(e);
-      });
-    } catch (ex) {
+    if (this.props.mode === 'json') {
+      try {
+        const parsed = JSON.parse(e);
+        this.setState({ value: null }, () => {
+          this.props.onChange(e);
+        });
+      } catch (ex) {
+        this.setState({ value: e });
+      }
+    } else {
       this.setState({ value: e });
+      this.props.onChange(e);
     }
   };
 
@@ -30,14 +39,29 @@ export class CodeInput extends Component {
         </label>
         <div className="col-sm-10">
           <AceEditor
-            mode="javascript"
+            mode={this.props.mode || "javascript"}
             theme="monokai"
             onChange={this.onChange}
             value={code}
             name="scriptParam"
             editorProps={{ $blockScrolling: true }}
-            height="300px"
+            height={this.props.height || "300px"}
             width="100%"
+            showGutter={true}
+            highlightActiveLine={true}
+            tabSize={2}
+            enableBasicAutocompletion={true}
+            enableLiveAutocompletion={true}
+            annotations={this.props.annotations() || []}
+            commands={[{  
+              name: 'saveAndCompile',
+              bindKey: { win: 'Ctrl-S', mac: 'Command-S'},
+              exec: () => {
+                if (this.props.saveAndCompile) {
+                  this.props.saveAndCompile();
+                }
+              }
+            }]}
           />
         </div>
       </div>

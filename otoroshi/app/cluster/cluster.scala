@@ -22,6 +22,7 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import models._
 import org.joda.time.DateTime
+import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -1175,6 +1176,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   private lazy val _clientCertificateValidationDataStore = new InMemoryClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
+
+  private lazy val _scriptDataStore = new InMemoryScriptDataStore(redis, env)
+  override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

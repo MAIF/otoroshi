@@ -387,7 +387,8 @@ case class ServiceDescriptor(
     authConfigRef: Option[String] = None,
     cors: CorsSettings = CorsSettings(false),
     redirection: RedirectionSettings = RedirectionSettings(false),
-    clientValidatorRef: Option[String] = None
+    clientValidatorRef: Option[String] = None,
+    transformerRef: Option[String] = None
 ) {
 
   def toHost: String = subdomain match {
@@ -551,6 +552,7 @@ object ServiceDescriptor {
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
+          transformerRef = (json \ "transformerRef").asOpt[String].filterNot(_.trim.isEmpty),
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
           redirection = RedirectionSettings.format
             .reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull))
@@ -606,7 +608,8 @@ object ServiceDescriptor {
       "cors"                       -> sd.cors.asJson,
       "redirection"                -> sd.redirection.toJson,
       "authConfigRef"              -> sd.authConfigRef,
-      "clientValidatorRef"         -> sd.clientValidatorRef
+      "clientValidatorRef"         -> sd.clientValidatorRef,
+      "transformerRef"             -> sd.transformerRef
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

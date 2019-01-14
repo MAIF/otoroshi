@@ -1220,6 +1220,54 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def ScriptCompilationResult = Json.obj(
+    "description" -> "The result of the compilation of a Script",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "done"
+    ),
+    "properties" -> Json.obj(
+      "done"     -> SimpleBooleanType ~~> "Is the task done or not",
+      "error"    -> Ref("ScriptCompilationError")
+    )
+  )
+
+  def ScriptCompilationError = Json.obj(
+    "description" -> "The error of the compilation of a Script",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "line",
+      "column",
+      "file",
+      "rawMessage",
+      "message",
+    ),
+    "properties" -> Json.obj(
+      "line"     -> SimpleStringType ~~> "The line of the error",
+      "column"    -> SimpleStringType ~~> "The column of the error",
+      "file" -> SimpleObjectType ~~> "The file where the error is located",
+      "rawMessage" -> SimpleObjectType ~~> "The raw message from the compiler",
+      "message" -> SimpleObjectType ~~> "The message to display for the error"
+    )
+  )
+
+  def Script = Json.obj(
+    "description" -> "A script to transformer otoroshi requests ",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "id",
+      "name",
+      "desc",
+      "code",
+    ),
+    "properties" -> Json.obj(
+      "id"     -> SimpleStringType ~~> "The id of the script",
+      "name"    -> SimpleStringType ~~> "The name of the script",
+      "desc" -> SimpleObjectType ~~> "The description of the script",
+      "code" -> SimpleObjectType ~~> "The code of the script"
+    )
+  )
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1803,7 +1851,6 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       goodResponse = GoodResponse(Ref("Deleted"))
     )
   )
-
   def GroupsManagement = Json.obj(
     "get" -> Operation(
       tag = "groups",
@@ -2127,6 +2174,84 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def ScriptApi = Json.obj(
+    "get" -> Operation(
+      tag = "scripts",
+      summary = "Get a script",
+      description = "Get a script",
+      operationId = "findScriptById",
+      parameters = Json.arr(
+        PathParam("scriptId", "The script id")
+      ),
+      goodResponse = GoodResponse(Ref("Script"))
+    ),
+    "put" -> Operation(
+      tag = "scripts",
+      summary = "Update a script",
+      description = "Update a script",
+      operationId = "updateScript",
+      parameters = Json.arr(
+        PathParam("scriptId", "The script id"),
+        BodyParam("The updated script", Ref("Script"))
+      ),
+      goodResponse = GoodResponse(Ref("Script"))
+    ),
+    "patch" -> Operation(
+      tag = "scripts",
+      summary = "Update a script with a diff",
+      description = "Update a script with a diff",
+      operationId = "patchScript",
+      parameters = Json.arr(
+        PathParam("scriptId", "The script id"),
+        BodyParam("The patch for the script", Ref("Patch"))
+      ),
+      goodResponse = GoodResponse(Ref("Script"))
+    ),
+    "delete" -> Operation(
+      tag = "scripts",
+      summary = "Delete a script",
+      description = "Delete a script",
+      operationId = "deleteScript",
+      parameters = Json.arr(
+        PathParam("scriptId", "The script id")
+      ),
+      goodResponse = GoodResponse(Ref("Deleted"))
+    )
+  )
+
+  def ScriptsApi = Json.obj(
+    "get" -> Operation(
+      tag = "scripts",
+      summary = "Get all scripts",
+      description = "Get all scripts",
+      operationId = "findAllScripts",
+      goodResponse = GoodResponse(ArrayOf(Ref("Script")))
+    ),
+    "post" -> Operation(
+      tag = "scripts",
+      summary = "Create a new script",
+      description = "Create a new script",
+      operationId = "createScript",
+      parameters = Json.arr(
+        BodyParam("The script to create", Ref("Script"))
+      ),
+      goodResponse = GoodResponse(Ref("Script"))
+    )
+  )
+
+  def ScriptCompilationApi = Json.obj(
+    "post" -> Operation(
+      tag = "scripts",
+      summary = "Compile a script",
+      description = "Compile a script",
+      operationId = "compileScript",
+      parameters = Json.arr(
+        BodyParam("The script to compile", Ref("Script"))
+      ),
+      goodResponse = GoodResponse(Ref("ScriptCompilationResult"))
+    )
+  )
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2162,6 +2287,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("health", "Everything about Otoroshi health status"),
         Tag("jwt-verifiers", "Everything about Otoroshi global JWT token verifiers"),
         Tag("auth-config", "Everything about Otoroshi global auth. module config"),
+        Tag("script", "Everything about Otoroshi request transformer scripts"),
         Tag("certificates", "Everything about Otoroshi SSL/TLS certificates"),
         Tag("validation-authorities", "Everything about Otoroshi validation authorities")
       ),
@@ -2195,6 +2321,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "/api/groups"                                         -> GroupsManagement,
         "/api/verifiers"                                      -> JWTVerifiers,
         "/api/auths"                                          -> AuthConfigs,
+        "/api/scripts/_compile"                               -> ScriptCompilationApi,
+        "/api/scripts/{scriptId}"                             -> ScriptApi,
+        "/api/scripts"                                        -> ScriptsApi,
         "/api/certificates"                                   -> Certificates,
         "/api/client-validators"                              -> ValidationAuthoritiesApi,
         "/api/snowmonkey/config"                              -> SnowMonkeyConfigApi,
@@ -2300,6 +2429,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "RedirectionSettings"         -> RedirectionSettings,
         "InMemoryUser"                -> InMemoryUser,
         "LdapUser"                    -> LdapUser,
+        "Script"                      -> Script,
+        "ScriptCompilationResult"     -> ScriptCompilationResult,
+        "ScriptCompilationError"      -> ScriptCompilationError,
         "Certificate"                 -> Certificate,
         "ValidationAuthority"         -> ValidationAuthority
       )

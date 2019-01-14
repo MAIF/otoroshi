@@ -5,6 +5,7 @@ import controllers._
 import env.Env
 import gateway._
 import modules._
+import otoroshi.script.ScriptApiController
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
@@ -63,6 +64,7 @@ package object modules {
     lazy val u2fController             = wire[U2FController]
     lazy val clusterController         = wire[ClusterController]
     lazy val clientValidatorController = wire[ClientValidatorsController]
+    lazy val scriptApiController       = wire[ScriptApiController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
