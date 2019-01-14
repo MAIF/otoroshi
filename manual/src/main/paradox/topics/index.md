@@ -10,5 +10,6 @@ In this sections, you will find informations about various topics supported by O
 * [SSL/TLS termination with Otoroshi](./ssl.md)
 * [Mutual TLS with Otoroshi](./mtls.md)
 * [Otoroshi Clustering](./clustering.md)
+* [Requests trasnformation](./req-transformers.md)
 
 @@@
