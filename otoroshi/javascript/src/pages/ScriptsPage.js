@@ -61,7 +61,7 @@ class Warning extends Component {
               backgroundColor: '#494948',
               width: '100%',
             }}>
-            <i className="fa fa-skull-crossbones" /> Using a request transformer can be really ineficient and costly for your service. It can impact performances severely and mess with Otoroshi stability in general. Remember "Where there is great power there is great responsibility" ;)
+            <i className="fa fa-skull-crossbones" style={{ color: 'red', fontSize: 22 }} /> Using a request transformer can be really ineficient and costly for your service. It can impact performances severely and mess with Otoroshi stability in general. Remember "Where there is great power there is great responsibility" ;)
           </p>
         </div>
       </div>
