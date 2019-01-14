@@ -10,7 +10,7 @@
 @@@
 
 @@@ div { .centered-img }
-<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo-xmas.png" width="300"></img>
+<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
 @@@
 
 ## Installation
