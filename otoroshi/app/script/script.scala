@@ -557,5 +557,3 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 }
-
-

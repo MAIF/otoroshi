@@ -48,21 +48,33 @@ class CompilationTools extends Component {
   }
 }
 
-class Warning extends Component {
+export class Warning extends Component {
   render() {
     return (
       <div className="form-group">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
-          <p
+          <div
             style={{
               padding: 10,
               borderRadius: 5,
               backgroundColor: '#494948',
               width: '100%',
             }}>
-            <i className="fa fa-skull-crossbones" style={{ color: 'red', fontSize: 22 }} /> Using a request transformer can be really ineficient and costly for your service. It can impact performances severely and mess with Otoroshi stability in general. Remember "Where there is great power there is great responsibility" ;)
-          </p>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+              <i className="fa fa-skull-crossbones" style={{ color: '#c9302c', fontSize: 35 }} /> 
+            </div>
+            <p style={{ textAlign: 'justify' }}>
+              Request transformers let you chose exactly how Otoroshi request are handled and forwarded from client to target and back. 
+              You can change the headers / body of the request and the headers / body of the response to make it behave exactly as you expect. 
+              It's a good way to support things that are not supported out of the box by Otoroshi.
+              However, using a request transformer can be really inefficient (depending on what you're trying to do) and costly for your service. 
+              It can impact performances severely and mess with Otoroshi stability in general. 
+            </p>
+            <p style={{ width: '100%', textAlign: 'right', fontSize: 12 }}>
+              <span style={{ fontStyle: 'italic' }}>"Where there is great power there is great responsibility"</span> - Winston Churchill
+            </p>
+          </div>
         </div>
       </div>
     );

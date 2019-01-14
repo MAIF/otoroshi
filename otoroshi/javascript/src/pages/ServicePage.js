@@ -24,6 +24,7 @@ import { ChaosConfigWithSkin } from '../components/ChaosConfig';
 import { JwtVerifier, LocationSettings } from '../components/JwtVerifier';
 import { AlgoSettings } from '../components/JwtVerifier';
 import { AuthModuleConfig } from '../components/AuthModuleConfig';
+import { Warning } from './ScriptsPage';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -1343,20 +1344,7 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Request transformation">
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                <p
-                  style={{
-                    padding: 10,
-                    borderRadius: 5,
-                    backgroundColor: '#494948',
-                    width: '100%',
-                  }}>
-                  <i className="fa fa-skull-crossbones" style={{ color: 'red', fontSize: 22 }} /> Using a request transformer can be really ineficient and costly for your service. It can impact performances severely and mess with Otoroshi stability in general. Remember "Where there is great power there is great responsibility" ;)
-                </p>
-              </div>
-            </div>
+            <Warning />
             <SelectInput
               label="Request transformer"
               value={this.state.service.transformerRef}
