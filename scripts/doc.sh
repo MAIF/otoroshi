@@ -21,6 +21,7 @@ build () {
 buildDev () {
   cd $LOCATION/manual
   sbt ';clean;paradox'
+  rm -rf $LOCATION/docs/devmanual
   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
   mv $LOCATION/docs/main $LOCATION/docs/devmanual
 }

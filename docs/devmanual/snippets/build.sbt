@@ -1,4 +1,4 @@
 resolvers += Resolver.bintrayRepo("maif", "maven")
 
-libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.4.1"
-libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.4.1" classifier "assets"
+libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.4.3-dev"
+libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.4.3-dev" classifier "assets"
