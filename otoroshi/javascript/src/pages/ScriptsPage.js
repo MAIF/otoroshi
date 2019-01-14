@@ -48,6 +48,27 @@ class CompilationTools extends Component {
   }
 }
 
+class Warning extends Component {
+  render() {
+    return (
+      <div className="form-group">
+        <label className="col-xs-12 col-sm-2 control-label" />
+        <div className="col-sm-10">
+          <p
+            style={{
+              padding: 10,
+              borderRadius: 5,
+              backgroundColor: '#494948',
+              width: '100%',
+            }}>
+            <i className="fa fa-skull-crossbones" /> Using a request transformer can be really ineficient and costly for your service. It can impact performances severely and mess with Otoroshi stability in general. Remember "Where there is great power there is great responsibility" ;)
+          </p>
+        </div>
+      </div>
+    );
+  }
+}
+
 export class ScriptsPage extends Component {
 
   state = {
@@ -55,6 +76,9 @@ export class ScriptsPage extends Component {
   }
 
   formSchema = {
+    warning: {
+      type: Warning
+    },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
       type: 'string',
@@ -100,7 +124,7 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
-  formFlow = ['id', 'name', 'desc', 'compilation', 'code'];
+  formFlow = ['warning', 'id', 'name', 'desc', 'compilation', 'code'];
 
   componentDidMount() {
     this.props.setTitle(`All Scripts (experimental)`);
