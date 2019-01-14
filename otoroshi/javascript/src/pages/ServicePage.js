@@ -1339,7 +1339,7 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
-            notVisible={!this.props.env.scriptingEnabled || this.state.service.redirection.enabled}
+            notVisible={this.props.env ? !this.props.env.scriptingEnabled || this.state.service.redirection.enabled : false}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Request transformation">

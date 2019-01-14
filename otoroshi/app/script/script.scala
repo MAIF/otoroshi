@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import actions.ApiAction
 import akka.actor.Cancellable
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -26,10 +27,17 @@ import storage.{BasicStore, RedisLike, RedisLikeStore}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String]) {
   lazy val host: String = headers.getOrElse("Host", "")
+  lazy val uri: Uri = Uri(url)
+  lazy val scheme: String = uri.scheme
+  lazy val authority: Uri.Authority = uri.authority
+  lazy val fragment: Option[String] = uri.fragment
+  lazy val path: String = uri.path.toString()
+  lazy val queryString: Option[String] = uri.rawQueryString
+  lazy val relativeUri: String = uri.toRelative.toString()
 }
 case class HttpResponse(status: Int, headers: Map[String, String])
 
@@ -169,6 +177,8 @@ class ScriptManager(env: Env) {
   private val updateRef = new AtomicReference[Cancellable]()
   private val compiling = new TrieMap[String, Unit]()
   private val cache = new TrieMap[String, (String, RequestTransformer)]()
+  private val cpCache = new TrieMap[String, RequestTransformer]()
+  private val cpTryCache = new TrieMap[String, Unit]()
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
@@ -219,13 +229,29 @@ class ScriptManager(env: Env) {
   }
 
   def getScript(ref: String)(implicit ec: ExecutionContext): RequestTransformer = {
-    env.datastores.scriptDataStore.findById(ref).map {
-      case Some(script) => compileAndUpdateIfNeeded(script)
-      case None =>
-        logger.error(s"Script with id `$ref` does not exists ...")
-        // do nothing as the script does not exists
+    ref match {
+      case r if r.startsWith("cp:") => {
+        if (!cpTryCache.contains(ref)) {
+          Try(env.environment.classLoader.loadClass(r.replace("cp:", "")).asSubclass(classOf[RequestTransformer]))
+            .map(clazz => clazz.newInstance()) match {
+            case Success(tr) =>
+              cpTryCache.put(ref, ())
+              cpCache.put(ref, tr)
+            case Failure(e) => logger.error(s"Classpath transformer `$ref` does not exists ...")
+          }
+        }
+        cpCache.get(ref).flatMap(a => Option(a)).getOrElse(DefaultRequestTransformer)
+      }
+      case r => {
+        env.datastores.scriptDataStore.findById(ref).map {
+          case Some(script) => compileAndUpdateIfNeeded(script)
+          case None =>
+            logger.error(s"Script with id `$ref` does not exists ...")
+            // do nothing as the script does not exists
+        }
+        cache.get(ref).flatMap(a => Option(a._2)).getOrElse(DefaultRequestTransformer)
+      }
     }
-    cache.get(ref).flatMap(a => Option(a._2)).getOrElse(DefaultRequestTransformer)
   }
 
   def preCompileScript(script: Script)(implicit ec: ExecutionContext): Unit = {
@@ -411,12 +437,29 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
+  private lazy val transformersNames: Seq[String] = Try {
+    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
+
+    import collection.JavaConverters._
+    val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages("java.*", "javax.*").scan
+    try {
+      val controlClasses1: ClassInfoList = scanResult.getSubclasses(classOf[RequestTransformer].getName)
+      val controlClasses2: ClassInfoList = scanResult.getClassesImplementing(classOf[RequestTransformer].getName)
+      val classes = controlClasses1.asScala ++ controlClasses2.asScala
+      classes.filterNot(c => c.getName == "otoroshi.script.DefaultRequestTransformer$").map(c => c.getName)
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        Seq.empty[String]
+    }
+    finally if (scanResult != null) scanResult.close()
+  } getOrElse Seq.empty[String]
+
   def findAllScriptsList() = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
       env.datastores.scriptDataStore.findAll().map { all =>
-        Ok(JsArray(all.map { script =>
-          Json.obj("id" -> script.id, "name" -> script.name)
-        }))
+        val allClasses = all.map(c => Json.obj("id" -> c.id, "name" -> c.name)) ++ transformersNames.map(c => Json.obj("id" -> s"cp:$c", "name" -> c))
+        Ok(JsArray(allClasses))
       }
     }
   }
