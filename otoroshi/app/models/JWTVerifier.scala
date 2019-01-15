@@ -227,7 +227,7 @@ object AlgoSettings extends FromJson[AlgoSettings] {
         case "HSAlgoSettings" => HSAlgoSettings.fromJson(json)
         case "RSAlgoSettings" => RSAlgoSettings.fromJson(json)
         case "ESAlgoSettings" => ESAlgoSettings.fromJson(json)
-        case "JWKAlgoSettings" => JWKAlgoSettings.fromJson(json)
+        case "JWKSAlgoSettings" => JWKSAlgoSettings.fromJson(json)
       }
     } recover {
       case e => Left(e)
@@ -401,14 +401,14 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     "privateKey" -> this.privateKey.map(pk => JsString(pk)).getOrElse(JsNull).as[JsValue]
   )
 }
-object JWKAlgoSettings extends FromJson[JWKAlgoSettings] {
+object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 
   val cache: TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])] = new TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])]()
 
-  override def fromJson(json: JsValue): Either[Throwable, JWKAlgoSettings] = {
+  override def fromJson(json: JsValue): Either[Throwable, JWKSAlgoSettings] = {
     Try {
       Right(
-        JWKAlgoSettings(
+        JWKSAlgoSettings(
           (json \ "url").as[String],
           (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           (json \ "timeout").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(2000, TimeUnit.MILLISECONDS)),
@@ -421,7 +421,7 @@ object JWKAlgoSettings extends FromJson[JWKAlgoSettings] {
     } get
   }
 }
-case class JWKAlgoSettings(url: String, headers: Map[String, String], timeout: FiniteDuration, ttl: FiniteDuration, kty: KeyType) extends AlgoSettings {
+case class JWKSAlgoSettings(url: String, headers: Map[String, String], timeout: FiniteDuration, ttl: FiniteDuration, kty: KeyType) extends AlgoSettings {
 
   def algoFromJwk(alg: String, jwk: JWK): Option[Algorithm] = {
     jwk match {
@@ -442,7 +442,7 @@ case class JWKAlgoSettings(url: String, headers: Map[String, String], timeout: F
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     mode match {
       case InputMode(alg, Some(kid)) => {
-        JWKAlgoSettings.cache.get(url) match {
+        JWKSAlgoSettings.cache.get(url) match {
           case Some((stop, keys)) if stop > System.currentTimeMillis() => {
             keys.get(kid) match {
               case Some(jwk) => algoFromJwk(alg, jwk)
@@ -465,7 +465,7 @@ case class JWKAlgoSettings(url: String, headers: Map[String, String], timeout: F
                     val jwk = JWK.parse(Json.stringify(k))
                     (jwk.getKeyID, jwk)
                   }.toMap
-                  JWKAlgoSettings.cache.put(url, (stop, keys))
+                  JWKSAlgoSettings.cache.put(url, (stop, keys))
                   keys.get(kid) match {
                     case Some(jwk) => algoFromJwk(alg, jwk)
                     case None => None
@@ -487,7 +487,7 @@ case class JWKAlgoSettings(url: String, headers: Map[String, String], timeout: F
   }
 
   override def asJson: JsValue = Json.obj(
-    "type" -> "JWKAlgoSettings",
+    "type" -> "JWKSAlgoSettings",
     "url" -> url,
     "timeout" -> timeout.toMillis,
     "headers" -> headers,

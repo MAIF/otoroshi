@@ -633,18 +633,15 @@ class WebSocketHandler()(implicit env: Env) {
                               }
                             }
 
-                            val queryString = req.queryString.mapValues(_.last)
                             val rawRequest = otoroshi.script.HttpRequest(
                               url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
                               method = req.method,
-                              headers = req.headers.toSimpleMap,
-                              query = queryString
+                              headers = req.headers.toSimpleMap
                             )
                             val otoroshiRequest = otoroshi.script.HttpRequest(
                               url = url,
                               method = req.method,
-                              headers = headersIn.toMap,
-                              query = queryString
+                              headers = headersIn.toMap
                             )
                             val upstreamStart = System.currentTimeMillis()
                             descriptor.transformRequest(

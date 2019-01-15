@@ -149,9 +149,9 @@ export class AlgoSettings extends Component {
                   privateKey: '-----BEGIN PRIVATE KEY-----\nxxxxxxxx\n-----END PRIVATE KEY-----',
                 });
                 break;
-              case 'JWKAlgoSettings':
+              case 'JWKSAlgoSettings':
                 changeTheValue(path + '', {
-                  type: 'JWKAlgoSettings',
+                  type: 'JWKSAlgoSettings',
                   url: 'https://jwk.foo.bar/.well-known/jwks.json', 
                   headers: {}, 
                   timeout: 2000, 
@@ -166,7 +166,7 @@ export class AlgoSettings extends Component {
             { label: 'Hmac + SHA', value: 'HSAlgoSettings' },
             { label: 'RSASSA-PKCS1 + SHA', value: 'RSAlgoSettings' },
             { label: 'ECDSA + SHA', value: 'ESAlgoSettings' },
-            { label: 'JWK Set', value: 'JWKAlgoSettings' },
+            { label: 'JWK Set', value: 'JWKSAlgoSettings' },
           ]}
           help="What kind of algorithm you want to use to verify/sign your JWT token with"
         />
@@ -240,7 +240,7 @@ export class AlgoSettings extends Component {
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,
         ]}
-        {algo.type === 'JWKAlgoSettings' && [
+        {algo.type === 'JWKSAlgoSettings' && [
 
           <TextInput
             label="URL"
