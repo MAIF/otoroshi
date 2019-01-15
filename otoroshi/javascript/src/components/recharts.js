@@ -19,16 +19,16 @@ const RADIAN = Math.PI / 180;
 
 export class Histogram extends Component {
   colors = [
-    '#95cf3d',
     '#027cc3',
+    '#95cf3d',
     '#ff8900',
-    '#d50200',
     '#7cb5ec',
     '#8085c9',
     '#ffeb3b',
     '#8a2be2',
-    '#a52a2a',
     '#deb887',
+    '#d50200',
+    '#a52a2a',
   ];
 
   formatTick = v => {
@@ -86,7 +86,7 @@ export class Histogram extends Component {
             <YAxis tickFormatter={this.formatTick} />
             <CartesianGrid strokeDasharray="3 3" />
             <Tooltip />
-            {seriesName.map((sn, idx) => (
+            {_.sortBy(seriesName, sn => sn).map((sn, idx) => (
               <Area
                 key={sn}
                 type="monotone"
@@ -110,13 +110,13 @@ export class RoundChart extends Component {
     '#95cf3d',
     '#027cc3',
     '#ff8900',
-    '#d50200',
     '#7cb5ec',
     '#8085c9',
     '#ffeb3b',
     '#8a2be2',
-    '#a52a2a',
     '#deb887',
+    '#d50200',
+    '#a52a2a',
   ];
 
   renderCustomizedLabel = props => {
