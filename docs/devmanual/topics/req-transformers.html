@@ -407,15 +407,23 @@ new MyTransformer()
 <img src="../img/scripts-2.png" /></div>
 <h2><a href="#providing-a-transformer-from-java-classpath" name="providing-a-transformer-from-java-classpath" class="anchor"><span class="anchor-link"></span></a>Providing a transformer from Java classpath</h2>
 <p>You can write your own transformer using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.</p>
-<pre class="prettyprint"><code class="language-scala">resolvers += Resolver.bintrayRepo(&quot;maif&quot;, &quot;maven&quot;)
-
-libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &quot;1.x.x&quot;
+<pre class="prettyprint"><code class="language-scala">lazy val root = (project in file(&quot;.&quot;)).
+  settings(
+    inThisBuild(List(
+      organization := &quot;com.example&quot;,
+      scalaVersion := &quot;2.12.7&quot;,
+      version      := &quot;0.1.0-SNAPSHOT&quot;
+    )),
+    name := &quot;request-transformer-example&quot;,
+    resolvers += Resolver.bintrayRepo(&quot;maif&quot;, &quot;maven&quot;),
+    libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &quot;1.x.x&quot;
+  )
 </code></pre>
 <p>When your code is ready, create a jar file </p>
 <pre><code>sbt package
 </code></pre>
 <p>and add the jar file to the Otoroshi classpath</p>
-<pre class="prettyprint"><code class="language-sh">java -cp /path/to/transformer.jar -jar otoroshi.jar
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.scripts.enabled=true -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
 </code></pre>
 <p>then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
 <pre class="prettyprint"><code class="language-json">{
@@ -442,7 +450,11 @@ my-transformer {
 <pre class="prettyprint"><code class="language-sh">java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
 </code></pre>
 <p>then, in your transformer, you can write something like </p>
-<pre class="prettyprint"><code class="language-scala">import akka.stream.Materializer
+<pre class="prettyprint"><code class="language-scala">package com.example.otoroshi
+
+import akka.stream.Materializer
+import akka.stream.scaladsl._
+import akka.util.ByteString
 import env.Env
 import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.script._
@@ -477,12 +489,10 @@ class BodyLengthLimiter extends RequestTransformer {
     body.limitWeighted(max)(_.size)
   }
 }
-
-new BodyLengthLimiter()
 </code></pre>
 <h2><a href="#using-a-library-that-is-not-embedded-in-otoroshi" name="using-a-library-that-is-not-embedded-in-otoroshi" class="anchor"><span class="anchor-link"></span></a>Using a library that is not embedded in Otoroshi</h2>
 <p>Just use the <code>classpath</code> option when running Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">java -cp /path/to/library.jar -jar otoroshi.jar
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.scripts.enabled=true -cp &quot;/path/to/library.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
 </code></pre>
 <p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
 <div class="nav-next">
