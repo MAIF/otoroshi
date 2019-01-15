@@ -37,11 +37,11 @@ object ElasticAnalyticsConfig {
       Try {
         JsSuccess(
           ElasticAnalyticsConfig(
-            clusterUri = (json \ "clusterUri").as[String],
-            index = (json \ "index").asOpt[String],
-            `type` = (json \ "type").asOpt[String],
-            user = (json \ "user").asOpt[String],
-            password = (json \ "password").asOpt[String],
+            clusterUri = (json \ "clusterUri").asOpt[String].map(_.trim).get,
+            index = (json \ "index").asOpt[String].map(_.trim),
+            `type` = (json \ "type").asOpt[String].map(_.trim),
+            user = (json \ "user").asOpt[String].map(_.trim),
+            password = (json \ "password").asOpt[String].map(_.trim),
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
           )
         )
