@@ -94,7 +94,7 @@ object ApiKey {
       "throttlingQuota"   -> apk.throttlingQuota,
       "dailyQuota"        -> apk.dailyQuota,
       "monthlyQuota"      -> apk.monthlyQuota,
-      "metadata"          -> JsObject(apk.metadata.mapValues(JsString.apply))
+      "metadata"          -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
@@ -109,7 +109,7 @@ object ApiKey {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+          metadata = (json \ "metadata").asOpt[Map[String, String]].map(m => m.filter(_._1.nonEmpty)).getOrElse(Map.empty[String, String])
         )
       } map {
         case sd => JsSuccess(sd)
