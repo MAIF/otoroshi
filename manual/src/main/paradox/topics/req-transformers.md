@@ -200,9 +200,17 @@ Then go to a service descriptor, scroll to the bottom of the page, and select yo
 You can write your own transformer using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.
 
 ```scala
-resolvers += Resolver.bintrayRepo("maif", "maven")
-
-libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.x.x"
+lazy val root = (project in file(".")).
+  settings(
+    inThisBuild(List(
+      organization := "com.example",
+      scalaVersion := "2.12.7",
+      version      := "0.1.0-SNAPSHOT"
+    )),
+    name := "request-transformer-example",
+    resolvers += Resolver.bintrayRepo("maif", "maven"),
+    libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.x.x"
+  )
 ```
 
 When your code is ready, create a jar file 
@@ -214,7 +222,7 @@ sbt package
 and add the jar file to the Otoroshi classpath
 
 ```sh
-java -cp /path/to/transformer.jar -jar otoroshi.jar
+java -Dotoroshi.scripts.enabled=true -cp "/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
 ```
 
 then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using `cp:` prefix like 
@@ -254,7 +262,11 @@ java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
 then, in your transformer, you can write something like 
 
 ```scala
+package com.example.otoroshi
+
 import akka.stream.Materializer
+import akka.stream.scaladsl._
+import akka.util.ByteString
 import env.Env
 import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.script._
@@ -289,8 +301,6 @@ class BodyLengthLimiter extends RequestTransformer {
     body.limitWeighted(max)(_.size)
   }
 }
-
-new BodyLengthLimiter()
 ```
 
 ## Using a library that is not embedded in Otoroshi
@@ -298,7 +308,7 @@ new BodyLengthLimiter()
 Just use the `classpath` option when running Otoroshi
 
 ```sh
-java -cp /path/to/library.jar -jar otoroshi.jar
+java -Dotoroshi.scripts.enabled=true -cp "/path/to/library.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
 ```
 
 Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability
