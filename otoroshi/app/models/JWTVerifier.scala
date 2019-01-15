@@ -2,12 +2,15 @@ package models
 
 import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
+import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
+import com.auth0.jwk.Jwk
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.Verification
+import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
@@ -21,7 +24,8 @@ import storage.BasicStore
 import utils.ReplaceAllWith
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 trait AsJson {
@@ -191,9 +195,13 @@ case class InCookie(name: String) extends JwtTokenLocation {
   override def asJson                                = Json.obj("type" -> "InCookie", "name" -> this.name)
 }
 
+sealed trait AlgoMode
+case class InputMode(typ: String, kid: Option[String]) extends AlgoMode
+case object OutputMode extends AlgoMode
+
 sealed trait AlgoSettings extends AsJson {
 
-  def asAlgorithm(implicit env: Env): Option[Algorithm]
+  def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm]
 
   def transformValue(secret: String)(implicit env: Env): String = {
     AlgoSettings.fromCacheOrNot(
@@ -219,6 +227,7 @@ object AlgoSettings extends FromJson[AlgoSettings] {
         case "HSAlgoSettings" => HSAlgoSettings.fromJson(json)
         case "RSAlgoSettings" => RSAlgoSettings.fromJson(json)
         case "ESAlgoSettings" => ESAlgoSettings.fromJson(json)
+        case "JWKAlgoSettings" => JWKAlgoSettings.fromJson(json)
       }
     } recover {
       case e => Left(e)
@@ -248,7 +257,7 @@ object HSAlgoSettings extends FromJson[HSAlgoSettings] {
 }
 case class HSAlgoSettings(size: Int, secret: String) extends AlgoSettings {
 
-  override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
     case 256 => Some(Algorithm.HMAC256(transformValue(secret)))
     case 384 => Some(Algorithm.HMAC384(transformValue(secret)))
     case 512 => Some(Algorithm.HMAC512(transformValue(secret)))
@@ -300,7 +309,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
     case 256 =>
       Some(
         Algorithm.RSA256(getPublicKey(transformValue(publicKey)),
@@ -366,7 +375,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(implicit env: Env): Option[Algorithm] = size match {
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
     case 256 =>
       Some(
         Algorithm.ECDSA256(getPublicKey(transformValue(publicKey)),
@@ -390,6 +399,100 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     "size"       -> this.size,
     "publicKey"  -> this.publicKey,
     "privateKey" -> this.privateKey.map(pk => JsString(pk)).getOrElse(JsNull).as[JsValue]
+  )
+}
+object JWKAlgoSettings extends FromJson[JWKAlgoSettings] {
+
+  val cache: TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])] = new TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])]()
+
+  override def fromJson(json: JsValue): Either[Throwable, JWKAlgoSettings] = {
+    Try {
+      Right(
+        JWKAlgoSettings(
+          (json \ "url").as[String],
+          (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          (json \ "timeout").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(2000, TimeUnit.MILLISECONDS)),
+          (json \ "ttl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS)),
+          (json \ "kty").asOpt[String].map(v => KeyType.parse(v)).getOrElse(KeyType.RSA)
+        )
+      )
+    } recover {
+      case e => Left(e)
+    } get
+  }
+}
+case class JWKAlgoSettings(url: String, headers: Map[String, String], timeout: FiniteDuration, ttl: FiniteDuration, kty: KeyType) extends AlgoSettings {
+
+  def algoFromJwk(alg: String, jwk: JWK): Option[Algorithm] = {
+    jwk match {
+      case rsaKey: RSAKey => alg match {
+        case "RS256" => Some(Algorithm.RSA256(rsaKey.toRSAPublicKey, null))
+        case "RS384" => Some(Algorithm.RSA384(rsaKey.toRSAPublicKey, null))
+        case "RS512" => Some(Algorithm.RSA512(rsaKey.toRSAPublicKey, null))
+      }
+      case ecKey: ECKey => alg match {
+        case "EC256" => Some(Algorithm.ECDSA256(ecKey.toECPublicKey, null))
+        case "EC384" => Some(Algorithm.ECDSA384(ecKey.toECPublicKey, null))
+        case "EC512" => Some(Algorithm.ECDSA512(ecKey.toECPublicKey, null))
+      }
+      case _ => None
+    }
+  }
+
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    mode match {
+      case InputMode(alg, Some(kid)) => {
+        JWKAlgoSettings.cache.get(url) match {
+          case Some((stop, keys)) if stop > System.currentTimeMillis() => {
+            keys.get(kid) match {
+              case Some(jwk) => algoFromJwk(alg, jwk)
+              case None => None
+            }
+          }
+          case _ => {
+            Try {
+              val protocol = url.split("://").toSeq.headOption.getOrElse("http")
+              val fu = env.Ws.urlWithProtocol(protocol, url)
+                .withRequestTimeout(timeout)
+                .withHttpHeaders(headers.toSeq: _*)
+                .get()
+              val resp = Await.result(fu, timeout) // :'( :'( :'(
+              val stop = System.currentTimeMillis() + ttl.toMillis
+              val obj = Json.parse(resp.body).as[JsObject]
+              (obj \ "keys").asOpt[JsArray] match {
+                case Some(values) => {
+                  val keys = values.value.map { k =>
+                    val jwk = JWK.parse(Json.stringify(k))
+                    (jwk.getKeyID, jwk)
+                  }.toMap
+                  JWKAlgoSettings.cache.put(url, (stop, keys))
+                  keys.get(kid) match {
+                    case Some(jwk) => algoFromJwk(alg, jwk)
+                    case None => None
+                  }
+                }
+                case None => None
+              }
+
+            } match {
+              case Failure(e) => None
+              case Success(Some(algo)) => Some(algo)
+              case Success(None) => None
+            }
+          }
+        }
+      }
+      case _ => None
+    }
+  }
+
+  override def asJson: JsValue = Json.obj(
+    "type" -> "JWKAlgoSettings",
+    "url" -> url,
+    "timeout" -> timeout.toMillis,
+    "headers" -> headers,
+    "ttl" -> ttl.toMillis,
+    "kty" -> kty.getValue
   )
 }
 
@@ -601,7 +704,10 @@ sealed trait JwtVerifier extends AsJson {
           .left[A]
       case None if !strict => f(JwtInjection()).right[Result]
       case Some(token) =>
-        algoSettings.asAlgorithm match {
+        val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(0)))).getOrElse(Json.obj())
+        val kid = (tokenHeader \ "kid").asOpt[String]
+        val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+        algoSettings.asAlgorithm(InputMode(alg, kid)) match {
           case None =>
             Errors
               .craftResponseResult(
@@ -616,7 +722,7 @@ sealed trait JwtVerifier extends AsJson {
             val verification = strategy.verificationSettings.asVerification(algorithm)
             Try(verification.build().verify(token)) match {
               case Failure(e) =>
-                // logger.error("Bad JWT token", e)
+                logger.error("Bad JWT token", e)
                 Errors
                   .craftResponseResult(
                     "error.bad.token",
@@ -630,7 +736,7 @@ sealed trait JwtVerifier extends AsJson {
                 strategy match {
                   case s @ PassThrough(_) => f(JwtInjection()).right[Result]
                   case s @ Sign(_, aSettings) =>
-                    aSettings.asAlgorithm match {
+                    aSettings.asAlgorithm(OutputMode) match {
                       case None =>
                         Errors
                           .craftResponseResult(
@@ -648,7 +754,7 @@ sealed trait JwtVerifier extends AsJson {
                       }
                     }
                   case s @ Transform(_, tSettings, aSettings) =>
-                    aSettings.asAlgorithm match {
+                    aSettings.asAlgorithm(OutputMode) match {
                       case None =>
                         Errors
                           .craftResponseResult(

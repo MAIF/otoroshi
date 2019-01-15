@@ -44,7 +44,7 @@ object OtoroshiClaim {
   lazy val logger = Logger("otoroshi-claim")
 
   def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(implicit env: Env): String = {
-    val algorithm = jwtSettings.asAlgorithm.get
+    val algorithm = jwtSettings.asAlgorithm(models.OutputMode).get
     val builder: JWTCreator.Builder = JWT
       .create()
       .withIssuer(env.Headers.OtoroshiIssuer)

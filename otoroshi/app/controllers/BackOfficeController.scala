@@ -1,6 +1,7 @@
 package controllers
 
 import java.security.cert.X509Certificate
+import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, KeyPairGenerator}
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -27,6 +28,7 @@ import utils.LocalCache
 import security._
 import org.mindrot.jbcrypt.BCrypt
 import akka.http.scaladsl.util.FastFuture._
+import com.nimbusds.jose.jwk.JWKSet
 import ssl.FakeKeyStore.KeystoreSettings
 import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
 

@@ -514,7 +514,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "statsdConfig"               -> Ref("StatsdConfig"),
       "chaosConfig"                -> Ref("ChaosConfig"),
       "jwtVerifier"                -> OneOf(Ref("LocalJwtVerifier"), Ref("RefJwtVerifier")),
-      "secComSettings"             -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
+      "secComSettings"             -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKAlgoSettings")),
       "metadata"                   -> SimpleObjectType ~~> "Just a bunch of random properties",
       "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
       "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
@@ -861,7 +861,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "enabled"      -> SimpleBooleanType ~~> "Is it enabled",
       "strict"       -> SimpleBooleanType ~~> "Does it fail if JWT not found",
       "source"       -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
-      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKAlgoSettings")),
       "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
@@ -886,7 +886,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "enabled"      -> SimpleBooleanType ~~> "Is it enabled",
       "strict"       -> SimpleBooleanType ~~> "Does it fail if JWT not found",
       "source"       -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
-      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings")),
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKAlgoSettings")),
       "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
@@ -1015,6 +1015,23 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "privateKey" -> SimpleStringType ~~> "The private key for the RSA function"
     )
   )
+  def JWKAlgoSettings = Json.obj(
+    "description" -> "Settings for a JWK set",
+    "type"        -> "object",
+    "required" -> Json.arr(
+      "type",
+      "size",
+      "publicKey",
+    ),
+    "properties" -> Json.obj(
+      "type"       -> SimpleStringType ~~> "String with value JWKAlgoSettings",
+      "url"        -> SimpleStringType ~~> "The url for the http call",
+      "headers"    -> SimpleObjectType ~~> "The headers for the http call",
+      "timeout"    -> SimpleLongType ~~> "The timeout of the http call",
+      "ttl"        -> SimpleLongType ~~> "The ttl of the keyset",
+      "kty"        -> SimpleStringType ~~> "The type of key: RSA or EC",
+    )
+  )
   def MappingSettings = Json.obj(
     "description" -> "Settings to change fields of a JWT token",
     "type"        -> "object",
@@ -1075,7 +1092,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     "properties" -> Json.obj(
       "type"                 -> SimpleStringType ~~> "String with value Sign",
       "verificationSettings" -> Ref("VerificationSettings"),
-      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
+      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKAlgoSettings"))
     )
   )
 
@@ -1091,7 +1108,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "type"                 -> SimpleStringType ~~> "String with value Transform",
       "verificationSettings" -> Ref("VerificationSettings"),
       "transformSettings"    -> Ref("TransformSettings"),
-      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"))
+      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKAlgoSettings"))
     )
   )
 
@@ -2415,6 +2432,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "HSAlgoSettings"              -> HSAlgoSettings,
         "RSAlgoSettings"              -> RSAlgoSettings,
         "ESAlgoSettings"              -> ESAlgoSettings,
+        "JWKAlgoSettings"             -> JWKAlgoSettings,
         "MappingSettings"             -> MappingSettings,
         "TransformSettings"           -> TransformSettings,
         "VerificationSettings"        -> VerificationSettings,

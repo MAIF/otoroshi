@@ -149,6 +149,16 @@ export class AlgoSettings extends Component {
                   privateKey: '-----BEGIN PRIVATE KEY-----\nxxxxxxxx\n-----END PRIVATE KEY-----',
                 });
                 break;
+              case 'JWKAlgoSettings':
+                changeTheValue(path + '', {
+                  type: 'JWKAlgoSettings',
+                  url: 'https://jwk.foo.bar/.well-known/jwks.json', 
+                  headers: {}, 
+                  timeout: 2000, 
+                  ttl: 5 * 60 * 60 * 1000, 
+                  kty: 'RSA'
+                });
+                break;
             }
             // changeTheValue(path + '', e)
           }}
@@ -156,6 +166,7 @@ export class AlgoSettings extends Component {
             { label: 'Hmac + SHA', value: 'HSAlgoSettings' },
             { label: 'RSASSA-PKCS1 + SHA', value: 'RSAlgoSettings' },
             { label: 'ECDSA + SHA', value: 'ESAlgoSettings' },
+            { label: 'JWK Set', value: 'JWKAlgoSettings' },
           ]}
           help="What kind of algorithm you want to use to verify/sign your JWT token with"
         />
@@ -228,6 +239,45 @@ export class AlgoSettings extends Component {
             help="The ECDSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,
+        ]}
+        {algo.type === 'JWKAlgoSettings' && [
+
+          <TextInput
+            label="URL"
+            value={algo.url}
+            help="The JWK Set url"
+            onChange={e => changeTheValue(path + '.url', e)}
+          />,
+          <NumberInput
+            label="HTTP call timeout"
+            suffix="millis."
+            value={algo.timeout}
+            help="Timeout for fetching the keyset"
+            onChange={e => changeTheValue(path + '.timeout', e)}
+          />,
+          <NumberInput
+            label="TTL"
+            suffix="millis."
+            value={algo.ttl}
+            help="Cache TTL for the keyset"
+            onChange={e => changeTheValue(path + '.ttl', e)}
+          />,
+          <ObjectInput 
+            label="HTTP Headers"
+            value={algo.headers}
+            help="The HTTP headers passed"
+            onChange={e => changeTheValue(path + '.headers', e)}
+          />,
+          <SelectInput
+            label="Key type"
+            help="Type of key"
+            value={algo.kty}
+            onChange={v => changeTheValue(path + '.kty', v)}
+            possibleValues={[
+              { label: 'RSA', value: 'RSA' },
+              { label: 'EC', value: 'EC' },
+            ]}
+          />
         ]}
       </div>
     );
@@ -318,6 +368,7 @@ export class JwtVerifier extends Component {
           path={`${path}.algoSettings`}
           changeTheValue={this.changeTheValue}
           algo={verifier.algoSettings}
+          withJWK
         />
         <br />
         {/* **************************************************************************************************** */}
