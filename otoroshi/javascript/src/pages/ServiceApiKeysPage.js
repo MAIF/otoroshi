@@ -507,6 +507,7 @@ export class ServiceApiKeysPage extends Component {
         defaultValue={() => ({
           clientId: faker.random.alphaNumeric(16),
           clientSecret: faker.random.alphaNumeric(64),
+          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
           enabled: true,
           throttlingQuota: 100,
           dailyQuota: 1000000,
