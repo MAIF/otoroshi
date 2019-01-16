@@ -15,12 +15,12 @@ import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.{JsNull, JsString, JsValue, Json}
+import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
 import storage.inmemory._
-import storage.{DataStoreHealth, DataStores}
+import storage.{DataStoreHealth, DataStores, RedisLike, RedisLikeStore}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -93,8 +93,8 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _backOfficeUserDataStore     = new InMemoryBackOfficeUserDataStore(redis, env)
   private lazy val _serviceGroupDataStore       = new InMemoryServiceGroupDataStore(redis, env)
   private lazy val _globalConfigDataStore       = new InMemoryGlobalConfigDataStore(redis, env)
-  private lazy val _apiKeyDataStore             = new InMemoryApiKeyDataStore(redis, env)
-  private lazy val _serviceDescriptorDataStore  = new InMemoryServiceDescriptorDataStore(redis, statsItems, env)
+  private lazy val _apiKeyDataStore             = new InMemoryApiKeyDataStoreWrapper(redis, env)
+  private lazy val _serviceDescriptorDataStore  = new InMemoryServiceDescriptorDataStoreWrapper(redis, statsItems, env)
   private lazy val _u2FAdminDataStore           = new InMemoryU2FAdminDataStore(redis)
   private lazy val _simpleAdminDataStore        = new InMemorySimpleAdminDataStore(redis, env)
   private lazy val _alertDataStore              = new InMemoryAlertDataStore(redis)
@@ -142,3 +142,35 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] =
     throw new RuntimeException("Cluster mode not supported for Mongo datastore")
 }
+
+class InMemoryApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends InMemoryApiKeyDataStore(redisCli, _env) {
+
+  private val customFmt = new Format[ApiKey] {
+    override def reads(json: JsValue): JsResult[ApiKey] = {
+      ApiKey._fmt.reads(json).map(a => a.copy(metadata = a.metadata.map(t => (t._1.replaceAll("_dot_", "."), t._2))))
+    }
+
+    override def writes(o: ApiKey): JsValue = {
+      ApiKey._fmt.writes(o.copy(metadata = o.metadata.map(t => (t._1.replaceAll("\\.", "_dot_"), t._2))))
+    }
+  }
+
+  override def fmt: Format[ApiKey] = customFmt
+}
+
+class InMemoryServiceDescriptorDataStoreWrapper(redisCli: RedisLike, maxQueueSize: Int, _env: Env) extends InMemoryServiceDescriptorDataStore(redisCli, maxQueueSize, _env) {
+
+  private val customFmt = new Format[ServiceDescriptor] {
+    override def reads(json: JsValue): JsResult[ServiceDescriptor] = {
+      ServiceDescriptor._fmt.reads(json).map(a => a.copy(metadata = a.metadata.map(t => (t._1.replaceAll("_dot_", "."), t._2))))
+    }
+
+    override def writes(o: ServiceDescriptor): JsValue = {
+      ServiceDescriptor._fmt.writes(o.copy(metadata = o.metadata.map(t => (t._1.replaceAll("\\.", "_dot_"), t._2))))
+    }
+  }
+
+  override def fmt: Format[ServiceDescriptor] = customFmt
+}
+
+

@@ -203,6 +203,10 @@ sealed trait AlgoSettings extends AsJson {
 
   def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm]
 
+  def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+    FastFuture.successful(asAlgorithm(mode)(env))
+  }
+
   def transformValue(secret: String)(implicit env: Env): String = {
     AlgoSettings.fromCacheOrNot(
       secret,
@@ -423,6 +427,8 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 }
 case class JWKSAlgoSettings(url: String, headers: Map[String, String], timeout: FiniteDuration, ttl: FiniteDuration, kty: KeyType) extends AlgoSettings {
 
+  val logger = Logger("otoroshi-jwks")
+
   def algoFromJwk(alg: String, jwk: JWK): Option[Algorithm] = {
     jwk match {
       case rsaKey: RSAKey => alg match {
@@ -440,49 +446,51 @@ case class JWKSAlgoSettings(url: String, headers: Map[String, String], timeout: 
   }
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), timeout)
+  }
+
+  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     mode match {
       case InputMode(alg, Some(kid)) => {
         JWKSAlgoSettings.cache.get(url) match {
           case Some((stop, keys)) if stop > System.currentTimeMillis() => {
             keys.get(kid) match {
-              case Some(jwk) => algoFromJwk(alg, jwk)
-              case None => None
+              case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
+              case None => FastFuture.successful(None)
             }
           }
           case _ => {
-            Try {
-              val protocol = url.split("://").toSeq.headOption.getOrElse("http")
-              val fu = env.Ws.urlWithProtocol(protocol, url)
-                .withRequestTimeout(timeout)
-                .withHttpHeaders(headers.toSeq: _*)
-                .get()
-              val resp = Await.result(fu, timeout) // :'( :'( :'(
-              val stop = System.currentTimeMillis() + ttl.toMillis
-              val obj = Json.parse(resp.body).as[JsObject]
-              (obj \ "keys").asOpt[JsArray] match {
-                case Some(values) => {
-                  val keys = values.value.map { k =>
-                    val jwk = JWK.parse(Json.stringify(k))
-                    (jwk.getKeyID, jwk)
-                  }.toMap
-                  JWKSAlgoSettings.cache.put(url, (stop, keys))
-                  keys.get(kid) match {
-                    case Some(jwk) => algoFromJwk(alg, jwk)
-                    case None => None
+            val protocol = url.split("://").toSeq.headOption.getOrElse("http")
+            env.Ws.urlWithProtocol(protocol, url)
+              .withRequestTimeout(timeout)
+              .withHttpHeaders(headers.toSeq: _*)
+              .get()
+              .map { resp =>
+                val stop = System.currentTimeMillis() + ttl.toMillis
+                val obj = Json.parse(resp.body).as[JsObject]
+                (obj \ "keys").asOpt[JsArray] match {
+                  case Some(values) => {
+                    val keys = values.value.map { k =>
+                      val jwk = JWK.parse(Json.stringify(k))
+                      (jwk.getKeyID, jwk)
+                    }.toMap
+                    JWKSAlgoSettings.cache.put(url, (stop, keys))
+                    keys.get(kid) match {
+                      case Some(jwk) => algoFromJwk(alg, jwk)
+                      case None => None
+                    }
                   }
+                  case None => None
                 }
-                case None => None
-              }
-
-            } match {
-              case Failure(e) => None
-              case Success(Some(algo)) => Some(algo)
-              case Success(None) => None
+              }.recover {
+              case e =>
+                logger.error(s"Error while reading JWKS $url", e)
+                None
             }
           }
         }
       }
-      case _ => None
+      case _ => FastFuture.successful(None)
     }
   }
 
@@ -707,7 +715,7 @@ sealed trait JwtVerifier extends AsJson {
         val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(0)))).getOrElse(Json.obj())
         val kid = (tokenHeader \ "kid").asOpt[String]
         val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
-        algoSettings.asAlgorithm(InputMode(alg, kid)) match {
+        algoSettings.asAlgorithmF(InputMode(alg, kid)) flatMap {
           case None =>
             Errors
               .craftResponseResult(
@@ -736,7 +744,7 @@ sealed trait JwtVerifier extends AsJson {
                 strategy match {
                   case s @ PassThrough(_) => f(JwtInjection()).right[Result]
                   case s @ Sign(_, aSettings) =>
-                    aSettings.asAlgorithm(OutputMode) match {
+                    aSettings.asAlgorithmF(OutputMode) flatMap {
                       case None =>
                         Errors
                           .craftResponseResult(
@@ -754,7 +762,7 @@ sealed trait JwtVerifier extends AsJson {
                       }
                     }
                   case s @ Transform(_, tSettings, aSettings) =>
-                    aSettings.asAlgorithm(OutputMode) match {
+                    aSettings.asAlgorithmF(OutputMode) flatMap {
                       case None =>
                         Errors
                           .craftResponseResult(
