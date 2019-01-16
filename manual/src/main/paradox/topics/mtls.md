@@ -2,7 +2,7 @@
 
 Otoroshi support mutual TLS out of the box. mTLS from client to Otoroshi and from Otoroshi to targets are supported. In this article we will see how to configure Otoroshi to use end-to-end mTLS. All code and files used in this articles can be found on the [Otoroshi github](https://github.com/MAIF/otoroshi/tree/master/demos/mtls)
 
-@@@ note { title=Experimental Feature }
+@@@ note { title="Experimental Feature" }
 Dynamic Mutual TLS is an experimental feature. It can change until it becomess an official feature
 @@@
 
