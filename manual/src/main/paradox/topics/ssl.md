@@ -2,7 +2,7 @@
 
 Otoroshi can be used as an SSL/TLS termination. It is enabled by default but you can customise HTTPS port with `https.port` config. and env. var `HTTPS_PORT`. You can create upload any certificate you want in the Otoroshi UI or using the API. Just go to `settings (cog icon) / SSL certificates`.
 
-@@@ note { title=Experimental Feature }
+@@@ note { title="Experimental Feature" }
 Dynamic SSL/TLS termination is an experimental feature. It can change until it becomess an official feature
 @@@
 

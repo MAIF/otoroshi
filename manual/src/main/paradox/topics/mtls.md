@@ -336,7 +336,7 @@ And that's it
 
 ## Validating client certificates based on user identity
 
-@@@ note { title=Experimental Feature }
+@@@ note { title="Experimental Feature" }
 Validation authorities is an experimental feature. It can change until it becomess an official feature
 @@@
 

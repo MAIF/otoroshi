@@ -483,8 +483,8 @@ req.on(&#39;error&#39;, (e) =&gt; {
 # {&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
 <p>And that&rsquo;s it </p>
-<h2><a href="#validating-client-certificates-based-on-user-identity" name="validating-client-certificates-based-on-user-identity" class="anchor"><span class="anchor-link"></span></a>Validating client certificates based on user identity</h2>
-<p>@@@ note { title=Experimental Feature } Validation authorities is an experimental feature. It can change until it becomess an official feature @@@</p>
+<h2><a href="#validating-client-certificates-based-on-user-identity" name="validating-client-certificates-based-on-user-identity" class="anchor"><span class="anchor-link"></span></a>Validating client certificates based on user identity</h2><div class="callout note "><div class="callout-title">Experimental Feature</div>
+<p>Validation authorities is an experimental feature. It can change until it becomess an official feature</p></div>
 <p>The use case is the following :</p><div class="centered-img">
 <img src="../img/mtls-arch-2.jpg" /></div>
 <p>the idea here is to provide a unique client certificate per device that can access Otoroshi and use a validation authority to check if the user is allowed to access the underlying app with a specific device.</p>
