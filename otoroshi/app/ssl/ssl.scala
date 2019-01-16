@@ -70,8 +70,11 @@ object ClientAuth {
   def values: Seq[ClientAuth] = Seq(None, Want, Need)
   def apply(name: String): Option[ClientAuth] = {
     name.toLowerCase match {
+      case "None" => Some(None)
       case "none" => Some(None)
+      case "Want" => Some(Want)
       case "want" => Some(Want)
+      case "Need" => Some(Need)
       case "need" => Some(Need)
       case _      => scala.None
     }

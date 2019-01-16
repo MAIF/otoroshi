@@ -1384,7 +1384,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   case None =>
                                     Errors.craftResponseResult(
                                       "Invalid API key",
-                                      BadGateway,
+                                      BadRequest,
                                       req,
                                       Some(descriptor),
                                       Some("errors.invalid.api.key"),
@@ -1402,7 +1402,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     )
                                     Errors.craftResponseResult(
                                       "Bad API key",
-                                      BadGateway,
+                                      BadRequest,
                                       req,
                                       Some(descriptor),
                                       Some("errors.bad.api.key"),

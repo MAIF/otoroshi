@@ -10,7 +10,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
 import cluster.{ClusterAgent, _}
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import events._
 import gateway.CircuitBreakersHolder
@@ -55,6 +55,16 @@ class Env(val configuration: Configuration,
           val circuitBeakersHolder: CircuitBreakersHolder) {
 
   val logger = Logger("otoroshi-env")
+
+  val otoroshiConfig: Configuration = (for {
+    appConfig <- configuration.getOptional[Configuration]("app")
+    otoConfig <- configuration.getOptional[Configuration]("otoroshi")
+  } yield {
+    val appConfigJson: JsObject = Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
+    val otoConfigJson: JsObject = Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
+    val finalConfigJson1: JsObject = appConfigJson ++ otoConfigJson
+    Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
+  }) getOrElse configuration
 
   private lazy val xmasStart = DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
   private lazy val xmasStop =
