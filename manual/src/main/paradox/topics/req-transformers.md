@@ -2,6 +2,10 @@
 
 When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Request transformer is an experimental feature hidden behind a feature flag that allow you to code how Otoroshi should behave when receiving and rounting an http request. With request transformers, you can change request / response headers and request / response body to way you want.
 
+@@@note
+Request transformers is an experimental feature. It can change until it becomess an official feature
+@@@
+
 @@@ warning
 Request transformers is a **very** powerful feature that allow you to do almost everything you want. But like any powerful feature, it comes with a price. The fact that you are responsible for how the request is transformed makes you responsible for all issues introduced by the transformer. If you block the current thread, introduce big latency, generate uncatched exceptions, etc. it's **your fault**. You have to ensure that your code is fast, non blocking, safe, etc. In any case, Otoroshi developpers will not responsible for issues caused by a request transformer.
 
