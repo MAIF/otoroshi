@@ -2,7 +2,7 @@
 
 When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Request transformer is an experimental feature hidden behind a feature flag that allow you to code how Otoroshi should behave when receiving and rounting an http request. With request transformers, you can change request / response headers and request / response body to way you want.
 
-@@@note
+@@@ note { title=Experimental Feature }
 Request transformers is an experimental feature. It can change until it becomess an official feature
 @@@
 

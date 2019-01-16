@@ -235,8 +235,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#mutual-tls-with-otoroshi" name="mutual-tls-with-otoroshi" class="anchor"><span class="anchor-link"></span></a>Mutual TLS with Otoroshi</h1>
-<p>Otoroshi support mutual TLS out of the box. mTLS from client to Otoroshi and from Otoroshi to targets are supported. In this article we will see how to configure Otoroshi to use end-to-end mTLS. All code and files used in this articles can be found on the <a href="https://github.com/MAIF/otoroshi/tree/master/demos/mtls">Otoroshi github</a></p><div class="callout note "><div class="callout-title">Note</div>
-<p>Dynamic Mutual TLS is an experimental feature. It can change until it becomess an official feature</p></div>
+<p>Otoroshi support mutual TLS out of the box. mTLS from client to Otoroshi and from Otoroshi to targets are supported. In this article we will see how to configure Otoroshi to use end-to-end mTLS. All code and files used in this articles can be found on the <a href="https://github.com/MAIF/otoroshi/tree/master/demos/mtls">Otoroshi github</a></p>
+<p>@@@ note { title=Experimental Feature } Dynamic Mutual TLS is an experimental feature. It can change until it becomess an official feature @@@</p>
 <h2><a href="#end-to-end-mtls" name="end-to-end-mtls" class="anchor"><span class="anchor-link"></span></a>End-to-end mTLS</h2>
 <p>The use case is the following :</p><div class="centered-img">
 <img src="../img/mtls-arch-1.jpg" /></div>
@@ -483,8 +483,8 @@ req.on(&#39;error&#39;, (e) =&gt; {
 # {&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
 <p>And that&rsquo;s it </p>
-<h2><a href="#validating-client-certificates-based-on-user-identity" name="validating-client-certificates-based-on-user-identity" class="anchor"><span class="anchor-link"></span></a>Validating client certificates based on user identity</h2><div class="callout note "><div class="callout-title">Note</div>
-<p>Validation authorities is an experimental feature. It can change until it becomess an official feature</p></div>
+<h2><a href="#validating-client-certificates-based-on-user-identity" name="validating-client-certificates-based-on-user-identity" class="anchor"><span class="anchor-link"></span></a>Validating client certificates based on user identity</h2>
+<p>@@@ note { title=Experimental Feature } Validation authorities is an experimental feature. It can change until it becomess an official feature @@@</p>
 <p>The use case is the following :</p><div class="centered-img">
 <img src="../img/mtls-arch-2.jpg" /></div>
 <p>the idea here is to provide a unique client certificate per device that can access Otoroshi and use a validation authority to check if the user is allowed to access the underlying app with a specific device.</p>
