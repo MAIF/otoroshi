@@ -13,6 +13,7 @@ clean () {
 
 build () {
   cd $LOCATION/manual
+  node indexer.js
   sbt ';clean;paradox'
   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
   mv $LOCATION/docs/main $LOCATION/docs/manual
@@ -20,6 +21,7 @@ build () {
 
 buildDev () {
   cd $LOCATION/manual
+  node indexer.js
   sbt ';clean;paradox'
   rm -rf $LOCATION/docs/devmanual
   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs

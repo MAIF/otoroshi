@@ -10,4 +10,45 @@ $(function() {
       }
     }, 500);
   });
+
+  function setupSearch() {
+    elasticlunr.clearStopWords();
+    var index = elasticlunr();
+    index.addField('title');
+    index.addField('content');
+    index.setRef('url');
+    $.get('/content.json', function(data) {
+      data.map(page => {
+        index.addDoc(page);
+      });
+      $('.title-wrapper').append([
+        '<div id="search-block" style="width: 100%; display: flex; justify-content: flex-end;padding-right: 0px; padding-top: 14px;">', 
+          '<input id="search-zone" type="text" placeholder="Search the doc ..." style="width: 300px;"></input>', 
+          '<div id="search-results" style="background-color: #eee; border: 1px solid #eee;z-index: 999; position: absolute; display: flex; flex-direction: column;">', 
+          '</div>',
+        '</div>'
+      ].join(''));
+      $('body').on('click', '#reset-search', function(e) {
+        $('#search-zone').value('');
+        $('#search-results').html('');
+      });
+      $('body').on('keyup', '#search-zone', function(e) {
+        var searched = e.target.value;
+        var search = index.search(searched, { expand: true });
+        var foundDocs = search.map(f => {
+          return data.filter(d => d.url === f.ref)[0];
+        });
+        const rect = e.target.getBoundingClientRect();
+        $('#search-results').css('left', rect.left).css('top', rect.top + rect.height).css('width', rect.width);
+        console.log(foundDocs.length)
+        var foundDocsHtml = foundDocs.length > 0 ? foundDocs.slice(0, 10).map(d => {
+          return '<a style="height: 50px; background-color: #fbfbfb; padding: 10px;" href="' + d.url + '">' + d.title + '</a>';
+        }).join('') : '<span style="height: 50px; background-color: #fbfbfb; padding: 10px;>No results</span>';
+        $('#search-results').html('<h3 style="padding: 10px; margin-bottom: 0px;display: flex; justify-content: space-between;">Search results ' + 
+          '<button type="button" id="reset-search" style="font-size: 14px;border: 1px solid black;padding: 5px;border-radius: 4px;font-weight: lighter;mmargin-left: 20px;">clear search</button></h3>' + foundDocsHtml);
+      });
+    });
+  }
+
+  setupSearch();
 });
