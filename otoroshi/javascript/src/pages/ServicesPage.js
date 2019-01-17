@@ -123,7 +123,7 @@ export class ServicesPage extends Component {
   }
 
   deleteService = (service, table) => {
-    const confirmed = confirm('TAre you ssure you want to delete service: ' + service.name);
+    const confirmed = confirm('Are you sure you want to delete service "' + service.name + '"');
     if (confirmed) {
       BackOfficeServices.deleteService(service).then(() => {
         table.update();
