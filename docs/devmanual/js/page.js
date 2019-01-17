@@ -46,7 +46,6 @@ $(function() {
         });
         const rect = e.target.getBoundingClientRect();
         $('#search-results').css('left', rect.left).css('top', rect.top + rect.height).css('width', rect.width);
-        console.log(foundDocs.length)
         var foundDocsHtml = foundDocs.length > 0 ? foundDocs.slice(0, 10).map(d => {
           return '<a style="height: 50px; background-color: #fbfbfb; padding: 10px;" href="' + additionalPath + d.url + '">' + d.title + '</a>';
         }).join('') : '<span style="height: 50px; background-color: #fbfbfb; padding: 10px;>No results</span>';
