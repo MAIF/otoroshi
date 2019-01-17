@@ -18,11 +18,8 @@ $(function() {
     index.addField('content');
     index.setRef('url');
     var additionalPath = window.location.host === 'maif.github.io' ? 
-      (window.location.pathname.indexOf('devmanual') > -1 ? '/otoroshi/devmanual' :  '/otoroshi/manual') :
-      (window.location.pathname.indexOf('devmanual') > -1 ? '/devmanual' :  '/manual');
-    var url = window.location.host === 'maif.github.io' ? 
-      (window.location.pathname.indexOf('devmanual') > -1 ? '/otoroshi/devmanual/content.json' :  '/otoroshi/manual/content.json') :
-      (window.location.pathname.indexOf('devmanual') > -1 ? '/devmanual/content.json' :  '/manual/content.json');
+      (window.location.pathname.indexOf('devmanual') > -1 ? '/otoroshi/devmanual' :  '/otoroshi/manual') : '';
+    var url = additionalPath + '/content.json';
     $.get(url, function(data) {
       data.map(page => {
         index.addDoc(page);
@@ -35,7 +32,7 @@ $(function() {
         '</div>'
       ].join(''));
       $('body').on('click', '#reset-search', function(e) {
-        $('#search-zone').value('');
+        $('#search-zone').val('');
         $('#search-results').html('');
       });
       $('body').on('keyup', '#search-zone', function(e) {
