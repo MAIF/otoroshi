@@ -17,7 +17,10 @@ $(function() {
     index.addField('title');
     index.addField('content');
     index.setRef('url');
-    $.get('/content.json', function(data) {
+    var url = window.location.host === 'maif.github.io' ? 
+      (window.location.pathname.indexOf('devmanual') > -1 ? '/otoroshi/devmanual/content.json' :  '/otoroshi/manual/content.json') :
+      (window.location.pathname.indexOf('devmanual') > -1 ? '/devmanual/content.json' :  '/manual/content.json');
+    $.get(url, function(data) {
       data.map(page => {
         index.addDoc(page);
       });
