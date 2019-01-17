@@ -869,6 +869,12 @@ small {
   .site-footer-nav .nav-links {
     height: 8rem;
   }
+
+}
+@media screen and (max-width: 511px) {
+  #search-block {
+    display: none !important;
+  }
 }
 
 .nav-links ul {
