@@ -17,6 +17,9 @@ $(function() {
     index.addField('title');
     index.addField('content');
     index.setRef('url');
+    var additionalPath = window.location.host === 'maif.github.io' ? 
+      (window.location.pathname.indexOf('devmanual') > -1 ? '/otoroshi/devmanual' :  '/otoroshi/manual') :
+      (window.location.pathname.indexOf('devmanual') > -1 ? '/devmanual' :  '/manual');
     var url = window.location.host === 'maif.github.io' ? 
       (window.location.pathname.indexOf('devmanual') > -1 ? '/otoroshi/devmanual/content.json' :  '/otoroshi/manual/content.json') :
       (window.location.pathname.indexOf('devmanual') > -1 ? '/devmanual/content.json' :  '/manual/content.json');
@@ -45,7 +48,7 @@ $(function() {
         $('#search-results').css('left', rect.left).css('top', rect.top + rect.height).css('width', rect.width);
         console.log(foundDocs.length)
         var foundDocsHtml = foundDocs.length > 0 ? foundDocs.slice(0, 10).map(d => {
-          return '<a style="height: 50px; background-color: #fbfbfb; padding: 10px;" href="' + d.url + '">' + d.title + '</a>';
+          return '<a style="height: 50px; background-color: #fbfbfb; padding: 10px;" href="' + additionalPath + d.url + '">' + d.title + '</a>';
         }).join('') : '<span style="height: 50px; background-color: #fbfbfb; padding: 10px;>No results</span>';
         $('#search-results').html('<h3 style="padding: 10px; margin-bottom: 0px;display: flex; justify-content: space-between;">Search results ' + 
           '<button type="button" id="reset-search" style="font-size: 14px;border: 1px solid black;padding: 5px;border-radius: 4px;font-weight: lighter;mmargin-left: 20px;">clear search</button></h3>' + foundDocsHtml);
