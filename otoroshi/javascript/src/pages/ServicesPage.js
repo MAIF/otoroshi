@@ -27,6 +27,17 @@ export class ServicesPage extends Component {
       content: item => item.name,
     },
     {
+      title: 'Delete',
+      style: { textAlign: 'center', width: 70 },
+      notFilterable: true,
+      content: item => item.enabled,
+      cell: (v, item, table) => (
+        <button type="button" className="btn btn-danger btn-sm" onClick={e => this.deleteService(item, table)}>
+          <i className="glyphicon glyphicon-trash" />
+        </button>
+      ),
+    },
+    {
       title: 'Env.',
       style: { textAlign: 'center', width: 120 },
       content: item => item.env,
@@ -110,6 +121,15 @@ export class ServicesPage extends Component {
       });
     }
   }
+
+  deleteService = (service, table) => {
+    const confirmed = confirm('TAre you ssure you want to delete service: ' + service.name);
+    if (confirmed) {
+      BackOfficeServices.deleteService(service).then(() => {
+        table.update();
+      });
+    }
+  };
 
   componentDidMount() {
     const env = this.props.location.query.env;
