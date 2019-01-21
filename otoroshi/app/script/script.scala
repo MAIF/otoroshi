@@ -14,12 +14,13 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
+import gateway.Errors
 import javax.script._
 import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
+import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -113,6 +114,16 @@ trait RequestTransformer {
 }
 
 object DefaultRequestTransformer extends RequestTransformer
+object CompilingRequestTransformer extends RequestTransformer {
+  override def transformRequestSync(snowflake: String, rawRequest: HttpRequest, otoroshiRequest: HttpRequest, desc: ServiceDescriptor, apiKey: Option[ApiKey], user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
+    val accept = rawRequest.headers.get("Accept").getOrElse("text/html").split(",").toSeq.map(_.trim)
+    if (accept.contains("text/html")) { // in a browser
+      Left(Results.InternalServerError("<h3>not ready yet ...</h3>"))
+    } else {
+      Left(Results.InternalServerError(Json.obj("error" -> "not ready yet ...")))
+    }
+  }
+}
 
 class ScriptCompiler(env: Env) {
 
@@ -249,7 +260,13 @@ class ScriptManager(env: Env) {
             logger.error(s"Script with id `$ref` does not exists ...")
             // do nothing as the script does not exists
         }
-        cache.get(ref).flatMap(a => Option(a._2)).getOrElse(DefaultRequestTransformer)
+        cache.get(ref).flatMap(a => Option(a._2)).getOrElse {
+          if (compiling.contains(ref)) {
+            CompilingRequestTransformer
+          } else {
+            DefaultRequestTransformer
+          }
+        }
       }
     }
   }
@@ -278,9 +295,7 @@ object Implicits {
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
         case true => desc.transformerRef match {
-          case Some(ref) =>
-            val script = env.scriptManager.getScript(ref)
-            script.transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
+          case Some(ref) => env.scriptManager.getScript(ref).transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
           case None => FastFuture.successful(Right(otoroshiRequest))
         }
         case false => FastFuture.successful(Right(otoroshiRequest))

@@ -519,6 +519,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
       "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
       "authConfigRef"              -> SimpleStringType ~~> "A reference to a global auth module config",
+      "transformerRef"             -> SimpleStringType ~~> "A reference to a request transformer",
+      "clientValidatorRef"         -> SimpleStringType ~~> "A reference to validation authority",
       "cors"                       -> Ref("CorsSettings"),
       "redirection"                -> Ref("RedirectionSettings")
     )

@@ -509,7 +509,7 @@ class Env(val configuration: Configuration,
                         .render(ConfigRenderOptions.concise())
                     )
                     .as[JsObject]
-                  logger.info(s"Importing from config file ${Json.prettyPrint(importJson)}")
+                  logger.info(s"Importing from config file")
                   datastores.globalConfigDataStore
                     .fullImport(importJson)(ec, this)
                     .andThen {
