@@ -10,3 +10,4 @@ node_modules
 target
 /data
 .metals
+.java-version
