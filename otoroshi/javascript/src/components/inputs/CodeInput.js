@@ -39,13 +39,13 @@ export class CodeInput extends Component {
         </label>
         <div className="col-sm-10">
           <AceEditor
-            mode={this.props.mode || "javascript"}
+            mode={this.props.mode || 'javascript'}
             theme="monokai"
             onChange={this.onChange}
             value={code}
             name="scriptParam"
             editorProps={{ $blockScrolling: true }}
-            height={this.props.height || "300px"}
+            height={this.props.height || '300px'}
             width="100%"
             showGutter={true}
             highlightActiveLine={true}
@@ -53,15 +53,17 @@ export class CodeInput extends Component {
             enableBasicAutocompletion={true}
             enableLiveAutocompletion={true}
             annotations={this.props.annotations() || []}
-            commands={[{  
-              name: 'saveAndCompile',
-              bindKey: { win: 'Ctrl-S', mac: 'Command-S'},
-              exec: () => {
-                if (this.props.saveAndCompile) {
-                  this.props.saveAndCompile();
-                }
-              }
-            }]}
+            commands={[
+              {
+                name: 'saveAndCompile',
+                bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+                exec: () => {
+                  if (this.props.saveAndCompile) {
+                    this.props.saveAndCompile();
+                  }
+                },
+              },
+            ]}
           />
         </div>
       </div>

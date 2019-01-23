@@ -1022,7 +1022,6 @@ export function updateClientValidator(ak) {
   }).then(r => r.json());
 }
 
-
 export function findAllScripts() {
   return fetch('/bo/api/proxy/api/scripts', {
     method: 'GET',

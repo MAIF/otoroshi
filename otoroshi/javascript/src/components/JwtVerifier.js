@@ -152,11 +152,11 @@ export class AlgoSettings extends Component {
               case 'JWKSAlgoSettings':
                 changeTheValue(path + '', {
                   type: 'JWKSAlgoSettings',
-                  url: 'https://jwk.foo.bar/.well-known/jwks.json', 
-                  headers: {}, 
-                  timeout: 2000, 
-                  ttl: 5 * 60 * 60 * 1000, 
-                  kty: 'RSA'
+                  url: 'https://jwk.foo.bar/.well-known/jwks.json',
+                  headers: {},
+                  timeout: 2000,
+                  ttl: 5 * 60 * 60 * 1000,
+                  kty: 'RSA',
                 });
                 break;
             }
@@ -241,7 +241,6 @@ export class AlgoSettings extends Component {
           />,
         ]}
         {algo.type === 'JWKSAlgoSettings' && [
-
           <TextInput
             label="URL"
             value={algo.url}
@@ -262,7 +261,7 @@ export class AlgoSettings extends Component {
             help="Cache TTL for the keyset"
             onChange={e => changeTheValue(path + '.ttl', e)}
           />,
-          <ObjectInput 
+          <ObjectInput
             label="HTTP Headers"
             value={algo.headers}
             help="The HTTP headers passed"
@@ -273,11 +272,8 @@ export class AlgoSettings extends Component {
             help="Type of key"
             value={algo.kty}
             onChange={v => changeTheValue(path + '.kty', v)}
-            possibleValues={[
-              { label: 'RSA', value: 'RSA' },
-              { label: 'EC', value: 'EC' },
-            ]}
-          />
+            possibleValues={[{ label: 'RSA', value: 'RSA' }, { label: 'EC', value: 'EC' }]}
+          />,
         ]}
       </div>
     );

@@ -18,7 +18,12 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
+import ssl.{
+  CertificateDataStore,
+  ClientCertificateValidationDataStore,
+  InMemoryClientCertificateValidationDataStore,
+  RedisClientCertificateValidationDataStore
+}
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, RedisLike, RedisLikeStore}
 
@@ -115,7 +120,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
-  private lazy val _scriptDataStore = new InMemoryScriptDataStore(redis, env)
+  private lazy val _scriptDataStore             = new InMemoryScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
@@ -158,11 +163,14 @@ class InMemoryApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends InM
   override def fmt: Format[ApiKey] = customFmt
 }
 
-class InMemoryServiceDescriptorDataStoreWrapper(redisCli: RedisLike, maxQueueSize: Int, _env: Env) extends InMemoryServiceDescriptorDataStore(redisCli, maxQueueSize, _env) {
+class InMemoryServiceDescriptorDataStoreWrapper(redisCli: RedisLike, maxQueueSize: Int, _env: Env)
+    extends InMemoryServiceDescriptorDataStore(redisCli, maxQueueSize, _env) {
 
   private val customFmt = new Format[ServiceDescriptor] {
     override def reads(json: JsValue): JsResult[ServiceDescriptor] = {
-      ServiceDescriptor._fmt.reads(json).map(a => a.copy(metadata = a.metadata.map(t => (t._1.replaceAll("_dot_", "."), t._2))))
+      ServiceDescriptor._fmt
+        .reads(json)
+        .map(a => a.copy(metadata = a.metadata.map(t => (t._1.replaceAll("_dot_", "."), t._2))))
     }
 
     override def writes(o: ServiceDescriptor): JsValue = {
@@ -172,5 +180,3 @@ class InMemoryServiceDescriptorDataStoreWrapper(redisCli: RedisLike, maxQueueSiz
 
   override def fmt: Format[ServiceDescriptor] = customFmt
 }
-
-

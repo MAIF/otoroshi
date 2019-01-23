@@ -197,7 +197,7 @@ case class InCookie(name: String) extends JwtTokenLocation {
 
 sealed trait AlgoMode
 case class InputMode(typ: String, kid: Option[String]) extends AlgoMode
-case object OutputMode extends AlgoMode
+case object OutputMode                                 extends AlgoMode
 
 sealed trait AlgoSettings extends AsJson {
 
@@ -228,9 +228,9 @@ object AlgoSettings extends FromJson[AlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, AlgoSettings] =
     Try {
       (json \ "type").as[String] match {
-        case "HSAlgoSettings" => HSAlgoSettings.fromJson(json)
-        case "RSAlgoSettings" => RSAlgoSettings.fromJson(json)
-        case "ESAlgoSettings" => ESAlgoSettings.fromJson(json)
+        case "HSAlgoSettings"   => HSAlgoSettings.fromJson(json)
+        case "RSAlgoSettings"   => RSAlgoSettings.fromJson(json)
+        case "ESAlgoSettings"   => ESAlgoSettings.fromJson(json)
         case "JWKSAlgoSettings" => JWKSAlgoSettings.fromJson(json)
       }
     } recover {
@@ -407,7 +407,8 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
 }
 object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 
-  val cache: TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])] = new TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])]()
+  val cache: TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])] =
+    new TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])]()
 
   override def fromJson(json: JsValue): Either[Throwable, JWKSAlgoSettings] = {
     Try {
@@ -415,8 +416,14 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
         JWKSAlgoSettings(
           (json \ "url").as[String],
           (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-          (json \ "timeout").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(2000, TimeUnit.MILLISECONDS)),
-          (json \ "ttl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS)),
+          (json \ "timeout")
+            .asOpt[Long]
+            .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
+            .getOrElse(FiniteDuration(2000, TimeUnit.MILLISECONDS)),
+          (json \ "ttl")
+            .asOpt[Long]
+            .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
+            .getOrElse(FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS)),
           (json \ "kty").asOpt[String].map(v => KeyType.parse(v)).getOrElse(KeyType.RSA)
         )
       )
@@ -425,22 +432,29 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
     } get
   }
 }
-case class JWKSAlgoSettings(url: String, headers: Map[String, String], timeout: FiniteDuration, ttl: FiniteDuration, kty: KeyType) extends AlgoSettings {
+case class JWKSAlgoSettings(url: String,
+                            headers: Map[String, String],
+                            timeout: FiniteDuration,
+                            ttl: FiniteDuration,
+                            kty: KeyType)
+    extends AlgoSettings {
 
   val logger = Logger("otoroshi-jwks")
 
   def algoFromJwk(alg: String, jwk: JWK): Option[Algorithm] = {
     jwk match {
-      case rsaKey: RSAKey => alg match {
-        case "RS256" => Some(Algorithm.RSA256(rsaKey.toRSAPublicKey, null))
-        case "RS384" => Some(Algorithm.RSA384(rsaKey.toRSAPublicKey, null))
-        case "RS512" => Some(Algorithm.RSA512(rsaKey.toRSAPublicKey, null))
-      }
-      case ecKey: ECKey => alg match {
-        case "EC256" => Some(Algorithm.ECDSA256(ecKey.toECPublicKey, null))
-        case "EC384" => Some(Algorithm.ECDSA384(ecKey.toECPublicKey, null))
-        case "EC512" => Some(Algorithm.ECDSA512(ecKey.toECPublicKey, null))
-      }
+      case rsaKey: RSAKey =>
+        alg match {
+          case "RS256" => Some(Algorithm.RSA256(rsaKey.toRSAPublicKey, null))
+          case "RS384" => Some(Algorithm.RSA384(rsaKey.toRSAPublicKey, null))
+          case "RS512" => Some(Algorithm.RSA512(rsaKey.toRSAPublicKey, null))
+        }
+      case ecKey: ECKey =>
+        alg match {
+          case "EC256" => Some(Algorithm.ECDSA256(ecKey.toECPublicKey, null))
+          case "EC384" => Some(Algorithm.ECDSA384(ecKey.toECPublicKey, null))
+          case "EC512" => Some(Algorithm.ECDSA512(ecKey.toECPublicKey, null))
+        }
       case _ => None
     }
   }
@@ -456,18 +470,19 @@ case class JWKSAlgoSettings(url: String, headers: Map[String, String], timeout: 
           case Some((stop, keys)) if stop > System.currentTimeMillis() => {
             keys.get(kid) match {
               case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
-              case None => FastFuture.successful(None)
+              case None      => FastFuture.successful(None)
             }
           }
           case _ => {
             val protocol = url.split("://").toSeq.headOption.getOrElse("http")
-            env.Ws.urlWithProtocol(protocol, url)
+            env.Ws
+              .urlWithProtocol(protocol, url)
               .withRequestTimeout(timeout)
               .withHttpHeaders(headers.toSeq: _*)
               .get()
               .map { resp =>
                 val stop = System.currentTimeMillis() + ttl.toMillis
-                val obj = Json.parse(resp.body).as[JsObject]
+                val obj  = Json.parse(resp.body).as[JsObject]
                 (obj \ "keys").asOpt[JsArray] match {
                   case Some(values) => {
                     val keys = values.value.map { k =>
@@ -477,16 +492,17 @@ case class JWKSAlgoSettings(url: String, headers: Map[String, String], timeout: 
                     JWKSAlgoSettings.cache.put(url, (stop, keys))
                     keys.get(kid) match {
                       case Some(jwk) => algoFromJwk(alg, jwk)
-                      case None => None
+                      case None      => None
                     }
                   }
                   case None => None
                 }
-              }.recover {
-              case e =>
-                logger.error(s"Error while reading JWKS $url", e)
-                None
-            }
+              }
+              .recover {
+                case e =>
+                  logger.error(s"Error while reading JWKS $url", e)
+                  None
+              }
           }
         }
       }
@@ -495,12 +511,12 @@ case class JWKSAlgoSettings(url: String, headers: Map[String, String], timeout: 
   }
 
   override def asJson: JsValue = Json.obj(
-    "type" -> "JWKSAlgoSettings",
-    "url" -> url,
+    "type"    -> "JWKSAlgoSettings",
+    "url"     -> url,
     "timeout" -> timeout.toMillis,
     "headers" -> headers,
-    "ttl" -> ttl.toMillis,
-    "kty" -> kty.getValue
+    "ttl"     -> ttl.toMillis,
+    "kty"     -> kty.getValue
   )
 }
 
@@ -713,8 +729,8 @@ sealed trait JwtVerifier extends AsJson {
       case None if !strict => f(JwtInjection()).right[Result]
       case Some(token) =>
         val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(0)))).getOrElse(Json.obj())
-        val kid = (tokenHeader \ "kid").asOpt[String]
-        val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+        val kid         = (tokenHeader \ "kid").asOpt[String]
+        val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
         algoSettings.asAlgorithmF(InputMode(alg, kid)) flatMap {
           case None =>
             Errors

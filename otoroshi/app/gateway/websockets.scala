@@ -644,26 +644,33 @@ class WebSocketHandler()(implicit env: Env) {
                               headers = headersIn.toMap
                             )
                             val upstreamStart = System.currentTimeMillis()
-                            descriptor.transformRequest(
-                              snowflake = snowflake,
-                              rawRequest = rawRequest,
-                              otoroshiRequest = otoroshiRequest,
-                              desc = descriptor,
-                              apiKey = apiKey,
-                              user = paUsr
-                            ).flatMap { 
-                              case Left(badResult) => FastFuture.successful(badResult).asLeft[WSFlow]
-                              case Right(httpRequest) => {
-                                FastFuture.successful(
-                                  Right(
-                                    ActorFlow.actorRef(
-                                      out =>
-                                        WebSocketProxyActor.props(httpRequest.url, env.otoroshiMaterializer, out, env, http, httpRequest.headers.toSeq)
+                            descriptor
+                              .transformRequest(
+                                snowflake = snowflake,
+                                rawRequest = rawRequest,
+                                otoroshiRequest = otoroshiRequest,
+                                desc = descriptor,
+                                apiKey = apiKey,
+                                user = paUsr
+                              )
+                              .flatMap {
+                                case Left(badResult) => FastFuture.successful(badResult).asLeft[WSFlow]
+                                case Right(httpRequest) => {
+                                  FastFuture.successful(
+                                    Right(
+                                      ActorFlow.actorRef(
+                                        out =>
+                                          WebSocketProxyActor.props(httpRequest.url,
+                                                                    env.otoroshiMaterializer,
+                                                                    out,
+                                                                    env,
+                                                                    http,
+                                                                    httpRequest.headers.toSeq)
+                                      )
                                     )
                                   )
-                                )
+                                }
                               }
-                            }
                           }
 
                           def passWithApiKey(
@@ -1094,7 +1101,7 @@ class WebSocketHandler()(implicit env: Env) {
                             }
                           }
                         }
-                      }
+                    }
                   }
                 }
             }

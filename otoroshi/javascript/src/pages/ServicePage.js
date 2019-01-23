@@ -1340,7 +1340,11 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
-            notVisible={this.props.env ? !this.props.env.scriptingEnabled || this.state.service.redirection.enabled : false}
+            notVisible={
+              this.props.env
+                ? !this.props.env.scriptingEnabled || this.state.service.redirection.enabled
+                : false
+            }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Request transformation">
@@ -1357,17 +1361,13 @@ export class ServicePage extends Component {
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 {!this.state.service.transformerRef && (
-                  <a
-                    href={`/bo/dashboard/scripts/add`}
-                    className="btn btn-sm btn-primary">
+                  <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
                     <i className="glyphicon glyphicon-plus" /> Create a new script.
                   </a>
                 )}
                 {this.state.service.transformerRef && (
                   <a
-                    href={`/bo/dashboard/scripts/edit/${
-                      this.state.service.transformerRef
-                    }`}
+                    href={`/bo/dashboard/scripts/edit/${this.state.service.transformerRef}`}
                     className="btn btn-sm btn-success">
                     <i className="glyphicon glyphicon-edit" /> Edit the script.
                   </a>

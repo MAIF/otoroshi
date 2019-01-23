@@ -20,7 +20,13 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
+import com.typesafe.sslconfig.ssl.{
+  KeyManagerConfig,
+  KeyStoreConfig,
+  SSLConfigSettings,
+  TrustManagerConfig,
+  TrustStoreConfig
+}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -646,7 +652,7 @@ object CertificateData {
 
   import collection.JavaConverters._
 
-  private val logger = Logger("otoroshi-cert-data")
+  private val logger                                 = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
   private val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
 
@@ -656,7 +662,7 @@ object CertificateData {
     val buffer = base64Decode(
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
-    val cert = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
+    val cert     = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
     val altNames = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
     val rawDomain: String = Option(cert.getSubjectDN.getName)
       .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
@@ -796,7 +802,7 @@ object FakeKeyStore {
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
-    val extensions = new CertificateExtensions()
+    val extensions   = new CertificateExtensions()
     val generalNames = new GeneralNames()
     generalNames.add(new GeneralName(new DNSName(host)))
     extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
@@ -842,7 +848,7 @@ object FakeKeyStore {
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
-    val extensions = new CertificateExtensions()
+    val extensions   = new CertificateExtensions()
     val generalNames = new GeneralNames()
     generalNames.add(new GeneralName(new DNSName(host)))
     extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))

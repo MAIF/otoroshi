@@ -32,7 +32,10 @@ export class ServicesPage extends Component {
       notFilterable: true,
       content: item => item.enabled,
       cell: (v, item, table) => (
-        <button type="button" className="btn btn-danger btn-sm" onClick={e => this.deleteService(item, table)}>
+        <button
+          type="button"
+          className="btn btn-danger btn-sm"
+          onClick={e => this.deleteService(item, table)}>
           <i className="glyphicon glyphicon-trash" />
         </button>
       ),

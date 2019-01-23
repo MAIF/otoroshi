@@ -542,7 +542,10 @@ object ServiceDescriptor {
           healthCheck = (json \ "healthCheck").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
           clientConfig = (json \ "clientConfig").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
           canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].map(_.filter(_._1.nonEmpty)).getOrElse(Map.empty[String, String]),
+          metadata = (json \ "metadata")
+            .asOpt[Map[String, String]]
+            .map(_.filter(_._1.nonEmpty))
+            .getOrElse(Map.empty[String, String]),
           chaosConfig = (json \ "chaosConfig").asOpt(ChaosConfig._fmt).getOrElse(ChaosConfig()),
           jwtVerifier = JwtVerifier
             .fromJson((json \ "jwtVerifier").asOpt[JsValue].getOrElse(JsNull))

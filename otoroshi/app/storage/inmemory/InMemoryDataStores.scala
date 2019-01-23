@@ -86,7 +86,7 @@ class InMemoryDataStores(configuration: Configuration,
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
-  private lazy val _scriptDataStore = new InMemoryScriptDataStore(redis, env)
+  private lazy val _scriptDataStore             = new InMemoryScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore

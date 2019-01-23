@@ -514,15 +514,18 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "statsdConfig"               -> Ref("StatsdConfig"),
       "chaosConfig"                -> Ref("ChaosConfig"),
       "jwtVerifier"                -> OneOf(Ref("LocalJwtVerifier"), Ref("RefJwtVerifier")),
-      "secComSettings"             -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKSAlgoSettings")),
-      "metadata"                   -> SimpleObjectType ~~> "Just a bunch of random properties",
-      "matchingHeaders"            -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
-      "additionalHeaders"          -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
-      "authConfigRef"              -> SimpleStringType ~~> "A reference to a global auth module config",
-      "transformerRef"             -> SimpleStringType ~~> "A reference to a request transformer",
-      "clientValidatorRef"         -> SimpleStringType ~~> "A reference to validation authority",
-      "cors"                       -> Ref("CorsSettings"),
-      "redirection"                -> Ref("RedirectionSettings")
+      "secComSettings" -> OneOf(Ref("HSAlgoSettings"),
+                                Ref("RSAlgoSettings"),
+                                Ref("ESAlgoSettings"),
+                                Ref("JWKSAlgoSettings")),
+      "metadata"           -> SimpleObjectType ~~> "Just a bunch of random properties",
+      "matchingHeaders"    -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
+      "additionalHeaders"  -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
+      "authConfigRef"      -> SimpleStringType ~~> "A reference to a global auth module config",
+      "transformerRef"     -> SimpleStringType ~~> "A reference to a request transformer",
+      "clientValidatorRef" -> SimpleStringType ~~> "A reference to validation authority",
+      "cors"               -> Ref("CorsSettings"),
+      "redirection"        -> Ref("RedirectionSettings")
     )
   )
 
@@ -859,12 +862,15 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"
     ),
     "properties" -> Json.obj(
-      "type"         -> SimpleStringType ~~> "A string with value 'local'",
-      "enabled"      -> SimpleBooleanType ~~> "Is it enabled",
-      "strict"       -> SimpleBooleanType ~~> "Does it fail if JWT not found",
-      "source"       -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
-      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKSAlgoSettings")),
-      "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
+      "type"    -> SimpleStringType ~~> "A string with value 'local'",
+      "enabled" -> SimpleBooleanType ~~> "Is it enabled",
+      "strict"  -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source"  -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
+                              Ref("RSAlgoSettings"),
+                              Ref("ESAlgoSettings"),
+                              Ref("JWKSAlgoSettings")),
+      "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
   def GlobalJwtVerifier = Json.obj(
@@ -882,14 +888,17 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"
     ),
     "properties" -> Json.obj(
-      "id"           -> SimpleStringType ~~> "Verifier id",
-      "name"         -> SimpleStringType ~~> "Verifier name",
-      "desc"         -> SimpleStringType ~~> "Verifier description",
-      "enabled"      -> SimpleBooleanType ~~> "Is it enabled",
-      "strict"       -> SimpleBooleanType ~~> "Does it fail if JWT not found",
-      "source"       -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
-      "algoSettings" -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKSAlgoSettings")),
-      "strategy"     -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
+      "id"      -> SimpleStringType ~~> "Verifier id",
+      "name"    -> SimpleStringType ~~> "Verifier name",
+      "desc"    -> SimpleStringType ~~> "Verifier description",
+      "enabled" -> SimpleBooleanType ~~> "Is it enabled",
+      "strict"  -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source"  -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
+                              Ref("RSAlgoSettings"),
+                              Ref("ESAlgoSettings"),
+                              Ref("JWKSAlgoSettings")),
+      "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
   def GenericOauth2ModuleConfig = Json.obj(
@@ -1026,12 +1035,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "publicKey",
     ),
     "properties" -> Json.obj(
-      "type"       -> SimpleStringType ~~> "String with value JWKSAlgoSettings",
-      "url"        -> SimpleStringType ~~> "The url for the http call",
-      "headers"    -> SimpleObjectType ~~> "The headers for the http call",
-      "timeout"    -> SimpleLongType ~~> "The timeout of the http call",
-      "ttl"        -> SimpleLongType ~~> "The ttl of the keyset",
-      "kty"        -> SimpleStringType ~~> "The type of key: RSA or EC",
+      "type"    -> SimpleStringType ~~> "String with value JWKSAlgoSettings",
+      "url"     -> SimpleStringType ~~> "The url for the http call",
+      "headers" -> SimpleObjectType ~~> "The headers for the http call",
+      "timeout" -> SimpleLongType ~~> "The timeout of the http call",
+      "ttl"     -> SimpleLongType ~~> "The ttl of the keyset",
+      "kty"     -> SimpleStringType ~~> "The type of key: RSA or EC",
     )
   )
   def MappingSettings = Json.obj(
@@ -1094,7 +1103,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     "properties" -> Json.obj(
       "type"                 -> SimpleStringType ~~> "String with value Sign",
       "verificationSettings" -> Ref("VerificationSettings"),
-      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKSAlgoSettings"))
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
+                              Ref("RSAlgoSettings"),
+                              Ref("ESAlgoSettings"),
+                              Ref("JWKSAlgoSettings"))
     )
   )
 
@@ -1110,7 +1122,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "type"                 -> SimpleStringType ~~> "String with value Transform",
       "verificationSettings" -> Ref("VerificationSettings"),
       "transformSettings"    -> Ref("TransformSettings"),
-      "algoSettings"         -> OneOf(Ref("HSAlgoSettings"), Ref("RSAlgoSettings"), Ref("ESAlgoSettings"), Ref("JWKSAlgoSettings"))
+      "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
+                              Ref("RSAlgoSettings"),
+                              Ref("ESAlgoSettings"),
+                              Ref("JWKSAlgoSettings"))
     )
   )
 
@@ -1246,8 +1261,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "done"
     ),
     "properties" -> Json.obj(
-      "done"     -> SimpleBooleanType ~~> "Is the task done or not",
-      "error"    -> Ref("ScriptCompilationError")
+      "done"  -> SimpleBooleanType ~~> "Is the task done or not",
+      "error" -> Ref("ScriptCompilationError")
     )
   )
 
@@ -1262,11 +1277,11 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "message",
     ),
     "properties" -> Json.obj(
-      "line"     -> SimpleStringType ~~> "The line of the error",
-      "column"    -> SimpleStringType ~~> "The column of the error",
-      "file" -> SimpleObjectType ~~> "The file where the error is located",
+      "line"       -> SimpleStringType ~~> "The line of the error",
+      "column"     -> SimpleStringType ~~> "The column of the error",
+      "file"       -> SimpleObjectType ~~> "The file where the error is located",
       "rawMessage" -> SimpleObjectType ~~> "The raw message from the compiler",
-      "message" -> SimpleObjectType ~~> "The message to display for the error"
+      "message"    -> SimpleObjectType ~~> "The message to display for the error"
     )
   )
 
@@ -1280,8 +1295,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "code",
     ),
     "properties" -> Json.obj(
-      "id"     -> SimpleStringType ~~> "The id of the script",
-      "name"    -> SimpleStringType ~~> "The name of the script",
+      "id"   -> SimpleStringType ~~> "The id of the script",
+      "name" -> SimpleStringType ~~> "The name of the script",
       "desc" -> SimpleObjectType ~~> "The description of the script",
       "code" -> SimpleObjectType ~~> "The code of the script"
     )
@@ -2434,7 +2449,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "HSAlgoSettings"              -> HSAlgoSettings,
         "RSAlgoSettings"              -> RSAlgoSettings,
         "ESAlgoSettings"              -> ESAlgoSettings,
-        "JWKSAlgoSettings"             -> JWKSAlgoSettings,
+        "JWKSAlgoSettings"            -> JWKSAlgoSettings,
         "MappingSettings"             -> MappingSettings,
         "TransformSettings"           -> TransformSettings,
         "VerificationSettings"        -> VerificationSettings,

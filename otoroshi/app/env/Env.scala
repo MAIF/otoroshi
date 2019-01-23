@@ -60,8 +60,10 @@ class Env(val configuration: Configuration,
     appConfig <- configuration.getOptional[Configuration]("app")
     otoConfig <- configuration.getOptional[Configuration]("otoroshi")
   } yield {
-    val appConfigJson: JsObject = Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
-    val otoConfigJson: JsObject = Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
+    val appConfigJson: JsObject =
+      Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
+    val otoConfigJson: JsObject =
+      Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
     val finalConfigJson1: JsObject = appConfigJson ++ otoConfigJson
     Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
   }) getOrElse configuration
@@ -364,8 +366,8 @@ class Env(val configuration: Configuration,
   }
 
   val scriptingEnabled = configuration.getOptional[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
-  val scriptCompiler = new ScriptCompiler(this)
-  val scriptManager  = new ScriptManager(this).start()
+  val scriptCompiler   = new ScriptCompiler(this)
+  val scriptManager    = new ScriptManager(this).start()
 
   if (scriptingEnabled) logger.warn("Scripting is enabled on this Otoroshi instance !")
 

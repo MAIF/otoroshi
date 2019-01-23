@@ -109,7 +109,10 @@ object ApiKey {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].map(m => m.filter(_._1.nonEmpty)).getOrElse(Map.empty[String, String])
+          metadata = (json \ "metadata")
+            .asOpt[Map[String, String]]
+            .map(m => m.filter(_._1.nonEmpty))
+            .getOrElse(Map.empty[String, String])
         )
       } map {
         case sd => JsSuccess(sd)
