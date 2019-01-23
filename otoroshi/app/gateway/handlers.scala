@@ -581,8 +581,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               .fast
               .flatMap {
                 case None =>
-                  val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap)
-                  logger.info(s"Downstream service not found for $query")
+                  // val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap)
+                  // logger.info(s"Downstream service not found for $query")
                   Errors.craftResponseResult(s"Downstream service not found",
                                              NotFound,
                                              req,

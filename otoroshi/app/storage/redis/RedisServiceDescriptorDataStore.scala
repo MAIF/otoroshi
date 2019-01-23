@@ -360,13 +360,6 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     // sers
   }
 
-  @inline
-  def logOnly(query: ServiceDescriptorQuery, str: String): Unit = {
-    if (query.subdomain == "sportbenevoles") {
-      logger.info(str)
-    }
-  }
-
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
   override def find(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,
                                                    env: Env): Future[Option[ServiceDescriptor]] = {
@@ -377,15 +370,11 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
         query
           .getServices()
           .fast
-          .map(services => {
-            logOnly(query, s"cached query ${services.map(_.name).mkString(", ")}")
-            sortServices(services, query)
-          })
+          .map(services => sortServices(services, query))
       }
       case false => {
         logger.debug("Full scan of services, should not pass here anymore ...")
         findAll().fast.map { descriptors =>
-          logOnly(query, s"full scan query ${descriptors.size}")
           val validDescriptors = descriptors.filter { sr =>
             if (env.redirectToDev) {
               utils.RegexPool(sr.toDevHost).matches(query.toDevHost)
@@ -398,7 +387,6 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
         }
       }
     } map { filteredDescriptors =>
-      logOnly(query, s"filteredDescriptors, ${filteredDescriptors.map(_.name).mkString(", ")}")
       if (env.redirectToDev) {
         filteredDescriptors.sortWith { (a, b) =>
           // TODO : do not use hardcoded stuff
