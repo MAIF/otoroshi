@@ -47,6 +47,7 @@ class InMemoryDataStores(configuration: Configuration,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.info("Now using InMemory DataStores")
     redis.start()
+    _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
     FastFuture.successful(())
   }
@@ -55,6 +56,7 @@ class InMemoryDataStores(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
     _certificateDataStore.stopSync()
+    _serviceDescriptorDataStore.stopCleanup()
     redis.stop()
     actorSystem.terminate()
     FastFuture.successful(())

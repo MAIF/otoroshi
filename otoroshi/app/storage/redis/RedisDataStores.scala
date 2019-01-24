@@ -1,7 +1,9 @@
 package storage.redis
 
+import java.util.concurrent.atomic.AtomicReference
+
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -67,6 +69,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.info("Now using Redis DataStores")
+    _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
     FastFuture.successful(())
   }
@@ -74,6 +77,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def after(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+    _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     redisActorSystem.terminate()
     FastFuture.successful(())

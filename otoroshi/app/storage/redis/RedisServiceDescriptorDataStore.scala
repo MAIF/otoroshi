@@ -1,22 +1,29 @@
 package storage.redis
 
+import java.util.concurrent.atomic.AtomicReference
+
+import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
 import env.Env
 import models.{Key, ServiceDescriptor, ServiceDescriptorDataStore, ServiceDescriptorQuery}
 import play.api.Logger
 import play.api.libs.json.Format
 import redis.RedisClientMasterSlaves
-
 import utils.RegexPool
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
 class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueueSize: Int, _env: Env)
     extends ServiceDescriptorDataStore
     with RedisStore[ServiceDescriptor] {
 
   lazy val logger = Logger("otoroshi-redis-service-datastore")
+
+  private val updateRef  = new AtomicReference[Cancellable]()
 
   override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
 
@@ -39,6 +46,26 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
   private def dataOutForServiceKey(name: String)      = s"${_env.storageRoot}:data:$name:out"
   private def dataInForServiceStatsKey(name: String)  = s"${_env.storageRoot}:data:$name:stats:in"
   private def dataOutForServiceStatsKey(name: String) = s"${_env.storageRoot}:data:$name:stats:out"
+
+  def startCleanup(env: Env): Unit = {
+    updateRef.set(
+      env.otoroshiScheduler.schedule(10.seconds, 5.minutes)(cleanupFastLookups()(env.otoroshiExecutionContext, env.otoroshiMaterializer, env))(env.otoroshiExecutionContext)
+    )
+  }
+
+  def stopCleanup(): Unit = {
+    Option(updateRef.get()).foreach(_.cancel())
+  }
+
+  override def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long] = {
+    redisCli.keys(s"${_env.storageRoot}:desclookup:*").flatMap { keys =>
+      Source(keys.toList).mapAsync(1)(key => redisCli.pttl(key).map(ttl => (key, ttl)))
+        .filter(_._2 == -1)
+        .grouped(100)
+        .mapAsync(1)(seq => redisCli.del(seq.map(_._1): _*))
+        .runFold(0L)(_ + _)
+    }
+  }
 
   override def getFastLookups(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,
                                                              env: Env): Future[Seq[String]] =

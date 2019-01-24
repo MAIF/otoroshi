@@ -1,6 +1,7 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import auth._
 import env.Env
@@ -686,4 +687,6 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
                                                                                       env: Env): Future[Boolean]
   def removeFastLookups(query: ServiceDescriptorQuery, services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext,
                                                                                          env: Env): Future[Boolean]
+
+  def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
 }
