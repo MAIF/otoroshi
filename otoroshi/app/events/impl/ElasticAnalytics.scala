@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import env.Env
 import events.{AnalyticEvent, AnalyticsReadsService, AnalyticsWritesService}
-import models.ElasticAnalyticsConfig
+import models.{ElasticAnalyticsConfig, ServiceDescriptor}
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json.JsValueWrapper
@@ -249,7 +249,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       .addHttpHeaders(config.headers.toSeq: _*)
   }
 
-  override def fetchHits(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchHits(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
@@ -257,9 +257,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       Json.obj(
         "size" -> 0,
         "query" -> Json.obj(
-          "bool" -> Json.obj(
-            "must" -> filters(service, from, to)
-          )
+          "bool" -> filters(service, from, to)
         )
       )
     ).map { resp =>
@@ -271,7 +269,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
   }
 
   override def events(eventType: String,
-                      service: Option[String],
+                      service: Option[ServiceDescriptor],
                       from: Option[DateTime],
                       to: Option[DateTime],
                       page: Int,
@@ -288,8 +286,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
           "bool" -> Json.obj(
             "minimum_should_match" -> 1,
             "should" -> (
-              service.map(id => Json.obj("term" -> Json.obj("@serviceId"     -> id))).toSeq ++
-              service.map(id => Json.obj("term" -> Json.obj("@serviceId.raw" -> id))).toSeq
+              service.map(s => Json.obj("term" -> Json.obj("@serviceId"     -> s.id))).toSeq ++
+              service.map(s => Json.obj("term" -> Json.obj("@serviceId.raw" -> s.id))).toSeq
             ),
             "must" -> (
               dateFilters(from, to) ++
@@ -314,37 +312,37 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       .map(Some.apply)
   }
 
-  override def fetchDataIn(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchDataIn(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     sum("data.dataIn", service, from, to).map(Some.apply)
 
-  override def fetchDataOut(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchDataOut(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     sum("data.dataOut", service, from, to).map(Some.apply)
 
-  override def fetchAvgDuration(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchAvgDuration(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     avg("duration", service, from, to).map(Some.apply)
 
-  override def fetchAvgOverhead(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchAvgOverhead(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     avg("overhead", service, from, to).map(Some.apply)
 
-  override def fetchStatusesPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchStatusesPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     piechart("status", service, from, to).map(Some.apply)
 
-  override def fetchStatusesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchStatusesHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -352,9 +350,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       Json.obj(
         "size" -> 0,
         "query" -> Json.obj {
-          "bool" -> Json.obj {
-            "must" -> filters(service, from, to)
-          }
+          "bool" -> filters(service, from, to)
         },
         "aggs" -> Json.obj(
           "codes" -> Json.obj(
@@ -405,43 +401,43 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       }
       .map(Some.apply)
 
-  override def fetchDataInStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchDataInStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     statsHistogram("data.dataIn", service, from, to).map(Some.apply)
 
-  override def fetchDataOutStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchDataOutStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     statsHistogram("data.dataOut", service, from, to).map(Some.apply)
 
-  override def fetchDurationStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchDurationStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     statsHistogram("duration", service, from, to).map(Some.apply)
 
-  override def fetchDurationPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchDurationPercentilesHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     percentilesHistogram("duration", service, from, to).map(Some.apply)
 
-  override def fetchOverheadPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchOverheadPercentilesHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     percentilesHistogram("overhead", service, from, to).map(Some.apply)
 
-  override def fetchProductPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
+  override def fetchProductPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     piechart("@product", service, from, to).map(Some.apply)
 
-  override def fetchApiKeyPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchApiKeyPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -451,7 +447,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       )
     ))).map(Some.apply)
 
-  override def fetchUserPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchUserPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -461,13 +457,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       )
     ))).map(Some.apply)
 
-  override def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
+  override def fetchServicePiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     piechart("@service", service, from, to).map(Some.apply)
 
-  override def fetchOverheadStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchOverheadStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -503,16 +499,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
   }
 
   private def statsHistogram(field: String,
-                             service: Option[String],
+                             service: Option[ServiceDescriptor],
                              mayBeFrom: Option[DateTime],
                              mayBeTo: Option[DateTime])(implicit ec: ExecutionContext): Future[JsObject] = {
     query(
       Json.obj(
         "size" -> 0,
         "query" -> Json.obj(
-          "bool" -> Json.obj(
-            "must" -> filters(service, mayBeFrom, mayBeTo)
-          )
+          "bool" -> filters(service, mayBeFrom, mayBeTo)
         ),
         "aggs" -> Json.obj(
           "stats" -> Json.obj(
@@ -546,16 +540,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
   }
 
   private def percentilesHistogram(field: String,
-                                   service: Option[String],
+                                   service: Option[ServiceDescriptor],
                                    mayBeFrom: Option[DateTime],
                                    mayBeTo: Option[DateTime])(implicit ec: ExecutionContext): Future[JsObject] = {
     query(
       Json.obj(
         "size" -> 0,
         "query" -> Json.obj(
-          "bool" -> Json.obj(
-            "must" -> filters(service, mayBeFrom, mayBeTo)
-          )
+          "bool" -> filters(service, mayBeFrom, mayBeTo)
         ),
         "aggs" -> Json.obj(
           "stats" -> Json.obj(
@@ -631,12 +623,12 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
     }
   }
 
-  private def sum(field: String, service: Option[String], mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime])(
+  private def sum(field: String, service: Option[ServiceDescriptor], mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime])(
       implicit ec: ExecutionContext
   ): Future[JsObject] = {
     aggregation("sum", field, service, mayBeFrom, mayBeTo)
   }
-  private def avg(field: String, service: Option[String], mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime])(
+  private def avg(field: String, service: Option[ServiceDescriptor], mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime])(
       implicit ec: ExecutionContext
   ): Future[JsObject] = {
     aggregation("avg", field, service, mayBeFrom, mayBeTo)
@@ -644,16 +636,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
 
   private def aggregation(operation: String,
                           field: String,
-                          service: Option[String],
+                          service: Option[ServiceDescriptor],
                           mayBeFrom: Option[DateTime],
                           mayBeTo: Option[DateTime])(implicit ec: ExecutionContext): Future[JsObject] = {
     query(
       Json.obj(
         "size" -> 0,
         "query" -> Json.obj(
-          "bool" -> Json.obj(
-            "must" -> filters(service, mayBeFrom, mayBeTo)
-          )
+          "bool" -> filters(service, mayBeFrom, mayBeTo)
         ),
         "aggs" -> Json.obj {
           operation -> Json.obj(
@@ -670,7 +660,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
     }
   }
 
-  def piechart(field: String, service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int = 200, additionalFilters: Seq[JsObject] = Seq.empty)(
+  def piechart(field: String, service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime], size: Int = 200, additionalFilters: Seq[JsObject] = Seq.empty)(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
@@ -678,9 +668,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       Json.obj(
         "size" -> 0,
         "query" -> Json.obj(
-          "bool" -> Json.obj {
-            "must" -> (filters(service, from, to) ++ additionalFilters)
-          }
+          "bool" -> filters(service, from, to, additionalMust = additionalFilters)
         ),
         "aggs" -> Json.obj(
           "codes" -> Json.obj(
@@ -745,20 +733,35 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
 
   private def gatewayEventFilters = Seq(Json.obj("term" -> Json.obj("@type" -> "GatewayEvent")))
 
-  private def filters(service: Option[String],
+  private def filters(service: Option[ServiceDescriptor],
                       mayBeFrom: Option[DateTime],
-                      mayBeTo: Option[DateTime]): Seq[JsObject] = {
+                      mayBeTo: Option[DateTime],
+                      additionalMust: Seq[JsObject] = Seq.empty,
+                      additionalShould: Seq[JsObject] = Seq.empty): JsObject = {
 
-    val serviceQuery = service.map { s =>
-      Json.obj(
-        "term" -> Json.obj(
-          "@service" -> s
-        )
+    // val serviceQuery = service.map { s =>
+    //   Json.obj(
+    //     "term" -> Json.obj(
+    //       "@serviceId" -> s.id
+    //     )
+    //   )
+    // }
+    // dateFilters(mayBeFrom, mayBeTo) ++
+    // gatewayEventFilters ++
+    // serviceQuery.toSeq
+
+    Json.obj(
+      "minimum_should_match" -> 1,
+    "should" -> (
+        service.map(s => Json.obj("term" -> Json.obj("@serviceId"     -> s.id))).toSeq ++
+        service.map(s => Json.obj("term" -> Json.obj("@serviceId.raw" -> s.id))).toSeq ++
+        additionalShould
+      ),
+      "must" -> (
+        dateFilters(mayBeFrom, mayBeTo) ++
+        gatewayEventFilters ++
+        additionalMust
       )
-    }
-    dateFilters(mayBeFrom, mayBeTo) ++
-    gatewayEventFilters ++
-    serviceQuery.toSeq
+    )
   }
-
 }

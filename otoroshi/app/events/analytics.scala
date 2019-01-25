@@ -296,76 +296,76 @@ trait HealthCheckDataStore {
 
 trait AnalyticsReadsService {
   def events(eventType: String,
-             service: Option[String],
+             service: Option[ServiceDescriptor],
              from: Option[DateTime],
              to: Option[DateTime],
              page: Int = 1,
              size: Int = 50)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
-  def fetchHits(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchHits(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataIn(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchDataIn(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataOut(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchDataOut(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchAvgDuration(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchAvgDuration(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchAvgOverhead(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchAvgOverhead(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchStatusesPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchStatusesPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchStatusesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchStatusesHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataInStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchDataInStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataOutStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchDataOutStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDurationStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchDurationStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDurationPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchDurationPercentilesHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchOverheadPercentilesHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchOverheadPercentilesHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchOverheadStatsHistogram(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchOverheadStatsHistogram(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchProductPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
+  def fetchProductPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchApiKeyPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchApiKeyPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchUserPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  def fetchUserPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
+  def fetchServicePiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
@@ -388,7 +388,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
   }
 
   override def events(eventType: String,
-                      service: Option[String],
+                      service: Option[ServiceDescriptor],
                       from: Option[DateTime],
                       to: Option[DateTime],
                       page: Int,
@@ -402,7 +402,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchHits(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -412,7 +412,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchDataIn(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -421,7 +421,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         .getOrElse(FastFuture.successful(None))
     )
   override def fetchDataOut(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -431,7 +431,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchAvgDuration(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -441,7 +441,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchAvgOverhead(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -451,7 +451,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchStatusesPiechart(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -461,7 +461,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchStatusesHistogram(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -471,7 +471,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchDataInStatsHistogram(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -481,7 +481,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchDataOutStatsHistogram(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -491,7 +491,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchDurationStatsHistogram(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -501,7 +501,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchDurationPercentilesHistogram(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -511,7 +511,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchOverheadPercentilesHistogram(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -521,7 +521,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     )
 
   override def fetchOverheadStatsHistogram(
-      service: Option[String],
+      service: Option[ServiceDescriptor],
       from: Option[DateTime],
       to: Option[DateTime]
   )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
@@ -529,7 +529,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       _.map(_.fetchOverheadStatsHistogram(service, from, to))
         .getOrElse(FastFuture.successful(None))
     )
-  override def fetchProductPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
+  override def fetchProductPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -538,7 +538,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         .getOrElse(FastFuture.successful(None))
     )
 
-  override def fetchApiKeyPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchApiKeyPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext
   ): Future[Option[JsValue]] = underlyingService().flatMap(
@@ -546,7 +546,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       .getOrElse(FastFuture.successful(None))
   )
 
-  override def fetchUserPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+  override def fetchUserPiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext
   ): Future[Option[JsValue]] = underlyingService().flatMap(
@@ -554,7 +554,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       .getOrElse(FastFuture.successful(None))
   )
 
-  override def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
+  override def fetchServicePiechart(service: Option[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
