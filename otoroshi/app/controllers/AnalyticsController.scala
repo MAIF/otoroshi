@@ -149,6 +149,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(None, fromDate, toDate)
           fProductPiechart     = analyticsService.fetchProductPiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
           fServicePiechart     = analyticsService.fetchServicePiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
+          fApiKeyPiechart      = analyticsService.fetchApiKeyPiechart(None, fromDate, toDate)
+          fUserPiechart        = analyticsService.fetchUserPiechart(None, fromDate, toDate)
 
           statusesPiechart    <- fstatusesPiechart
           statusesHistogram   <- fstatusesHistogram
@@ -160,6 +162,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           dataOutStats        <- fdataOutHistogram
           productPiechart     <- fProductPiechart
           servicePiechart     <- fServicePiechart
+          apiKeyPiechart      <- fApiKeyPiechart
+          userPiechart        <- fUserPiechart
 
           hits        <- fhits
           datain      <- fdatain
@@ -183,7 +187,9 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
               "avgDuration"         -> avgduration,
               "avgOverhead"         -> avgoverhead,
               "productPiechart"     -> productPiechart,
-              "servicePiechart"     -> servicePiechart
+              "servicePiechart"     -> servicePiechart,
+              "apiKeyPiechart"      -> apiKeyPiechart,
+              "userPiechart"        -> userPiechart
             )
           )
       }

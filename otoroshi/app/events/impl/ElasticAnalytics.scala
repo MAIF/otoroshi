@@ -750,18 +750,31 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
     // gatewayEventFilters ++
     // serviceQuery.toSeq
 
-    Json.obj(
-      "minimum_should_match" -> 1,
-    "should" -> (
-        service.map(s => Json.obj("term" -> Json.obj("@serviceId"     -> s.id))).toSeq ++
-        service.map(s => Json.obj("term" -> Json.obj("@serviceId.raw" -> s.id))).toSeq ++
-        additionalShould
-      ),
-      "must" -> (
-        dateFilters(mayBeFrom, mayBeTo) ++
-        gatewayEventFilters ++
-        additionalMust
-      )
-    )
+    service match {
+      case None => {
+        Json.obj(
+          "must" -> (
+            dateFilters(mayBeFrom, mayBeTo) ++
+            gatewayEventFilters ++
+            additionalMust
+          )
+        )
+      }
+      case Some(_) => {
+        Json.obj(
+          "minimum_should_match" -> 1,
+          "should" -> (
+            service.map(s => Json.obj("term" -> Json.obj("@serviceId"     -> s.id))).toSeq ++
+              service.map(s => Json.obj("term" -> Json.obj("@serviceId.raw" -> s.id))).toSeq ++
+              additionalShould
+            ),
+          "must" -> (
+            dateFilters(mayBeFrom, mayBeTo) ++
+            gatewayEventFilters ++
+            additionalMust
+          )
+        )
+      }
+    }
   }
 }
