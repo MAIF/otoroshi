@@ -73,6 +73,7 @@ class CassandraDataStores(configuration: Configuration,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.info("Now using Cassandra DataStores")
     redis.start()
+    _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
     FastFuture.successful(())
   }
@@ -80,6 +81,7 @@ class CassandraDataStores(configuration: Configuration,
   override def after(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+    _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     redis.stop()
     actorSystem.terminate()

@@ -66,6 +66,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
       Await.result(redis.flushall(), 5.second)
     }
     Await.result(redis.initIndexes(), 5.second)
+    _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
     FastFuture.successful(())
   }
@@ -74,6 +75,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
     import actorSystem.dispatcher
 
+    _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     Await.ready(
       connection
