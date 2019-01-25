@@ -271,6 +271,26 @@ export class ServiceAnalyticsPage extends Component {
               />
             </div>
           </div>,
+           <div className="row">
+            <div className="col-md-12">
+              <RoundChart
+                series={data.apiKeyPiechart && data.apiKeyPiechart.series}
+                title="Hits by apikey"
+                unit=" hits"
+                size={400}
+              />
+            </div>
+           </div>,
+           this.state.service.privateApp ? <div className="row">
+            <div className="col-md-12">
+              <RoundChart
+                series={data.userPiechart && data.userPiechart.series}
+                title="Hits by user"
+                unit=" hits"
+                size={400}
+              />
+            </div>
+          </div> : null,
         ]}
       </div>
     );

@@ -6,8 +6,13 @@ import { Table } from '../components/inputs';
 export class ClusterPage extends Component {
   columns = [
     {
-      title: 'Worker name',
+      title: 'Member name',
       content: item => item.name.toLowerCase(),
+    },
+    {
+      title: 'Type',
+      style: { textAlign: 'center', width: 100 },
+      content: item => item.type,
     },
     {
       title: 'Location',
@@ -114,7 +119,7 @@ export class ClusterPage extends Component {
         selfUrl="cluster"
         defaultTitle="Cluster view"
         defaultValue={() => ({})}
-        itemName="worker"
+        itemName="member"
         columns={this.columns}
         fetchItems={BackOfficeServices.fetchClusterMembers}
         showActions={false}

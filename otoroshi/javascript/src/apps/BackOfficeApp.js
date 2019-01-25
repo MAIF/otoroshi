@@ -372,7 +372,7 @@ class BackOfficeAppContainer extends Component {
                           width: '100%',
                           height: '70vh',
                         }}>
-                        <img src={this.state.env.otoroshiLogo} className="logoOtoroshi" />
+                        <img src={this.state.env ? this.state.env.otoroshiLogo : ''} className="logoOtoroshi" />
                         <div style={{ fontSize: 20, marginBottom: 20, marginTop: 20 }}>
                           Ooops, an error occured
                         </div>

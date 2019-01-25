@@ -441,6 +441,26 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
   ): Future[Option[JsValue]] =
     piechart("@product", service, from, to).map(Some.apply)
 
+  override def fetchApiKeyPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]] =
+    piechart("identity.label.raw", service, from, to, additionalFilters = Seq(Json.obj(
+      "term" -> Json.obj(
+      "identity.identityType.raw" -> "APIKEY"
+      )
+    ))).map(Some.apply)
+
+  override def fetchUserPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]] =
+    piechart("identity.label.raw", service, from, to, additionalFilters = Seq(Json.obj(
+      "term" -> Json.obj(
+        "identity.identityType.raw" -> "PRIVATEAPP"
+      )
+    ))).map(Some.apply)
+
   override def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
@@ -650,16 +670,16 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
     }
   }
 
-  def piechart(field: String, service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int = 200)(
+  def piechart(field: String, service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int = 200, additionalFilters: Seq[JsObject] = Seq.empty)(
       implicit env: Env,
       ec: ExecutionContext
-  ): Future[JsValue] =
+  ): Future[JsValue] = {
     query(
       Json.obj(
         "size" -> 0,
         "query" -> Json.obj(
           "bool" -> Json.obj {
-            "must" -> filters(service, from, to)
+            "must" -> (filters(service, from, to) ++ additionalFilters)
           }
         ),
         "aggs" -> Json.obj(
@@ -694,6 +714,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
         )
       )
     }
+  }
 
   private def dateFilters(mayBeFrom: Option[DateTime], mayBeTo: Option[DateTime]): Seq[JsObject] = {
     val to = mayBeTo.getOrElse(DateTime.now())

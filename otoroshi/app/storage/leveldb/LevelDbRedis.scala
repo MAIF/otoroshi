@@ -35,6 +35,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
         expirations.remove(entry.getKey)
       }
     }
+
     ()
   }
 

@@ -136,6 +136,7 @@ class Env(val configuration: Configuration,
     configuration.getOptional[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty)
   )
   lazy val clusterAgent: ClusterAgent = ClusterAgent(clusterConfig, this)
+  lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
@@ -375,12 +376,12 @@ class Env(val configuration: Configuration,
 
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
-    new java.io.File("./otoroshi.jks").deleteOnExit()
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
     scriptManager.stop()
     clusterAgent.stop()
+    clusterLeaderAgent.stop()
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
     FastFuture.successful(())
@@ -449,7 +450,9 @@ class Env(val configuration: Configuration,
       implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
       clusterAgent.warnAboutHttpLeaderUrls()
-      if (clusterConfig.mode == ClusterMode.Worker) {
+      if (clusterConfig.mode == ClusterMode.Leader) {
+        clusterLeaderAgent.start()
+      } else if (clusterConfig.mode == ClusterMode.Worker) {
         clusterAgent.startF()
       } else {
         DynamicSSLEngineProvider.setCurrentEnv(this)

@@ -479,7 +479,7 @@ export class ServicePage extends Component {
             label="Id"
             placeholder="You service Id"
             value={this.state.service.id}
-            onChange={e => ({})}
+            onChange={v => this.changeTheValue('id', v)}
             help="A unique random string to identify your service"
           />
           <SelectInput
@@ -668,17 +668,17 @@ export class ServicePage extends Component {
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
-            initCollapsed={!this.state.service.redirection.enabled}
+            initCollapsed={!this.state.service.redirection ? this.state.service.redirection.enabled : false}
             label="Redirection">
             <BooleanInput
               label="Redirection enabled"
-              value={this.state.service.redirection.enabled}
+              value={this.state.service.redirection ? this.state.service.redirection.enabled : false}
               help="..."
               onChange={v => this.changeTheValue('redirection.enabled', v)}
             />
             <SelectInput
               label="Http redirection code"
-              value={this.state.service.redirection.code}
+              value={this.state.service.redirection ? this.state.service.redirection.code : '302'}
               onChange={e => this.changeTheValue('redirection.code', e)}
               possibleValues={[
                 {

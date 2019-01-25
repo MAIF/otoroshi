@@ -357,6 +357,14 @@ trait AnalyticsReadsService {
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
+  def fetchApiKeyPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]]
+  def fetchUserPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]]
   def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,
       ec: ExecutionContext
@@ -529,6 +537,22 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       _.map(_.fetchProductPiechart(service, from, to, size))
         .getOrElse(FastFuture.successful(None))
     )
+
+  override def fetchApiKeyPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]] = underlyingService().flatMap(
+    _.map(_.fetchApiKeyPiechart(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+  )
+
+  override def fetchUserPiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]] = underlyingService().flatMap(
+    _.map(_.fetchUserPiechart(service, from, to))
+      .getOrElse(FastFuture.successful(None))
+  )
 
   override def fetchServicePiechart(service: Option[String], from: Option[DateTime], to: Option[DateTime], size: Int)(
       implicit env: Env,

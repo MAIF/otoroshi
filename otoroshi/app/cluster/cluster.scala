@@ -127,6 +127,7 @@ case class ClusterConfig(
   def gunzip(): Flow[ByteString, ByteString, NotUsed] =
     if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
 }
+
 object ClusterConfig {
   def apply(configuration: Configuration): ClusterConfig = {
     // Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
@@ -184,12 +185,14 @@ case class MemberView(name: String,
                       location: String,
                       lastSeen: DateTime,
                       timeout: Duration,
+                      memberType: ClusterMode,
                       stats: JsObject = Json.obj()) {
   def asJson: JsValue = Json.obj(
     "name"     -> name,
     "location" -> location,
     "lastSeen" -> lastSeen.getMillis,
     "timeout"  -> timeout.toMillis,
+    "type"     -> memberType.name,
     "stats"    -> stats
   )
   def statsView: StatsView = {
@@ -213,6 +216,7 @@ object MemberView {
           location = (value \ "location").as[String],
           lastSeen = new DateTime((value \ "lastSeen").as[Long]),
           timeout = Duration((value \ "timeout").as[Long], TimeUnit.MILLISECONDS),
+          memberType = (value \ "type").asOpt[String].map(n => ClusterMode(n).getOrElse(ClusterMode.Off)).getOrElse(ClusterMode.Off),
           stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj())
         )
       )
@@ -222,7 +226,7 @@ object MemberView {
 }
 
 trait ClusterStateDataStore {
-  def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def registerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]]
   def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long]
   def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit]
@@ -234,7 +238,7 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
 
   override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
-      .keys(s"${env.storageRoot}:cluster:workers:*")
+      .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(
         keys =>
           if (keys.isEmpty) FastFuture.successful(0L)
@@ -242,8 +246,8 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
       )
   }
 
-  override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    val key = s"${env.storageRoot}:cluster:workers:${member.name}"
+  override def registerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    val key = s"${env.storageRoot}:cluster:members:${member.name}"
     redisLike.get(key).flatMap {
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
@@ -267,7 +271,7 @@ class InMemoryClusterStateDataStore(redisLike: RedisLike, env: Env) extends Clus
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
-        .keys(s"${env.storageRoot}:cluster:workers:*")
+        .keys(s"${env.storageRoot}:cluster:members:*")
         .flatMap(
           keys =>
             if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
@@ -351,7 +355,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
 
   override def clearMembers()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
     redisLike
-      .keys(s"${env.storageRoot}:cluster:workers:*")
+      .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(
         keys =>
           if (keys.isEmpty) FastFuture.successful(0L)
@@ -359,8 +363,8 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
       )
   }
 
-  override def registerWorkerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    val key = s"${env.storageRoot}:cluster:workers:${member.name}"
+  override def registerMember(member: MemberView)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    val key = s"${env.storageRoot}:cluster:members:${member.name}"
     redisLike.get(key).flatMap {
       case Some(m) => {
         MemberView.fromJsonSafe(Json.parse(m.utf8String)) match {
@@ -384,7 +388,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
     if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
-        .keys(s"${env.storageRoot}:cluster:workers:*")
+        .keys(s"${env.storageRoot}:cluster:members:*")
         .flatMap(
           keys =>
             if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
@@ -607,9 +611,10 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                   ctx.request.headers
                     .get(ClusterAgent.OtoroshiWorkerNameHeader)
                     .map { name =>
-                      env.datastores.clusterStateDataStore.registerWorkerMember(
+                      env.datastores.clusterStateDataStore.registerMember(
                         MemberView(
                           name = name,
+                          memberType = ClusterMode.Worker,
                           location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
                           lastSeen = DateTime.now(),
                           timeout =
@@ -675,9 +680,10 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         val cachedValue = cachedRef.get()
 
         ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
-          env.datastores.clusterStateDataStore.registerWorkerMember(
+          env.datastores.clusterStateDataStore.registerMember(
             MemberView(
               name = name,
+              memberType = ClusterMode.Worker,
               location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
               lastSeen = DateTime.now(),
               timeout = Duration(env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
@@ -753,6 +759,85 @@ object ClusterAgent {
   val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
+}
+
+object ClusterLeaderAgent {
+  def apply(config: ClusterConfig, env: Env) = new ClusterLeaderAgent(config, env)
+}
+
+class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
+  import scala.concurrent.duration._
+
+  implicit lazy val ec    = env.otoroshiExecutionContext
+  implicit lazy val mat   = env.otoroshiMaterializer
+  implicit lazy val sched = env.otoroshiScheduler
+  implicit lazy val _env  = env
+
+  private val membershipRef = new AtomicReference[Cancellable]()
+
+  def renewMemberShip(): Unit = {
+    (for {
+      rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
+      duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
+      overhead                  <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
+      dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
+      dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
+      concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
+    } yield {
+      Json.obj(
+        "typ" -> "globstats",
+        "rate" -> BigDecimal(
+          Option(rate)
+            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+            .getOrElse(0.0)
+        ).setScale(3, RoundingMode.HALF_EVEN),
+        "duration" -> BigDecimal(
+          Option(duration)
+            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+            .getOrElse(0.0)
+        ).setScale(3, RoundingMode.HALF_EVEN),
+        "overhead" -> BigDecimal(
+          Option(overhead)
+            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+            .getOrElse(0.0)
+        ).setScale(3, RoundingMode.HALF_EVEN),
+        "dataInRate" -> BigDecimal(
+          Option(dataInRate)
+            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+            .getOrElse(0.0)
+        ).setScale(3, RoundingMode.HALF_EVEN),
+        "dataOutRate" -> BigDecimal(
+          Option(dataOutRate)
+            .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+            .getOrElse(0.0)
+        ).setScale(3, RoundingMode.HALF_EVEN),
+        "concurrentHandledRequests" -> concurrentHandledRequests
+      )
+    }).flatMap { stats =>
+        env.datastores.clusterStateDataStore.registerMember(
+          MemberView(
+            name = env.clusterConfig.leader.name,
+            memberType = ClusterMode.Leader,
+            location = s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}",
+            lastSeen = DateTime.now(),
+            timeout = 120.seconds,
+            stats = stats
+          )
+        )
+      }
+  }
+
+  def start(): Unit = {
+    if (config.mode == ClusterMode.Leader) {
+      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
+      membershipRef.set(env.otoroshiScheduler.schedule(1.second, 30.seconds)(renewMemberShip()))
+    }
+  }
+  def stop(): Unit = {
+    if (config.mode == ClusterMode.Leader) {
+      Option(membershipRef.get()).foreach(_.cancel())
+    }
+  }
 }
 
 class ClusterAgent(config: ClusterConfig, env: Env) {

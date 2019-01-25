@@ -129,7 +129,7 @@ export class RoundChart extends Component {
         textAnchor={x > cx ? 'start' : 'end'}
         dominantBaseline="central"
         style={{ padding: 5 }}>
-        {props.name}: {(props.percent * 100).toFixed(0)}% ({props.value})
+        {props.name.replace(/"/g, '')}: {(props.percent * 100).toFixed(0)}% ({props.value})
       </text>
     );
   };
