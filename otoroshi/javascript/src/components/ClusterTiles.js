@@ -128,7 +128,7 @@ export class ClusterTiles extends Component {
     this.setState({
       firstDone: true,
       payload: `${payloadIn.prettify()} ${payloadInUnit} / ${payloadOut.prettify()} ${payloadOutUnit}`,
-      workers: `${data.workers} workers`,
+      workers: data.workers === 1 ? `${data.workers} member` : `${data.workers} members`,
       health: data.health,
     });
   };

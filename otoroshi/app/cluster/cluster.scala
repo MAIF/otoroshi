@@ -901,22 +901,26 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   def createSession(user: PrivateAppsUser): Future[Unit] = {
-    Retry
-      .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
-        env.Ws
-          .url(otoroshiUrl + s"/api/cluster/sessions")
-          .withHttpHeaders(
-            "Host"                                    -> config.leader.host,
-            "Content-Type"                            -> "application/json",
-            ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-            ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
-          )
-          .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-          .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
-          .post(user.toJson)
-          .filter(_.status == 201)
-      }
-      .map(_ => ())
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
+          env.Ws
+            .url(otoroshiUrl + s"/api/cluster/sessions")
+            .withHttpHeaders(
+              "Host"                                    -> config.leader.host,
+              "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .post(user.toJson)
+            .filter(_.status == 201)
+        }
+        .map(_ => ())
+    } else {
+      FastFuture.successful(())
+    }
   }
 
   def incrementApi(id: String, increment: Long): Unit = {
