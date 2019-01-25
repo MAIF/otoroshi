@@ -16,6 +16,7 @@ import utils.RegexPool
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.util.Success
 
 class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueueSize: Int, _env: Env)
     extends ServiceDescriptorDataStore
@@ -64,6 +65,9 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
         .grouped(100)
         .mapAsync(1)(seq => redisCli.del(seq.map(_._1): _*))
         .runFold(0L)(_ + _)
+    }.andThen {
+      case Success(count) if count > 0L => logger.info(s"Cleaned up $count fast lookup keys without ttl")
+      case _ =>
     }
   }
 
