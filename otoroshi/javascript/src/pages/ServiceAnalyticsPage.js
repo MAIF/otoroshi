@@ -277,7 +277,7 @@ export class ServiceAnalyticsPage extends Component {
                 series={data.apiKeyPiechart && data.apiKeyPiechart.series}
                 title="Hits by apikey"
                 unit=" hits"
-                size={400}
+                size={500}
               />
             </div>
            </div>,
@@ -287,7 +287,7 @@ export class ServiceAnalyticsPage extends Component {
                 series={data.userPiechart && data.userPiechart.series}
                 title="Hits by user"
                 unit=" hits"
-                size={400}
+                size={500}
               />
             </div>
           </div> : null,
