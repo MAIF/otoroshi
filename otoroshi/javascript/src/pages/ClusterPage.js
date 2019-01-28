@@ -23,6 +23,7 @@ export class ClusterPage extends Component {
     {
       title: 'Last seen at',
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 150 },
+      notFilterable: true,
       content: item => moment(item.lastSeen).format('DD-MM-YYYY HH:mm:ss'),
     },
     {
@@ -44,21 +45,25 @@ export class ClusterPage extends Component {
     {
       title: 'Rate',
       style: { textAlign: 'center', width: 80 },
+      notFilterable: true,
       content: item => (item.stats.rate || 0.0).toFixed(2) + ' call/s',
     },
     {
       title: 'Overhead',
       style: { textAlign: 'center', width: 80 },
+      notFilterable: true,
       content: item => (item.stats.overhead || 0.0).toFixed(2) + ' ms',
     },
     {
       title: 'Duration',
       style: { textAlign: 'center', width: 80 },
+      notFilterable: true,
       content: item => (item.stats.duration || 0.0).toFixed(2) + ' ms',
     },
     {
       title: 'Data in',
       style: { textAlign: 'center', width: 80 },
+      notFilterable: true,
       content: item => {
         const kb = (item.stats.dataInRate || 0.0) / 1024;
         const mb = (item.stats.dataInRate || 0.0) / (1024 * 1024);
@@ -72,6 +77,7 @@ export class ClusterPage extends Component {
     {
       title: 'Data out',
       style: { textAlign: 'center', width: 80 },
+      notFilterable: true,
       content: item => {
         const kb = (item.stats.dataOutRate || 0.0) / 1024;
         const mb = (item.stats.dataOutRate || 0.0) / (1024 * 1024);
@@ -85,6 +91,7 @@ export class ClusterPage extends Component {
     {
       title: 'CPU / load',
       style: { textAlign: 'center', width: 150 },
+      notFilterable: true,
       content: item => {
         const usage = (item.stats.cpu_usage || 0.0);
         const loadAverage = (item.stats.load_average || 0.0);
@@ -94,6 +101,7 @@ export class ClusterPage extends Component {
     {
       title: 'Mem',
       style: { textAlign: 'center', width: 150 },
+      notFilterable: true,
       content: item => {
         const usage = (item.stats.heap_used || 0.0);
         const total = (item.stats.heap_size || 0.0);
