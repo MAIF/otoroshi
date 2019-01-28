@@ -46,7 +46,7 @@ services:
       - config-server
 
   otoroshi-service-1:
-    image: maif/otoroshi:1.4.4
+    image: maif/otoroshi:1.4.5-dev
     networks:
       - mesh
     environment:
@@ -59,7 +59,7 @@ services:
       - config-server
 
   otoroshi-service-2:
-    image: maif/otoroshi:1.4.4
+    image: maif/otoroshi:1.4.5-dev
     networks:
       - mesh
     environment:
