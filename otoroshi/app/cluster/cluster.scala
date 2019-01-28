@@ -438,13 +438,14 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
                        val items = values.map { v =>
                          v.utf8String.toLong
                        }
+                       val itemSize = if (items.isEmpty) 1 else items.size
                        val total = items.fold(0L)(_ + _)
-                       (total / items.size).toLong
+                       (total / itemSize).toLong
                      }
                  }
                )
              )
-             .map(a => a.fold(0L)(_ + _) / a.size)
+             .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
 
       out <- Future
               .sequence(
@@ -456,13 +457,14 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
                         val items = values.map { v =>
                           v.utf8String.toLong
                         }
+                        val itemSize = if (items.isEmpty) 1 else items.size
                         val total = items.fold(0L)(_ + _)
-                        (total / items.size).toLong
+                        (total / itemSize).toLong
                       }
                   }
                 )
               )
-              .map(a => a.fold(0L)(_ + _) / a.size)
+              .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
     } yield (in, out)
   }
 }

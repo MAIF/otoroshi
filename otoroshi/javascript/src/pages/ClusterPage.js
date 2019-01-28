@@ -97,7 +97,7 @@ export class ClusterPage extends Component {
       content: item => {
         const usage = (item.stats.heap_used || 0.0);
         const total = (item.stats.heap_size || 0.0);
-        return `${usage}/${total} Mb`;
+        return `${usage} / ${total} Mb`;
       },
     }
   ];
