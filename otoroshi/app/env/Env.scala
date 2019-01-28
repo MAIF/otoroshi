@@ -135,7 +135,7 @@ class Env(val configuration: Configuration,
   lazy val clusterConfig: ClusterConfig = ClusterConfig(
     configuration.getOptional[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty)
   )
-  lazy val clusterAgent: ClusterAgent = ClusterAgent(clusterConfig, this)
+  lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")

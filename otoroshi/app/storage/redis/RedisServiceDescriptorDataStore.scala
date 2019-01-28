@@ -24,7 +24,7 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
 
   lazy val logger = Logger("otoroshi-redis-service-datastore")
 
-  private val updateRef  = new AtomicReference[Cancellable]()
+  private val updateRef = new AtomicReference[Cancellable]()
 
   override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
 
@@ -50,7 +50,9 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
 
   def startCleanup(env: Env): Unit = {
     updateRef.set(
-      env.otoroshiScheduler.schedule(10.seconds, 5.minutes)(cleanupFastLookups()(env.otoroshiExecutionContext, env.otoroshiMaterializer, env))(env.otoroshiExecutionContext)
+      env.otoroshiScheduler.schedule(10.seconds, 5.minutes)(
+        cleanupFastLookups()(env.otoroshiExecutionContext, env.otoroshiMaterializer, env)
+      )(env.otoroshiExecutionContext)
     )
   }
 
@@ -59,16 +61,20 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
   }
 
   override def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long] = {
-    redisCli.keys(s"${_env.storageRoot}:desclookup:*").flatMap { keys =>
-      Source(keys.toList).mapAsync(1)(key => redisCli.pttl(key).map(ttl => (key, ttl)))
-        .filter(_._2 == -1)
-        .grouped(100)
-        .mapAsync(1)(seq => redisCli.del(seq.map(_._1): _*))
-        .runFold(0L)(_ + _)
-    }.andThen {
-      case Success(count) if count > 0L => logger.info(s"Cleaned up $count fast lookup keys without ttl")
-      case _ =>
-    }
+    redisCli
+      .keys(s"${_env.storageRoot}:desclookup:*")
+      .flatMap { keys =>
+        Source(keys.toList)
+          .mapAsync(1)(key => redisCli.pttl(key).map(ttl => (key, ttl)))
+          .filter(_._2 == -1)
+          .grouped(100)
+          .mapAsync(1)(seq => redisCli.del(seq.map(_._1): _*))
+          .runFold(0L)(_ + _)
+      }
+      .andThen {
+        case Success(count) if count > 0L => logger.info(s"Cleaned up $count fast lookup keys without ttl")
+        case _                            =>
+      }
   }
 
   override def getFastLookups(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,

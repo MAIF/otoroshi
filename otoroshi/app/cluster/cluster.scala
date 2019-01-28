@@ -217,7 +217,10 @@ object MemberView {
           location = (value \ "location").as[String],
           lastSeen = new DateTime((value \ "lastSeen").as[Long]),
           timeout = Duration((value \ "timeout").as[Long], TimeUnit.MILLISECONDS),
-          memberType = (value \ "type").asOpt[String].map(n => ClusterMode(n).getOrElse(ClusterMode.Off)).getOrElse(ClusterMode.Off),
+          memberType = (value \ "type")
+            .asOpt[String]
+            .map(n => ClusterMode(n).getOrElse(ClusterMode.Off))
+            .getOrElse(ClusterMode.Off),
           stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj())
         )
       )
@@ -439,7 +442,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
                          v.utf8String.toLong
                        }
                        val itemSize = if (items.isEmpty) 1 else items.size
-                       val total = items.fold(0L)(_ + _)
+                       val total    = items.fold(0L)(_ + _)
                        (total / itemSize).toLong
                      }
                  }
@@ -458,7 +461,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
                           v.utf8String.toLong
                         }
                         val itemSize = if (items.isEmpty) 1 else items.size
-                        val total = items.fold(0L)(_ + _)
+                        val total    = items.fold(0L)(_ + _)
                         (total / itemSize).toLong
                       }
                   }
@@ -766,7 +769,7 @@ object ClusterAgent {
 
 object CpuInfo {
 
-  private val mbs = ManagementFactory.getPlatformMBeanServer
+  private val mbs      = ManagementFactory.getPlatformMBeanServer
   private val osMXBean = ManagementFactory.getOperatingSystemMXBean
 
   def cpuLoad(): Double = {
@@ -807,9 +810,9 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
       dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
       concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
     } yield {
-      val rt  = Runtime.getRuntime
+      val rt = Runtime.getRuntime
       Json.obj(
-        "typ" -> "globstats",
+        "typ"               -> "globstats",
         "cpu_usage"         -> CpuInfo.cpuLoad(),
         "load_average"      -> CpuInfo.loadAverage(),
         "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
@@ -845,17 +848,17 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         "concurrentHandledRequests" -> concurrentHandledRequests
       )
     }).flatMap { stats =>
-        env.datastores.clusterStateDataStore.registerMember(
-          MemberView(
-            name = env.clusterConfig.leader.name,
-            memberType = ClusterMode.Leader,
-            location = s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}",
-            lastSeen = DateTime.now(),
-            timeout = 120.seconds,
-            stats = stats
-          )
+      env.datastores.clusterStateDataStore.registerMember(
+        MemberView(
+          name = env.clusterConfig.leader.name,
+          memberType = ClusterMode.Leader,
+          location = s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}",
+          lastSeen = DateTime.now(),
+          timeout = 120.seconds,
+          stats = stats
         )
-      }
+      )
+    }
   }
 
   def start(): Unit = {
@@ -1094,7 +1097,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           Cluster.logger.trace(
             s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
           )
-          val rt  = Runtime.getRuntime
+          val rt = Runtime.getRuntime
           (for {
             rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
             duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
@@ -1106,7 +1109,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             ByteString(
               Json.stringify(
                 Json.obj(
-                  "typ" -> "globstats",
+                  "typ"               -> "globstats",
                   "cpu_usage"         -> CpuInfo.cpuLoad(),
                   "load_average"      -> CpuInfo.loadAverage(),
                   "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,

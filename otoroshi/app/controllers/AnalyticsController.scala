@@ -63,7 +63,6 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
             fApiKeyPiechart      = analyticsService.fetchApiKeyPiechart(Some(desc), fromDate, toDate)
             fUserPiechart        = analyticsService.fetchUserPiechart(Some(desc), fromDate, toDate)
 
-
             statusesPiechart    <- fstatusesPiechart
             statusesHistogram   <- fstatusesHistogram
             overheadPercentiles <- foverheadPercentiles
@@ -73,7 +72,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
             dataInStats         <- fdataInHistogram
             dataOutStats        <- fdataOutHistogram
             apiKeyPiechart      <- fApiKeyPiechart
-            userPiechart      <- fUserPiechart
+            userPiechart        <- fUserPiechart
 
             hits        <- fhits
             datain      <- fdatain

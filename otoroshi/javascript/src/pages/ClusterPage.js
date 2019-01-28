@@ -93,8 +93,8 @@ export class ClusterPage extends Component {
       style: { textAlign: 'center', width: 150 },
       notFilterable: true,
       content: item => {
-        const usage = (item.stats.cpu_usage || 0.0);
-        const loadAverage = (item.stats.load_average || 0.0);
+        const usage = item.stats.cpu_usage || 0.0;
+        const loadAverage = item.stats.load_average || 0.0;
         return `${usage.toFixed(2)} % - ${loadAverage.toFixed(3)}`;
       },
     },
@@ -103,11 +103,11 @@ export class ClusterPage extends Component {
       style: { textAlign: 'center', width: 150 },
       notFilterable: true,
       content: item => {
-        const usage = (item.stats.heap_used || 0.0);
-        const total = (item.stats.heap_size || 0.0);
+        const usage = item.stats.heap_used || 0.0;
+        const total = item.stats.heap_size || 0.0;
         return `${usage} / ${total} Mb`;
       },
-    }
+    },
   ];
 
   update = () => {

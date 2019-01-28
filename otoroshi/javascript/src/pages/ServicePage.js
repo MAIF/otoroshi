@@ -668,11 +668,15 @@ export class ServicePage extends Component {
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}
-            initCollapsed={!this.state.service.redirection ? this.state.service.redirection.enabled : false}
+            initCollapsed={
+              !this.state.service.redirection ? this.state.service.redirection.enabled : false
+            }
             label="Redirection">
             <BooleanInput
               label="Redirection enabled"
-              value={this.state.service.redirection ? this.state.service.redirection.enabled : false}
+              value={
+                this.state.service.redirection ? this.state.service.redirection.enabled : false
+              }
               help="..."
               onChange={v => this.changeTheValue('redirection.enabled', v)}
             />

@@ -504,7 +504,11 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val controlClasses1: ClassInfoList = scanResult.getSubclasses(classOf[RequestTransformer].getName)
       val controlClasses2: ClassInfoList = scanResult.getClassesImplementing(classOf[RequestTransformer].getName)
       val classes                        = controlClasses1.asScala ++ controlClasses2.asScala
-      classes.filterNot(c => c.getName == "otoroshi.script.DefaultRequestTransformer$" || c.getName == "otoroshi.script.CompilingRequestTransformer$").map(c => c.getName)
+      classes
+        .filterNot(
+          c => c.getName == "otoroshi.script.DefaultRequestTransformer$" || c.getName == "otoroshi.script.CompilingRequestTransformer$"
+        )
+        .map(c => c.getName)
     } catch {
       case e: Throwable =>
         e.printStackTrace()
