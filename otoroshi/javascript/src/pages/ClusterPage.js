@@ -7,25 +7,43 @@ export class ClusterPage extends Component {
   columns = [
     {
       title: 'Member name',
+      style: { textAlign: 'left', width: 250 },
       content: item => item.name.toLowerCase(),
     },
     {
       title: 'Type',
-      style: { textAlign: 'center', width: 100 },
+      style: { textAlign: 'center', width: 80 },
       content: item => item.type,
     },
     {
       title: 'Location',
+      style: { textAlign: 'center', width: 180 },
       content: item => item.location,
     },
     {
       title: 'Last seen at',
-      style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 190 },
-      content: item => moment(item.lastSeen).format('DD-MM-YYYY HH:mm:ss.SSS'),
+      style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 150 },
+      content: item => moment(item.lastSeen).format('DD-MM-YYYY HH:mm:ss'),
+    },
+    {
+      title: 'Health',
+      style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 50 },
+      content: item => item.timeout,
+      notFilterable: true,
+      cell: (a, item) => {
+        const value = item.time - item.lastSeen;
+        if (value < item.timeout / 2) {
+          return <i className="fa fa-heartbeat" style={{ color: 'green' }} />;
+        } else if (value < 3 * (item.timeout / 3)) {
+          return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />;
+        } else {
+          return <i className="fa fa-heartbeat" style={{ color: 'red' }} />;
+        }
+      },
     },
     {
       title: 'Rate',
-      style: { textAlign: 'center', width: 120 },
+      style: { textAlign: 'center', width: 80 },
       content: item => (item.stats.rate || 0.0).toFixed(2) + ' call/s',
     },
     {
@@ -65,21 +83,23 @@ export class ClusterPage extends Component {
       },
     },
     {
-      title: 'Health',
-      style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 100 },
-      content: item => item.timeout,
-      notFilterable: true,
-      cell: (a, item) => {
-        const value = item.time - item.lastSeen;
-        if (value < item.timeout / 2) {
-          return <i className="fa fa-heartbeat" style={{ color: 'green' }} />;
-        } else if (value < 3 * (item.timeout / 3)) {
-          return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />;
-        } else {
-          return <i className="fa fa-heartbeat" style={{ color: 'red' }} />;
-        }
+      title: 'CPU / load',
+      style: { textAlign: 'center', width: 150 },
+      content: item => {
+        const usage = (item.stats.cpu_usage || 0.0);
+        const loadAverage = (item.stats.load_average || 0.0);
+        return `${usage.toFixed(2)} % - ${loadAverage.toFixed(3)}`;
       },
     },
+    {
+      title: 'Mem',
+      style: { textAlign: 'center', width: 150 },
+      content: item => {
+        const usage = (item.stats.heap_used || 0.0);
+        const total = (item.stats.heap_size || 0.0);
+        return `${usage}/${total} Mb`;
+      },
+    }
   ];
 
   update = () => {

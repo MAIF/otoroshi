@@ -20,6 +20,7 @@ import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
+import javax.management.{Attribute, ObjectName}
 import models._
 import org.joda.time.DateTime
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
@@ -761,6 +762,26 @@ object ClusterAgent {
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 }
 
+object CpuInfo {
+
+  private val mbs = ManagementFactory.getPlatformMBeanServer
+  private val osMXBean = ManagementFactory.getOperatingSystemMXBean
+
+  def cpuLoad(): Double = {
+    val name = ObjectName.getInstance("java.lang:type=OperatingSystem")
+    val list = mbs.getAttributes(name, Array("ProcessCpuLoad"))
+    if (list.isEmpty) return 0.0
+    val att   = list.get(0).asInstanceOf[Attribute]
+    val value = att.getValue.asInstanceOf[Double]
+    if (value == -1.0) return 0.0
+    (value * 1000) / 10.0
+  }
+
+  def loadAverage(): Double = {
+    osMXBean.getSystemLoadAverage
+  }
+}
+
 object ClusterLeaderAgent {
   def apply(config: ClusterConfig, env: Env) = new ClusterLeaderAgent(config, env)
 }
@@ -784,8 +805,16 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
       dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
       concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
     } yield {
+      val rt  = Runtime.getRuntime
       Json.obj(
         "typ" -> "globstats",
+        "cpu_usage"         -> CpuInfo.cpuLoad(),
+        "load_average"      -> CpuInfo.loadAverage(),
+        "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
+        "heap_size"         -> rt.totalMemory() / 1024 / 1024,
+        "live_threads"      -> ManagementFactory.getThreadMXBean.getThreadCount,
+        "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
+        "daemon_threads"    -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
         "rate" -> BigDecimal(
           Option(rate)
             .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
@@ -1063,6 +1092,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           Cluster.logger.trace(
             s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
           )
+          val rt  = Runtime.getRuntime
           (for {
             rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
             duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
@@ -1075,6 +1105,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               Json.stringify(
                 Json.obj(
                   "typ" -> "globstats",
+                  "cpu_usage"         -> CpuInfo.cpuLoad(),
+                  "load_average"      -> CpuInfo.loadAverage(),
+                  "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
+                  "heap_size"         -> rt.totalMemory() / 1024 / 1024,
+                  "live_threads"      -> ManagementFactory.getThreadMXBean.getThreadCount,
+                  "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
+                  "daemon_threads"    -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
                   "rate" -> BigDecimal(
                     Option(rate)
                       .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)

@@ -25,7 +25,7 @@ libraryDependencies ++= Seq(
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
   "com.propensive"           %% "kaleidoscope"             % "0.1.0",
   "io.github.classgraph"     % "classgraph"                % "4.6.13",
-  "com.auth0"                % "jwks-rsa"                  % "0.7.0", // https://github.com/auth0/jwks-rsa-java
+  "com.auth0"                % "jwks-rsa"                  % "0.7.0",  // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"             % "nimbus-jose-jwt"           % "6.0",
   // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "javax.xml.bind"         % "jaxb-api"              % "2.3.0",
