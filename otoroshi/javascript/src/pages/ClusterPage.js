@@ -123,7 +123,7 @@ export class ClusterPage extends Component {
       if (env.clusterRole === 'Off') {
         this.props.setTitle(`Cluster mode is not enabled`);
       } else {
-        this.props.setTitle(`Cluster view (${env.clusterRole} cluster)`);
+        this.props.setTitle(`Cluster members`);
       }
     });
   }
