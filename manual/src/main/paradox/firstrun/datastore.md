@@ -8,8 +8,8 @@ Available datastores are the following :
 
 * in memory
 * redis
-* cassandra
-* mongodb
+* cassandra (experimental support)
+* mongodb (experimental support)
 * levelDB (not suitable for production usage)
 
 The **levelDB** datastore is pretty handy for testing purposes, but is not supposed to be used in production mode.

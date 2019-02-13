@@ -12,10 +12,10 @@ All the features supported by **Otoroshi** are listed below
 * @ref:[Official Docker image](./getotoroshi/fromdocker.md)
 * @ref:[Multi backend datastore support](./firstrun/datastore.md)
     * Redis
-    * LevelDB
     * In memory
-    * Cassandra
-    * Mongo
+    * Cassandra (experimental support)
+    * Mongo (experimental support)
+    * LevelDB (not suitable for production usage)		
 * @ref:[Service is private (Api key access) by default with exclusions](./usage/2-services.md)
 * @ref:[Support wildcard domain names per service](./usage/2-services.md)
 * @ref:[Support routing headers for a service (ie. for service versioning)](./usage/2-services.md#service-meta)
