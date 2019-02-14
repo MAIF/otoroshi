@@ -55,6 +55,8 @@ POST    /bo/api/certificates/_caSigned                        controllers.BackOf
 POST    /bo/api/certificates/_ca                              controllers.BackOfficeController.caCert()
 POST    /bo/api/certificates/:id/_renew                       controllers.BackOfficeController.renew(id)
 
+POST    /bo/api/oidc/_fetchConfig                            controllers.BackOfficeController.fetchOpenIdConfiguration()
+
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
 POST    /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)

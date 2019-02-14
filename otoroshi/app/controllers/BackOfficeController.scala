@@ -28,6 +28,7 @@ import utils.LocalCache
 import security._
 import org.mindrot.jbcrypt.BCrypt
 import akka.http.scaladsl.util.FastFuture._
+import auth.GenericOauth2ModuleConfig
 import com.nimbusds.jose.jwk.JWKSet
 import ssl.FakeKeyStore.KeystoreSettings
 import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
@@ -748,6 +749,60 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       }
       case _ => {
         FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad renew")))
+      }
+    }
+  }
+
+  def fetchOpenIdConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+
+    import scala.concurrent.duration._
+
+    val id = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
+    val name = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
+    val desc = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
+    (ctx.request.body \ "url").asOpt[String] match {
+      case None => FastFuture.successful(Ok(GenericOauth2ModuleConfig(
+        id = id,
+        name = name,
+        desc = desc
+      ).asJson))
+      case Some(url) => {
+        env.Ws.url(url).withRequestTimeout(10.seconds).get().map { resp =>
+          if (resp.status == 200) {
+            Try {
+              val config = GenericOauth2ModuleConfig(
+                id = id,
+                name = name,
+                desc = desc
+              )
+              val body = Json.parse(resp.body)
+              val tokenUrl = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
+              val authorizeUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
+              val userInfoUrl = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
+              val loginUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.loginUrl)
+              val logoutUrl = (body \ "end_session_endpoint").asOpt[String].getOrElse(config.logoutUrl)
+              Ok(config.copy(
+                tokenUrl = tokenUrl,
+                authorizeUrl = authorizeUrl,
+                userInfoUrl = userInfoUrl,
+                loginUrl = loginUrl,
+                logoutUrl = logoutUrl
+              ).asJson)
+            } getOrElse {
+              Ok(GenericOauth2ModuleConfig(
+                id = id,
+                name = name,
+                desc = desc
+              ).asJson)
+            }
+          } else {
+            Ok(GenericOauth2ModuleConfig(
+              id = id,
+              name = name,
+              desc = desc
+            ).asJson)
+          }
+        }
       }
     }
   }
