@@ -1173,7 +1173,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   } else {
                                                     Seq.empty[(String, String)]
                                                   }) ++ descriptor.cors
-                                            .asHeaders(req)
+                                            .asHeaders(req) ++ desc.additionalHeadersOut
 
                                           val otoroshiResponse = otoroshi.script.HttpResponse(
                                             status = resp.status,
