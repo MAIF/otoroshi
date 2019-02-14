@@ -78,6 +78,10 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def loginUrl: String
   def logoutUrl: String
   def accessTokenField: String
+  def scope: String
+  def useJson: Boolean
+  def readProfileFromToken: Boolean
+  def jwtVerifier: Option[AlgoSettings]
   def nameField: String
   def emailField: String
   def otoroshiDataField: String

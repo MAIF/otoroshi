@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
-import com.auth0.jwk.Jwk
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.Verification
@@ -490,6 +489,7 @@ case class JWKSAlgoSettings(url: String,
                       (jwk.getKeyID, jwk)
                     }.toMap
                     JWKSAlgoSettings.cache.put(url, (stop, keys))
+                    println(keys + "")
                     keys.get(kid) match {
                       case Some(jwk) => algoFromJwk(alg, jwk)
                       case None      => None

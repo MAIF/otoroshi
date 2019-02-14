@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 
 import { TextInput, NumberInput, SelectInput, CodeInput, BooleanInput } from './inputs';
+import { AlgoSettings } from './JwtVerifier';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -23,6 +24,14 @@ export class Oauth2ModuleConfig extends Component {
     logoutUrl: 'http://my.iam.local:8082/logout',
     callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback',
     accessTokenField: 'access_token',
+    scope: 'openid profile email name',
+    useJson: false,
+    readProfileFromToken: false,
+    jwtVerifier: {
+      type: 'HSAlgoSettings',
+      size: 512,
+      secret: 'secret',
+    },
     nameField: 'name',
     emailField: 'email',
     otoroshiDataField: 'app_metadata | otoroshi_data',
@@ -70,6 +79,11 @@ export class Oauth2ModuleConfig extends Component {
 
   render() {
     const settings = this.props.value || this.props.settings;
+    settings.jwtVerifier = settings.jwtVerifier || {
+      type: 'HSAlgoSettings',
+      size: 512,
+      secret: 'secret',
+    };
     const path = this.props.path || '';
     const changeTheValue = this.changeTheValue;
     if (this.state.error) {
@@ -108,6 +122,18 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           suffix="seconds"
           onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
+        />
+        <BooleanInput
+          label="Use json payloads"
+          value={settings.useJson}
+          help="..."
+          onChange={v => changeTheValue(path + '.useJson', v)}
+        />
+        <BooleanInput
+          label="Read profile from token"
+          value={settings.readProfileFromToken}
+          help="..."
+          onChange={v => changeTheValue(path + '.readProfileFromToken', v)}
         />
         <TextInput
           label="Client ID"
@@ -164,6 +190,12 @@ export class Oauth2ModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.accessTokenField', v)}
         />
         <TextInput
+          label="Scope"
+          value={settings.scope}
+          help="..."
+          onChange={v => changeTheValue(path + '.scope', v)}
+        />
+        <TextInput
           label="Name field name"
           value={settings.nameField}
           help="..."
@@ -181,6 +213,12 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
         />
+        {settings.readProfileFromToken && <AlgoSettings
+          algoTitle="Token verification"
+          path={`jwtVerifier`}
+          changeTheValue={this.changeTheValue}
+          algo={settings.jwtVerifier}
+        />}
       </div>
     );
   }
@@ -611,6 +649,14 @@ export class AuthModuleConfig extends Component {
                 logoutUrl: 'http://my.iam.local:8082/logout',
                 callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback',
                 accessTokenField: 'access_token',
+                scope: 'openid profile email name',
+                useJson: false,
+                readProfileFromToken: false,
+                jwtVerifier: {
+                  type: 'HSAlgoSettings',
+                  size: 512,
+                  secret: 'secret',
+                },
                 nameField: 'name',
                 emailField: 'email',
                 otoroshiDataField: 'app_metadata | otoroshi_data',

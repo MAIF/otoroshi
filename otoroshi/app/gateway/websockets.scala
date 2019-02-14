@@ -685,7 +685,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     Right(
                                       ActorFlow.actorRef(
                                         out =>
-                                          WebSocketProxyActor.props(httpRequest.url,
+                                          WebSocketProxyActor.props(httpRequest.url.replace("://", ":///").replace("//", "/"),
                                                                     env.otoroshiMaterializer,
                                                                     out,
                                                                     env,

@@ -1,5 +1,7 @@
 package auth
 
+import akka.http.scaladsl.util.FastFuture
+import com.auth0.jwt.JWT
 import controllers.routes
 import env.Env
 import models._
@@ -9,9 +11,10 @@ import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
 import storage.BasicStore
+import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
 
@@ -45,6 +48,9 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           accessTokenField = (json \ "accessTokenField").asOpt[String].getOrElse("access_token"),
           nameField = (json \ "nameField").asOpt[String].getOrElse("name"),
           emailField = (json \ "emailField").asOpt[String].getOrElse("email"),
+          useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
+          readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
+          jwtVerifier = (json \ "jwtVerifier").asOpt[JsValue].flatMap(v => AlgoSettings.fromJson(v).toOption),
           otoroshiDataField = (json \ "otoroshiDataField").asOpt[String].getOrElse("app_metadata | otoroshi_data"),
           callbackUrl = (json \ "callbackUrl")
             .asOpt[String]
@@ -68,6 +74,10 @@ case class GenericOauth2ModuleConfig(
     userInfoUrl: String = "http://localhost:8082/userinfo",
     loginUrl: String = "http://localhost:8082/login",
     logoutUrl: String = "http://localhost:8082/logout",
+    scope: String = "openid profile email name",
+    useJson: Boolean = false,
+    readProfileFromToken: Boolean = false,
+    jwtVerifier: Option[AlgoSettings] = None,
     accessTokenField: String = "access_token",
     nameField: String = "name",
     emailField: String = "email",
@@ -89,7 +99,11 @@ case class GenericOauth2ModuleConfig(
     "userInfoUrl"       -> this.userInfoUrl,
     "loginUrl"          -> this.loginUrl,
     "logoutUrl"         -> this.logoutUrl,
+    "scope"             -> this.scope,
+    "useJson"           -> this.useJson,
+    "readProfileFromToken" -> this.readProfileFromToken,
     "accessTokenField"  -> this.accessTokenField,
+    "jwtVerifier"       -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
     "nameField"         -> this.nameField,
     "emailField"        -> this.emailField,
     "otoroshiDataField" -> this.otoroshiDataField,
@@ -134,7 +148,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val redirect     = request.getQueryString("redirect")
     val clientId     = authConfig.clientId
     val responseType = "code"
-    val scope        = "openid profile email name"
+    val scope        = authConfig.scope // "openid profile email name"
 
     val redirectUri = authConfig.callbackUrl
     val loginUrl =
@@ -186,9 +200,19 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            env.Ws
-              .url(authConfig.tokenUrl)
-              .post(
+            val builder = env.Ws.url(authConfig.tokenUrl)
+            val future1 = if (authConfig.useJson) {
+              builder.post(
+                Json.obj(
+                  "code"          -> code,
+                  "grant_type"    -> "authorization_code",
+                  "client_id"     -> clientId,
+                  "client_secret" -> clientSecret,
+                  "redirect_uri"  -> redirectUri
+                )
+              )
+            } else {
+              builder.post(
                 Map(
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
@@ -197,16 +221,43 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   "redirect_uri"  -> redirectUri
                 )
               )(writeableOf_urlEncodedSimpleForm)
-              .flatMap { resp =>
+            }
+            future1.flatMap { resp =>
                 val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
-                env.Ws
-                  .url(authConfig.userInfoUrl)
-                  .post(
-                    Map(
-                      "access_token" -> accessToken
+                if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                  val algoSettings = authConfig.jwtVerifier.get
+                  val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+                  val tokenBody   = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+                  val kid         = (tokenHeader \ "kid").asOpt[String]
+                  val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+                  algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
+                    case Some(algo) => {
+                      Try(JWT.require(algo).build().verify(accessToken)).map { _ =>
+                        println(Json.stringify(tokenBody))
+                        FastFuture.successful(tokenBody)
+                      } getOrElse {
+                        FastFuture.failed(new RuntimeException("Bad token"))
+                      }
+                    }
+                    case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
+                  }
+                } else {
+                  val builder2 = env.Ws.url(authConfig.userInfoUrl)
+                  val future2 = if (authConfig.useJson) {
+                    builder2.post(
+                      Json.obj(
+                        "access_token" -> accessToken
+                      )
                     )
-                  )(writeableOf_urlEncodedSimpleForm)
-                  .map(_.json)
+                  } else {
+                    builder2.post(
+                      Map(
+                        "access_token" -> accessToken
+                      )
+                    )(writeableOf_urlEncodedSimpleForm)
+                  }
+                  future2.map(_.json)
+                }
               }
               .map { user =>
                 val meta = PrivateAppsUser
@@ -251,9 +302,19 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            env.Ws
-              .url(authConfig.tokenUrl)
-              .post(
+            val builder = env.Ws.url(authConfig.tokenUrl)
+            val future1 = if (authConfig.useJson) {
+              builder.post(
+                Json.obj(
+                  "code"          -> code,
+                  "grant_type"    -> "authorization_code",
+                  "client_id"     -> clientId,
+                  "client_secret" -> clientSecret,
+                  "redirect_uri"  -> redirectUri
+                )
+              )
+            } else {
+              builder.post(
                 Map(
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
@@ -262,16 +323,45 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   "redirect_uri"  -> redirectUri
                 )
               )(writeableOf_urlEncodedSimpleForm)
-              .flatMap { resp =>
+            }
+            future1.flatMap { resp =>
                 val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
-                env.Ws
-                  .url(authConfig.userInfoUrl)
-                  .post(
-                    Map(
-                      "access_token" -> accessToken
+                if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                  val algoSettings = authConfig.jwtVerifier.get
+                  val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+                  val tokenBody   = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+                  val kid         = (tokenHeader \ "kid").asOpt[String]
+                  val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+                  println(Json.stringify(tokenHeader))
+                  println(Json.stringify(tokenBody))
+
+                  algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
+                    case Some(algo) => {
+                      Try(JWT.require(algo).acceptLeeway(10000).build().verify(accessToken)).map { _ =>
+                        FastFuture.successful(tokenBody)
+                      } recoverWith {
+                        case e => Success(FastFuture.failed(e))
+                      } get
+                    }
+                    case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
+                  }
+                } else {
+                  val builder2 = env.Ws.url(authConfig.userInfoUrl)
+                  val future2 = if (authConfig.useJson) {
+                    builder2.post(
+                      Json.obj(
+                        "access_token" -> accessToken
+                      )
                     )
-                  )(writeableOf_urlEncodedSimpleForm)
-                  .map(_.json)
+                  } else {
+                    builder2.post(
+                      Map(
+                        "access_token" -> accessToken
+                      )
+                    )(writeableOf_urlEncodedSimpleForm)
+                  }
+                  future2.map(_.json)
+                }
               }
               .map { user =>
                 Right(

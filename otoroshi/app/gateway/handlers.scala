@@ -1087,7 +1087,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         )
                                       else EmptyBody // Stream IN
                                     env.gatewayClient
-                                      .urlWithProtocol(target.scheme, httpRequest.url)
+                                      .urlWithProtocol(target.scheme, httpRequest.url.replace("://", ":///").replace("//", "/"))
                                       .withRequestTimeout(6.hour) // we should monitor leaks
                                       .withMethod(httpRequest.method)
                                       .withHttpHeaders(httpRequest.headers.toSeq: _*)
