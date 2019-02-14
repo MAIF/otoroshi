@@ -163,43 +163,52 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     env.redirections.nonEmpty && env.redirections.exists(it => host.contains(it))
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
-    val isSecured = getSecuredFor(request)
-    val protocol  = getProtocolFor(request)
-    val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
-    val cookies   = request.cookies.map(_.value).map(ByteString.apply)
-    val headers   = request.headers.toSimpleMap.values.map(ByteString.apply)
-    // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
-    if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
-      Some(clusterError("Waiting for first Otoroshi leader sync."))
-    } else if (url.size > (4 * 1024)) {
-      Some(tooBig("URL should be smaller than 4 Kb"))
-    } else if (cookies.exists(_.size > (16 * 1024))) {
-      Some(tooBig("Cookies should be smaller than 16 Kb"))
-    } else if (headers.exists(_.size > (16 * 1024))) {
-      Some(tooBig("Headers should be smaller than 16 Kb"))
+    if (env.globalMaintenanceMode) {
+      if (request.relativeUri.contains("__otoroshi_assets")) {
+        super.routeRequest(request)
+      } else {
+        Some(globalMaintenanceMode())
+      }
     } else {
-      val toHttps = env.exposedRootSchemeIsHttps
-      val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
-      host match {
-        case str if matchRedirection(str)                                           => Some(redirectToMainDomain())
-        case _ if request.relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
-        case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
-        case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
-        case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")     => Some(setPrivateAppsCookies())
-        case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout")    => Some(removePrivateAppsCookies())
-        case env.backOfficeHost if !isSecured && toHttps && env.isProd              => Some(redirectToHttps())
-        case env.privateAppsHost if !isSecured && toHttps && env.isProd             => Some(redirectToHttps())
-        case env.adminApiHost if env.exposeAdminApi                                 => super.routeRequest(request)
-        case env.backOfficeHost if env.exposeAdminDashboard                         => super.routeRequest(request)
-        case env.privateAppsHost                                                    => super.routeRequest(request)
-        case _ =>
-          request.headers.get("Sec-WebSocket-Version") match {
-            case None    => Some(forwardCall())
-            case Some(_) => Some(webSocketHandler.proxyWebSocket())
-          }
+      val isSecured = getSecuredFor(request)
+      val protocol  = getProtocolFor(request)
+      val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
+      val cookies   = request.cookies.map(_.value).map(ByteString.apply)
+      val headers   = request.headers.toSimpleMap.values.map(ByteString.apply)
+      // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
+      if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
+        Some(clusterError("Waiting for first Otoroshi leader sync."))
+      } else if (url.size > (4 * 1024)) {
+        Some(tooBig("URL should be smaller than 4 Kb"))
+      } else if (cookies.exists(_.size > (16 * 1024))) {
+        Some(tooBig("Cookies should be smaller than 16 Kb"))
+      } else if (headers.exists(_.size > (16 * 1024))) {
+        Some(tooBig("Headers should be smaller than 16 Kb"))
+      } else {
+        val toHttps = env.exposedRootSchemeIsHttps
+        val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+        host match {
+          case str if matchRedirection(str)                                           => Some(redirectToMainDomain())
+          case _ if request.relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
+          case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
+          case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")     => Some(setPrivateAppsCookies())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout")    => Some(removePrivateAppsCookies())
+          case env.backOfficeHost if !isSecured && toHttps && env.isProd              => Some(redirectToHttps())
+          case env.privateAppsHost if !isSecured && toHttps && env.isProd             => Some(redirectToHttps())
+          case env.adminApiHost if env.exposeAdminApi                                 => super.routeRequest(request)
+          case env.backOfficeHost if env.exposeAdminDashboard                         => super.routeRequest(request)
+          case env.privateAppsHost                                                    => super.routeRequest(request)
+          case _ =>
+            request.headers.get("Sec-WebSocket-Version") match {
+              case None    => Some(forwardCall())
+              case Some(_) => Some(webSocketHandler.proxyWebSocket())
+            }
+        }
       }
     }
   }
+
 
   def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
     if (desc.xForwardedHeaders) {
@@ -344,6 +353,16 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def tooBig(message: String) = actionBuilder.async { req =>
     Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"))
+  }
+
+  def globalMaintenanceMode() = actionBuilder.async { req =>
+    Errors.craftResponseResult(
+      "Service in maintenance mode",
+      ServiceUnavailable,
+      req,
+      None,
+      Some("errors.service.in.maintenance")
+    )
   }
 
   def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]],
@@ -546,6 +565,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
     // val currentProcessedRequests = env.datastores.requestsDataStore.incrementProcessedRequests()
     val globalConfig = env.datastores.globalConfigDataStore.latest()
+
     val finalResult = {
       // env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig => // Very consuming but eh !!!
       env.statsd.meter(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests.toDouble)(
@@ -610,6 +630,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   )
                 }
                 case Some(rawDesc) => {
+                  if (rawDesc.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
+                    Errors.craftResponseResult(
+                      "Service in maintenance mode",
+                      ServiceUnavailable,
+                      req,
+                      Some(rawDesc),
+                      Some("errors.service.in.maintenance")
+                    )
+                  } else {
                   passWithReadOnly(rawDesc.readOnly, req) {
                     applyJwtVerifier(rawDesc, req) { jwtInjection =>
                       applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -1870,6 +1899,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       }
                     }
                   }
+                }
                 }
               }
           }

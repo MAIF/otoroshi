@@ -138,6 +138,8 @@ class Env(val configuration: Configuration,
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
+  lazy val globalMaintenanceMode: Boolean = configuration.getOptional[Boolean]("otoroshi.maintenanceMode").getOrElse(false)
+
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
   lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)

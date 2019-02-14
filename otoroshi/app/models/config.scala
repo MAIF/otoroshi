@@ -85,6 +85,7 @@ case class GlobalConfig(
     useCircuitBreakers: Boolean = true,
     apiReadOnly: Boolean = false,
     u2fLoginOnly: Boolean = false,
+    maintenanceMode: Boolean = false,
     ipFiltering: IpFiltering = IpFiltering(),
     throttlingQuota: Long = BaseQuotas.MaxValue,
     perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
@@ -177,6 +178,7 @@ object GlobalConfig {
       }
       Json.obj(
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
+        "maintenanceMode"         -> o.maintenanceMode,
         "streamEntityOnly"        -> o.streamEntityOnly,
         "autoLinkToDefaultGroup"  -> o.autoLinkToDefaultGroup,
         "limitConcurrentRequests" -> o.limitConcurrentRequests,
@@ -211,6 +213,7 @@ object GlobalConfig {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("dev", "sandbox", "experiments", "preprod", "prod")),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
+          maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
           limitConcurrentRequests = (json \ "limitConcurrentRequests").asOpt[Boolean].getOrElse(false), // TODO : true by default after prod monitoring
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),

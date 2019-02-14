@@ -189,6 +189,14 @@ export class DangerZonePage extends Component {
         help: 'Forces admins to login only with user/password or user/password/u2F device',
       },
     },
+    maintenanceMode: {
+      type: 'bool',
+      props: {
+        label: 'Maintenance mode',
+        placeholder: '--',
+        help: 'Pass every otoroshi service in maintenance mode',
+      },
+    },
     apiReadOnly: {
       type: 'bool',
       props: {
@@ -415,6 +423,7 @@ export class DangerZonePage extends Component {
 
   formFlow = [
     '<<<Misc. Settings',
+    'maintenanceMode',
     'u2fLoginOnly',
     'apiReadOnly',
     'streamEntityOnly',
