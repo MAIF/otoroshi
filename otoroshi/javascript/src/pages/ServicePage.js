@@ -552,6 +552,12 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
             />
             <BooleanInput
+              label="Send X-Forwarded-* headers"
+              value={this.state.service.xForwardedHeaders}
+              help="When enabled, Otoroshi will send X-Forwarded-* headers to target"
+              onChange={v => this.changeTheValue('xForwardedHeaders', v)}
+            />
+            <BooleanInput
               label="Force HTTPS"
               value={this.state.service.forceHttps}
               help="Will force redirection to https:// if not present"
@@ -1200,12 +1206,20 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('metadata', v)}
             />
             <ObjectInput
-              label="Additional Headers"
+              label="Additional Headers In"
               placeholderKey="Header name (ie.Access-Control-Allow-Origin)"
               placeholderValue="Header value (ie. *)"
               value={this.state.service.additionalHeaders}
-              help="Specify headers that will be added to each client request. Useful to add authentication."
+              help="Specify headers that will be added to each client request (from Otoroshi to target). Useful to add authentication."
               onChange={v => this.changeTheValue('additionalHeaders', v)}
+            />
+            <ObjectInput
+              label="Additional Headers Out"
+              placeholderKey="Header name (ie. Content-Security-Policy)"
+              placeholderValue="Header value (ie. default-src 'src')"
+              value={this.state.service.additionalHeadersOut}
+              help="Specify headers that will be added to each client responsse (from Otoroshi to client)."
+              onChange={v => this.changeTheValue('additionalHeadersOut', v)}
             />
             <ObjectInput
               label="Matching Headers"

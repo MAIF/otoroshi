@@ -81,6 +81,31 @@ class WebSocketHandler()(implicit env: Env) {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
+  @inline
+  def getProtocolFor(req: RequestHeader): String = {
+    req.headers
+      .get("X-Forwarded-Proto")
+      .orElse(req.headers.get("X-Forwarded-Protocol"))
+      .map(_ == "https")
+      .orElse(Some(req.secure))
+      .map {
+        case true  => "https"
+        case false => "http"
+      }
+      .getOrElse("http")
+  }
+
+  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
+    if (desc.xForwardedHeaders) {
+      val xForwardedFor = request.headers.get("X-Forwarded-For").map(v => v + ", " + request.remoteAddress).getOrElse(request.remoteAddress)
+      val xForwardedProto = getProtocolFor(request)
+      val xForwardedHost = request.headers.get("X-Forwarded-Host").getOrElse(request.host)
+      Seq("X-Forwarded-For" -> xForwardedFor, "X-Forwarded-Host" -> xForwardedHost, "X-Forwarded-Proto" -> xForwardedProto)
+    } else {
+      Seq.empty[(String, String)]
+    }
+  }
+
   def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
     env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
       case None => FastFuture.successful(None)
@@ -533,7 +558,7 @@ class WebSocketHandler()(implicit env: Env) {
                               descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
                                 .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                 .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-                                .filterNot(t => jwtInjection.removeHeaders.contains(t._1))
+                                .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc, req)
 
                             // val requestHeader = ByteString(
                             //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn

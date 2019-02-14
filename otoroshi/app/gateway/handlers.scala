@@ -201,6 +201,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
+  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
+    if (desc.xForwardedHeaders) {
+      val xForwardedFor = request.headers.get("X-Forwarded-For").map(v => v + ", " + request.remoteAddress).getOrElse(request.remoteAddress)
+      val xForwardedProto = getProtocolFor(request)
+      val xForwardedHost = request.headers.get("X-Forwarded-Host").getOrElse(request.host)
+      Seq("X-Forwarded-For" -> xForwardedFor, "X-Forwarded-Host" -> xForwardedHost, "X-Forwarded-Proto" -> xForwardedProto)
+    } else {
+      Seq.empty[(String, String)]
+    }
+  }
+
   def setPrivateAppsCookies() = actionBuilder.async { req =>
     val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
     val sessionIdOpt: Option[String]  = req.queryString.get("sessionId").map(_.last)
@@ -877,7 +888,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
                                   .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                   .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-                                  .filterNot(t => jwtInjection.removeHeaders.contains(t._1))
+                                  .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc, req)
 
                               val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
                                 bodyAlreadyConsumed.compareAndSet(false, true)
@@ -1173,7 +1184,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   } else {
                                                     Seq.empty[(String, String)]
                                                   }) ++ descriptor.cors
-                                            .asHeaders(req) ++ desc.additionalHeadersOut
+                                            .asHeaders(req) ++ desc.additionalHeadersOut.toSeq
 
                                           val otoroshiResponse = otoroshi.script.HttpResponse(
                                             status = resp.status,
