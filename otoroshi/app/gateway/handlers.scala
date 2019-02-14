@@ -882,7 +882,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 .serialize(desc.secComSettings)(env)
                               logger.trace(s"Claim is : $claim")
                               val headersIn: Seq[(String, String)] =
-                                (req.headers.toSimpleMap
+                                (req.headers.toMap.map(tuple => (tuple._1, tuple._2.mkString(",")))
                                   .filterNot(
                                     t =>
                                       if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
