@@ -23,7 +23,7 @@ First you have to enable Otoroshi request transformers with the `-Dotoroshi.scri
 A request transformer is a piece of Scala code than can handle the complete lifecycle of an http request made on Otoroshi
 
 ```scala
-case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String]) {
+case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
   lazy val host: String = headers.getOrElse("Host", "")
   lazy val uri: Uri = Uri(url)
   lazy val scheme: String = uri.scheme
@@ -33,7 +33,7 @@ case class HttpRequest(url: String, method: String, headers: Map[String, String]
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String = uri.toRelative.toString()
 }
-case class HttpResponse(status: Int, headers: Map[String, String])
+case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
 
 trait RequestTransformer {
 
