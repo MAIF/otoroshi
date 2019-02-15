@@ -552,6 +552,12 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
             />
             <BooleanInput
+              label="Override Host header"
+              value={this.state.service.overrideHost}
+              help="When enabled, Otoroshi will automatically set the Host header to corresponding target host"
+              onChange={v => this.changeTheValue('overrideHost', v)}
+            />
+            <BooleanInput
               label="Send X-Forwarded-* headers"
               value={this.state.service.xForwardedHeaders}
               help="When enabled, Otoroshi will send X-Forwarded-* headers to target"

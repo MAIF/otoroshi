@@ -536,7 +536,8 @@ class WebSocketHandler()(implicit env: Env) {
                               (req.headers.toMap.toSeq.flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
                                 .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                                 env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
-                                "Host"                               -> host,
+                                // "Host"                               -> host,
+                                "Host"                               -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
                                 env.Headers.OtoroshiRequestId        -> snowflake,
                                 env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
                               ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {

@@ -891,7 +891,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   )
                                   .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                                   env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
-                                  "Host"                               -> host,
+                                  //"Host"                               -> host,
+                                  "Host"                               -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
                                   env.Headers.OtoroshiRequestId        -> snowflake,
                                   env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
                                 ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
