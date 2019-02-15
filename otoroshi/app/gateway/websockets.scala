@@ -31,6 +31,7 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
+import play.api.libs.ws.DefaultWSCookie
 
 class WebSocketHandler()(implicit env: Env) {
 
@@ -653,15 +654,26 @@ class WebSocketHandler()(implicit env: Env) {
                               }
                             }
 
+                            val wsCookiesIn = req.cookies.toSeq.map(c => DefaultWSCookie(
+                              name = c.name,
+                              value = c.value,
+                              domain = c.domain,
+                              path = Option(c.path),
+                              maxAge = c.maxAge.map(_.toLong),
+                              secure = c.secure,
+                              httpOnly = c.httpOnly
+                            ))
                             val rawRequest = otoroshi.script.HttpRequest(
                               url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
                               method = req.method,
-                              headers = req.headers.toSimpleMap
+                              headers = req.headers.toSimpleMap,
+                              cookies = wsCookiesIn
                             )
                             val otoroshiRequest = otoroshi.script.HttpRequest(
                               url = url,
                               method = req.method,
-                              headers = headersIn.toMap
+                              headers = headersIn.toMap,
+                              cookies = wsCookiesIn
                             )
                             val upstreamStart = System.currentTimeMillis()
                             descriptor

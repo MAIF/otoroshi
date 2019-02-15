@@ -20,6 +20,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
+import play.api.libs.ws.WSCookie
 import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import storage.redis.RedisStore
@@ -30,7 +31,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class HttpRequest(url: String, method: String, headers: Map[String, String]) {
+case class HttpRequest(url: String, method: String, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
   lazy val host: String                = headers.getOrElse("Host", "")
   lazy val uri: Uri                    = Uri(url)
   lazy val scheme: String              = uri.scheme
@@ -40,7 +41,7 @@ case class HttpRequest(url: String, method: String, headers: Map[String, String]
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String         = uri.toRelative.toString()
 }
-case class HttpResponse(status: Int, headers: Map[String, String])
+case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
 
 trait RequestTransformer {
 

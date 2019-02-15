@@ -26,7 +26,7 @@ import play.api.Logger
 import play.api.http.{Status => _, _}
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{EmptyBody, SourceBody}
+import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
@@ -38,6 +38,7 @@ import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
+import play.libs.ws.WSCookie
 
 case class ProxyDone(status: Int, upstreamLatency: Long, headersOut: Seq[Header])
 
@@ -1048,15 +1049,26 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               //.andThen {
                               //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
                               //}
+                              val wsCookiesIn = req.cookies.toSeq.map(c => DefaultWSCookie(
+                                name = c.name,
+                                value = c.value,
+                                domain = c.domain,
+                                path = Option(c.path),
+                                maxAge = c.maxAge.map(_.toLong),
+                                secure = c.secure,
+                                httpOnly = c.httpOnly
+                              ))
                               val rawRequest = otoroshi.script.HttpRequest(
                                 url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
                                 method = req.method,
-                                headers = req.headers.toSimpleMap
+                                headers = req.headers.toSimpleMap,
+                                cookies = wsCookiesIn
                               )
                               val otoroshiRequest = otoroshi.script.HttpRequest(
                                 url = url,
                                 method = req.method,
-                                headers = headersIn.toMap
+                                headers = headersIn.toMap,
+                                cookies = wsCookiesIn
                               )
                               val upstreamStart = System.currentTimeMillis()
                               descriptor
@@ -1089,7 +1101,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       .urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url))
                                       .withRequestTimeout(6.hour) // we should monitor leaks
                                       .withMethod(httpRequest.method)
-                                      .withHttpHeaders(httpRequest.headers.toSeq: _*)
+                                      .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
+                                      .withCookies(wsCookiesIn: _*)
                                       .withBody(body)
                                       .withFollowRedirects(false)
                                       .stream()
@@ -1111,7 +1124,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head)
                                         val rawResponse = otoroshi.script.HttpResponse(
                                           status = resp.status,
-                                          headers = headers.toMap
+                                          headers = headers.toMap,
+                                          cookies = resp.cookies
                                         )
                                         // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                         // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
@@ -1217,7 +1231,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                                           val otoroshiResponse = otoroshi.script.HttpResponse(
                                             status = resp.status,
-                                            headers = _headersOut.toMap
+                                            headers = _headersOut.toMap,
+                                            cookies = resp.cookies
                                           )
                                           descriptor
                                             .transformResponse(
@@ -1276,7 +1291,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   body = theStream
                                                 )
 
-                                                val cookies = resp.cookies.map(c => Cookie(
+                                                val cookies = httpResponse.cookies.map(c => Cookie(
                                                   name = c.name,
                                                   value = c.value,
                                                   maxAge = c.maxAge.map(_.toInt),
@@ -1284,7 +1299,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   domain = c.domain,
                                                   secure = c.secure,
                                                   httpOnly = c.httpOnly,
-                                                  sameSite = None,
+                                                  sameSite = None
                                                 ))
 
                                                 if (req.version == "HTTP/1.0") {
