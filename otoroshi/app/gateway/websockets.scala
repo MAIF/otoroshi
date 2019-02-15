@@ -537,7 +537,7 @@ class WebSocketHandler()(implicit env: Env) {
                               .serialize(desc.secComSettings)(env)
                             logger.trace(s"Claim is : $claim")
                             val headersIn: Seq[(String, String)] =
-                              (req.headers.toMap.map(tuple => (tuple._1, tuple._2.mkString(",")))
+                              (req.headers.toMap.toSeq.flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
                                 .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
                                 env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
                                 "Host"                               -> host,

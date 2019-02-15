@@ -29,7 +29,7 @@ import security._
 import org.mindrot.jbcrypt.BCrypt
 import akka.http.scaladsl.util.FastFuture._
 import auth.GenericOauth2ModuleConfig
-import com.nimbusds.jose.jwk.JWKSet
+import com.nimbusds.jose.jwk.{JWKSet, KeyType}
 import ssl.FakeKeyStore.KeystoreSettings
 import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
 
@@ -776,17 +776,29 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 desc = desc
               )
               val body = Json.parse(resp.body)
+              val issuer = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
               val tokenUrl = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
               val authorizeUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
               val userInfoUrl = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
-              val loginUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.loginUrl)
-              val logoutUrl = (body \ "end_session_endpoint").asOpt[String].getOrElse(config.logoutUrl)
+              val loginUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
+              val logoutUrl = (body \ "end_session_endpoint").asOpt[String].getOrElse(issuer + "logout")
+              val jwksUri = (body \ "jwks_uri").asOpt[String]
               Ok(config.copy(
                 tokenUrl = tokenUrl,
                 authorizeUrl = authorizeUrl,
                 userInfoUrl = userInfoUrl,
                 loginUrl = loginUrl,
-                logoutUrl = logoutUrl
+                logoutUrl = logoutUrl,
+                accessTokenField = jwksUri.map(_ => "id_token").getOrElse("access_token"),
+                useJson = true,
+                readProfileFromToken = jwksUri.isDefined,
+                jwtVerifier = jwksUri.map(url => JWKSAlgoSettings(
+                  url = url,
+                  headers = Map.empty[String, String],
+                  timeout = FiniteDuration(2000, TimeUnit.MILLISECONDS),
+                  ttl = FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS),
+                  kty = KeyType.RSA
+                ))
               ).asJson)
             } getOrElse {
               Ok(GenericOauth2ModuleConfig(

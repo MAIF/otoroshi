@@ -232,12 +232,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
                   algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
                     case Some(algo) => {
-                      Try(JWT.require(algo).build().verify(accessToken)).map { _ =>
-                        println(Json.stringify(tokenBody))
+                      Try(JWT.require(algo).acceptLeeway(10000).build().verify(accessToken)).map { _ =>
                         FastFuture.successful(tokenBody)
-                      } getOrElse {
-                        FastFuture.failed(new RuntimeException("Bad token"))
-                      }
+                      } recoverWith {
+                        case e => Success(FastFuture.failed(e))
+                      } get
                     }
                     case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
                   }
@@ -332,9 +331,6 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   val tokenBody   = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
                   val kid         = (tokenHeader \ "kid").asOpt[String]
                   val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
-                  println(Json.stringify(tokenHeader))
-                  println(Json.stringify(tokenBody))
-
                   algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
                     case Some(algo) => {
                       Try(JWT.require(algo).acceptLeeway(10000).build().verify(accessToken)).map { _ =>

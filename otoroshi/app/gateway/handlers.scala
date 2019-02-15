@@ -882,7 +882,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 .serialize(desc.secComSettings)(env)
                               logger.trace(s"Claim is : $claim")
                               val headersIn: Seq[(String, String)] =
-                                (req.headers.toMap.map(tuple => (tuple._1, tuple._2.mkString(",")))
+                                (req.headers.toMap.toSeq.flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
                                   .filterNot(
                                     t =>
                                       if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
@@ -1109,9 +1109,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         val (resp, remainingQuotas) = tuple
                                         // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
                                         val headers = resp.headers.mapValues(_.head)
+                                        val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head)
                                         val rawResponse = otoroshi.script.HttpResponse(
                                           status = resp.status,
-                                          headers = headers
+                                          headers = headers.toMap
                                         )
                                         // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                         // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
@@ -1187,7 +1188,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           }
                                         } else {
                                           val upstreamLatency = System.currentTimeMillis() - upstreamStart
-                                          val _headersOut: Seq[(String, String)] = headers.toSeq
+                                          val _headersOut: Seq[(String, String)] = _headersForOut
                                             .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
                                             if (descriptor.sendOtoroshiHeadersBack) {
                                               Seq(
