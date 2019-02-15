@@ -18,18 +18,13 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests}
 import play.api.mvc._
 import play.api.libs.json.Json
 import security.{IdGenerator, OtoroshiClaim}
-import utils.Metrics
+import utils.{Metrics, UrlSanitizer}
 import utils.future.Implicits._
 
 import scala.concurrent.{Future, Promise}
@@ -685,7 +680,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     Right(
                                       ActorFlow.actorRef(
                                         out =>
-                                          WebSocketProxyActor.props(httpRequest.url.replace("://", ":///").replace("//", "/"),
+                                          WebSocketProxyActor.props(UrlSanitizer.sanitize(httpRequest.url),
                                                                     env.otoroshiMaterializer,
                                                                     out,
                                                                     env,

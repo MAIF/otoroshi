@@ -63,3 +63,10 @@ object test {
     "pouet"
   }
 }
+
+object UrlSanitizer {
+  private val doubleSlash = Pattern.compile("([^:])\\/\\/")
+  def sanitize(url: String): String = {
+    doubleSlash.matcher(url).replaceAll("$1/")
+  }
+}

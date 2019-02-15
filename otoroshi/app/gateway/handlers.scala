@@ -20,7 +20,7 @@ import controllers.routes
 import env.{Env, SidecarConfig}
 import events._
 import models._
-import utils.MaxLengthLimiter
+import utils.{MaxLengthLimiter, RegexPool, UrlSanitizer}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.{Status => _, _}
@@ -31,7 +31,6 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
 import security.{IdGenerator, OtoroshiClaim}
-import utils.RegexPool
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -1087,7 +1086,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         )
                                       else EmptyBody // Stream IN
                                     env.gatewayClient
-                                      .urlWithProtocol(target.scheme, httpRequest.url.replace("://", ":///").replace("//", "/"))
+                                      .urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url))
                                       .withRequestTimeout(6.hour) // we should monitor leaks
                                       .withMethod(httpRequest.method)
                                       .withHttpHeaders(httpRequest.headers.toSeq: _*)
