@@ -11,3 +11,4 @@ target
 /data
 .metals
 .java-version
+*.patch

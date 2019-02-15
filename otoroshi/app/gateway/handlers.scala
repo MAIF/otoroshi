@@ -1277,6 +1277,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   body = theStream
                                                 )
 
+                                                val cookies = resp.cookies.map(c => Cookie(
+                                                  name = c.name,
+                                                  value = c.value,
+                                                  maxAge = c.maxAge.map(_.toInt),
+                                                  path = c.path.getOrElse("/"),
+                                                  domain = c.domain,
+                                                  secure = c.secure,
+                                                  httpOnly = c.httpOnly,
+                                                  sameSite = None,
+                                                ))
+
                                                 if (req.version == "HTTP/1.0") {
                                                   logger.warn(
                                                     s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
@@ -1290,9 +1301,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     .fast
                                                     .map { body =>
                                                       Status(httpResponse.status)(body)
-                                                        .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                                        .withHeaders(headersOut.filterNot(h => h._1 == "Content-Type" || h._1 == "Set-Cookie"): _*)
                                                         .as(contentType)
-                                                        .withCookies(withTrackingCookies: _*)
+                                                        .withCookies((withTrackingCookies ++ cookies): _*)
                                                     }
                                                 } else if (globalConfig.streamEntityOnly) { // only temporary
                                                   // stream out
@@ -1324,9 +1335,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   FastFuture.successful(
                                                     Status(httpResponse.status)
                                                       .sendEntity(entity)
-                                                      .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
+                                                      .withHeaders(headersOut.filterNot(h => h._1 == "Content-Type" || h._1 == "Set-Cookie"): _*)
                                                       .as(contentType)
-                                                      .withCookies(withTrackingCookies: _*)
+                                                      .withCookies((withTrackingCookies ++ cookies): _*)
                                                   )
                                                 } else {
                                                   val response = httpResponse.headers
@@ -1337,8 +1348,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       // stream out
                                                       Status(httpResponse.status)
                                                         .chunked(finalStream)
-                                                        .withHeaders(headersOut: _*)
-                                                        .withCookies(withTrackingCookies: _*)
+                                                        .withHeaders(headersOut.filterNot(h => h._1 == "Set-Cookie"): _*)
+                                                        .withCookies((withTrackingCookies ++ cookies): _*)
                                                       // .as(contentType)
                                                     } getOrElse {
                                                     // stream out
@@ -1353,8 +1364,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           httpResponse.headers.get("Content-Type")
                                                         )
                                                       )
-                                                      .withHeaders(headersOut.filterNot(_._1 == "Content-Type"): _*)
-                                                      .withCookies(withTrackingCookies: _*)
+                                                      .withHeaders(headersOut.filterNot(h => h._1 == "Content-Type" || h._1 == "Set-Cookie"): _*)
+                                                      .withCookies((withTrackingCookies ++ cookies): _*)
                                                       .as(contentType)
                                                   }
                                                   FastFuture.successful(response)
