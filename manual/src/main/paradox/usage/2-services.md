@@ -34,7 +34,7 @@ Then, you will be able to choose the URL that will be used to reach your new ser
 <img src="../img/service-flags-2.png" />
 @@@
 
-In the `service targets` section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets.
+In the `service targets` section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets. If the `override Host header` toggle is one, the host header will be changed for the host of the target. For example, if you request `http://www.foo.bar/api` with a target to `http://www-internal.service.local/api`, the target will receive a `Host: www-internal.service.local` instead of `Host: www.foo.bar`.
 
 You can also specify a target root, if you say that the target root is `/foo/`, then any call to `https://my.api.foo` will call `http://192.168.0.42/foo/` and nay call to `https://my.api.foo/bar` will call `http://192.168.0.42/foo/bar`.
 
