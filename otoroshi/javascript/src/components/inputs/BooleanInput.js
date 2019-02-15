@@ -54,6 +54,47 @@ export class BooleanInput extends Component {
   }
 }
 
+export class BiColumnBooleanInput extends Component {
+  toggleOff = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!this.props.disabled) this.props.onChange(false);
+  };
+
+  toggleOn = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!this.props.disabled) this.props.onChange(true);
+  };
+
+  toggle = value => {
+    if (!this.props.disabled) this.props.onChange(value);
+  };
+
+  render() {
+    const value = !!this.props.value;
+
+    return (
+      <div>
+        <div className="form-group">
+          <label className="col-xs-12 col-sm-4 control-label">
+            {this.props.label} <Help text={this.props.help} />
+          </label>
+          <div className="col-sm-8">
+            <div className="row">
+              <div className="col-sm-6">
+                {value && <OnSwitch onChange={this.toggleOff} />}
+                {!value && <OffSwitch onChange={this.toggleOn} />}
+              </div>
+              <div className="col-sm-6">
+                {this.props.after && <div className="pull-right">{this.props.after()}</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
 export class SimpleBooleanInput extends Component {
   toggleOff = e => {
     if (e && e.preventDefault) e.preventDefault();
