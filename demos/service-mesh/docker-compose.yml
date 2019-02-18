@@ -50,7 +50,7 @@ services:
         ipv4_address: 172.16.239.44
 
   otoroshi-service-1:
-    image: maif/otoroshi:1.4.5-dev
+    image: maif/otoroshi:1.4.5
     networks:
       - mesh
     environment:
@@ -75,7 +75,7 @@ services:
         ipv4_address: 172.16.239.31
 
   otoroshi-service-2:
-    image: maif/otoroshi:1.4.5-dev
+    image: maif/otoroshi:1.4.5
     networks:
       - mesh
     environment:
