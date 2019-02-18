@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Try Otoroshi in 5 minutes · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="js/page.js"></script>
+<script type="text/javascript" src="js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.5
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="about.html" class="page">About Otoroshi</a></li>
+  <li><a href="archi.html" class="page">Architecture</a></li>
+  <li><a href="features.html" class="page">Features</a></li>
+  <li><a href="quickstart.html" class="active page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="videos.html" class="page">Video tutorials</a></li>
+  <li><a href="getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="topics/req-transformers.html" class="page">Request transformers</a></li>
+  </ul></li>
+  <li><a href="api.html" class="page">Admin REST API</a></li>
+  <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="cli.html" class="page">Rust CLI</a></li>
+  <li><a href="deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="deploy/other.html" class="page">Others</a></li>
+    <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+  </ul></li>
+  <li><a href="connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.5
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="about.html" class="page">About Otoroshi</a></li>
+  <li><a href="archi.html" class="page">Architecture</a></li>
+  <li><a href="features.html" class="page">Features</a></li>
+  <li><a href="quickstart.html" class="active page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="videos.html" class="page">Video tutorials</a></li>
+  <li><a href="getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="topics/req-transformers.html" class="page">Request transformers</a></li>
+  </ul></li>
+  <li><a href="api.html" class="page">Admin REST API</a></li>
+  <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="cli.html" class="page">Rust CLI</a></li>
+  <li><a href="deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="deploy/other.html" class="page">Others</a></li>
+    <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+  </ul></li>
+  <li><a href="connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="index.html">Otoroshi</a></li>
+  <li>Try Otoroshi in 5 minutes</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#try-otoroshi-in-5-minutes" name="try-otoroshi-in-5-minutes" class="anchor"><span class="anchor-link"></span></a>Try Otoroshi in 5 minutes</h1>
+<p>what you will need :</p>
+<ul>
+  <li>JDK 8</li>
+  <li>curl</li>
+  <li>5 minutes of free time</li>
+</ul>
+<p>If you don&rsquo;t/can&rsquo;t have these tools on your machine, you can start a sandboxed environment using here with the following command</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -it maif/otoroshi-demo bash
+</code></pre>
+<p>or you can also try Otoroshi online with Google Cloud Shell if you&rsquo;re a user of the Google Cloud Platform</p><div class="centered-img">
+<p><a href="https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&tutorial=tutorial.md"><img src="http://gstatic.com/cloudssh/images/open-btn.svg" alt="Open in Cloud Shell" /></a></p></div>
+<h2><a href="#the-elevator-pitch" name="the-elevator-pitch" class="anchor"><span class="anchor-link"></span></a>The elevator pitch</h2>
+<p>Otoroshi is an awesome reverse proxy built with Scala that handles all the calls to and between your microservices without service locator and lets you change configuration dynamically at runtime.</p>
+<h2><a href="#i-like-sh-but-i-really-want-to-see-the-ui" name="i-like-sh-but-i-really-want-to-see-the-ui" class="anchor"><span class="anchor-link"></span></a>I like sh but I really want to see the UI</h2>
+<p>As Otoroshi uses Otoroshi to serve its own admin UI and admin API, you won&rsquo;t be able to access the admin UI on <code>http://localhost:8080</code>. Otoroshi needs a domain name to know that you want to access the admin UI. By default, the admin UI is exposed on <code>http://otoroshi.foo.bar:8080</code>. Of course you can <a href="firstrun/configfile.html#common-configuration">configure</a> the domain of the subdomain. To configure access to the admin, just go to the <a href="#what-about-the-ui">UI section of the quickstart</a>.</p>
+<h2><a href="#now-some-sh-" name="now-some-sh-" class="anchor"><span class="anchor-link"></span></a>Now some sh :)</h2>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.5/otoroshi.jar
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.4.5/otoroshicli
+# or if you use linux
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.5/otoroshicli
+# or if you use windows
+curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.4.5/otoroshicli.exe
+
+chmod +x otoroshicli
+
+# Run the Otoroshi server on Java 8
+java -jar otoroshi.jar &amp;
+
+# Run the Otoroshi server on Java 9 and 10
+java --add-modules java.xml.bind -jar otoroshi.jar &amp;
+
+# Check if admin api works
+./otoroshicli services all
+./otoroshicli apikeys all
+./otoroshicli groups all
+
+# Create a service that will proxy call to https://freegeoip.net through http://ip.geo.com:8080
+./otoroshicli services create --group default --name geo-ip-api --env prod \
+  --domain geo.com --subdomain ip --root /json/ --target https://freegeoip.net \
+  --public-pattern &#39;/.*&#39; --no-force-https
+
+# Then test it
+./otoroshicli tryout call &quot;http://127.0.0.1:8080/&quot; -X GET -H &#39;Host: ip.geo.com&#39;
+# works with curl -X GET -H &#39;Host: ip.geo.com&#39; &quot;http://127.0.0.1:8080/&quot; | jqn
+
+# Run 3 new microservices in 3 new terminal processes
+./otoroshicli tryout serve 9901
+./otoroshicli tryout serve 9902
+./otoroshicli tryout serve 9903
+
+# Create a service that will loadbalance between these 3 microservices and serves them through
+# http://api.hello.com:8080
+./otoroshicli services create --group default --id hello-api --name hello-api \
+  --env prod --domain hello.com --subdomain api --root / \
+  --target &quot;http://127.0.0.1:9901&quot; \
+  --target &quot;http://127.0.0.1:9902&quot; \
+  --public-pattern &#39;/.*&#39; --no-force-https --client-retries 3
+
+# Then test it multiple time to observe loadbalancing
+# You can also define &#39;127.0.0.1  api.hello.com&#39; in your /etc/hosts file and test it in your browser
+./otoroshicli tryout call &quot;http://127.0.0.1:8080/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+sudo echo &quot;127.0.0.1    api.hello.com&quot; &gt;&gt; /etc/hosts
+open &quot;http://api.hello.com:8080/&quot;
+
+# Then add a new target
+./otoroshicli services add-target hello-api --target=&quot;http://127.0.0.1:9903&quot;
+
+# Then test it multiple time to observe loadbalancing
+./otoroshicli tryout call &quot;http://127.0.0.1:8080/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then kill one of the microservices and test it multiple time to observe loadbalancing
+./otoroshicli tryout call &quot;http://127.0.0.1:8080/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then kill a second microservices and test it multiple time to observe loadbalancing
+./otoroshicli tryout call &quot;http://127.0.0.1:8080/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then kill the last microservices and test it to observe connection error
+./otoroshicli tryout call &quot;http://127.0.0.1:8080/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then delete your service
+./otoroshicli services delete hello-api
+</code></pre>
+<h2><a href="#what-about-the-ui" name="what-about-the-ui" class="anchor"><span class="anchor-link"></span></a>What about the UI</h2>
+<p>first you need to add the following line to your <code>/etc/hosts</code> file.</p>
+<pre><code>127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar
+</code></pre>
+<p>you can use the following command</p>
+<pre class="prettyprint"><code class="language-sh">sudo echo &quot;127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar&quot; &gt;&gt; /etc/hosts
+</code></pre>
+<p>Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a> and <strong>log in with the credential generated in the logs</strong> during first startup ;-)</p>
+<p>If you want to know more about Otoroshi, you should continue reading the documentation starting with <a href="getotoroshi/index.html">how to get Otoroshi</a></p>
+<h2><a href="#i-dont-have-jdk-8-on-my-machine-but-i-have-docker-" name="i-dont-have-jdk-8-on-my-machine-but-i-have-docker-" class="anchor"><span class="anchor-link"></span></a>I don&rsquo;t have JDK 8 on my machine but I have Docker :)</h2>
+<p>If you want to use Docker, just follow these instructions</p>
+<pre class="prettyprint"><code class="language-sh"># here be careful, if you want to change the OTOROSHI_PORT, change the same value in the `otoroshicli.toml` config file
+export OTOROSHI_PORT=8080
+export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
+
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.5/otoroshicli
+# or if you use linux
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.4.5/otoroshicli
+# or if you use windows
+curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.4.5/otoroshicli.exe
+
+chmod +x otoroshicli 
+
+docker run -p &quot;$OTOROSHI_PORT:8080&quot; maif/otoroshi &amp;
+
+# Check if admin api works
+./otoroshicli services all
+./otoroshicli apikeys all
+./otoroshicli groups all
+
+# Create a service that will proxy call to https://freegeoip.net through http://ip.geo.com:$OTOROSHI_PORT
+./otoroshicli services create --group default --name geo-ip-api --env prod \
+  --domain geo.com --subdomain ip --root /json/ --target https://freegeoip.net \
+  --public-pattern &#39;/.*&#39; --no-force-https
+
+# Then test it
+./otoroshicli tryout call &quot;http://127.0.0.1:$OTOROSHI_PORT/&quot; -X GET -H &#39;Host: ip.geo.com&#39;
+# works with curl -X GET -H &#39;Host: ip.geo.com&#39; &quot;http://127.0.0.1:$OTOROSHI_PORT/&quot; | jqn
+
+# Run 3 new microservices in 3 new terminal processes
+./otoroshicli tryout serve 9901
+./otoroshicli tryout serve 9902
+./otoroshicli tryout serve 9903
+
+# Create a service that will loadbalance between these 3 microservices and serves them through
+# http://api.hello.com:$OTOROSHI_PORT
+./otoroshicli services create --group default --id hello-api --name hello-api \
+  --env prod --domain hello.com --subdomain api --root / \
+  --target &quot;http://$LOCAL_IP_ADDRESS:9901&quot; \
+  --target &quot;http://$LOCAL_IP_ADDRESS:9902&quot; \
+  --public-pattern &#39;/.*&#39; --no-force-https --client-retries 3
+
+# Then test it multiple time to observe loadbalancing
+# You can also define &#39;127.0.0.1  api.hello.com&#39; in your /etc/hosts file and test it in your browser
+./otoroshicli tryout call &quot;http://127.0.0.1:$OTOROSHI_PORT/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+sudo echo &quot;127.0.0.1    api.hello.com&quot; &gt;&gt; /etc/hosts
+open &quot;http://api.hello.com:$OTOROSHI_PORT/&quot;
+
+# Then add a new target
+./otoroshicli services add-target hello-api --target=&quot;http://$LOCAL_IP_ADDRESS:9903&quot;
+
+# Then test it multiple time to observe loadbalancing
+./otoroshicli tryout call &quot;http://127.0.0.1:$OTOROSHI_PORT/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then kill one of the microservices and test it multiple time to observe loadbalancing
+./otoroshicli tryout call &quot;http://127.0.0.1:$OTOROSHI_PORT/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then kill a second microservices and test it multiple time to observe loadbalancing
+./otoroshicli tryout call &quot;http://127.0.0.1:$OTOROSHI_PORT/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then kill the last microservices and test it to observe connection error
+./otoroshicli tryout call &quot;http://127.0.0.1:$OTOROSHI_PORT/&quot; -H &#39;Host: api.hello.com&#39; -H &#39;Accept: application/json&#39;
+
+# Then delete your service
+./otoroshicli services delete hello-api
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="videos.html">Video tutorials</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="quickstart.html#try-otoroshi-in-5-minutes" class="header">Try Otoroshi in 5 minutes</a>
+  <ul>
+    <li><a href="quickstart.html#the-elevator-pitch" class="header">The elevator pitch</a></li>
+    <li><a href="quickstart.html#i-like-sh-but-i-really-want-to-see-the-ui" class="header">I like sh but I really want to see the UI</a></li>
+    <li><a href="quickstart.html#now-some-sh-" class="header">Now some sh :)</a></li>
+    <li><a href="quickstart.html#what-about-the-ui" class="header">What about the UI</a></li>
+    <li><a href="quickstart.html#i-dont-have-jdk-8-on-my-machine-but-i-have-docker-" class="header">I don&rsquo;t have JDK 8 on my machine but I have Docker :)</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2019</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="js/magellan.js"></script>
+
+<style type="text/css">@import "lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
