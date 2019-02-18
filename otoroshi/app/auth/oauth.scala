@@ -87,27 +87,27 @@ case class GenericOauth2ModuleConfig(
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
   override def asJson = Json.obj(
-    "type"              -> "oauth2",
-    "id"                -> this.id,
-    "name"              -> this.name,
-    "desc"              -> this.desc,
-    "sessionMaxAge"     -> this.sessionMaxAge,
-    "clientId"          -> this.clientId,
-    "clientSecret"      -> this.clientSecret,
-    "authorizeUrl"      -> this.authorizeUrl,
-    "tokenUrl"          -> this.tokenUrl,
-    "userInfoUrl"       -> this.userInfoUrl,
-    "loginUrl"          -> this.loginUrl,
-    "logoutUrl"         -> this.logoutUrl,
-    "scope"             -> this.scope,
-    "useJson"           -> this.useJson,
+    "type"                 -> "oauth2",
+    "id"                   -> this.id,
+    "name"                 -> this.name,
+    "desc"                 -> this.desc,
+    "sessionMaxAge"        -> this.sessionMaxAge,
+    "clientId"             -> this.clientId,
+    "clientSecret"         -> this.clientSecret,
+    "authorizeUrl"         -> this.authorizeUrl,
+    "tokenUrl"             -> this.tokenUrl,
+    "userInfoUrl"          -> this.userInfoUrl,
+    "loginUrl"             -> this.loginUrl,
+    "logoutUrl"            -> this.logoutUrl,
+    "scope"                -> this.scope,
+    "useJson"              -> this.useJson,
     "readProfileFromToken" -> this.readProfileFromToken,
-    "accessTokenField"  -> this.accessTokenField,
-    "jwtVerifier"       -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
-    "nameField"         -> this.nameField,
-    "emailField"        -> this.emailField,
-    "otoroshiDataField" -> this.otoroshiDataField,
-    "callbackUrl"       -> this.callbackUrl
+    "accessTokenField"     -> this.accessTokenField,
+    "jwtVerifier"          -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
+    "nameField"            -> this.nameField,
+    "emailField"           -> this.emailField,
+    "otoroshiDataField"    -> this.otoroshiDataField,
+    "callbackUrl"          -> this.callbackUrl
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
@@ -222,14 +222,17 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 )
               )(writeableOf_urlEncodedSimpleForm)
             }
-            future1.flatMap { resp =>
+            future1
+              .flatMap { resp =>
                 val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
                   val algoSettings = authConfig.jwtVerifier.get
-                  val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
-                  val tokenBody   = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
-                  val kid         = (tokenHeader \ "kid").asOpt[String]
-                  val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+                  val tokenHeader =
+                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+                  val tokenBody =
+                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+                  val kid = (tokenHeader \ "kid").asOpt[String]
+                  val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
                   algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
                     case Some(algo) => {
                       Try(JWT.require(algo).acceptLeeway(10000).build().verify(accessToken)).map { _ =>
@@ -323,14 +326,17 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 )
               )(writeableOf_urlEncodedSimpleForm)
             }
-            future1.flatMap { resp =>
+            future1
+              .flatMap { resp =>
                 val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
                   val algoSettings = authConfig.jwtVerifier.get
-                  val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
-                  val tokenBody   = Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
-                  val kid         = (tokenHeader \ "kid").asOpt[String]
-                  val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+                  val tokenHeader =
+                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+                  val tokenBody =
+                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+                  val kid = (tokenHeader \ "kid").asOpt[String]
+                  val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
                   algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
                     case Some(algo) => {
                       Try(JWT.require(algo).acceptLeeway(10000).build().verify(accessToken)).map { _ =>

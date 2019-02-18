@@ -31,7 +31,10 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class HttpRequest(url: String, method: String, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
+case class HttpRequest(url: String,
+                       method: String,
+                       headers: Map[String, String],
+                       cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
   lazy val host: String                = headers.getOrElse("Host", "")
   lazy val uri: Uri                    = Uri(url)
   lazy val scheme: String              = uri.scheme

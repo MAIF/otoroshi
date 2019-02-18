@@ -56,8 +56,8 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchConfig = () => {
-    const url = window.prompt("URL of the OIDC config");
-    if( url) {
+    const url = window.prompt('URL of the OIDC config');
+    if (url) {
       return fetch(`/bo/api/oidc/_fetchConfig`, {
         method: 'POST',
         credentials: 'include',
@@ -65,17 +65,19 @@ export class Oauth2ModuleConfig extends Component {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          url, 
+        body: JSON.stringify({
+          url,
           id: this.props.value.id,
           name: this.props.value.name,
           desc: this.props.value.desc,
         }),
-      }).then(r => r.json()).then(config => {
-        this.props.onChange(config);
-      });
+      })
+        .then(r => r.json())
+        .then(config => {
+          this.props.onChange(config);
+        });
     }
-  }
+  };
 
   render() {
     const settings = this.props.value || this.props.settings;
@@ -90,11 +92,16 @@ export class Oauth2ModuleConfig extends Component {
       return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
     }
     return (
-        <div>
-          <div className="form-group">
-          <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label"></label>
+      <div>
+        <div className="form-group">
+          <label
+            htmlFor={`input-${this.props.label}`}
+            className="col-xs-12 col-sm-2 control-label"
+          />
           <div className="col-sm-10">
-            <button type="button" className="btn btn-success" onClick={this.fetchConfig}>Get from OIDC config</button>
+            <button type="button" className="btn btn-success" onClick={this.fetchConfig}>
+              Get from OIDC config
+            </button>
           </div>
         </div>
         <TextInput
@@ -213,12 +220,14 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
         />
-        {settings.readProfileFromToken && <AlgoSettings
-          algoTitle="Token verification"
-          path={`jwtVerifier`}
-          changeTheValue={this.changeTheValue}
-          algo={settings.jwtVerifier}
-        />}
+        {settings.readProfileFromToken && (
+          <AlgoSettings
+            algoTitle="Token verification"
+            path={`jwtVerifier`}
+            changeTheValue={this.changeTheValue}
+            algo={settings.jwtVerifier}
+          />
+        )}
       </div>
     );
   }

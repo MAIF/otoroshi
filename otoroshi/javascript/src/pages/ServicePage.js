@@ -522,60 +522,60 @@ export class ServicePage extends Component {
             onChange={e => this.changeTheValue('name', e)}
           />
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Flags">
-          <div className="row">
-          <div className="col-md-6">
-            <BiColumnBooleanInput
-              label="Service enabled"
-              value={this.state.service.enabled}
-              help="Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist."
-              onChange={v => this.changeTheValue('enabled', v)}
-            />
-            <BiColumnBooleanInput
-              label="Read only mode"
-              value={this.state.service.readOnly}
-              help="Authorize only GET, HEAD, OPTIONS calls on this service "
-              onChange={v => this.changeTheValue('readOnly', v)}
-            />
-            <BiColumnBooleanInput
-              label="Maintenance mode"
-              value={this.state.service.maintenanceMode}
-              help="Display a maintainance page when a user try to use the service"
-              onChange={v => this.changeTheValue('maintenanceMode', v)}
-            />
-            <BiColumnBooleanInput
-              label="Construction mode"
-              value={this.state.service.buildMode}
-              help="Display a construction page when a user try to use the service"
-              onChange={v => this.changeTheValue('buildMode', v)}
-            />
+            <div className="row">
+              <div className="col-md-6">
+                <BiColumnBooleanInput
+                  label="Service enabled"
+                  value={this.state.service.enabled}
+                  help="Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist."
+                  onChange={v => this.changeTheValue('enabled', v)}
+                />
+                <BiColumnBooleanInput
+                  label="Read only mode"
+                  value={this.state.service.readOnly}
+                  help="Authorize only GET, HEAD, OPTIONS calls on this service "
+                  onChange={v => this.changeTheValue('readOnly', v)}
+                />
+                <BiColumnBooleanInput
+                  label="Maintenance mode"
+                  value={this.state.service.maintenanceMode}
+                  help="Display a maintainance page when a user try to use the service"
+                  onChange={v => this.changeTheValue('maintenanceMode', v)}
+                />
+                <BiColumnBooleanInput
+                  label="Construction mode"
+                  value={this.state.service.buildMode}
+                  help="Display a construction page when a user try to use the service"
+                  onChange={v => this.changeTheValue('buildMode', v)}
+                />
+              </div>
+              <div className="col-md-6">
+                <BiColumnBooleanInput
+                  label="Send Otoroshi headers back"
+                  value={this.state.service.sendOtoroshiHeadersBack}
+                  help="When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
+                  onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
+                />
+                <BiColumnBooleanInput
+                  label="Override Host header"
+                  value={this.state.service.overrideHost}
+                  help="When enabled, Otoroshi will automatically set the Host header to corresponding target host"
+                  onChange={v => this.changeTheValue('overrideHost', v)}
+                />
+                <BiColumnBooleanInput
+                  label="Send X-Forwarded-* headers"
+                  value={this.state.service.xForwardedHeaders}
+                  help="When enabled, Otoroshi will send X-Forwarded-* headers to target"
+                  onChange={v => this.changeTheValue('xForwardedHeaders', v)}
+                />
+                <BiColumnBooleanInput
+                  label="Force HTTPS"
+                  value={this.state.service.forceHttps}
+                  help="Will force redirection to https:// if not present"
+                  onChange={v => this.changeTheValue('forceHttps', v)}
+                />
+              </div>
             </div>
-            <div className="col-md-6">
-            <BiColumnBooleanInput
-              label="Send Otoroshi headers back"
-              value={this.state.service.sendOtoroshiHeadersBack}
-              help="When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
-              onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
-            />
-            <BiColumnBooleanInput
-              label="Override Host header"
-              value={this.state.service.overrideHost}
-              help="When enabled, Otoroshi will automatically set the Host header to corresponding target host"
-              onChange={v => this.changeTheValue('overrideHost', v)}
-            />
-            <BiColumnBooleanInput
-              label="Send X-Forwarded-* headers"
-              value={this.state.service.xForwardedHeaders}
-              help="When enabled, Otoroshi will send X-Forwarded-* headers to target"
-              onChange={v => this.changeTheValue('xForwardedHeaders', v)}
-            />
-            <BiColumnBooleanInput
-              label="Force HTTPS"
-              value={this.state.service.forceHttps}
-              help="Will force redirection to https:// if not present"
-              onChange={v => this.changeTheValue('forceHttps', v)}
-            />
-          </div>
-          </div>
           </Collapse>
           <Collapse
             collapsed={this.state.allCollapsed}

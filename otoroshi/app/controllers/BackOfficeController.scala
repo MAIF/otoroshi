@@ -754,18 +754,22 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def fetchOpenIdConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
-
     import scala.concurrent.duration._
 
-    val id = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
+    val id   = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
     val name = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
     val desc = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
     (ctx.request.body \ "url").asOpt[String] match {
-      case None => FastFuture.successful(Ok(GenericOauth2ModuleConfig(
-        id = id,
-        name = name,
-        desc = desc
-      ).asJson))
+      case None =>
+        FastFuture.successful(
+          Ok(
+            GenericOauth2ModuleConfig(
+              id = id,
+              name = name,
+              desc = desc
+            ).asJson
+          )
+        )
       case Some(url) => {
         env.Ws.url(url).withRequestTimeout(10.seconds).get().map { resp =>
           if (resp.status == 200) {
@@ -775,44 +779,57 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 name = name,
                 desc = desc
               )
-              val body = Json.parse(resp.body)
-              val issuer = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
-              val tokenUrl = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
+              val body         = Json.parse(resp.body)
+              val issuer       = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
+              val tokenUrl     = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
               val authorizeUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
-              val userInfoUrl = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
-              val loginUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
-              val logoutUrl = (body \ "end_session_endpoint").asOpt[String].getOrElse((issuer + "/logout").replace("//logout", "/logout"))
+              val userInfoUrl  = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
+              val loginUrl     = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
+              val logoutUrl = (body \ "end_session_endpoint")
+                .asOpt[String]
+                .getOrElse((issuer + "/logout").replace("//logout", "/logout"))
               val jwksUri = (body \ "jwks_uri").asOpt[String]
-              Ok(config.copy(
-                tokenUrl = tokenUrl,
-                authorizeUrl = authorizeUrl,
-                userInfoUrl = userInfoUrl,
-                loginUrl = loginUrl,
-                logoutUrl = logoutUrl,
-                accessTokenField = jwksUri.map(_ => "id_token").getOrElse("access_token"),
-                useJson = true,
-                readProfileFromToken = jwksUri.isDefined,
-                jwtVerifier = jwksUri.map(url => JWKSAlgoSettings(
-                  url = url,
-                  headers = Map.empty[String, String],
-                  timeout = FiniteDuration(2000, TimeUnit.MILLISECONDS),
-                  ttl = FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS),
-                  kty = KeyType.RSA
-                ))
-              ).asJson)
+              Ok(
+                config
+                  .copy(
+                    tokenUrl = tokenUrl,
+                    authorizeUrl = authorizeUrl,
+                    userInfoUrl = userInfoUrl,
+                    loginUrl = loginUrl,
+                    logoutUrl = logoutUrl,
+                    accessTokenField = jwksUri.map(_ => "id_token").getOrElse("access_token"),
+                    useJson = true,
+                    readProfileFromToken = jwksUri.isDefined,
+                    jwtVerifier = jwksUri.map(
+                      url =>
+                        JWKSAlgoSettings(
+                          url = url,
+                          headers = Map.empty[String, String],
+                          timeout = FiniteDuration(2000, TimeUnit.MILLISECONDS),
+                          ttl = FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS),
+                          kty = KeyType.RSA
+                      )
+                    )
+                  )
+                  .asJson
+              )
             } getOrElse {
-              Ok(GenericOauth2ModuleConfig(
+              Ok(
+                GenericOauth2ModuleConfig(
+                  id = id,
+                  name = name,
+                  desc = desc
+                ).asJson
+              )
+            }
+          } else {
+            Ok(
+              GenericOauth2ModuleConfig(
                 id = id,
                 name = name,
                 desc = desc
-              ).asJson)
-            }
-          } else {
-            Ok(GenericOauth2ModuleConfig(
-              id = id,
-              name = name,
-              desc = desc
-            ).asJson)
+              ).asJson
+            )
           }
         }
       }

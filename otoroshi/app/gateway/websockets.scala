@@ -18,7 +18,12 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  Message => PlayWSMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests}
 import play.api.mvc._
@@ -93,10 +98,15 @@ class WebSocketHandler()(implicit env: Env) {
 
   def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
     if (desc.xForwardedHeaders) {
-      val xForwardedFor = request.headers.get("X-Forwarded-For").map(v => v + ", " + request.remoteAddress).getOrElse(request.remoteAddress)
+      val xForwardedFor = request.headers
+        .get("X-Forwarded-For")
+        .map(v => v + ", " + request.remoteAddress)
+        .getOrElse(request.remoteAddress)
       val xForwardedProto = getProtocolFor(request)
-      val xForwardedHost = request.headers.get("X-Forwarded-Host").getOrElse(request.host)
-      Seq("X-Forwarded-For" -> xForwardedFor, "X-Forwarded-Host" -> xForwardedHost, "X-Forwarded-Proto" -> xForwardedProto)
+      val xForwardedHost  = request.headers.get("X-Forwarded-Host").getOrElse(request.host)
+      Seq("X-Forwarded-For"   -> xForwardedFor,
+          "X-Forwarded-Host"  -> xForwardedHost,
+          "X-Forwarded-Proto" -> xForwardedProto)
     } else {
       Seq.empty[(String, String)]
     }
@@ -533,29 +543,30 @@ class WebSocketHandler()(implicit env: Env) {
                               .serialize(desc.secComSettings)(env)
                             logger.trace(s"Claim is : $claim")
                             val headersIn: Seq[(String, String)] =
-                              (req.headers.toMap.toSeq.flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
-                                .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                                env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
-                                // "Host"                               -> host,
-                                "Host"                               -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
-                                env.Headers.OtoroshiRequestId        -> snowflake,
-                                env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                              ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-                                      Map(
-                                        env.Headers.OtoroshiState -> state,
-                                        env.Headers.OtoroshiClaim -> claim
-                                      )
-                                    } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
-                                      Map(
-                                        env.Headers.OtoroshiClaim -> claim
-                                      )
-                                    } else {
-                                      Map.empty[String, String]
-                                    }) ++
-                              descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
-                                .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
-                                .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-                                .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc, req)
+                            (req.headers.toMap.toSeq
+                              .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
+                              .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
+                              env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
+                              // "Host"                               -> host,
+                              "Host"                               -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
+                              env.Headers.OtoroshiRequestId        -> snowflake,
+                              env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
+                            ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
+                                    Map(
+                                      env.Headers.OtoroshiState -> state,
+                                      env.Headers.OtoroshiClaim -> claim
+                                    )
+                                  } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
+                                    Map(
+                                      env.Headers.OtoroshiClaim -> claim
+                                    )
+                                  } else {
+                                    Map.empty[String, String]
+                                  }) ++
+                            descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
+                              .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
+                              .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
+                              .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc, req)
 
                             // val requestHeader = ByteString(
                             //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
@@ -655,15 +666,18 @@ class WebSocketHandler()(implicit env: Env) {
                               }
                             }
 
-                            val wsCookiesIn = req.cookies.toSeq.map(c => DefaultWSCookie(
-                              name = c.name,
-                              value = c.value,
-                              domain = c.domain,
-                              path = Option(c.path),
-                              maxAge = c.maxAge.map(_.toLong),
-                              secure = c.secure,
-                              httpOnly = c.httpOnly
-                            ))
+                            val wsCookiesIn = req.cookies.toSeq.map(
+                              c =>
+                                DefaultWSCookie(
+                                  name = c.name,
+                                  value = c.value,
+                                  domain = c.domain,
+                                  path = Option(c.path),
+                                  maxAge = c.maxAge.map(_.toLong),
+                                  secure = c.secure,
+                                  httpOnly = c.httpOnly
+                              )
+                            )
                             val rawRequest = otoroshi.script.HttpRequest(
                               url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
                               method = req.method,
@@ -698,7 +712,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                     out,
                                                                     env,
                                                                     http,
-                                                                    httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"))
+                                                                    httpRequest.headers.toSeq
+                                                                      .filterNot(_._1 == "Cookie"))
                                       )
                                     )
                                   )
