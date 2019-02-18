@@ -939,6 +939,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "loginUrl"          -> SimpleStringType ~~> "OAuth login URL",
       "logoutUrl"         -> SimpleStringType ~~> "OAuth logout URL",
       "callbackUrl"       -> SimpleStringType ~~> "Otoroshi callback URL",
+      "scope"             -> SimpleStringType ~~> "The scope of the token",
       "accessTokenField"  -> SimpleStringType ~~> "Field name to get access token",
       "nameField"         -> SimpleStringType ~~> "Field name to get name from user profile",
       "emailField"        -> SimpleStringType ~~> "Field name to get email from user profile",
