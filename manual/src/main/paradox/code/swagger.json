@@ -4254,6 +4254,16 @@
                 "example" : true,
                 "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
               },
+              "xForwardedHeaders" : {
+                "type" : "boolean",
+                "example" : true,
+                "description" : "When enabled, Otoroshi will send X-Forwarded-* headers to target"
+              },
+              "overrideHost" : {
+                "type" : "boolean",
+                "example" : true,
+                "description" : "When enabled, Otoroshi will automatically set the Host header to corresponding target host"
+              },
               "secComExcludedPatterns" : {
                 "type" : "array",
                 "items" : {
@@ -4674,6 +4684,16 @@
           "type" : "boolean",
           "example" : true,
           "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
+        },
+        "xForwardedHeaders" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "When enabled, Otoroshi will send X-Forwarded-* headers to target"
+        },
+        "overrideHost" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "When enabled, Otoroshi will automatically set the Host header to corresponding target host"
         },
         "secComExcludedPatterns" : {
           "type" : "array",
@@ -5745,6 +5765,11 @@
           "example" : "a string value",
           "description" : "Otoroshi callback URL"
         },
+        "scope" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The scope of the token"
+        },
         "accessTokenField" : {
           "type" : "string",
           "example" : "a string value",
@@ -5764,6 +5789,28 @@
           "type" : "string",
           "example" : "a string value",
           "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
+        },
+        "useJson" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider"
+        },
+        "readProfileFromToken" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "The user profile will be read from the JWT token in id_token"
+        },
+        "jwtVerifier" : {
+          "oneOf" : [ {
+            "$ref" : "#/definitions/HSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/RSAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/ESAlgoSettings"
+          }, {
+            "$ref" : "#/definitions/JWKSAlgoSettings"
+          } ],
+          "description" : "Algo. settings to verify JWT token"
         }
       }
     },
