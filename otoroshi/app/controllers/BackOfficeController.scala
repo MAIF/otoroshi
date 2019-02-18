@@ -781,7 +781,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               val authorizeUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
               val userInfoUrl = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
               val loginUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
-              val logoutUrl = (body \ "end_session_endpoint").asOpt[String].getOrElse(issuer + "logout")
+              val logoutUrl = (body \ "end_session_endpoint").asOpt[String].getOrElse((issuer + "/logout").replace("//logout", "/logout"))
               val jwksUri = (body \ "jwks_uri").asOpt[String]
               Ok(config.copy(
                 tokenUrl = tokenUrl,
