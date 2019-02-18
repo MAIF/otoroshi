@@ -489,7 +489,6 @@ case class JWKSAlgoSettings(url: String,
                       (jwk.getKeyID, jwk)
                     }.toMap
                     JWKSAlgoSettings.cache.put(url, (stop, keys))
-                    println(keys + "")
                     keys.get(kid) match {
                       case Some(jwk) => algoFromJwk(alg, jwk)
                       case None      => None

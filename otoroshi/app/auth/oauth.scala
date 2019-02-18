@@ -48,6 +48,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           accessTokenField = (json \ "accessTokenField").asOpt[String].getOrElse("access_token"),
           nameField = (json \ "nameField").asOpt[String].getOrElse("name"),
           emailField = (json \ "emailField").asOpt[String].getOrElse("email"),
+          scope = (json \ "scope").asOpt[String].getOrElse("openid profile email name"),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
           jwtVerifier = (json \ "jwtVerifier").asOpt[JsValue].flatMap(v => AlgoSettings.fromJson(v).toOption),
@@ -126,7 +127,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val redirect     = request.getQueryString("redirect")
     val clientId     = authConfig.clientId
     val responseType = "code"
-    val scope        = "openid profile email name"
+    val scope        = authConfig.scope // "openid profile email name"
 
     val redirectUri = authConfig.callbackUrl + s"?desc=${descriptor.id}"
     val loginUrl =
