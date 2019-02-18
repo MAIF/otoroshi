@@ -503,6 +503,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "buildMode"                  -> SimpleBooleanType ~~> "Display a construction page when a user try to use the service",
       "enforceSecureCommunication" -> SimpleBooleanType ~~> "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
       "sendOtoroshiHeadersBack"    -> SimpleBooleanType ~~> "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...",
+      "xForwardedHeaders"          -> SimpleBooleanType ~~> "When enabled, Otoroshi will send X-Forwarded-* headers to target",
+      "overrideHost"               -> SimpleBooleanType ~~> "When enabled, Otoroshi will automatically set the Host header to corresponding target host",
       "secComExcludedPatterns"     -> ArrayOf(SimpleStringType) ~~> "URI patterns excluded from secured communications",
       "publicPatterns"             -> ArrayOf(SimpleStringType) ~~> "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'",
       "privatePatterns"            -> ArrayOf(SimpleStringType) ~~> "If you define a public pattern that is a little bit too much, you can make some of public URL private again",
@@ -940,7 +942,13 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "accessTokenField"  -> SimpleStringType ~~> "Field name to get access token",
       "nameField"         -> SimpleStringType ~~> "Field name to get name from user profile",
       "emailField"        -> SimpleStringType ~~> "Field name to get email from user profile",
-      "otoroshiDataField" -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
+      "otoroshiDataField" -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
+      "useJson"           -> SimpleBooleanType ~~> "Use JSON or URL Form Encoded as payload with the OAuth provider",
+      "readProfileFromToken" -> SimpleBooleanType ~~> "The user profile will be read from the JWT token in id_token",
+      "jwtVerifier"       -> OneOf(Ref("HSAlgoSettings"),
+        Ref("RSAlgoSettings"),
+        Ref("ESAlgoSettings"),
+        Ref("JWKSAlgoSettings")) ~~> "Algo. settings to verify JWT token"
     )
   )
 
