@@ -1100,7 +1100,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       else EmptyBody // Stream IN
                                     env.gatewayClient
                                       .urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url))
-                                      .withRequestTimeout(6.hour) // we should monitor leaks
+                                      .withRequestTimeout(env.requestTimeout) // we should monitor leaks
                                       .withMethod(httpRequest.method)
                                       .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
                                       .withCookies(wsCookiesIn: _*)

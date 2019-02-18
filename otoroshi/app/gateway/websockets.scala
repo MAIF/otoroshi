@@ -698,7 +698,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                                     out,
                                                                     env,
                                                                     http,
-                                                                    httpRequest.headers.toSeq)
+                                                                    httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"))
                                       )
                                     )
                                   )

@@ -140,6 +140,7 @@ class Env(val configuration: Configuration,
 
   lazy val globalMaintenanceMode: Boolean = configuration.getOptional[Boolean]("otoroshi.maintenanceMode").getOrElse(false)
 
+  lazy val requestTimeout: FiniteDuration  = configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
   lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)

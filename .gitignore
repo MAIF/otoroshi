@@ -12,3 +12,5 @@ target
 .metals
 .java-version
 *.patch
+.settings
+.project
