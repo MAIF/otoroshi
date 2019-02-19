@@ -283,7 +283,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 Right(
                   PrivateAppsUser(
                     randomId = IdGenerator.token(64),
-                    name = (user \ authConfig.nameField).asOpt[String].getOrElse("No Name"),
+                    name = (user \ authConfig.nameField).asOpt[String].orElse((user \ "sub").asOpt[String]).getOrElse("No Name"),
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                     profile = user,
                     realm = authConfig.cookieSuffix(descriptor),
@@ -375,7 +375,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 Right(
                   BackOfficeUser(
                     randomId = IdGenerator.token(64),
-                    name = (user \ authConfig.nameField).asOpt[String].getOrElse("No Name"),
+                    name = (user \ authConfig.nameField).asOpt[String].orElse((user \ "sub").asOpt[String]).getOrElse("No Name"),
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                     profile = user,
                     authorizedGroup = None,
