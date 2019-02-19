@@ -478,6 +478,7 @@ export class ServicePage extends Component {
           </div>
           <TextInput
             label="Id"
+            disabled={!this.state.neverSaved}
             placeholder="You service Id"
             value={this.state.service.id}
             onChange={v => this.changeTheValue('id', v)}

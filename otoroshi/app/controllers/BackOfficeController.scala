@@ -827,7 +827,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 GenericOauth2ModuleConfig(
                   id = id,
                   name = name,
-                  desc = desc
+                  desc = desc,
+                  clientId = clientId,
+                  clientSecret = clientSecret
                 ).asJson
               )
             }
@@ -836,7 +838,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               GenericOauth2ModuleConfig(
                 id = id,
                 name = name,
-                desc = desc
+                desc = desc,
+                clientId = clientId,
+                clientSecret = clientSecret
               ).asJson
             )
           }
