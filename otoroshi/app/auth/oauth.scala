@@ -50,6 +50,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           emailField = (json \ "emailField").asOpt[String].getOrElse("email"),
           scope = (json \ "scope").asOpt[String].getOrElse("openid profile email name"),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
+          useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
           jwtVerifier = (json \ "jwtVerifier").asOpt[JsValue].flatMap(v => AlgoSettings.fromJson(v).toOption),
           otoroshiDataField = (json \ "otoroshiDataField").asOpt[String].getOrElse("app_metadata | otoroshi_data"),
@@ -76,6 +77,7 @@ case class GenericOauth2ModuleConfig(
     loginUrl: String = "http://localhost:8082/login",
     logoutUrl: String = "http://localhost:8082/logout",
     scope: String = "openid profile email name",
+    useCookie: Boolean = false,
     useJson: Boolean = false,
     readProfileFromToken: Boolean = false,
     jwtVerifier: Option[AlgoSettings] = None,
@@ -101,6 +103,7 @@ case class GenericOauth2ModuleConfig(
     "loginUrl"             -> this.loginUrl,
     "logoutUrl"            -> this.logoutUrl,
     "scope"                -> this.scope,
+    "useCookie"            -> this.useCookie,
     "useJson"              -> this.useJson,
     "readProfileFromToken" -> this.readProfileFromToken,
     "accessTokenField"     -> this.accessTokenField,
@@ -128,13 +131,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
-
-    val redirectUri = authConfig.callbackUrl + s"?desc=${descriptor.id}"
+    val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
+    val redirectUri = authConfig.callbackUrl + queryParam
     val loginUrl =
       s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
+      "desc" -> descriptor.id,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
         )
@@ -194,7 +198,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   ): Future[Either[String, PrivateAppsUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = authConfig.clientSecret
-    val redirectUri  = authConfig.callbackUrl + s"?desc=${descriptor.id}"
+    val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
+    val redirectUri  = authConfig.callbackUrl + queryParam
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None => {

@@ -2,12 +2,15 @@ package controllers
 import actions.{ApiAction, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import events.{AdminApiEvent, AnalyticsReadsServiceImpl, Audit}
+import events._
+import models.ApiKey
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.future.Implicits._
+
+import scala.concurrent.Future
 
 class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(
     implicit env: Env
@@ -47,21 +50,21 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           for {
             _ <- FastFuture.successful(())
 
-            fhits                = analyticsService.fetchHits(Some(desc), fromDate, toDate)
-            fdatain              = analyticsService.fetchDataIn(Some(desc), fromDate, toDate)
-            fdataout             = analyticsService.fetchDataOut(Some(desc), fromDate, toDate)
-            favgduration         = analyticsService.fetchAvgDuration(Some(desc), fromDate, toDate)
-            favgoverhead         = analyticsService.fetchAvgOverhead(Some(desc), fromDate, toDate)
-            fstatusesPiechart    = analyticsService.fetchStatusesPiechart(Some(desc), fromDate, toDate)
-            fstatusesHistogram   = analyticsService.fetchStatusesHistogram(Some(desc), fromDate, toDate)
-            foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(Some(desc), fromDate, toDate)
-            foverheadStats       = analyticsService.fetchOverheadStatsHistogram(Some(desc), fromDate, toDate)
-            fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(Some(desc), fromDate, toDate)
-            fdurationStats       = analyticsService.fetchDurationStatsHistogram(Some(desc), fromDate, toDate)
-            fdataInHistogram     = analyticsService.fetchDataInStatsHistogram(Some(desc), fromDate, toDate)
-            fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(Some(desc), fromDate, toDate)
-            fApiKeyPiechart      = analyticsService.fetchApiKeyPiechart(Some(desc), fromDate, toDate)
-            fUserPiechart        = analyticsService.fetchUserPiechart(Some(desc), fromDate, toDate)
+            fhits                = analyticsService.fetchHits(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fdatain              = analyticsService.fetchDataIn(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fdataout             = analyticsService.fetchDataOut(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            favgduration         = analyticsService.fetchAvgDuration(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            favgoverhead         = analyticsService.fetchAvgOverhead(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fstatusesPiechart    = analyticsService.fetchStatusesPiechart(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fstatusesHistogram   = analyticsService.fetchStatusesHistogram(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            foverheadStats       = analyticsService.fetchOverheadStatsHistogram(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fdurationStats       = analyticsService.fetchDurationStatsHistogram(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fdataInHistogram     = analyticsService.fetchDataInStatsHistogram(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fApiKeyPiechart      = analyticsService.fetchApiKeyPiechart(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
+            fUserPiechart        = analyticsService.fetchUserPiechart(Some(ServiceDescriptorFilterable(desc)), fromDate, toDate)
 
             statusesPiechart    <- fstatusesPiechart
             statusesHistogram   <- fstatusesHistogram
@@ -223,7 +226,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
             analyticsService
-              .events("GatewayEvent", Some(desc), fromDate, toDate, paginationPage, paginationPageSize)
+              .events("GatewayEvent", Some(ServiceDescriptorFilterable(desc)), fromDate, toDate, paginationPage, paginationPageSize)
               .map(_.getOrElse(Json.obj()))
               .map { r =>
                 logger.debug(s"$r")
@@ -235,4 +238,134 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
       }
   }
 
+  def filterableEvents(from: Option[String] = None, to: Option[String] = None) = ApiAction.async { ctx =>
+    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    val paginationPageSize: Int =
+      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
+    val paginationPosition = (paginationPage - 1) * paginationPageSize
+    val fromDate           = from.map(f => new DateTime(f.toLong))
+    val toDate             = to.map(f => new DateTime(f.toLong))
+
+    val apiKeyId = ctx.request.getQueryString("apikey")
+    val groupId = ctx.request.getQueryString("group")
+    val serviceId = ctx.request.getQueryString("service")
+    serviceId.orElse(apiKeyId).orElse(groupId).map { entityId =>
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
+          case (Some(id), _, _) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
+          case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
+          case (_, _, Some(id)) => env.datastores.serviceGroupDataStore.findById(id).map(_.map(ServiceGroupFilterable.apply))
+        }
+        futureFilterable.flatMap {
+          case None => NotFound(Json.obj("error" -> s"Service with id: '$entityId' not found")).asFuture
+          case Some(filterable) => {
+
+            val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+            analyticsService
+              .events("GatewayEvent", Some(filterable), fromDate, toDate, paginationPage, paginationPageSize)
+              .map(_.getOrElse(Json.obj()))
+              .map { r =>
+                logger.debug(s"$r")
+                (r \ "events").as[JsValue]
+              }
+              .map(json => Ok(json))
+          }
+        }
+      }
+    } getOrElse {
+      NotFound(Json.obj("error" -> s"No entity found")).asFuture
+    }
+  }
+
+  def filterableStats(from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    val paginationPageSize: Int = ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
+    val paginationPosition = (paginationPage - 1) * paginationPageSize
+    val apiKeyId = ctx.request.getQueryString("apikey")
+    val groupId = ctx.request.getQueryString("group")
+    val serviceId = ctx.request.getQueryString("service")
+    serviceId.orElse(apiKeyId).orElse(groupId).map { entityId =>
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
+          case (Some(id), _, _) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
+          case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
+          case (_, _, Some(id)) => env.datastores.serviceGroupDataStore.findById(id).map(_.map(ServiceGroupFilterable.apply))
+        }
+        // val futureFilterable: Future[Option[Filterable]] = FastFuture.successful(Some(ApiKeyFilterable(ApiKey(
+        //   clientId = apiKeyId.get,
+        //   clientSecret = "--",
+        //   clientName = "--",
+        //   authorizedGroup = "--"
+        // ))))
+        futureFilterable.flatMap {
+          case None => NotFound(Json.obj("error" -> s"Entity: '$entityId' not found")).asFuture
+          case Some(filterable) => {
+
+            val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+            val fromDate = from.map(f => new DateTime(f.toLong))
+            val toDate = to.map(f => new DateTime(f.toLong))
+            for {
+              _ <- FastFuture.successful(())
+
+              fhits = analyticsService.fetchHits(Some(filterable), fromDate, toDate)
+              fdatain = analyticsService.fetchDataIn(Some(filterable), fromDate, toDate)
+              fdataout = analyticsService.fetchDataOut(Some(filterable), fromDate, toDate)
+              favgduration = analyticsService.fetchAvgDuration(Some(filterable), fromDate, toDate)
+              favgoverhead = analyticsService.fetchAvgOverhead(Some(filterable), fromDate, toDate)
+              fstatusesPiechart = analyticsService.fetchStatusesPiechart(Some(filterable), fromDate, toDate)
+              fstatusesHistogram = analyticsService.fetchStatusesHistogram(Some(filterable), fromDate, toDate)
+              foverheadPercentiles = analyticsService.fetchOverheadPercentilesHistogram(Some(filterable), fromDate, toDate)
+              foverheadStats = analyticsService.fetchOverheadStatsHistogram(Some(filterable), fromDate, toDate)
+              fdurationPercentiles = analyticsService.fetchDurationPercentilesHistogram(Some(filterable), fromDate, toDate)
+              fdurationStats = analyticsService.fetchDurationStatsHistogram(Some(filterable), fromDate, toDate)
+              fdataInHistogram = analyticsService.fetchDataInStatsHistogram(Some(filterable), fromDate, toDate)
+              fdataOutHistogram = analyticsService.fetchDataOutStatsHistogram(Some(filterable), fromDate, toDate)
+              fApiKeyPiechart = analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
+              fUserPiechart = analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate)
+
+              statusesPiechart <- fstatusesPiechart
+              statusesHistogram <- fstatusesHistogram
+              overheadPercentiles <- foverheadPercentiles
+              overheadStats <- foverheadStats
+              durationPercentiles <- fdurationPercentiles
+              durationStats <- fdurationStats
+              dataInStats <- fdataInHistogram
+              dataOutStats <- fdataOutHistogram
+              apiKeyPiechart <- fApiKeyPiechart
+              userPiechart <- fUserPiechart
+
+              hits <- fhits
+              datain <- fdatain
+              dataout <- fdataout
+              avgduration <- favgduration
+              avgoverhead <- favgoverhead
+            } yield {
+              Ok(
+                Json.obj(
+                  "statusesPiechart" -> statusesPiechart,
+                  "statusesHistogram" -> statusesHistogram,
+                  "overheadPercentiles" -> overheadPercentiles,
+                  "overheadStats" -> overheadStats,
+                  "durationPercentiles" -> durationPercentiles,
+                  "durationStats" -> durationStats,
+                  "dataInStats" -> dataInStats,
+                  "dataOutStats" -> dataOutStats,
+                  "apiKeyPiechart" -> apiKeyPiechart,
+                  "userPiechart" -> userPiechart,
+                  "hits" -> hits,
+                  "dataIn" -> datain,
+                  "dataOut" -> dataout,
+                  "avgDuration" -> avgduration,
+                  "avgOverhead" -> avgoverhead
+                )
+              )
+            }
+          }
+        }
+      }
+    } getOrElse {
+      NotFound(Json.obj("error" -> s"No entity found")).asFuture
+    }
+  }
 }

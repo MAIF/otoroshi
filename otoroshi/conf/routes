@@ -213,6 +213,8 @@ GET     /api/scripts                                          otoroshi.script.Sc
 
 
 GET     /api/stats/global                                     controllers.AnalyticsController.globalStats(from: Option[String], to: Option[String])
+GET     /api/stats                                            controllers.AnalyticsController.filterableStats(from: Option[String], to: Option[String])
+GET     /api/events                                           controllers.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])
 # POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()

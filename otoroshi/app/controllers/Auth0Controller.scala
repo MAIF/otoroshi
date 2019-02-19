@@ -94,7 +94,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                           }
                           FastFuture.successful(
                             Redirect(setCookiesRedirect)
-                              .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
+                              .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                               .withCookies(env.createPrivateSessionCookies(host, user.randomId, descriptor, auth): _*)
                           )
                       }
@@ -136,7 +136,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
 
     implicit val req = ctx.request
 
-    ctx.request.getQueryString("desc") match {
+    ctx.request.getQueryString("desc").orElse(ctx.request.session.get("desc")) match {
       case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
       case Some(serviceId) => {
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -178,7 +178,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                             .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
                       }
                       Redirect(setCookiesRedirect)
-                        .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
+                        .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                         .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
                     }
                 }

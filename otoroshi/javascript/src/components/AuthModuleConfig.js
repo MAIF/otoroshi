@@ -131,6 +131,12 @@ export class Oauth2ModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
         />
         <BooleanInput
+          label="Use cookie"
+          value={settings.useCookie}
+          help="If your OAuth2 provider does not support query param in redirect uri, you can use cookies instead"
+          onChange={v => changeTheValue(path + '.useCookie', v)}
+        />
+        <BooleanInput
           label="Use json payloads"
           value={settings.useJson}
           help="..."
