@@ -70,6 +70,8 @@ export class Oauth2ModuleConfig extends Component {
           id: this.props.value.id,
           name: this.props.value.name,
           desc: this.props.value.desc,
+          clientId: this.props.value.clientId,
+          clientSecret: this.props.value.clientSecret
         }),
       })
         .then(r => r.json())

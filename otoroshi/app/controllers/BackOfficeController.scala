@@ -759,6 +759,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     val id   = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
     val name = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
     val desc = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
+    val clientId = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
+    val clientSecret = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
     (ctx.request.body \ "url").asOpt[String] match {
       case None =>
         FastFuture.successful(
@@ -766,7 +768,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             GenericOauth2ModuleConfig(
               id = id,
               name = name,
-              desc = desc
+              desc = desc,
+              clientId = clientId,
+              clientSecret = clientSecret
             ).asJson
           )
         )
@@ -789,17 +793,22 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 .asOpt[String]
                 .getOrElse((issuer + "/logout").replace("//logout", "/logout"))
               val jwksUri = (body \ "jwks_uri").asOpt[String]
+              val scope = (body \ "scopes_supported").asOpt[Seq[String]].map(_.mkString(" ")).getOrElse("openid profile email name")
               Ok(
                 config
                   .copy(
+                    clientId = clientId,
+                    clientSecret = clientSecret,
                     tokenUrl = tokenUrl,
                     authorizeUrl = authorizeUrl,
                     userInfoUrl = userInfoUrl,
                     loginUrl = loginUrl,
                     logoutUrl = logoutUrl,
+                    scope = scope,
                     accessTokenField = jwksUri.map(_ => "id_token").getOrElse("access_token"),
                     useJson = true,
                     readProfileFromToken = jwksUri.isDefined,
+                    nameField = (if (scope.contains(config.nameField)) config.nameField else config.emailField),
                     jwtVerifier = jwksUri.map(
                       url =>
                         JWKSAlgoSettings(
