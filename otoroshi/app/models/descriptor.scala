@@ -11,7 +11,7 @@ import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import storage.BasicStore
-import utils.ReplaceAllWith
+import utils.{GzipConfig, ReplaceAllWith}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -392,7 +392,8 @@ case class ServiceDescriptor(
     cors: CorsSettings = CorsSettings(false),
     redirection: RedirectionSettings = RedirectionSettings(false),
     clientValidatorRef: Option[String] = None,
-    transformerRef: Option[String] = None
+    transformerRef: Option[String] = None,
+    gzipConfig: GzipConfig = GzipConfig()
 ) {
 
   def toHost: String = subdomain match {
@@ -550,6 +551,7 @@ object ServiceDescriptor {
           healthCheck = (json \ "healthCheck").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
           clientConfig = (json \ "clientConfig").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
           canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
+          gzipConfig = (json \ "gzipConfig").asOpt(GzipConfig._fmt).getOrElse(GzipConfig()),
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(_.filter(_._1.nonEmpty))
@@ -615,6 +617,7 @@ object ServiceDescriptor {
       "healthCheck"                -> sd.healthCheck.toJson,
       "clientConfig"               -> sd.clientConfig.toJson,
       "canary"                     -> sd.canary.toJson,
+      "gzipConfig"                 -> sd.gzipConfig.asJson,
       "metadata"                   -> JsObject(sd.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
       "chaosConfig"                -> sd.chaosConfig.asJson,
       "jwtVerifier"                -> sd.jwtVerifier.asJson,

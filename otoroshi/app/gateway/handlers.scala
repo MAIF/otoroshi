@@ -1130,6 +1130,30 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         .flatMap(resp => quotas.fast.map(q => (resp, q)))
                                         .flatMap { tuple =>
                                           val (resp, remainingQuotas) = tuple
+
+                                          Try {
+                                            val pub = resp.underlying[play.shaded.ahc.org.asynchttpclient.netty.handler.StreamedResponsePublisher]
+                                            val clazz = classOf[play.shaded.ahc.org.asynchttpclient.netty.handler.StreamedResponsePublisher]
+                                            Try(clazz.getDeclaredMethod("future")).orElse(Try(clazz.getMethod("future"))).toOption.foreach { method =>
+                                              method.setAccessible(true)
+                                              val respFu = method.invoke(pub).asInstanceOf[play.shaded.ahc.org.asynchttpclient.netty.NettyResponseFuture[_]]
+                                              val v = respFu.get
+                                              println(uri)
+                                              println("1: " + respFu.getNettyRequest.getHttpRequest.headers().get("Content-Encoding"))
+                                              println("2: " + respFu.getCurrentRequest.getHeaders().get("Content-Encoding"))
+                                              println("3: " + respFu.getTargetRequest.getHeaders().get("Content-Encoding"))
+
+                                              println("4: " + respFu.getNettyRequest.getHttpRequest.headers().get("Accept-Encoding"))
+                                              println("5: " + respFu.getCurrentRequest.getHeaders().get("Accept-Encoding"))
+                                              println("6: " + respFu.getTargetRequest.getHeaders().get("Accept-Encoding"))
+
+
+
+                                            }
+                                          } match {
+                                            case Failure(e) => e.printStackTrace()
+                                            case _ =>
+                                          }
                                           // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
                                           val headers = resp.headers.mapValues(_.head)
                                           val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
@@ -1366,19 +1390,18 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           Some(contentType) // contentTypeOpt
                                                         )
                                                       }
-                                                    FastFuture.successful(
-                                                      Status(httpResponse.status)
-                                                        .sendEntity(entity)
-                                                        .withHeaders(
-                                                          headersOut.filterNot(
-                                                            h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                          ): _*
-                                                        )
-                                                        .as(contentType)
-                                                        .withCookies((withTrackingCookies ++ cookies): _*)
-                                                    )
+                                                    val response: Result = Status(httpResponse.status)
+                                                      .sendEntity(entity)
+                                                      .withHeaders(
+                                                        headersOut.filterNot(
+                                                          h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                        ): _*
+                                                      )
+                                                      .as(contentType)
+                                                      .withCookies((withTrackingCookies ++ cookies): _*)
+                                                    FastFuture.successful(response)
                                                   } else {
-                                                    val response = httpResponse.headers
+                                                    val response: Result = httpResponse.headers
                                                       .get("Transfer-Encoding")
                                                       //.flatMap(_.lastOption)
                                                       .filter(_ == "chunked")
