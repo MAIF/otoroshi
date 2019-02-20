@@ -770,7 +770,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               name = name,
               desc = desc,
               clientId = clientId,
-              clientSecret = clientSecret
+              clientSecret = clientSecret,
+              oidConfig = None,
             ).asJson
           )
         )
@@ -781,7 +782,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               val config = GenericOauth2ModuleConfig(
                 id = id,
                 name = name,
-                desc = desc
+                desc = desc,
+                oidConfig = Some(url)
               )
               val body         = Json.parse(resp.body)
               val issuer       = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
@@ -791,9 +793,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               val loginUrl     = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
               val logoutUrl = (body \ "end_session_endpoint")
                 .asOpt[String]
+                .orElse((body \ "ping_end_session_endpoint").asOpt[String])
                 .getOrElse((issuer + "/logout").replace("//logout", "/logout"))
               val jwksUri = (body \ "jwks_uri").asOpt[String]
               val scope = (body \ "scopes_supported").asOpt[Seq[String]].map(_.mkString(" ")).getOrElse("openid profile email name")
+              val claims = (body \ "claims_supported").asOpt[Seq[String]].map(_.mkString(" ")).getOrElse("email name")
               Ok(
                 config
                   .copy(
@@ -805,10 +809,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                     loginUrl = loginUrl,
                     logoutUrl = logoutUrl,
                     scope = scope,
+                    claims = claims,
                     accessTokenField = jwksUri.map(_ => "id_token").getOrElse("access_token"),
                     useJson = true,
                     readProfileFromToken = jwksUri.isDefined,
                     nameField = (if (scope.contains(config.nameField)) config.nameField else config.emailField),
+                    oidConfig = Some(url),
                     jwtVerifier = jwksUri.map(
                       url =>
                         JWKSAlgoSettings(
@@ -829,7 +835,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   name = name,
                   desc = desc,
                   clientId = clientId,
-                  clientSecret = clientSecret
+                  clientSecret = clientSecret,
+                  oidConfig = Some(url)
                 ).asJson
               )
             }
@@ -840,7 +847,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 name = name,
                 desc = desc,
                 clientId = clientId,
-                clientSecret = clientSecret
+                clientSecret = clientSecret,
+                oidConfig = Some(url)
               ).asJson
             )
           }

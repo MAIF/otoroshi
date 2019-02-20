@@ -211,6 +211,12 @@ export class Oauth2ModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.scope', v)}
         />
         <TextInput
+          label="Claims"
+          value={settings.claims}
+          help="..."
+          onChange={v => changeTheValue(path + '.claims', v)}
+        />
+        <TextInput
           label="Name field name"
           value={settings.nameField}
           help="..."
@@ -227,6 +233,12 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.otoroshiDataField}
           help="..."
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
+        />
+        <TextInput
+          label="OIDC config url"
+          value={settings.oidConfig}
+          help="..."
+          onChange={v => changeTheValue(path + '.oidConfig', v)}
         />
         {settings.readProfileFromToken && (
           <AlgoSettings
@@ -682,7 +694,7 @@ export class AuthModuleConfig extends Component {
           }
         }}
         possibleValues={[
-          { label: 'Generic oauth2 provider', value: 'oauth2' },
+          { label: 'OAuth2 / OIDC provider', value: 'oauth2' },
           { label: 'In memory auth. provider', value: 'basic' },
           { label: 'Ldap auth. provider', value: 'ldap' },
         ]}

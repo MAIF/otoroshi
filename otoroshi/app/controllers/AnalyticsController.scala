@@ -251,6 +251,11 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
     val serviceId = ctx.request.getQueryString("service")
     serviceId.orElse(apiKeyId).orElse(groupId).map { entityId =>
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        val filterType = (serviceId, apiKeyId, groupId) match {
+          case (Some(id), _, _) => "Service"
+          case (_, Some(id), _) => "ApiKey"
+          case (_, _, Some(id)) => "Group"
+        }
         val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
           case (Some(id), _, _) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
           case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
@@ -268,7 +273,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
                 logger.debug(s"$r")
                 (r \ "events").as[JsValue]
               }
-              .map(json => Ok(json))
+              .map(json => Ok(Json.obj("type" -> filterType, "events" -> json)))
           }
         }
       }
@@ -286,17 +291,16 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
     val serviceId = ctx.request.getQueryString("service")
     serviceId.orElse(apiKeyId).orElse(groupId).map { entityId =>
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        val filterType = (serviceId, apiKeyId, groupId) match {
+          case (Some(id), _, _) => "Service"
+          case (_, Some(id), _) => "ApiKey"
+          case (_, _, Some(id)) => "Group"
+        }
         val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
           case (Some(id), _, _) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
           case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
           case (_, _, Some(id)) => env.datastores.serviceGroupDataStore.findById(id).map(_.map(ServiceGroupFilterable.apply))
         }
-        // val futureFilterable: Future[Option[Filterable]] = FastFuture.successful(Some(ApiKeyFilterable(ApiKey(
-        //   clientId = apiKeyId.get,
-        //   clientSecret = "--",
-        //   clientName = "--",
-        //   authorizedGroup = "--"
-        // ))))
         futureFilterable.flatMap {
           case None => NotFound(Json.obj("error" -> s"Entity: '$entityId' not found")).asFuture
           case Some(filterable) => {
@@ -321,6 +325,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
               fdurationStats = analyticsService.fetchDurationStatsHistogram(Some(filterable), fromDate, toDate)
               fdataInHistogram = analyticsService.fetchDataInStatsHistogram(Some(filterable), fromDate, toDate)
               fdataOutHistogram = analyticsService.fetchDataOutStatsHistogram(Some(filterable), fromDate, toDate)
+
+              fServicePiechart = analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
               fApiKeyPiechart = analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
               fUserPiechart = analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate)
 
@@ -334,6 +340,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
               dataOutStats <- fdataOutHistogram
               apiKeyPiechart <- fApiKeyPiechart
               userPiechart <- fUserPiechart
+              servicePiechart <- fServicePiechart
 
               hits <- fhits
               datain <- fdatain
@@ -343,6 +350,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
             } yield {
               Ok(
                 Json.obj(
+                  "type" -> filterType,
                   "statusesPiechart" -> statusesPiechart,
                   "statusesHistogram" -> statusesHistogram,
                   "overheadPercentiles" -> overheadPercentiles,
@@ -353,6 +361,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
                   "dataOutStats" -> dataOutStats,
                   "apiKeyPiechart" -> apiKeyPiechart,
                   "userPiechart" -> userPiechart,
+                  "servicePiechart" -> servicePiechart,
                   "hits" -> hits,
                   "dataIn" -> datain,
                   "dataOut" -> dataout,

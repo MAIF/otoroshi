@@ -79,6 +79,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def logoutUrl: String
   def accessTokenField: String
   def scope: String
+  def claims: String
   def useJson: Boolean
   def useCookie: Boolean
   def readProfileFromToken: Boolean
@@ -87,6 +88,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def emailField: String
   def otoroshiDataField: String
   def callbackUrl: String
+  def oidConfig: Option[String]
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {

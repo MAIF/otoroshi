@@ -49,6 +49,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           nameField = (json \ "nameField").asOpt[String].getOrElse("name"),
           emailField = (json \ "emailField").asOpt[String].getOrElse("email"),
           scope = (json \ "scope").asOpt[String].getOrElse("openid profile email name"),
+          claims = (json \ "claims").asOpt[String].getOrElse("email name"),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
           useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
@@ -56,7 +57,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           otoroshiDataField = (json \ "otoroshiDataField").asOpt[String].getOrElse("app_metadata | otoroshi_data"),
           callbackUrl = (json \ "callbackUrl")
             .asOpt[String]
-            .getOrElse("http://privateapps.foo.bar:8080/privateapps/generic/callback")
+            .getOrElse("http://privateapps.foo.bar:8080/privateapps/generic/callback"),
+          oidConfig = (json \ "oidConfig").asOpt[String]
         )
       )
     } recover {
@@ -77,6 +79,7 @@ case class GenericOauth2ModuleConfig(
     loginUrl: String = "http://localhost:8082/login",
     logoutUrl: String = "http://localhost:8082/logout",
     scope: String = "openid profile email name",
+    claims: String = "email name",
     useCookie: Boolean = false,
     useJson: Boolean = false,
     readProfileFromToken: Boolean = false,
@@ -85,7 +88,8 @@ case class GenericOauth2ModuleConfig(
     nameField: String = "name",
     emailField: String = "email",
     otoroshiDataField: String = "app_metadata|otoroshi_data",
-    callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback"
+    callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback",
+    oidConfig: Option[String] = None
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -103,6 +107,7 @@ case class GenericOauth2ModuleConfig(
     "loginUrl"             -> this.loginUrl,
     "logoutUrl"            -> this.logoutUrl,
     "scope"                -> this.scope,
+    "claims"               -> this.claims,
     "useCookie"            -> this.useCookie,
     "useJson"              -> this.useJson,
     "readProfileFromToken" -> this.readProfileFromToken,
@@ -111,7 +116,8 @@ case class GenericOauth2ModuleConfig(
     "nameField"            -> this.nameField,
     "emailField"           -> this.emailField,
     "otoroshiDataField"    -> this.otoroshiDataField,
-    "callbackUrl"          -> this.callbackUrl
+    "callbackUrl"          -> this.callbackUrl,
+    "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
@@ -131,14 +137,15 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
+    val claims       = authConfig.claims
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
     val redirectUri = authConfig.callbackUrl + queryParam
     val loginUrl =
-      s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+      s"${authConfig.loginUrl}?scope=$scope&claims=$claims&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
-      "desc" -> descriptor.id,
+      s"desc" -> descriptor.id,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
         )
@@ -154,10 +161,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
+    val claims       = authConfig.claims
 
     val redirectUri = authConfig.callbackUrl
     val loginUrl =
-      s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+      s"${authConfig.loginUrl}?scope=$scope&claims=$claims&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
