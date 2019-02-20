@@ -137,11 +137,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
-    val claims       = authConfig.claims
+    val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
     val redirectUri = authConfig.callbackUrl + queryParam
     val loginUrl =
-      s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+      s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
@@ -161,11 +161,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
-    val claims       = authConfig.claims
+    val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
 
     val redirectUri = authConfig.callbackUrl
     val loginUrl =
-      s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+      s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(

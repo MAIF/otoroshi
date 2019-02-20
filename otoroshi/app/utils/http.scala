@@ -174,14 +174,13 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
-  lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
-  lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
-  lazy val _bodyAsBytes: ByteString      = Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
-  lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
-  lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
-  lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
-  lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
-
+  private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
+  private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  private lazy val _bodyAsBytes: ByteString      = Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
+  private lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
+  private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
+  private lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()
@@ -209,13 +208,13 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
-  lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
-  lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
-  lazy val _bodyAsBytes: ByteString      = rawbody
-  lazy val _bodyAsString: String         = rawbody.utf8String
-  lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
-  lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
-  lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
+  private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
+  private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  private lazy val _bodyAsBytes: ByteString      = rawbody
+  private lazy val _bodyAsString: String         = rawbody.utf8String
+  private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
+  private lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()

@@ -797,7 +797,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 .getOrElse((issuer + "/logout").replace("//logout", "/logout"))
               val jwksUri = (body \ "jwks_uri").asOpt[String]
               val scope = (body \ "scopes_supported").asOpt[Seq[String]].map(_.mkString(" ")).getOrElse("openid profile email name")
-              val claims = (body \ "claims_supported").asOpt[Seq[String]].map(_.mkString(" ")).getOrElse("email name")
+              val claims = (body \ "claims_supported").asOpt[JsArray].map(Json.stringify).getOrElse("""["email","name"]""")
               Ok(
                 config
                   .copy(
