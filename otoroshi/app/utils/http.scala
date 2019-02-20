@@ -2,6 +2,7 @@ package utils.http
 
 import java.io.File
 import java.net.URI
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.ActorSystem
@@ -27,7 +28,7 @@ import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
 import scala.util.Try
-import scala.xml.Elem
+import scala.xml.{Elem, XML}
 
 object WsClientChooser {
   def apply(standardClient: WSClient,
@@ -173,9 +174,14 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
-  lazy val charset = httpResponse.entity.contentType.charsetOption
-  lazy val _contentType = httpResponse.entity.contentType.mediaType.toString() + charset.map(v => ";charset=" + v.value).getOrElse("")
-  override def contentType: String = _contentType
+  lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
+  lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  lazy val _bodyAsBytes: ByteString      = Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
+  lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
+  lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
+  lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
+  lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
+
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()
@@ -184,15 +190,15 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
   def bodyAsSource: Source[ByteString, _]              = httpResponse.entity.dataBytes
   override def header(name: String): Option[String]    = headerValues(name).headOption
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
-  // override def contentType: String                     = header("Content-Type").getOrElse("application/octet-stream")
+  override def contentType: String                     = _contentType
 
   override def body[T: BodyReadable]: T      = throw new RuntimeException("Not supported on this WSClient !!!")
-  def body: String                           = throw new RuntimeException("Not supported on this WSClient !!!")
-  def bodyAsBytes: ByteString                = throw new RuntimeException("Not supported on this WSClient !!!")
-  lazy val cookies: Seq[WSCookie]            = AkkWsClient.cookies(httpResponse)
-  def cookie(name: String): Option[WSCookie] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def xml: Elem                     = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def json: JsValue                 = throw new RuntimeException("Not supported on this WSClient !!!")
+  def body: String                           = _bodyAsString
+  def bodyAsBytes: ByteString                = _bodyAsBytes
+  def cookies: Seq[WSCookie]                 = _cookies
+  def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
+  override def xml: Elem                     = _bodyAsXml
+  override def json: JsValue                 = _bodyAsJson
 }
 
 case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: String, rawbody: ByteString)
@@ -203,9 +209,13 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
-  lazy val charset = httpResponse.entity.contentType.charsetOption
-  lazy val _contentType = httpResponse.entity.contentType.mediaType.toString() + charset.map(v => ";charset=" + v.value).getOrElse("")
-  override def contentType: String = _contentType
+  lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
+  lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  lazy val _bodyAsBytes: ByteString      = rawbody
+  lazy val _bodyAsString: String         = rawbody.utf8String
+  lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
+  lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
+  lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()
@@ -214,14 +224,14 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   def bodyAsSource: Source[ByteString, _]              = Source.single(rawbody)
   override def header(name: String): Option[String]    = headerValues(name).headOption
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
-  def body: String                                     = rawbody.utf8String
-  def bodyAsBytes: ByteString                          = rawbody
-  override def xml: Elem                               = scala.xml.XML.loadString(rawbody.utf8String)
-  override def json: JsValue                           = Json.parse(rawbody.utf8String)
-
+  def body: String                                     = _bodyAsString
+  def bodyAsBytes: ByteString                          = _bodyAsBytes
+  override def xml: Elem                               = _bodyAsXml
+  override def json: JsValue                           = _bodyAsJson
+  override def contentType: String                     = _contentType
+  def cookies: Seq[WSCookie]                           = _cookies
   override def body[T: BodyReadable]: T      = throw new RuntimeException("Not supported on this WSClient !!!")
-  lazy val cookies: Seq[WSCookie]                 = AkkWsClient.cookies(httpResponse)
-  def cookie(name: String): Option[WSCookie] = throw new RuntimeException("Not supported on this WSClient !!!")
+  def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
 }
 
 object CaseInsensitiveOrdered extends Ordering[String] {

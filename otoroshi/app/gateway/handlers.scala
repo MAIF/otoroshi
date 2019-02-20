@@ -26,7 +26,7 @@ import play.api.Logger
 import play.api.http.{Status => _, _}
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
+import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody, StandaloneWSRequest}
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router

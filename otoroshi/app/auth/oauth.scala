@@ -141,7 +141,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
     val redirectUri = authConfig.callbackUrl + queryParam
     val loginUrl =
-      s"${authConfig.loginUrl}?scope=$scope&claims=$claims&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+      s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
@@ -165,7 +165,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
     val redirectUri = authConfig.callbackUrl
     val loginUrl =
-      s"${authConfig.loginUrl}?scope=$scope&claims=$claims&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+      s"${authConfig.loginUrl}?scope=$scope&client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
