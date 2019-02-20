@@ -359,15 +359,26 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
                   "durationStats" -> durationStats,
                   "dataInStats" -> dataInStats,
                   "dataOutStats" -> dataOutStats,
-                  "apiKeyPiechart" -> apiKeyPiechart,
-                  "userPiechart" -> userPiechart,
-                  "servicePiechart" -> servicePiechart,
                   "hits" -> hits,
                   "dataIn" -> datain,
                   "dataOut" -> dataout,
                   "avgDuration" -> avgduration,
                   "avgOverhead" -> avgoverhead
-                )
+                ) ++ ((serviceId, apiKeyId, groupId) match {
+                  case (Some(id), _, _) => Json.obj(
+                    "apiKeyPiechart" -> apiKeyPiechart,
+                    "userPiechart" -> userPiechart,
+                  )
+                  case (_, Some(id), _) => Json.obj(
+                    "userPiechart" -> userPiechart,
+                    "servicePiechart" -> servicePiechart
+                  )
+                  case (_, _, Some(id)) => Json.obj(
+                    "apiKeyPiechart" -> apiKeyPiechart,
+                    "userPiechart" -> userPiechart,
+                    "servicePiechart" -> servicePiechart
+                  )
+                })
               )
             }
           }
