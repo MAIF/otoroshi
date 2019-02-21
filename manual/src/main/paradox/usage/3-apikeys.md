@@ -72,6 +72,13 @@ Informations about current quotas usage will be returned in response headers.
 <img src="../img/create-apikey.png" />
 @@@
 
+@@@ warning
+Daily and monthly quotas are based on the following rules :
+
+* daily quota is computed between 00h00:00.000 and 23h59:59.999
+* monthly qutoas is computed between the first day of the month at 00h00:00.000 and the last day of the month at 23h59:59.999
+@@@
+
 ## Update an API key
 
 To update an `API key`, just click on the edit button <img src="../img/edit.png" /> of your `API key`
