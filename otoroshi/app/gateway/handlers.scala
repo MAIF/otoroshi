@@ -1391,7 +1391,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             headersOut.filterNot(h => h._1 == "Set-Cookie"): _*
                                                           )
                                                           .withCookies((withTrackingCookies ++ cookies): _*)
-                                                        // .as(contentType)
+                                                          .as(contentType)
                                                       } getOrElse {
                                                       // stream out
                                                       Status(httpResponse.status)
