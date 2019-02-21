@@ -1347,7 +1347,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     val response: Result = isChunked match {
                                                       case true => {
                                                         // stream out
-                                                        logger.warn(s"1: Chunking response for ${desc.name} ${req.relativeUri}")
                                                         Status(httpResponse.status)
                                                           .chunked(finalStream)
                                                           .withHeaders(
@@ -1420,7 +1419,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     val response: Result = isChunked match {
                                                       case true => {
                                                         // stream out
-                                                        logger.warn(s"2: Chunking response for ${desc.name} ${req.relativeUri}")
                                                         Status(httpResponse.status)
                                                           .chunked(finalStream)
                                                           .withHeaders(
