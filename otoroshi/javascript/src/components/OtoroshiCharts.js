@@ -54,7 +54,6 @@ export class OtoroshiCharts extends Component {
         const data = {
           ...this.defaultPayload, ...rawData,
         };
-        console.log(rawData, data)
         this.setState({ data, loading: false });
       });
     });
@@ -98,7 +97,6 @@ export class OtoroshiCharts extends Component {
     if (!data) {
       return null;
     }
-    console.log(data);
     const hits = data.hits && data.hits.count ? data.hits.count.prettify() : 0;
     const totalDataIn = data.dataIn ? this.computeValue(data.dataIn['data.dataIn']) : 0;
     const totalDataOut = data.dataOut ? this.computeValue(data.dataOut['data.dataOut']) : 0;
