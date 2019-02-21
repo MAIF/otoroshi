@@ -654,6 +654,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             )
                                           )
                                         ),
+                                      responseChunked = false,
                                       `@serviceId` = descriptor.id,
                                       `@service` = descriptor.name,
                                       descriptor = descriptor,

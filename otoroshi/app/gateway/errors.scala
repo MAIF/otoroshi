@@ -88,6 +88,7 @@ object Errors {
           descriptor = descriptor,
           `@product` = descriptor.metadata.getOrElse("product", "--"),
           remainingQuotas = RemainingQuotas(),
+          responseChunked = false,
           viz = Some(viz)
         ).toAnalytics()(env)
       }

@@ -40,7 +40,7 @@ import utils.RequestImplicits._
 import otoroshi.script.Implicits._
 import play.libs.ws.WSCookie
 
-case class ProxyDone(status: Int, upstreamLatency: Long, headersOut: Seq[Header])
+case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header])
 
 class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
@@ -1043,6 +1043,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 )
                                               )
                                             ),
+                                          responseChunked = resp.isChunked,
                                           `@serviceId` = descriptor.id,
                                           `@service` = descriptor.name,
                                           descriptor = descriptor,
@@ -1264,7 +1265,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                                   // meterOut.mark(responseHeader.length)
                                                   // counterOut.addAndGet(responseHeader.length)
-
+                                                  val isChunked = httpResponse.headers.get("Transfer-Encoding").contains("chunked")
                                                   val theStream: Source[ByteString, _] = resp.bodyAsSource
                                                     .concat(snowMonkeyContext.trailingResponseBodyStream)
                                                     .alsoTo(Sink.onComplete {
@@ -1272,6 +1273,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
                                                         promise.trySuccess(
                                                           ProxyDone(httpResponse.status,
+                                                                    isChunked,
                                                                     upstreamLatency,
                                                                     headersOut.map(Header.apply))
                                                         )
@@ -1282,6 +1284,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         )
                                                         promise.trySuccess(
                                                           ProxyDone(httpResponse.status,
+                                                                    isChunked,
                                                                     upstreamLatency,
                                                                     headersOut.map(Header.apply))
                                                         )
@@ -1317,7 +1320,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     )
                                                   )
 
-                                                  val isChunked = httpResponse.headers.get("Transfer-Encoding").contains("chunked")
                                                   if (req.version == "HTTP/1.0") {
                                                     logger.warn(
                                                       s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
