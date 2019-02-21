@@ -1337,7 +1337,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           )
                                                           .as(contentType)
                                                           .withCookies((withTrackingCookies ++ cookies): _*)
-                                                        desc.gzipConfig.handleResult(req, response)
+                                                        desc.gzip.handleResult(req, response)
                                                       }
                                                   } else if (globalConfig.streamEntityOnly) { // only temporary
                                                     // stream out
@@ -1376,7 +1376,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       )
                                                       .as(contentType)
                                                       .withCookies((withTrackingCookies ++ cookies): _*)
-                                                    desc.gzipConfig.handleResult(req, response)
+                                                    desc.gzip.handleResult(req, response)
                                                     // FastFuture.successful(response)
                                                   } else {
                                                     val response: Result = httpResponse.headers
@@ -1415,7 +1415,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         .withCookies((withTrackingCookies ++ cookies): _*)
                                                         .as(contentType)
                                                     }
-                                                    desc.gzipConfig.handleResult(req, response)
+                                                    desc.gzip.handleResult(req, response)
                                                     //FastFuture.successful(response)
                                                   }
                                                 }

@@ -1128,6 +1128,65 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
+            label="Gzip support">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.gzip.enabled}
+              help="..."
+              onChange={v => this.changeTheValue('gzip.enabled', v)}
+            />
+            <ArrayInput
+              label="Mimetypes whitelist"
+              placeholder="text/html"
+              suffix="pattern"
+              value={this.state.service.gzip.whiteList}
+              help="..."
+              onChange={arr => this.changeTheValue('gzip.whiteList', arr)}
+            />
+            <ArrayInput
+              label="Mimetypes blacklist"
+              placeholder="text/html"
+              suffix="pattern"
+              value={this.state.service.gzip.blacklist}
+              help="..."
+              onChange={arr => this.changeTheValue('gzip.blacklist', arr)}
+            />
+            <NumberInput
+              label="Compression level"
+              value={this.state.service.gzip.compressionLevel}
+              help="..."
+              suffix="0 to 9"
+              from="0"
+              to="9"
+              onChange={v => this.changeTheValue('gzip.compressionLevel', v)}
+            />
+            <NumberInput
+              label="Buffer size"
+              value={this.state.service.gzip.bufferSize}
+              help="..."
+              suffix="bytes"
+              onChange={v => this.changeTheValue('gzip.bufferSize', v)}
+            />
+            <NumberInput
+              label="Chunk threshold"
+              value={this.state.service.gzip.chunkedThreshold}
+              help="..."
+              suffix="bytes"
+              onChange={v => this.changeTheValue('gzip.chunkedThreshold', v)}
+            />
+            <ArrayInput
+              label="Excluded patterns"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.gzip.excludedPatterns}
+              help="By default, when gzip is enabled, everything has gzip. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
+              onChange={arr => this.changeTheValue('gzip.excludedPatterns', arr)}
+            />
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="Client settings">
             <BooleanInput
               label="Use circuit breaker"
