@@ -1265,7 +1265,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                                   // meterOut.mark(responseHeader.length)
                                                   // counterOut.addAndGet(responseHeader.length)
-                                                  val isChunked = httpResponse.headers.get("Transfer-Encoding").contains("chunked")
+                                                  val isChunked = resp.header("Transfer-Encoding").contains("chunked")
                                                   val theStream: Source[ByteString, _] = resp.bodyAsSource
                                                     .concat(snowMonkeyContext.trailingResponseBodyStream)
                                                     .alsoTo(Sink.onComplete {

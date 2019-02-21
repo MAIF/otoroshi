@@ -31,6 +31,7 @@ import { CertificatesPage } from '../pages/CertificatesPage';
 import { ClusterPage } from '../pages/ClusterPage';
 import { ScriptsPage } from '../pages/ScriptsPage';
 import { ClientValidatorsPage } from '../pages/ClientValidatorsPage';
+import { GroupStatsPage } from '../pages/GroupStatsPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -200,6 +201,12 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
+                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem/status"
+                          component={props =>
+                            this.decorate(ApiKeyStatsPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
                           path="/lines/:lineId/services/:serviceId/apikeys/:taction"
                           component={props =>
                             this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
@@ -232,6 +239,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/groups/:taction/:titem"
                           component={props => this.decorate(GroupsPage, props)}
+                        />
+                        <Route
+                          path="/groups/:taction/:titem/stats"
+                          component={props => this.decorate(GroupStatsPage, props)}
                         />
                         <Route
                           path="/groups/:taction"
