@@ -291,6 +291,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       `@serviceId` = "mon-service-id",
       `@service` = "mon-service",
       `@product` = "mon-product",
+      responseChunked = false,
       descriptor = ServiceDescriptor(id = "123456",
                                      groupId = "test",
                                      name = "name",
