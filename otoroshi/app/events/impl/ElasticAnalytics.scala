@@ -820,10 +820,10 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       }
       case Some(ApiKeyFilterable(apiKey)) => {
         Json.obj(
-          "minimum_should_match" -> 2,
+          "minimum_should_match" -> 1,
           "should" -> (
             Seq(
-              Json.obj("term" -> Json.obj("identity.identityType.raw"     -> "APIKEY")),
+              // Json.obj("term" -> Json.obj("identity.identityType.raw"     -> "APIKEY")),
               Json.obj("term" -> Json.obj("identity.identity"     -> apiKey.clientId)),
               Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId))
             ) ++
