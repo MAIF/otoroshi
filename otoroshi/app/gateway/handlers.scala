@@ -1317,6 +1317,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     )
                                                   )
 
+                                                  val isChunked = httpResponse.headers.get("Transfer-Encoding").contains("chunked")
                                                   if (req.version == "HTTP/1.0") {
                                                     logger.warn(
                                                       s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
@@ -1342,10 +1343,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   } else if (globalConfig.streamEntityOnly) { // only temporary
                                                     // stream out
                                                     val entity =
-                                                      if (httpResponse.headers
-                                                            .get("Transfer-Encoding")
-                                                            //.flatMap(_.lastOption)
-                                                            .contains("chunked")) {
+                                                      if (isChunked) {
                                                         HttpEntity.Chunked(
                                                           finalStream
                                                             .map(i => play.api.http.HttpChunk.Chunk(i))
@@ -1372,7 +1370,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       .withHeaders(
                                                         headersOut.filterNot(
                                                           h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                        ): _*
+                                                        ) ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
                                                       )
                                                       .as(contentType)
                                                       .withCookies((withTrackingCookies ++ cookies): _*)
@@ -1388,7 +1386,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         Status(httpResponse.status)
                                                           .chunked(finalStream)
                                                           .withHeaders(
-                                                            headersOut.filterNot(h => h._1 == "Set-Cookie"): _*
+                                                            headersOut.filterNot(h => h._1 == "Set-Cookie")
+                                                              ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
                                                           )
                                                           .withCookies((withTrackingCookies ++ cookies): _*)
                                                           .as(contentType)
