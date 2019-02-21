@@ -1350,6 +1350,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       .filter(_ == "chunked")
                                                       .map { _ =>
                                                         // stream out
+                                                        logger.info(s"Chunking response for ${desc.name} ${req.relativeUri}")
                                                         Status(httpResponse.status)
                                                           .chunked(finalStream)
                                                           .withHeaders(
