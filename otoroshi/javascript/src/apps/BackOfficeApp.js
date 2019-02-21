@@ -32,6 +32,7 @@ import { ClusterPage } from '../pages/ClusterPage';
 import { ScriptsPage } from '../pages/ScriptsPage';
 import { ClientValidatorsPage } from '../pages/ClientValidatorsPage';
 import { GroupStatsPage } from '../pages/GroupStatsPage';
+import { ApiKeyStatsPage } from '../pages/ApiKeyStatsPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -195,15 +196,15 @@ class BackOfficeAppContainer extends Component {
                           component={props => this.decorate(DocumentationPage, props)}
                         />
                         <Route
-                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
+                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem/stats"
                           component={props =>
-                            this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
+                            this.decorate(ApiKeyStatsPage, { ...props, env: this.state.env })
                           }
                         />
                         <Route
-                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem/status"
+                          path="/lines/:lineId/services/:serviceId/apikeys/:taction/:titem"
                           component={props =>
-                            this.decorate(ApiKeyStatsPage, { ...props, env: this.state.env })
+                            this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
                           }
                         />
                         <Route
@@ -237,12 +238,12 @@ class BackOfficeAppContainer extends Component {
                           component={props => this.decorate(ServicesPage, props)}
                         />
                         <Route
-                          path="/groups/:taction/:titem"
-                          component={props => this.decorate(GroupsPage, props)}
-                        />
-                        <Route
                           path="/groups/:taction/:titem/stats"
                           component={props => this.decorate(GroupStatsPage, props)}
+                        />
+                        <Route
+                          path="/groups/:taction/:titem"
+                          component={props => this.decorate(GroupsPage, props)}
                         />
                         <Route
                           path="/groups/:taction"

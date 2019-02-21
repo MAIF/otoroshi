@@ -10,8 +10,28 @@ import { OtoDatePicker } from '../components/datepicker';
 
 export class OtoroshiCharts extends Component {
 
+  defaultPayload = {
+    statusesPiechart: { series: [] },
+    statusesHistogram: { series: [] },
+    durationStats: { series: [] },
+    durationPercentiles: { series: [] },
+    overheadStats: { series: [] },
+    overheadPercentiles: { series: [] },
+    dataOutStats: { series: [] },
+    dataInStats: { series: [] },
+    productPiechart: { series: [] },
+    servicePiechart: { series: [] },
+    apiKeyPiechart: { series: [] },
+    userPiechart: { series: [] },
+    hits: { count: 0 },
+    avgDuration: { duration: 0 },
+    avgOverhead: { overhead: 0 },
+    dataIn: { 'data.dataIn': 0 },
+    dataOut: { 'data.dataOut': 0 },
+  };
+
   state = {
-    data: this.props.data || null,
+    data: this.props.data || this.defaultPayload,
     from: this.props.from || moment().startOf('day'),
     to: this.props.to || moment(),
     loading: true,
@@ -32,26 +52,7 @@ export class OtoroshiCharts extends Component {
         this.state.to
       ).then(rawData => {
         const data = {
-          ...{
-            statusesPiechart: { series: [] },
-            statusesHistogram: { series: [] },
-            durationStats: { series: [] },
-            durationPercentiles: { series: [] },
-            overheadStats: { series: [] },
-            overheadPercentiles: { series: [] },
-            dataOutStats: { series: [] },
-            dataInStats: { series: [] },
-            productPiechart: { series: [] },
-            servicePiechart: { series: [] },
-            apiKeyPiechart: { series: [] },
-            userPiechart: { series: [] },
-            hits: { count: 0 },
-            avgDuration: { duration: 0 },
-            avgOverhead: { overhead: 0 },
-            dataIn: { 'data.dataIn': 0 },
-            dataOut: { 'data.dataOut': 0 },
-          },
-          ...rawData,
+          ...this.defaultPayload, ...rawData,
         };
         this.setState({ data, loading: false });
       });
@@ -92,8 +93,11 @@ export class OtoroshiCharts extends Component {
   };
 
   render() {
-    const data = this.state.data,
-
+    const data = this.state.data;
+    if (!data) {
+      return null;
+    }
+    console.log(data);
     const hits = data.hits && data.hits.count ? data.hits.count.prettify() : 0;
     const totalDataIn = this.computeValue(data.dataIn['data.dataIn']);
     const totalDataOut = this.computeValue(data.dataOut['data.dataOut']);

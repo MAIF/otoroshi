@@ -20,6 +20,12 @@ export class GroupsPage extends Component {
   columns = [
     { title: 'Name', content: item => item.name },
     { title: 'Description', noMobile: true, content: item => item.description },
+    { 
+      title: 'Stats', 
+      style: { textAlign: 'center', width: 70 },
+      notFilterable: true,
+      content: item => <button type="button" className="btn btn-sm btn-success" onClick={e => window.location = `/bo/dashboard/groups/edit/${item.id}/stats`}><i className="glyphicon glyphicon-stats" /></button> 
+    }
   ];
 
   formFlow = ['id', 'name', 'description'];

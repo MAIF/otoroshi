@@ -283,6 +283,16 @@ export function fetchApiKeys(lineId, serviceId) {
   }).then(r => r.json());
 }
 
+export function fetchApiKeyById(serviceId, apkid) {
+  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${apkid}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
 export function deleteApiKey(serviceId, ak) {
   return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`, {
     method: 'DELETE',
