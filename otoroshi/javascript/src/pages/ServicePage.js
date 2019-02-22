@@ -400,6 +400,24 @@ export class ServicePage extends Component {
     });
   };
 
+  computeIfButtonDisabled = (header) => {
+    return !!this.state.service.additionalHeadersOut[header]
+  }
+
+  addSecurityHeader = (header, value) => {
+    const service = this.state.service;
+    const additionalHeadersOut = service.additionalHeadersOut || {};
+    return this.setState({
+      service: { 
+        ...service, 
+        additionalHeadersOut: { 
+          ...additionalHeadersOut, 
+          [header]: value 
+        } 
+      }
+    });
+  }
+
   render() {
     if (!this.state.service) return null;
     const propsDisabled = { disabled: true };
@@ -1262,22 +1280,7 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Additional settings">
-            <TextInput
-              label="OpenAPI"
-              placeholder="The URL for the OpenAPI descriptor of this service"
-              value={this.state.service.api.openApiDescriptorUrl}
-              help="Specify an open API descriptor. Useful to display the documentation"
-              onChange={e => this.changeTheValue('api.openApiDescriptorUrl', e)}
-            />
-            <ObjectInput
-              label="Metadata"
-              placeholderKey="Metadata key"
-              placeholderValue="Metadata value"
-              value={this.state.service.metadata}
-              help="Specify metadata for the service. Useful for analytics"
-              onChange={v => this.changeTheValue('metadata', v)}
-            />
+            label="HTTP Headers">
             <ObjectInput
               label="Additional Headers In"
               placeholderKey="Header name (ie.Access-Control-Allow-Origin)"
@@ -1294,6 +1297,21 @@ export class ServicePage extends Component {
               help="Specify headers that will be added to each client responsse (from Otoroshi to client)."
               onChange={v => this.changeTheValue('additionalHeadersOut', v)}
             />
+            <div className="form-group">
+              <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+                Security headers
+              </label>
+              <div className="col-sm-10">
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-Frame-Option', 'DENY')} disabled={this.computeIfButtonDisabled('X-Frame-Option')} className="btn btn-xs btn-success">X-Frame-Option</button>
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')} disabled={this.computeIfButtonDisabled('X-XSS-Protection')} className="btn btn-xs btn-success">X-XSS-Protection</button>
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')} disabled={this.computeIfButtonDisabled('X-Content-Type-Options')} className="btn btn-xs btn-success">X-Content-Type-Options</button>
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')} disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')} className="btn btn-xs btn-success">X-Permitted-Cross-Domain-Policies</button>
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Referrer-Policy', 'origin-when-cross-origin, strict-origin-when-cross-origin')} disabled={this.computeIfButtonDisabled('Referrer-Policy')} className="btn btn-xs btn-success">Referrer-Policy</button>
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")} disabled={this.computeIfButtonDisabled('Content-Security-Policy')} className="btn btn-xs btn-success">Content-Security-Policy</button>
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Strict-Transport-Security', 'max-age=86400; includeSubDomains; preload')} disabled={this.computeIfButtonDisabled('Strict-Transport-Security')} className="btn btn-xs btn-success">Strict-Transport-Security</button>
+                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Public-Key-Pins', 'pin-sha256="....."; max-age=10; includeSubdomains')} disabled={this.computeIfButtonDisabled('Public-Key-Pins')} className="btn btn-xs btn-success">Public-Key-Pins</button>
+              </div>
+            </div>
             <ObjectInput
               label="Matching Headers"
               placeholderKey="Header name (ie. Accept)"
@@ -1301,6 +1319,27 @@ export class ServicePage extends Component {
               value={this.state.service.matchingHeaders}
               help="Specify headers that MUST be present on client request to route it. Useful to implement versioning."
               onChange={v => this.changeTheValue('matchingHeaders', v)}
+            />
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Additional settings">
+            <TextInput
+              label="OpenAPI"
+              placeholder="The URL for the OpenAPI descriptor of this service"
+              value={this.state.service.api.openApiDescriptorUrl}
+              help="Specify an open API descriptor. Useful to display the documentation"
+              onChange={e => this.changeTheValue('api.openApiDescriptorUrl', e)}
+            />
+            <ObjectInput
+              label="Metadata"
+              placeholderKey="Metadata key"
+              placeholderValue="Metadata value"
+              value={this.state.service.metadata}
+              help="Specify metadata for the service. Useful for analytics"
+              onChange={v => this.changeTheValue('metadata', v)}
             />
             <ArrayInput
               label="IP Whitelist"
