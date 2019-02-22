@@ -14,13 +14,13 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
-import play.api.{Configuration, Environment, Logger}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
+import play.api.{Configuration, Environment, Logger}
 import redis._
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
-import storage.inmemory._
 import storage._
+import storage.inmemory._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -159,7 +159,7 @@ class RedisSentinelLFDataStores(configuration: Configuration, environment: Envir
   lazy val redisCli: SentinelMonitoredRedisClientMasterSlaves = {
     implicit val ec = redisDispatcher
     val members: Seq[(String, Int)] = configuration
-      .getOptional[Seq[Configuration]]("app.redis.cluster.sentinels.members")
+      .getOptional[Seq[Configuration]]("app.redis.cluster.sentinels.lf.members")
       .map(_.map { config =>
         (
           config.getOptional[String]("host").getOrElse("localhost"),
@@ -167,7 +167,7 @@ class RedisSentinelLFDataStores(configuration: Configuration, environment: Envir
         )
       })
       .getOrElse(Seq.empty[(String, Int)])
-    val master = configuration.getOptional[String]("app.redis.cluster.sentinels.master").get
+    val master = configuration.getOptional[String]("app.redis.cluster.sentinels.lf.master").get
     val cli: SentinelMonitoredRedisClientMasterSlaves = SentinelMonitoredRedisClientMasterSlaves(
       members,
       master
