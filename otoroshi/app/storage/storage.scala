@@ -94,7 +94,7 @@ trait RedisLike {
   def stop(): Unit
   def flushall(): Future[Boolean]
   def get(key: String): Future[Option[ByteString]]
-  def mget(keys: String*): Future[Seq[Option[ByteString]]]
+  def mget(keys: String*): Future[Seq[Option[ByteString]]] // multi key op ?
   def set(key: String,
           value: String,
           exSeconds: Option[Long] = None,
@@ -103,11 +103,11 @@ trait RedisLike {
             value: ByteString,
             exSeconds: Option[Long] = None,
             pxMilliseconds: Option[Long] = None): Future[Boolean]
-  def del(keys: String*): Future[Long]
+  def del(keys: String*): Future[Long] // multi key op ?
   def incr(key: String): Future[Long]
   def incrby(key: String, increment: Long): Future[Long]
   def exists(key: String): Future[Boolean]
-  def keys(pattern: String): Future[Seq[String]]
+  def keys(pattern: String): Future[Seq[String]] // multi key op ?
   def hdel(key: String, fields: String*): Future[Long]
   def hgetall(key: String): Future[Map[String, ByteString]]
   def hset(key: String, field: String, value: String): Future[Boolean]
