@@ -255,11 +255,13 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           case (Some(id), _, _) => "Service"
           case (_, Some(id), _) => "ApiKey"
           case (_, _, Some(id)) => "Group"
+          case _ => "None"
         }
         val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
           case (Some(id), _, _) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
           case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
           case (_, _, Some(id)) => env.datastores.serviceGroupDataStore.findById(id).map(_.map(ServiceGroupFilterable.apply))
+          case _                => FastFuture.successful(None)
         }
         futureFilterable.flatMap {
           case None => NotFound(Json.obj("error" -> s"Service with id: '$entityId' not found")).asFuture
@@ -295,11 +297,13 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           case (Some(id), _, _) => "Service"
           case (_, Some(id), _) => "ApiKey"
           case (_, _, Some(id)) => "Group"
+          case _ => "None"
         }
         val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
           case (Some(id), _, _) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
           case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
           case (_, _, Some(id)) => env.datastores.serviceGroupDataStore.findById(id).map(_.map(ServiceGroupFilterable.apply))
+          case _                => FastFuture.successful(None)
         }
         futureFilterable.flatMap {
           case None => NotFound(Json.obj("error" -> s"Entity: '$entityId' not found")).asFuture
@@ -378,6 +382,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
                     "userPiechart" -> userPiechart,
                     "servicePiechart" -> servicePiechart
                   )
+                  case _ => Json.obj()
                 })
               )
             }
