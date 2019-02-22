@@ -507,6 +507,23 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
+  def passWithHeadersVerification(desc: ServiceDescriptor, req: RequestHeader)(f: => Future[Result]): Future[Result] = {
+    if (desc.headersVerification.isEmpty) {
+      f
+    } else {
+      desc.headersVerification.map(tuple => req.headers.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
+        case Some(_) => Errors.craftResponseResult(
+          "Missing header(s)",
+          Results.BadRequest,
+          req,
+          Some(desc),
+          Some("errors.missing.headers")
+        )
+        case None => f
+      }
+    }
+  }
+
   def passWithReadOnly(readOnly: Boolean, req: RequestHeader)(f: => Future[Result]): Future[Result] = {
     readOnly match {
       case false => f
@@ -644,6 +661,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       Some("errors.service.in.maintenance")
                     )
                   } else {
+                    passWithHeadersVerification(rawDesc, req) {
                     passWithReadOnly(rawDesc.readOnly, req) {
                       applyJwtVerifier(rawDesc, req) { jwtInjection =>
                         applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -2037,6 +2055,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                           }
                         }
                       }
+                    }
                     }
                   }
                 }

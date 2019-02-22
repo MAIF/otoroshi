@@ -375,6 +375,7 @@ case class ServiceDescriptor(
     privatePatterns: Seq[String] = Seq.empty[String],
     additionalHeaders: Map[String, String] = Map.empty[String, String],
     additionalHeadersOut: Map[String, String] = Map.empty[String, String],
+    headersVerification: Map[String, String] = Map.empty[String, String],
     matchingHeaders: Map[String, String] = Map.empty[String, String],
     ipFiltering: IpFiltering = IpFiltering(),
     api: ApiDescriptor = ApiDescriptor(false, None),
@@ -545,6 +546,8 @@ object ServiceDescriptor {
             (json \ "additionalHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           additionalHeadersOut =
             (json \ "additionalHeadersOut").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          headersVerification =
+            (json \ "headersVerification").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           matchingHeaders = (json \ "matchingHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           ipFiltering = (json \ "ipFiltering").asOpt(IpFiltering.format).getOrElse(IpFiltering()),
           api = (json \ "api").asOpt(ApiDescriptor.format).getOrElse(ApiDescriptor(false, None)),
@@ -611,6 +614,7 @@ object ServiceDescriptor {
       "privatePatterns"            -> JsArray(sd.privatePatterns.map(JsString.apply)),
       "additionalHeaders"          -> JsObject(sd.additionalHeaders.mapValues(JsString.apply)),
       "additionalHeadersOut"       -> JsObject(sd.additionalHeadersOut.mapValues(JsString.apply)),
+      "headersVerification"        -> JsObject(sd.headersVerification.mapValues(JsString.apply)),
       "matchingHeaders"            -> JsObject(sd.matchingHeaders.mapValues(JsString.apply)),
       "ipFiltering"                -> sd.ipFiltering.toJson,
       "api"                        -> sd.api.toJson,

@@ -235,6 +235,23 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
+  def passWithHeadersVerification(desc: ServiceDescriptor, req: RequestHeader)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    if (desc.headersVerification.isEmpty) {
+      f
+    } else {
+      desc.headersVerification.map(tuple => req.headers.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
+        case Some(_) => Errors.craftResponseResult(
+          "Missing header(s)",
+          Results.BadRequest,
+          req,
+          Some(desc),
+          Some("errors.missing.headers")
+        ).asLeft[WSFlow]
+        case None => f
+      }
+    }
+  }
+
   def passWithReadOnly(readOnly: Boolean, req: RequestHeader)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
@@ -337,6 +354,7 @@ class WebSocketHandler()(implicit env: Env) {
                   .asLeft[WSFlow]
               }
               case Some(rawDesc) =>
+                passWithHeadersVerification(rawDesc, req) {
                 passWithReadOnly(rawDesc.readOnly, req) {
                   applyJwtVerifier(rawDesc, req) { jwtInjection =>
                     applySidecar(rawDesc, remoteAddress, req) { desc =>
@@ -1153,6 +1171,7 @@ class WebSocketHandler()(implicit env: Env) {
                     }
                   }
                 }
+            }
             }
         }
       }

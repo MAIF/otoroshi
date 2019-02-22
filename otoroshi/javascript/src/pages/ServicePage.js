@@ -1313,6 +1313,14 @@ export class ServicePage extends Component {
               </div>
             </div>
             <ObjectInput
+              label="Headers verification"
+              placeholderKey="Header name"
+              placeholderValue="Header value"
+              value={this.state.service.headersVerification}
+              help="Verify that some headers has a specific value"
+              onChange={v => this.changeTheValue('headersVerification', v)}
+            />
+            <ObjectInput
               label="Matching Headers"
               placeholderKey="Header name (ie. Accept)"
               placeholderValue="Header value (ie. application/vnd.myapp.v2+json)"
