@@ -8,18 +8,19 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import auth.AuthConfigsDataStore
-import cluster.{ClusterStateDataStore, RedisClusterStateDataStore}
+import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore, RedisClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
-import otoroshi.script.{RedisScriptDataStore, ScriptDataStore}
+import otoroshi.script.{InMemoryScriptDataStore, RedisScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
-import redis.{RedisClientMasterSlaves, RedisServer}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
+import redis.{RedisClientMasterSlaves, RedisCluster, RedisServer}
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
+import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +40,7 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
         .getOrElse(ConfigFactory.empty)
     )
   lazy val redisDispatcher = redisActorSystem.dispatcher
-  lazy val redis = {
+  lazy val redis: RedisClientMasterSlaves = {
     // import collection.JavaConverters._
     implicit val ec = redisDispatcher
     val master = RedisServer(

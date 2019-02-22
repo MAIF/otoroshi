@@ -32,6 +32,7 @@ import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores
 import storage.leveldb.LevelDbDataStores
 import storage.mongo.MongoDataStores
+import storage.redis.next._
 import storage.redis.RedisDataStores
 import utils.http._
 
@@ -353,6 +354,12 @@ class Env(val configuration: Configuration,
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
       case _ if clusterConfig.mode == ClusterMode.Worker =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
+      case "redis-pool"        if clusterConfig.mode == ClusterMode.Leader => new RedisCPDataStores(configuration, environment, lifecycle, this)
+      case "redis-mpool"       if clusterConfig.mode == ClusterMode.Leader => new RedisMCPDataStores(configuration, environment, lifecycle, this)
+      case "redis-cluster"     if clusterConfig.mode == ClusterMode.Leader => new RedisClusterDataStores(configuration, environment, lifecycle, this)
+      case "redis-lf"          if clusterConfig.mode == ClusterMode.Leader => new RedisLFDataStores(configuration, environment, lifecycle, this)
+      case "redis-sentinel"    if clusterConfig.mode == ClusterMode.Leader => new RedisSentinelDataStores(configuration, environment, lifecycle, this)
+      case "redis-sentinel-lf" if clusterConfig.mode == ClusterMode.Leader => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "redis" if clusterConfig.mode == ClusterMode.Leader =>
         new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory" if clusterConfig.mode == ClusterMode.Leader =>
@@ -368,6 +375,12 @@ class Env(val configuration: Configuration,
       case "leveldb"   => new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "cassandra" => new CassandraDataStores(configuration, environment, lifecycle, this)
       case "mongo"     => new MongoDataStores(configuration, environment, lifecycle, this)
+      case "redis-pool"        => new RedisCPDataStores(configuration, environment, lifecycle, this)
+      case "redis-mpool"       => new RedisMCPDataStores(configuration, environment, lifecycle, this)
+      case "redis-cluster"     => new RedisClusterDataStores(configuration, environment, lifecycle, this)
+      case "redis-lf"          => new RedisLFDataStores(configuration, environment, lifecycle, this)
+      case "redis-sentinel"    => new RedisSentinelDataStores(configuration, environment, lifecycle, this)
+      case "redis-sentinel-lf" => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
