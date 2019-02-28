@@ -470,8 +470,10 @@ class Env(val configuration: Configuration,
 
       clusterAgent.warnAboutHttpLeaderUrls()
       if (clusterConfig.mode == ClusterMode.Leader) {
+        logger.info(s"Running Otoroshi Leader agent !")
         clusterLeaderAgent.start()
       } else if (clusterConfig.mode == ClusterMode.Worker) {
+        logger.info(s"Running Otoroshi Worker agent !")
         clusterAgent.startF()
       } else {
         DynamicSSLEngineProvider.setCurrentEnv(this)
