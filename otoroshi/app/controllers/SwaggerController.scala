@@ -520,14 +520,42 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
                                 Ref("RSAlgoSettings"),
                                 Ref("ESAlgoSettings"),
                                 Ref("JWKSAlgoSettings")),
-      "metadata"           -> SimpleObjectType ~~> "Just a bunch of random properties",
-      "matchingHeaders"    -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
-      "additionalHeaders"  -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
-      "authConfigRef"      -> SimpleStringType ~~> "A reference to a global auth module config",
-      "transformerRef"     -> SimpleStringType ~~> "A reference to a request transformer",
-      "clientValidatorRef" -> SimpleStringType ~~> "A reference to validation authority",
-      "cors"               -> Ref("CorsSettings"),
-      "redirection"        -> Ref("RedirectionSettings")
+      "metadata"            -> SimpleObjectType ~~> "Just a bunch of random properties",
+      "matchingHeaders"     -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
+      "additionalHeaders"   -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
+      "authConfigRef"       -> SimpleStringType ~~> "A reference to a global auth module config",
+      "transformerRef"      -> SimpleStringType ~~> "A reference to a request transformer",
+      "clientValidatorRef"  -> SimpleStringType ~~> "A reference to validation authority",
+      "clientValidatorRef"  -> SimpleStringType ~~> "A reference to validation authority",
+      "cors"                -> Ref("CorsSettings"),
+      "redirection"         -> Ref("RedirectionSettings"),
+      "overrideHost"        -> SimpleBooleanType ~~> "Host header will be overriden with Host of the target",
+      "xForwardedHeaders"   -> SimpleBooleanType ~~> "Send X-Forwarded-* headers",
+      "gzip"                -> Ref("Gzip"),
+      "headersVerification" -> SimpleObjectType ~~> "Specify headers that will be verified after routing.",
+    )
+  )
+
+  def Gzip = Json.obj(
+    "description" -> "Configuration for gzip of service responses",
+    "type"        -> "object",
+    "required"    -> Json.arr(
+      "enabled",
+      "excludedPatterns",
+      "whiteList",
+      "blackList",
+      "bufferSize",
+      "chunkedThreshold",
+      "compressionLevel",
+    ),
+    "properties" -> Json.obj(
+      "enabled"           -> SimpleBooleanType ~~> "Whether gzip compression is enabled or not",
+      "excludedPatterns"  -> ArrayOf(SimpleStringType) ~~> "Patterns that are excluded from gzipping",        
+      "whiteList"         -> ArrayOf(SimpleStringType) ~~> "Whitelisted mime types. Wildcard supported",  
+      "blackList"         -> ArrayOf(SimpleStringType) ~~> "Blacklisted mime types. Wildcard supported",  
+      "bufferSize"        -> SimpleLongType ~~> "Size of the GZip buffer", 
+      "chunkedThreshold"  -> SimpleLongType ~~> "Threshold for chunking data",        
+      "compressionLevel"  -> SimpleIntType ~~> "Compression level. From 0 to 9"        
     )
   )
 
@@ -940,11 +968,14 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "logoutUrl"            -> SimpleStringType ~~> "OAuth logout URL",
       "callbackUrl"          -> SimpleStringType ~~> "Otoroshi callback URL",
       "scope"                -> SimpleStringType ~~> "The scope of the token",
+      "claims"               -> SimpleStringType ~~> "The claims of the token",
       "accessTokenField"     -> SimpleStringType ~~> "Field name to get access token",
       "nameField"            -> SimpleStringType ~~> "Field name to get name from user profile",
       "emailField"           -> SimpleStringType ~~> "Field name to get email from user profile",
       "otoroshiDataField"    -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
+      "oidConfig"            -> SimpleStringType ~~> "URL of the OIDC config. file",
       "useJson"              -> SimpleBooleanType ~~> "Use JSON or URL Form Encoded as payload with the OAuth provider",
+      "useCookies"           -> SimpleBooleanType ~~> "Use for redirection to actual service",
       "readProfileFromToken" -> SimpleBooleanType ~~> "The user profile will be read from the JWT token in id_token",
       "jwtVerifier" -> OneOf(Ref("HSAlgoSettings"),
                              Ref("RSAlgoSettings"),
@@ -2473,6 +2504,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "RedirectionSettings"         -> RedirectionSettings,
         "InMemoryUser"                -> InMemoryUser,
         "LdapUser"                    -> LdapUser,
+        "Gzip"                        -> Gzip,
         "Script"                      -> Script,
         "ScriptCompilationResult"     -> ScriptCompilationResult,
         "ScriptCompilationError"      -> ScriptCompilationError,
