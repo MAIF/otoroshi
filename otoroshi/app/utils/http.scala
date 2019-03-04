@@ -256,7 +256,7 @@ case class AkkaWsClientRequest(
 
   override type Self = WSRequest
 
-  def withFollowRedirects(follow: Boolean): Self = this
+  private val _uri = Uri(rawUrl)
 
   def withMethod(method: String): AkkaWsClientRequest = {
     copy(_method = HttpMethods.getForKeyCaseInsensitive(method).getOrElse(HttpMethod.custom(method)))
@@ -364,10 +364,6 @@ case class AkkaWsClientRequest(
 
   ///////////
 
-  override def withQueryString(parameters: (String, String)*): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withQueryStringParameters(parameters: (String, String)*): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
   override def withCookies(cookies: WSCookie*): WSRequest = {
     val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
     val newCookies = oldCookies :+ cookies.toList.map { c =>
@@ -377,44 +373,54 @@ case class AkkaWsClientRequest(
       headers = headers + ("Cookie" -> newCookies)
     )
   }
-  override def method: String                        = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def queryString: Map[String, Seq[String]] = throw new RuntimeException("Not supported on this WSClient !!!")
+
+  override lazy val followRedirects: Option[Boolean]                                                     = Some(false)
+  override def withFollowRedirects(follow: Boolean): Self                                                = this
+  override def method: String                                                                            = _method.value
+  override def queryString: Map[String, Seq[String]]                                                     = _uri.query().toMultiMap
+  override def get(): Future[WSResponse]                                                                 = withMethod("GET").execute()
+  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse]                = withMethod("POST").withBody(evidence$2.transform(body)).execute()
+  override def post(body: File): Future[WSResponse]                                                      = withMethod("POST").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse]               = withMethod("PATCH").withBody(evidence$3.transform(body)).execute()
+  override def patch(body: File): Future[WSResponse]                                                     = withMethod("PATCH").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse]                 = withMethod("PUT").withBody(evidence$4.transform(body)).execute()
+  override def put(body: File): Future[WSResponse]                                                       = withMethod("PUT").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+  override def delete(): Future[WSResponse]                                                              = withMethod("DELETE").execute()
+  override def head(): Future[WSResponse]                                                                = withMethod("HEAD").execute()
+  override def options(): Future[WSResponse]                                                             = withMethod("OPTIONS").execute()
+  override lazy val url: String                                                                          = _uri.toString()
+  override lazy val uri: URI                                                                             = new URI(_uri.toRelative.toString())
+  override lazy val contentType: Option[String]                                                          = realContentType.map(_.value)
+  override lazy val cookies: Seq[WSCookie]                                                               = {
+    headers.get("Cookies").map { headers =>
+      headers.flatMap { header =>
+        header.split(";").map { value =>
+          val parts = value.split("=")
+          libs.ws.DefaultWSCookie(
+            name = parts(0),
+            value = parts(1)
+          )
+        }
+      }
+    } getOrElse Seq.empty
+  }
+  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters: _*)
+  override def withQueryStringParameters(parameters: (String, String)*): WSRequest                       = copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
+  override def addQueryStringParameters(parameters: (String, String)*): WSRequest                        = {
+    val params: Seq[(String, String)] = _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
+    copy(rawUrl = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
+  }
+
+  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]  = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   = throw new RuntimeException("Not supported on this WSClient !!!")
   override def calc: Option[WSSignatureCalculator]   = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def auth: Option[(String, String, WSAuthScheme)] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def followRedirects: Option[Boolean]   = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def auth: Option[(String, String, WSAuthScheme)] = throw new RuntimeException("Not supported on this WSClient !!!")
   override def virtualHost: Option[String]        = throw new RuntimeException("Not supported on this WSClient !!!")
   override def proxyServer: Option[WSProxyServer] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def sign(calc: WSSignatureCalculator): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withRequestFilter(filter: WSRequestFilter): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
+  override def sign(calc: WSSignatureCalculator): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def withRequestFilter(filter: WSRequestFilter): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
   override def withVirtualHost(vh: String): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withProxyServer(proxyServer: WSProxyServer): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def get(): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def post(body: File): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def patch(body: File): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def put(body: File): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def delete(): Future[WSResponse]  = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def head(): Future[WSResponse]    = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def options(): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def url: String                   = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def uri: URI                      = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def contentType: Option[String]   = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def cookies: Seq[WSCookie]        = throw new RuntimeException("Not supported on this WSClient req.cookies !!!")
+  override def withProxyServer(proxyServer: WSProxyServer): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
 }
