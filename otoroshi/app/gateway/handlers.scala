@@ -1127,25 +1127,33 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             )
                                           )
                                         else EmptyBody // Stream IN
-                                      env.gatewayClient
+
+                                    // env.gatewayClient
+                                    //   .urlWithProtocol(target.scheme, url)
+                                    //   //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
+                                    //   .withRequestTimeout(6.hour) // we should monitor leaks
+                                    //   .withMethod(req.method)
+                                    //   // .withQueryString(queryString: _*)
+                                    //   .withHttpHeaders(headersIn: _*)
+                                    //   .withBody(body)
+                                    //   .withFollowRedirects(false)
+                                    //   .stream()
+
+                                    val builder = env.gatewayClient
                                         .urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url))
                                         .withRequestTimeout(env.requestTimeout) // we should monitor leaks
                                         .withMethod(httpRequest.method)
                                         .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
                                         .withCookies(wsCookiesIn: _*)
-                                        .withBody(body)
                                         .withFollowRedirects(false)
-                                        .stream()
-                                        // env.gatewayClient
-                                        //   .urlWithProtocol(target.scheme, url)
-                                        //   //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
-                                        //   .withRequestTimeout(6.hour) // we should monitor leaks
-                                        //   .withMethod(req.method)
-                                        //   // .withQueryString(queryString: _*)
-                                        //   .withHttpHeaders(headersIn: _*)
-                                        //   .withBody(body)
-                                        //   .withFollowRedirects(false)
-                                        //   .stream()
+
+                                    val builderWithBody = if (currentReqHasBody) {
+                                      builder.withBody(body)
+                                    } else {
+                                      builder
+                                    } 
+
+                                    builderWithBody.stream()
                                         .flatMap(resp => quotas.fast.map(q => (resp, q)))
                                         .flatMap { tuple =>
                                           val (resp, remainingQuotas) = tuple
