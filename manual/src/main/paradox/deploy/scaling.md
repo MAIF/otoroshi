@@ -39,3 +39,6 @@ You can also use any other TCP load balancer, from a hardware box to a small js 
 tcp-proxy.js
 :   @@snip [tcp-proxy.js](../snippets/tcp-proxy.js) 
 
+tcp-proxy.rs
+:   @@snip [tcp-proxy.rs](../snippets/proxy.rs) 
+
