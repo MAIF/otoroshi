@@ -22,6 +22,7 @@ import play.filters.HttpFiltersComponents
 import router.Routes
 import ssl.ClientValidatorsController
 import storage.DataStores
+import utils.Metrics
 
 import scala.concurrent.ExecutionContext
 
@@ -79,6 +80,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
   override lazy val serverConfig                           = _serverConfig
 
+  lazy val metrics              = wire[Metrics]
   lazy val snowMonkey           = wire[SnowMonkey]
   lazy val unAuthApiAction      = wire[UnAuthApiAction]
   lazy val apiAction            = wire[ApiAction]

@@ -4,6 +4,7 @@ GET     /robot.txt                                            controllers.BackOf
 GET     /error                                                controllers.BackOfficeController.error(message: Option[String])
 GET     /auth0error                                           controllers.AuthController.auth0error(error: Option[String], error_description: Option[String])
 GET     /health                                               controllers.ApiController.health()
+GET     /metrics                                              controllers.ApiController.processMetrics()
 
 # U2F URLs
 POST    /bo/u2f/register/start                                controllers.U2FController.u2fRegisterStart()

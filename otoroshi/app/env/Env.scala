@@ -457,7 +457,7 @@ class Env(val configuration: Configuration,
     additionalHeaders = Map(
       "Host" -> backOfficeDescriptorHostHeader
     ),
-    publicPatterns = Seq("/health")
+    publicPatterns = Seq("/health", "/metrics")
   )
 
   lazy val otoroshiVersion     = "1.4.7-dev"
@@ -575,6 +575,9 @@ class Env(val configuration: Configuration,
             case Some(s) if !s.publicPatterns.contains("/health") =>
               logger.info("Updating BackOffice service to handle health check ...")
               s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
+            case Some(s) if !s.publicPatterns.contains("/metrics") =>
+              logger.info("Updating BackOffice service to handle metrics ...")
+              s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(ec, this)
             case _ =>
           }
         }

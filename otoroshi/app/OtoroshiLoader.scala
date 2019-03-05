@@ -15,6 +15,7 @@ import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import router.Routes
 import ssl.ClientValidatorsController
+import utils.Metrics
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -48,6 +49,7 @@ package object modules {
     override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
     override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
 
+    lazy val metrics              = wire[Metrics]
     lazy val snowMonkey           = wire[SnowMonkey]
     lazy val unAuthApiAction      = wire[UnAuthApiAction]
     lazy val apiAction            = wire[ApiAction]

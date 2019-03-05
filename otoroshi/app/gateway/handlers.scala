@@ -1146,7 +1146,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
                                         .withCookies(wsCookiesIn: _*)
                                         .withFollowRedirects(false)
-
+                                    // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
                                     val builderWithBody = if (currentReqHasBody) {
                                       builder.withBody(body)
                                     } else {

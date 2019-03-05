@@ -7,6 +7,8 @@ lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
   .disablePlugins(PlayFilters)
 
+lazy val metricsVersion = "4.0.2"
+
 libraryDependencies ++= Seq(
   ws,
   filters,
@@ -18,7 +20,12 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"        %% "akka-stream-kafka"        % "0.21",
   "com.github.etaty"         %% "rediscala"                % "1.8.0",
   "com.github.gphat"         %% "censorinus"               % "2.1.8",
-  "io.dropwizard.metrics"    % "metrics-core"              % "3.1.2",
+  "io.dropwizard.metrics"    % "metrics-core"              % metricsVersion, // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-jvm"               % metricsVersion, // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-jmx"               % metricsVersion, // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-json"              % metricsVersion, // Apache 2.0
+  "io.prometheus"            % "simpleclient_common"       % "0.5.0", // Apache 2.0
+  "io.prometheus"            % "simpleclient_dropwizard"   % "0.5.0", // Apache 2.0
   "com.auth0"                % "java-jwt"                  % "3.4.0",
   "com.yubico"               % "u2flib-server-core"        % "0.16.0",
   "com.yubico"               % "u2flib-server-attestation" % "0.16.0",

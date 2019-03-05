@@ -25,13 +25,14 @@ import play.api.mvc._
 import security.IdGenerator
 import ssl.Cert
 import storage.{Healthy, Unhealthy, Unreachable}
+import utils.Metrics
 import utils.future.Implicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
-class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(implicit env: Env)
+class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, _metrics: Metrics, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
@@ -41,6 +42,29 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   val sourceBodyParser = BodyParser("ApiController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
+  }
+
+  def processMetrics() = UnAuthApiAction.async { ctx =>
+
+    def fetchMetrics(): Result = {
+      if (ctx.req.accepts("application/json")) {
+        Ok(_metrics.jsonExport).withHeaders("Content-Type" -> "application/json")
+      } else if (ctx.req.accepts("application/prometheus")) {
+        Ok(_metrics.prometheusExport).withHeaders("Content-Type" -> "text/plain")
+      } else  {
+        Ok(_metrics.defaultHttpFormat)
+      }
+    }
+
+    FastFuture.successful(((ctx.req.getQueryString("access_key"), env.healthAccessKey) match {
+      case (_, None)                                  => fetchMetrics()
+      case (Some(header), Some(key)) if header == key => fetchMetrics()
+      case _                                          => Unauthorized(Json.obj("error" -> "unauthorized"))
+    }) withHeaders(
+      env.Headers.OtoroshiStateResp -> ctx.req.headers
+        .get(env.Headers.OtoroshiState)
+        .getOrElse("--")
+    ))
   }
 
   def health() = UnAuthApiAction.async { ctx =>
