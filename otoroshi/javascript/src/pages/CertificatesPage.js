@@ -97,14 +97,15 @@ class Commands extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    const value = window.prompt('Certificate hostname');
-    if (value && value.trim() !== '') {
-      BackOfficeServices.caSignedCert(id, value).then(cert => {
-        this.props.setTitle(`Create a new certificate`);
-        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-        this.props.table().setState({ currentItem: cert, showAddForm: true });
-      });
-    }
+    window.newPrompt('Certificate hostname').then(value => {
+      if (value && value.trim() !== '') {
+        BackOfficeServices.caSignedCert(id, value).then(cert => {
+          this.props.setTitle(`Create a new certificate`);
+          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+          this.props.table().setState({ currentItem: cert, showAddForm: true });
+        });
+      }
+    });
   };
 
   componentDidMount() {
@@ -165,12 +166,13 @@ class Commands extends Component {
               type="button"
               className="btn btn-sm btn-success"
               onClick={e => {
-                const value = window.prompt('Certificate host ?');
-                if (value && value.trim() !== '') {
-                  BackOfficeServices.selfSignedCert(value).then(cert => {
-                    this.props.rawOnChange(cert);
-                  });
-                }
+                window.newPrompt('Certificate host ?').then(value => {
+                  if (value && value.trim() !== '') {
+                    BackOfficeServices.selfSignedCert(value).then(cert => {
+                      this.props.rawOnChange(cert);
+                    });
+                  }
+                });
               }}>
               <i className="fas fa-screwdriver" /> Generate self signed cert.
             </button>
@@ -364,38 +366,42 @@ export class CertificatesPage extends Component {
   }
 
   createSelfSigned = () => {
-    const value = window.prompt('Certificate hostname');
-    if (value && value.trim() !== '') {
-      BackOfficeServices.selfSignedCert(value).then(cert => {
-        this.props.setTitle(`Create a new certificate`);
-        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-        this.table.setState({ currentItem: cert, showAddForm: true });
-      });
-    }
+    window.newPrompt('Certificate hostname').then(value => {
+      if (value && value.trim() !== '') {
+        BackOfficeServices.selfSignedCert(value).then(cert => {
+          this.props.setTitle(`Create a new certificate`);
+          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+          this.table.setState({ currentItem: cert, showAddForm: true });
+        });
+      }
+    });
   };
 
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    const value = window.prompt('Certificate hostname');
-    if (value && value.trim() !== '') {
-      BackOfficeServices.caSignedCert(id, value).then(cert => {
-        this.props.setTitle(`Create a new certificate`);
-        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-        this.table.setState({ currentItem: cert, showAddForm: true });
-      });
-    }
+    window.newPrompt('Certificate hostname').then(value => {
+      if (value && value.trim() !== '') {
+        BackOfficeServices.caSignedCert(id, value).then(cert => {
+          this.props.setTitle(`Create a new certificate`);
+          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+          this.table.setState({ currentItem: cert, showAddForm: true });
+        });
+      }
+    });
+
   };
 
   createCA = () => {
-    const value = window.prompt('Certificate Authority CN');
-    if (value && value.trim() !== '') {
-      BackOfficeServices.caCert(value).then(cert => {
-        this.props.setTitle(`Create a new Certificate Authority`);
-        window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-        this.table.setState({ currentItem: cert, showAddForm: true });
-      });
-    }
+    window.newPrompt('Certificate Authority CN').then(value => {
+      if (value && value.trim() !== '') {
+        BackOfficeServices.caCert(value).then(cert => {
+          this.props.setTitle(`Create a new Certificate Authority`);
+          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+          this.table.setState({ currentItem: cert, showAddForm: true });
+        });
+      }
+    });
   };
 
   render() {

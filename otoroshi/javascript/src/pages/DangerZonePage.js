@@ -558,11 +558,15 @@ export class DangerZonePage extends Component {
 
   panicMode = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.confirm('Are you sure you want to enable panic mode ?');
-    window.confirm('Are you really sure ?');
-    BackOfficeServices.panicMode().then(() => {
-      window.location.href = '/';
-    });
+    window.newConfirm('Are you sure you want to enable panic mode ?').then(ok => {
+      window.newConfirm('Are you really sure ?').then(ok2 => {
+        if (ok && ok2) {
+          BackOfficeServices.panicMode().then(() => {
+            window.location.href = '/';
+          });
+        }
+      });
+    });    
   };
 
   fullExport = e => {
@@ -585,24 +589,26 @@ export class DangerZonePage extends Component {
 
   importData = e => {
     if (e && e.preventDefault()) e.preventDefault();
-    if (
-      window.confirm(
-        'Importing will erase all existing data in the datastore.\n You will be logged out at the end of the import.\n You may want to export your data before doing that.\n Are you sure you want to do that ?'
-      ) &&
-      window.confirm('Really sure ?')
-    ) {
-      const input = document.querySelector('input[type="file"]');
-      const data = new FormData();
-      data.append('file', input.files[0]);
-      return fetch('/bo/api/proxy/api/import', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-        },
-        body: input.files[0],
-      }).then(r => window.location.reload(), e => console.log(e));
-    }
+    
+    window.newConfirm(
+      'Importing will erase all existing data in the datastore.\n You will be logged out at the end of the import.\n You may want to export your data before doing that.\n Are you sure you want to do that ?'
+    ).then(ok => {
+      window.newConfirm('Really sure ?').then(ok2 => {
+        if (ok && ok2) {
+          const input = document.querySelector('input[type="file"]');
+          const data = new FormData();
+          data.append('file', input.files[0]);
+          return fetch('/bo/api/proxy/api/import', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+            },
+            body: input.files[0],
+          }).then(r => window.location.reload(), e => console.log(e));
+        }
+      });
+    });
   };
 
   readyToPush = e => {

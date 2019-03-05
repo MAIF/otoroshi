@@ -305,49 +305,54 @@ export class ServicePage extends Component {
 
   deleteService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    const name = window.prompt('Type the name of the service to delete it');
-    if (name && name === this.state.service.name) {
-      BackOfficeServices.deleteService(this.state.service).then(() => {
-        window.location.href = `/bo/dashboard/services`;
-        // this.props.history.push({
-        //   pathname: `/lines/${this.state.service.env}/services`
-        // });
-      });
-    }
+    window.newPrompt('Type the name of the service to delete it').then(name => {
+      if (name && name === this.state.service.name) {
+        BackOfficeServices.deleteService(this.state.service).then(() => {
+          window.location.href = `/bo/dashboard/services`;
+          // this.props.history.push({
+          //   pathname: `/lines/${this.state.service.env}/services`
+          // });
+        });
+      }
+    });
   };
 
   duplicateService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    const dup = window.confirm(`Are you sure you want to duplicate ${this.state.service.name} ?`);
-    if (dup) {
-      BackOfficeServices.createNewService().then(service => {
-        const newService = { ...this.state.service };
-        newService.id = service.id;
-        newService.enabled = false;
-        newService.name = newService.name + ' (duplicated)';
-        ServicePage.__willCreateService = newService;
-        this.props.history.push({
-          pathname: `/lines/${newService.env}/services/${newService.id}`,
+    window.newConfirm(`Are you sure you want to duplicate ${this.state.service.name} ?`).then(dup => {
+      if (dup) {
+        BackOfficeServices.createNewService().then(service => {
+          const newService = { ...this.state.service };
+          newService.id = service.id;
+          newService.enabled = false;
+          newService.name = newService.name + ' (duplicated)';
+          ServicePage.__willCreateService = newService;
+          this.props.history.push({
+            pathname: `/lines/${newService.env}/services/${newService.id}`,
+          });
+          // BackOfficeServices.saveService(newService).then(() => {
+          //   this.props.history.push({ pathname: `/lines/${newService.env}/services/${newService.id}` });
+          //   setTimeout(() => {
+          //     window.location.reload();
+          //   }, 300);
+          // });
         });
-        // BackOfficeServices.saveService(newService).then(() => {
-        //   this.props.history.push({ pathname: `/lines/${newService.env}/services/${newService.id}` });
-        //   setTimeout(() => {
-        //     window.location.reload();
-        //   }, 300);
-        // });
-      });
-    }
+      }
+    });
   };
 
   createNewGroup = e => {
     if (e && e.preventDefault) e.preventDefault();
-    const groupName = window.prompt('New group name');
-    BackOfficeServices.createGroup({
-      id: faker.random.alphaNumeric(64),
-      name: groupName,
-      description: 'Group named ' + groupName,
-    }).then(group => {
-      this.setState({ service: { ...this.state.service, groupId: group.id } });
+    window.newPrompt('New group name').then(groupName => {
+      if (groupName) {
+        BackOfficeServices.createGroup({
+          id: faker.random.alphaNumeric(64),
+          name: groupName,
+          description: 'Group named ' + groupName,
+        }).then(group => {
+          this.setState({ service: { ...this.state.service, groupId: group.id } });
+        });
+      }
     });
   };
 
@@ -1313,20 +1318,20 @@ export class ServicePage extends Component {
               </div>
             </div>
             <ObjectInput
-              label="Headers verification"
-              placeholderKey="Header name"
-              placeholderValue="Header value"
-              value={this.state.service.headersVerification}
-              help="Verify that some headers has a specific value"
-              onChange={v => this.changeTheValue('headersVerification', v)}
-            />
-            <ObjectInput
               label="Matching Headers"
               placeholderKey="Header name (ie. Accept)"
               placeholderValue="Header value (ie. application/vnd.myapp.v2+json)"
               value={this.state.service.matchingHeaders}
-              help="Specify headers that MUST be present on client request to route it. Useful to implement versioning."
+              help="Specify headers that MUST be present on client request to route it (pre routing). Useful to implement versioning."
               onChange={v => this.changeTheValue('matchingHeaders', v)}
+            />
+            <ObjectInput
+              label="Headers verification"
+              placeholderKey="Header name"
+              placeholderValue="Header value"
+              value={this.state.service.headersVerification}
+              help="Verify that some headers has a specific value (post routing)"
+              onChange={v => this.changeTheValue('headersVerification', v)}
             />
           </Collapse>
           <Collapse

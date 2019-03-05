@@ -56,29 +56,30 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchConfig = () => {
-    const url = window.prompt('URL of the OIDC config');
-    if (url) {
-      return fetch(`/bo/api/oidc/_fetchConfig`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url,
-          id: this.props.value.id,
-          name: this.props.value.name,
-          desc: this.props.value.desc,
-          clientId: this.props.value.clientId,
-          clientSecret: this.props.value.clientSecret
-        }),
-      })
-        .then(r => r.json())
-        .then(config => {
-          this.props.onChange(config);
-        });
-    }
+    window.newPrompt('URL of the OIDC config').then(url => {
+      if (url) {
+        return fetch(`/bo/api/oidc/_fetchConfig`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url,
+            id: this.props.value.id,
+            name: this.props.value.name,
+            desc: this.props.value.desc,
+            clientId: this.props.value.clientId,
+            clientSecret: this.props.value.clientSecret
+          }),
+        })
+          .then(r => r.json())
+          .then(config => {
+            this.props.onChange(config);
+          });
+      }
+    });
   };
 
   render() {
@@ -301,13 +302,15 @@ export class User extends Component {
           type="button"
           className="btn btn-sm btn-success"
           onClick={e => {
-            const value1 = window.prompt('Type password');
-            const value2 = window.prompt('Re-type password');
-            if (value1 && value2 && value1 === value2) {
-              this.props.hashPassword(this.props.user.email, value1);
-            } else {
-              window.alert('Passwords does not match !');
-            }
+            window.newPrompt('Type password').then(value1 => {
+              window.newPrompt('Re-type password').then(value2 => {
+                if (value1 && value2 && value1 === value2) {
+                  this.props.hashPassword(this.props.user.email, value1);
+                } else {
+                  window.newAlert('Passwords does not match !');
+                }
+              })
+            });
           }}
           style={{ marginLeft: 5 }}>
           Set password
@@ -317,8 +320,8 @@ export class User extends Component {
           className="btn btn-sm btn-success"
           onClick={e => {
             const password = faker.random.alphaNumeric(16);
-            window.alert(`The generated password is: ${password}`);
             this.props.hashPassword(this.props.user.email, password);
+            window.newAlert(`The generated password is: ${password}`);
           }}
           style={{ marginLeft: 5 }}>
           Generate password

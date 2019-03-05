@@ -9,11 +9,15 @@ export class ResetDBButton extends Component {
 
   resetDB = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.confirm('Etes vous sûr de vouloir effacer la base de données ?');
-    window.confirm('Vraiment sûr de vouloir effacer toutes ces précieuses données ?');
-    this.setState({ loading: true });
-    BackOfficeServices.resetDB().then(() => {
-      this.setState({ loading: false });
+    window.newConfirm('Are you sure you want to reset datastore ?').then(ok => {
+      window.newConfirm('Are you really sure ?').then(ok2 => {
+        if (ok && ok2) {
+          this.setState({ loading: true });
+          BackOfficeServices.resetDB().then(() => {
+            this.setState({ loading: false });
+          });
+        }
+      });
     });
   };
 

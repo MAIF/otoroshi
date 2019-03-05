@@ -89,7 +89,7 @@ export class U2FRegisterPage extends Component {
     const passwordcheck = this.state.passwordcheck;
     const label = this.state.label;
     if (password !== passwordcheck) {
-      return window.alert('Password does not match !!!');
+      return window.newAlert('Password does not match !!!');
     }
     fetch(`/bo/u2f/register/start`, {
       method: 'POST',
@@ -155,7 +155,7 @@ export class U2FRegisterPage extends Component {
     const passwordcheck = this.state.passwordcheck;
     const label = this.state.label;
     if (password !== passwordcheck) {
-      return window.alert('Password does not match !!!');
+      return window.newAlert('Password does not match !!!');
     }
     fetch(`/bo/simple/admins`, {
       method: 'POST',
@@ -185,14 +185,16 @@ export class U2FRegisterPage extends Component {
 
   discardAdmin = (e, username, id, table) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (window.confirm(`Are you sure that you want to discard admin user for ${username} ?`)) {
-      BackOfficeServices.discardAdmin(username, id).then(() => {
-        setTimeout(() => {
-          table.update();
-          //window.location.href = '/bo/dashboard/admins';
-        }, 1000);
-      });
-    }
+    window.newConfirm(`Are you sure that you want to discard admin user for ${username} ?`).then(ok => {
+      if (ok) {  
+        BackOfficeServices.discardAdmin(username, id).then(() => {
+          setTimeout(() => {
+            table.update();
+            //window.location.href = '/bo/dashboard/admins';
+          }, 1000);
+        });
+      }
+    });
   };
 
   render() {

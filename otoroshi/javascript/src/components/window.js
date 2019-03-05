@@ -203,7 +203,7 @@ export function registerConfirm() {
 }
 
 export function registerPrompt() {
-  window.oldPrompt = window.prompot;
+  window.oldPrompt = window.prompt;
   if (!document.getElementById('otoroshi-alerts-container')) {
     const div = document.createElement('div');
     div.setAttribute('id', 'otoroshi-alerts-container');

@@ -175,17 +175,19 @@ export class Table extends Component {
 
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (window.confirm('Are you sure you want to delete that item ?')) {
-      this.props
-        .deleteItem(item)
-        .then(() => {
-          return this.props.fetchItems();
-        })
-        .then(items => {
-          urlTo(`/bo/dashboard/${this.props.selfUrl}`);
-          this.setState({ items, showEditForm: false, showAddForm: false });
-        });
-    }
+    window.newConfirm('Are you sure you want to delete that item ?').then(ok => {
+      if (ok) {
+        this.props
+          .deleteItem(item)
+          .then(() => {
+            return this.props.fetchItems();
+          })
+          .then(items => {
+            urlTo(`/bo/dashboard/${this.props.selfUrl}`);
+            this.setState({ items, showEditForm: false, showAddForm: false });
+          });
+      }
+    });
   };
 
   createItem = e => {
