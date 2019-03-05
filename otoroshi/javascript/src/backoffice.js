@@ -18,6 +18,8 @@ import { U2FLoginPage } from './pages/U2FLoginPage';
 import { GenericLoginPage } from './pages/GenericLoginPage';
 import * as BackOfficeServices from './services/BackOfficeServices';
 
+import { registerAlert, registerConfirm, registerPrompt } from './components/window';
+
 if (!window.Symbol) {
   window.Symbol = Symbol;
 }
@@ -104,18 +106,27 @@ function setupOutdatedBrowser() {
   });
 }
 
+function setupWindowUtils() {
+  registerAlert();
+  registerConfirm(); 
+  registerPrompt();
+}
+
 export function init(node) {
   setupKonami();
   setupOutdatedBrowser();
+  setupWindowUtils();
   ReactDOM.render(<BackOfficeApp />, node);
 }
 
 export function login(node, otoroshiLogo) {
   setupOutdatedBrowser();
+  setupWindowUtils();
   ReactDOM.render(<U2FLoginPage otoroshiLogo={otoroshiLogo} />, node);
 }
 
 export function genericLogin(opts, node) {
   setupOutdatedBrowser();
+  setupWindowUtils();
   ReactDOM.render(<GenericLoginPage {...opts} />, node);
 }

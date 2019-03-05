@@ -27,12 +27,14 @@ export class PrivateAppsSessionsPage extends Component {
     {
       title: 'Profile',
       content: item => 0,
-      cell: (v, item) => JSON.stringify(item.profile),
+      style: { textAlign: 'center', width: 70 },
+      cell: (v, item) => <button type="button" className="btn btn-success btn-xs" onClick={e => window.newAlert(<pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>)}>See</button>,
     },
     {
       title: 'Meta.',
       content: item => 0,
-      cell: (v, item) => JSON.stringify(item.otoroshiData),
+      style: { textAlign: 'center', width: 70 },
+      cell: (v, item) => <button type="button" className="btn btn-success btn-xs" onClick={e => window.newAlert(<pre style={{ height: 300 }}>{JSON.stringify(item.otoroshiData, null, 2)}</pre>)}>See</button>,
     },
     {
       title: 'Realm',
