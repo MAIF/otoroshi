@@ -66,7 +66,7 @@ export class PrivateAppsSessionsPage extends Component {
 
   discardSession = (e, id, table) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (confirm(`Are you sure that you want to discard private apps session for ${id} ?`)) {
+    if (window.confirm(`Are you sure that you want to discard private apps session for ${id} ?`)) {
       BackOfficeServices.discardPrivateAppsSession(id).then(() => {
         setTimeout(() => {
           table.update();
@@ -78,7 +78,7 @@ export class PrivateAppsSessionsPage extends Component {
   discardSessions = e => {
     if (e && e.preventDefault) e.preventDefault();
     if (
-      confirm('Are you sure that you want to discard all private apps session including yourself ?')
+      window.confirm('Are you sure that you want to discard all private apps session including yourself ?')
     ) {
       BackOfficeServices.discardAllPrivateAppsSessions().then(() => {
         setTimeout(() => {
@@ -90,7 +90,7 @@ export class PrivateAppsSessionsPage extends Component {
 
   discardOldSessions = e => {
     if (e && e.preventDefault) e.preventDefault();
-    if (confirm('Are you sure that you want to discard old private apps session ?')) {
+    if (window.confirm('Are you sure that you want to discard old private apps session ?')) {
       BackOfficeServices.fetchPrivateAppsSessions()
         .then(sessions => {
           let groups = _.groupBy(sessions, i => i.email);

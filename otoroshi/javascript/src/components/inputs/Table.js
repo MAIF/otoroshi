@@ -175,7 +175,7 @@ export class Table extends Component {
 
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (confirm('Are you sure you want to delete that item ?')) {
+    if (window.confirm('Are you sure you want to delete that item ?')) {
       this.props
         .deleteItem(item)
         .then(() => {

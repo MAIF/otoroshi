@@ -558,8 +558,8 @@ export class DangerZonePage extends Component {
 
   panicMode = e => {
     if (e && e.preventDefault) e.preventDefault();
-    confirm('Are you sure you want to enable panic mode ?');
-    confirm('Are you really sure ?');
+    window.confirm('Are you sure you want to enable panic mode ?');
+    window.confirm('Are you really sure ?');
     BackOfficeServices.panicMode().then(() => {
       window.location.href = '/';
     });
@@ -586,10 +586,10 @@ export class DangerZonePage extends Component {
   importData = e => {
     if (e && e.preventDefault()) e.preventDefault();
     if (
-      confirm(
+      window.confirm(
         'Importing will erase all existing data in the datastore.\n You will be logged out at the end of the import.\n You may want to export your data before doing that.\n Are you sure you want to do that ?'
       ) &&
-      confirm('Really sure ?')
+      window.confirm('Really sure ?')
     ) {
       const input = document.querySelector('input[type="file"]');
       const data = new FormData();

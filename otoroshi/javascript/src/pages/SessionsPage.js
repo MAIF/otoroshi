@@ -49,7 +49,7 @@ export class SessionsPage extends Component {
 
   discardSession = (e, id, table) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (confirm(`Are you sure that you want to discard admin session for ${id} ?`)) {
+    if (window.confirm(`Are you sure that you want to discard admin session for ${id} ?`)) {
       BackOfficeServices.discardSession(id).then(() => {
         setTimeout(() => {
           table.update();
@@ -61,7 +61,7 @@ export class SessionsPage extends Component {
 
   discardSessions = e => {
     if (e && e.preventDefault) e.preventDefault();
-    if (confirm('Are you sure that you want to discard all admin session including yourself ?')) {
+    if (window.confirm('Are you sure that you want to discard all admin session including yourself ?')) {
       BackOfficeServices.discardAllSessions().then(() => {
         setTimeout(() => {
           window.location.href = '/';
@@ -72,7 +72,7 @@ export class SessionsPage extends Component {
 
   discardOldSessions = e => {
     if (e && e.preventDefault) e.preventDefault();
-    if (confirm('Are you sure that you want to discard old admin session ?')) {
+    if (window.confirm('Are you sure that you want to discard old admin session ?')) {
       BackOfficeServices.fetchSessions()
         .then(sessions => {
           let groups = _.groupBy(sessions, i => i.email);

@@ -305,7 +305,7 @@ export class ServicePage extends Component {
 
   deleteService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    const name = prompt('Type the name of the service to delete it');
+    const name = window.prompt('Type the name of the service to delete it');
     if (name && name === this.state.service.name) {
       BackOfficeServices.deleteService(this.state.service).then(() => {
         window.location.href = `/bo/dashboard/services`;
@@ -318,7 +318,7 @@ export class ServicePage extends Component {
 
   duplicateService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    const dup = confirm(`Are you sure you want to duplicate ${this.state.service.name} ?`);
+    const dup = window.confirm(`Are you sure you want to duplicate ${this.state.service.name} ?`);
     if (dup) {
       BackOfficeServices.createNewService().then(service => {
         const newService = { ...this.state.service };
@@ -341,7 +341,7 @@ export class ServicePage extends Component {
 
   createNewGroup = e => {
     if (e && e.preventDefault) e.preventDefault();
-    const groupName = prompt('New group name');
+    const groupName = window.prompt('New group name');
     BackOfficeServices.createGroup({
       id: faker.random.alphaNumeric(64),
       name: groupName,

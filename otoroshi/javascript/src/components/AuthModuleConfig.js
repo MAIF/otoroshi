@@ -301,12 +301,12 @@ export class User extends Component {
           type="button"
           className="btn btn-sm btn-success"
           onClick={e => {
-            const value1 = prompt('Type password');
-            const value2 = prompt('Re-type password');
+            const value1 = window.prompt('Type password');
+            const value2 = window.prompt('Re-type password');
             if (value1 && value2 && value1 === value2) {
               this.props.hashPassword(this.props.user.email, value1);
             } else {
-              windows.alert('Passwords does not match !');
+              window.alert('Passwords does not match !');
             }
           }}
           style={{ marginLeft: 5 }}>

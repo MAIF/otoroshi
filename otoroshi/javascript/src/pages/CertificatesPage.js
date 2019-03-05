@@ -97,7 +97,7 @@ class Commands extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    const value = prompt('Certificate hostname');
+    const value = window.prompt('Certificate hostname');
     if (value && value.trim() !== '') {
       BackOfficeServices.caSignedCert(id, value).then(cert => {
         this.props.setTitle(`Create a new certificate`);
@@ -165,7 +165,7 @@ class Commands extends Component {
               type="button"
               className="btn btn-sm btn-success"
               onClick={e => {
-                const value = prompt('Certificate host ?');
+                const value = window.prompt('Certificate host ?');
                 if (value && value.trim() !== '') {
                   BackOfficeServices.selfSignedCert(value).then(cert => {
                     this.props.rawOnChange(cert);
@@ -364,7 +364,7 @@ export class CertificatesPage extends Component {
   }
 
   createSelfSigned = () => {
-    const value = prompt('Certificate hostname');
+    const value = window.prompt('Certificate hostname');
     if (value && value.trim() !== '') {
       BackOfficeServices.selfSignedCert(value).then(cert => {
         this.props.setTitle(`Create a new certificate`);
@@ -377,7 +377,7 @@ export class CertificatesPage extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    const value = prompt('Certificate hostname');
+    const value = window.prompt('Certificate hostname');
     if (value && value.trim() !== '') {
       BackOfficeServices.caSignedCert(id, value).then(cert => {
         this.props.setTitle(`Create a new certificate`);
@@ -388,7 +388,7 @@ export class CertificatesPage extends Component {
   };
 
   createCA = () => {
-    const value = prompt('Certificate Authority CN');
+    const value = window.prompt('Certificate Authority CN');
     if (value && value.trim() !== '') {
       BackOfficeServices.caCert(value).then(cert => {
         this.props.setTitle(`Create a new Certificate Authority`);
