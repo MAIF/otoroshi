@@ -125,8 +125,6 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
     implicit val req = request
 
-    println("pouet")
-
     val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.adminApiHost => block(UnAuthApiActionContent(request))
