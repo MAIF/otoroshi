@@ -25,14 +25,14 @@ export class PrivateAppsSessionsPage extends Component {
         item.expiredAt ? moment(item.expiredAt).format('DD/MM/YYYY HH:mm:ss') : '',
     },
     {
-      title: '',
+      title: 'Profile',
       content: item => 0,
       notFilterable: true,
       style: { textAlign: 'center', width: 70 },
       cell: (v, item) => <button type="button" className="btn btn-success btn-xs" onClick={e => window.newAlert(<pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>)}>Profile</button>,
     },
     {
-      title: '',
+      title: 'Meta.',
       content: item => 0,
       notFilterable: true,
       style: { textAlign: 'center', width: 70 },
