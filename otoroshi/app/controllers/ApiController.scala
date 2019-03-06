@@ -56,15 +56,19 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, _met
       }
     }
 
-    FastFuture.successful(((ctx.req.getQueryString("access_key"), env.healthAccessKey) match {
-      case (_, None)                                  => fetchMetrics()
-      case (Some(header), Some(key)) if header == key => fetchMetrics()
-      case _                                          => Unauthorized(Json.obj("error" -> "unauthorized"))
-    }) withHeaders(
-      env.Headers.OtoroshiStateResp -> ctx.req.headers
-        .get(env.Headers.OtoroshiState)
-        .getOrElse("--")
-    ))
+    if (env.metricsEnabled) {
+      FastFuture.successful(((ctx.req.getQueryString("access_key"), env.metricsAccessKey) match {
+        case (_, None) => fetchMetrics()
+        case (Some(header), Some(key)) if header == key => fetchMetrics()
+        case _ => Unauthorized(Json.obj("error" -> "unauthorized"))
+      }) withHeaders (
+        env.Headers.OtoroshiStateResp -> ctx.req.headers
+          .get(env.Headers.OtoroshiState)
+          .getOrElse("--")
+        ))
+    } else {
+      FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
+    }
   }
 
   def health() = UnAuthApiAction.async { ctx =>

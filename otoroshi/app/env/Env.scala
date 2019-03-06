@@ -142,6 +142,15 @@ class Env(val configuration: Configuration,
   lazy val globalMaintenanceMode: Boolean =
     configuration.getOptional[Boolean]("otoroshi.maintenanceMode").getOrElse(false)
 
+  lazy val metricsEnabled: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.metrics.enabled").getOrElse(true)
+
+  lazy val metricsAccessKey: Option[String] =
+    configuration.getOptional[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
+
+  lazy val metricsEvery: FiniteDuration =
+    configuration.getOptional[Long]("otoroshi.metrics.every").map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(30, TimeUnit.SECONDS))
+
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
