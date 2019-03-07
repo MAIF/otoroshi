@@ -60,6 +60,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   def confidentialAppLoginPageOptions() = PrivateAppsAction.async { ctx =>
     val cors = CorsSettings(
       enabled = true,
+      allowOrigin = s"${env.rootScheme}${env.privateAppsHost}",
       exposeHeaders = Seq.empty[String],
       allowHeaders = Seq.empty[String],
       allowMethods = Seq("GET")
