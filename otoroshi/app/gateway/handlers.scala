@@ -53,6 +53,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     val remoteAddress       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
     logger.error(s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap.mkString(";")}")
     env.metrics.counter("errors.client").inc()
+    env.datastores.serviceDescriptorDataStore.updateMetricsOnError()
     Errors.craftResponseResult(s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
                                Status(statusCode),
                                request,

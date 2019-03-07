@@ -675,6 +675,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit]
+  def updateMetricsOnError()(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def updateIncrementableMetrics(id: String, calls: Long, dataIn: Long, dataOut: Long, config: models.GlobalConfig)(
       implicit ec: ExecutionContext,
       env: Env
