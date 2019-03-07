@@ -64,7 +64,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     // exception.printStackTrace()
     val remoteAddress       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
     env.metrics.counter("errors.server").inc()
-    logger.error(s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} - ${request.headers.toSimpleMap.mkString(";")", exception)
+    logger.error(s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} - ${request.headers.toSimpleMap.mkString(";")}", exception)
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }
 }
