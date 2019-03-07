@@ -93,6 +93,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   def markString(name: String, value: String): Unit = mark(name, value)
   def markLong(name: String, value: Long): Unit = mark(name, value)
   def markDouble(name: String, value: Double): Unit = mark(name, value)
+  def counter(name: String): Counter = metricRegistry.counter(name)
 
   private def gauge[T](f: => T): Gauge[T] = {
     new Gauge[T] {

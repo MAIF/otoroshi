@@ -49,9 +49,10 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
   lazy val logger = Logger("otoroshi-error-handler")
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
-    val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
-    logger.error(s"Client Error: $message on ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode)")
-    Errors.craftResponseResult(s"Client Error: an error occured on ${request.relativeUri} ($statusCode)",
+    val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
+    logger.error(s"Client Error: $message on ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap.mkString(";")}")
+    env.metrics.counter("errors.client").inc()
+    Errors.craftResponseResult(s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
                                Status(statusCode),
                                request,
                                None,
@@ -60,6 +61,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
     // exception.printStackTrace()
+    env.metrics.counter("errors.server").inc()
     logger.error(s"Server Error ${exception.getMessage} on ${request.theProtocol}://${request.host}${request.relativeUri}", exception)
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }

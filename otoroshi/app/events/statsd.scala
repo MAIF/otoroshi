@@ -10,7 +10,7 @@ import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
 import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorSystem, Cancellable, Props}
-import com.codahale.metrics.{Gauge, MetricRegistry, Reporter}
+import com.codahale.metrics.{Counter, Gauge, MetricRegistry, Reporter}
 import play.api.libs.json._
 import env.Env
 import github.gphat.censorinus._
@@ -218,6 +218,7 @@ class StatsDReporter(registry: MetricRegistry, env: Env) extends Reporter with C
   def sendToStatsD(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registry.getGauges.forEach((name: String, gauge: Gauge[_]) => env.statsd.metric(name, gauge.getValue)(config.statsdConfig))
+      registry.getCounters.forEach((name: String, gauge: Counter) => env.statsd.metric(name, gauge.getCount)(config.statsdConfig))
     }
   }
 
