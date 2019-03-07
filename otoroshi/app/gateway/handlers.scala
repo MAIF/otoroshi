@@ -1066,7 +1066,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           responseChunked = resp.isChunked,
                                           `@serviceId` = descriptor.id,
                                           `@service` = descriptor.name,
-                                          descriptor = descriptor,
+                                          descriptor = Some(descriptor),
                                           `@product` = descriptor.metadata.getOrElse("product", "--"),
                                           remainingQuotas = q,
                                           viz = Some(viz)
