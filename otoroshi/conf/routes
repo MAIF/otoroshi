@@ -72,6 +72,7 @@ GET     /privateapps/error                                    controllers.Privat
 GET     /privateapps/home                                     controllers.PrivateAppsController.home
 GET     /privateapps/redirect                                 controllers.PrivateAppsController.redirect
 
+OPTIONS /privateapps/generic/login                            controllers.AuthController.confidentialAppLoginPageOptions()
 GET     /privateapps/generic/login                            controllers.AuthController.confidentialAppLoginPage()
 GET     /privateapps/generic/logout                           controllers.AuthController.confidentialAppLogout()
 GET     /privateapps/generic/callback                         controllers.AuthController.confidentialAppCallback()

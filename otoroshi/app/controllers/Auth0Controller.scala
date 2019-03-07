@@ -5,13 +5,15 @@ import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
+import akka.util.ByteString
 import auth.AuthModuleConfig
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
 import gateway.Errors
-import models.ServiceDescriptor
+import models.{CorsSettings, ServiceDescriptor}
 import cluster.ClusterMode
 import play.api.Logger
+import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 import security.IdGenerator
 
@@ -52,6 +54,26 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
           case Some(auth) => f(auth)
         }
       }
+    }
+  }
+
+  def confidentialAppLoginPageOptions() = PrivateAppsAction.async { ctx =>
+    val cors = CorsSettings(
+      enabled = true,
+      exposeHeaders = Seq.empty[String],
+      allowHeaders = Seq.empty[String],
+      allowMethods = Seq("GET")
+    )
+    if (cors.shouldNotPass(ctx.request)) {
+      Errors.craftResponseResult(
+        "Cors error",
+        Results.BadRequest,
+        ctx.request,
+        None,
+        Some("errors.cors.error")
+      )
+    } else {
+      FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request): _*))
     }
   }
 
