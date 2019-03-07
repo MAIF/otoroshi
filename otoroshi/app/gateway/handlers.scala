@@ -50,7 +50,8 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
     val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
-    logger.error(s"Client Error: $message on ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap.mkString(";")}")
+    val remoteAddress       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+    logger.error(s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap.mkString(";")}")
     env.metrics.counter("errors.client").inc()
     Errors.craftResponseResult(s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
                                Status(statusCode),
@@ -61,8 +62,9 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
     // exception.printStackTrace()
+    val remoteAddress       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
     env.metrics.counter("errors.server").inc()
-    logger.error(s"Server Error ${exception.getMessage} on ${request.theProtocol}://${request.host}${request.relativeUri}", exception)
+    logger.error(s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} - ${request.headers.toSimpleMap.mkString(";")", exception)
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }
 }
