@@ -121,7 +121,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         )
         cb.onOpen {
           env.datastores.globalConfigDataStore.singleton().fast.map { config =>
-            env.statsd.set(s"services.${descriptor.id}.circuit-breaker", "open")(config.statsdConfig)
+            env.metrics.markString(s"services.${descriptor.id}.circuit-breaker", "open")
           }
           Audit.send(
             CircuitBreakerOpenedEvent(
@@ -142,7 +142,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         }
         cb.onClose {
           env.datastores.globalConfigDataStore.singleton().fast.map { config =>
-            env.statsd.set(s"services.${descriptor.id}.circuit-breaker", "closed")(config.statsdConfig)
+            env.metrics.markString(s"services.${descriptor.id}.circuit-breaker", "closed")
           }
           Audit.send(
             CircuitBreakerClosedEvent(

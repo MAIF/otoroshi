@@ -75,7 +75,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
               hce.toAnalytics()
               hce.pushToRedis()
               env.datastores.globalConfigDataStore.singleton().map { config =>
-                env.statsd.set(s"services.${desc.id}.health", hce.health.getOrElse("RED"))(config.statsdConfig)
+                env.metrics.markString(s"services.${desc.id}.health", hce.health.getOrElse("RED"))
               }
             }
             case Failure(error) => {
@@ -97,7 +97,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
               hce.toAnalytics()
               hce.pushToRedis()
               env.datastores.globalConfigDataStore.singleton().map { config =>
-                env.statsd.set(s"services.${desc.id}.health", hce.health.getOrElse("RED"))(config.statsdConfig)
+                env.metrics.markString(s"services.${desc.id}.health", hce.health.getOrElse("RED"))
               }
             }
           }

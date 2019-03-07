@@ -34,6 +34,7 @@ import storage.leveldb.LevelDbDataStores
 import storage.mongo.MongoDataStores
 import storage.redis.next._
 import storage.redis.RedisDataStores
+import utils.Metrics
 import utils.http._
 
 import scala.concurrent.duration._
@@ -294,6 +295,7 @@ class Env(val configuration: Configuration,
   }
 
   lazy val statsd = new StatsdWrapper(otoroshiActorSystem, this)
+  lazy val metrics = new Metrics(this, lifecycle)
 
   lazy val mode   = environment.mode
   lazy val isDev  = mode == Mode.Dev

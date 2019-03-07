@@ -130,7 +130,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     for {
       secCalls <- redisCli.incrby(throttlingKey(), 1L)
       _        <- redisCli.ttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), 10) }
-      fu       = env.statsd.meter(s"global.throttling-quotas", secCalls.toDouble)(config.statsdConfig)
+      fu       = env.metrics.markLong(s"global.throttling-quotas", secCalls)
     } yield ()
 
   private val configCache     = new java.util.concurrent.atomic.AtomicReference[GlobalConfig](null)

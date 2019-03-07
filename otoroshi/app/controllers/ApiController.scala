@@ -32,7 +32,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
-class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, _metrics: Metrics, cc: ControllerComponents)(implicit env: Env)
+class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
@@ -48,11 +48,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, _met
 
     def fetchMetrics(): Result = {
       if (ctx.req.accepts("application/json")) {
-        Ok(_metrics.jsonExport).withHeaders("Content-Type" -> "application/json")
+        Ok(env.metrics.jsonExport).withHeaders("Content-Type" -> "application/json")
       } else if (ctx.req.accepts("application/prometheus")) {
-        Ok(_metrics.prometheusExport).withHeaders("Content-Type" -> "text/plain")
+        Ok(env.metrics.prometheusExport).withHeaders("Content-Type" -> "text/plain")
       } else  {
-        Ok(_metrics.defaultHttpFormat)
+        Ok(env.metrics.defaultHttpFormat)
       }
     }
 
