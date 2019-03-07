@@ -87,7 +87,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   private def mark[T](name: String, value: Any): Unit = {
     lastData.computeIfAbsent(name, (t: String) => new AtomicReference[Any](value))
     lastData.getOrDefault(name, new AtomicReference[Any](value)).set(value)
-    metricRegistry.gauge("instances." + name, () => gauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
+    metricRegistry.gauge("internals." + name, () => gauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
   }
 
   def markString(name: String, value: String): Unit = mark(name, value)
