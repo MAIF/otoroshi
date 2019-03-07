@@ -50,7 +50,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
     val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
-    logger.error(s"Client Error: $message on ${request.relativeUri} ($statusCode)")
+    logger.error(s"Client Error: $message on ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode)")
     Errors.craftResponseResult(s"Client Error: an error occured on ${request.relativeUri} ($statusCode)",
                                Status(statusCode),
                                request,
@@ -60,7 +60,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
     // exception.printStackTrace()
-    logger.error(s"Server Error ${exception.getMessage} on ${request.relativeUri}", exception)
+    logger.error(s"Server Error ${exception.getMessage} on ${request.theProtocol}://${request.host}${request.relativeUri}", exception)
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }
 }
