@@ -187,16 +187,18 @@ export class U2FRegisterPage extends Component {
 
   discardAdmin = (e, username, id, table) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm(`Are you sure that you want to discard admin user for ${username} ?`).then(ok => {
-      if (ok) {  
-        BackOfficeServices.discardAdmin(username, id).then(() => {
-          setTimeout(() => {
-            table.update();
-            //window.location.href = '/bo/dashboard/admins';
-          }, 1000);
-        });
-      }
-    });
+    window
+      .newConfirm(`Are you sure that you want to discard admin user for ${username} ?`)
+      .then(ok => {
+        if (ok) {
+          BackOfficeServices.discardAdmin(username, id).then(() => {
+            setTimeout(() => {
+              table.update();
+              //window.location.href = '/bo/dashboard/admins';
+            }, 1000);
+          });
+        }
+      });
   };
 
   render() {
@@ -292,7 +294,7 @@ export class U2FRegisterPage extends Component {
           fetchItems={BackOfficeServices.fetchAdmins}
           showActions={false}
           showLink={false}
-          injectTable={t => this.table = t}
+          injectTable={t => (this.table = t)}
           extractKey={item => (item.registration ? item.registration.keyHandle : item.username)}
         />
       </div>

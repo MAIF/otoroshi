@@ -389,7 +389,6 @@ export class CertificatesPage extends Component {
         });
       }
     });
-
   };
 
   createCA = () => {

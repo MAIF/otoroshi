@@ -401,17 +401,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
       }
       .map(Some.apply)
 
-  override def fetchDataInStatsHistogram(filterable: Option[Filterable],
-                                         from: Option[DateTime],
-                                         to: Option[DateTime])(
+  override def fetchDataInStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     statsHistogram("data.dataIn", filterable, from, to).map(Some.apply)
 
-  override def fetchDataOutStatsHistogram(filterable: Option[Filterable],
-                                          from: Option[DateTime],
-                                          to: Option[DateTime])(
+  override def fetchDataOutStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
@@ -809,13 +805,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
               Json.obj("term" -> Json.obj("descriptor.groupId"     -> group.id)),
               Json.obj("term" -> Json.obj("descriptor.groupId.raw" -> group.id))
             ) ++
-              additionalShould
-            ),
+            additionalShould
+          ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-              gatewayEventFilters ++
-              additionalMust
-            )
+            gatewayEventFilters ++
+            additionalMust
+          )
         )
       }
       case Some(ApiKeyFilterable(apiKey)) => {
@@ -827,13 +823,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
               Json.obj("term" -> Json.obj("identity.identity"     -> apiKey.clientId)),
               Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId))
             ) ++
-              additionalShould
-            ),
+            additionalShould
+          ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-              gatewayEventFilters ++
-              additionalMust
-            )
+            gatewayEventFilters ++
+            additionalMust
+          )
         )
       }
       case Some(ServiceDescriptorFilterable(service)) => {

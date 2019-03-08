@@ -139,13 +139,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
-    val redirectUri = authConfig.callbackUrl + queryParam
+    val redirectUri  = authConfig.callbackUrl + queryParam
     val loginUrl =
       s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
-      s"desc" -> descriptor.id,
+        s"desc" -> descriptor.id,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
         )
@@ -291,7 +291,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 Right(
                   PrivateAppsUser(
                     randomId = IdGenerator.token(64),
-                    name = (user \ authConfig.nameField).asOpt[String].orElse((user \ "sub").asOpt[String]).getOrElse("No Name"),
+                    name = (user \ authConfig.nameField)
+                      .asOpt[String]
+                      .orElse((user \ "sub").asOpt[String])
+                      .getOrElse("No Name"),
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                     profile = user,
                     realm = authConfig.cookieSuffix(descriptor),
@@ -383,7 +386,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 Right(
                   BackOfficeUser(
                     randomId = IdGenerator.token(64),
-                    name = (user \ authConfig.nameField).asOpt[String].orElse((user \ "sub").asOpt[String]).getOrElse("No Name"),
+                    name = (user \ authConfig.nameField)
+                      .asOpt[String]
+                      .orElse((user \ "sub").asOpt[String])
+                      .getOrElse("No Name"),
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                     profile = user,
                     authorizedGroup = None,

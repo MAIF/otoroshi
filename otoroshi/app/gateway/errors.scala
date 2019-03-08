@@ -55,7 +55,7 @@ object Errors {
                 .map(_ == "https")
                 .orElse(Some(req.secure))
                 .map {
-                  case true => "https"
+                  case true  => "https"
                   case false => "http"
                 }
                 .getOrElse("http"),

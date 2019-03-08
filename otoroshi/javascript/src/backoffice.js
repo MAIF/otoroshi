@@ -108,7 +108,7 @@ function setupOutdatedBrowser() {
 
 function setupWindowUtils() {
   registerAlert();
-  registerConfirm(); 
+  registerConfirm();
   registerPrompt();
 }
 

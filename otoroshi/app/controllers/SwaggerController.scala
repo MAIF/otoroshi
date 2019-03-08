@@ -539,7 +539,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   def Gzip = Json.obj(
     "description" -> "Configuration for gzip of service responses",
     "type"        -> "object",
-    "required"    -> Json.arr(
+    "required" -> Json.arr(
       "enabled",
       "excludedPatterns",
       "whiteList",
@@ -549,13 +549,13 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "compressionLevel",
     ),
     "properties" -> Json.obj(
-      "enabled"           -> SimpleBooleanType ~~> "Whether gzip compression is enabled or not",
-      "excludedPatterns"  -> ArrayOf(SimpleStringType) ~~> "Patterns that are excluded from gzipping",        
-      "whiteList"         -> ArrayOf(SimpleStringType) ~~> "Whitelisted mime types. Wildcard supported",  
-      "blackList"         -> ArrayOf(SimpleStringType) ~~> "Blacklisted mime types. Wildcard supported",  
-      "bufferSize"        -> SimpleLongType ~~> "Size of the GZip buffer", 
-      "chunkedThreshold"  -> SimpleLongType ~~> "Threshold for chunking data",        
-      "compressionLevel"  -> SimpleIntType ~~> "Compression level. From 0 to 9"        
+      "enabled"          -> SimpleBooleanType ~~> "Whether gzip compression is enabled or not",
+      "excludedPatterns" -> ArrayOf(SimpleStringType) ~~> "Patterns that are excluded from gzipping",
+      "whiteList"        -> ArrayOf(SimpleStringType) ~~> "Whitelisted mime types. Wildcard supported",
+      "blackList"        -> ArrayOf(SimpleStringType) ~~> "Blacklisted mime types. Wildcard supported",
+      "bufferSize"       -> SimpleLongType ~~> "Size of the GZip buffer",
+      "chunkedThreshold" -> SimpleLongType ~~> "Threshold for chunking data",
+      "compressionLevel" -> SimpleIntType ~~> "Compression level. From 0 to 9"
     )
   )
 

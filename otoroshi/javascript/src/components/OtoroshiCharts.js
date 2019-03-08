@@ -9,7 +9,6 @@ import moment from 'moment';
 import { OtoDatePicker } from '../components/datepicker';
 
 export class OtoroshiCharts extends Component {
-
   defaultPayload = {
     statusesPiechart: { series: [] },
     statusesHistogram: { series: [] },
@@ -45,14 +44,12 @@ export class OtoroshiCharts extends Component {
     this.update(nextProps);
   }
 
-  update = (props) => {
+  update = props => {
     this.setState({ loading: true }, () => {
-      props.fetchData(
-        this.state.from,
-        this.state.to
-      ).then(rawData => {
+      props.fetchData(this.state.from, this.state.to).then(rawData => {
         const data = {
-          ...this.defaultPayload, ...rawData,
+          ...this.defaultPayload,
+          ...rawData,
         };
         this.setState({ data, loading: false });
       });
@@ -257,7 +254,7 @@ export class OtoroshiCharts extends Component {
               />
             </div>
           </div>,
-          (this.state.data.type === "ApiKey" || this.state.data.type === "Group") && (
+          (this.state.data.type === 'ApiKey' || this.state.data.type === 'Group') && (
             <div className="row">
               <div className="col-md-12">
                 <RoundChart
@@ -269,7 +266,7 @@ export class OtoroshiCharts extends Component {
               </div>
             </div>
           ),
-          (this.state.data.type === "Service" || this.state.data.type === "Group") && (
+          (this.state.data.type === 'Service' || this.state.data.type === 'Group') && (
             <div className="row">
               <div className="col-md-12">
                 <RoundChart
@@ -290,7 +287,7 @@ export class OtoroshiCharts extends Component {
                 size={500}
               />
             </div>
-          </div>
+          </div>,
         ]}
       </div>
     );

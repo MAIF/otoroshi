@@ -573,7 +573,7 @@ export class DangerZonePage extends Component {
           });
         }
       });
-    });    
+    });
   };
 
   fullExport = e => {
@@ -596,26 +596,28 @@ export class DangerZonePage extends Component {
 
   importData = e => {
     if (e && e.preventDefault()) e.preventDefault();
-    
-    window.newConfirm(
-      'Importing will erase all existing data in the datastore.\n You will be logged out at the end of the import.\n You may want to export your data before doing that.\n Are you sure you want to do that ?'
-    ).then(ok => {
-      window.newConfirm('Really sure ?').then(ok2 => {
-        if (ok && ok2) {
-          const input = document.querySelector('input[type="file"]');
-          const data = new FormData();
-          data.append('file', input.files[0]);
-          return fetch('/bo/api/proxy/api/import', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              Accept: 'application/json',
-            },
-            body: input.files[0],
-          }).then(r => window.location.reload(), e => console.log(e));
-        }
+
+    window
+      .newConfirm(
+        'Importing will erase all existing data in the datastore.\n You will be logged out at the end of the import.\n You may want to export your data before doing that.\n Are you sure you want to do that ?'
+      )
+      .then(ok => {
+        window.newConfirm('Really sure ?').then(ok2 => {
+          if (ok && ok2) {
+            const input = document.querySelector('input[type="file"]');
+            const data = new FormData();
+            data.append('file', input.files[0]);
+            return fetch('/bo/api/proxy/api/import', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                Accept: 'application/json',
+              },
+              body: input.files[0],
+            }).then(r => window.location.reload(), e => console.log(e));
+          }
+        });
       });
-    });
   };
 
   readyToPush = e => {

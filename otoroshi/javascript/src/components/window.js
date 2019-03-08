@@ -7,7 +7,7 @@ class Alert extends Component {
     if (e.keyCode === 13) {
       this.props.close();
     }
-  }
+  };
   componentDidMount() {
     document.body.addEventListener('keydown', this.defaultButton);
   }
@@ -15,13 +15,20 @@ class Alert extends Component {
     document.body.removeEventListener('keydown', this.defaultButton);
   }
   render() {
-    const res = _.isFunction(this.props.message) ? this.props.message(this.props.close) : this.props.message;
+    const res = _.isFunction(this.props.message)
+      ? this.props.message(this.props.close)
+      : this.props.message;
     return (
       <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal" onClick={this.props.close} aria-label="Close">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={this.props.close}
+                aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
               <h4 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h4>
@@ -33,17 +40,17 @@ class Alert extends Component {
             </div>
             <div className="modal-footer">
               {this.props.linkOpt && (
-                  <a
-                    data-dismiss="modal"
-                    href={this.props.linkOpt.to}
-                    className="btn btn-default"
-                    onClick={this.props.close}>
-                    {this.props.linkOpt.title}
-                  </a>
-                )}
-                <button type="button" className="btn btn-primary" onClick={this.props.close}>
-                  Close
-                </button>
+                <a
+                  data-dismiss="modal"
+                  href={this.props.linkOpt.to}
+                  className="btn btn-default"
+                  onClick={this.props.close}>
+                  {this.props.linkOpt.title}
+                </a>
+              )}
+              <button type="button" className="btn btn-primary" onClick={this.props.close}>
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -57,7 +64,7 @@ class Confirm extends Component {
     if (e.keyCode === 13) {
       this.props.ok();
     }
-  }
+  };
   componentDidMount() {
     document.body.addEventListener('keydown', this.defaultButton);
   }
@@ -70,7 +77,12 @@ class Confirm extends Component {
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal" onClick={this.props.cancel} aria-label="Close">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={this.props.cancel}
+                aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
               <h4 className="modal-title">{this.props.title ? this.props.title : 'Confirm'}</h4>
@@ -101,7 +113,7 @@ class Prompt extends Component {
     if (e.keyCode === 13) {
       this.props.ok(this.state.text);
     }
-  }
+  };
   componentDidMount() {
     document.body.addEventListener('keydown', this.defaultButton);
     if (this.ref) {
@@ -117,7 +129,12 @@ class Prompt extends Component {
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal" onClick={this.props.cancel} aria-label="Close">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={this.props.cancel}
+                aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
               <h4 className="modal-title">{this.props.title ? this.props.title : 'Prompt'}</h4>
@@ -128,7 +145,7 @@ class Prompt extends Component {
                 type="text"
                 className="form-control"
                 value={this.state.text}
-                ref={r => this.ref = r}
+                ref={r => (this.ref = r)}
                 onChange={e => this.setState({ text: e.target.value })}
               />
             </div>

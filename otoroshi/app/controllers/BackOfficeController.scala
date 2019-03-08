@@ -756,10 +756,10 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def fetchOpenIdConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     import scala.concurrent.duration._
 
-    val id   = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
-    val name = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
-    val desc = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
-    val clientId = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
+    val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
+    val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
+    val desc         = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
+    val clientId     = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
     val clientSecret = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
     (ctx.request.body \ "url").asOpt[String] match {
       case None =>
@@ -796,8 +796,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 .orElse((body \ "ping_end_session_endpoint").asOpt[String])
                 .getOrElse((issuer + "/logout").replace("//logout", "/logout"))
               val jwksUri = (body \ "jwks_uri").asOpt[String]
-              val scope = (body \ "scopes_supported").asOpt[Seq[String]].map(_.mkString(" ")).getOrElse("openid profile email name")
-              val claims = (body \ "claims_supported").asOpt[JsArray].map(Json.stringify).getOrElse("""["email","name"]""")
+              val scope = (body \ "scopes_supported")
+                .asOpt[Seq[String]]
+                .map(_.mkString(" "))
+                .getOrElse("openid profile email name")
+              val claims =
+                (body \ "claims_supported").asOpt[JsArray].map(Json.stringify).getOrElse("""["email","name"]""")
               Ok(
                 config
                   .copy(

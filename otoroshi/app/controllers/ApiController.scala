@@ -45,27 +45,28 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def processMetrics() = UnAuthApiAction.async { ctx =>
-
     def fetchMetrics(): Result = {
       if (ctx.req.accepts("application/json")) {
         Ok(env.metrics.jsonExport).withHeaders("Content-Type" -> "application/json")
       } else if (ctx.req.accepts("application/prometheus")) {
         Ok(env.metrics.prometheusExport).withHeaders("Content-Type" -> "text/plain")
-      } else  {
+      } else {
         Ok(env.metrics.defaultHttpFormat)
       }
     }
 
     if (env.metricsEnabled) {
-      FastFuture.successful(((ctx.req.getQueryString("access_key"), env.metricsAccessKey) match {
-        case (_, None) => fetchMetrics()
-        case (Some(header), Some(key)) if header == key => fetchMetrics()
-        case _ => Unauthorized(Json.obj("error" -> "unauthorized"))
-      }) withHeaders (
-        env.Headers.OtoroshiStateResp -> ctx.req.headers
-          .get(env.Headers.OtoroshiState)
-          .getOrElse("--")
-        ))
+      FastFuture.successful(
+        ((ctx.req.getQueryString("access_key"), env.metricsAccessKey) match {
+          case (_, None)                                  => fetchMetrics()
+          case (Some(header), Some(key)) if header == key => fetchMetrics()
+          case _                                          => Unauthorized(Json.obj("error" -> "unauthorized"))
+        }) withHeaders (
+          env.Headers.OtoroshiStateResp -> ctx.req.headers
+            .get(env.Headers.OtoroshiState)
+            .getOrElse("--")
+        )
+      )
     } else {
       FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
     }

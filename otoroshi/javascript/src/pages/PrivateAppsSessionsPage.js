@@ -29,14 +29,36 @@ export class PrivateAppsSessionsPage extends Component {
       content: item => 0,
       notFilterable: true,
       style: { textAlign: 'center', width: 70 },
-      cell: (v, item) => <button type="button" className="btn btn-success btn-xs" onClick={e => window.newAlert(<pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>)}>Profile</button>,
+      cell: (v, item) => (
+        <button
+          type="button"
+          className="btn btn-success btn-xs"
+          onClick={e =>
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>
+            )
+          }>
+          Profile
+        </button>
+      ),
     },
     {
       title: 'Meta.',
       content: item => 0,
       notFilterable: true,
       style: { textAlign: 'center', width: 70 },
-      cell: (v, item) => <button type="button" className="btn btn-success btn-xs" onClick={e => window.newAlert(<pre style={{ height: 300 }}>{JSON.stringify(item.otoroshiData, null, 2)}</pre>)}>Meta.</button>,
+      cell: (v, item) => (
+        <button
+          type="button"
+          className="btn btn-success btn-xs"
+          onClick={e =>
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item.otoroshiData, null, 2)}</pre>
+            )
+          }>
+          Meta.
+        </button>
+      ),
     },
     {
       title: 'Realm',
@@ -68,49 +90,57 @@ export class PrivateAppsSessionsPage extends Component {
 
   discardSession = (e, id, table) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm(`Are you sure that you want to discard private apps session for ${id} ?`).then(ok => {
-      if (ok) {
-        BackOfficeServices.discardPrivateAppsSession(id).then(() => {
-          setTimeout(() => {
-            table.update();
-          }, 1000);
-        });
-      }
-    });
+    window
+      .newConfirm(`Are you sure that you want to discard private apps session for ${id} ?`)
+      .then(ok => {
+        if (ok) {
+          BackOfficeServices.discardPrivateAppsSession(id).then(() => {
+            setTimeout(() => {
+              table.update();
+            }, 1000);
+          });
+        }
+      });
   };
 
   discardSessions = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm('Are you sure that you want to discard all private apps session including yourself ?').then(ok => {
-      if (ok) {
-        BackOfficeServices.discardAllPrivateAppsSessions().then(() => {
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        });
-      }
-    });
+    window
+      .newConfirm(
+        'Are you sure that you want to discard all private apps session including yourself ?'
+      )
+      .then(ok => {
+        if (ok) {
+          BackOfficeServices.discardAllPrivateAppsSessions().then(() => {
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          });
+        }
+      });
   };
 
   discardOldSessions = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm('Are you sure that you want to discard old private apps session ?').then(ok => {
-      if (ok) {  
-        BackOfficeServices.fetchPrivateAppsSessions()
-          .then(sessions => {
-            let groups = _.groupBy(sessions, i => i.email);
-            groups = _.mapValues(groups, g => {
-              const values = _.orderBy(g, i => i.expiredAt, 'desc');
-              const head = values.shift();
-              return Promise.all(
-                values.map(v => BackOfficeServices.discardPrivateAppsSession(v.randomId))
-              ).then(() => head);
-            });
-            return Promise.all(_.values(groups));
-          })
-          .then(() => window.location.reload());
-      }
-    });
+    window
+      .newConfirm('Are you sure that you want to discard old private apps session ?')
+      .then(ok => {
+        if (ok) {
+          BackOfficeServices.fetchPrivateAppsSessions()
+            .then(sessions => {
+              let groups = _.groupBy(sessions, i => i.email);
+              groups = _.mapValues(groups, g => {
+                const values = _.orderBy(g, i => i.expiredAt, 'desc');
+                const head = values.shift();
+                return Promise.all(
+                  values.map(v => BackOfficeServices.discardPrivateAppsSession(v.randomId))
+                ).then(() => head);
+              });
+              return Promise.all(_.values(groups));
+            })
+            .then(() => window.location.reload());
+        }
+      });
   };
 
   render() {

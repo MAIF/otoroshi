@@ -71,7 +71,7 @@ export class Oauth2ModuleConfig extends Component {
             name: this.props.value.name,
             desc: this.props.value.desc,
             clientId: this.props.value.clientId,
-            clientSecret: this.props.value.clientSecret
+            clientSecret: this.props.value.clientSecret,
           }),
         })
           .then(r => r.json())
@@ -309,7 +309,7 @@ export class User extends Component {
                 } else {
                   window.newAlert('Passwords does not match !');
                 }
-              })
+              });
             });
           }}
           style={{ marginLeft: 5 }}>

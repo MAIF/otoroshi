@@ -20,12 +20,19 @@ export class GroupsPage extends Component {
   columns = [
     { title: 'Name', content: item => item.name },
     { title: 'Description', noMobile: true, content: item => item.description },
-    { 
-      title: 'Stats', 
+    {
+      title: 'Stats',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      content: item => <button type="button" className="btn btn-sm btn-success" onClick={e => window.location = `/bo/dashboard/groups/edit/${item.id}/stats`}><i className="glyphicon glyphicon-stats" /></button> 
-    }
+      content: item => (
+        <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={e => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}>
+          <i className="glyphicon glyphicon-stats" />
+        </button>
+      ),
+    },
   ];
 
   formFlow = ['id', 'name', 'description'];
@@ -55,7 +62,7 @@ export class GroupsPage extends Component {
           this.props.history.push({
             pathname: `/services?group=${item.id}&groupName=${item.name}`,
             // query: { group: item.id, groupName: item.name },
-          })
+          });
         }}
         itemUrl={i => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
         showActions={true}

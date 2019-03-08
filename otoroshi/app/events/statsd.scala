@@ -113,12 +113,12 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
       config =>
         value match {
           case b: Boolean => statsdActor ! StatsdEvent("set", name, 0.0, b.toString, defaultSampleRate, false, config)
-          case b: Long => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
-          case b: Double => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
-          case b: Int => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
-          case b: String => statsdActor ! StatsdEvent("set", name, 0.0, b, defaultSampleRate, false, config)
-          case _ =>
-        }
+          case b: Long    => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
+          case b: Double  => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
+          case b: Int     => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
+          case b: String  => statsdActor ! StatsdEvent("set", name, 0.0, b, defaultSampleRate, false, config)
+          case _          =>
+      }
     )
     if (optConfig.isEmpty) close()
   }
@@ -210,26 +210,32 @@ object StatsdActor {
 
 class StatsDReporter(registry: MetricRegistry, env: Env) extends Reporter with Closeable {
 
-  implicit val e = env
+  implicit val e  = env
   implicit val ec = env.otoroshiExecutionContext
 
   private val cancellable = new AtomicReference[Option[Cancellable]](None)
 
   def sendToStatsD(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      registry.getGauges.forEach((name: String, gauge: Gauge[_]) => env.statsd.metric(name, gauge.getValue)(config.statsdConfig))
-      registry.getCounters.forEach((name: String, gauge: Counter) => env.statsd.metric(name, gauge.getCount)(config.statsdConfig))
+      registry.getGauges
+        .forEach((name: String, gauge: Gauge[_]) => env.statsd.metric(name, gauge.getValue)(config.statsdConfig))
+      registry.getCounters
+        .forEach((name: String, gauge: Counter) => env.statsd.metric(name, gauge.getCount)(config.statsdConfig))
     }
   }
 
   def start(): StatsDReporter = {
-    cancellable.set(Some(env.otoroshiScheduler.schedule(
-      FiniteDuration(5, TimeUnit.SECONDS),
-      env.metricsEvery,
-      new Runnable {
-        override def run(): Unit = sendToStatsD()
-      }
-    )))
+    cancellable.set(
+      Some(
+        env.otoroshiScheduler.schedule(
+          FiniteDuration(5, TimeUnit.SECONDS),
+          env.metricsEvery,
+          new Runnable {
+            override def run(): Unit = sendToStatsD()
+          }
+        )
+      )
+    )
     this
   }
 

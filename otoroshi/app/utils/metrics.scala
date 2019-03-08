@@ -33,11 +33,11 @@ import play.api.libs.json.Json
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
 
-  private implicit val ev =  env
-  private implicit val ec =  env.otoroshiExecutionContext
+  private implicit val ev                    = env
+  private implicit val ec                    = env.otoroshiExecutionContext
   private val metricRegistry: MetricRegistry = new MetricRegistry
-  private val mbs = ManagementFactory.getPlatformMBeanServer
-  private val rt  = Runtime.getRuntime
+  private val mbs                            = ManagementFactory.getPlatformMBeanServer
+  private val rt                             = Runtime.getRuntime
 
   private val appEnv         = Option(System.getenv("APP_ENV")).getOrElse("--")
   private val commitId       = Option(System.getenv("COMMIT_ID")).getOrElse("--")
@@ -45,16 +45,16 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   private val appId          = Option(System.getenv("APP_ID")).getOrElse("--")
   private val instanceId     = Option(System.getenv("INSTANCE_ID")).getOrElse("--")
 
-  private val lastcalls = new AtomicLong(0L)
-  private val lastdataIn = new AtomicLong(0L)
-  private val lastdataOut = new AtomicLong(0L)
-  private val lastrate = new AtomicLong(0L)
-  private val lastduration = new AtomicLong(0L)
-  private val lastoverhead = new AtomicLong(0L)
-  private val lastdataInRate = new AtomicLong(0L)
-  private val lastdataOutRate = new AtomicLong(0L)
+  private val lastcalls                     = new AtomicLong(0L)
+  private val lastdataIn                    = new AtomicLong(0L)
+  private val lastdataOut                   = new AtomicLong(0L)
+  private val lastrate                      = new AtomicLong(0L)
+  private val lastduration                  = new AtomicLong(0L)
+  private val lastoverhead                  = new AtomicLong(0L)
+  private val lastdataInRate                = new AtomicLong(0L)
+  private val lastdataOutRate               = new AtomicLong(0L)
   private val lastconcurrentHandledRequests = new AtomicLong(0L)
-  private val lastData = new ConcurrentHashMap[String, AtomicReference[Any]]()
+  private val lastData                      = new ConcurrentHashMap[String, AtomicReference[Any]]()
 
   // metricRegistry.register("jvm.buffer", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()))
   // metricRegistry.register("jvm.classloading", new ClassLoadingGaugeSet())
@@ -63,37 +63,44 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   metricRegistry.register("jvm.thread", new ThreadStatesGaugeSet())
   metricRegistry.register("jvm.gc", new GarbageCollectorMetricSet())
   metricRegistry.register("jvm.attr", new JvmAttributeGaugeSet())
-  metricRegistry.register("attr", new MetricSet {
-    override def getMetrics: util.Map[String, Metric] = {
-      val gauges = new util.HashMap[String, Metric]
-      gauges.put("jvm.cpu.usage", gauge((getProcessCpuLoad() * 100).toLong))
-      gauges.put("jvm.heap.used", gauge((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024))
-      gauges.put("jvm.heap.size", gauge(rt.totalMemory() / 1024 / 1024))
-      gauges.put("instance.env", gauge(appEnv))
-      gauges.put("instance.id", gauge(instanceId))
-      gauges.put("instance.number", gauge(instanceNumber))
-      gauges.put("app.id", gauge(appId))
-      gauges.put("app.commit", gauge(commitId))
-      gauges.put("cluster.mode", gauge(env.clusterConfig.mode.name))
-      gauges.put("cluster.name", gauge(env.clusterConfig.mode match {
-        case ClusterMode.Worker => env.clusterConfig.worker.name
-        case ClusterMode.Leader => env.clusterConfig.leader.name
-        case ClusterMode.Off => "--"
-      }))
-      Collections.unmodifiableMap(gauges)
+  metricRegistry.register(
+    "attr",
+    new MetricSet {
+      override def getMetrics: util.Map[String, Metric] = {
+        val gauges = new util.HashMap[String, Metric]
+        gauges.put("jvm.cpu.usage", gauge((getProcessCpuLoad() * 100).toLong))
+        gauges.put("jvm.heap.used", gauge((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024))
+        gauges.put("jvm.heap.size", gauge(rt.totalMemory() / 1024 / 1024))
+        gauges.put("instance.env", gauge(appEnv))
+        gauges.put("instance.id", gauge(instanceId))
+        gauges.put("instance.number", gauge(instanceNumber))
+        gauges.put("app.id", gauge(appId))
+        gauges.put("app.commit", gauge(commitId))
+        gauges.put("cluster.mode", gauge(env.clusterConfig.mode.name))
+        gauges.put(
+          "cluster.name",
+          gauge(env.clusterConfig.mode match {
+            case ClusterMode.Worker => env.clusterConfig.worker.name
+            case ClusterMode.Leader => env.clusterConfig.leader.name
+            case ClusterMode.Off    => "--"
+          })
+        )
+        Collections.unmodifiableMap(gauges)
+      }
     }
-  })
+  )
 
   private def mark[T](name: String, value: Any): Unit = {
     lastData.computeIfAbsent(name, (t: String) => new AtomicReference[Any](value))
     lastData.getOrDefault(name, new AtomicReference[Any](value)).set(value)
-    metricRegistry.gauge("internals." + name, () => gauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
+    metricRegistry.gauge("internals." + name,
+                         () => gauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
   }
 
   def markString(name: String, value: String): Unit = mark(name, value)
-  def markLong(name: String, value: Long): Unit = mark(name, value)
+  def markLong(name: String, value: Long): Unit     = mark(name, value)
   def markDouble(name: String, value: Double): Unit = mark(name, value)
-  def counter(name: String): Counter = metricRegistry.counter(name)
+  def counter(name: String): Counter                = metricRegistry.counter(name)
 
   private def gauge[T](f: => T): Gauge[T] = {
     new Gauge[T] {
@@ -163,9 +170,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
       lastdataInRate.set(sumDouble(dataInRate, _.dataInRate, membersStats).toLong)
       lastdataOutRate.set(sumDouble(dataOutRate, _.dataOutRate, membersStats).toLong)
       lastconcurrentHandledRequests.set(
-        sumDouble(concurrentHandledRequests.toDouble,
-        _.concurrentHandledRequests.toDouble,
-        membersStats).toLong
+        sumDouble(concurrentHandledRequests.toDouble, _.concurrentHandledRequests.toDouble, membersStats).toLong
       )
       ()
     }
@@ -215,7 +220,6 @@ class SimpleEnum[T](l: util.List[T]) extends util.Enumeration[T] {
   override def hasMoreElements: Boolean = it.hasNext
   override def nextElement(): T         = it.next()
 }
-
 
 case class MeterView(count: Long,
                      meanRate: Double,

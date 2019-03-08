@@ -319,26 +319,28 @@ export class ServicePage extends Component {
 
   duplicateService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm(`Are you sure you want to duplicate ${this.state.service.name} ?`).then(dup => {
-      if (dup) {
-        BackOfficeServices.createNewService().then(service => {
-          const newService = { ...this.state.service };
-          newService.id = service.id;
-          newService.enabled = false;
-          newService.name = newService.name + ' (duplicated)';
-          ServicePage.__willCreateService = newService;
-          this.props.history.push({
-            pathname: `/lines/${newService.env}/services/${newService.id}`,
+    window
+      .newConfirm(`Are you sure you want to duplicate ${this.state.service.name} ?`)
+      .then(dup => {
+        if (dup) {
+          BackOfficeServices.createNewService().then(service => {
+            const newService = { ...this.state.service };
+            newService.id = service.id;
+            newService.enabled = false;
+            newService.name = newService.name + ' (duplicated)';
+            ServicePage.__willCreateService = newService;
+            this.props.history.push({
+              pathname: `/lines/${newService.env}/services/${newService.id}`,
+            });
+            // BackOfficeServices.saveService(newService).then(() => {
+            //   this.props.history.push({ pathname: `/lines/${newService.env}/services/${newService.id}` });
+            //   setTimeout(() => {
+            //     window.location.reload();
+            //   }, 300);
+            // });
           });
-          // BackOfficeServices.saveService(newService).then(() => {
-          //   this.props.history.push({ pathname: `/lines/${newService.env}/services/${newService.id}` });
-          //   setTimeout(() => {
-          //     window.location.reload();
-          //   }, 300);
-          // });
-        });
-      }
-    });
+        }
+      });
   };
 
   createNewGroup = e => {
@@ -405,23 +407,23 @@ export class ServicePage extends Component {
     });
   };
 
-  computeIfButtonDisabled = (header) => {
-    return !!this.state.service.additionalHeadersOut[header]
-  }
+  computeIfButtonDisabled = header => {
+    return !!this.state.service.additionalHeadersOut[header];
+  };
 
   addSecurityHeader = (header, value) => {
     const service = this.state.service;
     const additionalHeadersOut = service.additionalHeadersOut || {};
     return this.setState({
-      service: { 
-        ...service, 
-        additionalHeadersOut: { 
-          ...additionalHeadersOut, 
-          [header]: value 
-        } 
-      }
+      service: {
+        ...service,
+        additionalHeadersOut: {
+          ...additionalHeadersOut,
+          [header]: value,
+        },
+      },
     });
-  }
+  };
 
   render() {
     if (!this.state.service) return null;
@@ -1303,18 +1305,95 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('additionalHeadersOut', v)}
             />
             <div className="form-group">
-              <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+              <label
+                htmlFor={`input-${this.props.label}`}
+                className="col-xs-12 col-sm-2 control-label">
                 Security headers
               </label>
               <div className="col-sm-10">
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-Frame-Option', 'DENY')} disabled={this.computeIfButtonDisabled('X-Frame-Option')} className="btn btn-xs btn-success">X-Frame-Option</button>
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')} disabled={this.computeIfButtonDisabled('X-XSS-Protection')} className="btn btn-xs btn-success">X-XSS-Protection</button>
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')} disabled={this.computeIfButtonDisabled('X-Content-Type-Options')} className="btn btn-xs btn-success">X-Content-Type-Options</button>
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')} disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')} className="btn btn-xs btn-success">X-Permitted-Cross-Domain-Policies</button>
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Referrer-Policy', 'origin-when-cross-origin, strict-origin-when-cross-origin')} disabled={this.computeIfButtonDisabled('Referrer-Policy')} className="btn btn-xs btn-success">Referrer-Policy</button>
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")} disabled={this.computeIfButtonDisabled('Content-Security-Policy')} className="btn btn-xs btn-success">Content-Security-Policy</button>
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Strict-Transport-Security', 'max-age=86400; includeSubDomains; preload')} disabled={this.computeIfButtonDisabled('Strict-Transport-Security')} className="btn btn-xs btn-success">Strict-Transport-Security</button>
-                <button type="button" style={{ marginBottom: 5 }} onClick={e => this.addSecurityHeader('Public-Key-Pins', 'pin-sha256="....."; max-age=10; includeSubdomains')} disabled={this.computeIfButtonDisabled('Public-Key-Pins')} className="btn btn-xs btn-success">Public-Key-Pins</button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e => this.addSecurityHeader('X-Frame-Option', 'DENY')}
+                  disabled={this.computeIfButtonDisabled('X-Frame-Option')}
+                  className="btn btn-xs btn-success">
+                  X-Frame-Option
+                </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')}
+                  disabled={this.computeIfButtonDisabled('X-XSS-Protection')}
+                  className="btn btn-xs btn-success">
+                  X-XSS-Protection
+                </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')}
+                  disabled={this.computeIfButtonDisabled('X-Content-Type-Options')}
+                  className="btn btn-xs btn-success">
+                  X-Content-Type-Options
+                </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e =>
+                    this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')
+                  }
+                  disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')}
+                  className="btn btn-xs btn-success">
+                  X-Permitted-Cross-Domain-Policies
+                </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e =>
+                    this.addSecurityHeader(
+                      'Referrer-Policy',
+                      'origin-when-cross-origin, strict-origin-when-cross-origin'
+                    )
+                  }
+                  disabled={this.computeIfButtonDisabled('Referrer-Policy')}
+                  className="btn btn-xs btn-success">
+                  Referrer-Policy
+                </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e =>
+                    this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")
+                  }
+                  disabled={this.computeIfButtonDisabled('Content-Security-Policy')}
+                  className="btn btn-xs btn-success">
+                  Content-Security-Policy
+                </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e =>
+                    this.addSecurityHeader(
+                      'Strict-Transport-Security',
+                      'max-age=86400; includeSubDomains; preload'
+                    )
+                  }
+                  disabled={this.computeIfButtonDisabled('Strict-Transport-Security')}
+                  className="btn btn-xs btn-success">
+                  Strict-Transport-Security
+                </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={e =>
+                    this.addSecurityHeader(
+                      'Public-Key-Pins',
+                      'pin-sha256="....."; max-age=10; includeSubdomains'
+                    )
+                  }
+                  disabled={this.computeIfButtonDisabled('Public-Key-Pins')}
+                  className="btn btn-xs btn-success">
+                  Public-Key-Pins
+                </button>
               </div>
             </div>
             <ObjectInput

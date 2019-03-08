@@ -17,9 +17,26 @@ import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import javax.net.ssl.SSLContext
-import play.api.{Logger, libs}
+import play.api.{libs, Logger}
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{BodyReadable, BodyWritable, DefaultWSCookie, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
+import play.api.libs.ws.{
+  BodyReadable,
+  BodyWritable,
+  DefaultWSCookie,
+  EmptyBody,
+  InMemoryBody,
+  SourceBody,
+  WSAuthScheme,
+  WSBody,
+  WSClient,
+  WSClientConfig,
+  WSCookie,
+  WSProxyServer,
+  WSRequest,
+  WSRequestFilter,
+  WSResponse,
+  WSSignatureCalculator
+}
 import play.api.mvc.MultipartFormData
 import play.libs.ws.DefaultWSCookie
 import ssl.DynamicSSLEngineProvider
@@ -102,19 +119,21 @@ class WsClientChooser(standardClient: WSClient,
 
 object AkkWsClient {
   def cookies(httpResponse: HttpResponse): Seq[WSCookie] = {
-    httpResponse.headers.collect {
-      case c: `Set-Cookie` => c.cookie
-    }.map { c =>
-      libs.ws.DefaultWSCookie(
-        name = c.name,
-        value = c.value,
-        domain = c.domain,
-        path = c.path,
-        maxAge = c.maxAge,
-        secure = c.secure,
-        httpOnly = c.httpOnly
-      )
-    }
+    httpResponse.headers
+      .collect {
+        case c: `Set-Cookie` => c.cookie
+      }
+      .map { c =>
+        libs.ws.DefaultWSCookie(
+          name = c.name,
+          value = c.value,
+          domain = c.domain,
+          path = c.path,
+          maxAge = c.maxAge,
+          secure = c.secure,
+          httpOnly = c.httpOnly
+        )
+      }
   }
 }
 
@@ -170,17 +189,21 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
     extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(("Content-Type" -> Seq(contentType)))
+    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+      ("Content-Type" -> Seq(contentType))
+    )
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
-  private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
-  private lazy val _bodyAsBytes: ByteString      = Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
-  private lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
-  private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
-  private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
-  private lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
+  private lazy val _contentType: String = httpResponse.entity.contentType.mediaType
+    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  private lazy val _bodyAsBytes: ByteString =
+    Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
+  private lazy val _bodyAsString: String   = _bodyAsBytes.utf8String
+  private lazy val _bodyAsXml: Elem        = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue    = Json.parse(_bodyAsString)
+  private lazy val _cookies: Seq[WSCookie] = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()
@@ -204,17 +227,20 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
     extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(("Content-Type" -> Seq(contentType)))
+    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+      ("Content-Type" -> Seq(contentType))
+    )
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
-  private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType.toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
-  private lazy val _bodyAsBytes: ByteString      = rawbody
-  private lazy val _bodyAsString: String         = rawbody.utf8String
-  private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
-  private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
-  private lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
+  private lazy val _contentType: String = httpResponse.entity.contentType.mediaType
+    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  private lazy val _bodyAsBytes: ByteString = rawbody
+  private lazy val _bodyAsString: String    = rawbody.utf8String
+  private lazy val _bodyAsXml: Elem         = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue     = Json.parse(_bodyAsString)
+  private lazy val _cookies: Seq[WSCookie]  = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()
@@ -229,8 +255,8 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   override def json: JsValue                           = _bodyAsJson
   override def contentType: String                     = _contentType
   def cookies: Seq[WSCookie]                           = _cookies
-  override def body[T: BodyReadable]: T      = throw new RuntimeException("Not supported on this WSClient !!!")
-  def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
+  override def body[T: BodyReadable]: T                = throw new RuntimeException("Not supported on this WSClient !!!")
+  def cookie(name: String): Option[WSCookie]           = _cookies.find(_.name == name)
 }
 
 object CaseInsensitiveOrdered extends Ordering[String] {
@@ -366,32 +392,40 @@ case class AkkaWsClientRequest(
 
   override def withCookies(cookies: WSCookie*): WSRequest = {
     val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
-    val newCookies = oldCookies :+ cookies.toList.map { c =>
-      s"${c.name}=${c.value}"
-    }.mkString(";")
+    val newCookies = oldCookies :+ cookies.toList
+      .map { c =>
+        s"${c.name}=${c.value}"
+      }
+      .mkString(";")
     copy(
       headers = headers + ("Cookie" -> newCookies)
     )
   }
 
-  override lazy val followRedirects: Option[Boolean]                                                     = Some(false)
-  override def withFollowRedirects(follow: Boolean): Self                                                = this
-  override def method: String                                                                            = _method.value
-  override def queryString: Map[String, Seq[String]]                                                     = _uri.query().toMultiMap
-  override def get(): Future[WSResponse]                                                                 = withMethod("GET").execute()
-  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse]                = withMethod("POST").withBody(evidence$2.transform(body)).execute()
-  override def post(body: File): Future[WSResponse]                                                      = withMethod("POST").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
-  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse]               = withMethod("PATCH").withBody(evidence$3.transform(body)).execute()
-  override def patch(body: File): Future[WSResponse]                                                     = withMethod("PATCH").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
-  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse]                 = withMethod("PUT").withBody(evidence$4.transform(body)).execute()
-  override def put(body: File): Future[WSResponse]                                                       = withMethod("PUT").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
-  override def delete(): Future[WSResponse]                                                              = withMethod("DELETE").execute()
-  override def head(): Future[WSResponse]                                                                = withMethod("HEAD").execute()
-  override def options(): Future[WSResponse]                                                             = withMethod("OPTIONS").execute()
-  override lazy val url: String                                                                          = _uri.toString()
-  override lazy val uri: URI                                                                             = new URI(_uri.toRelative.toString())
-  override lazy val contentType: Option[String]                                                          = realContentType.map(_.value)
-  override lazy val cookies: Seq[WSCookie]                                                               = {
+  override lazy val followRedirects: Option[Boolean]      = Some(false)
+  override def withFollowRedirects(follow: Boolean): Self = this
+  override def method: String                             = _method.value
+  override def queryString: Map[String, Seq[String]]      = _uri.query().toMultiMap
+  override def get(): Future[WSResponse]                  = withMethod("GET").execute()
+  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse] =
+    withMethod("POST").withBody(evidence$2.transform(body)).execute()
+  override def post(body: File): Future[WSResponse] =
+    withMethod("POST").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse] =
+    withMethod("PATCH").withBody(evidence$3.transform(body)).execute()
+  override def patch(body: File): Future[WSResponse] =
+    withMethod("PATCH").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse] =
+    withMethod("PUT").withBody(evidence$4.transform(body)).execute()
+  override def put(body: File): Future[WSResponse] =
+    withMethod("PUT").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+  override def delete(): Future[WSResponse]     = withMethod("DELETE").execute()
+  override def head(): Future[WSResponse]       = withMethod("HEAD").execute()
+  override def options(): Future[WSResponse]    = withMethod("OPTIONS").execute()
+  override lazy val url: String                 = _uri.toString()
+  override lazy val uri: URI                    = new URI(_uri.toRelative.toString())
+  override lazy val contentType: Option[String] = realContentType.map(_.value)
+  override lazy val cookies: Seq[WSCookie] = {
     headers.get("Cookies").map { headers =>
       headers.flatMap { header =>
         header.split(";").map { value =>
@@ -404,23 +438,33 @@ case class AkkaWsClientRequest(
       }
     } getOrElse Seq.empty
   }
-  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters: _*)
-  override def withQueryStringParameters(parameters: (String, String)*): WSRequest                       = copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
-  override def addQueryStringParameters(parameters: (String, String)*): WSRequest                        = {
-    val params: Seq[(String, String)] = _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
+  override def withQueryString(parameters: (String, String)*): WSRequest = addQueryStringParameters(parameters: _*)
+  override def withQueryStringParameters(parameters: (String, String)*): WSRequest =
+    copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
+  override def addQueryStringParameters(parameters: (String, String)*): WSRequest = {
+    val params
+      : Seq[(String, String)] = _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
     copy(rawUrl = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
   }
 
-  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]  = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def calc: Option[WSSignatureCalculator]   = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def auth: Option[(String, String, WSAuthScheme)] = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
+    throw new RuntimeException("Not supported on this WSClient !!!")
+  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
+    throw new RuntimeException("Not supported on this WSClient !!!")
+  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
+    throw new RuntimeException("Not supported on this WSClient !!!")
+  override def calc: Option[WSSignatureCalculator] = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def auth: Option[(String, String, WSAuthScheme)] =
+    throw new RuntimeException("Not supported on this WSClient !!!")
   override def virtualHost: Option[String]        = throw new RuntimeException("Not supported on this WSClient !!!")
   override def proxyServer: Option[WSProxyServer] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def sign(calc: WSSignatureCalculator): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withRequestFilter(filter: WSRequestFilter): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def sign(calc: WSSignatureCalculator): WSRequest =
+    throw new RuntimeException("Not supported on this WSClient !!!")
+  override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest =
+    throw new RuntimeException("Not supported on this WSClient !!!")
+  override def withRequestFilter(filter: WSRequestFilter): WSRequest =
+    throw new RuntimeException("Not supported on this WSClient !!!")
   override def withVirtualHost(vh: String): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withProxyServer(proxyServer: WSProxyServer): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def withProxyServer(proxyServer: WSProxyServer): WSRequest =
+    throw new RuntimeException("Not supported on this WSClient !!!")
 }

@@ -49,29 +49,33 @@ export class SessionsPage extends Component {
 
   discardSession = (e, id, table) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm(`Are you sure that you want to discard admin session for ${id} ?`).then(ok => {
-      if (ok) {
-        BackOfficeServices.discardSession(id).then(() => {
-          setTimeout(() => {
-            table.update();
-            //window.location.href = '/bo/dashboard/sessions/admin';
-          }, 1000);
-        });
-      }
-    });
+    window
+      .newConfirm(`Are you sure that you want to discard admin session for ${id} ?`)
+      .then(ok => {
+        if (ok) {
+          BackOfficeServices.discardSession(id).then(() => {
+            setTimeout(() => {
+              table.update();
+              //window.location.href = '/bo/dashboard/sessions/admin';
+            }, 1000);
+          });
+        }
+      });
   };
 
   discardSessions = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm('Are you sure that you want to discard all admin session including yourself ?').then(ok => {
-      if (ok) {
-        BackOfficeServices.discardAllSessions().then(() => {
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 1000);
-        });
-      }
-    });
+    window
+      .newConfirm('Are you sure that you want to discard all admin session including yourself ?')
+      .then(ok => {
+        if (ok) {
+          BackOfficeServices.discardAllSessions().then(() => {
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1000);
+          });
+        }
+      });
   };
 
   discardOldSessions = e => {
@@ -84,9 +88,9 @@ export class SessionsPage extends Component {
             groups = _.mapValues(groups, g => {
               const values = _.orderBy(g, i => i.expiredAt, 'desc');
               const head = values.shift();
-              return Promise.all(values.map(v => BackOfficeServices.discardSession(v.randomId))).then(
-                () => head
-              );
+              return Promise.all(
+                values.map(v => BackOfficeServices.discardSession(v.randomId))
+              ).then(() => head);
             });
             return Promise.all(_.values(groups));
           })

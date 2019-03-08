@@ -27,17 +27,26 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RedisCPStore(redis: RedisClientPool, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec)
 
-class RedisMCPStore(redis: RedisClientMutablePool, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec)
+class RedisMCPStore(redis: RedisClientMutablePool, env: Env, ec: ExecutionContext)
+    extends RedisCommandsStore(redis, env, ec)
 
-class RedisClusterStore(redis: RedisCluster, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec, true)
+class RedisClusterStore(redis: RedisCluster, env: Env, ec: ExecutionContext)
+    extends RedisCommandsStore(redis, env, ec, true)
 
-class RedisLFStore(redis: RedisClientMasterSlaves, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec)
+class RedisLFStore(redis: RedisClientMasterSlaves, env: Env, ec: ExecutionContext)
+    extends RedisCommandsStore(redis, env, ec)
 
-class RedisSentinelStore(redis: SentinelMonitoredRedisClient, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec)
+class RedisSentinelStore(redis: SentinelMonitoredRedisClient, env: Env, ec: ExecutionContext)
+    extends RedisCommandsStore(redis, env, ec)
 
-class RedisSentinelLFStore(redis: SentinelMonitoredRedisClientMasterSlaves, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec)
+class RedisSentinelLFStore(redis: SentinelMonitoredRedisClientMasterSlaves, env: Env, ec: ExecutionContext)
+    extends RedisCommandsStore(redis, env, ec)
 
-class RedisCPDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
+class RedisCPDataStores(configuration: Configuration,
+                        environment: Environment,
+                        lifecycle: ApplicationLifecycle,
+                        env: Env)
+    extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientPool = {
     implicit val ec = redisDispatcher
     val members = configuration
@@ -55,15 +64,19 @@ class RedisCPDataStores(configuration: Configuration, environment: Environment, 
     )(redisActorSystem)
     cli
   }
-  lazy val _redis: RedisLike = new RedisCPStore(redisCli, env, redisActorSystem.dispatcher)
-  override def loggerName: String = "otoroshi-redis-pool-datastores"
-  override def name: String = "Redis Pool"
-  override def redis: RedisLike = _redis
-  override def info(): Future[String] = redisCli.info()
+  lazy val _redis: RedisLike                          = new RedisCPStore(redisCli, env, redisActorSystem.dispatcher)
+  override def loggerName: String                     = "otoroshi-redis-pool-datastores"
+  override def name: String                           = "Redis Pool"
+  override def redis: RedisLike                       = _redis
+  override def info(): Future[String]                 = redisCli.info()
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
-class RedisMCPDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
+class RedisMCPDataStores(configuration: Configuration,
+                         environment: Environment,
+                         lifecycle: ApplicationLifecycle,
+                         env: Env)
+    extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientMutablePool = {
     implicit val ec = redisDispatcher
     val members = configuration
@@ -81,21 +94,33 @@ class RedisMCPDataStores(configuration: Configuration, environment: Environment,
     )(redisActorSystem)
     cli
   }
-  lazy val _redis: RedisLike = new RedisMCPStore(redisCli, env, redisActorSystem.dispatcher)
-  override def loggerName: String = "otoroshi-redis-mpool-datastores"
-  override def name: String = "Redis Mutable Pool"
-  override def redis: RedisLike = _redis
-  override def info(): Future[String] = redisCli.info()
+  lazy val _redis: RedisLike                          = new RedisMCPStore(redisCli, env, redisActorSystem.dispatcher)
+  override def loggerName: String                     = "otoroshi-redis-mpool-datastores"
+  override def name: String                           = "Redis Mutable Pool"
+  override def redis: RedisLike                       = _redis
+  override def info(): Future[String]                 = redisCli.info()
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
-class RedisLFDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
+class RedisLFDataStores(configuration: Configuration,
+                        environment: Environment,
+                        lifecycle: ApplicationLifecycle,
+                        env: Env)
+    extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientMasterSlaves = {
     implicit val ec = redisDispatcher
     val master = RedisServer(
-      host = configuration.getOptional[String]("app.redis.host").orElse(configuration.getOptional[String]("app.redis.lf.master.host")).getOrElse("localhost"),
-      port = configuration.getOptional[Int]("app.redis.port").orElse(configuration.getOptional[Int]("app.redis.lf.master.port")).getOrElse(6379),
-      password = configuration.getOptional[String]("app.redis.password").orElse(configuration.getOptional[String]("app.redis.lf.master.password"))
+      host = configuration
+        .getOptional[String]("app.redis.host")
+        .orElse(configuration.getOptional[String]("app.redis.lf.master.host"))
+        .getOrElse("localhost"),
+      port = configuration
+        .getOptional[Int]("app.redis.port")
+        .orElse(configuration.getOptional[Int]("app.redis.lf.master.port"))
+        .getOrElse(6379),
+      password = configuration
+        .getOptional[String]("app.redis.password")
+        .orElse(configuration.getOptional[String]("app.redis.lf.master.password"))
     )
     val slaves = configuration
       .getOptional[Seq[Configuration]]("app.redis.slaves")
@@ -115,15 +140,19 @@ class RedisLFDataStores(configuration: Configuration, environment: Environment, 
     )(redisActorSystem)
     cli
   }
-  lazy val _redis: RedisLike = new RedisLFStore(redisCli, env, redisActorSystem.dispatcher)
-  override def loggerName: String = "otoroshi-redis-lf-datastores"
-  override def name: String = "Redis Leader/Followers"
-  override def redis: RedisLike = _redis
-  override def info(): Future[String] = redisCli.info()
+  lazy val _redis: RedisLike                          = new RedisLFStore(redisCli, env, redisActorSystem.dispatcher)
+  override def loggerName: String                     = "otoroshi-redis-lf-datastores"
+  override def name: String                           = "Redis Leader/Followers"
+  override def redis: RedisLike                       = _redis
+  override def info(): Future[String]                 = redisCli.info()
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
-class RedisSentinelDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
+class RedisSentinelDataStores(configuration: Configuration,
+                              environment: Environment,
+                              lifecycle: ApplicationLifecycle,
+                              env: Env)
+    extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: SentinelMonitoredRedisClient = {
     implicit val ec = redisDispatcher
     val members: Seq[(String, Int)] = configuration
@@ -135,10 +164,10 @@ class RedisSentinelDataStores(configuration: Configuration, environment: Environ
         )
       })
       .getOrElse(Seq.empty[(String, Int)])
-    val master = configuration.getOptional[String]("app.redis.sentinels.master").get
+    val master   = configuration.getOptional[String]("app.redis.sentinels.master").get
     val password = configuration.getOptional[String]("app.redis.sentinels.password")
-    val db = configuration.getOptional[Int]("app.redis.sentinels.db")
-    val name = configuration.getOptional[String]("app.redis.sentinels.name").getOrElse("SMRedisClient")
+    val db       = configuration.getOptional[Int]("app.redis.sentinels.db")
+    val name     = configuration.getOptional[String]("app.redis.sentinels.name").getOrElse("SMRedisClient")
     val cli: SentinelMonitoredRedisClient = SentinelMonitoredRedisClient(
       members,
       master,
@@ -148,15 +177,19 @@ class RedisSentinelDataStores(configuration: Configuration, environment: Environ
     )(redisActorSystem)
     cli
   }
-  lazy val _redis: RedisLike = new RedisSentinelStore(redisCli, env, redisActorSystem.dispatcher)
-  override def loggerName: String = "otoroshi-redis-sentinel-datastores"
-  override def name: String = "Redis Sentinels"
-  override def redis: RedisLike = _redis
-  override def info(): Future[String] = redisCli.info()
+  lazy val _redis: RedisLike                          = new RedisSentinelStore(redisCli, env, redisActorSystem.dispatcher)
+  override def loggerName: String                     = "otoroshi-redis-sentinel-datastores"
+  override def name: String                           = "Redis Sentinels"
+  override def redis: RedisLike                       = _redis
+  override def info(): Future[String]                 = redisCli.info()
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
-class RedisSentinelLFDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
+class RedisSentinelLFDataStores(configuration: Configuration,
+                                environment: Environment,
+                                lifecycle: ApplicationLifecycle,
+                                env: Env)
+    extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: SentinelMonitoredRedisClientMasterSlaves = {
     implicit val ec = redisDispatcher
     val members: Seq[(String, Int)] = configuration
@@ -175,15 +208,19 @@ class RedisSentinelLFDataStores(configuration: Configuration, environment: Envir
     )(redisActorSystem)
     cli
   }
-  lazy val _redis: RedisLike = new RedisSentinelLFStore(redisCli, env, redisActorSystem.dispatcher)
-  override def loggerName: String = "otoroshi-redis-sentinel-lf-datastores"
-  override def name: String = "Redis Sentinel Leader/Followers"
-  override def redis: RedisLike = _redis
-  override def info(): Future[String] = redisCli.info()
+  lazy val _redis: RedisLike                          = new RedisSentinelLFStore(redisCli, env, redisActorSystem.dispatcher)
+  override def loggerName: String                     = "otoroshi-redis-sentinel-lf-datastores"
+  override def name: String                           = "Redis Sentinel Leader/Followers"
+  override def redis: RedisLike                       = _redis
+  override def info(): Future[String]                 = redisCli.info()
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
-class RedisClusterDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
+class RedisClusterDataStores(configuration: Configuration,
+                             environment: Environment,
+                             lifecycle: ApplicationLifecycle,
+                             env: Env)
+    extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
 
   lazy val redisCluster: RedisCluster = {
     implicit val ec = redisDispatcher
@@ -205,14 +242,18 @@ class RedisClusterDataStores(configuration: Configuration, environment: Environm
 
   lazy val _redis: RedisLike = new RedisClusterStore(redisCluster, env, redisActorSystem.dispatcher)
 
-  override def loggerName: String = "otoroshi-redis-cluster-datastores"
-  override def name: String = "Redis Cluster"
-  override def redis: RedisLike = _redis
-  override def info(): Future[String] = redisCluster.info()
+  override def loggerName: String                     = "otoroshi-redis-cluster-datastores"
+  override def name: String                           = "Redis Cluster"
+  override def redis: RedisLike                       = _redis
+  override def info(): Future[String]                 = redisCluster.info()
   override def typeOfKey(key: String): Future[String] = redisCluster.`type`(key)
 }
 
-abstract class AbstractRedisDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends DataStores {
+abstract class AbstractRedisDataStores(configuration: Configuration,
+                                       environment: Environment,
+                                       lifecycle: ApplicationLifecycle,
+                                       env: Env)
+    extends DataStores {
 
   def loggerName: String
   def name: String
@@ -304,8 +345,8 @@ abstract class AbstractRedisDataStores(configuration: Configuration, environment
     }
   }
   override def rawExport(
-                          group: Int
-                        )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -319,17 +360,17 @@ abstract class AbstractRedisDataStores(configuration: Configuration, environment
             keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
-                  key == s"${env.storageRoot}:events:audit" ||
-                  key == s"${env.storageRoot}:events:alerts" ||
-                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                  key.startsWith(s"${env.storageRoot}:admins:") ||
-                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 for {
@@ -341,9 +382,9 @@ abstract class AbstractRedisDataStores(configuration: Configuration, environment
                     case JsNull => JsNull
                     case _ =>
                       Json.obj("k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w)
+                               "v" -> value,
+                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                               "w" -> w)
                   }
               }
           )
@@ -368,7 +409,8 @@ abstract class AbstractRedisDataStores(configuration: Configuration, environment
   }
 }
 
-class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: ExecutionContext, cluster: Boolean = false) extends RedisLike {
+class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: ExecutionContext, cluster: Boolean = false)
+    extends RedisLike {
 
   implicit val ec = executionContext
 
@@ -387,28 +429,36 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
     if (cluster) {
       val keysAndHash: Seq[(Int, Seq[(String, Int)])] = keys.map(k => (k, CRC16.crc16(k))).groupBy(_._2).toSeq
-      Future.sequence(keysAndHash.map { otherKeysTuple =>
-        val (_, seq) = otherKeysTuple
-        val keys: Seq[String] = seq.map(_._1)
-        redis.mget(keys: _*).map(_.zip(keys))
-      }).map { res =>
-        val results: Map[String, Option[ByteString]] = res.flatten.map(t => (t._2, t._1)).toMap
-        keys.map(k => results.get(k).flatten)
-      }
+      Future
+        .sequence(keysAndHash.map { otherKeysTuple =>
+          val (_, seq)          = otherKeysTuple
+          val keys: Seq[String] = seq.map(_._1)
+          redis.mget(keys: _*).map(_.zip(keys))
+        })
+        .map { res =>
+          val results: Map[String, Option[ByteString]] = res.flatten.map(t => (t._2, t._1)).toMap
+          keys.map(k => results.get(k).flatten)
+        }
     } else {
       redis.mget(keys: _*)
     }
   }
 
-  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = setBS(key, ByteString(value), exSeconds, pxMilliseconds)
+  override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
+    setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
-  override def setBS(key: String, value: ByteString, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = redis.set(key, value, exSeconds, pxMilliseconds)
+  override def setBS(key: String,
+                     value: ByteString,
+                     exSeconds: Option[Long],
+                     pxMilliseconds: Option[Long]): Future[Boolean] = redis.set(key, value, exSeconds, pxMilliseconds)
 
   override def del(keys: String*): Future[Long] = {
     if (cluster) {
-      Future.sequence(keys.toSeq.groupBy(CRC16.crc16).map { otherKeys => 
-        redis.del(otherKeys._2: _*)
-      }).map(_.foldLeft(0L)(_ + _))
+      Future
+        .sequence(keys.toSeq.groupBy(CRC16.crc16).map { otherKeys =>
+          redis.del(otherKeys._2: _*)
+        })
+        .map(_.foldLeft(0L)(_ + _))
     } else {
       redis.del(keys: _*)
     }
@@ -432,11 +482,12 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
 
   override def llen(key: String): Future[Long] = redis.llen(key)
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply):_*)
+  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
 
-  override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(v => ByteString(v.toString)):_*)
+  override def lpushLong(key: String, values: Long*): Future[Long] =
+    lpushBS(key, values.map(v => ByteString(v.toString)): _*)
 
-  override def lpushBS(key: String, values: ByteString*): Future[Long] = redis.lpush(key, values:_*)
+  override def lpushBS(key: String, values: ByteString*): Future[Long] = redis.lpush(key, values: _*)
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = redis.lrange(key, start, stop)
 
@@ -450,9 +501,9 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = redis.pexpire(key, milliseconds)
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply):_*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
 
-  override def saddBS(key: String, members: ByteString*): Future[Long] = redis.sadd(key, members:_*)
+  override def saddBS(key: String, members: ByteString*): Future[Long] = redis.sadd(key, members: _*)
 
   override def sismember(key: String, member: String): Future[Boolean] = sismemberBS(key, ByteString(member))
 

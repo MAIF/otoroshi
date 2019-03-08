@@ -213,4 +213,3 @@ object Redis {
       s"$command can be very slow as it's performing in n calls to redis for n keys. You might not want to use $command for good performances"
     )
 }
-

@@ -219,15 +219,15 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
   }
 
   override def updateMetricsOnError()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
-    val time        = System.currentTimeMillis()
+    val time = System.currentTimeMillis()
     val callsShiftGlobalTime = redisCli.lpush(serviceCallStatsKey("global"), time).flatMap { _ =>
       redisCli.ltrim(serviceCallStatsKey("global"), 0, maxQueueSize)
       redisCli.expire(serviceCallStatsKey("global"), 10)
     }
-    val callsIncrementGlobalCalls  = redisCli.incr(serviceCallKey("global"))
+    val callsIncrementGlobalCalls = redisCli.incr(serviceCallKey("global"))
     for {
-      _            <- callsShiftGlobalTime
-      globalCalls  <- callsIncrementGlobalCalls
+      _           <- callsShiftGlobalTime
+      globalCalls <- callsIncrementGlobalCalls
     } yield {
       env.metrics.markLong(s"global.calls", globalCalls)
       ()

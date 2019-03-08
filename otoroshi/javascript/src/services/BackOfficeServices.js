@@ -1098,13 +1098,15 @@ export function updateScript(ak) {
   }).then(r => r.json());
 }
 
-
 export function fetchStats(by, id, from, to, limit = 500) {
-  return fetch(`/bo/api/proxy/api/stats?${by}=${id}&from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then(r => r.json());
+  return fetch(
+    `/bo/api/proxy/api/stats?${by}=${id}&from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    }
+  ).then(r => r.json());
 }

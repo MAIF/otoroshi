@@ -126,13 +126,15 @@ export class ServicesPage extends Component {
   }
 
   deleteService = (service, table) => {
-    window.newConfirm('Are you sure you want to delete service "' + service.name + '"').then(confirmed => {
-      if (confirmed) {
-        BackOfficeServices.deleteService(service).then(() => {
-          table.update();
-        });
-      }
-    });
+    window
+      .newConfirm('Are you sure you want to delete service "' + service.name + '"')
+      .then(confirmed => {
+        if (confirmed) {
+          BackOfficeServices.deleteService(service).then(() => {
+            table.update();
+          });
+        }
+      });
   };
 
   componentDidMount() {

@@ -271,9 +271,8 @@ class DailyRemainingQuotas extends Component {
 }
 
 export class ServiceApiKeysPage extends Component {
-
   state = {
-    service: null
+    service: null,
   };
 
   formSchema = {
@@ -436,11 +435,22 @@ export class ServiceApiKeysPage extends Component {
         />
       ),
     },
-    { 
-      title: 'Stats', 
+    {
+      title: 'Stats',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      content: item => <button type="button" className="btn btn-sm btn-success" onClick={e => window.location = `/bo/dashboard/lines/prod/services/${this.state.service ? this.state.service.id : '-'}/apikeys/edit/${item.clientId}/stats`}><i className="glyphicon glyphicon-stats" /></button> 
+      content: item => (
+        <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={e =>
+            (window.location = `/bo/dashboard/lines/prod/services/${
+              this.state.service ? this.state.service.id : '-'
+            }/apikeys/edit/${item.clientId}/stats`)
+          }>
+          <i className="glyphicon glyphicon-stats" />
+        </button>
+      ),
     },
   ];
 

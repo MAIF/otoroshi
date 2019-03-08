@@ -292,12 +292,14 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       `@service` = "mon-service",
       `@product` = "mon-product",
       responseChunked = false,
-      descriptor = Some(ServiceDescriptor(id = "123456",
-                                     groupId = "test",
-                                     name = "name",
-                                     env = "prod",
-                                     domain = "toto.com",
-                                     subdomain = "")),
+      descriptor = Some(
+        ServiceDescriptor(id = "123456",
+                          groupId = "test",
+                          name = "name",
+                          env = "prod",
+                          domain = "toto.com",
+                          subdomain = "")
+      ),
       remainingQuotas = RemainingQuotas(),
       viz = None
     )

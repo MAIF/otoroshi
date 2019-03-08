@@ -309,7 +309,7 @@ object GlobalConfig {
               (config \ "domain").asOpt[String].filter(_.nonEmpty)
             ) match {
               case (eu, Some(apiKey), Some(domain)) => Some(MailgunSettings(eu, apiKey, domain))
-              case _                            => None
+              case _                                => None
             }
           },
           cleverSettings = (json \ "cleverSettings").asOpt[JsValue].flatMap { config =>

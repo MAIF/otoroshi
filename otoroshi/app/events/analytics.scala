@@ -298,8 +298,8 @@ trait HealthCheckDataStore {
 
 sealed trait Filterable
 case class ServiceDescriptorFilterable(service: ServiceDescriptor) extends Filterable
-case class ApiKeyFilterable(apiKey: ApiKey) extends Filterable
-case class ServiceGroupFilterable(group: ServiceGroup) extends Filterable
+case class ApiKeyFilterable(apiKey: ApiKey)                        extends Filterable
+case class ServiceGroupFilterable(group: ServiceGroup)             extends Filterable
 
 trait AnalyticsReadsService {
   def events(eventType: String,
@@ -348,15 +348,11 @@ trait AnalyticsReadsService {
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDurationPercentilesHistogram(filterable: Option[Filterable],
-                                        from: Option[DateTime],
-                                        to: Option[DateTime])(
+  def fetchDurationPercentilesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchOverheadPercentilesHistogram(filterable: Option[Filterable],
-                                        from: Option[DateTime],
-                                        to: Option[DateTime])(
+  def fetchOverheadPercentilesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]

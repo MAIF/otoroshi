@@ -6,7 +6,7 @@ import { OtoroshiCharts } from '../components/OtoroshiCharts';
 
 export class ApiKeyStatsPage extends Component {
   state = {
-    apikey: null
+    apikey: null,
   };
 
   componentDidMount() {
@@ -21,11 +21,9 @@ export class ApiKeyStatsPage extends Component {
 
   fetchData = (from, to) => {
     return BackOfficeServices.fetchStats('apikey', this.props.params.titem, from, to);
-  }
+  };
 
   render() {
-    return (
-      <OtoroshiCharts fetchData={this.fetchData} />
-    );
+    return <OtoroshiCharts fetchData={this.fetchData} />;
   }
 }

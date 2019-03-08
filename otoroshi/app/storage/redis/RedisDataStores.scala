@@ -19,7 +19,12 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisCluster, RedisServer}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
+import ssl.{
+  CertificateDataStore,
+  ClientCertificateValidationDataStore,
+  InMemoryClientCertificateValidationDataStore,
+  RedisClientCertificateValidationDataStore
+}
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
 
