@@ -148,3 +148,161 @@ Once your Redis Cluster is created, it would look like the image below.
 For applications in the same security group as your cluster, redis cluster is accessible via the **Primary Endpoint**. Don't worry the default security group is fine, you don't need any configuration to access the cluster from Otoroshi.
 
 To make Otoroshi use the created cluster, you can either use Envs `REDIS_HOST` and `REDIS_PORT`, or set `app.redis.host` and `app.redis.port` in your otoroshi.conf.
+
+## Create SSL certificate and configure your domain
+
+Otoroshi has now a datastore, but not yet ready for use. 
+
+In order to get it ready you need to :
+
+* Configure Otoroshi with your domain 
+* Create a wildcard SSL certificate for your domain
+* Configure Orotoshi AWS Elastic Beanstalk instance with the SSL certificate 
+* Configure your DNS to redirect all traffic on your domain to Orotoshi  
+  
+### Configure Otoroshi with your domain
+
+You can use ENVs or you can use a custom otoroshi.conf in your Docker container.
+
+For the second option your otoroshi.conf would look like this :
+
+``` 
+   include "application.conf"
+   http.port = 8080
+   app {
+     env = "prod"
+     domain = "mysubdomain.foo.bar"
+     rootScheme = "https"
+     snowflake {
+       seed = 0
+     }
+     events {
+       maxSize = 1000
+     }
+     backoffice {
+       subdomain = "otoroshi"
+       session {
+         exp = 86400000
+       }
+     }
+     
+     storage = "redis"
+     redis {
+        host="myredishost"
+        port=myredisport
+     }
+   
+     privateapps {
+       subdomain = "privateapps"
+     }
+   
+     adminapi {
+       targetSubdomain = "otoroshi-admin-internal-api"
+       exposedSubdomain = "otoroshi-api"
+       defaultValues {
+         backOfficeGroupId = "admin-api-group"
+         backOfficeApiKeyClientId = "admin-client-id"
+         backOfficeApiKeyClientSecret = "admin-client-secret"
+         backOfficeServiceId = "admin-api-service"
+       }
+       proxy {
+         https = true
+         local = false
+       }
+     }
+     claim {
+       sharedKey = "myclaimsharedkey"
+     }
+   }
+   
+   play.http {
+     session {
+       secure = false
+       httpOnly = true
+       maxAge = 2147483646
+       domain = ".mysubdomain.foo.bar"
+       cookieName = "oto-sess"
+     }
+   }
+``` 
+
+### Create a wildcard SSL certificate for your domain
+
+Go to [AWS Certificate Manager](https://eu-west-3.console.aws.amazon.com/acm/home?region=eu-west-3#/firstrun).
+
+Below **Provision certificates** hit **Get started**.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-10.png" />
+@@@   
+ 
+Keep the default selected value **Request a public certificate** and hit **Request a certificate**.
+ 
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-11.png" />
+@@@  
+
+Put your **Domain name**, use *. for wildcard, for instance *\*.mysubdomain.foo.bar*, then hit **Next**.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-12.png" />
+@@@  
+
+You can choose between **Email validation** and **DNS validation**, I'd recommend **DNS validation**, then hit **Review**.    
+    
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-13.png" />
+@@@ 
+ 
+Verify that you did put the right **Domain name** then hit **Confirm and request**.   
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-14.png" />
+@@@
+ 
+As you see in the image above, to let Amazon do the validation you have to add the `CNAME` record to your DNS configuration. Normally this operation takes around one day.
+  
+### Configure Orotoshi AWS Elastic Beanstalk instance with the SSL certificate 
+
+Once the certificate is validated, you need to modify the configuration of Otoroshi-env to add the SSL certificate for HTTPS. 
+For that you need to go to [AWS Elastic Beanstalk applications](https://eu-west-3.console.aws.amazon.com/elasticbeanstalk/home?region=eu-west-3#/applications),
+hit **Otoroshi-env**, then on the left side hit **Configuration**, then on the **Load balancer** card hit **Modify**.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-15.png" />
+@@@
+
+In the **Application Load Balancer** section hit **Add listener**.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-16.png" />
+@@@
+
+Fill the popup as the image above, then hit **Add**.   
+
+You should now be seeing something like this : 
+   
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-17.png" />
+@@@   
+ 
+ 
+Make sure that your listener is enabled, and on the bottom right of the page hit **Apply**.
+
+Now you have **https**, so let's use Otoroshi.
+
+### Configure your DNS to redirect all traffic on your domain to Orotoshi
+  
+It's actually pretty simple, you just need to add a `CNAME` record to your DNS configuration, that redirects *\*.mysubdomain.foo.bar* to the DNS name of Otoroshi's load balancer.
+
+To find the DNS name of Otoroshi's load balancer go to [AWS Ec2](https://eu-west-3.console.aws.amazon.com/ec2/v2/home?region=eu-west-3#LoadBalancers:tag:elasticbeanstalk:environment-name=Otoroshi-env;sort=loadBalancerName)
+
+You would find something like this : 
+  
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-18.png" />
+@@@   
+
+There is your DNS name. So add your `CNAME` record. 
+ 
+Once all these steps are done, the AWS Elastic Beanstalk Otoroshi instance, would now be handling all the requests on your domain. ;)    
