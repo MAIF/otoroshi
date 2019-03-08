@@ -303,6 +303,6 @@ You would find something like this :
 <img src="../img/deploy-elb-18.png" />
 @@@   
 
-There is your DNS name. So add your `CNAME` record. 
+There is your DNS name, so add your `CNAME` record. 
  
 Once all these steps are done, the AWS Elastic Beanstalk Otoroshi instance, would now be handling all the requests on your domain. ;)    
