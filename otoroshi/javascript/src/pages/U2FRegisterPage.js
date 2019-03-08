@@ -140,6 +140,7 @@ export class U2FRegisterPage extends Component {
                   passwordcheck: '',
                   message: `Registration done for '${data.username}'`,
                 });
+                if (this.table) this.table.update();
               }, this.handleError);
           }
         });
@@ -172,6 +173,7 @@ export class U2FRegisterPage extends Component {
     })
       .then(r => r.json(), this.handleError)
       .then(data => {
+        if (this.table) this.table.update();
         this.setState({
           error: null,
           email: '',
@@ -290,6 +292,7 @@ export class U2FRegisterPage extends Component {
           fetchItems={BackOfficeServices.fetchAdmins}
           showActions={false}
           showLink={false}
+          injectTable={t => this.table = t}
           extractKey={item => (item.registration ? item.registration.keyHandle : item.username)}
         />
       </div>
