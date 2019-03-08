@@ -4257,12 +4257,12 @@
               "xForwardedHeaders" : {
                 "type" : "boolean",
                 "example" : true,
-                "description" : "When enabled, Otoroshi will send X-Forwarded-* headers to target"
+                "description" : "Send X-Forwarded-* headers"
               },
               "overrideHost" : {
                 "type" : "boolean",
                 "example" : true,
-                "description" : "When enabled, Otoroshi will automatically set the Host header to corresponding target host"
+                "description" : "Host header will be overriden with Host of the target"
               },
               "secComExcludedPatterns" : {
                 "type" : "array",
@@ -4377,6 +4377,19 @@
               },
               "redirection" : {
                 "$ref" : "#/definitions/RedirectionSettings"
+              },
+              "gzip" : {
+                "$ref" : "#/definitions/Gzip"
+              },
+              "headersVerification" : {
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                },
+                "additionalProperties" : {
+                  "type" : "string"
+                },
+                "description" : "Specify headers that will be verified after routing."
               }
             }
           },
@@ -4688,12 +4701,12 @@
         "xForwardedHeaders" : {
           "type" : "boolean",
           "example" : true,
-          "description" : "When enabled, Otoroshi will send X-Forwarded-* headers to target"
+          "description" : "Send X-Forwarded-* headers"
         },
         "overrideHost" : {
           "type" : "boolean",
           "example" : true,
-          "description" : "When enabled, Otoroshi will automatically set the Host header to corresponding target host"
+          "description" : "Host header will be overriden with Host of the target"
         },
         "secComExcludedPatterns" : {
           "type" : "array",
@@ -4808,6 +4821,19 @@
         },
         "redirection" : {
           "$ref" : "#/definitions/RedirectionSettings"
+        },
+        "gzip" : {
+          "$ref" : "#/definitions/Gzip"
+        },
+        "headersVerification" : {
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          },
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "Specify headers that will be verified after routing."
         }
       }
     },
@@ -5770,6 +5796,11 @@
           "example" : "a string value",
           "description" : "The scope of the token"
         },
+        "claims" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "The claims of the token"
+        },
         "accessTokenField" : {
           "type" : "string",
           "example" : "a string value",
@@ -5790,10 +5821,20 @@
           "example" : "a string value",
           "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
         },
+        "oidConfig" : {
+          "type" : "string",
+          "example" : "a string value",
+          "description" : "URL of the OIDC config. file"
+        },
         "useJson" : {
           "type" : "boolean",
           "example" : true,
           "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider"
+        },
+        "useCookies" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Use for redirection to actual service"
         },
         "readProfileFromToken" : {
           "type" : "boolean",
@@ -6075,6 +6116,60 @@
             "type" : "string"
           },
           "description" : "Metadata of the user"
+        }
+      }
+    },
+    "Gzip" : {
+      "description" : "Configuration for gzip of service responses",
+      "type" : "object",
+      "required" : [ "enabled", "excludedPatterns", "whiteList", "blackList", "bufferSize", "chunkedThreshold", "compressionLevel" ],
+      "properties" : {
+        "enabled" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Whether gzip compression is enabled or not"
+        },
+        "excludedPatterns" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "Patterns that are excluded from gzipping"
+        },
+        "whiteList" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "Whitelisted mime types. Wildcard supported"
+        },
+        "blackList" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "a string value"
+          },
+          "description" : "Blacklisted mime types. Wildcard supported"
+        },
+        "bufferSize" : {
+          "type" : "integer",
+          "format" : "int64",
+          "example" : 123,
+          "description" : "Size of the GZip buffer"
+        },
+        "chunkedThreshold" : {
+          "type" : "integer",
+          "format" : "int64",
+          "example" : 123,
+          "description" : "Threshold for chunking data"
+        },
+        "compressionLevel" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 123123,
+          "description" : "Compression level. From 0 to 9"
         }
       }
     },
