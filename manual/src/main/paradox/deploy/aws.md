@@ -16,3 +16,28 @@ Unlike Clever Cloud, to deploy an application on AWS Elastic Beanstalk, you don'
 AWS Elastic Beanstalk does only the run part. So you have to handle your own build pipeline, upload a Zip file containing your runnable, then AWS Elastic Beanstalk will take it from there.  
   
 Eg: for apps running on the JVM (Scala/Java/Kotlin) a Zip with the jar inside would suffice, for apps running in a Docker container, a Zip with the DockerFile would be enough.   
+
+
+## Prepare your deployment target
+Actually, there are 2 options to build your target. 
+
+Either you create a DockerFile from this [Docker image](../getotoroshi/fromdocker.md), build a zip, and do all the Otoroshi custom configuration using ENVs.
+
+Or you download the @ref:[otoroshi.jar](../getotoroshi/frombinaries.md), do all the Otoroshi custom configuration using your own otoroshi.conf, and create a DockerFile that runs the jar using your otoroshi.conf. 
+
+For the second option your DockerFile would look like this :
+
+``` 
+    FROM openjdk:8
+    VOLUME /tmp
+    EXPOSE 8080
+    ADD otoroshi.jar app.jar
+    ADD otoroshi.conf otoroshi.conf
+    RUN sh -c 'touch /app.jar'
+    ENV JAVA_OPTS=""
+    ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -Dconfig.file=/otoroshi.conf -jar /app.jar" ]
+``` 
+ 
+I'd recommend the second option.
+       
+Now Zip your target (Jar + Conf + DockerFile) and get ready for deployment. 
