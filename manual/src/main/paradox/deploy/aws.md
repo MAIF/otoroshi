@@ -9,3 +9,10 @@ deploy the @ref:[otoroshi.jar](../firstrun/run.md#from-jar-file)
 * Or you can use [AWS Elastic Beanstalk](https://aws.amazon.com/fr/elasticbeanstalk)
 
 In this section we are going to cover how to deploy Otoroshi on [AWS Elastic Beanstalk](https://aws.amazon.com/fr/elasticbeanstalk). 
+
+## AWS Elastic Beanstalk Overview
+Unlike Clever Cloud, to deploy an application on AWS Elastic Beanstalk, you don't link your app to your VCS repository, push your code and expect it to be built and run.
+
+AWS Elastic Beanstalk does only the run part. So you have to handle your own build pipeline, upload a Zip file containing your runnable, then AWS Elastic Beanstalk will take it from there.  
+  
+Eg: for apps running on the JVM (Scala/Java/Kotlin) a Zip with the jar inside would suffice, for apps running in a Docker container, a Zip with the DockerFile would be enough.   
