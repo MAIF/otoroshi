@@ -119,3 +119,32 @@ Also note that you can set Envs for Otoroshi in same page (see image below).
 To finalise the creation process, hit **Create app** on the bottom right.
 
 The Otoroshi app is now created, and it's running which is cool, but we still don't have neither a **datastore** nor **https**.
+  
+## Create an Otoroshi datastore on AWS ElastiCache
+
+By default Otoroshi uses non persistent memory to store it's data, Otoroshi supports many kinds of datastores. In this section we will be covering Redis datastore.   
+
+Before starting, using a datastore hosted by AWS is not at all mandatory, feel free to use your own if you like, but if you want to learn more about ElastiCache, this section may interest you, otherwise you can skip it.
+
+Go to [AWS ElastiCache](https://eu-west-3.console.aws.amazon.com/elasticache/home?region=eu-west-3#) and hit **Get Started Now**.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-8.png" />
+@@@  
+
+For **Cluster engine** keep Redis.
+
+Choose a **Name** for your datastore, for instance otoroshi-datastore.
+
+You can keep all the other default values and hit **Create** on the bottom right of the page.
+
+Once your Redis Cluster is created, it would look like the image below.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-9.png" />
+@@@  
+
+
+For applications in the same security group as your cluster, redis cluster is accessible via the **Primary Endpoint**. Don't worry the default security group is fine, you don't need any configuration to access the cluster from Otoroshi.
+
+To make Otoroshi use the created cluster, you can either use Envs `REDIS_HOST` and `REDIS_PORT`, or set `app.redis.host` and `app.redis.port` in your otoroshi.conf.
