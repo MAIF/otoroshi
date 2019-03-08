@@ -4,11 +4,38 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.7] - 2019-03-08
+
+https://github.com/MAIF/otoroshi/milestone/19?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.6...v1.4.7
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.7
+
+### Added
+- documentation to deploy otoroshi en AWS Elastic Beanstalk
+- Support for Mailgun EU
+- Support for Prometheus metrics
+- Support for json metrics
+- New analytics apis that are more flexible
+- Header value verification post routing
+- additional headers out
+- shortcut to add security headers
+- gzip support
+
+### Changed
+- Show sessions profile and metadata in modal window
+- Do not use native modals in browser anymore
+- OIDC auto config is more reliable
+- Chunked response handling has been rewritten
+
+### Fixed
+- reload admins table after adding a new admin
+- Content-Encoding is not missing anymore in responses
+
 ## [1.4.6] - 2019-02-18
 
 https://github.com/MAIF/otoroshi/milestone/18?closed=1
 https://github.com/MAIF/otoroshi/compare/v1.4.5...v1.4.6
-https://github.com/MAIF/otoroshi/releases/tag/v1.4.5
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.6
 
 ### Changed
 - Updated swagger according to last API changes

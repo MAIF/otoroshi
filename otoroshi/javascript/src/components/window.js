@@ -150,12 +150,12 @@ class Prompt extends Component {
               />
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={this.props.cancel}>
+              <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
                 Cancel
               </button>
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-success"
                 onClick={e => this.props.ok(this.state.text)}>
                 Ok
               </button>
