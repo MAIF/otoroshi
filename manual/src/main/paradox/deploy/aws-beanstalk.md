@@ -1,4 +1,4 @@
-# AWS 
+# AWS - Elastic Beanstalk
 
 Now you want to use Otoroshi on AWS. There are multiple options to deploy Otoroshi on AWS, 
 for instance :
@@ -27,15 +27,15 @@ Or you download the @ref:[otoroshi.jar](../getotoroshi/frombinaries.md), do all 
 
 For the second option your DockerFile would look like this :
 
-``` 
-    FROM openjdk:8
-    VOLUME /tmp
-    EXPOSE 8080
-    ADD otoroshi.jar app.jar
-    ADD otoroshi.conf otoroshi.conf
-    RUN sh -c 'touch /app.jar'
-    ENV JAVA_OPTS=""
-    ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -Dconfig.file=/otoroshi.conf -jar /app.jar" ]
+```dockerfile
+FROM openjdk:8
+VOLUME /tmp
+EXPOSE 8080
+ADD otoroshi.jar otoroshi.jar
+ADD otoroshi.conf otoroshi.conf
+RUN sh -c 'touch /otoroshi.jar'
+ENV JAVA_OPTS=""
+ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -Dconfig.file=/otoroshi.conf -jar /otoroshi.jar" ]
 ``` 
  
 I'd recommend the second option.
