@@ -5,6 +5,7 @@ Now it's time to deploy Otoroshi in production, in this chapter we will see what
 @@@ index
 
 * [clevercloud](./clevercloud.md)
+* [aws](./aws.md)
 * [others](./other.md)  
 * [scaling](./scaling.md)  
 
