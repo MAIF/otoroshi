@@ -1,29 +1,28 @@
 package utils
 
 import java.lang.management.ManagementFactory
-import java.util.{Collections, HashMap, Locale, Map}
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import java.util.{Timer => _, _}
 
 import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
 import cluster.{ClusterMode, StatsView}
+import com.codahale.metrics._
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.jvm._
-import com.codahale.metrics._
 import env.Env
+import events.StatsDReporter
 import javax.management.{Attribute, ObjectName}
 import play.api.libs.json.JsValue
 
 import scala.concurrent.duration.FiniteDuration
-
-//object Metrics {
-//val metrics = new MetricRegistry()
-//}
-
 import java.io.StringWriter
 import java.util
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
+import com.codahale.metrics.MetricRegistry.MetricSupplier
 import com.codahale.metrics.json.MetricsModule
 import com.codahale.metrics.jvm.{MemoryUsageGaugeSet, ThreadStatesGaugeSet}
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -40,11 +39,22 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   private val mbs = ManagementFactory.getPlatformMBeanServer
   private val rt  = Runtime.getRuntime
 
-  val appEnv         = Option(System.getenv("APP_ENV")).getOrElse("--")
-  val commitId       = Option(System.getenv("COMMIT_ID")).getOrElse("--")
-  val instanceNumber = Option(System.getenv("INSTANCE_NUMBER")).getOrElse("--")
-  val appId          = Option(System.getenv("APP_ID")).getOrElse("--")
-  val instanceId     = Option(System.getenv("INSTANCE_ID")).getOrElse("--")
+  private val appEnv         = Option(System.getenv("APP_ENV")).getOrElse("--")
+  private val commitId       = Option(System.getenv("COMMIT_ID")).getOrElse("--")
+  private val instanceNumber = Option(System.getenv("INSTANCE_NUMBER")).getOrElse("--")
+  private val appId          = Option(System.getenv("APP_ID")).getOrElse("--")
+  private val instanceId     = Option(System.getenv("INSTANCE_ID")).getOrElse("--")
+
+  private val lastcalls = new AtomicLong(0L)
+  private val lastdataIn = new AtomicLong(0L)
+  private val lastdataOut = new AtomicLong(0L)
+  private val lastrate = new AtomicLong(0L)
+  private val lastduration = new AtomicLong(0L)
+  private val lastoverhead = new AtomicLong(0L)
+  private val lastdataInRate = new AtomicLong(0L)
+  private val lastdataOutRate = new AtomicLong(0L)
+  private val lastconcurrentHandledRequests = new AtomicLong(0L)
+  private val lastData = new ConcurrentHashMap[String, AtomicReference[Any]]()
 
   // metricRegistry.register("jvm.buffer", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()))
   // metricRegistry.register("jvm.classloading", new ClassLoadingGaugeSet())
@@ -53,9 +63,12 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   metricRegistry.register("jvm.thread", new ThreadStatesGaugeSet())
   metricRegistry.register("jvm.gc", new GarbageCollectorMetricSet())
   metricRegistry.register("jvm.attr", new JvmAttributeGaugeSet())
-  metricRegistry.register("otoroshi.attr", new MetricSet {
+  metricRegistry.register("attr", new MetricSet {
     override def getMetrics: util.Map[String, Metric] = {
       val gauges = new util.HashMap[String, Metric]
+      gauges.put("jvm.cpu.usage", gauge((getProcessCpuLoad() * 100).toLong))
+      gauges.put("jvm.heap.used", gauge((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024))
+      gauges.put("jvm.heap.size", gauge(rt.totalMemory() / 1024 / 1024))
       gauges.put("instance.env", gauge(appEnv))
       gauges.put("instance.id", gauge(instanceId))
       gauges.put("instance.number", gauge(instanceNumber))
@@ -70,6 +83,17 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
       Collections.unmodifiableMap(gauges)
     }
   })
+
+  private def mark[T](name: String, value: Any): Unit = {
+    lastData.computeIfAbsent(name, (t: String) => new AtomicReference[Any](value))
+    lastData.getOrDefault(name, new AtomicReference[Any](value)).set(value)
+    metricRegistry.gauge("internals." + name, () => gauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
+  }
+
+  def markString(name: String, value: String): Unit = mark(name, value)
+  def markLong(name: String, value: Long): Unit = mark(name, value)
+  def markDouble(name: String, value: Double): Unit = mark(name, value)
+  def counter(name: String): Counter = metricRegistry.counter(name)
 
   private def gauge[T](f: => T): Gauge[T] = {
     new Gauge[T] {
@@ -118,9 +142,6 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   }
 
   private def updateMetrics(): Unit = {
-    metricRegistry.meter("jvm.cpu_usage").mark((getProcessCpuLoad() * 100).toLong)
-    metricRegistry.meter("jvm.heap.used").mark((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024)
-    metricRegistry.meter("jvm.heap.size").mark(rt.totalMemory() / 1024 / 1024)
     for {
       calls                     <- env.datastores.serviceDescriptorDataStore.globalCalls()
       dataIn                    <- env.datastores.serviceDescriptorDataStore.globalDataIn()
@@ -133,15 +154,15 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
       concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
       membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
     } yield {
-      metricRegistry.meter("otoroshi.calls").mark(calls)
-      metricRegistry.meter("otoroshi.dataIn").mark(dataIn)
-      metricRegistry.meter("otoroshi.dataOut").mark(dataOut)
-      metricRegistry.meter("otoroshi.rate").mark(sumDouble(rate, _.rate, membersStats).toLong)
-      metricRegistry.meter("otoroshi.duration").mark(avgDouble(duration, _.duration, membersStats).toLong)
-      metricRegistry.meter("otoroshi.overhead").mark(avgDouble(overhead, _.overhead, membersStats).toLong)
-      metricRegistry.meter("otoroshi.dataInRate").mark(sumDouble(dataInRate, _.dataInRate, membersStats).toLong)
-      metricRegistry.meter("otoroshi.dataOutRate").mark(sumDouble(dataOutRate, _.dataOutRate, membersStats).toLong)
-      metricRegistry.meter("otoroshi.concurrentHandledRequests").mark(
+      lastcalls.set(calls)
+      lastdataIn.set(dataIn)
+      lastdataOut.set(dataOut)
+      lastrate.set(sumDouble(rate, _.rate, membersStats).toLong)
+      lastduration.set(avgDouble(duration, _.duration, membersStats).toLong)
+      lastoverhead.set(avgDouble(overhead, _.overhead, membersStats).toLong)
+      lastdataInRate.set(sumDouble(dataInRate, _.dataInRate, membersStats).toLong)
+      lastdataOutRate.set(sumDouble(dataOutRate, _.dataOutRate, membersStats).toLong)
+      lastconcurrentHandledRequests.set(
         sumDouble(concurrentHandledRequests.toDouble,
         _.concurrentHandledRequests.toDouble,
         membersStats).toLong
@@ -175,9 +196,16 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
     }
   }
 
+  private val statsd: Option[StatsDReporter] = {
+    Some(env.metricsEnabled).filter(_ == true).map { _ =>
+      new StatsDReporter(metricRegistry, env).start()
+    }
+  }
+
   applicationLifecycle.addStopHook { () =>
     update.foreach(_.cancel())
     jmx.foreach(_.stop())
+    statsd.foreach(_.stop())
     FastFuture.successful(())
   }
 }

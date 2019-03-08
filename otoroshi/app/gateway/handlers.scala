@@ -49,9 +49,12 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
   lazy val logger = Logger("otoroshi-error-handler")
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
-    val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occured")
-    logger.error(s"Client Error: $message on ${request.relativeUri} ($statusCode)")
-    Errors.craftResponseResult(s"Client Error: an error occured on ${request.relativeUri} ($statusCode)",
+    val message = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
+    val remoteAddress       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+    logger.error(s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap.mkString(";")}")
+    env.metrics.counter("errors.client").inc()
+    env.datastores.serviceDescriptorDataStore.updateMetricsOnError()
+    Errors.craftResponseResult(s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
                                Status(statusCode),
                                request,
                                None,
@@ -60,7 +63,10 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
     // exception.printStackTrace()
-    logger.error(s"Server Error ${exception.getMessage} on ${request.relativeUri}", exception)
+    val remoteAddress       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+    logger.error(s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} - ${request.headers.toSimpleMap.mkString(";")}", exception)
+    env.metrics.counter("errors.server").inc()
+    env.datastores.serviceDescriptorDataStore.updateMetricsOnError()
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }
 }
@@ -590,9 +596,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
     val finalResult = {
       // env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig => // Very consuming but eh !!!
-      env.statsd.meter(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests.toDouble)(
-        globalConfig.statsdConfig
-      )
+      env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests)
       if (currentHandledRequests > globalConfig.maxConcurrentRequests) {
         Audit.send(
           MaxConcurrentRequestReachedEvent(
@@ -1064,7 +1068,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           responseChunked = resp.isChunked,
                                           `@serviceId` = descriptor.id,
                                           `@service` = descriptor.name,
-                                          descriptor = descriptor,
+                                          descriptor = Some(descriptor),
                                           `@product` = descriptor.metadata.getOrElse("product", "--"),
                                           remainingQuotas = q,
                                           viz = Some(viz)
@@ -2081,7 +2085,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         //  .fast
         //  .map(
         //    config =>
-        env.statsd.meter(s"${env.snowflakeSeed}.concurrent-requests", requests.toDouble)(globalConfig.statsdConfig)
+        env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
       //  )
     }(env.otoroshiExecutionContext)
   }

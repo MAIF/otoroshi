@@ -212,7 +212,7 @@ case class GatewayEvent(
     gwError: Option[String] = None,
     `@serviceId`: String,
     `@service`: String,
-    descriptor: ServiceDescriptor,
+    descriptor: Option[ServiceDescriptor],
     `@product`: String = "--",
     remainingQuotas: RemainingQuotas,
     viz: Option[OtoroshiViz]
@@ -245,7 +245,7 @@ object GatewayEvent {
     "gwError"         -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "@serviceId"      -> o.`@serviceId`,
     "@service"        -> o.`@service`,
-    "descriptor"      -> ServiceDescriptor.toJson(o.descriptor),
+    "descriptor"      -> o.descriptor.map(d => ServiceDescriptor.toJson(d)).getOrElse(JsNull).as[JsValue],
     "@product"        -> o.`@product`,
     "remainingQuotas" -> o.remainingQuotas,
     "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],

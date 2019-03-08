@@ -31,67 +31,122 @@ object Errors {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
 
-    def sendAnalytics(headers: Seq[Header]) = {
-      maybeDescriptor.foreach { descriptor =>
-        val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
-        // TODO : mark as error ???
-        val viz: OtoroshiViz = OtoroshiViz(
-          to = descriptor.id,
-          toLbl = descriptor.name,
-          from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
-          fromLbl = fromLbl,
-          fromTo = s"$fromLbl###${descriptor.name}"
-        )
-        GatewayEvent(
-          `@id` = errorId,
-          reqId = env.snowflakeGenerator.nextIdStr(),
-          parentReqId = None,
-          `@timestamp` = DateTime.now(),
-          protocol = req.version,
-          to = Location(
-            scheme = req.headers
-              .get("X-Forwarded-Protocol")
-              .map(_ == "https")
-              .orElse(Some(req.secure))
-              .map {
-                case true  => "https"
-                case false => "http"
-              }
-              .getOrElse("http"),
-            host = req.host,
-            uri = req.relativeUri
-          ),
-          target = Location(
-            scheme = descriptor.target.scheme,
-            host = descriptor.target.host,
-            uri = req.relativeUri
-          ),
-          duration = duration,
-          overhead = overhead,
-          cbDuration = cbDuration,
-          overheadWoCb = overhead - cbDuration,
-          callAttempts = callAttempts,
-          url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.relativeUri}",
-          method = req.method,
-          from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),
-          env = descriptor.env,
-          data = DataInOut(
-            dataIn = 0,
-            dataOut = 0
-          ),
-          status = status.header.status,
-          headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
-          headersOut = headers,
-          identity = None,
-          `@serviceId` = descriptor.id,
-          `@service` = descriptor.name,
-          descriptor = descriptor,
-          `@product` = descriptor.metadata.getOrElse("product", "--"),
-          remainingQuotas = RemainingQuotas(),
-          responseChunked = false,
-          viz = Some(viz)
-        ).toAnalytics()(env)
+    def sendAnalytics(headers: Seq[Header]): Unit = {
+      maybeDescriptor match {
+        case Some(descriptor) => {
+          val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
+          // TODO : mark as error ???
+          val viz: OtoroshiViz = OtoroshiViz(
+            to = descriptor.id,
+            toLbl = descriptor.name,
+            from = req.headers.get(env.Headers.OtoroshiVizFrom).getOrElse("internet"),
+            fromLbl = fromLbl,
+            fromTo = s"$fromLbl###${descriptor.name}"
+          )
+          GatewayEvent(
+            `@id` = errorId,
+            reqId = env.snowflakeGenerator.nextIdStr(),
+            parentReqId = None,
+            `@timestamp` = DateTime.now(),
+            protocol = req.version,
+            to = Location(
+              scheme = req.headers
+                .get("X-Forwarded-Protocol")
+                .map(_ == "https")
+                .orElse(Some(req.secure))
+                .map {
+                  case true => "https"
+                  case false => "http"
+                }
+                .getOrElse("http"),
+              host = req.host,
+              uri = req.relativeUri
+            ),
+            target = Location(
+              scheme = descriptor.target.scheme,
+              host = descriptor.target.host,
+              uri = req.relativeUri
+            ),
+            duration = duration,
+            overhead = overhead,
+            cbDuration = cbDuration,
+            overheadWoCb = overhead - cbDuration,
+            callAttempts = callAttempts,
+            url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.relativeUri}",
+            method = req.method,
+            from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),
+            env = descriptor.env,
+            data = DataInOut(
+              dataIn = 0,
+              dataOut = 0
+            ),
+            status = status.header.status,
+            headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
+            headersOut = headers,
+            identity = None,
+            `@serviceId` = descriptor.id,
+            `@service` = descriptor.name,
+            descriptor = Some(descriptor),
+            `@product` = descriptor.metadata.getOrElse("product", "--"),
+            remainingQuotas = RemainingQuotas(),
+            responseChunked = false,
+            viz = Some(viz)
+          ).toAnalytics()(env)
+        }
+        case None => {
+          val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
+          GatewayEvent(
+            `@id` = errorId,
+            reqId = env.snowflakeGenerator.nextIdStr(),
+            parentReqId = None,
+            `@timestamp` = DateTime.now(),
+            protocol = req.version,
+            to = Location(
+              scheme = req.headers
+                .get("X-Forwarded-Protocol")
+                .map(_ == "https")
+                .orElse(Some(req.secure))
+                .map {
+                  case true  => "https"
+                  case false => "http"
+                }
+                .getOrElse("http"),
+              host = req.host,
+              uri = req.relativeUri
+            ),
+            target = Location(
+              scheme = req.theProtocol,
+              host = req.host,
+              uri = req.relativeUri
+            ),
+            duration = duration,
+            overhead = overhead,
+            cbDuration = cbDuration,
+            overheadWoCb = overhead - cbDuration,
+            callAttempts = callAttempts,
+            url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
+            method = req.method,
+            from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),
+            env = "prod",
+            data = DataInOut(
+              dataIn = 0,
+              dataOut = 0
+            ),
+            status = status.header.status,
+            headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
+            headersOut = headers,
+            identity = None,
+            `@serviceId` = "none",
+            `@service` = "none",
+            descriptor = None,
+            `@product` = "--",
+            remainingQuotas = RemainingQuotas(),
+            responseChunked = false,
+            viz = None
+          ).toAnalytics()(env)
+        }
       }
+      ()
     }
 
     def standardResult(): Future[Result] = {

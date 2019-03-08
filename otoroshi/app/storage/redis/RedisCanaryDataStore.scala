@@ -30,12 +30,12 @@ class RedisCanaryDataStore(redisCli: RedisClientMasterSlaves, _env: Env) extends
     val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     if (hash % 100 < (traffic * 100)) {
       redisCli.incr(canaryCountKey(serviceId).key).map { c =>
-        env.statsd.counter(s"services.$serviceId.users.canary", c)(config.statsdConfig)
+        env.metrics.markLong(s"services.$serviceId.users.canary", c)
       }
       FastFuture.successful(true)
     } else {
       redisCli.incr(standardCountKey(serviceId).key).map { c =>
-        env.statsd.counter(s"services.$serviceId.users.default", c)(config.statsdConfig)
+        env.metrics.markLong(s"services.$serviceId.users.default", c)
       }
       FastFuture.successful(false)
     }

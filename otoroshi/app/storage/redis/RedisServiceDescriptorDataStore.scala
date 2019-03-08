@@ -199,23 +199,39 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
               _ =>
                 FastFuture.successful(
                   (
-                    env.statsd.meter(s"global.calls", globalCalls.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.calls", serviceCalls.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"global.duration", callDuration.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"global.overhead", callOverhead.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"global.data-in", dataIn.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"global.data-out", dataOut.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"global.upstream-latency", upstreamLatency.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.duration", callDuration.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.overhead", callOverhead.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.data-in", dataIn.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.data-out", dataOut.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.upstream-latency", upstreamLatency.toDouble)(config.statsdConfig)
+                    env.metrics.markLong(s"global.calls", globalCalls),
+                    env.metrics.markLong(s"services.${id}.calls", serviceCalls),
+                    env.metrics.markLong(s"global.duration", callDuration),
+                    env.metrics.markLong(s"global.overhead", callOverhead),
+                    env.metrics.markLong(s"global.data-in", dataIn),
+                    env.metrics.markLong(s"global.data-out", dataOut),
+                    env.metrics.markLong(s"global.upstream-latency", upstreamLatency),
+                    env.metrics.markLong(s"services.${id}.duration", callDuration),
+                    env.metrics.markLong(s"services.${id}.overhead", callOverhead),
+                    env.metrics.markLong(s"services.${id}.data-in", dataIn),
+                    env.metrics.markLong(s"services.${id}.data-out", dataOut),
+                    env.metrics.markLong(s"services.${id}.upstream-latency", upstreamLatency)
                   )
               )
             )
             .getOrElse(FastFuture.successful(()))
     } yield ()
+  }
+
+  override def updateMetricsOnError()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    val time        = System.currentTimeMillis()
+    val callsShiftGlobalTime = redisCli.lpush(serviceCallStatsKey("global"), time).flatMap { _ =>
+      redisCli.ltrim(serviceCallStatsKey("global"), 0, maxQueueSize)
+      redisCli.expire(serviceCallStatsKey("global"), 10)
+    }
+    val callsIncrementGlobalCalls  = redisCli.incr(serviceCallKey("global"))
+    for {
+      _            <- callsShiftGlobalTime
+      globalCalls  <- callsIncrementGlobalCalls
+    } yield {
+      env.metrics.markLong(s"global.calls", globalCalls)
+      ()
+    }
   }
 
   override def updateIncrementableMetrics(id: String,
@@ -254,12 +270,12 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
               _ =>
                 FastFuture.successful(
                   (
-                    env.statsd.meter(s"global.calls", globalCalls.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.calls", serviceCalls.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"global.data-in", dataIn.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"global.data-out", dataOut.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.data-in", dataIn.toDouble)(config.statsdConfig),
-                    env.statsd.meter(s"services.${id}.data-out", dataOut.toDouble)(config.statsdConfig),
+                    env.metrics.markLong(s"global.calls", globalCalls),
+                    env.metrics.markLong(s"services.${id}.calls", serviceCalls),
+                    env.metrics.markLong(s"global.data-in", dataIn),
+                    env.metrics.markLong(s"global.data-out", dataOut),
+                    env.metrics.markLong(s"services.${id}.data-in", dataIn),
+                    env.metrics.markLong(s"services.${id}.data-out", dataOut),
                   )
               )
             )
