@@ -284,6 +284,12 @@ export class DangerZonePage extends Component {
         help: '...',
       },
     },
+    'mailGunSettings.eu': {
+      type: 'bool',
+      props: {
+        label: 'EU tenant',
+      },
+    },
     'mailGunSettings.apiKey': {
       type: 'string',
       props: {
@@ -467,6 +473,7 @@ export class DangerZonePage extends Component {
     'backOfficeAuthRef',
     'backOfficeAuthButtons',
     '>>>Mailgun settings',
+    'mailGunSettings.eu',
     'mailGunSettings.apiKey',
     'mailGunSettings.domain',
     '>>>CleverCloud settings',

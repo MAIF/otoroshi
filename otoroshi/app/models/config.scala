@@ -69,10 +69,28 @@ object CleverCloudSettings {
   implicit val format = Json.format[CleverCloudSettings]
 }
 
-case class MailgunSettings(apiKey: String, domain: String)
+case class MailgunSettings(eu: Boolean, apiKey: String, domain: String)
 
 object MailgunSettings {
-  implicit val format = Json.format[MailgunSettings]
+  val format = new Format[MailgunSettings] {
+    override def writes(o: MailgunSettings) = Json.obj(
+      "eu"     -> o.eu,
+      "apiKey" -> o.apiKey,
+      "domain" -> o.domain
+    )
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          MailgunSettings(
+            eu = (json \ "eu").asOpt[Boolean].getOrElse(false),
+            apiKey = (json \ "password").asOpt[String].map(_.trim).get,
+            domain = (json \ "domain").asOpt[String].map(_.trim).get,
+          )
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
 }
 
 case class GlobalConfig(
@@ -139,6 +157,7 @@ object GlobalConfig {
         case None => JsNull
         case Some(config) =>
           Json.obj(
+            "eu"     -> config.eu,
             "apiKey" -> config.apiKey,
             "domain" -> config.domain
           )
@@ -285,10 +304,11 @@ object GlobalConfig {
           backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
           mailGunSettings = (json \ "mailGunSettings").asOpt[JsValue].flatMap { config =>
             (
+              (config \ "eu").asOpt[Boolean].getOrElse(false),
               (config \ "apiKey").asOpt[String].filter(_.nonEmpty),
               (config \ "domain").asOpt[String].filter(_.nonEmpty)
             ) match {
-              case (Some(apiKey), Some(domain)) => Some(MailgunSettings(apiKey, domain))
+              case (eu, Some(apiKey), Some(domain)) => Some(MailgunSettings(eu, apiKey, domain))
               case _                            => None
             }
           },

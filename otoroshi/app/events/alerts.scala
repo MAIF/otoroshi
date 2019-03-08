@@ -861,7 +861,10 @@ class AlertsActor(implicit env: Env) extends Actor {
         config.mailGunSettings match {
           case Some(mailgunSettings) =>
             env.Ws
-              .url(s"https://api.mailgun.net/v3/${mailgunSettings.domain}/messages")
+              .url(mailgunSettings.eu match {
+                case true => s"https://api.eu.mailgun.net/v3/${mailgunSettings.domain}/messages"
+                case false => s"https://api.mailgun.net/v3/${mailgunSettings.domain}/messages"
+              })
               .withAuth("api", mailgunSettings.apiKey, WSAuthScheme.BASIC)
               .post(
                 Map(
