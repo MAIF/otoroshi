@@ -157,8 +157,8 @@ In order to get it ready you need to :
 
 * Configure Otoroshi with your domain 
 * Create a wildcard SSL certificate for your domain
-* Configure Orotoshi AWS Elastic Beanstalk instance with the SSL certificate 
-* Configure your DNS to redirect all traffic on your domain to Orotoshi  
+* Configure Otoroshi AWS Elastic Beanstalk instance with the SSL certificate 
+* Configure your DNS to redirect all traffic on your domain to Otoroshi  
   
 ### Configure Otoroshi with your domain
 
@@ -262,7 +262,7 @@ Verify that you did put the right **Domain name** then hit **Confirm and request
  
 As you see in the image above, to let Amazon do the validation you have to add the `CNAME` record to your DNS configuration. Normally this operation takes around one day.
   
-### Configure Orotoshi AWS Elastic Beanstalk instance with the SSL certificate 
+### Configure Otoroshi AWS Elastic Beanstalk instance with the SSL certificate 
 
 Once the certificate is validated, you need to modify the configuration of Otoroshi-env to add the SSL certificate for HTTPS. 
 For that you need to go to [AWS Elastic Beanstalk applications](https://eu-west-3.console.aws.amazon.com/elasticbeanstalk/home?region=eu-west-3#/applications),
@@ -291,7 +291,7 @@ Make sure that your listener is enabled, and on the bottom right of the page hit
 
 Now you have **https**, so let's use Otoroshi.
 
-### Configure your DNS to redirect all traffic on your domain to Orotoshi
+### Configure your DNS to redirect all traffic on your domain to Otoroshi
   
 It's actually pretty simple, you just need to add a `CNAME` record to your DNS configuration, that redirects *\*.mysubdomain.foo.bar* to the DNS name of Otoroshi's load balancer.
 
