@@ -40,4 +40,82 @@ For the second option your DockerFile would look like this :
  
 I'd recommend the second option.
        
-Now Zip your target (Jar + Conf + DockerFile) and get ready for deployment. 
+Now Zip your target (Jar + Conf + DockerFile) and get ready for deployment.     
+
+## Create an Otoroshi instance on AWS Elastic Beanstalk
+First, go to [AWS Elastic Beanstalk Console](https://eu-west-3.console.aws.amazon.com/elasticbeanstalk/home?region=eu-west-3#/welcome), don't forget to sign in and make sure that you are in the good region (eg : eu-west-3 for Paris).
+
+Hit **Get started** 
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-0.png" />
+@@@
+
+Specify the **Application name** of your application, Otoroshi for example.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-1.png" />
+@@@
+ 
+Choose the **Platform** of the application you want to create, in your case use Docker.
+
+For **Application code** choose **Upload your code** then hit **Upload**.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-2.png" />
+@@@
+
+Browse the zip created in the [previous section](#prepare-your-deployment-target) from your machine. 
+
+As you can see in the image above, you can also choose an S3 location, you can imagine that at the end of your build pipeline you upload your Zip to S3, and then get it from there (I wouldn't recommend that though).
+  
+When the upload is done, hit **Configure more options**.
+   
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-3.png" />
+@@@ 
+ 
+Right now an AWS Elastic Beanstalk application has been created, and by default an environment named Otoroshi-env is being created as well.
+
+AWS Elastic Beanstalk can manage multiple environments of the same application, for instance environments can be (prod, preprod, expriments...).  
+
+Otoroshi is a bit particular, it doesn't make much sense to have multiple environments, since Otoroshi will handle all the requests from/to downstream services regardless of the environment.        
+ 
+As you see in the image above, we are now configuring the Otoroshi-env, the one and only environment of Otoroshi.
+  
+For **Configuration presets**, choose custom configuration, now you have a load balancer for your environment with the capacity of at least one instance and at most four.
+I'd recommend at least 2 instances, to change that, on the **Capacity** card hit **Modify**.         
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-4.png" />
+@@@
+
+Change the **Instances** to min 2, max 4 then hit **Save**. For the **Scaling triggers**, I'd keep the default values, but know that you can edit the capacity config any time you want, it only costs a redeploy, which will be done automatically by the way.
+       
+Instances size is by default t2.micro, which is a bit small for running Otoroshi, I'd recommend a t2.medium.     
+On the **Instances** card hit **Modify**.
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-5.png" />
+@@@
+
+For **Instance type** choose t2.medium, then hit **Save**, no need to change the volume size, unless you have a lot of http call faults, which means a lot more logs, in that case the default volume size may not be enough.
+
+The default environment created for Otoroshi, for instance Otoroshi-env, is a web server environment which fits in your case, but the thing is that on AWS Elastic Beanstalk by default a web server environment for a docker-based application, runs behind an Nginx proxy.
+We have to remove that proxy. So on the **Software** card hit **Modify**.
+        
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-6.png" />
+@@@        
+    
+For **Proxy server** choose None then hit **Save**.
+
+Also note that you can set Envs for Otoroshi in same page (see image below). 
+
+@@@ div { .centered-img }
+<img src="../img/deploy-elb-7.png" />
+@@@  
+
+To finalise the creation process, hit **Create app** on the bottom right.
+
+The Otoroshi app is now created, and it's running which is cool, but we still don't have neither a **datastore** nor **https**.
