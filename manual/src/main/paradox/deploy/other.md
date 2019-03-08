@@ -4,7 +4,11 @@ Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)
 
 This section is not finished yet. So, as Otoroshi is available as a @ref:[Docker image](../getotoroshi/fromdocker.md) that you can run on any Docker compatible cloud, just go ahead and use it on cloud provider until we have more detailed documentation.
 
-## Running Otoroshi on AWS
+## Running Otoroshi on AWS Elastic Beanstalk
+
+See the @ref:[dedicated page to run Otoroshi on AWS Elastic Beanstalk](./aws-beanstalk.md)
+
+## Running Otoroshi on Amazon Elastic Container Service
 
 Deploy the @ref:[Docker image](../firstrun/run.md#from-docker) using [Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html)
 
