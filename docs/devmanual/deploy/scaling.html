@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Scaling Otoroshi * · Otoroshi</title>
+<title>Scaling Otoroshi · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -88,6 +88,7 @@
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -95,8 +96,9 @@
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi *</a></li>
+    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -137,7 +139,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -195,6 +197,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -202,8 +205,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi *</a></li>
+    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -226,7 +230,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../deploy/index.html">Deploy to production</a></li>
-  <li>Scaling Otoroshi *</li>
+  <li>Scaling Otoroshi</li>
 </ul>
 </div>
 </div>
@@ -234,26 +238,49 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#scaling-otoroshi-" name="scaling-otoroshi-" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi *</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>this section is still under construction&hellip;</p></div>
+<h1><a href="#scaling-otoroshi" name="scaling-otoroshi" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi</h1>
 <h2><a href="#using-multiple-instances-with-a-front-load-balancer" name="using-multiple-instances-with-a-front-load-balancer" class="anchor"><span class="anchor-link"></span></a>Using multiple instances with a front load balancer</h2>
 <p>Otoroshi has been designed to work with multiple instances. If you already have an infrastructure using frontal load balancing, you just have to declare Otoroshi instances as the target of all domain names handled by Otoroshi</p>
 <h2><a href="#using-master-workers-mode-of-otoroshi" name="using-master-workers-mode-of-otoroshi" class="anchor"><span class="anchor-link"></span></a>Using master / workers mode of Otoroshi</h2>
-<p>Work in progress :) you can follow the issue here <a href="https://github.com/MAIF/otoroshi/issues/8">https://github.com/MAIF/otoroshi/issues/8</a></p>
+<p>You can read everything about it in <a href="../topics/clustering.html">the clustering section</a> of the documentation.</p>
 <h2><a href="#using-ipvs" name="using-ipvs" class="anchor"><span class="anchor-link"></span></a>Using IPVS</h2>
-<p>You can use <a href="https://en.wikipedia.org/wiki/IP_Virtual_Server">IPVS</a> to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.</p>
+<p>You can use <a href="https://en.wikipedia.org/wiki/IP_Virtual_Server">IPVS</a> to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi. You can find example of configuration <a href="http://www.linuxvirtualserver.org/VS-DRouting.html">here</a> </p>
 <h2><a href="#using-dns-round-robin" name="using-dns-round-robin" class="anchor"><span class="anchor-link"></span></a>Using DNS Round Robin</h2>
 <p>You can use <a href="https://en.wikipedia.org/wiki/Round-robin_DNS">DNS round robin technique</a> to declare multiple A records under the domain names handled by Otoroshi.</p>
 <h2><a href="#using-software-l4-l7-load-balancers" name="using-software-l4-l7-load-balancers" class="anchor"><span class="anchor-link"></span></a>Using software L4/L7 load balancers</h2>
 <p>You can use software L4 load balancers like NGINX or HAProxy to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.</p>
 <dl>
-  <dt>NGINX config.
-  </dt>
+  <dt>NGINX L7</dt>
   <dd>
   <pre class="prettyprint"><code class="language-conf">upstream otoroshi {
   server 192.168.1.40:8080 max_fails=1;
   server 192.168.1.41:8080 max_fails=1;
   server 192.168.1.42:8080 max_fails=1;
+}
+
+server {
+  listen 80;
+  # http://nginx.org/en/docs/http/server_names.html
+  server_name otoroshi.foo.bar otoroshi-api.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar *-api.foo.bar;
+  location / {
+    # SSE config
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_set_header Connection &#39;&#39;;
+    proxy_http_version 1.1;
+    chunked_transfer_encoding off;
+  
+    # websockets config
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection &quot;upgrade&quot;;
+  
+    # other config
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_pass http://otoroshi;
+  }
 }
 
 server {
@@ -284,9 +311,176 @@ server {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-Protocol $scheme;
     proxy_pass http://otoroshi;
   }
+}</code></pre></dd>
+  <dt>NGINX L4</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">stream {
+
+  upstream back_http_nodes {
+    zone back_http_nodes 64k;
+    server 192.168.1.40:8080 max_fails=1;
+    server 192.168.1.41:8080 max_fails=1;
+    server 192.168.1.42:8080 max_fails=1;
+  }
+
+  upstream back_https_nodes {
+    zone back_https_nodes 64k;
+    server 192.168.1.40:8443 max_fails=1;
+    server 192.168.1.41:8443 max_fails=1;
+    server 192.168.1.42:8443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass back_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass back_https_nodes;
+    health_check;
+  }
+  
+}
+</code></pre></dd>
+  <dt>HA Proxy L7</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">frontend front_nodes_http
+    bind *:80
+    mode http
+    default_backend back_http_nodes
+    timeout client          1m
+
+frontend front_nodes_https
+    bind *:443
+    mode http
+    default_backend back_https_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode http
+    balance roundrobin
+    option forwardfor
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+    http-request set-header X-Client-IP %[src]
+    server node1 192.168.1.40:8080
+    server node2 192.168.1.41:8080
+    server node3 192.168.1.42:8080
+    timeout connect        10s
+    timeout server          1m
+
+backend back_https_nodes
+    mode http
+    balance roundrobin
+    option forwardfor
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+    http-request set-header X-Client-IP %[src]
+    server node1 192.168.1.40:8443
+    server node2 192.168.1.41:8443
+    server node3 192.168.1.42:8443
+    timeout connect        10s
+    timeout server          1m</code></pre></dd>
+  <dt>HA Proxy L4</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">frontend front_nodes_http
+    bind *:80
+    mode tcp
+    default_backend back_http_nodes
+    timeout client          1m
+
+frontend front_nodes_https
+    bind *:443
+    mode tcp
+    default_backend back_https_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode tcp
+    balance roundrobin
+    server node1 192.168.1.40:8080
+    server node2 192.168.1.41:8080
+    server node3 192.168.1.42:8080
+    timeout connect        10s
+    timeout server          1m
+
+backend back_https_nodes
+    mode tcp
+    balance roundrobin
+    server node1 192.168.1.40:8443
+    server node2 192.168.1.41:8443
+    server node3 192.168.1.42:8443
+    timeout connect        10s
+    timeout server          1m</code></pre></dd>
+</dl>
+<h2><a href="#using-a-custom-tcp-load-balancer" name="using-a-custom-tcp-load-balancer" class="anchor"><span class="anchor-link"></span></a>Using a custom TCP load balancer</h2>
+<p>You can also use any other TCP load balancer, from a hardware box to a small js file like</p>
+<dl>
+  <dt>tcp-proxy.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-js">const proxy = require(&quot;node-tcp-proxy&quot;);
+
+const hosts = [&quot;192.168.1.40&quot;, &quot;192.168.1.41&quot;, &quot;192.168.1.42&quot;];
+const portsHttp = [8080, 8080, 8080];
+const portsHttps = [8443, 8443, 8443];
+
+const proxyHttp = proxy.createProxy(80, hosts, portsHttp, {
+  tls: false
+});
+
+const proxyHttps = proxy.createProxy(443, hosts, portsHttps, {
+  tls: false
+});
+</code></pre></dd>
+  <dt>tcp-proxy.rs
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-rs">extern crate futures;
+extern crate tokio;
+extern crate rand;
+
+use futures::{Future, Stream};
+use rand::Rng;
+use std::net::SocketAddr;
+use tokio::io::copy;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::prelude::*;
+
+fn main() -&gt; Result&lt;(), Box&lt;std::error::Error&gt;&gt; {
+    let urls: Vec&lt;std::net::SocketAddr&gt; = vec![
+        std::net::SocketAddr::new(&quot;192.168.1.40&quot;.parse().unwrap(), 8080),
+        std::net::SocketAddr::new(&quot;192.168.1.41&quot;.parse().unwrap(), 8080),
+        std::net::SocketAddr::new(&quot;192.168.1.42&quot;.parse().unwrap(), 8080),
+    ];
+    let addr: SocketAddr = &quot;0.0.0.0:80&quot;.to_string().parse().unwrap();
+    let sock = TcpListener::bind(&amp;addr).unwrap();
+    println!(&quot;TCP load balancer listening on {}&quot;, addr);
+    let done = sock
+        .incoming()
+        .map_err(move |e| println!(&quot;Error accepting socket; error = {:?}&quot;, e))
+        .for_each(move |server_socket| {
+            let index = rand::thread_rng().gen_range(0, urls.len());
+            let url = &amp;urls[index];
+            let client_pair = TcpStream::connect(&amp;url).map(|socket| socket.split());
+            let msg = client_pair
+                .and_then(move |(client_reader, client_writer)| {
+                    let (server_reader, server_writer) = server_socket.split();
+                    let upload = copy(server_reader, client_writer);
+                    let download = copy(client_reader, server_writer);
+                    upload.join(download)
+                }).then(|_res| {
+                    Ok(())
+                });
+            tokio::spawn(msg);
+            Ok(())
+        });
+    tokio::run(done);
+    Ok(())
 }</code></pre></dd>
 </dl>
 <div class="nav-next">
@@ -299,13 +493,14 @@ server {
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../deploy/scaling.html#scaling-otoroshi-" class="header">Scaling Otoroshi *</a>
+  <li><a href="../deploy/scaling.html#scaling-otoroshi" class="header">Scaling Otoroshi</a>
   <ul>
     <li><a href="../deploy/scaling.html#using-multiple-instances-with-a-front-load-balancer" class="header">Using multiple instances with a front load balancer</a></li>
     <li><a href="../deploy/scaling.html#using-master-workers-mode-of-otoroshi" class="header">Using master / workers mode of Otoroshi</a></li>
     <li><a href="../deploy/scaling.html#using-ipvs" class="header">Using IPVS</a></li>
     <li><a href="../deploy/scaling.html#using-dns-round-robin" class="header">Using DNS Round Robin</a></li>
     <li><a href="../deploy/scaling.html#using-software-l4-l7-load-balancers" class="header">Using software L4/L7 load balancers</a></li>
+    <li><a href="../deploy/scaling.html#using-a-custom-tcp-load-balancer" class="header">Using a custom TCP load balancer</a></li>
   </ul></li>
 </ul>
 </div>

@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -88,6 +88,7 @@
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -95,8 +96,9 @@
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="active page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -137,7 +139,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -195,6 +197,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -202,8 +205,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="active page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -237,7 +241,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#others" name="others" class="anchor"><span class="anchor-link"></span></a>Others</h1>
 <p>Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)</p>
 <p>This section is not finished yet. So, as Otoroshi is available as a <a href="../getotoroshi/fromdocker.html">Docker image</a> that you can run on any Docker compatible cloud, just go ahead and use it on cloud provider until we have more detailed documentation.</p>
-<h2><a href="#running-otoroshi-on-aws" name="running-otoroshi-on-aws" class="anchor"><span class="anchor-link"></span></a>Running Otoroshi on AWS</h2>
+<h2><a href="#running-otoroshi-on-aws-elastic-beanstalk" name="running-otoroshi-on-aws-elastic-beanstalk" class="anchor"><span class="anchor-link"></span></a>Running Otoroshi on AWS Elastic Beanstalk</h2>
+<p>See the <a href="aws-beanstalk.html">dedicated page to run Otoroshi on AWS Elastic Beanstalk</a></p>
+<h2><a href="#running-otoroshi-on-amazon-elastic-container-service" name="running-otoroshi-on-amazon-elastic-container-service" class="anchor"><span class="anchor-link"></span></a>Running Otoroshi on Amazon Elastic Container Service</h2>
 <p>Deploy the <a href="../firstrun/run.html#from-docker">Docker image</a> using <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html">Amazon ECS</a></p>
 <h2><a href="#running-otoroshi-on-gce" name="running-otoroshi-on-gce" class="anchor"><span class="anchor-link"></span></a>Running Otoroshi on GCE</h2>
 <p>Deploy the <a href="../firstrun/run.html#from-docker">Docker image</a> using <a href="https://cloud.google.com/compute/docs/containers/deploying-containers">Google Compute Engine container integration</a></p>
@@ -252,7 +258,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p><a href="https://www.playframework.com/documentation/2.6.x/ProductionConfiguration">https://www.playframework.com/documentation/2.6.x/ProductionConfiguration</a></p>
 <p>Download the latest <a href="../getotoroshi/frombinaries.html">Otoroshi distribution</a>, unzip it, customize it and run it.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../deploy/scaling.html">Scaling Otoroshi *</a></p>
+<p><strong>Next:</strong> <a href="../deploy/scaling.html">Scaling Otoroshi</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -263,7 +269,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../deploy/other.html#others" class="header">Others</a>
   <ul>
-    <li><a href="../deploy/other.html#running-otoroshi-on-aws" class="header">Running Otoroshi on AWS</a></li>
+    <li><a href="../deploy/other.html#running-otoroshi-on-aws-elastic-beanstalk" class="header">Running Otoroshi on AWS Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html#running-otoroshi-on-amazon-elastic-container-service" class="header">Running Otoroshi on Amazon Elastic Container Service</a></li>
     <li><a href="../deploy/other.html#running-otoroshi-on-gce" class="header">Running Otoroshi on GCE</a></li>
     <li><a href="../deploy/other.html#running-otoroshi-on-azure" class="header">Running Otoroshi on Azure</a></li>
     <li><a href="../deploy/other.html#running-otoroshi-on-heroku" class="header">Running Otoroshi on Heroku</a></li>

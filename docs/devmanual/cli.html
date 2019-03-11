@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -88,6 +88,7 @@
     <li><a href="topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
   <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -95,8 +96,9 @@
   <li><a href="deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="deploy/other.html" class="page">Others</a></li>
-    <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+    <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -137,7 +139,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -195,6 +197,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="api.html" class="page">Admin REST API</a></li>
   <li><a href="embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -202,8 +205,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="deploy/other.html" class="page">Others</a></li>
-    <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+    <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -237,18 +241,18 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Otoroshi provides a command line tool to command Otoroshi instances.</p>
 <h2><a href="#download" name="download" class="anchor"><span class="anchor-link"></span></a>Download</h2>
 <p>First, download the Otoroshi CLI depending on your operating system :</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.3-dev/otoroshicli
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/linux-otoroshicli/1.4.8-dev/otoroshicli
 # or if you use linux
-curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.4.3-dev/otoroshicli
+curl -L -o otoroshicli https://dl.bintray.com/maif/binaries/mac-otoroshicli/1.4.8-dev/otoroshicli
 # or if you use windows
-curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.4.3-dev/otoroshicli.exe
+curl -L -o otoroshicli.exe https://dl.bintray.com/maif/binaries/win-otoroshicli/1.4.8-dev/otoroshicli.exe
 </code></pre>
 <h2><a href="#usage" name="usage" class="anchor"><span class="anchor-link"></span></a>Usage</h2>
 <p>The documentation is not written yet, but you can explore the cli usage using the help flag <code>-h</code></p>
 <p>You can read more about it <a href="https://github.com/MAIF/otoroshi/tree/master/clients/cli">here</a>.</p>
 <pre><code>$ otoroshicli -h
 
-otoroshicli 1.4.3-dev
+otoroshicli 1.4.8-dev
    ____  __________  ____  ____  _____ __  ______     ________    ____
   / __ \/_  __/ __ \/ __ \/ __ \/ ___// / / /  _/    / ____/ /   /  _/
  / / / / / / / / / / /_/ / / / /\__ \/ /_/ // /_____/ /   / /    / /

@@ -30,7 +30,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -88,6 +88,7 @@
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../topics/req-transformers.html" class="active page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -95,8 +96,9 @@
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -137,7 +139,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.4.3-dev
+1.4.8-dev
 </div>
 </div>
 <div class="nav-toc">
@@ -195,6 +197,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../topics/req-transformers.html" class="active page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
@@ -202,8 +205,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
-    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi *</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../connectors/index.html" class="page">Connectors</a>
   <ul>
@@ -236,15 +240,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#request-transformers" name="request-transformers" class="anchor"><span class="anchor-link"></span></a>Request transformers</h1>
 <p>When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Request transformer is an experimental feature hidden behind a feature flag that allow you to code how Otoroshi should behave when receiving and rounting an http request. With request transformers, you can change request / response headers and request / response body to way you want.</p><div class="callout note "><div class="callout-title">Experimental Feature</div>
-<p>Request transformers is an experimental feature. It can change until it becomess an official feature</p></div><div class="callout warning "><div class="callout-title">Warning</div>
-<p>Request transformers is a <strong>very</strong> powerful feature that allow you to do almost everything you want. But like any powerful feature, it comes with a price. The fact that you are responsible for how the request is transformed makes you responsible for all issues introduced by the transformer. If you block the current thread, introduce big latency, generate uncatched exceptions, etc. it&rsquo;s <strong>your fault</strong>. You have to ensure that your code is fast, non blocking, safe, etc. In any case, Otoroshi developpers will not responsible for issues caused by a request transformer.</p>
+<p>Request transformers is an experimental feature. It can change until it becomess an official feature</p></div><div class="callout warning "><div class="callout-title">Use at your own risk</div>
+<p>Request transformers is a <strong>very</strong> powerful feature that allow you to do almost everything you want. But like any powerful feature, it comes with a price. The fact that you are responsible for how the request is transformed makes you responsible for all issues introduced by the transformer. If you block the current thread, introduce big latency, generate uncatched exceptions, etc. it&rsquo;s <strong>your fault</strong>. You have to ensure that your code is fast, non blocking, safe, etc. In any case, Otoroshi developers will not responsible for issues caused by a request transformer.</p>
 <p>And always remember this quote from <del>uncle Ben</del> Winston Churchill:</p>
 <p style="font-style: italic; text-align: right">"Where there is great power there is great responsibility"</p></div>
 <h2><a href="#enabling-request-transformers" name="enabling-request-transformers" class="anchor"><span class="anchor-link"></span></a>Enabling request transformers</h2>
 <p>First you have to enable Otoroshi request transformers with the <code>-Dotoroshi.scripts.enabled=true</code> flag, or using env. variable <code>OTOROSHI_SCRIPTS_ENABLED=true</code>.</p>
 <h2><a href="#anatomy-of-a-transformer" name="anatomy-of-a-transformer" class="anchor"><span class="anchor-link"></span></a>Anatomy of a transformer</h2>
 <p>A request transformer is a piece of Scala code than can handle the complete lifecycle of an http request made on Otoroshi</p>
-<pre class="prettyprint"><code class="language-scala">case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String]) {
+<pre class="prettyprint"><code class="language-scala">case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
   lazy val host: String = headers.getOrElse(&quot;Host&quot;, &quot;&quot;)
   lazy val uri: Uri = Uri(url)
   lazy val scheme: String = uri.scheme
@@ -254,7 +258,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String = uri.toRelative.toString()
 }
-case class HttpResponse(status: Int, headers: Map[String, String])
+case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
 
 trait RequestTransformer {
 
@@ -497,7 +501,7 @@ class BodyLengthLimiter extends RequestTransformer {
 </code></pre>
 <p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../api.html">Admin REST API</a></p>
+<p><strong>Next:</strong> <a href="../topics/monitoring.html">Monitoring Otoroshi</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
