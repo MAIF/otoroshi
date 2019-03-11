@@ -1,6 +1,7 @@
 package controllers
 import actions.{ApiAction, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
 import env.Env
 import events._
 import org.joda.time.DateTime
@@ -9,10 +10,10 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import utils.future.Implicits._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
-  def call(req: RequestHeader): Future[JsObject] = {
+  def call(req: RequestHeader)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
     req.getQueryString("fields") match {
       case None => f().map {
         case Some(res) => Json.obj(fieldName -> res)
