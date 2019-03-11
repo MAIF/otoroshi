@@ -52,7 +52,7 @@ export class CodeInput extends Component {
             tabSize={2}
             enableBasicAutocompletion={true}
             enableLiveAutocompletion={true}
-            annotations={this.props.annotations() || []}
+            annotations={this.props.annotations ? this.props.annotations() : []}
             commands={[
               {
                 name: 'saveAndCompile',
