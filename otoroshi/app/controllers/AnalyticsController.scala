@@ -3,14 +3,31 @@ import actions.{ApiAction, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
 import env.Env
 import events._
-import models.ApiKey
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import utils.future.Implicits._
 
 import scala.concurrent.Future
+
+case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
+  def call(req: RequestHeader): Future[JsObject] = {
+    req.getQueryString("fields") match {
+      case None => f().map {
+        case Some(res) => Json.obj(fieldName -> res)
+        case None => Json.obj()
+      }
+      case Some(fieldsStr) if fieldsStr.toLowerCase().split(",").toSeq.contains(fieldName.toLowerCase())=> {
+        f().map {
+          case Some(res) => Json.obj(fieldName -> res)
+          case None => Json.obj()
+        }
+      }
+      case _ => FastFuture.successful(Json.obj())
+    }
+  }
+}
 
 class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(
     implicit env: Env
@@ -333,83 +350,35 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
 
             val fromDate = from.map(f => new DateTime(f.toLong))
             val toDate   = to.map(f => new DateTime(f.toLong))
-            for {
-              _ <- FastFuture.successful(())
 
-              fhits              = analyticsService.fetchHits(Some(filterable), fromDate, toDate)
-              fdatain            = analyticsService.fetchDataIn(Some(filterable), fromDate, toDate)
-              fdataout           = analyticsService.fetchDataOut(Some(filterable), fromDate, toDate)
-              favgduration       = analyticsService.fetchAvgDuration(Some(filterable), fromDate, toDate)
-              favgoverhead       = analyticsService.fetchAvgOverhead(Some(filterable), fromDate, toDate)
-              fstatusesPiechart  = analyticsService.fetchStatusesPiechart(Some(filterable), fromDate, toDate)
-              fstatusesHistogram = analyticsService.fetchStatusesHistogram(Some(filterable), fromDate, toDate)
-              foverheadPercentiles = analyticsService
-                .fetchOverheadPercentilesHistogram(Some(filterable), fromDate, toDate)
-              foverheadStats = analyticsService.fetchOverheadStatsHistogram(Some(filterable), fromDate, toDate)
-              fdurationPercentiles = analyticsService
-                .fetchDurationPercentilesHistogram(Some(filterable), fromDate, toDate)
-              fdurationStats    = analyticsService.fetchDurationStatsHistogram(Some(filterable), fromDate, toDate)
-              fdataInHistogram  = analyticsService.fetchDataInStatsHistogram(Some(filterable), fromDate, toDate)
-              fdataOutHistogram = analyticsService.fetchDataOutStatsHistogram(Some(filterable), fromDate, toDate)
-
-              fServicePiechart = analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
-              fApiKeyPiechart  = analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
-              fUserPiechart    = analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate)
-
-              statusesPiechart    <- fstatusesPiechart
-              statusesHistogram   <- fstatusesHistogram
-              overheadPercentiles <- foverheadPercentiles
-              overheadStats       <- foverheadStats
-              durationPercentiles <- fdurationPercentiles
-              durationStats       <- fdurationStats
-              dataInStats         <- fdataInHistogram
-              dataOutStats        <- fdataOutHistogram
-              apiKeyPiechart      <- fApiKeyPiechart
-              userPiechart        <- fUserPiechart
-              servicePiechart     <- fServicePiechart
-
-              hits        <- fhits
-              datain      <- fdatain
-              dataout     <- fdataout
-              avgduration <- favgduration
-              avgoverhead <- favgoverhead
-            } yield {
-              Ok(
-                Json.obj(
-                  "type"                -> filterType,
-                  "statusesPiechart"    -> statusesPiechart,
-                  "statusesHistogram"   -> statusesHistogram,
-                  "overheadPercentiles" -> overheadPercentiles,
-                  "overheadStats"       -> overheadStats,
-                  "durationPercentiles" -> durationPercentiles,
-                  "durationStats"       -> durationStats,
-                  "dataInStats"         -> dataInStats,
-                  "dataOutStats"        -> dataOutStats,
-                  "hits"                -> hits,
-                  "dataIn"              -> datain,
-                  "dataOut"             -> dataout,
-                  "avgDuration"         -> avgduration,
-                  "avgOverhead"         -> avgoverhead
-                ) ++ ((serviceId, apiKeyId, groupId) match {
-                  case (Some(id), _, _) =>
-                    Json.obj(
-                      "apiKeyPiechart" -> apiKeyPiechart,
-                      "userPiechart"   -> userPiechart,
-                    )
-                  case (_, Some(id), _) =>
-                    Json.obj(
-                      "userPiechart"    -> userPiechart,
-                      "servicePiechart" -> servicePiechart
-                    )
-                  case (_, _, Some(id)) =>
-                    Json.obj(
-                      "apiKeyPiechart"  -> apiKeyPiechart,
-                      "userPiechart"    -> userPiechart,
-                      "servicePiechart" -> servicePiechart
-                    )
-                  case _ => Json.obj()
-                })
-              )
+            val parts = Seq(
+              Part("statusesPiechart", () => analyticsService.fetchStatusesPiechart(Some(filterable), fromDate, toDate)),
+              Part("statusesHistogram", () => analyticsService.fetchStatusesHistogram(Some(filterable), fromDate, toDate)),
+              Part("overheadPercentiles", () => analyticsService.fetchOverheadPercentilesHistogram(Some(filterable), fromDate, toDate)),
+              Part("overheadStats", () => analyticsService.fetchOverheadStatsHistogram(Some(filterable), fromDate, toDate)),
+              Part("durationPercentiles", () => analyticsService.fetchDurationPercentilesHistogram(Some(filterable), fromDate, toDate)),
+              Part("durationStats", () => analyticsService.fetchDurationStatsHistogram(Some(filterable), fromDate, toDate)),
+              Part("dataInStats", () => analyticsService.fetchDataInStatsHistogram(Some(filterable), fromDate, toDate)),
+              Part("dataOutStats", () => analyticsService.fetchDataOutStatsHistogram(Some(filterable), fromDate, toDate)),
+              Part("hits", () => analyticsService.fetchHits(Some(filterable), fromDate, toDate)),
+              Part("dataIn", () => analyticsService.fetchDataIn(Some(filterable), fromDate, toDate)),
+              Part("dataOut", () => analyticsService.fetchDataOut(Some(filterable), fromDate, toDate)),
+              Part("avgDuration", () => analyticsService.fetchAvgDuration(Some(filterable), fromDate, toDate)),
+              Part("avgOverhead", () => analyticsService.fetchAvgOverhead(Some(filterable), fromDate, toDate)),
+              Part("apiKeyPiechart", () => (serviceId, apiKeyId, groupId) match {
+                case (Some(id), _, _) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
+                case (_, _, Some(id)) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
+                case _ => FastFuture.successful(None)
+              }),
+              Part("servicePiechart", () => (serviceId, apiKeyId, groupId) match {
+                case (_, Some(id), _) => analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
+                case (_, _, Some(id)) => analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
+                case _ => FastFuture.successful(None)
+              }),
+              Part("userPiechart", () => analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate))
+            )
+            FastFuture.sequence(parts.map(_.call(ctx.request))).map { pts =>
+              Ok(pts.foldLeft(Json.obj("type" -> filterType))(_ ++ _))
             }
           }
         }
