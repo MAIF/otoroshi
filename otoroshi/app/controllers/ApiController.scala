@@ -1265,7 +1265,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                       "CREATE_APIKEY",
                       s"User created an ApiKey",
                       ctx.from,
-                      desc.toJson
+                      Json.obj(
+                        "desc" -> desc.toJson,
+                        "apikey" -> apiKey.toJson
+                      )
                     )
                     Audit.send(event)
                     Alerts.send(
@@ -1313,7 +1316,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "CREATE_APIKEY",
                   s"User created an ApiKey",
                   ctx.from,
-                  group.toJson
+                  Json.obj(
+                    "group" -> group.toJson,
+                    "apikey" -> apiKey.toJson
+                  )
                 )
                 Audit.send(event)
                 Alerts.send(
@@ -1357,7 +1363,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
-                  desc.toJson
+                  Json.obj(
+                    "desc" -> desc.toJson,
+                    "apikey" -> apiKey.toJson
+                  )
                 )
                 Audit.send(event)
                 Alerts.send(
@@ -1401,7 +1410,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
-                  desc.toJson
+                  Json.obj(
+                    "desc" -> desc.toJson,
+                    "apikey" -> apiKey.toJson
+                  )
                 )
                 Audit.send(event)
                 Alerts.send(
@@ -1440,7 +1452,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
-                  group.toJson
+                  Json.obj(
+                    "group" -> group.toJson,
+                    "apikey" -> apiKey.toJson
+                  )
                 )
                 Audit.send(event)
                 Alerts.send(
@@ -1482,7 +1497,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
-                  group.toJson
+                  Json.obj(
+                    "group" -> group.toJson,
+                    "apikey" -> apiKey.toJson
+                  )
                 )
                 Audit.send(event)
                 Alerts.send(
@@ -1516,7 +1534,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "DELETE_APIKEY",
               s"User deleted an ApiKey",
               ctx.from,
-              group.toJson
+              Json.obj(
+                "group" -> group.toJson,
+                "apikey" -> apiKey.toJson
+              )
             )
             Audit.send(event)
             Alerts.send(
@@ -1551,7 +1572,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "DELETE_APIKEY",
               s"User deleted an ApiKey",
               ctx.from,
-              desc.toJson
+              Json.obj(
+                "desc" -> desc.toJson,
+                "apikey" -> apiKey.toJson
+              )
             )
             Audit.send(event)
             Alerts.send(
@@ -1818,7 +1842,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
-                  desc.toJson
+                  Json.obj(
+                    "desc" -> desc.toJson,
+                    "apikey" -> apiKey.toJson
+                  )
                 )
                 Audit.send(event)
                 Alerts.send(
