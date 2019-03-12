@@ -186,7 +186,7 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
                   _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
                 } yield ()
             }
-          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String))
+          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String), true)
         }
       }
       case None => FastFuture.failed(new ServiceNotFoundException(serviceId))
@@ -209,7 +209,7 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
                   _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
                 } yield ()
             }
-          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String))
+          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String), true)
         }
       }
       case None => FastFuture.failed(new GroupNotFoundException(groupId))

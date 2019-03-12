@@ -421,7 +421,7 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
       case true => {
         logger.debug(s"Service descriptors for $query")
         query
-          .getServices()
+          .getServices(false)
           .fast
           .map(services => sortServices(services, query))
       }

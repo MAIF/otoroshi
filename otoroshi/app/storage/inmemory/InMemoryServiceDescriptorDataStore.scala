@@ -423,7 +423,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       case true => {
         logger.debug(s"Service descriptors exists for fast lookups ${query.asKey}")
         query
-          .getServices()
+          .getServices(false)
           .fast
           .map(services => sortServices(services, query))
       }

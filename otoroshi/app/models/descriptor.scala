@@ -70,15 +70,15 @@ case class ServiceDescriptorQuery(subdomain: String,
     }
   }
 
-  def getServices()(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  def getServices(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     val key = this.asKey
     get().flatMap { ids =>
       if (!servicesCache.containsKey(key)) {
-        env.datastores.serviceDescriptorDataStore.findAllById(ids).andThen {
+        env.datastores.serviceDescriptorDataStore.findAllById(ids, force).andThen {
           case scala.util.Success(ex) => servicesCache.put(key, ex)
         }
       } else {
-        env.datastores.serviceDescriptorDataStore.findAllById(ids).andThen {
+        env.datastores.serviceDescriptorDataStore.findAllById(ids, force).andThen {
           case scala.util.Success(ex) => servicesCache.put(key, ex)
         }
         FastFuture.successful(servicesCache.get(key))

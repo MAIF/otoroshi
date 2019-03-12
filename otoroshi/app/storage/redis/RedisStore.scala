@@ -139,10 +139,11 @@ trait RedisStore[T] extends BasicStore[T] {
       //   )
     }
   }
-  def findAllById(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = ids match {
+  def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = ids match {
     case keys if keys.isEmpty => FastFuture.successful(Seq.empty[T])
     case keys if _findAllCached && findAllCache.get() != null => {
-      findAll(true) // TODO : update findAllCache ??? FIXME ???
+      // TODO: was true, but high impact on perfs, so ...
+      findAll(force) // TODO : update findAllCache ??? FIXME ???
       FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
     }
     case keys => {

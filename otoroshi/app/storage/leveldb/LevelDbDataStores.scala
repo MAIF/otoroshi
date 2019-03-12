@@ -9,17 +9,17 @@ import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
+import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
-import play.api.{Configuration, Environment, Logger}
-import play.api.inject.ApplicationLifecycle
-import storage.{DataStoreHealth, DataStores}
-import storage.inmemory._
-import env.Env
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
+import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
+import storage.inmemory._
+import storage.{DataStoreHealth, DataStores}
 
 import scala.concurrent.{ExecutionContext, Future}
 
