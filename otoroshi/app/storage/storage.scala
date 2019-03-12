@@ -231,7 +231,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   }
   def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]] =
     redisLike.get(key(id).key).map(_.flatMap(v => fromJsonSafe(Json.parse(v.utf8String)).asOpt))
-  
+
   def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisLike.keys(key("*").key).flatMap { keys =>
       redisLike.del(keys: _*)

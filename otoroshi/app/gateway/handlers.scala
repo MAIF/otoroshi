@@ -208,6 +208,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
             Some(removePrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
           case env.backOfficeHost if !isSecured && toHttps && env.isProd           => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps && env.isProd          => Some(redirectToHttps())
           case env.adminApiHost if env.exposeAdminApi                              => super.routeRequest(request)
@@ -279,6 +280,56 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               Some("errors.auth.config.not.found")
             )
           case Some(auth) => f(auth)
+        }
+      }
+    }
+  }
+
+  def myProfile() = actionBuilder.async { req =>
+    import utils.future.Implicits._
+
+    implicit val request = req
+
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      ServiceLocation(req.host, globalConfig) match {
+        case None => {
+          Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+        }
+        case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
+          env.datastores.serviceDescriptorDataStore
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
+            .flatMap {
+              case None => {
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+              }
+              case Some(desc) if !desc.enabled => {
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+              }
+              case Some(descriptor) if !descriptor.privateApp => {
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+              }
+              case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
+                withAuthConfig(descriptor, req) { auth =>
+                  val expected = "oto-papps-" + auth.cookieSuffix(descriptor)
+                  req.cookies
+                    .get(expected)
+                    .flatMap { cookie =>
+                      env.extractPrivateSessionId(cookie)
+                    }
+                    .map { id =>
+                      env.datastores.privateAppsUserDataStore.findById(id).flatMap {
+                        case Some(session) => FastFuture.successful(Ok(session.profile))
+                        case None => Errors.craftResponseResult(s"Session not found", NotFound, req, None, Some("errors.session.not.found"))
+                      }
+                    } getOrElse {
+                      Errors.craftResponseResult(s"Session not found", NotFound, req, None, Some("errors.session.not.found"))
+                    }
+                }
+              }
+              case _ => {
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+              }
+            }
         }
       }
     }
