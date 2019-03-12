@@ -812,14 +812,14 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     } yield {
       val rt = Runtime.getRuntime
       Json.obj(
-        "typ"               -> "globstats",
-        "cpu_usage"         -> CpuInfo.cpuLoad(),
-        "load_average"      -> CpuInfo.loadAverage(),
-        "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
-        "heap_size"         -> rt.totalMemory() / 1024 / 1024,
-        "live_threads"      -> ManagementFactory.getThreadMXBean.getThreadCount,
+        "typ" -> "globstats",
+        "cpu_usage" -> CpuInfo.cpuLoad(),
+        "load_average" -> CpuInfo.loadAverage(),
+        "heap_used" -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
+        "heap_size" -> rt.totalMemory() / 1024 / 1024,
+        "live_threads" -> ManagementFactory.getThreadMXBean.getThreadCount,
         "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
-        "daemon_threads"    -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
+        "daemon_threads" -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
         "rate" -> BigDecimal(
           Option(rate)
             .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
@@ -864,7 +864,13 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   def start(): Unit = {
     if (config.mode == ClusterMode.Leader) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
-      membershipRef.set(env.otoroshiScheduler.schedule(1.second, 30.seconds)(renewMemberShip()))
+      membershipRef.set(env.otoroshiScheduler.schedule(1.second, 30.seconds)(
+        try {
+          renewMemberShip()
+        } catch {
+          case e: Throwable => Cluster.logger.error(s"Error while renewing leader membership of ${env.clusterConfig.leader.name}", e)
+        }
+      ))
     }
   }
   def stop(): Unit = {
@@ -1234,8 +1240,20 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
-      pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(pollState()))
-      pushRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(pushQuotas()))
+      pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(
+        try {
+          pollState()
+        } catch {
+          case e: Throwable => Cluster.logger.error(s"Error while polling state from leader", e)
+        }
+      ))
+      pushRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(
+        try {
+          pushQuotas()
+        } catch {
+          case e: Throwable => Cluster.logger.error(s"Error while pushing quotas to leader", e)
+        }
+      ))
     }
   }
   def stop(): Unit = {
@@ -1368,12 +1386,16 @@ class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLi
   @inline private def expirations: ConcurrentHashMap[String, Long] = _storeHolder.get().expirations
 
   private val cancel = actorSystem.scheduler.schedule(0.millis, 100.millis) {
-    val time = System.currentTimeMillis()
-    expirations.entrySet().asScala.foreach { entry =>
-      if (entry.getValue < time) {
-        store.remove(entry.getKey)
-        expirations.remove(entry.getKey)
+    try {
+      val time = System.currentTimeMillis()
+      expirations.entrySet().asScala.foreach { entry =>
+        if (entry.getValue < time) {
+          store.remove(entry.getKey)
+          expirations.remove(entry.getKey)
+        }
       }
+    } catch {
+      case e: Throwable => Cluster.logger.error(s"Error while applying expiration", e)
     }
     ()
   }

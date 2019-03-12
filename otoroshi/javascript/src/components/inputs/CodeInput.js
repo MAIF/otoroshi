@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Help } from './Help';
 import AceEditor from 'react-ace';
+import _ from 'lodash';
 import 'brace/mode/html';
 import 'brace/mode/scala';
 import 'brace/mode/javascript';
@@ -52,7 +53,7 @@ export class CodeInput extends Component {
             tabSize={2}
             enableBasicAutocompletion={true}
             enableLiveAutocompletion={true}
-            annotations={this.props.annotations ? this.props.annotations() : []}
+            annotations={this.props.annotations ? (_.isFunction(this.props.annotations) ? this.props.annotations() : this.props.annotations) : []}
             commands={[
               {
                 name: 'saveAndCompile',
