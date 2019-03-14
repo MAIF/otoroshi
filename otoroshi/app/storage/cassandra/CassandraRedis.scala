@@ -6,6 +6,7 @@ import java.util.regex.Pattern
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import com.datastax.driver.core.policies.LoadBalancingPolicy
 import com.datastax.driver.core.{ResultSet, ResultSetFuture}
 import play.api.Logger
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
@@ -80,6 +81,10 @@ class CassandraRedis(actorSystem: ActorSystem,
     .addContactPoints(contactPoints: _*)
     .withPort(contactPort)
     .withPoolingOptions(poolingOptions)
+    .withoutJMXReporting()
+    //.withReconnectionPolicy()
+    //.withRetryPolicy()
+    //.withLoadBalancingPolicy(LoadBalancingPolicy.)
 
   val cluster: Cluster = (for {
     username <- mayBeUsername
