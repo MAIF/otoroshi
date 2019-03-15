@@ -205,7 +205,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       env: Env
   ): Future[Either[String, PrivateAppsUser]] = {
     val clientId     = authConfig.clientId
-    val clientSecret = authConfig.clientSecret
+    val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
     val redirectUri  = authConfig.callbackUrl + queryParam
     request.getQueryString("error") match {
@@ -221,19 +221,16 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
                   "client_id"     -> clientId,
-                  "client_secret" -> clientSecret,
                   "redirect_uri"  -> redirectUri
-                )
+                ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
               )
             } else {
               builder.post(
                 Map(
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
-                  "client_id"     -> clientId,
-                  "client_secret" -> clientSecret,
-                  "redirect_uri"  -> redirectUri
-                )
+                  "client_id"     -> clientId
+                ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
               )(writeableOf_urlEncodedSimpleForm)
             }
             future1
@@ -313,7 +310,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       config: GlobalConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
     val clientId     = authConfig.clientId
-    val clientSecret = authConfig.clientSecret
+    val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val redirectUri  = authConfig.callbackUrl
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
@@ -328,9 +325,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
                   "client_id"     -> clientId,
-                  "client_secret" -> clientSecret,
                   "redirect_uri"  -> redirectUri
-                )
+                ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
               )
             } else {
               builder.post(
@@ -338,9 +334,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
                   "client_id"     -> clientId,
-                  "client_secret" -> clientSecret,
                   "redirect_uri"  -> redirectUri
-                )
+                ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
               )(writeableOf_urlEncodedSimpleForm)
             }
             future1
