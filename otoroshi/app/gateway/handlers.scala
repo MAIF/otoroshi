@@ -684,7 +684,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
         ServiceLocation(req.host, globalConfig) match {
           case None =>
-            Errors.craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}",
+            Errors.craftResponseResult(s"Service not found",
                                        NotFound,
                                        req,
                                        None,
@@ -699,7 +699,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 case None =>
                   // val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap)
                   // logger.info(s"Downstream service not found for $query")
-                  Errors.craftResponseResult(s"Downstream service not found",
+                  Errors.craftResponseResult(s"Service not found",
                                              NotFound,
                                              req,
                                              None,

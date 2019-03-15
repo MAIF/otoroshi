@@ -429,7 +429,9 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
         logger.debug("Full scan of services, should not pass here anymore ...")
         findAll().fast.map { descriptors =>
           val validDescriptors = descriptors.filter { sr =>
-            if (env.redirectToDev) {
+            if (!sr.enabled) {
+              false
+            } else if (env.redirectToDev) {
               utils.RegexPool(sr.toDevHost).matches(query.toDevHost)
             } else {
               utils.RegexPool(sr.toHost).matches(query.toHost)
