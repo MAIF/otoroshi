@@ -262,8 +262,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
                       paginationPageSize)
               .map(_.getOrElse(Json.obj()))
               .map { r =>
-                logger.debug(s"$r")
-                (r \ "events").as[JsValue]
+                // logger.debug(s"$r")
+                (r \ "events").asOpt[JsValue].getOrElse(Json.arr())
               }
               .map(json => Ok(json))
           }
@@ -307,8 +307,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
               .events("GatewayEvent", Some(filterable), fromDate, toDate, paginationPage, paginationPageSize)
               .map(_.getOrElse(Json.obj()))
               .map { r =>
-                logger.debug(s"$r")
-                (r \ "events").as[JsValue]
+                // logger.debug(s"$r")
+                (r \ "events").asOpt[JsValue].getOrElse(Json.arr())
               }
               .map(json => Ok(Json.obj("type" -> filterType, "events" -> json)))
           }

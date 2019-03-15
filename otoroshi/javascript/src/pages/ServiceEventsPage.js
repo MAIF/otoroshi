@@ -23,6 +23,24 @@ export class ServiceEventsPage extends Component {
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
     },
     { title: '@product', content: item => item['@product'] },
+    {
+      title: 'Content',
+      content: item => item['@timestamp'],
+      notFilterable: true,
+      style: { textAlign: 'center', width: 70 },
+      cell: (v, item) => (
+        <button
+          type="button"
+          className="btn btn-success btn-xs"
+          onClick={e =>
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>
+            )
+          }>
+          content
+        </button>
+      ),
+    },
     { title: 'protocol', content: item => item.protocol },
     { title: 'from', content: item => item.from },
     { title: 'duration', content: item => `${item.duration} ms.` },
