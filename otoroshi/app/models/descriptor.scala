@@ -471,9 +471,9 @@ case class OIDCThirdPartyApiKeyConfig(
                             val iss = (tokenBody \ "iss").as[String]
                             val subject = (tokenBody \ "sub").as[String]
                             val _apiKey = ApiKey(
-                              clientId = s"${descriptor.groupId}-${descriptor.id}-${subject}",
+                              clientId = s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}-${subject}",
                               clientSecret = "--",
-                              clientName = s"Temporary api key from $ref for $subject",
+                              clientName = s"Temporary apikey from ${oidcAuth.name} for $subject on ${descriptor.name}",
                               authorizedGroup = descriptor.groupId,
                               enabled = true,
                               readOnly = false,
@@ -484,7 +484,10 @@ case class OIDCThirdPartyApiKeyConfig(
                               metadata = Map(
                                 "iss" -> iss,
                                 "sub" -> subject,
-                                "desc" -> descriptor.id
+                                "desc" -> descriptor.id,
+                                "descName" -> descriptor.name,
+                                "auth" -> oidcAuth.id,
+                                "authName" -> oidcAuth.name
                               )
                             )
                             (saveApiKey match {
