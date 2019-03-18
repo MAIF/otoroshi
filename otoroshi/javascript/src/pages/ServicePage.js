@@ -1021,7 +1021,7 @@ export class ServicePage extends Component {
               label="Type"
               value={this.state.service.thirdPartyApiKey.type}
               possibleValues={[
-                { label: 'OpenID Connect tokens', value: 'OIDC' },
+                { label: 'OpenID Connect JWT tokens', value: 'OIDC' },
               ]}
               help="..."
             />
@@ -1032,6 +1032,12 @@ export class ServicePage extends Component {
                   value={this.state.service.thirdPartyApiKey.enabled}
                   help="..."
                   onChange={v => this.changeTheValue('thirdPartyApiKey.enabled', v)}
+                />
+                <BooleanInput
+                  label="Tmp. api keys only"
+                  value={this.state.service.thirdPartyApiKey.tmpApiKeysOnly}
+                  help="Never use apikeys from datastore, even if it exists"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.tmpApiKeysOnly', v)}
                 />
                 <BooleanInput
                   label="Save api keys"
@@ -1068,7 +1074,7 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <BooleanInput
-                  label="Location verification only"
+                  label="Local verif. only"
                   value={this.state.service.thirdPartyApiKey.localVerificationOnly}
                   help="Validate token only localy"
                   onChange={v => this.changeTheValue('thirdPartyApiKey.localVerificationOnly', v)}

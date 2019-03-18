@@ -376,6 +376,7 @@ case class OIDCThirdPartyApiKeyConfig(
   dailyQuota: Long = RemainingQuotas.MaxValue,
   monthlyQuota: Long = RemainingQuotas.MaxValue,
   excludedPatterns: Seq[String] = Seq.empty,
+  tmpApiKeysOnly: Boolean = true,
   saveApiKey: Boolean = false,
 ) extends ThirdPartyApiKeyConfig {
 
@@ -487,7 +488,11 @@ case class OIDCThirdPartyApiKeyConfig(
                               )
                             )
                             (saveApiKey match {
-                              case false => FastFuture.successful(_apiKey)
+                              case false if tmpApiKeysOnly => FastFuture.successful(_apiKey)
+                              case false if !tmpApiKeysOnly => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).map {
+                                case Some(apk) => apk
+                                case None => _apiKey
+                              }
                               case true => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).flatMap {
                                 case Some(apk) => FastFuture.successful(apk)
                                 case None => _apiKey.save().map { _ => _apiKey }
@@ -592,6 +597,7 @@ object OIDCThirdPartyApiKeyConfig {
           oidcConfigRef = (json \ "oidcConfigRef").asOpt[String].filterNot(_.isEmpty),
           localVerificationOnly = (json \ "localVerificationOnly").asOpt[Boolean].getOrElse(false),
           saveApiKey = (json \ "saveApiKey").asOpt[Boolean].getOrElse(false),
+          tmpApiKeysOnly = (json \ "tmpApiKeysOnly").asOpt[Boolean].getOrElse(true),
           ttl = (json \ "ttl").asOpt[Long].getOrElse(0L),
           headerName = (json \ "headerName").asOpt[String].getOrElse("Authorization"),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
@@ -613,6 +619,7 @@ object OIDCThirdPartyApiKeyConfig {
       "oidcConfigRef" -> o.oidcConfigRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "localVerificationOnly" -> o.localVerificationOnly,
       "saveApiKey" -> o.saveApiKey,
+      "tmpApiKeysOnly" -> o.tmpApiKeysOnly,
       "ttl" -> o.ttl,
       "headerName" -> o.headerName,
       "throttlingQuota" -> o.throttlingQuota,
