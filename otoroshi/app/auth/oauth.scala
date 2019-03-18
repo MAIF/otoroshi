@@ -1,5 +1,7 @@
 package auth
 
+import java.net.URLEncoder
+
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import controllers.routes
@@ -43,6 +45,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           authorizeUrl = (json \ "authorizeUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/authorize"),
           tokenUrl = (json \ "tokenUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/token"),
           userInfoUrl = (json \ "userInfoUrl").asOpt[String].getOrElse("http://localhost:8082/userinfo"),
+          introspectionUrl = (json \ "introspectionUrl").asOpt[String].getOrElse("http://localhost:8082/token/introspect"),
           loginUrl = (json \ "loginUrl").asOpt[String].getOrElse("http://localhost:8082/login"),
           logoutUrl = (json \ "logoutUrl").asOpt[String].getOrElse("http://localhost:8082/logout"),
           accessTokenField = (json \ "accessTokenField").asOpt[String].getOrElse("access_token"),
@@ -76,6 +79,7 @@ case class GenericOauth2ModuleConfig(
     tokenUrl: String = "http://localhost:8082/oauth/token",
     authorizeUrl: String = "http://localhost:8082/oauth/authorize",
     userInfoUrl: String = "http://localhost:8082/userinfo",
+    introspectionUrl: String = "http://localhost:8082/token/introspect",
     loginUrl: String = "http://localhost:8082/login",
     logoutUrl: String = "http://localhost:8082/logout",
     scope: String = "openid profile email name",
@@ -104,6 +108,7 @@ case class GenericOauth2ModuleConfig(
     "authorizeUrl"         -> this.authorizeUrl,
     "tokenUrl"             -> this.tokenUrl,
     "userInfoUrl"          -> this.userInfoUrl,
+    "introspectionUrl"     -> this.introspectionUrl,
     "loginUrl"             -> this.loginUrl,
     "logoutUrl"            -> this.logoutUrl,
     "scope"                -> this.scope,
@@ -139,7 +144,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
-    val redirectUri  = authConfig.callbackUrl + queryParam
+    val redirectUri  = URLEncoder.encode(authConfig.callbackUrl + queryParam, "UTF-8") // authConfig.callbackUrl + queryParam
     val loginUrl =
       s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
@@ -207,7 +212,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
-    val redirectUri  = authConfig.callbackUrl + queryParam
+    val redirectUri  = URLEncoder.encode(authConfig.callbackUrl + queryParam, "UTF-8") // authConfig.callbackUrl + queryParam
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None => {
@@ -229,7 +234,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 Map(
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
-                  "client_id"     -> clientId
+                  "client_id"     -> clientId,
                 ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
               )(writeableOf_urlEncodedSimpleForm)
             }
@@ -237,6 +242,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
               .flatMap { resp =>
                 val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                  // println(accessToken)
                   val algoSettings = authConfig.jwtVerifier.get
                   val tokenHeader =
                     Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())

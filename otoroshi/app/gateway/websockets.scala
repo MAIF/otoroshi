@@ -410,13 +410,13 @@ class WebSocketHandler()(implicit env: Env) {
                           .flatMap(iu => splitToCanary(desc, trackingId, reqNumber, globalConfig).map(d => (iu, d)))
                           .flatMap { tuple =>
                             val (isUp, _desc) = tuple
-                            val descriptor    = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
+                            val descriptor = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
 
                             def callDownstream(
-                                config: GlobalConfig,
-                                apiKey: Option[ApiKey] = None,
-                                paUsr: Option[PrivateAppsUser] = None
-                            ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                                                config: GlobalConfig,
+                                                apiKey: Option[ApiKey] = None,
+                                                paUsr: Option[PrivateAppsUser] = None
+                                              ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                               desc.wsValidateClientCertificates(req, apiKey, paUsr) {
                                 passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
                                   if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
@@ -430,10 +430,10 @@ class WebSocketHandler()(implicit env: Env) {
                                         counter,
                                         (t, attempts) =>
                                           actuallyCallDownstream(t,
-                                                                 apiKey,
-                                                                 paUsr,
-                                                                 System.currentTimeMillis - cbStart,
-                                                                 attempts)
+                                            apiKey,
+                                            paUsr,
+                                            System.currentTimeMillis - cbStart,
+                                            attempts)
                                       ) recoverWith {
                                       case _: scala.concurrent.TimeoutException =>
                                         Errors
@@ -488,8 +488,8 @@ class WebSocketHandler()(implicit env: Env) {
                                     }
                                   } else {
                                     val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
-                                                                      descriptor.targets.size
-                                                                    else 1)
+                                      descriptor.targets.size
+                                    else 1)
                                     // Round robin loadbalancing is happening here !!!!!
                                     val target = descriptor.targets.apply(index.toInt)
                                     actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
@@ -499,26 +499,26 @@ class WebSocketHandler()(implicit env: Env) {
                             }
 
                             def actuallyCallDownstream(
-                                target: Target,
-                                apiKey: Option[ApiKey] = None,
-                                paUsr: Option[PrivateAppsUser] = None,
-                                cbDuration: Long,
-                                callAttempts: Int
-                            ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                                                        target: Target,
+                                                        apiKey: Option[ApiKey] = None,
+                                                        paUsr: Option[PrivateAppsUser] = None,
+                                                        cbDuration: Long,
+                                                        callAttempts: Int
+                                                      ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                               logger.trace("[WEBSOCKET] Call downstream !!!")
                               val snowflake = env.snowflakeGenerator.nextIdStr()
-                              val state     = IdGenerator.extendedToken(128)
-                              val rawUri    = req.relativeUri.substring(1)
-                              val uriParts  = rawUri.split("/").toSeq
+                              val state = IdGenerator.extendedToken(128)
+                              val rawUri = req.relativeUri.substring(1)
+                              val uriParts = rawUri.split("/").toSeq
                               val uri: String =
                                 descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
                               // val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty) descriptor.targets.size else 1)
                               // // Round robin loadbalancing is happening here !!!!!
                               // val target = descriptor.targets.apply(index.toInt)
                               val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                              val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
-                              val root   = descriptor.root
-                              val url    = s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri"
+                              val host = if (descriptor.redirectToLocal) descriptor.localHost else target.host
+                              val root = descriptor.root
+                              val url = s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri"
                               // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                               val fromOtoroshi = req.headers
                                 .get(env.Headers.OtoroshiRequestId)
@@ -547,50 +547,50 @@ class WebSocketHandler()(implicit env: Env) {
                                 .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
                                 .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
                                 .withClaim("metadata",
-                                           paUsr
-                                             .flatMap(_.otoroshiData)
-                                             .orElse(apiKey.map(_.metadata))
-                                             .map(m => Json.stringify(Json.toJson(m))))
+                                  paUsr
+                                    .flatMap(_.otoroshiData)
+                                    .orElse(apiKey.map(_.metadata))
+                                    .map(m => Json.stringify(Json.toJson(m))))
                                 .withClaim("user", paUsr.map(u => Json.stringify(u.toJson)))
                                 .withClaim("apikey",
-                                           apiKey.map(
-                                             ak =>
-                                               Json.stringify(
-                                                 Json.obj(
-                                                   "clientId"   -> ak.clientId,
-                                                   "clientName" -> ak.clientName,
-                                                   "metadata"   -> ak.metadata
-                                                 )
-                                             )
-                                           ))
+                                  apiKey.map(
+                                    ak =>
+                                      Json.stringify(
+                                        Json.obj(
+                                          "clientId" -> ak.clientId,
+                                          "clientName" -> ak.clientName,
+                                          "metadata" -> ak.metadata
+                                        )
+                                      )
+                                  ))
                                 .serialize(desc.secComSettings)(env)
                               logger.trace(s"Claim is : $claim")
                               val headersIn: Seq[(String, String)] =
-                              (req.headers.toMap.toSeq
-                                .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
-                                .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
-                                env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
-                                // "Host"                               -> host,
-                                "Host"                               -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
-                                env.Headers.OtoroshiRequestId        -> snowflake,
-                                env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                              ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-                                      Map(
-                                        env.Headers.OtoroshiState -> state,
-                                        env.Headers.OtoroshiClaim -> claim
-                                      )
-                                    } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
-                                      Map(
-                                        env.Headers.OtoroshiClaim -> claim
-                                      )
-                                    } else {
-                                      Map.empty[String, String]
-                                    }) ++
-                              descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
-                                .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
-                                .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-                                .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc,
-                                                                                                               req)
+                                (req.headers.toMap.toSeq
+                                  .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
+                                  .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
+                                  env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
+                                  // "Host"                               -> host,
+                                  "Host" -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
+                                  env.Headers.OtoroshiRequestId -> snowflake,
+                                  env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
+                                ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
+                                  Map(
+                                    env.Headers.OtoroshiState -> state,
+                                    env.Headers.OtoroshiClaim -> claim
+                                  )
+                                } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
+                                  Map(
+                                    env.Headers.OtoroshiClaim -> claim
+                                  )
+                                } else {
+                                  Map.empty[String, String]
+                                }) ++
+                                  descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
+                                  .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
+                                  .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
+                                  .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc,
+                                  req)
 
                               // val requestHeader = ByteString(
                               //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
@@ -612,11 +612,11 @@ class WebSocketHandler()(implicit env: Env) {
                                   // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, http://${req.host}${req.relativeUri} => $url, $from)")
                                   descriptor
                                     .updateMetrics(duration,
-                                                   overhead,
-                                                   counterIn.get(),
-                                                   counterOut.get(),
-                                                   0,
-                                                   globalConfig)
+                                      overhead,
+                                      counterIn.get(),
+                                      counterOut.get(),
+                                      0,
+                                      globalConfig)
                                     .andThen {
                                       case Failure(e) => logger.error("Error while updating call metrics reporting", e)
                                     }
@@ -671,7 +671,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                 identityType = "APIKEY",
                                                 identity = k.clientId,
                                                 label = k.clientName
-                                            )
+                                              )
                                           )
                                           .orElse(
                                             paUsr.map(
@@ -680,7 +680,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                   identityType = "PRIVATEAPP",
                                                   identity = k.email,
                                                   label = k.name
-                                              )
+                                                )
                                             )
                                           ),
                                         responseChunked = false,
@@ -706,7 +706,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     maxAge = c.maxAge.map(_.toLong),
                                     secure = c.secure,
                                     httpOnly = c.httpOnly
-                                )
+                                  )
                               )
                               val rawRequest = otoroshi.script.HttpRequest(
                                 url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
@@ -738,12 +738,12 @@ class WebSocketHandler()(implicit env: Env) {
                                         ActorFlow.actorRef(
                                           out =>
                                             WebSocketProxyActor.props(UrlSanitizer.sanitize(httpRequest.url),
-                                                                      env.otoroshiMaterializer,
-                                                                      out,
-                                                                      env,
-                                                                      http,
-                                                                      httpRequest.headers.toSeq
-                                                                        .filterNot(_._1 == "Cookie"))
+                                              env.otoroshiMaterializer,
+                                              out,
+                                              env,
+                                              http,
+                                              httpRequest.headers.toSeq
+                                                .filterNot(_._1 == "Cookie"))
                                         )
                                       )
                                     )
@@ -752,265 +752,271 @@ class WebSocketHandler()(implicit env: Env) {
                             }
 
                             def passWithApiKey(
-                                config: GlobalConfig
-                            ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-                              val authByJwtToken = req.headers
-                                .get(env.Headers.OtoroshiBearer)
-                                .orElse(
-                                  req.headers.get("Authorization").filter(_.startsWith("Bearer "))
-                                )
-                                .map(_.replace("Bearer ", ""))
-                                .orElse(
-                                  req.queryString.get(env.Headers.OtoroshiBearerAuthorization).flatMap(_.lastOption)
-                                )
-                                .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
-                                .filter(_.split("\\.").length == 3)
-                              val authBasic = req.headers
-                                .get(env.Headers.OtoroshiAuthorization)
-                                .orElse(
-                                  req.headers.get("Authorization").filter(_.startsWith("Basic "))
-                                )
-                                .map(_.replace("Basic ", ""))
-                                .flatMap(e => Try(decodeBase64(e)).toOption)
-                                .orElse(
-                                  req.queryString
-                                    .get(env.Headers.OtoroshiBasicAuthorization)
-                                    .flatMap(_.lastOption)
-                                    .flatMap(e => Try(decodeBase64(e)).toOption)
-                                )
-                              val authByCustomHeaders = req.headers
-                                .get(env.Headers.OtoroshiClientId)
-                                .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
-                              val authBySimpleApiKeyClientId = req.headers
-                                .get(env.Headers.OtoroshiSimpleApiKeyClientId)
-                              if (authBySimpleApiKeyClientId.isDefined) {
-                                val clientId = authBySimpleApiKeyClientId.get
-                                env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
-                                  case None =>
-                                    Errors
-                                      .craftResponseResult(
-                                        "Invalid API key",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.invalid.api.key")
-                                      )
-                                      .asLeft[WSFlow]
-                                  case Some(key) if !key.allowClientIdOnly => {
-                                    Errors
-                                      .craftResponseResult(
-                                        "Bad API key",
-                                        BadGateway,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.bad.api.key")
-                                      )
-                                      .asLeft[WSFlow]
-                                  }
-                                  case Some(key) if key.allowClientIdOnly =>
-                                    key.withingQuotas().flatMap {
-                                      case true => callDownstream(config, Some(key))
-                                      case false =>
-                                        Errors
-                                          .craftResponseResult(
-                                            "You performed too much requests",
-                                            TooManyRequests,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.too.much.requests")
-                                          )
-                                          .asLeft[WSFlow]
-                                    }
-                                }
-                              } else if (authByCustomHeaders.isDefined) {
-                                val (clientId, clientSecret) = authByCustomHeaders.get
-                                env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
-                                  case None =>
-                                    Errors
-                                      .craftResponseResult("Invalid API key",
-                                                           Results.BadGateway,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.invalid.api.key"))
-                                      .asLeft[WSFlow]
-                                  case Some(key) if key.isInvalid(clientSecret) => {
-                                    Alerts.send(
-                                      RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                              DateTime.now(),
-                                                              env.env,
-                                                              req,
-                                                              key,
-                                                              descriptor)
-                                    )
-                                    Errors
-                                      .craftResponseResult("Bad API key",
-                                                           Results.BadGateway,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.bad.api.key"))
-                                      .asLeft[WSFlow]
-                                  }
-                                  case Some(key) if key.isValid(clientSecret) =>
-                                    key.withingQuotas().flatMap {
-                                      case true => callDownstream(config, Some(key))
-                                      case false =>
-                                        Errors
-                                          .craftResponseResult("You performed too much requests",
-                                                               Results.TooManyRequests,
-                                                               req,
-                                                               Some(descriptor),
-                                                               Some("errors.too.much.requests"))
-                                          .asLeft[WSFlow]
-                                    }
-                                }
-                              } else if (authByJwtToken.isDefined) {
-                                val jwtTokenValue = authByJwtToken.get
-                                Try {
-                                  JWT.decode(jwtTokenValue)
-                                } map { jwt =>
-                                  Option(jwt.getClaim("iss")).map(_.asString()) match {
-                                    case Some(clientId) =>
-                                      env.datastores.apiKeyDataStore
-                                        .findAuthorizeKeyFor(clientId, descriptor.id)
-                                        .flatMap {
-                                          case Some(apiKey) => {
-                                            val algorithm = Option(jwt.getAlgorithm).map {
-                                              case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
-                                              case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
-                                            } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
-                                            val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
-                                            Try(verifier.verify(jwtTokenValue)).filter { token =>
-                                              val xsrfToken       = token.getClaim("xsrfToken")
-                                              val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                                              if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
-                                                xsrfToken.asString() == xsrfTokenHeader.get
-                                              } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
-                                                false
-                                              } else {
-                                                true
-                                              }
-                                            } match {
-                                              case Success(_) =>
-                                                apiKey.withingQuotas().flatMap {
-                                                  case true => callDownstream(config, Some(apiKey))
-                                                  case false =>
-                                                    Errors
-                                                      .craftResponseResult("You performed too much requests",
-                                                                           Results.TooManyRequests,
-                                                                           req,
-                                                                           Some(descriptor),
-                                                                           Some("errors.too.much.requests"))
-                                                      .asLeft[WSFlow]
-                                                }
-                                              case Failure(e) => {
-                                                Alerts.send(
-                                                  RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                          DateTime.now(),
-                                                                          env.env,
-                                                                          req,
-                                                                          apiKey,
-                                                                          descriptor)
-                                                )
-                                                Errors
-                                                  .craftResponseResult("Bad API key",
-                                                                       Results.BadGateway,
-                                                                       req,
-                                                                       Some(descriptor),
-                                                                       Some("errors.bad.api.key"))
-                                                  .asLeft[WSFlow]
-                                              }
-                                            }
-                                          }
-                                          case None =>
-                                            Errors
-                                              .craftResponseResult("Invalid ApiKey provided",
-                                                                   Results.BadRequest,
-                                                                   req,
-                                                                   Some(descriptor),
-                                                                   Some("errors.invalid.api.key"))
-                                              .asLeft[WSFlow]
-                                        }
-                                    case None =>
-                                      Errors
-                                        .craftResponseResult("Invalid ApiKey provided",
-                                                             Results.BadRequest,
-                                                             req,
-                                                             Some(descriptor),
-                                                             Some("errors.invalid.api.key"))
-                                        .asLeft[WSFlow]
-                                  }
-                                } getOrElse Errors
-                                  .craftResponseResult("Invalid ApiKey provided",
-                                                       Results.BadRequest,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.invalid.api.key"))
-                                  .asLeft[WSFlow]
-                              } else if (authBasic.isDefined) {
-                                val auth   = authBasic.get
-                                val id     = auth.split(":").headOption.map(_.trim)
-                                val secret = auth.split(":").lastOption.map(_.trim)
-                                (id, secret) match {
-                                  case (Some(apiKeyClientId), Some(apiKeySecret)) => {
-                                    env.datastores.apiKeyDataStore
-                                      .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
-                                      .flatMap {
-                                        case None =>
-                                          Errors
-                                            .craftResponseResult("Invalid API key",
-                                                                 Results.BadGateway,
-                                                                 req,
-                                                                 Some(descriptor),
-                                                                 Some("errors.invalid.api.key"))
-                                            .asLeft[WSFlow]
-                                        case Some(key) if key.isInvalid(apiKeySecret) => {
-                                          Alerts.send(
-                                            RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                    DateTime.now(),
-                                                                    env.env,
-                                                                    req,
-                                                                    key,
-                                                                    descriptor)
-                                          )
-                                          Errors
-                                            .craftResponseResult("Bad API key",
-                                                                 Results.BadGateway,
-                                                                 req,
-                                                                 Some(descriptor),
-                                                                 Some("errors.bad.api.key"))
-                                            .asLeft[WSFlow]
-                                        }
-                                        case Some(key) if key.isValid(apiKeySecret) =>
-                                          key.withingQuotas().flatMap {
-                                            case true => callDownstream(config, Some(key))
-                                            case false =>
-                                              Errors
-                                                .craftResponseResult("You performed too much requests",
-                                                                     Results.TooManyRequests,
-                                                                     req,
-                                                                     Some(descriptor),
-                                                                     Some("errors.too.much.requests"))
-                                                .asLeft[WSFlow]
-                                          }
-                                      }
-                                  }
-                                  case _ =>
-                                    Errors
-                                      .craftResponseResult("No ApiKey provided",
-                                                           Results.BadRequest,
-                                                           req,
-                                                           Some(descriptor),
-                                                           Some("errors.bad.api.key"))
-                                      .asLeft[WSFlow]
+                                                config: GlobalConfig
+                                              ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                              if (descriptor.thirdPartyApiKey.enabled) {
+                                descriptor.thirdPartyApiKey.handleWS(req, descriptor, config) { key =>
+                                  callDownstream(config, key)
                                 }
                               } else {
-                                Errors
-                                  .craftResponseResult("No ApiKey provided",
-                                                       Results.BadRequest,
-                                                       req,
-                                                       Some(descriptor),
-                                                       Some("errors.bad.api.key"))
-                                  .asLeft[WSFlow]
+                                val authByJwtToken = req.headers
+                                  .get(env.Headers.OtoroshiBearer)
+                                  .orElse(
+                                    req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+                                  )
+                                  .map(_.replace("Bearer ", ""))
+                                  .orElse(
+                                    req.queryString.get(env.Headers.OtoroshiBearerAuthorization).flatMap(_.lastOption)
+                                  )
+                                  .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
+                                  .filter(_.split("\\.").length == 3)
+                                val authBasic = req.headers
+                                  .get(env.Headers.OtoroshiAuthorization)
+                                  .orElse(
+                                    req.headers.get("Authorization").filter(_.startsWith("Basic "))
+                                  )
+                                  .map(_.replace("Basic ", ""))
+                                  .flatMap(e => Try(decodeBase64(e)).toOption)
+                                  .orElse(
+                                    req.queryString
+                                      .get(env.Headers.OtoroshiBasicAuthorization)
+                                      .flatMap(_.lastOption)
+                                      .flatMap(e => Try(decodeBase64(e)).toOption)
+                                  )
+                                val authByCustomHeaders = req.headers
+                                  .get(env.Headers.OtoroshiClientId)
+                                  .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
+                                val authBySimpleApiKeyClientId = req.headers
+                                  .get(env.Headers.OtoroshiSimpleApiKeyClientId)
+                                if (authBySimpleApiKeyClientId.isDefined) {
+                                  val clientId = authBySimpleApiKeyClientId.get
+                                  env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
+                                    case None =>
+                                      Errors
+                                        .craftResponseResult(
+                                          "Invalid API key",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.invalid.api.key")
+                                        )
+                                        .asLeft[WSFlow]
+                                    case Some(key) if !key.allowClientIdOnly => {
+                                      Errors
+                                        .craftResponseResult(
+                                          "Bad API key",
+                                          BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.bad.api.key")
+                                        )
+                                        .asLeft[WSFlow]
+                                    }
+                                    case Some(key) if key.allowClientIdOnly =>
+                                      key.withingQuotas().flatMap {
+                                        case true => callDownstream(config, Some(key))
+                                        case false =>
+                                          Errors
+                                            .craftResponseResult(
+                                              "You performed too much requests",
+                                              TooManyRequests,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.too.much.requests")
+                                            )
+                                            .asLeft[WSFlow]
+                                      }
+                                  }
+                                } else if (authByCustomHeaders.isDefined) {
+                                  val (clientId, clientSecret) = authByCustomHeaders.get
+                                  env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
+                                    case None =>
+                                      Errors
+                                        .craftResponseResult("Invalid API key",
+                                          Results.BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.invalid.api.key"))
+                                        .asLeft[WSFlow]
+                                    case Some(key) if key.isInvalid(clientSecret) => {
+                                      Alerts.send(
+                                        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                          DateTime.now(),
+                                          env.env,
+                                          req,
+                                          key,
+                                          descriptor)
+                                      )
+                                      Errors
+                                        .craftResponseResult("Bad API key",
+                                          Results.BadGateway,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.bad.api.key"))
+                                        .asLeft[WSFlow]
+                                    }
+                                    case Some(key) if key.isValid(clientSecret) =>
+                                      key.withingQuotas().flatMap {
+                                        case true => callDownstream(config, Some(key))
+                                        case false =>
+                                          Errors
+                                            .craftResponseResult("You performed too much requests",
+                                              Results.TooManyRequests,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.too.much.requests"))
+                                            .asLeft[WSFlow]
+                                      }
+                                  }
+                                } else if (authByJwtToken.isDefined) {
+                                  val jwtTokenValue = authByJwtToken.get
+                                  Try {
+                                    JWT.decode(jwtTokenValue)
+                                  } map { jwt =>
+                                    Option(jwt.getClaim("iss")).map(_.asString()) match {
+                                      case Some(clientId) =>
+                                        env.datastores.apiKeyDataStore
+                                          .findAuthorizeKeyFor(clientId, descriptor.id)
+                                          .flatMap {
+                                            case Some(apiKey) => {
+                                              val algorithm = Option(jwt.getAlgorithm).map {
+                                                case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
+                                                case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
+                                              } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
+                                              val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
+                                              Try(verifier.verify(jwtTokenValue)).filter { token =>
+                                                val xsrfToken = token.getClaim("xsrfToken")
+                                                val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                                                if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                                                  xsrfToken.asString() == xsrfTokenHeader.get
+                                                } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                                                  false
+                                                } else {
+                                                  true
+                                                }
+                                              } match {
+                                                case Success(_) =>
+                                                  apiKey.withingQuotas().flatMap {
+                                                    case true => callDownstream(config, Some(apiKey))
+                                                    case false =>
+                                                      Errors
+                                                        .craftResponseResult("You performed too much requests",
+                                                          Results.TooManyRequests,
+                                                          req,
+                                                          Some(descriptor),
+                                                          Some("errors.too.much.requests"))
+                                                        .asLeft[WSFlow]
+                                                  }
+                                                case Failure(e) => {
+                                                  Alerts.send(
+                                                    RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                      DateTime.now(),
+                                                      env.env,
+                                                      req,
+                                                      apiKey,
+                                                      descriptor)
+                                                  )
+                                                  Errors
+                                                    .craftResponseResult("Bad API key",
+                                                      Results.BadGateway,
+                                                      req,
+                                                      Some(descriptor),
+                                                      Some("errors.bad.api.key"))
+                                                    .asLeft[WSFlow]
+                                                }
+                                              }
+                                            }
+                                            case None =>
+                                              Errors
+                                                .craftResponseResult("Invalid ApiKey provided",
+                                                  Results.BadRequest,
+                                                  req,
+                                                  Some(descriptor),
+                                                  Some("errors.invalid.api.key"))
+                                                .asLeft[WSFlow]
+                                          }
+                                      case None =>
+                                        Errors
+                                          .craftResponseResult("Invalid ApiKey provided",
+                                            Results.BadRequest,
+                                            req,
+                                            Some(descriptor),
+                                            Some("errors.invalid.api.key"))
+                                          .asLeft[WSFlow]
+                                    }
+                                  } getOrElse Errors
+                                    .craftResponseResult("Invalid ApiKey provided",
+                                      Results.BadRequest,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.invalid.api.key"))
+                                    .asLeft[WSFlow]
+                                } else if (authBasic.isDefined) {
+                                  val auth = authBasic.get
+                                  val id = auth.split(":").headOption.map(_.trim)
+                                  val secret = auth.split(":").lastOption.map(_.trim)
+                                  (id, secret) match {
+                                    case (Some(apiKeyClientId), Some(apiKeySecret)) => {
+                                      env.datastores.apiKeyDataStore
+                                        .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
+                                        .flatMap {
+                                          case None =>
+                                            Errors
+                                              .craftResponseResult("Invalid API key",
+                                                Results.BadGateway,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.invalid.api.key"))
+                                              .asLeft[WSFlow]
+                                          case Some(key) if key.isInvalid(apiKeySecret) => {
+                                            Alerts.send(
+                                              RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                DateTime.now(),
+                                                env.env,
+                                                req,
+                                                key,
+                                                descriptor)
+                                            )
+                                            Errors
+                                              .craftResponseResult("Bad API key",
+                                                Results.BadGateway,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"))
+                                              .asLeft[WSFlow]
+                                          }
+                                          case Some(key) if key.isValid(apiKeySecret) =>
+                                            key.withingQuotas().flatMap {
+                                              case true => callDownstream(config, Some(key))
+                                              case false =>
+                                                Errors
+                                                  .craftResponseResult("You performed too much requests",
+                                                    Results.TooManyRequests,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.too.much.requests"))
+                                                  .asLeft[WSFlow]
+                                            }
+                                        }
+                                    }
+                                    case _ =>
+                                      Errors
+                                        .craftResponseResult("No ApiKey provided",
+                                          Results.BadRequest,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.bad.api.key"))
+                                        .asLeft[WSFlow]
+                                  }
+                                } else {
+                                  Errors
+                                    .craftResponseResult("No ApiKey provided",
+                                      Results.BadRequest,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.bad.api.key"))
+                                    .asLeft[WSFlow]
+                                }
                               }
                             }
 

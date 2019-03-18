@@ -176,6 +176,12 @@ export class Oauth2ModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.tokenUrl', v)}
         />
         <TextInput
+          label="Introspection URL"
+          value={settings.introspectionUrl}
+          help="..."
+          onChange={v => changeTheValue(path + '.introspectionUrl', v)}
+        />
+        <TextInput
           label="Userinfo URL"
           value={settings.userInfoUrl}
           help="..."
@@ -241,14 +247,12 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.oidConfig', v)}
         />
-        {settings.readProfileFromToken && (
-          <AlgoSettings
-            algoTitle="Token verification"
-            path={`jwtVerifier`}
-            changeTheValue={this.changeTheValue}
-            algo={settings.jwtVerifier}
-          />
-        )}
+        <AlgoSettings
+          algoTitle="Token verification"
+          path={`jwtVerifier`}
+          changeTheValue={this.changeTheValue}
+          algo={settings.jwtVerifier}
+        />
       </div>
     );
   }

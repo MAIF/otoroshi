@@ -790,6 +790,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               val tokenUrl     = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
               val authorizeUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
               val userInfoUrl  = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
+              val introspectionUrl  = (body \ "introspection_endpoint").asOpt[String].getOrElse(config.introspectionUrl)
               val loginUrl     = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
               val logoutUrl = (body \ "end_session_endpoint")
                 .asOpt[String]
@@ -810,10 +811,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                     tokenUrl = tokenUrl,
                     authorizeUrl = authorizeUrl,
                     userInfoUrl = userInfoUrl,
+                    introspectionUrl = introspectionUrl,
                     loginUrl = loginUrl,
                     logoutUrl = logoutUrl,
                     scope = scope,
-                    claims = claims,
+                    claims = "",
                     accessTokenField = jwksUri.map(_ => "id_token").getOrElse("access_token"),
                     useJson = true,
                     readProfileFromToken = jwksUri.isDefined,

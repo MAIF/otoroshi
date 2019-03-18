@@ -51,6 +51,9 @@ package object future {
 
       def asLeft[R](implicit executor: ExecutionContext): Future[Either[A, R]] =
         future.map(a => Left[A, R](a))
+
+      def asRight[R](implicit executor: ExecutionContext): Future[Either[R, A]] =
+        future.map(a => Right[R, A](a))
     }
   }
 }
