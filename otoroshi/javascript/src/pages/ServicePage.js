@@ -905,44 +905,6 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Validation authority">
-            <SelectInput
-              label="Validation authority"
-              value={this.state.service.clientValidatorRef}
-              onChange={e => this.changeTheValue('clientValidatorRef', e)}
-              valuesFrom="/bo/api/proxy/api/client-validators"
-              transformer={a => ({ value: a.id, label: a.name })}
-              help="..."
-            />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                {!this.state.service.clientValidatorRef && (
-                  <a
-                    href={`/bo/dashboard/validation-authorities/add`}
-                    className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-plus" /> Create a new validation authority.
-                  </a>
-                )}
-                {this.state.service.clientValidatorRef && (
-                  <a
-                    href={`/bo/dashboard/validation-authorities/edit/${
-                      this.state.service.clientValidatorRef
-                    }`}
-                    className="btn btn-sm btn-success">
-                    <i className="glyphicon glyphicon-edit" /> Edit the validation authority.
-                  </a>
-                )}
-                <a href={`/bo/dashboard/validation-authorities`} className="btn btn-sm btn-primary">
-                  <i className="glyphicon glyphicon-link" /> all validation authorities.
-                </a>
-              </div>
-            </div>
-          </Collapse>
-          <Collapse
-            notVisible={this.state.service.redirection.enabled}
-            collapsed={this.state.allCollapsed}
-            initCollapsed={true}
             label="Authentication">
             <BooleanInput
               label="Enforce user authentication"
@@ -1260,6 +1222,44 @@ export class ServicePage extends Component {
               help="By default, when jwt verification is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={v => this.changeTheValue('jwtVerifier.excludedPatterns', v)}
             />
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Validation authority">
+            <SelectInput
+              label="Validation authority"
+              value={this.state.service.clientValidatorRef}
+              onChange={e => this.changeTheValue('clientValidatorRef', e)}
+              valuesFrom="/bo/api/proxy/api/client-validators"
+              transformer={a => ({ value: a.id, label: a.name })}
+              help="..."
+            />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                {!this.state.service.clientValidatorRef && (
+                  <a
+                    href={`/bo/dashboard/validation-authorities/add`}
+                    className="btn btn-sm btn-primary">
+                    <i className="glyphicon glyphicon-plus" /> Create a new validation authority.
+                  </a>
+                )}
+                {this.state.service.clientValidatorRef && (
+                  <a
+                    href={`/bo/dashboard/validation-authorities/edit/${
+                      this.state.service.clientValidatorRef
+                    }`}
+                    className="btn btn-sm btn-success">
+                    <i className="glyphicon glyphicon-edit" /> Edit the validation authority.
+                  </a>
+                )}
+                <a href={`/bo/dashboard/validation-authorities`} className="btn btn-sm btn-primary">
+                  <i className="glyphicon glyphicon-link" /> all validation authorities.
+                </a>
+              </div>
+            </div>
           </Collapse>
           <Collapse
             notVisible={this.state.service.redirection.enabled}
