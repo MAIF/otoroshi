@@ -17,6 +17,7 @@ import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.mvc.Results.TooManyRequests
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -468,7 +469,7 @@ case class OIDCThirdPartyApiKeyConfig(
                             val iss = (tokenBody \ "iss").as[String]
                             val subject = (tokenBody \ "sub").as[String]
                             val apiKey = ApiKey(
-                              clientId = s"${descriptor.id}-${subject}",
+                              clientId = s"${descriptor.groupId}-${descriptor.id}-${subject}",
                               clientSecret = "--",
                               clientName = s"Temporary api key from $ref for $subject",
                               authorizedGroup = descriptor.groupId,
@@ -489,27 +490,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                 if (localVerificationOnly) {
                                   f(Some(apiKey)).asRight[Result]
                                 } else {
-                                  // TODO: handle cache
-                                  val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
-                                  val builder = env.Ws.url(oidcAuth.introspectionUrl)
-                                  val future1 = if (oidcAuth.useJson) {
-                                    builder.post(
-                                      Json.obj(
-                                        "token"    -> header,
-                                        "client_id"     -> oidcAuth.clientId
-                                      ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
-                                    )
-                                  } else {
-                                    builder.post(
-                                      Map(
-                                        "token"          -> header,
-                                        "client_id"     -> oidcAuth.clientId
-                                      ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-                                    )(writeableOf_urlEncodedSimpleForm)
-                                  }
-                                  future1
-                                    .flatMap { resp =>
-                                      val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
+                                  OIDCThirdPartyApiKeyConfig.cache.get(apiKey.clientId) match {
+                                    case Some((stop, active)) if stop > System.currentTimeMillis() => {
                                       if (active) {
                                         f(Some(apiKey)).asRight[Result]
                                       } else {
@@ -523,6 +505,43 @@ case class OIDCThirdPartyApiKeyConfig(
                                           ).asLeft[A]
                                       }
                                     }
+                                    case _ => {
+                                      val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
+                                      val builder = env.Ws.url(oidcAuth.introspectionUrl)
+                                      val future1 = if (oidcAuth.useJson) {
+                                        builder.post(
+                                          Json.obj(
+                                            "token"    -> header,
+                                            "client_id"     -> oidcAuth.clientId
+                                          ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
+                                        )
+                                      } else {
+                                        builder.post(
+                                          Map(
+                                            "token"          -> header,
+                                            "client_id"     -> oidcAuth.clientId
+                                          ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+                                        )(writeableOf_urlEncodedSimpleForm)
+                                      }
+                                      future1
+                                        .flatMap { resp =>
+                                          val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
+                                          OIDCThirdPartyApiKeyConfig.cache.put(apiKey.clientId, (System.currentTimeMillis() + ttl, active))
+                                          if (active) {
+                                            f(Some(apiKey)).asRight[Result]
+                                          } else {
+                                            Errors
+                                              .craftResponseResult(
+                                                "Invalid api key",
+                                                Results.Unauthorized,
+                                                req,
+                                                Some(descriptor),
+                                                maybeCauseId = Some("oidc.invalid.token")
+                                              ).asLeft[A]
+                                          }
+                                        }
+                                    }
+                                  }
                                 }
                               }
                               case false =>
@@ -552,6 +571,8 @@ case class OIDCThirdPartyApiKeyConfig(
 object OIDCThirdPartyApiKeyConfig {
 
   lazy val logger = Logger("otoroshi-oidc-apikey-config")
+
+  val cache: TrieMap[String, (Long, Boolean)] = new TrieMap[String, (Long, Boolean)]()
 
   implicit val format = new Format[OIDCThirdPartyApiKeyConfig] {
 

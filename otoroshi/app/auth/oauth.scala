@@ -1,5 +1,7 @@
 package auth
 
+import java.net.URLEncoder
+
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import controllers.routes
@@ -142,7 +144,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
-    val redirectUri  = authConfig.callbackUrl + queryParam
+    val redirectUri  = URLEncoder.encode(authConfig.callbackUrl + queryParam, "UTF-8") // authConfig.callbackUrl + queryParam
     val loginUrl =
       s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
@@ -210,7 +212,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
-    val redirectUri  = authConfig.callbackUrl + queryParam
+    val redirectUri  = URLEncoder.encode(authConfig.callbackUrl + queryParam, "UTF-8") // authConfig.callbackUrl + queryParam
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None => {
@@ -232,7 +234,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 Map(
                   "code"          -> code,
                   "grant_type"    -> "authorization_code",
-                  "client_id"     -> clientId
+                  "client_id"     -> clientId,
                 ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
               )(writeableOf_urlEncodedSimpleForm)
             }
