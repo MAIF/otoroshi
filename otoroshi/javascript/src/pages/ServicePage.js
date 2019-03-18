@@ -1030,8 +1030,14 @@ export class ServicePage extends Component {
                 <BooleanInput
                   label="Enabled"
                   value={this.state.service.thirdPartyApiKey.enabled}
-                  help="Is JWT verification enabled for this service"
+                  help="..."
                   onChange={v => this.changeTheValue('thirdPartyApiKey.enabled', v)}
+                />
+                <BooleanInput
+                  label="Save api keys"
+                  value={this.state.service.thirdPartyApiKey.saveApiKey}
+                  help="Save the generated apikey from JWT token informations"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.saveApiKey', v)}
                 />
                 <SelectInput
                   label="OIDC config"
