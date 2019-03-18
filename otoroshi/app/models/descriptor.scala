@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import auth._
+import com.auth0.jwt.JWT
 import env.Env
 import gateway.Errors
 import play.api.Logger
@@ -12,9 +13,12 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import storage.BasicStore
 import utils.{GzipConfig, ReplaceAllWith}
+import play.api.http.websocket.{Message => PlayWSMessage}
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.mvc.Results.TooManyRequests
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 case class ServiceDescriptorQuery(subdomain: String,
                                   line: String = "prod",
@@ -343,6 +347,267 @@ object RedirectionSettings {
   }
 }
 
+sealed trait ThirdPartyApiKeyConfigType {
+  def name: String
+}
+
+object ThirdPartyApiKeyConfigType {
+  case object OIDC extends ThirdPartyApiKeyConfigType {
+    def name: String = "OIDC"
+  }
+}
+
+sealed trait ThirdPartyApiKeyConfig {
+  def enabled: Boolean
+  def typ: ThirdPartyApiKeyConfigType
+  def toJson: JsValue
+  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result]
+  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env):  Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+}
+
+case class OIDCThirdPartyApiKeyConfig(
+  enabled: Boolean = false,
+  oidcConfigRef: Option[String],
+  localVerificationOnly: Boolean = false,
+  ttl: Long = 0,
+  headerName: String = "Authorization",
+  throttlingQuota: Long = RemainingQuotas.MaxValue,
+  dailyQuota: Long = RemainingQuotas.MaxValue,
+  monthlyQuota: Long = RemainingQuotas.MaxValue,
+  excludedPatterns: Seq[String] = Seq.empty
+) extends ThirdPartyApiKeyConfig {
+
+  import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+  import utils.future.Implicits._
+
+  def typ: ThirdPartyApiKeyConfigType = ThirdPartyApiKeyConfigType.OIDC
+
+  def toJson: JsValue = OIDCThirdPartyApiKeyConfig.format.writes(this)
+
+  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env):  Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    handleInternal(req, descriptor, config)(f).map {
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Right(goodResult) => goodResult
+    }
+  }
+
+  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    handleInternal(req, descriptor, config)(f).map {
+      case Left(badResult)   => badResult
+      case Right(goodResult) => goodResult
+    }
+  }
+
+  private def shouldBeVerified(path: String): Boolean = !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
+
+  private def handleInternal[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[A])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    shouldBeVerified(req.path) match {
+      case false => f(None).asRight[Result]
+      case true => {
+        oidcConfigRef match {
+          case None => Errors.craftResponseResult(
+            message = "No OIDC configuration ref found",
+            status = Results.InternalServerError,
+            req = req,
+            maybeDescriptor = Some(descriptor),
+            maybeCauseId = Some("oidc.no.config.ref.found")
+          ).asLeft[A]
+          case Some(ref) => env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            case None => Errors.craftResponseResult(
+              message = "No OIDC configuration found",
+              status = Results.InternalServerError,
+              req = req,
+              maybeDescriptor = Some(descriptor),
+              maybeCauseId = Some("oidc.no.config.found")
+            ).asLeft[A]
+            case Some(auth) => {
+              val oidcAuth = auth.asInstanceOf[GenericOauth2ModuleConfig]
+              oidcAuth.jwtVerifier match {
+                case None => Errors.craftResponseResult(
+                  message = "No JWT verifier found",
+                  status = Results.BadRequest,
+                  req = req,
+                  maybeDescriptor = Some(descriptor),
+                  maybeCauseId = Some("oidc.no.jwt.verifier.found")
+                ).asLeft[A]
+                case Some(jwtVerifier) => req.headers.get(headerName) match {
+                  case None => Errors.craftResponseResult(
+                    message = "No bearer header found",
+                    status = Results.BadRequest,
+                    req = req,
+                    maybeDescriptor = Some(descriptor),
+                    maybeCauseId = Some("oidc.no.bearer.found")
+                  ).asLeft[A]
+                  case Some(rawHeader) => {
+                    val header = rawHeader.replace("Bearer ", "").replace("bearer ", "").trim()
+                    val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(0)))).getOrElse(Json.obj())
+                    val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(1)))).getOrElse(Json.obj())
+                    val kid         = (tokenHeader \ "kid").asOpt[String]
+                    val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+                    jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {
+                      case None => Errors
+                        .craftResponseResult(
+                          "Bad input alogirthm",
+                          Results.BadRequest,
+                          req,
+                          Some(descriptor),
+                          maybeCauseId = Some("oidc.bad.input.algorithm.name")
+                        ).asLeft[A]
+                      case Some(algorithm) => {
+                        val verifier = JWT.require(algorithm).acceptLeeway(10000).build()
+                        Try(verifier.verify(header)) match {
+                          case Failure(e) => Errors
+                            .craftResponseResult(
+                              "Bad token",
+                              Results.Unauthorized,
+                              req,
+                              Some(descriptor),
+                              maybeCauseId = Some("oidc.bad.token")
+                            ).asLeft[A]
+                          case Success(_) => {
+                            val iss = (tokenBody \ "iss").as[String]
+                            val subject = (tokenBody \ "sub").as[String]
+                            val apiKey = ApiKey(
+                              clientId = s"${descriptor.id}-${subject}",
+                              clientSecret = "--",
+                              clientName = s"Temporary api key from $ref for $subject",
+                              authorizedGroup = descriptor.groupId,
+                              enabled = true,
+                              readOnly = false,
+                              allowClientIdOnly = true,
+                              throttlingQuota = throttlingQuota,
+                              dailyQuota = dailyQuota,
+                              monthlyQuota = monthlyQuota,
+                              metadata = Map(
+                                "iss" -> iss,
+                                "sub" -> subject,
+                                "desc" -> descriptor.id
+                              )
+                            )
+                            apiKey.withingQuotas().flatMap {
+                              case true => {
+                                if (localVerificationOnly) {
+                                  f(Some(apiKey)).asRight[Result]
+                                } else {
+                                  // TODO: handle cache
+                                  val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
+                                  val builder = env.Ws.url(oidcAuth.introspectionUrl)
+                                  val future1 = if (oidcAuth.useJson) {
+                                    builder.post(
+                                      Json.obj(
+                                        "token"    -> header,
+                                        "client_id"     -> oidcAuth.clientId
+                                      ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
+                                    )
+                                  } else {
+                                    builder.post(
+                                      Map(
+                                        "token"          -> header,
+                                        "client_id"     -> oidcAuth.clientId
+                                      ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+                                    )(writeableOf_urlEncodedSimpleForm)
+                                  }
+                                  future1
+                                    .flatMap { resp =>
+                                      val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
+                                      if (active) {
+                                        f(Some(apiKey)).asRight[Result]
+                                      } else {
+                                        Errors
+                                          .craftResponseResult(
+                                            "Invalid api key",
+                                            Results.Unauthorized,
+                                            req,
+                                            Some(descriptor),
+                                            maybeCauseId = Some("oidc.invalid.token")
+                                          ).asLeft[A]
+                                      }
+                                    }
+                                }
+                              }
+                              case false =>
+                                Errors.craftResponseResult(
+                                  "You performed too much requests",
+                                  TooManyRequests,
+                                  req,
+                                  Some(descriptor),
+                                  Some("errors.too.much.requests")
+                                ).asLeft[A]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+object OIDCThirdPartyApiKeyConfig {
+
+  lazy val logger = Logger("otoroshi-oidc-apikey-config")
+
+  implicit val format = new Format[OIDCThirdPartyApiKeyConfig] {
+
+    override def reads(json: JsValue): JsResult[OIDCThirdPartyApiKeyConfig] =
+      Try {
+        OIDCThirdPartyApiKeyConfig(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          oidcConfigRef = (json \ "oidcConfigRef").asOpt[String].filterNot(_.isEmpty),
+          localVerificationOnly = (json \ "localVerificationOnly").asOpt[Boolean].getOrElse(false),
+          ttl = (json \ "ttl").asOpt[Long].getOrElse(0L),
+          headerName = (json \ "headerName").asOpt[String].getOrElse("Authorization"),
+          throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        )
+      } map {
+        case sd => JsSuccess(sd)
+      } recover {
+        case t =>
+          logger.error("Error while reading OIDCThirdPartyApiKeyConfig", t)
+          JsError(t.getMessage)
+      } get
+
+    override def writes(o: OIDCThirdPartyApiKeyConfig): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "type" -> o.typ.name,
+      "oidcConfigRef" -> o.oidcConfigRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "localVerificationOnly" -> o.localVerificationOnly,
+      "ttl" -> o.ttl,
+      "headerName" -> o.headerName,
+      "throttlingQuota" -> o.throttlingQuota,
+      "dailyQuota" -> o.dailyQuota,
+      "monthlyQuota" -> o.monthlyQuota,
+      "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply))
+    )
+  }
+}
+
+object ThirdPartyApiKeyConfig {
+
+  implicit val format = new Format[ThirdPartyApiKeyConfig] {
+
+    override def reads(json: JsValue): JsResult[ThirdPartyApiKeyConfig] =
+      Try {
+        (json \ "type").as[String] match {
+          case "OIDC"   => OIDCThirdPartyApiKeyConfig.format.reads(json)
+        }
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+
+    override def writes(o: ThirdPartyApiKeyConfig): JsValue = o.toJson
+  }
+}
+
 case class ServiceDescriptor(
     id: String,
     groupId: String = "default",
@@ -394,7 +659,8 @@ case class ServiceDescriptor(
     redirection: RedirectionSettings = RedirectionSettings(false),
     clientValidatorRef: Option[String] = None,
     transformerRef: Option[String] = None,
-    gzip: GzipConfig = GzipConfig()
+    gzip: GzipConfig = GzipConfig(),
+    thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None)
 ) {
 
   def toHost: String = subdomain match {
@@ -572,7 +838,9 @@ object ServiceDescriptor {
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
           redirection = RedirectionSettings.format
             .reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(RedirectionSettings(false))
+            .getOrElse(RedirectionSettings(false)),
+          thirdPartyApiKey = ThirdPartyApiKeyConfig.format.reads((json \ "thirdPartyApiKey").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(OIDCThirdPartyApiKeyConfig(false, None))
         )
       } map {
         case sd => JsSuccess(sd)
@@ -630,7 +898,8 @@ object ServiceDescriptor {
       "redirection"                -> sd.redirection.toJson,
       "authConfigRef"              -> sd.authConfigRef,
       "clientValidatorRef"         -> sd.clientValidatorRef,
-      "transformerRef"             -> sd.transformerRef
+      "transformerRef"             -> sd.transformerRef,
+      "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

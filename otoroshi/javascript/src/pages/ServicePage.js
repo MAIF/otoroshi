@@ -1016,6 +1016,106 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
+            label="Third party Api Keys">
+            <SelectInput
+              label="Type"
+              value={this.state.service.thirdPartyApiKey.type}
+              possibleValues={[
+                { label: 'OpenID Connect tokens', value: 'OIDC' },
+              ]}
+              help="..."
+            />
+            {this.state.service.thirdPartyApiKey.type === 'OIDC' && (
+              <div>
+                <BooleanInput
+                  label="Enabled"
+                  value={this.state.service.thirdPartyApiKey.enabled}
+                  help="Is JWT verification enabled for this service"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.enabled', v)}
+                />
+                <SelectInput
+                  label="OIDC config"
+                  value={this.state.service.thirdPartyApiKey.oidcConfigRef}
+                  onChange={e => this.changeTheValue('thirdPartyApiKey.oidcConfigRef', e)}
+                  valuesFrom="/bo/api/proxy/api/auths"
+                  transformer={a => ({ value: a.id, label: a.name })}
+                  help="..."
+                />
+                <div className="form-group">
+                  <label className="col-xs-12 col-sm-2 control-label" />
+                  <div className="col-sm-10">
+                    {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
+                      <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
+                        <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
+                      </a>
+                    )}
+                    {this.state.service.thirdPartyApiKey.oidcConfigRef && (
+                      <a
+                        href={`/bo/dashboard/auth-configs/edit/${this.state.service.thirdPartyApiKey.oidcConfigRef}`}
+                        className="btn btn-sm btn-success">
+                        <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
+                      </a>
+                    )}
+                    <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
+                      <i className="glyphicon glyphicon-link" /> all auth. config.
+                    </a>
+                  </div>
+                </div>
+                <BooleanInput
+                  label="Location verification only"
+                  value={this.state.service.thirdPartyApiKey.localVerificationOnly}
+                  help="Validate token only localy"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.localVerificationOnly', v)}
+                />
+                <NumberInput
+                  label="Cache TTL"
+                  suffix="ms."
+                  value={this.state.service.thirdPartyApiKey.ttl}
+                  help="TTL for the introspection cache"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.ttl', v)}
+                />
+                <TextInput
+                  label="Header name"
+                  value={this.state.service.thirdPartyApiKey.headerName}
+                  help="The name of the header containing the bearer"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.headerName', v)}
+                />
+                <NumberInput
+                  label="Throttling"
+                  suffix="Calls per second"
+                  value={this.state.service.thirdPartyApiKey.throttlingQuota}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.throttlingQuota', v)}
+                />
+                <NumberInput
+                  label="Daily quota"
+                  suffix="Calls per day"
+                  value={this.state.service.thirdPartyApiKey.dailyQuota}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.dailyQuota', v)}
+                />
+                <NumberInput
+                  label="Monthly quota"
+                  suffix="Calls per month"
+                  value={this.state.service.thirdPartyApiKey.monthlyQuota}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.monthlyQuota', v)}
+                />
+                <ArrayInput
+                  label="Excluded patterns"
+                  placeholder="URI pattern"
+                  suffix="regex"
+                  value={this.state.service.thirdPartyApiKey.excludedPatterns}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.excludedPatterns', v)}
+                />
+              </div>
+            )}
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="CORS support">
             <BooleanInput
               label="Enabled"

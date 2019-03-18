@@ -1609,302 +1609,308 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   }
 
                                   def passWithApiKey(config: GlobalConfig): Future[Result] = {
-                                    val authByJwtToken = req.headers
-                                      .get(env.Headers.OtoroshiBearer)
-                                      .orElse(
-                                        req.headers.get("Authorization").filter(_.startsWith("Bearer "))
-                                      )
-                                      .map(_.replace("Bearer ", ""))
-                                      .orElse(
-                                        req.queryString
-                                          .get(env.Headers.OtoroshiBearerAuthorization)
-                                          .flatMap(_.lastOption)
-                                      )
-                                      .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
-                                      .filter(_.split("\\.").length == 3)
-                                    val authBasic = req.headers
-                                      .get(env.Headers.OtoroshiAuthorization)
-                                      .orElse(
-                                        req.headers.get("Authorization").filter(_.startsWith("Basic "))
-                                      )
-                                      .map(_.replace("Basic ", ""))
-                                      .flatMap(e => Try(decodeBase64(e)).toOption)
-                                      .orElse(
-                                        req.queryString
-                                          .get(env.Headers.OtoroshiBasicAuthorization)
-                                          .flatMap(_.lastOption)
-                                          .flatMap(e => Try(decodeBase64(e)).toOption)
-                                      )
-                                    val authByCustomHeaders = req.headers
-                                      .get(env.Headers.OtoroshiClientId)
-                                      .flatMap(
-                                        id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s))
-                                      )
-                                    val authBySimpleApiKeyClientId = req.headers
-                                      .get(env.Headers.OtoroshiSimpleApiKeyClientId)
-                                    if (authBySimpleApiKeyClientId.isDefined) {
-                                      val clientId = authBySimpleApiKeyClientId.get
-                                      env.datastores.apiKeyDataStore
-                                        .findAuthorizeKeyFor(clientId, descriptor.id)
-                                        .flatMap {
-                                          case None =>
-                                            Errors.craftResponseResult(
-                                              "Invalid API key",
-                                              BadRequest,
-                                              req,
-                                              Some(descriptor),
-                                              Some("errors.invalid.api.key"),
-                                              duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                            )
-                                          case Some(key) if !key.allowClientIdOnly => {
-                                            Errors.craftResponseResult(
-                                              "Bad API key",
-                                              BadRequest,
-                                              req,
-                                              Some(descriptor),
-                                              Some("errors.bad.api.key"),
-                                              duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                            )
-                                          }
-                                          case Some(key) if key.allowClientIdOnly =>
-                                            key.withingQuotas().flatMap {
-                                              case true => callDownstream(config, Some(key))
-                                              case false =>
-                                                Errors.craftResponseResult(
-                                                  "You performed too much requests",
-                                                  TooManyRequests,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.too.much.requests"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
+                                    if (descriptor.thirdPartyApiKey.enabled) {
+                                      descriptor.thirdPartyApiKey.handle(req, descriptor, config) { key =>
+                                        callDownstream(config, key)
+                                      }
+                                    } else {
+                                      val authByJwtToken = req.headers
+                                        .get(env.Headers.OtoroshiBearer)
+                                        .orElse(
+                                          req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+                                        )
+                                        .map(_.replace("Bearer ", ""))
+                                        .orElse(
+                                          req.queryString
+                                            .get(env.Headers.OtoroshiBearerAuthorization)
+                                            .flatMap(_.lastOption)
+                                        )
+                                        .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
+                                        .filter(_.split("\\.").length == 3)
+                                      val authBasic = req.headers
+                                        .get(env.Headers.OtoroshiAuthorization)
+                                        .orElse(
+                                          req.headers.get("Authorization").filter(_.startsWith("Basic "))
+                                        )
+                                        .map(_.replace("Basic ", ""))
+                                        .flatMap(e => Try(decodeBase64(e)).toOption)
+                                        .orElse(
+                                          req.queryString
+                                            .get(env.Headers.OtoroshiBasicAuthorization)
+                                            .flatMap(_.lastOption)
+                                            .flatMap(e => Try(decodeBase64(e)).toOption)
+                                        )
+                                      val authByCustomHeaders = req.headers
+                                        .get(env.Headers.OtoroshiClientId)
+                                        .flatMap(
+                                          id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s))
+                                        )
+                                      val authBySimpleApiKeyClientId = req.headers
+                                        .get(env.Headers.OtoroshiSimpleApiKeyClientId)
+                                      if (authBySimpleApiKeyClientId.isDefined) {
+                                        val clientId = authBySimpleApiKeyClientId.get
+                                        env.datastores.apiKeyDataStore
+                                          .findAuthorizeKeyFor(clientId, descriptor.id)
+                                          .flatMap {
+                                            case None =>
+                                              Errors.craftResponseResult(
+                                                "Invalid API key",
+                                                BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.invalid.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            case Some(key) if !key.allowClientIdOnly => {
+                                              Errors.craftResponseResult(
+                                                "Bad API key",
+                                                BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
                                             }
-                                        }
-                                    } else if (authByCustomHeaders.isDefined) {
-                                      val (clientId, clientSecret) = authByCustomHeaders.get
-                                      env.datastores.apiKeyDataStore
-                                        .findAuthorizeKeyFor(clientId, descriptor.id)
-                                        .flatMap {
-                                          case None =>
-                                            Errors.craftResponseResult(
-                                              "Invalid API key",
-                                              BadRequest,
-                                              req,
-                                              Some(descriptor),
-                                              Some("errors.invalid.api.key"),
-                                              duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                            )
-                                          case Some(key) if key.isInvalid(clientSecret) => {
-                                            Alerts.send(
-                                              RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                      DateTime.now(),
-                                                                      env.env,
-                                                                      req,
-                                                                      key,
-                                                                      descriptor)
-                                            )
-                                            Errors.craftResponseResult(
-                                              "Bad API key",
-                                              BadRequest,
-                                              req,
-                                              Some(descriptor),
-                                              Some("errors.bad.api.key"),
-                                              duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                            )
-                                          }
-                                          case Some(key) if key.isValid(clientSecret) =>
-                                            key.withingQuotas().flatMap {
-                                              case true => callDownstream(config, Some(key))
-                                              case false =>
-                                                Errors.craftResponseResult(
-                                                  "You performed too much requests",
-                                                  TooManyRequests,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.too.much.requests"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                            }
-                                        }
-                                    } else if (authByJwtToken.isDefined) {
-                                      val jwtTokenValue = authByJwtToken.get
-                                      Try {
-                                        JWT.decode(jwtTokenValue)
-                                      } map { jwt =>
-                                        Option(jwt.getClaim("iss")).map(_.asString()) match {
-                                          case Some(clientId) =>
-                                            env.datastores.apiKeyDataStore
-                                              .findAuthorizeKeyFor(clientId, descriptor.id)
-                                              .flatMap {
-                                                case Some(apiKey) => {
-                                                  val algorithm = Option(jwt.getAlgorithm).map {
-                                                    case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
-                                                    case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
-                                                  } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
-                                                  val verifier =
-                                                    JWT.require(algorithm).withIssuer(apiKey.clientName).build
-                                                  Try(verifier.verify(jwtTokenValue)).filter { token =>
-                                                    val xsrfToken       = token.getClaim("xsrfToken")
-                                                    val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                                                    if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
-                                                      xsrfToken.asString() == xsrfTokenHeader.get
-                                                    } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
-                                                      false
-                                                    } else {
-                                                      true
-                                                    }
-                                                  } match {
-                                                    case Success(_) =>
-                                                      apiKey.withingQuotas().flatMap {
-                                                        case true => callDownstream(config, Some(apiKey))
-                                                        case false =>
-                                                          Errors.craftResponseResult(
-                                                            "You performed too much requests",
-                                                            TooManyRequests,
-                                                            req,
-                                                            Some(descriptor),
-                                                            Some("errors.too.much.requests"),
-                                                            duration = System.currentTimeMillis - start,
-                                                            overhead = (System
-                                                              .currentTimeMillis() - secondStart) + firstOverhead
-                                                          )
-                                                      }
-                                                    case Failure(e) => {
-                                                      Alerts.send(
-                                                        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                                DateTime.now(),
-                                                                                env.env,
-                                                                                req,
-                                                                                apiKey,
-                                                                                descriptor)
-                                                      )
-                                                      Errors.craftResponseResult(
-                                                        "Bad API key",
-                                                        BadRequest,
-                                                        req,
-                                                        Some(descriptor),
-                                                        Some("errors.bad.api.key"),
-                                                        duration = System.currentTimeMillis - start,
-                                                        overhead = (System
-                                                          .currentTimeMillis() - secondStart) + firstOverhead
-                                                      )
-                                                    }
-                                                  }
-                                                }
-                                                case None =>
+                                            case Some(key) if key.allowClientIdOnly =>
+                                              key.withingQuotas().flatMap {
+                                                case true => callDownstream(config, Some(key))
+                                                case false =>
                                                   Errors.craftResponseResult(
-                                                    "Invalid ApiKey provided 1",
-                                                    BadRequest,
+                                                    "You performed too much requests",
+                                                    TooManyRequests,
                                                     req,
                                                     Some(descriptor),
-                                                    Some("errors.invalid.api.key"),
+                                                    Some("errors.too.much.requests"),
                                                     duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                               }
-                                          case None =>
-                                            Errors.craftResponseResult(
-                                              "Invalid ApiKey provided 2",
-                                              BadRequest,
-                                              req,
-                                              Some(descriptor),
-                                              Some("errors.invalid.api.key"),
-                                              duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                            )
-                                        }
-                                      } getOrElse Errors.craftResponseResult(
-                                        s"Invalid ApiKey provided 3, $authByJwtToken, $authBasic",
-                                        BadRequest,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.invalid.api.key"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                      )
-                                    } else if (authBasic.isDefined) {
-                                      val auth   = authBasic.get
-                                      val id     = auth.split(":").headOption.map(_.trim)
-                                      val secret = auth.split(":").lastOption.map(_.trim)
-                                      (id, secret) match {
-                                        case (Some(apiKeyClientId), Some(apiKeySecret)) => {
-                                          env.datastores.apiKeyDataStore
-                                            .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
-                                            .flatMap {
-                                              case None =>
-                                                Errors.craftResponseResult(
-                                                  "Invalid API key",
-                                                  BadGateway,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.invalid.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              case Some(key) if key.isInvalid(apiKeySecret) => {
-                                                Alerts.send(
-                                                  RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                          DateTime.now(),
-                                                                          env.env,
-                                                                          req,
-                                                                          key,
-                                                                          descriptor)
-                                                )
-                                                Errors.craftResponseResult(
-                                                  "Bad API key",
-                                                  BadGateway,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.bad.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
+                                          }
+                                      } else if (authByCustomHeaders.isDefined) {
+                                        val (clientId, clientSecret) = authByCustomHeaders.get
+                                        env.datastores.apiKeyDataStore
+                                          .findAuthorizeKeyFor(clientId, descriptor.id)
+                                          .flatMap {
+                                            case None =>
+                                              Errors.craftResponseResult(
+                                                "Invalid API key",
+                                                BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.invalid.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            case Some(key) if key.isInvalid(clientSecret) => {
+                                              Alerts.send(
+                                                RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                                        DateTime.now(),
+                                                                        env.env,
+                                                                        req,
+                                                                        key,
+                                                                        descriptor)
+                                              )
+                                              Errors.craftResponseResult(
+                                                "Bad API key",
+                                                BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            }
+                                            case Some(key) if key.isValid(clientSecret) =>
+                                              key.withingQuotas().flatMap {
+                                                case true => callDownstream(config, Some(key))
+                                                case false =>
+                                                  Errors.craftResponseResult(
+                                                    "You performed too much requests",
+                                                    TooManyRequests,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.too.much.requests"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                  )
                                               }
-                                              case Some(key) if key.isValid(apiKeySecret) =>
-                                                key.withingQuotas().flatMap {
-                                                  case true => callDownstream(config, Some(key))
-                                                  case false =>
+                                          }
+                                      } else if (authByJwtToken.isDefined) {
+                                        val jwtTokenValue = authByJwtToken.get
+                                        Try {
+                                          JWT.decode(jwtTokenValue)
+                                        } map { jwt =>
+                                          Option(jwt.getClaim("iss")).map(_.asString()) match {
+                                            case Some(clientId) =>
+                                              env.datastores.apiKeyDataStore
+                                                .findAuthorizeKeyFor(clientId, descriptor.id)
+                                                .flatMap {
+                                                  case Some(apiKey) => {
+                                                    val algorithm = Option(jwt.getAlgorithm).map {
+                                                      case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
+                                                      case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
+                                                    } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
+                                                    val verifier =
+                                                      JWT.require(algorithm).withIssuer(apiKey.clientName).build
+                                                    Try(verifier.verify(jwtTokenValue)).filter { token =>
+                                                      val xsrfToken       = token.getClaim("xsrfToken")
+                                                      val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                                                      if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                                                        xsrfToken.asString() == xsrfTokenHeader.get
+                                                      } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                                                        false
+                                                      } else {
+                                                        true
+                                                      }
+                                                    } match {
+                                                      case Success(_) =>
+                                                        apiKey.withingQuotas().flatMap {
+                                                          case true => callDownstream(config, Some(apiKey))
+                                                          case false =>
+                                                            Errors.craftResponseResult(
+                                                              "You performed too much requests",
+                                                              TooManyRequests,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.too.much.requests"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead
+                                                            )
+                                                        }
+                                                      case Failure(e) => {
+                                                        Alerts.send(
+                                                          RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                                                  DateTime.now(),
+                                                                                  env.env,
+                                                                                  req,
+                                                                                  apiKey,
+                                                                                  descriptor)
+                                                        )
+                                                        Errors.craftResponseResult(
+                                                          "Bad API key",
+                                                          BadRequest,
+                                                          req,
+                                                          Some(descriptor),
+                                                          Some("errors.bad.api.key"),
+                                                          duration = System.currentTimeMillis - start,
+                                                          overhead = (System
+                                                            .currentTimeMillis() - secondStart) + firstOverhead
+                                                        )
+                                                      }
+                                                    }
+                                                  }
+                                                  case None =>
                                                     Errors.craftResponseResult(
-                                                      "You performed too much requests",
-                                                      TooManyRequests,
+                                                      "Invalid ApiKey provided 1",
+                                                      BadRequest,
                                                       req,
                                                       Some(descriptor),
-                                                      Some("errors.too.much.requests"),
+                                                      Some("errors.invalid.api.key"),
                                                       duration = System.currentTimeMillis - start,
                                                       overhead = (System
                                                         .currentTimeMillis() - secondStart) + firstOverhead
                                                     )
                                                 }
-                                            }
+                                            case None =>
+                                              Errors.craftResponseResult(
+                                                "Invalid ApiKey provided 2",
+                                                BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.invalid.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                          }
+                                        } getOrElse Errors.craftResponseResult(
+                                          s"Invalid ApiKey provided 3, $authByJwtToken, $authBasic",
+                                          BadRequest,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.invalid.api.key"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
+                                      } else if (authBasic.isDefined) {
+                                        val auth   = authBasic.get
+                                        val id     = auth.split(":").headOption.map(_.trim)
+                                        val secret = auth.split(":").lastOption.map(_.trim)
+                                        (id, secret) match {
+                                          case (Some(apiKeyClientId), Some(apiKeySecret)) => {
+                                            env.datastores.apiKeyDataStore
+                                              .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
+                                              .flatMap {
+                                                case None =>
+                                                  Errors.craftResponseResult(
+                                                    "Invalid API key",
+                                                    BadGateway,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.invalid.api.key"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                  )
+                                                case Some(key) if key.isInvalid(apiKeySecret) => {
+                                                  Alerts.send(
+                                                    RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                                            DateTime.now(),
+                                                                            env.env,
+                                                                            req,
+                                                                            key,
+                                                                            descriptor)
+                                                  )
+                                                  Errors.craftResponseResult(
+                                                    "Bad API key",
+                                                    BadGateway,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.bad.api.key"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                  )
+                                                }
+                                                case Some(key) if key.isValid(apiKeySecret) =>
+                                                  key.withingQuotas().flatMap {
+                                                    case true => callDownstream(config, Some(key))
+                                                    case false =>
+                                                      Errors.craftResponseResult(
+                                                        "You performed too much requests",
+                                                        TooManyRequests,
+                                                        req,
+                                                        Some(descriptor),
+                                                        Some("errors.too.much.requests"),
+                                                        duration = System.currentTimeMillis - start,
+                                                        overhead = (System
+                                                          .currentTimeMillis() - secondStart) + firstOverhead
+                                                      )
+                                                  }
+                                              }
+                                          }
+                                          case _ =>
+                                            Errors.craftResponseResult(
+                                              "No ApiKey provided",
+                                              BadRequest,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.no.api.key"),
+                                              duration = System.currentTimeMillis - start,
+                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                            )
                                         }
-                                        case _ =>
-                                          Errors.craftResponseResult(
-                                            "No ApiKey provided",
-                                            BadRequest,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.no.api.key"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          )
+                                      } else {
+                                        Errors.craftResponseResult(
+                                          "No ApiKey provided",
+                                          BadRequest,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.no.api.key"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
                                       }
-                                    } else {
-                                      Errors.craftResponseResult(
-                                        "No ApiKey provided",
-                                        BadRequest,
-                                        req,
-                                        Some(descriptor),
-                                        Some("errors.no.api.key"),
-                                        duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                      )
                                     }
                                   }
 

@@ -75,6 +75,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def authorizeUrl: String
   def tokenUrl: String
   def userInfoUrl: String
+  def introspectionUrl: String
   def loginUrl: String
   def logoutUrl: String
   def accessTokenField: String

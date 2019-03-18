@@ -43,6 +43,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           authorizeUrl = (json \ "authorizeUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/authorize"),
           tokenUrl = (json \ "tokenUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/token"),
           userInfoUrl = (json \ "userInfoUrl").asOpt[String].getOrElse("http://localhost:8082/userinfo"),
+          introspectionUrl = (json \ "introspectionUrl").asOpt[String].getOrElse("http://localhost:8082/token/introspect"),
           loginUrl = (json \ "loginUrl").asOpt[String].getOrElse("http://localhost:8082/login"),
           logoutUrl = (json \ "logoutUrl").asOpt[String].getOrElse("http://localhost:8082/logout"),
           accessTokenField = (json \ "accessTokenField").asOpt[String].getOrElse("access_token"),
@@ -76,6 +77,7 @@ case class GenericOauth2ModuleConfig(
     tokenUrl: String = "http://localhost:8082/oauth/token",
     authorizeUrl: String = "http://localhost:8082/oauth/authorize",
     userInfoUrl: String = "http://localhost:8082/userinfo",
+    introspectionUrl: String = "http://localhost:8082/token/introspect",
     loginUrl: String = "http://localhost:8082/login",
     logoutUrl: String = "http://localhost:8082/logout",
     scope: String = "openid profile email name",
@@ -104,6 +106,7 @@ case class GenericOauth2ModuleConfig(
     "authorizeUrl"         -> this.authorizeUrl,
     "tokenUrl"             -> this.tokenUrl,
     "userInfoUrl"          -> this.userInfoUrl,
+    "introspectionUrl"     -> this.introspectionUrl,
     "loginUrl"             -> this.loginUrl,
     "logoutUrl"            -> this.logoutUrl,
     "scope"                -> this.scope,
@@ -237,6 +240,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
               .flatMap { resp =>
                 val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                  // println(accessToken)
                   val algoSettings = authConfig.jwtVerifier.get
                   val tokenHeader =
                     Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
