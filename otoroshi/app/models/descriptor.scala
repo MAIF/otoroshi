@@ -366,18 +366,45 @@ sealed trait ThirdPartyApiKeyConfig {
   def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env):  Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
 }
 
+sealed trait OIDCThirdPartyApiKeyConfigMode {
+  def name: String
+}
+
+object OIDCThirdPartyApiKeyConfigMode {
+  case object Tmp extends OIDCThirdPartyApiKeyConfigMode {
+    def name: String = "Tmp"
+  }
+  case object Hybrid extends OIDCThirdPartyApiKeyConfigMode {
+    def name: String = "Hybrid"
+  }
+  case object Persistent extends OIDCThirdPartyApiKeyConfigMode {
+    def name: String = "Persistent"
+  }
+  def apply(str: String): Option[OIDCThirdPartyApiKeyConfigMode] = {
+    str match {
+      case "Tmp" => Some(Tmp)
+      case "tmp" => Some(Tmp)
+      case "Hybrid" => Some(Hybrid)
+      case "hybrid" => Some(Hybrid)
+      case "Persistent" => Some(Persistent)
+      case "persistent" => Some(Persistent)
+      case _ => None
+    }
+  }
+}
+
 case class OIDCThirdPartyApiKeyConfig(
   enabled: Boolean = false,
   oidcConfigRef: Option[String],
   localVerificationOnly: Boolean = false,
   ttl: Long = 0,
   headerName: String = "Authorization",
-  throttlingQuota: Long = RemainingQuotas.MaxValue,
+  throttlingQuota: Long = 100L,
   dailyQuota: Long = RemainingQuotas.MaxValue,
   monthlyQuota: Long = RemainingQuotas.MaxValue,
   excludedPatterns: Seq[String] = Seq.empty,
-  tmpApiKeysOnly: Boolean = true,
-  saveApiKey: Boolean = false,
+  mode: OIDCThirdPartyApiKeyConfigMode = OIDCThirdPartyApiKeyConfigMode.Tmp,
+  scopes: Seq[String] = Seq.empty
 ) extends ThirdPartyApiKeyConfig {
 
   import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
@@ -450,7 +477,7 @@ case class OIDCThirdPartyApiKeyConfig(
                     jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {
                       case None => Errors
                         .craftResponseResult(
-                          "Bad input alogirthm",
+                          "Bad input algorithm",
                           Results.BadRequest,
                           req,
                           Some(descriptor),
@@ -472,16 +499,17 @@ case class OIDCThirdPartyApiKeyConfig(
                             val subject = (tokenBody \ "sub").as[String]
                             val _apiKey = ApiKey(
                               clientId = s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}-${subject}",
-                              clientSecret = "--",
+                              clientSecret = IdGenerator.token(128),
                               clientName = s"Temporary apikey from ${oidcAuth.name} for $subject on ${descriptor.name}",
                               authorizedGroup = descriptor.groupId,
-                              enabled = true,
+                              enabled = false,
                               readOnly = false,
                               allowClientIdOnly = true,
                               throttlingQuota = throttlingQuota,
                               dailyQuota = dailyQuota,
                               monthlyQuota = monthlyQuota,
                               metadata = Map(
+                                "type" -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
                                 "iss" -> iss,
                                 "sub" -> subject,
                                 "desc" -> descriptor.id,
@@ -490,85 +518,97 @@ case class OIDCThirdPartyApiKeyConfig(
                                 "authName" -> oidcAuth.name
                               )
                             )
-                            (saveApiKey match {
-                              case false if tmpApiKeysOnly => FastFuture.successful(_apiKey)
-                              case false if !tmpApiKeysOnly => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).map {
-                                case Some(apk) => apk
-                                case None => _apiKey
-                              }
-                              case true => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).flatMap {
-                                case Some(apk) => FastFuture.successful(apk)
-                                case None => _apiKey.save().map { _ => _apiKey }
-                              }
-                            }) flatMap { apiKey =>
-                              apiKey.withingQuotas().flatMap {
-                                case true => {
-                                  if (localVerificationOnly) {
-                                    f(Some(apiKey)).asRight[Result]
-                                  } else {
-                                    OIDCThirdPartyApiKeyConfig.cache.get(apiKey.clientId) match {
-                                      case Some((stop, active)) if stop > System.currentTimeMillis() => {
-                                        if (active) {
-                                          f(Some(apiKey)).asRight[Result]
-                                        } else {
-                                          Errors
-                                            .craftResponseResult(
-                                              "Invalid api key",
-                                              Results.Unauthorized,
-                                              req,
-                                              Some(descriptor),
-                                              maybeCauseId = Some("oidc.invalid.token")
-                                            ).asLeft[A]
-                                        }
-                                      }
-                                      case _ => {
-                                        val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
-                                        val builder = env.Ws.url(oidcAuth.introspectionUrl)
-                                        val future1 = if (oidcAuth.useJson) {
-                                          builder.post(
-                                            Json.obj(
-                                              "token" -> header,
-                                              "client_id" -> oidcAuth.clientId
-                                            ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
-                                          )
-                                        } else {
-                                          builder.post(
-                                            Map(
-                                              "token" -> header,
-                                              "client_id" -> oidcAuth.clientId
-                                            ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-                                          )(writeableOf_urlEncodedSimpleForm)
-                                        }
-                                        future1
-                                          .flatMap { resp =>
-                                            val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
-                                            OIDCThirdPartyApiKeyConfig.cache.put(apiKey.clientId, (System.currentTimeMillis() + ttl, active))
-                                            if (active) {
-                                              f(Some(apiKey)).asRight[Result]
-                                            } else {
-                                              Errors
-                                                .craftResponseResult(
-                                                  "Invalid api key",
-                                                  Results.Unauthorized,
-                                                  req,
-                                                  Some(descriptor),
-                                                  maybeCauseId = Some("oidc.invalid.token")
-                                                ).asLeft[A]
-                                            }
+                            val tokenScopes = (tokenBody \ "scope").asOpt[String].map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
+                            if (tokenScopes.intersect(scopes) == scopes) {
+                              (mode match {
+                                case OIDCThirdPartyApiKeyConfigMode.Tmp => FastFuture.successful(_apiKey)
+                                case OIDCThirdPartyApiKeyConfigMode.Hybrid => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).map {
+                                  case Some(apk) => apk
+                                  case None => _apiKey
+                                }
+                                case OIDCThirdPartyApiKeyConfigMode.Persistent => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).flatMap {
+                                  case Some(apk) => FastFuture.successful(apk)
+                                  case None => _apiKey.save().map { _ => _apiKey }
+                                }
+                              }) flatMap { apiKey =>
+                                apiKey.withingQuotas().flatMap {
+                                  case true => {
+                                    if (localVerificationOnly) {
+                                      f(Some(apiKey)).asRight[Result]
+                                    } else {
+                                      OIDCThirdPartyApiKeyConfig.cache.get(apiKey.clientId) match {
+                                        case Some((stop, active)) if stop > System.currentTimeMillis() => {
+                                          if (active) {
+                                            f(Some(apiKey)).asRight[Result]
+                                          } else {
+                                            Errors
+                                              .craftResponseResult(
+                                                "Invalid api key",
+                                                Results.Unauthorized,
+                                                req,
+                                                Some(descriptor),
+                                                maybeCauseId = Some("oidc.invalid.token")
+                                              ).asLeft[A]
                                           }
+                                        }
+                                        case _ => {
+                                          val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
+                                          val builder = env.Ws.url(oidcAuth.introspectionUrl)
+                                          val future1 = if (oidcAuth.useJson) {
+                                            builder.post(
+                                              Json.obj(
+                                                "token" -> header,
+                                                "client_id" -> oidcAuth.clientId
+                                              ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
+                                            )
+                                          } else {
+                                            builder.post(
+                                              Map(
+                                                "token" -> header,
+                                                "client_id" -> oidcAuth.clientId
+                                              ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+                                            )(writeableOf_urlEncodedSimpleForm)
+                                          }
+                                          future1
+                                            .flatMap { resp =>
+                                              val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
+                                              OIDCThirdPartyApiKeyConfig.cache.put(apiKey.clientId, (System.currentTimeMillis() + ttl, active))
+                                              if (active) {
+                                                f(Some(apiKey)).asRight[Result]
+                                              } else {
+                                                Errors
+                                                  .craftResponseResult(
+                                                    "Invalid api key",
+                                                    Results.Unauthorized,
+                                                    req,
+                                                    Some(descriptor),
+                                                    maybeCauseId = Some("oidc.invalid.token")
+                                                  ).asLeft[A]
+                                              }
+                                            }
+                                        }
                                       }
                                     }
                                   }
+                                  case false =>
+                                    Errors.craftResponseResult(
+                                      "You performed too much requests",
+                                      TooManyRequests,
+                                      req,
+                                      Some(descriptor),
+                                      Some("errors.too.much.requests")
+                                    ).asLeft[A]
                                 }
-                                case false =>
-                                  Errors.craftResponseResult(
-                                    "You performed too much requests",
-                                    TooManyRequests,
-                                    req,
-                                    Some(descriptor),
-                                    Some("errors.too.much.requests")
-                                  ).asLeft[A]
                               }
+                            } else {
+                              Errors
+                                .craftResponseResult(
+                                  "Bad scope",
+                                  Results.Unauthorized,
+                                  req,
+                                  Some(descriptor),
+                                  maybeCauseId = Some("oidc.bad.scope")
+                                ).asLeft[A]
                             }
                           }
                         }
@@ -599,14 +639,14 @@ object OIDCThirdPartyApiKeyConfig {
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           oidcConfigRef = (json \ "oidcConfigRef").asOpt[String].filterNot(_.isEmpty),
           localVerificationOnly = (json \ "localVerificationOnly").asOpt[Boolean].getOrElse(false),
-          saveApiKey = (json \ "saveApiKey").asOpt[Boolean].getOrElse(false),
-          tmpApiKeysOnly = (json \ "tmpApiKeysOnly").asOpt[Boolean].getOrElse(true),
+          mode = (json \ "mode").asOpt[String].flatMap(v => OIDCThirdPartyApiKeyConfigMode(v)).getOrElse(OIDCThirdPartyApiKeyConfigMode.Tmp),
           ttl = (json \ "ttl").asOpt[Long].getOrElse(0L),
           headerName = (json \ "headerName").asOpt[String].getOrElse("Authorization"),
-          throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(100L),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       } map {
         case sd => JsSuccess(sd)
@@ -621,14 +661,14 @@ object OIDCThirdPartyApiKeyConfig {
       "type" -> o.typ.name,
       "oidcConfigRef" -> o.oidcConfigRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "localVerificationOnly" -> o.localVerificationOnly,
-      "saveApiKey" -> o.saveApiKey,
-      "tmpApiKeysOnly" -> o.tmpApiKeysOnly,
+      "mode" -> o.mode.name,
       "ttl" -> o.ttl,
       "headerName" -> o.headerName,
       "throttlingQuota" -> o.throttlingQuota,
       "dailyQuota" -> o.dailyQuota,
       "monthlyQuota" -> o.monthlyQuota,
-      "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply))
+      "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
+      "scopes" -> JsArray(o.scopes.map(JsString.apply))
     )
   }
 }

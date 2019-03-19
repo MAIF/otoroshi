@@ -241,7 +241,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
             }
             future1
               .flatMap { resp =>
-                val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
+                val rawToken: JsValue = resp.json
+                val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
                   // println(accessToken)
                   val algoSettings = authConfig.jwtVerifier.get
@@ -254,7 +255,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
                     case Some(algo) => {
                       Try(JWT.require(algo).acceptLeeway(10000).build().verify(accessToken)).map { _ =>
-                        FastFuture.successful(tokenBody)
+                        FastFuture.successful((tokenBody, rawToken))
                       } recoverWith {
                         case e => Success(FastFuture.failed(e))
                       } get
@@ -276,10 +277,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       )
                     )(writeableOf_urlEncodedSimpleForm)
                   }
-                  future2.map(_.json)
+                  future2.map(h => (h.json, rawToken))
                 }
               }
-              .map { user =>
+              .map { tuple =>
+                val (user, rawToken) = tuple
                 val meta = PrivateAppsUser
                   .select(user, authConfig.otoroshiDataField)
                   .asOpt[String]
@@ -301,6 +303,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .getOrElse("No Name"),
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
                     profile = user,
+                    token = rawToken,
                     realm = authConfig.cookieSuffix(descriptor),
                     otoroshiData = meta
                   )

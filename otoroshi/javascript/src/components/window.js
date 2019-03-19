@@ -141,13 +141,20 @@ class Prompt extends Component {
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
-              <input
+              {!this.props.textarea && <input
                 type="text"
                 className="form-control"
                 value={this.state.text}
                 ref={r => (this.ref = r)}
                 onChange={e => this.setState({ text: e.target.value })}
-              />
+              />}
+              {this.props.textarea && <textarea
+                className="form-control"
+                value={this.state.text}
+                ref={r => (this.ref = r)}
+                rows={this.props.rows || 5}
+                onChange={e => this.setState({ text: e.target.value })}
+              />}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
@@ -226,12 +233,14 @@ export function registerPrompt() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  window.newPrompt = (message, value) => {
+  window.newPrompt = (message, value, textarea, rows) => {
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Prompt
           message={message}
           value={value}
+          textarea={textarea}
+          rows={rows}
           ok={inputValue => {
             success(inputValue);
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));

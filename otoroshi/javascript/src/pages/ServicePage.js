@@ -995,17 +995,16 @@ export class ServicePage extends Component {
                   help="..."
                   onChange={v => this.changeTheValue('thirdPartyApiKey.enabled', v)}
                 />
-                <BooleanInput
-                  label="Tmp. api keys only"
-                  value={this.state.service.thirdPartyApiKey.tmpApiKeysOnly}
-                  help="Never use apikeys from datastore, even if it exists"
-                  onChange={v => this.changeTheValue('thirdPartyApiKey.tmpApiKeysOnly', v)}
-                />
-                <BooleanInput
-                  label="Save api keys"
-                  value={this.state.service.thirdPartyApiKey.saveApiKey}
-                  help="Save the generated apikey from JWT token informations"
-                  onChange={v => this.changeTheValue('thirdPartyApiKey.saveApiKey', v)}
+                <SelectInput
+                  label="Mode"
+                  value={this.state.service.thirdPartyApiKey.mode}
+                  onChange={e => this.changeTheValue('thirdPartyApiKey.mode', e)}
+                  possibleValues={[
+                    { value: 'Tmp', label: 'Temporary api keys (will not be stored)'},
+                    { value: 'Hybrid', label: 'Hybrid api keys (will not be stored, but will be query)'},
+                    { value: 'Persistent', label: 'Persistent api keys (will be stored)'},
+                  ]}
+                  help="..."
                 />
                 <SelectInput
                   label="OIDC config"
@@ -1042,14 +1041,14 @@ export class ServicePage extends Component {
                   onChange={v => this.changeTheValue('thirdPartyApiKey.localVerificationOnly', v)}
                 />
                 <NumberInput
-                  label="Cache TTL"
+                  label="Introspection cache TTL"
                   suffix="ms."
                   value={this.state.service.thirdPartyApiKey.ttl}
                   help="TTL for the introspection cache"
                   onChange={v => this.changeTheValue('thirdPartyApiKey.ttl', v)}
                 />
                 <TextInput
-                  label="Header name"
+                  label="Bearer header name"
                   value={this.state.service.thirdPartyApiKey.headerName}
                   help="The name of the header containing the bearer"
                   onChange={v => this.changeTheValue('thirdPartyApiKey.headerName', v)}
@@ -1074,6 +1073,13 @@ export class ServicePage extends Component {
                   value={this.state.service.thirdPartyApiKey.monthlyQuota}
                   help="..."
                   onChange={v => this.changeTheValue('thirdPartyApiKey.monthlyQuota', v)}
+                />
+                <ArrayInput
+                  label="Scopes validation"
+                  placeholder="scope"
+                  value={this.state.service.thirdPartyApiKey.scopes}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.scopes', v)}
                 />
                 <ArrayInput
                   label="Excluded patterns"

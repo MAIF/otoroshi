@@ -82,6 +82,39 @@ export class Oauth2ModuleConfig extends Component {
     });
   };
 
+  fetchKeycloakConfig = () => {
+    window.newPrompt('Keycloak config', '', true, 12).then(strConfig => {
+      if (strConfig) {
+        const config = JSON.parse(strConfig);
+        const serverUrl = config['auth-server-url'];
+        const realm = config.realm;
+        const configUrl = `${serverUrl}/realms/${realm}/.well-known/openid-configuration`;
+        const clientId = config.resource;
+        const clientSecret = (config.credentials ? (config.credentials.secret ? config.credentials.secret : '') : '');
+        return fetch(`/bo/api/oidc/_fetchConfig`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: configUrl,
+            id: this.props.value.id,
+            name: this.props.value.name,
+            desc: this.props.value.desc,
+            clientId: clientId,
+            clientSecret: clientSecret,
+          }),
+        })
+          .then(r => r.json())
+          .then(config => {
+            this.props.onChange(config);
+          });
+      }
+    });
+  };
+
   render() {
     const settings = this.props.value || this.props.settings;
     settings.jwtVerifier = settings.jwtVerifier || {
@@ -104,6 +137,9 @@ export class Oauth2ModuleConfig extends Component {
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.fetchConfig}>
               Get from OIDC config
+            </button>
+            <button type="button" className="btn btn-success" onClick={this.fetchKeycloakConfig}>
+              Get from Keycloak config
             </button>
           </div>
         </div>
