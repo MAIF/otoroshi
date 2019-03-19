@@ -12,7 +12,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
-import cluster.StatsView
+import cluster.{ClusterMode, MemberView, StatsView}
 import env.Env
 import events._
 import models._
@@ -73,27 +73,45 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def health() = UnAuthApiAction.async { ctx =>
-    def fetchHealth() =
+    def fetchHealth() = {
+      val membersF = if (env.clusterConfig.mode == ClusterMode.Leader) {
+        env.datastores.clusterStateDataStore.getMembers()
+      } else {
+        FastFuture.successful(Seq.empty[MemberView])
+      }
       for {
-        _health  <- env.datastores.health()
+        _health <- env.datastores.health()
         overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
+        members <- membersF
       } yield {
+        val cluster = env.clusterConfig.mode match {
+          case ClusterMode.Off => Json.obj()
+          case ClusterMode.Worker => Json.obj("cluster" -> Json.obj("lastSync" -> env.clusterAgent.lastSync.toString()))
+          case ClusterMode.Leader => {
+            val healths = members.map(_.health)
+            val foundOrange = healths.contains("orange")
+            val foundRed = healths.contains("red")
+            val health = if (foundRed) "unhealthy" else (if (foundOrange) "notthathealthy" else "healthy")
+            Json.obj("cluster" -> Json.obj("health" -> health))
+          }
+        }
         Ok(
           Json.obj(
             "otoroshi" -> JsString(_health match {
               case Healthy if overhead <= env.healthLimit => "healthy"
-              case Healthy if overhead > env.healthLimit  => "unhealthy"
-              case Unhealthy                              => "unhealthy"
-              case Unreachable                            => "down"
+              case Healthy if overhead > env.healthLimit => "unhealthy"
+              case Unhealthy => "unhealthy"
+              case Unreachable => "down"
             }),
             "datastore" -> JsString(_health match {
-              case Healthy     => "healthy"
-              case Unhealthy   => "unhealthy"
+              case Healthy => "healthy"
+              case Unhealthy => "unhealthy"
               case Unreachable => "unreachable"
             })
-          )
+          ) ++ cluster
         )
       }
+    }
 
     ((ctx.req.getQueryString("access_key"), env.healthAccessKey) match {
       case (_, None)                                  => fetchHealth()

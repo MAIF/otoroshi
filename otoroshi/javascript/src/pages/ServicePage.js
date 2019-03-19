@@ -305,7 +305,7 @@ export class ServicePage extends Component {
 
   deleteService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newPrompt('Type the name of the service to delete it').then(name => {
+    window.newPrompt(`Type the name of the service (${this.state.service.name})to delete it`).then(name => {
       if (name && name === this.state.service.name) {
         BackOfficeServices.deleteService(this.state.service).then(() => {
           window.location.href = `/bo/dashboard/services`;
@@ -1000,8 +1000,8 @@ export class ServicePage extends Component {
                   value={this.state.service.thirdPartyApiKey.mode}
                   onChange={e => this.changeTheValue('thirdPartyApiKey.mode', e)}
                   possibleValues={[
-                    { value: 'Tmp', label: 'Temporary api keys (will not be stored)'},
-                    { value: 'Hybrid', label: 'Hybrid api keys (will not be stored, but will be query)'},
+                    { value: 'Tmp', label: 'Temporary api keys (api keys will not be stored)'},
+                    { value: 'Hybrid', label: 'Hybrid api keys (api keys will not be stored, but will be used if they already exists)'},
                     { value: 'Persistent', label: 'Persistent api keys (will be stored)'},
                   ]}
                   help="..."
@@ -1034,6 +1034,10 @@ export class ServicePage extends Component {
                     </a>
                   </div>
                 </div>
+                <div className="form-group">
+                  <label className="control-label col-sm-2"></label>
+                  <div className="col-sm-10" style={{ borderBottom: '1px solid #666', paddingBottom: 5 }}>Verification</div>
+                </div>
                 <BooleanInput
                   label="Local verif. only"
                   value={this.state.service.thirdPartyApiKey.localVerificationOnly}
@@ -1053,6 +1057,17 @@ export class ServicePage extends Component {
                   help="The name of the header containing the bearer"
                   onChange={v => this.changeTheValue('thirdPartyApiKey.headerName', v)}
                 />
+                <ArrayInput
+                  label="Scopes validation"
+                  placeholder="scope"
+                  value={this.state.service.thirdPartyApiKey.scopes}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.scopes', v)}
+                />
+                <div className="form-group">
+                  <label className="control-label col-sm-2"></label>
+                  <div className="col-sm-10" style={{ borderBottom: '1px solid #666', paddingBottom: 5 }}>Quotas</div>
+                </div>
                 <NumberInput
                   label="Throttling"
                   suffix="Calls per second"
@@ -1074,13 +1089,10 @@ export class ServicePage extends Component {
                   help="..."
                   onChange={v => this.changeTheValue('thirdPartyApiKey.monthlyQuota', v)}
                 />
-                <ArrayInput
-                  label="Scopes validation"
-                  placeholder="scope"
-                  value={this.state.service.thirdPartyApiKey.scopes}
-                  help="..."
-                  onChange={v => this.changeTheValue('thirdPartyApiKey.scopes', v)}
-                />
+                <div className="form-group">
+                  <label className="control-label col-sm-2"></label>
+                  <div className="col-sm-10" style={{ borderBottom: '1px solid #666' }}></div>
+                </div>
                 <ArrayInput
                   label="Excluded patterns"
                   placeholder="URI pattern"

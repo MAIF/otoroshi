@@ -206,6 +206,17 @@ case class MemberView(name: String,
       concurrentHandledRequests = (stats \ "concurrentHandledRequests").asOpt[Long].getOrElse(0L)
     )
   }
+
+  def health: String = {
+    val value = System.currentTimeMillis() - lastSeen.getMillis
+    if (value < (timeout.toMillis / 2)) {
+      "green"
+    } else if (value < (3 * (timeout.toMillis / 4))) {
+      "orange"
+    } else {
+      "red"
+    }
+  }
 }
 
 object MemberView {
@@ -888,6 +899,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   implicit lazy val mat   = env.otoroshiMaterializer
   implicit lazy val sched = env.otoroshiScheduler
 
+  private val lastPoll                      = new AtomicReference[DateTime](DateTime.parse("1970-01-01T00:00:00.000"))
   private val pollRef                       = new AtomicReference[Cancellable]()
   private val pushRef                       = new AtomicReference[Cancellable]()
   private val counter                       = new AtomicInteger(0)
@@ -901,6 +913,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   )
   /////////////
+
+  def lastSync: DateTime = lastPoll.get()
 
   private def otoroshiUrl: String = {
     val count = counter.incrementAndGet() % (if (config.leader.urls.nonEmpty) config.leader.urls.size else 1)
@@ -1065,6 +1079,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   Cluster.logger.debug(
                     s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount."
                   )
+                  lastPoll.set(DateTime.now())
                   if (!store.isEmpty) {
                     firstSuccessfulStateFetchDone.compareAndSet(false, true)
                     env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
