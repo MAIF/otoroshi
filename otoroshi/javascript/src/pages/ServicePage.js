@@ -1064,10 +1064,36 @@ export class ServicePage extends Component {
                   help="..."
                   onChange={v => this.changeTheValue('thirdPartyApiKey.scopes', v)}
                 />
+                <ArrayInput
+                  label="Role paths"
+                  placeholder="path"
+                  value={this.state.service.thirdPartyApiKey.rolesPath}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.rolesPath', v)}
+                />
+                <ArrayInput
+                  label="Roles validation"
+                  placeholder="role"
+                  value={this.state.service.thirdPartyApiKey.roles}
+                  help="..."
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.roles', v)}
+                />
                 <div className="form-group">
                   <label className="control-label col-sm-2"></label>
                   <div className="col-sm-10" style={{ borderBottom: '1px solid #666', paddingBottom: 5 }}>Quotas</div>
                 </div>
+                <BooleanInput
+                  label="Use quotas"
+                  value={this.state.service.thirdPartyApiKey.quotasEnabled}
+                  help="Apply quotas policy on each individual token"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.quotasEnabled', v)}
+                />
+                <BooleanInput
+                  label="Unique Api Key"
+                  value={this.state.service.thirdPartyApiKey.uniqueApiKey}
+                  help="Any individual token is backed by a unique Api Key"
+                  onChange={v => this.changeTheValue('thirdPartyApiKey.quotasEnabled', v)}
+                />
                 <NumberInput
                   label="Throttling"
                   suffix="Calls per second"

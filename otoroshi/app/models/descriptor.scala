@@ -393,18 +393,24 @@ object OIDCThirdPartyApiKeyConfigMode {
   }
 }
 
+// TODO: roles validation (json path selector + array of possible roles)
+// TODO: quotasEnabled
 case class OIDCThirdPartyApiKeyConfig(
   enabled: Boolean = false,
   oidcConfigRef: Option[String],
   localVerificationOnly: Boolean = false,
   ttl: Long = 0,
   headerName: String = "Authorization",
+  quotasEnabled: Boolean = true,
+  uniqueApiKey: Boolean = false,
   throttlingQuota: Long = 100L,
   dailyQuota: Long = RemainingQuotas.MaxValue,
   monthlyQuota: Long = RemainingQuotas.MaxValue,
   excludedPatterns: Seq[String] = Seq.empty,
   mode: OIDCThirdPartyApiKeyConfigMode = OIDCThirdPartyApiKeyConfigMode.Tmp,
-  scopes: Seq[String] = Seq.empty
+  scopes: Seq[String] = Seq.empty,
+  roles: Seq[String] = Seq.empty,
+  rolesPath: Seq[String] = Seq.empty,
 ) extends ThirdPartyApiKeyConfig {
 
   import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
@@ -426,6 +432,23 @@ case class OIDCThirdPartyApiKeyConfig(
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
+  }
+
+  private def findAt(json: JsValue, path: String): Option[JsValue] = {
+    val parts = path.split("\\.").toSeq
+    def tail(rest: Seq[String]): Seq[String] = if (rest.isEmpty) Seq.empty[String] else rest.tail
+    def navTo(value: JsValue, field: Option[String], rest: Seq[String]): Option[JsValue] = {
+      field match {
+        case None => Some(value)
+        case Some(f) => {
+          (value \ f).asOpt[JsValue] match {
+            case None => None
+            case Some(doc) => navTo(doc, rest.headOption, tail(rest))
+          }
+        }
+      }
+    }
+    navTo(json, parts.headOption, tail(parts))
   }
 
   private def shouldBeVerified(path: String): Boolean = !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
@@ -498,7 +521,10 @@ case class OIDCThirdPartyApiKeyConfig(
                             val iss = (tokenBody \ "iss").as[String]
                             val subject = (tokenBody \ "sub").as[String]
                             val _apiKey = ApiKey(
-                              clientId = s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}-${subject}",
+                              clientId = uniqueApiKey match {
+                                case true => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}"
+                                case false => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}-${subject}"
+                              },
                               clientSecret = IdGenerator.token(128),
                               clientName = s"Temporary apikey from ${oidcAuth.name} for $subject on ${descriptor.name}",
                               authorizedGroup = descriptor.groupId,
@@ -519,7 +545,11 @@ case class OIDCThirdPartyApiKeyConfig(
                               )
                             )
                             val tokenScopes = (tokenBody \ "scope").asOpt[String].map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
-                            if (tokenScopes.intersect(scopes) == scopes) {
+                            val tokenRoles: Seq[String] = rolesPath.flatMap(p => findAt(tokenBody, p)).collect {
+                              case JsString(str) => Seq(str)
+                              case JsArray(v) => v.flatMap(_.asOpt[String])
+                            }.flatten
+                            if (tokenScopes.intersect(scopes) == scopes && tokenRoles.intersect(roles) == roles) {
                               (mode match {
                                 case OIDCThirdPartyApiKeyConfigMode.Tmp => FastFuture.successful(_apiKey)
                                 case OIDCThirdPartyApiKeyConfigMode.Hybrid => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).map {
@@ -531,7 +561,10 @@ case class OIDCThirdPartyApiKeyConfig(
                                   case None => _apiKey.save().map { _ => _apiKey }
                                 }
                               }) flatMap { apiKey =>
-                                apiKey.withingQuotas().flatMap {
+                                (quotasEnabled match {
+                                  case true => apiKey.withingQuotas()
+                                  case false => FastFuture.successful(true)
+                                }).flatMap {
                                   case true => {
                                     if (localVerificationOnly) {
                                       f(Some(apiKey)).asRight[Result]
@@ -603,11 +636,11 @@ case class OIDCThirdPartyApiKeyConfig(
                             } else {
                               Errors
                                 .craftResponseResult(
-                                  "Bad scope",
+                                  "Invalid token",
                                   Results.Unauthorized,
                                   req,
                                   Some(descriptor),
-                                  maybeCauseId = Some("oidc.bad.scope")
+                                  maybeCauseId = Some("oidc.invalid.token")
                                 ).asLeft[A]
                             }
                           }
@@ -637,6 +670,8 @@ object OIDCThirdPartyApiKeyConfig {
       Try {
         OIDCThirdPartyApiKeyConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          quotasEnabled = (json \ "quotasEnabled").asOpt[Boolean].getOrElse(true),
+          uniqueApiKey = (json \ "uniqueApiKey").asOpt[Boolean].getOrElse(false),
           oidcConfigRef = (json \ "oidcConfigRef").asOpt[String].filterNot(_.isEmpty),
           localVerificationOnly = (json \ "localVerificationOnly").asOpt[Boolean].getOrElse(false),
           mode = (json \ "mode").asOpt[String].flatMap(v => OIDCThirdPartyApiKeyConfigMode(v)).getOrElse(OIDCThirdPartyApiKeyConfigMode.Tmp),
@@ -646,7 +681,9 @@ object OIDCThirdPartyApiKeyConfig {
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       } map {
         case sd => JsSuccess(sd)
@@ -658,6 +695,8 @@ object OIDCThirdPartyApiKeyConfig {
 
     override def writes(o: OIDCThirdPartyApiKeyConfig): JsValue = Json.obj(
       "enabled" -> o.enabled,
+      "quotasEnabled" -> o.quotasEnabled,
+      "uniqueApiKey" -> o.uniqueApiKey,
       "type" -> o.typ.name,
       "oidcConfigRef" -> o.oidcConfigRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "localVerificationOnly" -> o.localVerificationOnly,
@@ -668,7 +707,9 @@ object OIDCThirdPartyApiKeyConfig {
       "dailyQuota" -> o.dailyQuota,
       "monthlyQuota" -> o.monthlyQuota,
       "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
-      "scopes" -> JsArray(o.scopes.map(JsString.apply))
+      "scopes" -> JsArray(o.scopes.map(JsString.apply)),
+      "rolesPath" -> JsArray(o.rolesPath.map(JsString.apply)),
+      "roles" -> JsArray(o.roles.map(JsString.apply))
     )
   }
 }
