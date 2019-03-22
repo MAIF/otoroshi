@@ -27,6 +27,14 @@ import { AlgoSettings } from '../components/JwtVerifier';
 import { AuthModuleConfig } from '../components/AuthModuleConfig';
 import { Warning } from './ScriptsPage';
 
+function nullAccess(obj, f) {
+  if (!!obj) {
+    f(obj)
+  } else {
+    null
+  }
+}
+
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
   for (let i in b) if (a[i] !== b[i]) return true;
@@ -1424,6 +1432,67 @@ export class ServicePage extends Component {
               help="Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
               onChange={v => this.changeTheValue('clientConfig.sampleInterval', v)}
             />
+            <div className="form-group">
+              <label className="control-label col-sm-2"></label>
+              <div className="col-sm-10" style={{ borderBottom: '1px solid #666', paddingBottom: 5 }}>Proxy settings</div>
+            </div>
+            <TextInput
+              label="Proxy host"
+              value={nullAccess(this.state.service.clientConfig.proxy, a => a.host)}
+              help="Proxy host"
+              onChange={v => this.changeTheValue('clientConfig.proxy.host', v)}
+            />
+            <NumberInput
+              label="Proxy port"
+              value={nullAccess(this.state.service.clientConfig.proxy, a => a.port)}
+              help="Proxy port"
+              onChange={v => this.changeTheValue('clientConfig.proxy.port', v)}
+            />
+            <TextInput
+              label="Proxy principal"
+              value={nullAccess(this.state.service.clientConfig.proxy, a => a.principal)}
+              help="Proxy principal"
+              onChange={v => this.changeTheValue('clientConfig.proxy.principal', v)}
+            />
+            <TextInput
+              label="Proxy password"
+              value={nullAccess(this.state.service.clientConfig.proxy, a => a.password)}
+              help="Proxy password"
+              onChange={v => this.changeTheValue('clientConfig.proxy.password', v)}
+            />
+            <SelectInput
+              label="Proxy protocol"
+              value={nullAccess(this.state.service.clientConfig.proxy, a => a.protocol)}
+              help="Proxy protocol"
+              possibleValues={[
+                { label: 'HTTP', value: 'http' },
+                { label: 'HTTPS', value: 'https' },
+                { label: 'Kerberos', value: 'kerberos' },
+                { label: 'NTLM', value: 'ntlm' },
+                { label: 'Spnego', value: 'spnego' },
+              ]}
+              onChange={v => this.changeTheValue('clientConfig.proxy.protocol', v)}
+            />
+            <TextInput
+              label="Proxy ntlm domain"
+              value={nullAccess(this.state.service.clientConfig.proxy, a => a.ntlmDomain)}
+              help="Proxy ntlmDomain"
+              onChange={v => this.changeTheValue('clientConfig.proxy.ntlmDomain', v)}
+            />
+            <TextInput
+              label="Proxy encoding"
+              value={nullAccess(this.state.service.clientConfig.proxy, a => a.encoding)}
+              help="Proxy protocol"
+              placeholder="UTF-8"
+              onChange={v => this.changeTheValue('clientConfig.proxy.encoding', v)}
+            />
+            {/*<ArrayInput
+              label="Non proxy host"
+              placeholder="IP address that can access the service"
+              value={this.state.service.clientConfig.proxy.nonProxyHosts}
+              help="List of non proxyable host"
+              onChange={arr => this.changeTheValue('clientConfig.proxy.nonProxyHosts', arr)}
+            />*/}
             {false && (
               <div className="form-group">
                 <label className="col-xs-12 col-sm-2 control-label" />

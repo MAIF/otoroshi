@@ -1,7 +1,7 @@
 package utils.http
 
 import java.io.File
-import java.net.URI
+import java.net.{InetSocketAddress, URI}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
@@ -10,35 +10,17 @@ import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
-import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
+import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import javax.net.ssl.SSLContext
-import play.api.{libs, Logger}
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{
-  BodyReadable,
-  BodyWritable,
-  DefaultWSCookie,
-  EmptyBody,
-  InMemoryBody,
-  SourceBody,
-  WSAuthScheme,
-  WSBody,
-  WSClient,
-  WSClientConfig,
-  WSCookie,
-  WSProxyServer,
-  WSRequest,
-  WSRequestFilter,
-  WSResponse,
-  WSSignatureCalculator
-}
+import play.api.libs.ws.{BodyReadable, BodyWritable, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
-import play.libs.ws.DefaultWSCookie
+import play.api.{Logger, libs}
 import ssl.DynamicSSLEngineProvider
 
 import scala.collection.immutable.TreeMap
@@ -174,7 +156,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
     .withMaxRetries(0)
     .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
 
-  private[utils] def executeRequest[T](request: HttpRequest): Future[HttpResponse] = {
+  private[utils] def executeRequest[T](request: HttpRequest, customizer: ConnectionPoolSettings => ConnectionPoolSettings): Future[HttpResponse] = {
     val currentSslContext = DynamicSSLEngineProvider.current
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
@@ -274,7 +256,8 @@ case class AkkaWsClientRequest(
     _method: HttpMethod = HttpMethods.GET,
     body: WSBody = EmptyBody,
     headers: Map[String, Seq[String]] = Map.empty[String, Seq[String]],
-    requestTimeout: Option[Int] = None
+    requestTimeout: Option[Int] = None,
+    proxy: Option[WSProxyServer] = None,
 )(implicit materializer: Materializer)
     extends WSRequest {
 
@@ -283,6 +266,31 @@ case class AkkaWsClientRequest(
   override type Self = WSRequest
 
   private val _uri = Uri(rawUrl)
+
+  private def customizer: ConnectionPoolSettings => ConnectionPoolSettings = {
+    proxy.map { proxySettings =>
+      val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+      val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
+        case (Some(principal), Some(password)) => {
+          val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+          //val realmBuilder = new Realm.Builder(proxySettings.principal.orNull, proxySettings.password.orNull)
+          //val scheme: Realm.AuthScheme = proxySettings.protocol.getOrElse("http").toLowerCase(java.util.Locale.ENGLISH) match {
+          //  case "http" | "https" => Realm.AuthScheme.BASIC
+          //  case "kerberos" => Realm.AuthScheme.KERBEROS
+          //  case "ntlm" => Realm.AuthScheme.NTLM
+          //  case "spnego" => Realm.AuthScheme.SPNEGO
+          //  case _ => scala.sys.error("Unrecognized protocol!")
+          //}
+          //realmBuilder.setScheme(scheme)
+          ClientTransport.httpsProxy(proxyAddress, auth)
+        }
+        case _ => ClientTransport.httpsProxy(proxyAddress)
+      }
+      a: ConnectionPoolSettings => a.withTransport(httpsProxyTransport)
+    } getOrElse {
+      a: ConnectionPoolSettings => a
+    }
+  }
 
   def withMethod(method: String): AkkaWsClientRequest = {
     copy(_method = HttpMethods.getForKeyCaseInsensitive(method).getOrElse(HttpMethod.custom(method)))
@@ -306,7 +314,7 @@ case class AkkaWsClientRequest(
   override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
 
   def stream(): Future[WSResponse] = {
-    client.executeRequest(buildRequest()).map(resp => AkkWsClientStreamedResponse(resp, rawUrl, client.mat))(client.ec)
+    client.executeRequest(buildRequest(), customizer).map(resp => AkkWsClientStreamedResponse(resp, rawUrl, client.mat))(client.ec)
     // execute()
   }
 
@@ -316,7 +324,7 @@ case class AkkaWsClientRequest(
 
   override def execute(): Future[WSResponse] = {
     client
-      .executeRequest(buildRequest())
+      .executeRequest(buildRequest(), customizer)
       .flatMap { response: HttpResponse =>
         response.entity
           .toStrict(FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2))
@@ -446,25 +454,24 @@ case class AkkaWsClientRequest(
       : Seq[(String, String)] = _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
     copy(rawUrl = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
   }
-
+  override def withProxyServer(proxyServer: WSProxyServer): WSRequest = copy(proxy = Option(proxyServer))
+  override def proxyServer: Option[WSProxyServer] = proxy
   override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
+    post[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
   override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
+    patch[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
   override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def calc: Option[WSSignatureCalculator] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def auth: Option[(String, String, WSAuthScheme)] =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def virtualHost: Option[String]        = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def proxyServer: Option[WSProxyServer] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def sign(calc: WSSignatureCalculator): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
+    put[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  override def auth: Option[(String, String, WSAuthScheme)] = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def calc: Option[WSSignatureCalculator]          = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def virtualHost: Option[String]                  = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def sign(calc: WSSignatureCalculator): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
   override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest =
     throw new RuntimeException("Not supported on this WSClient !!!")
   override def withRequestFilter(filter: WSRequestFilter): WSRequest =
     throw new RuntimeException("Not supported on this WSClient !!!")
   override def withVirtualHost(vh: String): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withProxyServer(proxyServer: WSProxyServer): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
 }

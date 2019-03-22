@@ -1215,10 +1215,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             .withCookies(wsCookiesIn: _*)
                                             .withFollowRedirects(false)
                                           // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
-                                          val builderWithBody = if (currentReqHasBody) {
-                                            builder.withBody(body)
-                                          } else {
+                                          val builderWithProxy = descriptor.clientConfig.proxy.map { proxy =>
+                                            builder.withProxyServer(proxy)
+                                          } getOrElse {
                                             builder
+                                          }
+                                          val builderWithBody = if (currentReqHasBody) {
+                                            builderWithProxy.withBody(body)
+                                          } else {
+                                            builderWithProxy
                                           }
 
                                           builderWithBody

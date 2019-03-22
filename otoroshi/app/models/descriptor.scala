@@ -15,6 +15,7 @@ import storage.BasicStore
 import utils.{GzipConfig, ReplaceAllWith}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.TooManyRequests
 
 import scala.collection.concurrent.TrieMap
@@ -190,7 +191,8 @@ case class ClientConfig(
     backoffFactor: Long = 2,
     callTimeout: Long = 30000,
     globalTimeout: Long = 30000,
-    sampleInterval: Long = 2000
+    sampleInterval: Long = 2000,
+    proxy: Option[WSProxyServer] = None
 ) {
   def toJson = ClientConfig.format.writes(this)
 }
@@ -198,6 +200,39 @@ case class ClientConfig(
 object ClientConfig {
 
   lazy val logger = Logger("otoroshi-client-config")
+
+  def proxyToJson(p: WSProxyServer): JsValue = Json.obj(
+    "host" -> p.host,// host: String
+    "port" -> p.port,// port: Int
+    "protocol" -> p.protocol.map(JsString.apply).getOrElse(JsNull).as[JsValue],// protocol: Option[String]
+    "principal" -> p.principal.map(JsString.apply).getOrElse(JsNull).as[JsValue],// principal: Option[String]
+    "password" -> p.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],// password: Option[String]
+    "ntlmDomain" -> p.ntlmDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],// ntlmDomain: Option[String]
+    "encoding" -> p.encoding.map(JsString.apply).getOrElse(JsNull).as[JsValue],// encoding: Option[String]
+    "nonProxyHosts" -> p.nonProxyHosts.map(nph => JsArray(nph.map(JsString.apply))).getOrElse(JsNull).as[JsValue],// nonProxyHosts: Option[Seq[String]]
+  )
+  def proxyFromJson(json: JsValue): Option[WSProxyServer] = {
+    val maybeHost = (json \ "host").asOpt[String].filterNot(_.trim.nonEmpty)
+    val maybePort = (json \ "port").asOpt[Int]
+    (maybeHost, maybePort) match {
+      case (Some(host), Some(port)) => {
+        Some(DefaultWSProxyServer(host, port)).map { proxy =>
+          (json \ "protocol").asOpt[String].map(v => proxy.copy(protocol = Some(v))).getOrElse(proxy)
+        }.map { proxy =>
+          (json \ "principal").asOpt[String].map(v => proxy.copy(principal = Some(v))).getOrElse(proxy)
+        }.map { proxy =>
+          (json \ "password").asOpt[String].map(v => proxy.copy(password = Some(v))).getOrElse(proxy)
+        }.map { proxy =>
+          (json \ "ntlmDomain").asOpt[String].map(v => proxy.copy(ntlmDomain = Some(v))).getOrElse(proxy)
+        }.map { proxy =>
+          (json \ "encoding").asOpt[String].map(v => proxy.copy(encoding = Some(v))).getOrElse(proxy)
+        }.map { proxy =>
+          (json \ "nonProxyHosts").asOpt[Seq[String]].map(v => proxy.copy(nonProxyHosts = Some(v))).getOrElse(proxy)
+        }
+      }
+      case _ => None
+    }
+  }
 
   implicit val format = new Format[ClientConfig] {
 
@@ -211,7 +246,8 @@ object ClientConfig {
           backoffFactor = (json \ "backoffFactor").asOpt[Long].getOrElse(2),
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000),
-          sampleInterval = (json \ "sampleInterval").asOpt[Long].getOrElse(2000)
+          sampleInterval = (json \ "sampleInterval").asOpt[Long].getOrElse(2000),
+          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => proxyFromJson(p))
         )
       } map {
         case sd => JsSuccess(sd)
@@ -229,7 +265,8 @@ object ClientConfig {
       "backoffFactor"     -> o.backoffFactor,
       "callTimeout"       -> o.callTimeout,
       "globalTimeout"     -> o.globalTimeout,
-      "sampleInterval"    -> o.sampleInterval
+      "sampleInterval"    -> o.sampleInterval,
+      "proxy"             -> o.proxy.map(p => proxyToJson(p)).getOrElse(Json.obj()).as[JsValue]
     )
   }
 }
