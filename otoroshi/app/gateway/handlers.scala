@@ -38,6 +38,7 @@ import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
+import utils.http.Implicits._
 import play.libs.ws.WSCookie
 
 case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header])
@@ -784,7 +785,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   def callDownstream(config: GlobalConfig,
                                                      apiKey: Option[ApiKey] = None,
                                                      paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                                    desc.validateClientCertificates(req, apiKey, paUsr) {
+                                    desc.validateClientCertificates(req, apiKey, paUsr, config) {
                                       passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
                                         if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                           val cbStart = System.currentTimeMillis()
@@ -1214,16 +1215,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
                                             .withCookies(wsCookiesIn: _*)
                                             .withFollowRedirects(false)
+                                            .withMaybeProxyServer(descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services))
+
                                           // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
-                                          val builderWithProxy = descriptor.clientConfig.proxy.map { proxy =>
-                                            builder.withProxyServer(proxy)
-                                          } getOrElse {
-                                            builder
-                                          }
                                           val builderWithBody = if (currentReqHasBody) {
-                                            builderWithProxy.withBody(body)
+                                            builder.withBody(body)
                                           } else {
-                                            builderWithProxy
+                                            builder
                                           }
 
                                           builderWithBody

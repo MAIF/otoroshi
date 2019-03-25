@@ -12,6 +12,7 @@ import {
 } from '.';
 
 import _ from 'lodash';
+import { Separator } from '../Separator';
 import { Collapse } from './Collapse';
 import { TextareaInput } from './TextInput';
 
@@ -114,6 +115,14 @@ export class Form extends Component {
         return <hr key={idx} />;
       }
     } else {
+      if (name.indexOf('-- ') === 0) {
+        if (this.collapsed) {
+          this.collapsed.push(<Separator title={name.replace('-- ', '')} />);
+          return null;
+        } else {
+          return <Separator title={name.replace('-- ', '')} />;
+        }
+      } 
       const { display, type, disabled, props = {} } = this.props.schema[name];
       // console.log('generate', name, 'of type', type, 'from', this.props.schema);
       let component = null;

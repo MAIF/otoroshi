@@ -14,6 +14,7 @@ import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
 import storage.BasicStore
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import play.api.libs.ws.WSProxyServer
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -61,7 +62,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           callbackUrl = (json \ "callbackUrl")
             .asOpt[String]
             .getOrElse("http://privateapps.foo.bar:8080/privateapps/generic/callback"),
-          oidConfig = (json \ "oidConfig").asOpt[String]
+          oidConfig = (json \ "oidConfig").asOpt[String],
+          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
         )
       )
     } recover {
@@ -93,7 +95,8 @@ case class GenericOauth2ModuleConfig(
     emailField: String = "email",
     otoroshiDataField: String = "app_metadata|otoroshi_data",
     callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback",
-    oidConfig: Option[String] = None
+    oidConfig: Option[String] = None,
+    proxy: Option[WSProxyServer] = None
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -122,7 +125,8 @@ case class GenericOauth2ModuleConfig(
     "emailField"           -> this.emailField,
     "otoroshiDataField"    -> this.otoroshiDataField,
     "callbackUrl"          -> this.callbackUrl,
-    "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy)
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
@@ -132,6 +136,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
   import play.api.libs.ws.DefaultBodyWritables._
   import utils.future.Implicits._
+  import utils.http.Implicits._
 
   override def paLoginPage(request: RequestHeader,
                            config: GlobalConfig,
@@ -219,7 +224,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            val builder = env.Ws.url(authConfig.tokenUrl)
+            val builder = env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
@@ -263,7 +268,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
                   }
                 } else {
-                  val builder2 = env.Ws.url(authConfig.userInfoUrl)
+                  val builder2 = env.Ws.url(authConfig.userInfoUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
                   val future2 = if (authConfig.useJson) {
                     builder2.post(
                       Json.obj(
@@ -328,7 +333,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            val builder = env.Ws.url(authConfig.tokenUrl)
+            val builder = env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
@@ -370,7 +375,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
                   }
                 } else {
-                  val builder2 = env.Ws.url(authConfig.userInfoUrl)
+                  val builder2 = env.Ws.url(authConfig.userInfoUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
                   val future2 = if (authConfig.useJson) {
                     builder2.post(
                       Json.obj(

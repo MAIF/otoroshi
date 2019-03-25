@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import faker from 'faker';
+import { Proxy } from '../components/Proxy';
 
 export class ClientValidatorsPage extends Component {
   columns = [
@@ -79,6 +80,9 @@ export class ClientValidatorsPage extends Component {
       display: value => !value.alwaysValid,
       props: { label: 'HTTP headers' },
     },
+    proxy: {
+      type: Proxy,
+    }
   };
 
   formFlow = [
@@ -95,6 +99,8 @@ export class ClientValidatorsPage extends Component {
     'noCache',
     'goodTtl',
     'badTtl',
+    '-- Proxy',
+    'proxy'
   ];
 
   componentDidMount() {

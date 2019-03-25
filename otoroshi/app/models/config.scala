@@ -4,6 +4,7 @@ import env.Env
 import events._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.WSProxyServer
 import storage.BasicStore
 import security.{Auth0Config, IdGenerator}
 import utils.CleverCloudClient
@@ -93,6 +94,55 @@ object MailgunSettings {
   }
 }
 
+case class Proxies(
+  alertEmails: Option[WSProxyServer] = None,
+  alertWebhooks: Option[WSProxyServer] = None,
+  eventsWebhooks: Option[WSProxyServer] = None,
+  clevercloud: Option[WSProxyServer] = None,
+  services: Option[WSProxyServer] = None,
+  auth: Option[WSProxyServer] = None,
+  authority: Option[WSProxyServer] = None,
+  jwk: Option[WSProxyServer] = None,
+  elastic: Option[WSProxyServer] = None,
+) {
+  def toJson: JsValue = Proxies.format.writes(this)
+}
+
+object Proxies {
+
+  val format = new Format[Proxies] {
+    override def writes(o: Proxies) = Json.obj(
+      "alertEmails" -> WSProxyServerJson.maybeProxyToJson(o.alertEmails),
+      "alertWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.alertWebhooks),
+      "eventsWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.eventsWebhooks),
+      "clevercloud" -> WSProxyServerJson.maybeProxyToJson(o.clevercloud),
+      "services" -> WSProxyServerJson.maybeProxyToJson(o.services),
+      "auth" -> WSProxyServerJson.maybeProxyToJson(o.auth),
+      "authority" -> WSProxyServerJson.maybeProxyToJson(o.authority),
+      "jwk" -> WSProxyServerJson.maybeProxyToJson(o.jwk),
+      "elastic" -> WSProxyServerJson.maybeProxyToJson(o.elastic),
+    )
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          Proxies(
+            alertEmails = (json \ "alertEmails").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            alertWebhooks = (json \ "alertWebhooks").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            eventsWebhooks = (json \ "eventsWebhooks").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            clevercloud = (json \ "clevercloud").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            services = (json \ "services").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            auth = (json \ "auth").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            authority = (json \ "authority").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            jwk = (json \ "jwk").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            elastic = (json \ "elastic").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+          )
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
 case class GlobalConfig(
     lines: Seq[String] = Seq("dev", "sandbox", "experiments", "preprod", "prod"),
     streamEntityOnly: Boolean = true,
@@ -122,7 +172,8 @@ case class GlobalConfig(
     middleFingers: Boolean = false,
     maxLogsSize: Int = 10000,
     otoroshiId: String = IdGenerator.uuid,
-    snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig()
+    snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
+    proxies: Proxies = Proxies()
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -142,7 +193,7 @@ case class GlobalConfig(
             secret = settings.secret
           )
         )
-        Some(CleverCloudClient(env, cleverSetting, settings.orgaId))
+        Some(CleverCloudClient(env, this, cleverSetting, settings.orgaId))
       }
     }
 }
@@ -357,6 +408,7 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def updateQuotas(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
   def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
+  def latestSafe: Option[GlobalConfig]
   def fullImport(export: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]

@@ -17,6 +17,7 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
+import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.PemUtils
 import storage.BasicStore
@@ -423,7 +424,8 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
             .asOpt[Long]
             .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
             .getOrElse(FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS)),
-          (json \ "kty").asOpt[String].map(v => KeyType.parse(v)).getOrElse(KeyType.RSA)
+          (json \ "kty").asOpt[String].map(v => KeyType.parse(v)).getOrElse(KeyType.RSA),
+          (json \ "proxy").asOpt[JsValue].flatMap(v => WSProxyServerJson.proxyFromJson(v))
         )
       )
     } recover {
@@ -435,7 +437,8 @@ case class JWKSAlgoSettings(url: String,
                             headers: Map[String, String],
                             timeout: FiniteDuration,
                             ttl: FiniteDuration,
-                            kty: KeyType)
+                            kty: KeyType,
+                            proxy: Option[WSProxyServer] = None)
     extends AlgoSettings {
 
   val logger = Logger("otoroshi-jwks")
@@ -463,6 +466,9 @@ case class JWKSAlgoSettings(url: String,
   }
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+
+    import utils.http.Implicits._
+
     mode match {
       case InputMode(alg, Some(kid)) => {
         JWKSAlgoSettings.cache.get(url) match {
@@ -478,6 +484,7 @@ case class JWKSAlgoSettings(url: String,
               .urlWithProtocol(protocol, url)
               .withRequestTimeout(timeout)
               .withHttpHeaders(headers.toSeq: _*)
+              .withMaybeProxyServer(proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk)))
               .get()
               .map { resp =>
                 val stop = System.currentTimeMillis() + ttl.toMillis
@@ -515,7 +522,8 @@ case class JWKSAlgoSettings(url: String,
     "timeout" -> timeout.toMillis,
     "headers" -> headers,
     "ttl"     -> ttl.toMillis,
-    "kty"     -> kty.getValue
+    "kty"     -> kty.getValue,
+    "proxy"   -> WSProxyServerJson.maybeProxyToJson(proxy)
   )
 }
 

@@ -197,10 +197,11 @@ case class ClientConfig(
   def toJson = ClientConfig.format.writes(this)
 }
 
-object ClientConfig {
-
-  lazy val logger = Logger("otoroshi-client-config")
-
+object WSProxyServerJson {
+  def maybeProxyToJson(p: Option[WSProxyServer]): JsValue = p match {
+    case Some(proxy) => proxyToJson(proxy)
+    case None => JsNull
+  }
   def proxyToJson(p: WSProxyServer): JsValue = Json.obj(
     "host" -> p.host,// host: String
     "port" -> p.port,// port: Int
@@ -212,7 +213,7 @@ object ClientConfig {
     "nonProxyHosts" -> p.nonProxyHosts.map(nph => JsArray(nph.map(JsString.apply))).getOrElse(JsNull).as[JsValue],// nonProxyHosts: Option[Seq[String]]
   )
   def proxyFromJson(json: JsValue): Option[WSProxyServer] = {
-    val maybeHost = (json \ "host").asOpt[String].filterNot(_.trim.nonEmpty)
+    val maybeHost = (json \ "host").asOpt[String].filterNot(_.trim.isEmpty)
     val maybePort = (json \ "port").asOpt[Int]
     (maybeHost, maybePort) match {
       case (Some(host), Some(port)) => {
@@ -233,6 +234,11 @@ object ClientConfig {
       case _ => None
     }
   }
+}
+
+object ClientConfig {
+
+  lazy val logger = Logger("otoroshi-client-config")
 
   implicit val format = new Format[ClientConfig] {
 
@@ -247,7 +253,7 @@ object ClientConfig {
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000),
           sampleInterval = (json \ "sampleInterval").asOpt[Long].getOrElse(2000),
-          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => proxyFromJson(p))
+          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
         )
       } map {
         case sd => JsSuccess(sd)
@@ -266,7 +272,7 @@ object ClientConfig {
       "callTimeout"       -> o.callTimeout,
       "globalTimeout"     -> o.globalTimeout,
       "sampleInterval"    -> o.sampleInterval,
-      "proxy"             -> o.proxy.map(p => proxyToJson(p)).getOrElse(Json.obj()).as[JsValue]
+      "proxy"             -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue]
     )
   }
 }
@@ -885,11 +891,12 @@ case class ServiceDescriptor(
   def validateClientCertificates(
       req: RequestHeader,
       apikey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
+      user: Option[PrivateAppsUser] = None,
+      config: GlobalConfig
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     clientValidatorRef.map { ref =>
       env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
-        case Some(validator) => validator.validateClientCertificates(req, this, apikey, user)(f)
+        case Some(validator) => validator.validateClientCertificates(req, this, apikey, user, config)(f)
         case None =>
           Errors.craftResponseResult(
             "Validator not found",
@@ -906,12 +913,13 @@ case class ServiceDescriptor(
 
   def wsValidateClientCertificates(req: RequestHeader,
                                    apikey: Option[ApiKey] = None,
-                                   user: Option[PrivateAppsUser] = None)(
+                                   user: Option[PrivateAppsUser] = None,
+                                   config: GlobalConfig)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     clientValidatorRef.map { ref =>
       env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
-        case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user)(f)
+        case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user, config)(f)
         case None =>
           Errors
             .craftResponseResult(

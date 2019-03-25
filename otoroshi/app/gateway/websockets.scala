@@ -1,10 +1,14 @@
 package gateway
 
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
+import akka.http.scaladsl.ClientTransport
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
@@ -18,12 +22,7 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests}
 import play.api.mvc._
@@ -37,6 +36,7 @@ import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
 import play.api.libs.ws.DefaultWSCookie
+import utils.http.WSProxyServerUtils
 
 class WebSocketHandler()(implicit env: Env) {
 
@@ -49,7 +49,7 @@ class WebSocketHandler()(implicit env: Env) {
 
   lazy val logger = Logger("otoroshi-websocket-handler")
 
-  lazy val http = akka.http.scaladsl.Http.get(env.otoroshiActorSystem)
+  // lazy val http = akka.http.scaladsl.Http.get(env.otoroshiActorSystem)
 
   val reqCounter = new AtomicInteger(0)
 
@@ -417,7 +417,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                 apiKey: Option[ApiKey] = None,
                                                 paUsr: Option[PrivateAppsUser] = None
                                               ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-                              desc.wsValidateClientCertificates(req, apiKey, paUsr) {
+                              desc.wsValidateClientCertificates(req, apiKey, paUsr, config) {
                                 passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
                                   if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                     val cbStart = System.currentTimeMillis()
@@ -738,12 +738,11 @@ class WebSocketHandler()(implicit env: Env) {
                                         ActorFlow.actorRef(
                                           out =>
                                             WebSocketProxyActor.props(UrlSanitizer.sanitize(httpRequest.url),
-                                              env.otoroshiMaterializer,
                                               out,
-                                              env,
-                                              http,
                                               httpRequest.headers.toSeq
-                                                .filterNot(_._1 == "Cookie"))
+                                                .filterNot(_._1 == "Cookie"),
+                                              descriptor,
+                                              env)
                                         )
                                       )
                                     )
@@ -1201,20 +1200,17 @@ class WebSocketHandler()(implicit env: Env) {
 
 object WebSocketProxyActor {
   def props(url: String,
-            mat: Materializer,
             out: ActorRef,
-            env: Env,
-            http: akka.http.scaladsl.HttpExt,
-            headers: Seq[(String, String)]) =
-    Props(new WebSocketProxyActor(url, mat, out, env, http, headers))
+            headers: Seq[(String, String)],
+            descriptor: ServiceDescriptor,
+            env: Env) = Props(new WebSocketProxyActor(url, out, headers, descriptor, env))
 }
 
 class WebSocketProxyActor(url: String,
-                          mat: Materializer,
                           out: ActorRef,
-                          env: Env,
-                          http: akka.http.scaladsl.HttpExt,
-                          headers: Seq[(String, String)])
+                          headers: Seq[(String, String)],
+                          descriptor: ServiceDescriptor,
+                          env: Env)
     extends Actor {
 
   lazy val source = Source.queue[Message](50000, OverflowStrategy.dropTail)
@@ -1232,7 +1228,7 @@ class WebSocketProxyActor(url: String,
       val request = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))(
         (r, header) => r.copy(extraHeaders = r.extraHeaders :+ header)
       )
-      val (connected, materialized) = http.singleWebSocketRequest(
+      val (connected, materialized) = env.gatewayClient.ws(
         request,
         Flow
           .fromSinkAndSourceMat(
@@ -1250,8 +1246,24 @@ class WebSocketProxyActor(url: String,
             logger.trace(s"[WEBSOCKET] target stopped")
             Option(queueRef.get()).foreach(_.complete())
             out ! PoisonPill
-          })
-      )(mat)
+          }),
+        descriptor.clientConfig.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
+          .filter(p => WSProxyServerUtils.isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty)))
+          .map { proxySettings =>
+          val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+          val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
+            case (Some(principal), Some(password)) => {
+              val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+              ClientTransport.httpsProxy(proxyAddress, auth)
+            }
+            case _ => ClientTransport.httpsProxy(proxyAddress)
+          }
+          // TODO: use proxy transport when akka http will be updated
+          a: ClientConnectionSettings => a//.withTransport(httpsProxyTransport)
+        } getOrElse {
+          a: ClientConnectionSettings => a
+        }
+      )
       queueRef.set(materialized._2)
       connected.andThen {
         case Success(r) => {

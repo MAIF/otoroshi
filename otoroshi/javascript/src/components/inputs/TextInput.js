@@ -1,6 +1,12 @@
 import React, { Component } from 'react';
 import { Help } from './Help';
 
+export class PasswordInput extends Component {
+  render() {
+    return <TextInput {...this.props} type="password"  />;
+  }
+}
+
 export class TextInput extends Component {
   onChange = e => {
     if (e && e.preventDefault) e.preventDefault();

@@ -4,10 +4,10 @@ import env.Env
 import models._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import storage.BasicStore
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthModule {
@@ -90,6 +90,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def otoroshiDataField: String
   def callbackUrl: String
   def oidConfig: Option[String]
+  def proxy: Option[WSProxyServer]
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {

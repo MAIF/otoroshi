@@ -95,10 +95,12 @@ object ElasticWritesAnalytics {
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
                              environment: Environment,
-                             client: WSClient,
+                             env: Env,
                              executionContext: ExecutionContext,
                              system: ActorSystem)
     extends AnalyticsWritesService {
+
+  import utils.http.Implicits._
 
   lazy val logger = Logger("otoroshi-analytics-writes-elastic")
 
@@ -108,7 +110,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
   private implicit val mat                      = ActorMaterializer()(system)
 
   private def url(url: String): WSRequest = {
-    val builder = client.url(url)
+    val builder = env.Ws.url(url).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
     authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
@@ -184,7 +186,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
   }
 
   override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val builder = client.url(urlFromPath("/_bulk"))
+    val builder = env.Ws.url(urlFromPath("/_bulk")).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
 
     val clientInstance = authHeader()
       .fold {

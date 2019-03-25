@@ -818,6 +818,7 @@ class AlertsActor(implicit env: Env) extends Actor {
 
   import org.joda.time.DateTime
   import events.KafkaWrapper
+  import utils.http.Implicits._
 
   implicit val ec = env.otoroshiExecutionContext
 
@@ -866,6 +867,7 @@ class AlertsActor(implicit env: Env) extends Actor {
                 case false => s"https://api.mailgun.net/v3/${mailgunSettings.domain}/messages"
               })
               .withAuth("api", mailgunSettings.apiKey, WSAuthScheme.BASIC)
+              .withMaybeProxyServer(config.proxies.alertEmails)
               .post(
                 Map(
                   "from"    -> Seq(s"Otoroshi Alerts <otoroshi@${env.domain}>"),
@@ -897,6 +899,7 @@ class AlertsActor(implicit env: Env) extends Actor {
               env.Ws
                 .url(url)
                 .withHttpHeaders(webhook.headers.toSeq: _*)
+                .withMaybeProxyServer(config.proxies.alertWebhooks)
                 .post(Json.obj("event" -> "ALERT", "payload" -> evt.toEnrichedJson))
                 .andThen {
                   case Failure(e) => {

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { ResetDBButton } from '../components/ResetDBButton';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Form, SelectInput } from '../components/inputs';
+import { Proxy } from '../components/Proxy';
 import moment from 'moment';
 
 function shallowDiffers(a, b) {
@@ -425,6 +426,15 @@ export class DangerZonePage extends Component {
       type: BackOfficeAuthButtons,
       props: {},
     },
+    'proxies.alertEmails': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.alertWebhooks': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.eventsWebhooks': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.clevercloud': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.services': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.auth': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.authority': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.jwk': { type: Proxy, props: { showNonProxyHosts: true } },
+    'proxies.elastic': { type: Proxy, props: { showNonProxyHosts: true } },
   };
 
   formFlow = [
@@ -482,6 +492,25 @@ export class DangerZonePage extends Component {
     'cleverSettings.token',
     'cleverSettings.secret',
     'cleverSettings.orgaId',
+    '>>>Proxies',
+    '-- Proxy for alert emails (mailgun)',
+    'proxies.alertEmails',
+    '-- Proxy for alert webhooks',
+    'proxies.alertWebhooks',
+    '-- Proxy for event webhooks',
+    'proxies.eventsWebhooks',
+    '-- Proxy for Celver-Cloud API access',
+    'proxies.clevercloud',
+    '-- Proxy for services access',
+    'proxies.services',
+    '-- Proxy for auth. access (OAuth, OIDC)',
+    'proxies.auth',
+    '-- Proxy for client validators',
+    'proxies.authority',
+    '-- Proxy for JWKS access',
+    'proxies.jwk',
+    '-- Proxy for elastic access',
+    'proxies.elastic',
   ];
 
   syncSchema = {

@@ -259,7 +259,7 @@ class Env(val configuration: Configuration,
     )
   }
 
-  lazy val internalClient = {
+  lazy val _internalClient = {
     val parser: WSConfigParser = new WSConfigParser(configuration.underlying, environment.classLoader)
     val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
       keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
@@ -314,7 +314,7 @@ class Env(val configuration: Configuration,
   def rootScheme               = if (isDev) "http://" else s"${exposedRootScheme}://"
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
 
-  def Ws = internalClient
+  def Ws = _internalClient
 
   lazy val snowflakeSeed      = configuration.getOptional[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator = IdGenerator(snowflakeSeed)
@@ -524,7 +524,7 @@ class Env(val configuration: Configuration,
               configuration.getOptional[String]("app.importFrom") match {
                 case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
                   logger.info(s"Importing from URL: $url")
-                  Ws.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
+                  _internalClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
                     val json = resp.json.as[JsObject]
                     datastores.globalConfigDataStore
                       .fullImport(json)(ec, this)
@@ -615,7 +615,7 @@ class Env(val configuration: Configuration,
                   v.replace(".", "").replace("-dev", "").replace("v", "").toDouble - 0.5
                 case v => v.replace(".", "").replace("-dev", "").replace("v", "").replace("-snapshot", "").toDouble
               }
-              Ws.url("https://updates.otoroshi.io/api/versions/latest")
+              _internalClient.url("https://updates.otoroshi.io/api/versions/latest")
                 .withRequestTimeout(10.seconds)
                 .withHttpHeaders(
                   "Otoroshi-Version" -> otoroshiVersion,
@@ -650,7 +650,7 @@ class Env(val configuration: Configuration,
   }(otoroshiExecutionContext)
 
   timeout(1000.millis).andThen {
-    case _ => {
+    case _ if clusterConfig.mode != ClusterMode.Worker => {
       implicit val ec = otoroshiExecutionContext
       implicit val ev = this
       for {

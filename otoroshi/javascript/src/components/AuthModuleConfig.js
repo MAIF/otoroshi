@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 
 import { TextInput, NumberInput, SelectInput, CodeInput, BooleanInput } from './inputs';
+import { Proxy } from './Proxy';
+import { Separator } from './Separator';
 import { AlgoSettings } from './JwtVerifier';
 
 import deepSet from 'set-value';
@@ -199,6 +201,7 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.clientSecret', v)}
         />
+        <Separator title="URLs" />
         <TextInput
           label="Authorize URL"
           value={settings.authorizeUrl}
@@ -241,6 +244,7 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.callbackUrl', v)}
         />
+        <Separator title="Token" />
         <TextInput
           label="Access token field name"
           value={settings.accessTokenField}
@@ -277,12 +281,19 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
         />
+        <Separator title="Proxy" />
+        <Proxy 
+          value={settings.proxy}
+          onChange={v => changeTheValue(path + '.proxy', v)}
+        />
+        <Separator title="OIDC Config" />
         <TextInput
           label="OIDC config url"
           value={settings.oidConfig}
           help="..."
           onChange={v => changeTheValue(path + '.oidConfig', v)}
         />
+        <Separator title="Token validation" />
         <AlgoSettings
           algoTitle="Token verification"
           path={`jwtVerifier`}

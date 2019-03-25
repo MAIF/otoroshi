@@ -28,7 +28,7 @@ import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{SourceBody, WSAuthScheme}
+import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
@@ -42,6 +42,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.{Failure, Success, Try}
+import utils.http.Implicits._
 
 /**
  * # TODO:
@@ -120,6 +121,7 @@ case class LeaderConfig(
 case class ClusterConfig(
     mode: ClusterMode = ClusterMode.Off,
     compression: Int = -1,
+    proxy: Option[WSProxyServer],
     leader: LeaderConfig = LeaderConfig(),
     worker: WorkerConfig = WorkerConfig()
 ) {
@@ -135,6 +137,17 @@ object ClusterConfig {
     ClusterConfig(
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       compression = configuration.getOptional[Int]("compression").getOrElse(-1),
+      proxy = configuration.getOptional[String]("proxy.host").map { host =>
+        DefaultWSProxyServer(
+          host = host,
+          port = configuration.getOptional[Int]("proxy.port").getOrElse(3129),
+          principal = configuration.getOptional[String]("proxy.principal"),
+          password = configuration.getOptional[String]("proxy.password"),
+          ntlmDomain = configuration.getOptional[String]("proxy.ntlmDomain"),
+          encoding = configuration.getOptional[String]("proxy.encoding"),
+          nonProxyHosts = None
+        )
+      },
       leader = LeaderConfig(
         name = configuration
           .getOptional[String]("leader.name")
@@ -938,6 +951,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
             .get()
             .filter(_.status == 200)
             .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
@@ -968,6 +982,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
             .post(user.toJson)
             .filter(_.status == 201)
         }
@@ -1055,6 +1070,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
             .withMethod("GET")
             .stream()
             .filter(_.status == 200)
@@ -1197,6 +1213,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
+              .withMaybeProxyServer(config.proxy)
               .withMethod("PUT")
               .withBody(wsBody)
               .stream()

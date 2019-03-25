@@ -1,16 +1,18 @@
 package events.impl
 import env.Env
 import events.{AnalyticEvent, AnalyticsWritesService}
-import models.{HSAlgoSettings, Webhook}
+import models.{GlobalConfig, HSAlgoSettings, Webhook}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.{JsArray, JsValue, Json}
 import security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
+class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends AnalyticsWritesService {
+
+  import utils.http.Implicits._
 
   lazy val logger = Logger("otoroshi-analytics-webhook")
 
@@ -24,8 +26,9 @@ class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
       .url(webhook.url + path)
       .withHttpHeaders(webhook.headers.toSeq: _*)
       .withQueryStringParameters(defaultParams(service, from, to, page, size): _*)
+      .withMaybeProxyServer(config.proxies.eventsWebhooks)
       .get()
-      .map(_.json)
+      .map(r => Json.parse(r.body))
       .map(r => Some(r))
 
   private def defaultParams(service: Option[String],
@@ -75,7 +78,7 @@ class WebHookAnalytics(webhook: Webhook) extends AnalyticsWritesService {
             .replace("@messageType", evt.`@type`)
       )
       .getOrElse(webhook.url)
-    val postResponse = env.Ws.url(url).withHttpHeaders(headers: _*).post(JsArray(event.map(_.toEnrichedJson)))
+    val postResponse = env.Ws.url(url).withHttpHeaders(headers: _*).withMaybeProxyServer(config.proxies.eventsWebhooks).post(JsArray(event.map(_.toEnrichedJson)))
     postResponse.andThen {
       case Success(resp) => {
         logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")

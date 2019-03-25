@@ -6,21 +6,24 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.ActorSystem
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Keep, Source}
 import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import javax.net.ssl.SSLContext
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{BodyReadable, BodyWritable, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSClient, WSClientConfig, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
+import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
 import play.api.{Logger, libs}
+import play.shaded.ahc.org.asynchttpclient.util.{Assertions, MiscUtils}
 import ssl.DynamicSSLEngineProvider
 
 import scala.collection.immutable.TreeMap
@@ -55,6 +58,10 @@ class WsClientChooser(standardClient: WSClient,
       connectionContextHolder.set(client)
     }
     connectionContextHolder.get()
+  }
+
+  def ws[T](request: WebSocketRequest,  clientFlow: Flow[Message, Message, T], customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
+    akkaClient.executeWsRequest(request, clientFlow, customizer)
   }
 
   def url(url: String): WSRequest = {
@@ -163,7 +170,22 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
       val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext)
       connectionContextHolder.set(connectionContext)
     }
-    client.singleRequest(request, connectionContextHolder.get(), connectionPoolSettings)
+    client.singleRequest(request, connectionContextHolder.get(), customizer(connectionPoolSettings))
+  }
+
+  private[utils] def executeWsRequest[T](request: WebSocketRequest, clientFlow: Flow[Message, Message, T], customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
+    val currentSslContext = DynamicSSLEngineProvider.current
+    if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
+      lastSslContext.set(currentSslContext)
+      val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext)
+      connectionContextHolder.set(connectionContext)
+    }
+    client.singleWebSocketRequest(
+      request = request,
+      clientFlow = clientFlow,
+      connectionContext = connectionContextHolder.get(),
+      settings = customizer(ClientConnectionSettings(system))
+    )(mat)
   }
 }
 
@@ -249,6 +271,31 @@ object CaseInsensitiveOrdered extends Ordering[String] {
   }
 }
 
+object WSProxyServerUtils {
+
+  def isIgnoredForHost(hostname: String, nonProxyHosts: Seq[String]): Boolean = {
+    Assertions.assertNotNull(hostname, "hostname")
+    if (nonProxyHosts.nonEmpty) {
+      val var2: Iterator[_] = nonProxyHosts.iterator
+      while ( {
+        var2.hasNext
+      }) {
+        val nonProxyHost: String = var2.next.asInstanceOf[String]
+        if (this.matchNonProxyHost(hostname, nonProxyHost)) return true
+      }
+    }
+    false
+  }
+
+  private def matchNonProxyHost(targetHost: String, nonProxyHost: String): Boolean = {
+    if (nonProxyHost.length > 1) {
+      if (nonProxyHost.charAt(0) == '*') return targetHost.regionMatches(true, targetHost.length - nonProxyHost.length + 1, nonProxyHost, 1, nonProxyHost.length - 1)
+      if (nonProxyHost.charAt(nonProxyHost.length - 1) == '*') return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length - 1)
+    }
+    nonProxyHost.equalsIgnoreCase(targetHost)
+  }
+}
+
 case class AkkaWsClientRequest(
     client: AkkWsClient,
     rawUrl: String,
@@ -268,7 +315,7 @@ case class AkkaWsClientRequest(
   private val _uri = Uri(rawUrl)
 
   private def customizer: ConnectionPoolSettings => ConnectionPoolSettings = {
-    proxy.map { proxySettings =>
+    proxy.filter(p => WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))).map { proxySettings =>
       val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
       val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
         case (Some(principal), Some(password)) => {
@@ -474,4 +521,15 @@ case class AkkaWsClientRequest(
   override def withRequestFilter(filter: WSRequestFilter): WSRequest =
     throw new RuntimeException("Not supported on this WSClient !!!")
   override def withVirtualHost(vh: String): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
+}
+
+object Implicits {
+  implicit class BetterStandaloneWSRequest[T <: StandaloneWSRequest](val req: T) extends AnyVal {
+    def withMaybeProxyServer(opt: Option[WSProxyServer]): req.Self = {
+      opt match {
+        case Some(proxy) => req.withProxyServer(proxy)
+        case None => req.asInstanceOf[req.Self]
+      }
+    }
+  }
 }

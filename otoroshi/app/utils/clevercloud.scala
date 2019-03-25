@@ -1,14 +1,15 @@
 package utils
 
 import java.util.Base64
+
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import com.google.common.base.Charsets
 import env.Env
+import models.GlobalConfig
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue}
 import play.utils.UriEncoding
@@ -64,12 +65,14 @@ object CleverCloudClient {
   case object PUT    extends HttpMethod
   case object DELETE extends HttpMethod
 
-  def apply(env: Env, settings: CleverSettings, orgaId: String): CleverCloudClient =
-    new CleverCloudClient(env, settings, orgaId)
+  def apply(env: Env, config: GlobalConfig, settings: CleverSettings, orgaId: String): CleverCloudClient =
+    new CleverCloudClient(env, config, settings, orgaId)
 
 }
 
-class CleverCloudClient(env: Env, val settings: CleverSettings, val orgaId: String) {
+class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSettings, val orgaId: String) {
+
+  import utils.http.Implicits._
 
   import CleverCloudClient._
 
@@ -97,6 +100,7 @@ class CleverCloudClient(env: Env, val settings: CleverSettings, val orgaId: Stri
     val builder = env.Ws
       .url(url)
       .withHttpHeaders("Authorization" -> params)
+      .withMaybeProxyServer(config.proxies.clevercloud)
       .withQueryStringParameters(queryParams: _*)
 
     // logger.debug(

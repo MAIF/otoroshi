@@ -53,12 +53,12 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           }
         }
         Future.traverse(
-          config.analyticsWebhooks.map(c => new WebHookAnalytics(c)) ++
+          config.analyticsWebhooks.map(c => new WebHookAnalytics(c, config)) ++
           config.elasticWritesConfigs.map(
             c =>
               new ElasticWritesAnalytics(c,
                                          env.environment,
-                                         env.Ws,
+                                         env,
                                          env.otoroshiExecutionContext,
                                          env.otoroshiActorSystem)
           )

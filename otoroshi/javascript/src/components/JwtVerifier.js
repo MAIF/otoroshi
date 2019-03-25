@@ -16,6 +16,8 @@ import {
 
 import deepSet from 'set-value';
 import _ from 'lodash';
+import { Separator } from './Separator';
+import { Proxy } from './Proxy';
 
 export class LocationSettings extends Component {
   state = {
@@ -274,6 +276,11 @@ export class AlgoSettings extends Component {
             onChange={v => changeTheValue(path + '.kty', v)}
             possibleValues={[{ label: 'RSA', value: 'RSA' }, { label: 'EC', value: 'EC' }]}
           />,
+          <Separator title="Proxy" />,
+          <Proxy 
+            value={algo.proxy}
+            onChange={v => changeTheValue(path + '.proxy', v)}
+          />
         ]}
       </div>
     );
@@ -291,7 +298,7 @@ export class JwtVerifier extends Component {
   };
 
   changeTheValue = (name, value) => {
-    console.log('changeTheValue', name, value);
+    // console.log('changeTheValue', name, value);
     if (this.props.onChange) {
       const clone = _.cloneDeep(this.props.value || this.props.verifier);
       const path = name.startsWith('.') ? name.substr(1) : name;
@@ -353,6 +360,7 @@ export class JwtVerifier extends Component {
         />
         <br />
         {/* **************************************************************************************************** */}
+        <Separator title="Token location" />
         <LocationSettings
           path={`${path}.source`}
           changeTheValue={this.changeTheValue}
@@ -360,6 +368,7 @@ export class JwtVerifier extends Component {
         />
         <br />
         {/* **************************************************************************************************** */}
+        <Separator title="Token validation" />
         <AlgoSettings
           path={`${path}.algoSettings`}
           changeTheValue={this.changeTheValue}
@@ -368,6 +377,7 @@ export class JwtVerifier extends Component {
         />
         <br />
         {/* **************************************************************************************************** */}
+        <Separator title="Strategy" />
         <SelectInput
           label="Verif. strategy"
           value={verifier.strategy.type}
@@ -456,6 +466,7 @@ export class JwtVerifier extends Component {
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
+          <Separator title="Re-sign settings" />,
           <AlgoSettings
             algoTitle="Re-sign algo."
             path={`${path}.strategy.algoSettings`}
@@ -472,12 +483,14 @@ export class JwtVerifier extends Component {
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
+          <Separator title="Re-sign settings" />,
           <AlgoSettings
             algoTitle="Re-sign algo."
             path={`${path}.strategy.algoSettings`}
             changeTheValue={this.changeTheValue}
             algo={verifier.strategy.algoSettings}
           />,
+          <Separator title="Transformation settings" />,
           <LocationSettings
             locationTitle="Token location"
             path={`${path}.strategy.transformSettings.location`}

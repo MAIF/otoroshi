@@ -134,6 +134,8 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
+  override def latestSafe: Option[GlobalConfig] = Option(configCache.get())
+
   override def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig] = {
     val time = System.currentTimeMillis
     val ref  = configCache.get()

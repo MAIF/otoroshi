@@ -776,6 +776,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           )
         )
       case Some(url) => {
+        // TODO: use a possible proxy ????
         env.Ws.url(url).withRequestTimeout(10.seconds).get().map { resp =>
           if (resp.status == 200) {
             Try {
@@ -830,7 +831,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                           headers = Map.empty[String, String],
                           timeout = FiniteDuration(2000, TimeUnit.MILLISECONDS),
                           ttl = FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS),
-                          kty = KeyType.RSA
+                          kty = KeyType.RSA,
+                          None
                       )
                     )
                   )

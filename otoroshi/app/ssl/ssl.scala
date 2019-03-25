@@ -20,13 +20,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{
-  KeyManagerConfig,
-  KeyStoreConfig,
-  SSLConfigSettings,
-  TrustManagerConfig,
-  TrustStoreConfig
-}
+import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -38,6 +32,7 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.{DateTime, Interval}
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.WSProxyServer
 import play.api.mvc._
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
@@ -1068,7 +1063,8 @@ object ClientCertificateValidator {
             timeout = (json \ "timeout").asOpt[Long].getOrElse(10000L),
             noCache = (json \ "noCache").asOpt[Boolean].getOrElse(false),
             alwaysValid = (json \ "alwaysValid").asOpt[Boolean].getOrElse(false),
-            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+            proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
           )
         )
       } recover {
@@ -1089,6 +1085,7 @@ object ClientCertificateValidator {
       "noCache"     -> o.noCache,
       "alwaysValid" -> o.alwaysValid,
       "headers"     -> o.headers,
+      "proxy"       -> WSProxyServerJson.maybeProxyToJson(o.proxy)
     )
   }
 
@@ -1119,8 +1116,11 @@ case class ClientCertificateValidator(
     timeout: Long = 10000L,
     noCache: Boolean,
     alwaysValid: Boolean,
-    headers: Map[String, String] = Map.empty
+    headers: Map[String, String] = Map.empty,
+    proxy: Option[WSProxyServer]
 ) {
+
+  import utils.http.Implicits._
 
   /*
   TEST CODE
@@ -1162,7 +1162,8 @@ case class ClientCertificateValidator(
       chain: Seq[X509Certificate],
       desc: ServiceDescriptor,
       apikey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
+      user: Option[PrivateAppsUser] = None,
+      config: GlobalConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     val certPayload = chain
       .map { cert =>
@@ -1194,6 +1195,7 @@ case class ClientCertificateValidator(
       .withMethod(method)
       .withBody(payload)
       .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
+      .withMaybeProxyServer(proxy.orElse(config.proxies.authority))
       .execute()
       .map { resp =>
         resp.status match { // TODO: can be good | revoked | unknown
@@ -1235,14 +1237,15 @@ case class ClientCertificateValidator(
       chain: Seq[X509Certificate],
       desc: ServiceDescriptor,
       apikey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
+      user: Option[PrivateAppsUser] = None,
+      config: GlobalConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key = computeKeyFromChain(chain) + "-" + apikey
       .map(_.clientId)
       .orElse(user.map(_.randomId))
       .getOrElse("none") + "-" + desc.id
     if (noCache) {
-      validateCertificateChain(chain, desc, apikey, user).map {
+      validateCertificateChain(chain, desc, apikey, user, config).map {
         case Some(bool) => bool
         case None       => false
       }
@@ -1251,7 +1254,7 @@ case class ClientCertificateValidator(
         case Some(true)  => FastFuture.successful(true)
         case Some(false) => FastFuture.successful(false)
         case None => {
-          validateCertificateChain(chain, desc, apikey, user).flatMap {
+          validateCertificateChain(chain, desc, apikey, user, config).flatMap {
             case Some(false) => setBadLocalValidation(key).map(_ => false)
             case Some(true)  => setGoodLocalValidation(key).map(_ => true)
             case None        => setBadLocalValidation(key).map(_ => false)
@@ -1264,13 +1267,14 @@ case class ClientCertificateValidator(
   private def internalValidateClientCertificates[A](request: RequestHeader,
                                                     desc: ServiceDescriptor,
                                                     apikey: Option[ApiKey] = None,
-                                                    user: Option[PrivateAppsUser] = None)(
+                                                    user: Option[PrivateAppsUser] = None,
+                                                    config: GlobalConfig)(
       f: => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     request.clientCertificateChain match {
       case Some(chain) if alwaysValid => f.map(Right.apply)
       case Some(chain) =>
-        isCertificateChainValid(chain, desc, apikey, user).flatMap {
+        isCertificateChainValid(chain, desc, apikey, user, config).flatMap {
           case true => f.map(Right.apply)
           case false =>
             Errors
@@ -1300,9 +1304,10 @@ case class ClientCertificateValidator(
       req: RequestHeader,
       desc: ServiceDescriptor,
       apikey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
+      user: Option[PrivateAppsUser] = None,
+      config: GlobalConfig
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    internalValidateClientCertificates(req, desc, apikey, user)(f).map {
+    internalValidateClientCertificates(req, desc, apikey, user, config)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
@@ -1311,10 +1316,11 @@ case class ClientCertificateValidator(
   def wsValidateClientCertificates(req: RequestHeader,
                                    desc: ServiceDescriptor,
                                    apikey: Option[ApiKey] = None,
-                                   user: Option[PrivateAppsUser] = None)(
+                                   user: Option[PrivateAppsUser] = None,
+                                   config: GlobalConfig)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    internalValidateClientCertificates(req, desc, apikey, user)(f).map {
+    internalValidateClientCertificates(req, desc, apikey, user, config)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
