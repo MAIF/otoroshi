@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "main": "release.js",
   "dependencies": {
-    "@rauschma/stringio": "^1.4.0",
-    "fs-extra": "^7.0.0",
-    "lodash": "^4.17.11",
-    "minimist": "^1.2.0",
-    "moment": "^2.22.2",
-    "node-cmd": "^3.0.0",
-    "node-fetch": "^2.2.0"
+    "@rauschma/stringio": "1.4.0",
+    "fs-extra": "7.0.0",
+    "lodash": "4.17.11",
+    "minimist": "1.2.0",
+    "moment": "2.22.2",
+    "node-cmd": "3.0.0",
+    "node-fetch": "2.2.0"
   }
 }
