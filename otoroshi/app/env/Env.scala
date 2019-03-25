@@ -10,8 +10,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
 import cluster.{ClusterAgent, _}
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import com.typesafe.sslconfig.ssl.SSLConfigSettings
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
@@ -26,14 +25,14 @@ import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import security.{ClaimCrypto, IdGenerator}
 import ssl.FakeKeyStore.KeystoreSettings
-import ssl.{Cert, ClientCertificateValidator, DynamicSSLEngineProvider, FakeKeyStore}
+import ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
 import storage.DataStores
 import storage.cassandra.CassandraDataStores
 import storage.inmemory.InMemoryDataStores
 import storage.leveldb.LevelDbDataStores
 import storage.mongo.MongoDataStores
-import storage.redis.next._
 import storage.redis.RedisDataStores
+import storage.redis.next._
 import utils.Metrics
 import utils.http._
 
@@ -414,6 +413,7 @@ class Env(val configuration: Configuration,
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
+  //val tcpProxy = utils.tcp.TcpProxy("0.0.0.0", 1234, false, this).start()
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
     healthCheckerActor ! PoisonPill
@@ -424,6 +424,7 @@ class Env(val configuration: Configuration,
     clusterLeaderAgent.stop()
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
+    //tcpProxy.flatMap(_.unbind())(otoroshiExecutionContext)
     FastFuture.successful(())
   })
 
@@ -658,6 +659,7 @@ class Env(val configuration: Configuration,
         _ <- datastores.certificatesDataStore
               .findAll()
               .map { certs =>
+                println(certs.map(_.domain).mkString("\n"))
                 //val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
                 val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
                 val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
