@@ -31,7 +31,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
   lazy val analytics = new ElasticWritesAnalytics(
     ElasticAnalyticsConfig(elasticUrl, Some("otoroshi-events"), Some("event"), None, None),
     otoroshiComponents.environment,
-    ws,
+    otoroshiComponents.env,
     otoroshiComponents.executionContext,
     otoroshiComponents.actorSystem
   )
