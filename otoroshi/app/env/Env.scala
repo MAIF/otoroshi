@@ -35,6 +35,7 @@ import storage.redis.RedisDataStores
 import storage.redis.next._
 import utils.Metrics
 import utils.http._
+import utils.tcp.{TcpProxy, TcpService}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -413,12 +414,11 @@ class Env(val configuration: Configuration,
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
-  val tcpProxy1 = utils.tcp.TcpProxy("0.0.0.0", 1201, utils.tcp.TlsMode.Disabled, false)(otoroshiActorSystem, otoroshiMaterializer).start()
-  val tcpProxy2 = utils.tcp.TcpProxy("0.0.0.0", 1202, utils.tcp.TlsMode.PassThrough, false)(otoroshiActorSystem, otoroshiMaterializer).start()
-  val tcpProxy3 = utils.tcp.TcpProxy("0.0.0.0", 1203, utils.tcp.TlsMode.Enabled, false)(otoroshiActorSystem, otoroshiMaterializer).start()
-  val tcpProxy4 = utils.tcp.TcpProxy("0.0.0.0", 1204, utils.tcp.TlsMode.Enabled, true)(otoroshiActorSystem, otoroshiMaterializer).start()
+  val servers = TcpService.runServers(this)(otoroshiExecutionContext, otoroshiActorSystem, otoroshiMaterializer)
+
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
+    implicit val ec = otoroshiExecutionContext
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
@@ -427,10 +427,7 @@ class Env(val configuration: Configuration,
     clusterLeaderAgent.stop()
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
-    tcpProxy1.flatMap(_.unbind())(otoroshiExecutionContext)
-    tcpProxy2.flatMap(_.unbind())(otoroshiExecutionContext)
-    tcpProxy3.flatMap(_.unbind())(otoroshiExecutionContext)
-    tcpProxy4.flatMap(_.unbind())(otoroshiExecutionContext)
+    servers.flatMap(_.stop())
     // FastFuture.successful(())
   })
 
