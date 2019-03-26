@@ -236,6 +236,9 @@ object TcpService {
       sni = SniSettings(true, false),
       clientAuth = ClientAuth.None,
       port = 1205,
+      // test with
+      // curl -v --resolve www.google.fr:1205:127.0.0.1 https://www.google.fr:1205/
+      // curl -v --resolve www.amazon.fr:1205:127.0.0.1 https://www.amazon.fr:1205/
       rules = Seq(
         TcpRule(
           domain = "www.google.fr",
