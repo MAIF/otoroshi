@@ -414,7 +414,7 @@ class Env(val configuration: Configuration,
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
-  val servers = TcpService.runServers(this)(otoroshiExecutionContext, otoroshiActorSystem, otoroshiMaterializer)
+  val servers = TcpService.runServers(this)
 
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
@@ -427,7 +427,7 @@ class Env(val configuration: Configuration,
     clusterLeaderAgent.stop()
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
-    servers.flatMap(_.stop())
+    servers.stop()
     // FastFuture.successful(())
   })
 
