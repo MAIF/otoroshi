@@ -413,7 +413,10 @@ class Env(val configuration: Configuration,
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
-  //val tcpProxy = utils.tcp.TcpProxy("0.0.0.0", 1234, false, this).start()
+  val tcpProxy1 = utils.tcp.TcpProxy("0.0.0.0", 1201, utils.tcp.TlsMode.Disabled, false)(otoroshiActorSystem, otoroshiMaterializer).start()
+  val tcpProxy2 = utils.tcp.TcpProxy("0.0.0.0", 1202, utils.tcp.TlsMode.PassThrough, false)(otoroshiActorSystem, otoroshiMaterializer).start()
+  val tcpProxy3 = utils.tcp.TcpProxy("0.0.0.0", 1203, utils.tcp.TlsMode.Enabled, false)(otoroshiActorSystem, otoroshiMaterializer).start()
+  val tcpProxy4 = utils.tcp.TcpProxy("0.0.0.0", 1204, utils.tcp.TlsMode.Enabled, true)(otoroshiActorSystem, otoroshiMaterializer).start()
   datastores.before(configuration, environment, lifecycle)
   lifecycle.addStopHook(() => {
     healthCheckerActor ! PoisonPill
@@ -424,8 +427,11 @@ class Env(val configuration: Configuration,
     clusterLeaderAgent.stop()
     otoroshiActorSystem.terminate()
     datastores.after(configuration, environment, lifecycle)
-    //tcpProxy.flatMap(_.unbind())(otoroshiExecutionContext)
-    FastFuture.successful(())
+    tcpProxy1.flatMap(_.unbind())(otoroshiExecutionContext)
+    tcpProxy2.flatMap(_.unbind())(otoroshiExecutionContext)
+    tcpProxy3.flatMap(_.unbind())(otoroshiExecutionContext)
+    tcpProxy4.flatMap(_.unbind())(otoroshiExecutionContext)
+    // FastFuture.successful(())
   })
 
   lazy val port =
@@ -659,7 +665,6 @@ class Env(val configuration: Configuration,
         _ <- datastores.certificatesDataStore
               .findAll()
               .map { certs =>
-                println(certs.map(_.domain).mkString("\n"))
                 //val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
                 val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
                 val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")

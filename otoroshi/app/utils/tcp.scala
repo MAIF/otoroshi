@@ -1,24 +1,24 @@
 package utils.tcp
 
-import java.security.SecureRandom
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import java.net.{InetAddress, InetSocketAddress}
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicLong
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.settings.ServerSettings
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.TLSProtocol.NegotiateNewSession
-import akka.stream.scaladsl.{Flow, Keep, Sink, Tcp}
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
 import akka.stream.{ActorMaterializer, IgnoreComplete}
 import akka.util.ByteString
 import akka.{Done, TcpUtils}
-import env.Env
 import javax.net.ssl._
 import play.api.Logger
 import play.server.api.SSLEngineProvider
 import ssl.{CustomSSLEngine, DynamicSSLEngineProvider}
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 import scala.util.control.NonFatal
 
@@ -33,17 +33,20 @@ object TlsMode {
 }
 
 /**
-- [ ] TCP service can be disabled
-- [ ] TCP service without sni is defined on a port and forwards to targets
-- [ ] Target can define their own dns resolving
+- [x] TCP service can be disabled
+- [x] TCP service without sni is defined on a port and forwards to targets
+- [x] Target can define their own dns resolving
 - [ ] TCP service can match a sni domain for a same port (need to catch sni name per request)
-- [ ] TCP service can forward non matching request to local http server (only for sni request)
-- [ ] TCP service can be exposed over tls using dyn tls stuff
-- [ ] TCP service can passthrough tls
-- [ ] rules
+- [x] TCP service can forward non matching request to local http server (only for sni request)
+- [x] TCP service can be exposed over tls using dyn tls stuff
+- [x] TCP service can passthrough tls
+- [x] rules
   * if no sni matching, then only one Tcp service can exists with a specific port number
   * if sni matching, then multiple Tcp services can exists with a the port number
   * if sni matching, then all Tcp services using the same port number must have the same Tls mode
+- [ ] We need a new datastore for tcp services
+- [ ] We need a new admin api for tcp services
+- [ ] We need to wire routexxx functions to the new datastore
 - [ ] A thread will request all tcp services with unique ports and stats tcp server.  Servers will be shut down with otoroshi app
  */
 case class TcpService(
@@ -56,89 +59,144 @@ case class TcpService(
 )
 
 object TcpService {
+
   private val reqCounter = new AtomicLong(0L)
   private val log = Logger("tcp-proxy")
-  def findByPort(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] = FastFuture.successful(Some(TcpService(
-    enabled = true,
-    tls = TlsMode.Enabled,
-    sni = SniSettings(false, false),
-    port = 1234,
-    interface = "0.0.0.0",
-    rules = Seq(TcpRule(
-      domain = "*",
-      targets = Seq(TcpTarget(
-        "localhost",
-        None,
-        1235,
-        false
+  private val services = Seq(
+    TcpService(
+      enabled = true,
+      tls = TlsMode.Disabled,
+      sni = SniSettings(false, false),
+      port = 1201,
+      rules = Seq(TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "localhost",
+            None,
+            1301,
+            false
+          ),
+          TcpTarget(
+            "localhost",
+            None,
+            1302,
+            false
+          )
+        )
       ))
-    ))
-  )))
-  def domainMatch(matchRule: String, domain: String): Boolean = true
-  def route(incoming: Tcp.IncomingConnection, sni: Option[String], ref: Future[String])(implicit ec: ExecutionContext, env: Env, actorSystem: ActorSystem, materializer: ActorMaterializer): Future[Done] = {
-    ref.map(s => log.info(s"routing on ${s}"))
-    // val maybeSni = Option(ref).map(_.get())
+    ),
+    TcpService(
+      enabled = true,
+      tls = TlsMode.PassThrough,
+      sni = SniSettings(false, false),
+      port = 1202,
+      rules = Seq(TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "ssl.ancelin.org",
+            Some("127.0.0.1"),
+            1303,
+            false
+          ),
+          TcpTarget(
+            "ssl.ancelin.org",
+            Some("127.0.0.1"),
+            1304,
+            false
+          )
+        )
+      ))
+    ),
+    TcpService(
+      enabled = true,
+      tls = TlsMode.Enabled,
+      sni = SniSettings(false, false),
+      port = 1203,
+      rules = Seq(TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "localhost",
+            None,
+            1301,
+            false
+          ),
+          TcpTarget(
+            "localhost",
+            None,
+            1302,
+            false
+          )
+        )
+      ))
+    ),
+    TcpService(
+      enabled = true,
+      tls = TlsMode.Enabled,
+      sni = SniSettings(true, false),
+      port = 1204,
+      rules = Seq(
+        TcpRule(
+          domain = "ssl.ancelin.org",
+          targets = Seq(
+            TcpTarget(
+              "localhost",
+              None,
+              1301,
+              false
+            )
+          )
+        ),
+        TcpRule(
+          domain = "ssl2.ancelin.org",
+          targets = Seq(
+            TcpTarget(
+              "localhost",
+              None,
+              1302,
+              false
+            )
+          )
+        )
+      )
+    )
+  )
+
+  def findByPort(port: Int)(implicit ec: ExecutionContext): Future[Option[TcpService]] = FastFuture.successful(services.find(_.port == port))
+
+  // TODO: handle *
+  def domainMatch(matchRule: String, domain: String): Boolean = matchRule == domain
+
+  def routeWithoutSNI(incoming: Tcp.IncomingConnection, debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer): Future[Done] = {
     TcpService.findByPort(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled => {
         try {
-
-          log.info(s"local: ${incoming.localAddress} ${incoming.localAddress.getHostName} ${incoming.localAddress.getHostString} ${incoming.localAddress.getAddress}")
-          log.info(s"remote: ${incoming.remoteAddress} ${incoming.remoteAddress.getHostName} ${incoming.remoteAddress.getHostString} ${incoming.remoteAddress.getAddress}")
-          val fullLayer: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] = service.sni.enabled match {
-            case true if sni.isDefined => {
-              val sniDomain = sni.get
-              service.rules.find(r => domainMatch(r.domain, sniDomain)) match {
-                case Some(rule) => {
-                  val targets = rule.targets
-                  val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
-                  val target = targets.apply(index.toInt)
-                  target.tls match {
-                    // TODO: test passthrough
-                    case true => {
-                      // TODO : be careful about domain name
-                      // TODO : handle local resolve ?
-                      Tcp().outgoingTlsConnection(target.host, target.port, DynamicSSLEngineProvider.current, NegotiateNewSession.withDefaults)
-                    }
-                    case false => {
-                      // TODO : handle local resolve ?
-                      Tcp().outgoingConnection(target.host, target.port)
-                    }
-                  }
+          log.info(s"local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
+          val fullLayer: Flow[ByteString, ByteString, Future[Tcp.OutgoingConnection]] = {
+            val targets = service.rules.flatMap(_.targets)
+            val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+            val target = targets.apply(index.toInt)
+            target.tls match {
+              case true => {
+                val remoteAddress = target.ip match {
+                  case Some(ip) => new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress), target.port)
+                  case None => new InetSocketAddress(target.host, target.port)
                 }
-                case None => if (service.sni.forwardIfNoMatch) {
-                  Tcp().outgoingConnection("127.0.0.1", env.port)
-                } else {
-                  throw new RuntimeException("no domain matches")
-                }
+                Tcp().outgoingTlsConnection(remoteAddress, DynamicSSLEngineProvider.current, NegotiateNewSession.withDefaults)
               }
-            }
-            case _ => {
-              val targets = service.rules.flatMap(_.targets)
-              val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
-              val target = targets.apply(index.toInt)
-              target.tls match {
-                // TODO: test passthrough
-                case true => {
-                  // TODO : be careful about domain name
-                  // TODO : handle local resolve ?
-                  Tcp().outgoingTlsConnection(target.host, target.port, DynamicSSLEngineProvider.current, NegotiateNewSession.withDefaults)
+              case false => {
+                val remoteAddress = target.ip match {
+                  case Some(ip) => new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress), target.port)
+                  case None => new InetSocketAddress(target.host, target.port)
                 }
-                case false => {
-                  // TODO : handle local resolve ?
-                  Tcp().outgoingConnection(target.host, target.port)
-                }
+                Tcp().outgoingConnection(remoteAddress)
               }
             }
           }
-          fullLayer
-            .map { bs =>
-              log.info("[RESP]: " + bs.utf8String)
-              bs
-            }
-            .joinMat(incoming.flow.map { bs =>
-              log.info("[REQ]: " + bs.utf8String)
-              bs
-            })(Keep.left)
+          fullLayer.alsoTo(debugger("[RESP]: "))
+            .joinMat(incoming.flow.alsoTo(debugger("[REQ]: ")))(Keep.left)
             .run()
             .map(_ => Done)
             .recover {
@@ -153,9 +211,71 @@ object TcpService {
       case _ => Future.failed[Done](new RuntimeException("No matching service !"))
     }
   }
+
+  def routeWithSNI(incoming: Tcp.IncomingConnection, ref: ConcurrentLinkedQueue[String], debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer): Future[Done] = {
+    TcpService.findByPort(incoming.localAddress.getPort).flatMap {
+      case Some(service) if service.enabled && service.sni.enabled => {
+        try {
+          log.info(s"local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
+          val fullLayer: Flow[ByteString, ByteString, Future[_]] = Flow.lazyInitAsync { () =>
+            val fu = FastFuture.successful(ref.poll())
+            fu.map { sniDomain =>
+              service.rules.find(r => domainMatch(r.domain, sniDomain)) match {
+                case Some(rule) => {
+                  val targets = rule.targets
+                  val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+                  val target = targets.apply(index.toInt)
+                  target.tls match {
+                    case true => {
+                      val remoteAddress = target.ip match {
+                        case Some(ip) => new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress), target.port)
+                        case None => new InetSocketAddress(target.host, target.port)
+                      }
+                      Tcp().outgoingTlsConnection(remoteAddress, DynamicSSLEngineProvider.current, NegotiateNewSession.withDefaults)
+                    }
+                    case false => {
+                      val remoteAddress = target.ip match {
+                        case Some(ip) => new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress), target.port)
+                        case None => new InetSocketAddress(target.host, target.port)
+                      }
+                      Tcp().outgoingConnection(remoteAddress)
+                    }
+                  }
+                }
+                case None if service.sni.forwardIfNoMatch => {
+                  // TODO: use actual port from env
+                  // TODO: check for TLS ? maybe from config
+                  Tcp().outgoingConnection("127.0.0.1", 9999)
+                }
+                case None => {
+                  Flow[ByteString].flatMapConcat(_ => Source.failed(new RuntimeException("No domain matches")))
+                }
+              }
+            } recover {
+              case e =>
+                log.error("SNI failed", e)
+                Flow[ByteString].flatMapConcat(_ => Source.failed(e))
+            }
+          }
+          fullLayer.alsoTo(debugger("[RESP]: "))
+            .joinMat(incoming.flow.alsoTo(debugger("[REQ]: ")))(Keep.left)
+            .run()
+            .map(_ => Done)
+            .recover {
+              case NonFatal(ex) => Done
+            }
+        } catch {
+          case NonFatal(e) =>
+            log.error(s"Could not materialize handling flow for ${incoming}", e)
+            throw e
+        }
+      }
+      case _ => Future.failed[Done](new RuntimeException("No matching service !"))
+    }
+  }
 }
 
-class TcpEngineProvider(ref: Promise[String]) extends SSLEngineProvider {
+class TcpEngineProvider(ref: ConcurrentLinkedQueue[String]) extends SSLEngineProvider {
 
   override def createSSLEngine(): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.current
@@ -174,8 +294,7 @@ class TcpEngineProvider(ref: Promise[String]) extends SSLEngineProvider {
         sniServerName match {
           case hn: SNIHostName =>
             val hostName = hn.getAsciiName
-            Option(ref).map(_.trySuccess(hostName))
-            println(s"hostName $hostName - ${Thread.currentThread().getName}")
+            Option(ref).map(_.offer(hostName))
             DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
           case _ =>
@@ -191,58 +310,78 @@ class TcpEngineProvider(ref: Promise[String]) extends SSLEngineProvider {
 }
 
 object TcpProxy {
-  def apply(interface: String, port: Int, passThrough: Boolean, env: Env): TcpProxy = new TcpProxy(interface, port, env)
+  def apply(interface: String, port: Int, tls: TlsMode, sni: Boolean, debug: Boolean = false)(implicit system: ActorSystem, mat: ActorMaterializer): TcpProxy = new TcpProxy(interface, port, tls, sni, debug)(system, mat)
 }
 
-class TcpProxy(interface: String, port: Int, env: Env) {
+class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, debug: Boolean = false)(implicit system: ActorSystem, mat: ActorMaterializer) {
 
   private val log = Logger("tcp-proxy")
-  private implicit val system = ActorSystem("tcp-proxy")
   private implicit val ec = system.dispatcher
-  private implicit val mat = ActorMaterializer.create(system)
+  private val queue = new ConcurrentLinkedQueue[String]()
 
-  private val tl = new ThreadLocal[AtomicReference[Promise[String]]]()
+  private def debugger(title: String): Sink[ByteString, Future[Done]] = debug match {
+    case true => Sink.foreach[ByteString](bs => log.info(title + bs.utf8String))
+    case false => Sink.ignore
+  }
 
-  private def tcpBind(settings: ServerSettings): Future[Tcp.ServerBinding] = {
+  private def tcpBindTlsAndSNI(settings: ServerSettings): Future[Tcp.ServerBinding] = {
     TcpUtils.bindTlsWithSSLEngine(
       interface = interface,
       port = port,
       createSSLEngine = () => {
-        val ref = tl.get()
-        println(s"createEnginee ($ref) ${Thread.currentThread().getName}")
-        new TcpEngineProvider(ref.get()).createSSLEngine()
+        new TcpEngineProvider(queue).createSSLEngine()
       },
       backlog = settings.backlog,
       options = settings.socketOptions,
       idleTimeout = Duration.Inf,
       verifySession = session => {
-        println(s"verify session ${session} ${Thread.currentThread().getName}")
         Success(())
       },
       closing = IgnoreComplete
     ).mapAsyncUnordered(settings.maxConnections) { incoming =>
-      val prom = Promise[String]
-      val ref = new AtomicReference[Promise[String]](prom)
-      tl.set(ref)
-      println(s"route ${Thread.currentThread().getName}")
-      val f = TcpService.route(incoming, None, prom.future)(ec, env, system, mat)
-      prom.future.andThen {
-        case _ =>
-          println("cleanup")
-          tl.remove()
-      }
-      f
+      TcpService.routeWithSNI(incoming, queue, debugger)(ec, system, mat)
     }
-    .to(Sink.foreach { w =>
-      println(s"done $w ${Thread.currentThread().getName}")
-    })
+    .to(Sink.ignore)
     .run()
   }
 
+  private def tcpBindTls(settings: ServerSettings): Future[Tcp.ServerBinding] = {
+    TcpUtils.bindTlsWithSSLEngine(
+      interface = interface,
+      port = port,
+      createSSLEngine = () => {
+        new TcpEngineProvider(null).createSSLEngine()
+      },
+      backlog = settings.backlog,
+      options = settings.socketOptions,
+      idleTimeout = Duration.Inf,
+      verifySession = session => {
+        Success(())
+      },
+      closing = IgnoreComplete
+    ).mapAsyncUnordered(settings.maxConnections) { incoming =>
+      TcpService.routeWithoutSNI(incoming, debugger)(ec, system, mat)
+    }.to(Sink.ignore).run()
+  }
+
+  private def tcpBindNoTls(settings: ServerSettings): Future[Tcp.ServerBinding] = {
+    Tcp().bind(
+      interface = interface,
+      port = port,
+      halfClose = false,
+      backlog = settings.backlog,
+      options = settings.socketOptions,
+      idleTimeout = Duration.Inf
+    ).mapAsyncUnordered(settings.maxConnections) { incoming =>
+      TcpService.routeWithoutSNI(incoming, debugger)(ec, system, mat)
+    }.to(Sink.ignore).run()
+  }
+
   def start(): Future[Tcp.ServerBinding] = {
-    tcpBind(ServerSettings(
-      """
-        |max-connections = 2048
+
+    // TODO: fetch from play config
+    val settings = ServerSettings(
+      """max-connections = 2048
         |remote-address-header = on
         |raw-request-uri-header = on
         |pipelining-limit = 64
@@ -255,10 +394,18 @@ class TcpProxy(interface: String, port: Int, env: Env) {
         |  tcp-keep-alive = true
         |  tcp-oob-inline = undefined
         |  tcp-no-delay = undefined
-        |}
-      """.stripMargin))
+        |}""".stripMargin)
+
+    tls match {
+      case TlsMode.Disabled => tcpBindNoTls(settings)
+      case TlsMode.PassThrough => tcpBindNoTls(settings)
+      case TlsMode.Enabled if !sni => tcpBindTls(settings)
+      case TlsMode.Enabled if sni => tcpBindTlsAndSNI(settings)
+    }
   }
 }
+
+
 // try {
 //   log.info(s"local: ${incoming.localAddress} ${incoming.localAddress.getHostName} ${incoming.localAddress.getHostString} ${incoming.localAddress.getAddress}")
 //   log.info(s"remote: ${incoming.remoteAddress} ${incoming.remoteAddress.getHostName} ${incoming.remoteAddress.getHostString} ${incoming.remoteAddress.getAddress}")

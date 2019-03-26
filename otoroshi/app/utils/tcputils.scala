@@ -3,8 +3,8 @@ package akka
 import akka.actor.ActorSystem
 import akka.io.Inet.SocketOption
 import akka.stream.scaladsl.Tcp.{IncomingConnection, ServerBinding}
-import akka.stream.{IgnoreComplete, TLSClosing}
 import akka.stream.scaladsl.{Source, Tcp}
+import akka.stream.{IgnoreComplete, TLSClosing}
 import javax.net.ssl.{SSLEngine, SSLSession}
 
 import scala.collection.immutable

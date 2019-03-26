@@ -797,11 +797,13 @@ object FakeKeyStore {
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
-    val extensions   = new CertificateExtensions()
-    val generalNames = new GeneralNames()
-    generalNames.add(new GeneralName(new DNSName(host)))
-    extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
-    certInfo.set(X509CertInfo.EXTENSIONS, extensions)
+    if (!host.contains("*")) {
+      val extensions = new CertificateExtensions()
+      val generalNames = new GeneralNames()
+      generalNames.add(new GeneralName(new DNSName(host)))
+      extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
+      certInfo.set(X509CertInfo.EXTENSIONS, extensions)
+    }
 
     // Create a new certificate and sign it
     val cert = new X509CertImpl(certInfo)
@@ -843,11 +845,13 @@ object FakeKeyStore {
     val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
-    val extensions   = new CertificateExtensions()
-    val generalNames = new GeneralNames()
-    generalNames.add(new GeneralName(new DNSName(host)))
-    extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
-    certInfo.set(X509CertInfo.EXTENSIONS, extensions)
+    if (!host.contains("*")) {
+      val extensions = new CertificateExtensions()
+      val generalNames = new GeneralNames()
+      generalNames.add(new GeneralName(new DNSName(host)))
+      extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
+      certInfo.set(X509CertInfo.EXTENSIONS, extensions)
+    }
 
     // Create a new certificate and sign it
     val cert                 = new X509CertImpl(certInfo)
