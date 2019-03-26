@@ -563,6 +563,7 @@ class RunningServers(env: Env) {
   private val running = new AtomicBoolean(false)
   private val syncing = new AtomicBoolean(false)
   private val runningServers = new AtomicReference[Seq[RunningServer]](Seq.empty)
+  private val log = Logger("tcp-proxy")
 
   private def updateRunningServers(): Unit = {
     if (running.get() && syncing.compareAndSet(false, true)) {
@@ -571,16 +572,20 @@ class RunningServers(env: Env) {
         val existingPorts = actualServers.map(_.port)
         val changed = services.filter(s => existingPorts.contains(s.port)).filter { s =>
           val server = actualServers.find(_.port == s.port).get
-          s.sni != server.oldService.sni &&
-            s.tls != server.oldService.tls &&
+          s.sni != server.oldService.sni ||
+            s.tls != server.oldService.tls ||
             s.clientAuth != server.oldService.clientAuth
         }
         val notRunning = services.filterNot(s => existingPorts.contains(s.port))
         val willExistPort = (changed ++ notRunning).map(_.port)
-        val toShutDown = actualServers.filterNot(s => willExistPort.contains(s.port))
-        val allDown1 = Future.sequence(toShutDown.map(_.binding.flatMap(_.unbind())))
+        val toShutDown = actualServers.filter(s => willExistPort.contains(s.port))
+        val allDown1 = Future.sequence(toShutDown.map { s =>
+          log.info(s"Stopping Tcp proxy on ${s.oldService.interface}:${s.oldService.port}")
+          s.binding.flatMap(_.unbind())
+        })
         val allDown2 = Future.sequence(changed.map { s =>
           val server = actualServers.find(_.port == s.port).get
+          log.info(s"Stopping Tcp proxy on ${server.oldService.interface}:${server.oldService.port}")
           server.binding.flatMap(_.unbind())
         })
         for {
@@ -589,7 +594,10 @@ class RunningServers(env: Env) {
         } yield {
           val running1 = changed.map(s => RunningServer(s.port, s, TcpProxy(s).start(env)))
           val running2 = notRunning.map(s => RunningServer(s.port, s, TcpProxy(s).start(env)))
-          runningServers.set((running1 ++ running2))
+          val changedPorts = changed.map(_.port)
+          val shutdownPorts = toShutDown.map(_.port)
+          val stayServers = actualServers.filterNot(s => changedPorts.contains(s.port) || shutdownPorts.contains(s.port))
+          runningServers.set(stayServers ++ running1 ++ running2)
         }
       }.andThen {
         case _ => syncing.compareAndSet(true, false)
@@ -610,6 +618,7 @@ class RunningServers(env: Env) {
     if (running.compareAndSet(true, false)) {
       Option(ref.get()).foreach(_.cancel())
       Future.sequence(runningServers.get().map { server =>
+        log.info(s"Stopping Tcp proxy on ${server.oldService.interface}:${server.oldService.port}")
         server.binding.flatMap(_.unbind())
       }).map(_ => ())
     } else {
