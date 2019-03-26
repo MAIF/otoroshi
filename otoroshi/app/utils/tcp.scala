@@ -26,7 +26,7 @@ import utils.RegexPool
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 
@@ -534,12 +534,17 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
   def start(env: Env): Future[Tcp.ServerBinding] = {
     val config = env.configuration.underlying
     val settings = ServerSettings(config)
-    tls match {
+    (tls match {
       case TlsMode.Disabled => tcpBindNoTls(settings, env)
       case TlsMode.PassThrough if sni => tcpBindNoTlsAndSNI(settings, env)
       case TlsMode.PassThrough if !sni => tcpBindNoTls(settings, env)
       case TlsMode.Enabled if !sni => tcpBindTls(settings, env)
       case TlsMode.Enabled if sni => tcpBindTlsAndSNI(settings, env)
+    }).andThen {
+      case Success(_) if tls == TlsMode.Enabled => log.info(s"Tcp/Tls proxy listening on $interface:$port")
+      case Success(_)                           => log.info(s"Tcp     proxy listening on $interface:$port")
+      case Failure(e) if tls == TlsMode.Enabled => log.error(s"Error while binding Tcp/Tls proxy on $interface:$port", e)
+      case Failure(e)                           => log.error(s"Error while binding Tcp     proxy on $interface:$port", e)
     }
   }
 }
