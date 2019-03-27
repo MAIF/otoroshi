@@ -301,8 +301,7 @@ class Env(val configuration: Configuration,
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
   lazy val metrics = new Metrics(this, lifecycle)
 
-  lazy val mode   = environment.mode
-  lazy val isDev  = mode == Mode.Dev
+  lazy val isDev  = env.toLowerCase == "dev" //environment.mode == Mode.Dev
   lazy val isProd = !isDev
   lazy val notDev = !isDev
   lazy val hash   = s"${System.currentTimeMillis()}"
