@@ -226,6 +226,8 @@ object TcpService {
   }
 
   def routeWithoutSNI(incoming: Tcp.IncomingConnection, port: Int, id: String, tls: Boolean, start: Long, debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer, env: Env): Future[TcpEvent] = {
+    val dataIn = new AtomicLong(0L)
+    val dataOut = new AtomicLong(0L)
     val targetRef = new AtomicReference[TcpTarget]()
     TcpService.findByPort(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled => {
@@ -252,11 +254,14 @@ object TcpService {
                 Tcp().outgoingConnection(remoteAddress)
               }
             }
+          }.map { bs =>
+            dataOut.addAndGet(bs.size)
+            bs
           }
           val overhead = System.currentTimeMillis() - start
           val target = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
-          fullLayer.alsoTo(debugger("[RESP]: "))
-            .joinMat(incoming.flow.alsoTo(debugger("[REQ]: ")))(Keep.left)
+          fullLayer.alsoTo(Sink.foreach(bs => dataOut.addAndGet(bs.size))) // debugger("[RESP]: ")
+            .joinMat(incoming.flow.alsoTo(Sink.foreach(bs => dataIn.addAndGet(bs.size))))(Keep.left) // debugger("[REQ]: ")
             .run()
             .map(_ => TcpEvent(
               `@id` = env.snowflakeGenerator.nextIdStr(),
@@ -265,11 +270,11 @@ object TcpService {
               protocol = if (tls) "Tcp/Tls" else "Tcp",
               to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
               target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
-              from = incoming.remoteAddress.toString,
+              remote = incoming.remoteAddress.toString,
               local = incoming.localAddress.toString,
               duration = 0L,
               overhead = overhead,
-              data = DataInOut(0L, 0L), // TODO
+              data = DataInOut(dataIn.get(), dataOut.get()),
               gwError = None,
               `@serviceId` = service.id,
               `@service` = service.name,
@@ -284,11 +289,11 @@ object TcpService {
                 protocol = if (tls) "Tcp/Tls" else "Tcp",
                 to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
                 target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
-                from = incoming.remoteAddress.toString,
+                remote = incoming.remoteAddress.toString,
                 local = incoming.localAddress.toString,
                 duration = 0L,
                 overhead = overhead,
-                data = DataInOut(0L, 0L), // TODO
+                data = DataInOut(dataIn.get(), dataOut.get()),
                 gwError = Some(ex.getMessage),
                 `@serviceId` = service.id,
                 `@service` = service.name,
@@ -306,11 +311,11 @@ object TcpService {
               protocol = if (tls) "Tcp/Tls" else "Tcp",
               to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
               target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
-              from = incoming.remoteAddress.toString,
+              remote = incoming.remoteAddress.toString,
               local = incoming.localAddress.toString,
               duration = 0L,
               overhead = 0L,
-              data = DataInOut(0L, 0L), // TODO
+              data = DataInOut(dataIn.get(), dataOut.get()),
               gwError = Some(s"Could not materialize handling flow for ${incoming}: $e"),
               `@serviceId` = "otoroshi",
               `@service` = "otoroshi",
@@ -327,11 +332,11 @@ object TcpService {
           protocol = if (tls) "Tcp/Tls" else "Tcp",
           to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
           target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
-          from = incoming.remoteAddress.toString,
+          remote = incoming.remoteAddress.toString,
           local = incoming.localAddress.toString,
           duration = 0L,
           overhead = 0L,
-          data = DataInOut(0L, 0L), // TODO
+          data = DataInOut(dataIn.get(), dataOut.get()),
           gwError = Some("No matching service !"),
           `@serviceId` = "otoroshi",
           `@service` = "otoroshi",
@@ -342,6 +347,8 @@ object TcpService {
   }
 
   def routeWithSNI(incoming: AwesomeIncomingConnection, port: Int, id: String, tls: Boolean, start: Long, debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer, env: Env): Future[TcpEvent] = {
+    val dataIn = new AtomicLong(0L)
+    val dataOut = new AtomicLong(0L)
     val targetRef = new AtomicReference[TcpTarget]()
     val ref = new AtomicReference[String]()
     TcpService.findByPort(incoming.localAddress.getPort).flatMap {
@@ -394,8 +401,8 @@ object TcpService {
           }
           val target = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
           val overhead = System.currentTimeMillis() - start
-          fullLayer.alsoTo(debugger("[RESP]: "))
-            .joinMat(incoming.flow.alsoTo(debugger("[REQ]: ")))(Keep.left)
+          fullLayer.alsoTo(Sink.foreach(bs => dataOut.addAndGet(bs.size))) // debugger("[RESP]: ")
+            .joinMat(incoming.flow.alsoTo(Sink.foreach(bs => dataIn.addAndGet(bs.size))))(Keep.left) // debugger("[REQ]: ")
             .run()
             .map(_ => TcpEvent(
               `@id` = env.snowflakeGenerator.nextIdStr(),
@@ -404,11 +411,11 @@ object TcpService {
               protocol = if (tls) "Tcp/Tls" else "Tcp",
               to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
               target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
-              from = incoming.remoteAddress.toString,
+              remote = incoming.remoteAddress.toString,
               local = incoming.localAddress.toString,
               duration = 0L,
               overhead = overhead,
-              data = DataInOut(0L, 0L), // TODO
+              data = DataInOut(dataIn.get(), dataOut.get()),
               gwError = None,
               `@serviceId` = service.id,
               `@service` = service.name,
@@ -423,11 +430,11 @@ object TcpService {
                 protocol = if (tls) "Tcp/Tls" else "Tcp",
                 to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
                 target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
-                from = incoming.remoteAddress.toString,
+                remote = incoming.remoteAddress.toString,
                 local = incoming.localAddress.toString,
                 duration = 0L,
                 overhead = overhead,
-                data = DataInOut(0L, 0L), // TODO
+                data = DataInOut(dataIn.get(), dataOut.get()),
                 gwError = Some(ex.getMessage),
                 `@serviceId` = service.id,
                 `@service` = service.name,
@@ -445,11 +452,11 @@ object TcpService {
               protocol = if (tls) "Tcp/Tls" else "Tcp",
               to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
               target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
-              from = incoming.remoteAddress.toString,
+              remote = incoming.remoteAddress.toString,
               local = incoming.localAddress.toString,
               duration = 0L,
               overhead = 0L,
-              data = DataInOut(0L, 0L), //  TODO
+              data = DataInOut(dataIn.get(), dataOut.get()),
               gwError = Some(s"Could not materialize handling flow for ${incoming}: $e"),
               `@serviceId` = "otoroshi",
               `@service` = "otoroshi",
@@ -466,11 +473,11 @@ object TcpService {
           protocol = if (tls) "Tcp/Tls" else "Tcp",
           to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
           target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
-          from = incoming.remoteAddress.toString,
+          remote = incoming.remoteAddress.toString,
           local = incoming.localAddress.toString,
           duration = 0L,
           overhead = 0L,
-          data = DataInOut(0L, 0L), // TODO
+          data = DataInOut(dataIn.get(), dataOut.get()),
           gwError = Some("No matching service !"),
           `@serviceId` = "otoroshi",
           `@service` = "otoroshi",
@@ -639,7 +646,8 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
       val id = env.snowflakeGenerator.nextIdStr()
       val start = System.currentTimeMillis()
       TcpService.routeWithSNI(incoming, port, id, false, start, debugger)(ec, system, mat, env).andThen {
-        case Success(evt) => evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+        case Success(evt) =>
+          val e = evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
       }
     }.to(Sink.ignore).run()
   }
