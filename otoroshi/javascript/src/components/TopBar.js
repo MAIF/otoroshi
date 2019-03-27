@@ -114,7 +114,7 @@ export class TopBar extends Component {
         });
         options.push({
           label: 'Tcp Services',
-          value: 'Tcp Services',
+          value: 'tcp-services',
           env: <i className="fas fa-cubes" />,
           action: () => (window.location.href = '/bo/dashboard/tcp/services'),
         });

@@ -40,17 +40,17 @@ import scala.util.{Failure, Success, Try}
 - [x] TCP service can be exposed over tls using dyn tls stuff
 - [x] TCP service can passthrough tls
 – [x] TCP service can specify if it needs or wants mtls
-– [ ] Passthrough + SNI
+– [x] Passthrough + SNI
 - [x] rules
   * if no sni matching, then only one Tcp service can exists with a specific port number
   * if sni matching, then multiple Tcp services can exists with a the port number
   * if sni matching, then all Tcp services using the same port number must have the same Tls mode
 - [x] We need a new datastore for tcp services
 - [ ] We need to include tcp services in backup/restore
-- [ ] We need a new admin api for tcp services
-- [ ] We need to wire routexxx functions to the new datastore
+- [x] We need a new admin api for tcp services
+- [x] We need to wire routexxx functions to the new datastore
 - [ ] We need to generate access events
-- [ ] A job will request all tcp services with unique ports and stats tcp server. Servers will be shut down with otoroshi app
+- [x] A job will request all tcp services with unique ports and stats tcp server. Servers will be shut down with otoroshi app
 - [ ] add api in swagger when feature is ready
   */
 case class TcpService(

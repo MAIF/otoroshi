@@ -1,7 +1,142 @@
 import React, { Component } from 'react';
-import { Table, SelectInput } from '../components/inputs';
+import { Table, Form } from '../components/inputs';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
+
+class Target extends Component {
+
+  formFlow = [
+    'domain',
+    'target.host',
+    'target.ip',
+    'target.port',
+    'target.tls',
+  ]
+
+  formSchema = {
+    domain: {
+      type: 'string',
+      props: {
+        label: 'Matching domain name',
+      },
+    },
+    'target.host': {
+      type: 'string',
+      props: {
+        label: 'Target host',
+      },
+    },
+    'target.ip': {
+      type: 'string',
+      props: {
+        label: 'Target ip address',
+      },
+    },
+    'target.port': {
+      type: 'number',
+      props: {
+        label: 'Target port',
+      },
+    },
+    'target.tls': {
+      type: 'bool',
+      props: {
+        label: 'TLS call',
+      },
+    },
+  }
+
+  render() {
+    const domain = this.props.domain;
+    const target = this.props.target;
+    return (
+      <div style={{ backgroundColor: 'rgb(65, 65, 65)', borderRadius: 4, padding: 10, width: '100%', marginBottom: 5 }}>
+        <Form
+          value={{ domain, target }}
+          onChange={this.props.onChange}
+          flow={this.formFlow}
+          schema={this.formSchema}
+          style={{ marginTop: 5 }}
+        />
+        <div style={{ display: 'flex', width: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <button type="button" className="btn btn-danger" onClick={this.props.delete}><i className="glyphicon glyphicon-trash" /></button>
+        </div>
+      </div>
+    );
+  }
+}
+
+class Targets extends Component {
+
+  changeTarget = (idx, oldRule, oldTarget, newTarget) => {
+    const value = this.props.rawValue;
+    value.rules.forEach(r => {
+      if (r.domain === oldRule.domain) {
+        if (r.domain !== newTarget.domain) {
+          r.domain = newTarget.domain;
+        } else {
+          r.targets.forEach((target, i) => {
+            if (i === idx) {
+              target.host = newTarget.target.host;
+              target.ip = newTarget.target.ip;
+              target.port = newTarget.target.port;
+              target.tls = newTarget.target.tls;
+            }
+          });
+        }
+      }
+    });
+    this.props.rawOnChange(value);
+  }
+
+  deleteTarget = (domain, target, idx) => {
+    const value = this.props.rawValue;
+    value.rules.forEach(r => {
+      if (r.domain === domain) {
+        r.targets = r.targets.filter((t, i) => i !== idx);
+      }
+    });
+    value.rules = value.rules.filter(r => r.targets.length > 0);
+    this.props.rawOnChange(value);
+  }
+
+  addTarget = () => {
+    const value = this.props.rawValue;
+    const rules = value.rules.filter(r => r.domain !== '*');
+    const rule = value.rules.filter(r => r.domain === '*')[0] || { domain: '*', targets: [] };
+    rule.targets.push({ 
+      host: 'my.new.host',
+      ip: null,
+      port: 1234,
+      tls: false
+    });
+    rules.push(rule);
+    value.rules = rules;
+    this.props.rawOnChange(value);
+  }
+
+  render() {
+    return (
+      <div>
+        {
+          this.props.value.map(rule => {
+            return rule.targets.map((target, idx) => {
+              return <Target 
+                domain={rule.domain} 
+                target={target} 
+                onChange={newTarget => this.changeTarget(idx, rule, target, newTarget)} 
+                delete={() => this.deleteTarget(rule.domain, target, idx)} 
+              />
+            });
+          })
+        }
+        <div style={{ display: 'flex', width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+          <button type="button" className="btn btn-primary" onClick={this.addTarget}><i className="glyphicon glyphicon-plus-sign" /></button>
+        </div>
+      </div>
+    )
+  }
+}
 
 export class TcpServicesPage extends Component {
 
@@ -106,7 +241,8 @@ export class TcpServicesPage extends Component {
     'sni.forwardsTo.ip',
     'sni.forwardsTo.port',
     'sni.forwardsTo.tls',
-    //'rules',
+    '>>>Rules',
+    'rules',
   ];
 
   formSchema = {
@@ -173,6 +309,9 @@ export class TcpServicesPage extends Component {
         ]
       }
     },
+    rules: {
+      type: Targets
+    }
   };
 
   render() {
@@ -185,7 +324,7 @@ export class TcpServicesPage extends Component {
           formFlow={this.formFlow}
           defaultTitle={this.title}
           defaultValue={BackOfficeServices.createNewTcpService}
-          itemName="Tcp Services"
+          itemName="Tcp Service"
           columns={this.columns}
           stayAfterSave={true}
           fetchItems={BackOfficeServices.findAllTcpServices}
@@ -197,8 +336,11 @@ export class TcpServicesPage extends Component {
           rowNavigation={true}
           navigateTo={this.gotoService}
           firstSort={0}
-          extractKey={item => item.id}
-          itemUrl={i => `/bo/dashboard/lines/${i.env}/tcp/services/${i.id}`}
+          extractKey={item => {
+            console.log(item.id)
+            return item.id
+          }}
+          itemUrl={i => `/bo/dashboard/tcp/services/edit/${i.id}`}
         />
       </div>
     );

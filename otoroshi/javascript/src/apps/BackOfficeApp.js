@@ -227,24 +227,23 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
-                          path="/services/:taction"
+                          path="/services/:taction/:titem"
                           component={props => this.decorate(ServicesPage, props)}
                         />
                         <Route
-                          path="/services/:taction/:titem"
+                          path="/services/:taction"
                           component={props => this.decorate(ServicesPage, props)}
                         />
                         <Route
                           path="/services"
                           component={props => this.decorate(ServicesPage, props)}
                         />
-
                         <Route
-                          path="/tcp/services/:taction"
+                          path="/tcp/services/:taction/:titem"
                           component={props => this.decorate(TcpServicesPage, props)}
                         />
                         <Route
-                          path="/tcp/services/:taction/:titem"
+                          path="/tcp/services/:taction"
                           component={props => this.decorate(TcpServicesPage, props)}
                         />
                         <Route
