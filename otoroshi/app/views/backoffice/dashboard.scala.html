@@ -7,7 +7,7 @@
     <script src="@routes.Assets.versioned("javascripts/u2f-api.js")"></script>
     <script src="@routes.Assets.versioned("javascripts/d3.v3.min.js")"></script>
     <script type="text/javascript">
-        window.__isDev = @_env.isDev;
+        window.__isDev = @_env.liveJs;
         window.__env = '@_env.env';
         window.__userid = '@user.email';
         window.__apiReadOnly = @config.apiReadOnly;
