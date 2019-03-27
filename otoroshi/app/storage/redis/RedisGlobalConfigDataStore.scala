@@ -8,6 +8,7 @@ import env.Env
 import models._
 import org.joda.time.DateTime
 import otoroshi.script.Script
+import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
 import redis.RedisClientMasterSlaves
@@ -196,6 +197,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     val certificates       = (export \ "certificates").asOpt[JsArray].getOrElse(Json.arr())
     val clientValidators   = (export \ "clientValidators").asOpt[JsArray].getOrElse(Json.arr())
     val scripts            = (export \ "scripts").asOpt[JsArray].getOrElse(Json.arr())
+    val tcpServices        = (export \ "tcpServices").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli.flushall()
@@ -223,6 +225,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       _ <- Future.sequence(certificates.value.map(Cert.fromJsons).map(_.save()))
       _ <- Future.sequence(clientValidators.value.map(ClientCertificateValidator.fromJsons).map(_.save()))
       _ <- Future.sequence(scripts.value.map(Script.fromJsons).map(_.save()))
+      _ <- Future.sequence(tcpServices.value.map(TcpService.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -252,6 +255,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       certificates     <- env.datastores.certificatesDataStore.findAll()
       clientValidators <- env.datastores.clientCertificateValidationDataStore.findAll()
       scripts          <- env.datastores.scriptDataStore.findAll()
+      tcpServices      <- env.datastores.tcpServiceDataStore.findAll()
     } yield
       Json.obj(
         "label"   -> "Otoroshi export",
@@ -274,7 +278,8 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
         "authConfigs"        -> JsArray(authConfigs.map(_.asJson)),
         "certificates"       -> JsArray(certificates.map(_.toJson)),
         "clientValidators"   -> JsArray(clientValidators.map(_.asJson)),
-        "scripts"            -> JsArray(scripts.map(_.toJson))
+        "scripts"            -> JsArray(scripts.map(_.toJson)),
+        "tcpServices"        -> JsArray(tcpServices.map(_.json))
       )
   }
 

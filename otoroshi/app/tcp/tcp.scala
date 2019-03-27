@@ -15,6 +15,7 @@ import akka.util.ByteString
 import akka.{AwesomeIncomingConnection, Done, TcpUtils}
 import env.Env
 import javax.net.ssl._
+import otoroshi.script.Script.logger
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -46,8 +47,9 @@ import scala.util.{Failure, Success, Try}
   * if sni matching, then multiple Tcp services can exists with a the port number
   * if sni matching, then all Tcp services using the same port number must have the same Tls mode
 - [x] We need a new datastore for tcp services
-- [ ] We need to include tcp services in backup/restore
+- [x] We need to include tcp services in backup/restore
 - [x] We need a new admin api for tcp services
+- [x] We need a new UI for tcp services
 - [x] We need to wire routexxx functions to the new datastore
 - [ ] We need to generate access events
 - [x] A job will request all tcp services with unique ports and stats tcp server. Servers will be shut down with otoroshi app
@@ -65,6 +67,7 @@ case class TcpService(
   rules: Seq[TcpRule]
 ) {
   def json: JsValue = TcpService.fmt.writes(this)
+  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
 }
 case class SniSettings(enabled: Boolean, forwardIfNoMatch: Boolean, forwardsTo: TcpTarget = TcpTarget("127.0.0.1", None, 8080, false)) {
   def json: JsValue = SniSettings.fmt.writes(this)
@@ -163,6 +166,16 @@ object TcpService {
 
   private val reqCounter = new AtomicLong(0L)
   private val log = Logger("tcp-proxy")
+
+  def fromJsons(value: JsValue): TcpService =
+    try {
+      fmt.reads(value).get
+    } catch {
+      case e: Throwable => {
+        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
+      }
+    }
 
   def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], TcpService] = fmt.reads(value).asEither
 
@@ -645,22 +658,28 @@ class RunningServers(env: Env) {
       TcpService.findAll().map { services =>
         val actualServers = runningServers.get()
         val existingPorts = actualServers.map(_.port)
+        log.debug(s"[RunningServer] existing $existingPorts")
         val changed = services.filter(s => existingPorts.contains(s.port)).filter { s =>
           val server = actualServers.find(_.port == s.port).get
-          s.sni != server.oldService.sni ||
+          s.interface != server.oldService.interface ||
+            s.sni != server.oldService.sni ||
             s.tls != server.oldService.tls ||
             s.clientAuth != server.oldService.clientAuth
         }
+        log.debug(s"[RunningServer] changed ${changed.map(_.port)}")
         val notRunning = services.filterNot(s => existingPorts.contains(s.port))
-        val willExistPort = (changed ++ notRunning).map(_.port)
-        val toShutDown = actualServers.filter(s => willExistPort.contains(s.port))
+        log.debug(s"[RunningServer] notRunning ${notRunning.map(_.port)}")
+        val willExistPort = (changed ++ notRunning ++ services).distinct.map(_.port)
+        log.debug(s"[RunningServer] willExist ${willExistPort}")
+        val toShutDown = actualServers.filterNot(s => willExistPort.contains(s.port))
+        log.debug(s"[RunningServer] toShutDown ${toShutDown.map(_.port)}")
         val allDown1 = Future.sequence(toShutDown.map { s =>
-          log.info(s"Stopping Tcp proxy on ${s.oldService.interface}:${s.oldService.port}")
+          log.info(s"Stopping Tcp proxy on ${s.oldService.interface}:${s.oldService.port} because it does not exists anymore")
           s.binding.flatMap(_.unbind())
         })
         val allDown2 = Future.sequence(changed.map { s =>
           val server = actualServers.find(_.port == s.port).get
-          log.info(s"Stopping Tcp proxy on ${server.oldService.interface}:${server.oldService.port}")
+          log.info(s"Stopping Tcp proxy on ${server.oldService.interface}:${server.oldService.port} because the service changed")
           server.binding.flatMap(_.unbind())
         })
         for {
