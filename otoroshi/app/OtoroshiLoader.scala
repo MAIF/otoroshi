@@ -16,6 +16,7 @@ import play.filters.HttpFiltersComponents
 import router.Routes
 import ssl.ClientValidatorsController
 import utils.Metrics
+import otoroshi.tcp.TcpServiceApiController
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -66,6 +67,7 @@ package object modules {
     lazy val clusterController         = wire[ClusterController]
     lazy val clientValidatorController = wire[ClientValidatorsController]
     lazy val scriptApiController       = wire[ScriptApiController]
+    lazy val tcpServiceApiController   = wire[TcpServiceApiController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

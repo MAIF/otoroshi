@@ -1,32 +1,25 @@
 package storage.redis
 
-import java.util.concurrent.atomic.AtomicReference
-
 import akka.NotUsed
-import akka.actor.{ActorSystem, Cancellable}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import auth.AuthConfigsDataStore
-import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore, RedisClusterStateDataStore}
+import cluster.{ClusterStateDataStore, RedisClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
-import otoroshi.script.{InMemoryScriptDataStore, RedisScriptDataStore, ScriptDataStore}
+import otoroshi.script.{RedisScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
-import redis.{RedisClientMasterSlaves, RedisCluster, RedisServer}
-import ssl.{
-  CertificateDataStore,
-  ClientCertificateValidationDataStore,
-  InMemoryClientCertificateValidationDataStore,
-  RedisClientCertificateValidationDataStore
-}
-import storage.inmemory._
+import redis.{RedisClientMasterSlaves, RedisServer}
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
 import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
+import otoroshi.tcp.{RedisTcpServiceDataStoreDataStore, TcpServiceDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -117,6 +110,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
 
   private lazy val _scriptDataStore             = new RedisScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
+
+  private lazy val _tcpServiceDataStore                 = new RedisTcpServiceDataStoreDataStore(redis, env)
+  override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

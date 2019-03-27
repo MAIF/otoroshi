@@ -12,6 +12,7 @@ import {
 } from '.';
 
 import _ from 'lodash';
+import deepGet from 'get-value';
 import { Separator } from '../Separator';
 import { Collapse } from './Collapse';
 import { TextareaInput } from './TextInput';
@@ -40,12 +41,14 @@ export class Form extends Component {
 
   getValue = (name, defaultValue) => {
     if (name.indexOf('.') > -1) {
-      const [key1, key2] = name.split('.');
-      if (this.props.value[key1]) {
-        return this.props.value[key1][key2] || defaultValue;
-      } else {
-        return defaultValue;
-      }
+      //const [key1, key2] = name.split('.');
+      //if (this.props.value[key1]) {
+      //  return this.props.value[key1][key2] || defaultValue;
+      //} else {
+      //  return defaultValue;
+      //}
+      const value = deepGet(this.props.value, name);
+      return value || defaultValue;
     } else {
       return this.props.value[name] || defaultValue;
     }

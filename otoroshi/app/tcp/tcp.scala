@@ -1,10 +1,10 @@
-package utils.tcp
+package otoroshi.tcp
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.MatchResult
 
-import akka.TcpUtils.domainNamePattern
+import actions.ApiAction
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.settings.ServerSettings
 import akka.http.scaladsl.util.FastFuture
@@ -17,6 +17,7 @@ import env.Env
 import javax.net.ssl._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.{AbstractController, ControllerComponents}
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
 import ssl.{ClientAuth, CustomSSLEngine, DynamicSSLEngineProvider}
@@ -26,8 +27,8 @@ import utils.RegexPool
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 
 /**
@@ -63,16 +64,76 @@ case class TcpService(
   interface: String = "0.0.0.0",
   rules: Seq[TcpRule]
 ) {
-  //def json: JsValue = TcpService.fmt.writes(this)
+  def json: JsValue = TcpService.fmt.writes(this)
 }
 case class SniSettings(enabled: Boolean, forwardIfNoMatch: Boolean, forwardsTo: TcpTarget = TcpTarget("127.0.0.1", None, 8080, false)) {
-  //def json: JsValue = SniSettings.fmt.writes(this)
+  def json: JsValue = SniSettings.fmt.writes(this)
+}
+object SniSettings {
+  def fmt: Format[SniSettings] = new Format[SniSettings] {
+    override def writes(o: SniSettings): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "forwardIfNoMatch" -> o.forwardIfNoMatch,
+      "forwardsTo" -> o.forwardsTo.json,
+    )
+    override def reads(json: JsValue): JsResult[SniSettings] = Try {
+      JsSuccess(
+        SniSettings(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          forwardIfNoMatch = (json \ "forwardIfNoMatch").asOpt[Boolean].getOrElse(false),
+          forwardsTo = (json \ "forwardsTo").asOpt(TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
 }
 case class TcpTarget(host: String, ip: Option[String], port: Int, tls: Boolean) {
-  //def json: JsValue = TcpTarget.fmt.writes(this)
+  def json: JsValue = TcpTarget.fmt.writes(this)
+}
+object TcpTarget {
+  def fmt: Format[TcpTarget] = new Format[TcpTarget] {
+    override def writes(o: TcpTarget): JsValue = Json.obj(
+      "host" -> o.host,
+      "ip" -> o.ip.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "port" -> o.port,
+      "tls" -> o.tls
+    )
+    override def reads(json: JsValue): JsResult[TcpTarget] = Try {
+      JsSuccess(
+        TcpTarget(
+          host = (json \ "host").as[String],
+          ip = (json \ "ip").asOpt[String],
+          port = (json \ "port").asOpt[Int].getOrElse(8080),
+          tls = (json \ "tls").asOpt[Boolean].getOrElse(false)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
 }
 case class TcpRule(domain: String, targets: Seq[TcpTarget]) {
-  //def json: JsValue = TcpRule.fmt.writes(this)
+  def json: JsValue = TcpRule.fmt.writes(this)
+}
+object TcpRule {
+  def fmt: Format[TcpRule] = new Format[TcpRule] {
+    override def writes(o: TcpRule): JsValue = Json.obj(
+      "domain" -> o.domain,
+      "targets" -> JsArray(o.targets.map(_.json))
+    )
+    override def reads(json: JsValue): JsResult[TcpRule] = Try {
+      JsSuccess(
+        TcpRule(
+          domain = (json \ "domain").asOpt[String].getOrElse("*"),
+          targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
 }
 sealed trait TlsMode {
   def name: String
@@ -87,6 +148,15 @@ object TlsMode {
   case object PassThrough extends TlsMode {
     def name: String = "PassThrough"
   }
+  def apply(v: String): Option[TlsMode] = v match {
+    case "Disabled"    => Some(Disabled)
+    case "disabled"    => Some(Disabled)
+    case "Enabled"     => Some(Enabled)
+    case "enabled"     => Some(Enabled)
+    case "PassThrough" => Some(PassThrough)
+    case "passthrough" => Some(PassThrough)
+    case _             => None
+  }
 }
 
 object TcpService {
@@ -94,39 +164,41 @@ object TcpService {
   private val reqCounter = new AtomicLong(0L)
   private val log = Logger("tcp-proxy")
 
-  //val fmt = new Format[TcpService] {
-  //  override def reads(json: JsValue): JsResult[TcpService] = Try {
-  //    JsSuccess(
-  //      TcpService(
-  //        id = (json \ "id").as[String],
-  //        name = (json \ "name").as[String],
-  //        enabled = (json \ "enabled").as[String],
-  //        tls = (json \ "tls").as[String],
-  //        sni = (json \ "sni").as[String],
-  //        clientAuth = (json \ "clientAuth").as[String],
-  //        port = (json \ "port").as[String],
-  //        interface = (json \ "interface").as[String],
-  //        rules = (json \ "rules").as[String],
-  //      )
-  //    )
-  //  } recover {
-  //    case e => JsError(e.getMessage)
-  //  } get
-  //
-  //  override def writes(o: TcpService): JsValue = Json.obj(
-  //    "id" -> o.id,
-  //    "name" -> o.name,
-  //    "enabled" -> o.enabled,
-  //    "tls" -> o.tls.name,
-  //    "sni" -> o.sni.json,
-  //    "clientAuth" -> o.clientAuth.name,
-  //    "port" -> o.port,
-  //    "interface" -> o.interface,
-  //    "rules" -> JsArray(o.rules.map(_.json)),
-  //  )
-  //}
+  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], TcpService] = fmt.reads(value).asEither
 
-  private val services = Seq(
+  val fmt: Format[TcpService] = new Format[TcpService] {
+    override def reads(json: JsValue): JsResult[TcpService] = Try {
+      JsSuccess(
+        TcpService(
+          id = (json \ "id").as[String],
+          name = (json \ "name").as[String],
+          port = (json \ "port").as[Int],
+          interface = (json \ "interface").asOpt[String].getOrElse("0.0.0.0"),
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          tls = (json \ "tls").asOpt[String].flatMap(TlsMode.apply).getOrElse(TlsMode.Disabled),
+          sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
+          clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
+          rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+
+    override def writes(o: TcpService): JsValue = Json.obj(
+      "id" -> o.id,
+      "name" -> o.name,
+      "enabled" -> o.enabled,
+      "tls" -> o.tls.name,
+      "sni" -> o.sni.json,
+      "clientAuth" -> o.clientAuth.name,
+      "port" -> o.port,
+      "interface" -> o.interface,
+      "rules" -> JsArray(o.rules.map(_.json)),
+    )
+  }
+
+  private val _services = Seq(
     TcpService(
       enabled = true,
       tls = TlsMode.Disabled,
@@ -270,9 +342,9 @@ object TcpService {
     new RunningServers(env).start()
   }
 
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[TcpService]] = FastFuture.successful(services)
+  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[TcpService]] = env.datastores.tcpServiceDataStore.findAll()
 
-  def findByPort(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] = FastFuture.successful(services.find(_.port == port))
+  def findByPort(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] = findAll().map(_.find(_.port == port))
 
   def domainMatch(matchRule: String, domain: String): Boolean = {
     RegexPool(matchRule).matches(domain)
@@ -636,7 +708,7 @@ class InMemoryTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
   extends TcpServiceDataStore
     with RedisLikeStore[TcpService] {
 
-  override def fmt: Format[TcpService]                 = ??? //TcpService.fmt
+  override def fmt: Format[TcpService]                 = TcpService.fmt
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): models.Key             = models.Key(s"${env.storageRoot}:tcp:services:$id")
   override def extractId(value: TcpService): String    = value.id
@@ -647,7 +719,113 @@ class RedisTcpServiceDataStoreDataStore(redisCli: RedisClientMasterSlaves, env: 
     with RedisStore[TcpService] {
 
   override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
-  override def fmt: Format[TcpService]                            = ??? //TcpService.fmt
+  override def fmt: Format[TcpService]                            = TcpService.fmt
   override def key(id: String): models.Key                        = models.Key(s"${env.storageRoot}:tcp:services:$id")
   override def extractId(value: TcpService): String               = value.id
+}
+
+class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
+  implicit env: Env
+) extends AbstractController(cc) {
+
+  import gnieh.diffson.playJson._
+  import utils.future.Implicits._
+
+  implicit lazy val ec  = env.otoroshiExecutionContext
+  implicit lazy val mat = env.otoroshiMaterializer
+
+  val logger = Logger("otoroshi-tcp-service-api")
+
+  def initiateTcpService() = ApiAction { ctx =>
+    Ok(TcpService(
+      id = IdGenerator.token,
+      enabled = true,
+      tls = TlsMode.Disabled,
+      sni = SniSettings(false, false),
+      clientAuth = ClientAuth.None,
+      port = 4200,
+      rules = Seq(TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "42.42.42.42",
+            None,
+            4200,
+            false
+          )
+        )
+      ))
+    ).json)
+  }
+
+  def findAllTcpServices() = ApiAction.async { ctx =>
+    env.datastores.tcpServiceDataStore.findAll().map(all => Ok(JsArray(all.map(_.json))))
+  }
+
+  def findTcpServiceById(id: String) = ApiAction.async { ctx =>
+    env.datastores.tcpServiceDataStore.findById(id).map {
+      case Some(service) => Ok(service.json)
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"TcpService with id $id not found")
+        )
+    }
+  }
+
+  def createTcpService() = ApiAction.async(parse.json) { ctx =>
+    TcpService.fromJsonSafe(ctx.request.body) match {
+      case Left(_) => BadRequest(Json.obj("error" -> "Bad TcpService format")).asFuture
+      case Right(service) =>
+        env.datastores.tcpServiceDataStore.set(service).map { _ =>
+          Ok(service.json)
+        }
+    }
+  }
+
+  def updateTcpService(id: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.tcpServiceDataStore.findById(id).flatMap {
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"TcpService with id $id not found")
+        ).asFuture
+      case Some(initialTcpService) => {
+        TcpService.fromJsonSafe(ctx.request.body) match {
+          case Left(_) => BadRequest(Json.obj("error" -> "Bad TcpService format")).asFuture
+          case Right(service) => {
+            env.datastores.tcpServiceDataStore.set(service).map { _ =>
+              Ok(service.json)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def patchTcpService(id: String) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.tcpServiceDataStore.findById(id).flatMap {
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"TcpService with id $id not found")
+        ).asFuture
+      case Some(initialTcpService) => {
+        val currentJson = initialTcpService.json
+        val patch       = JsonPatch(ctx.request.body)
+        val newTcpService   = patch(currentJson)
+        TcpService.fromJsonSafe(newTcpService) match {
+          case Left(_) => BadRequest(Json.obj("error" -> "Bad TcpService format")).asFuture
+          case Right(newTcpService) => {
+            env.datastores.tcpServiceDataStore.set(newTcpService).map { _ =>
+              Ok(newTcpService.json)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def deleteTcpService(id: String) = ApiAction.async { ctx =>
+    env.datastores.tcpServiceDataStore.delete(id).map { _ =>
+      Ok(Json.obj("done" -> true))
+    }
+  }
 }

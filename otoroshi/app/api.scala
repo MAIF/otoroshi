@@ -23,6 +23,7 @@ import router.Routes
 import ssl.ClientValidatorsController
 import storage.DataStores
 import utils.Metrics
+import otoroshi.tcp.TcpServiceApiController
 
 import scala.concurrent.ExecutionContext
 
@@ -98,6 +99,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val clusterController         = wire[ClusterController]
   lazy val clientValidatorController = wire[ClientValidatorsController]
   lazy val scriptApiController       = wire[ScriptApiController]
+  lazy val tcpServiceApiController   = wire[TcpServiceApiController]
 
   override lazy val assets: Assets = wire[Assets]
 

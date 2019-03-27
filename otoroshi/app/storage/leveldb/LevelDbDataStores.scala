@@ -20,6 +20,7 @@ import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores}
+import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -93,6 +94,9 @@ class LevelDbDataStores(configuration: Configuration,
 
   private lazy val _scriptDataStore             = new InMemoryScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
+
+  private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
+  override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

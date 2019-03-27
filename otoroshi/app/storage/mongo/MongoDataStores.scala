@@ -18,14 +18,10 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
-import ssl.{
-  CertificateDataStore,
-  ClientCertificateValidationDataStore,
-  InMemoryClientCertificateValidationDataStore,
-  RedisClientCertificateValidationDataStore
-}
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, RedisLike, RedisLikeStore}
+import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -124,6 +120,9 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
   private lazy val _scriptDataStore             = new InMemoryScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
+
+  private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
+  override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

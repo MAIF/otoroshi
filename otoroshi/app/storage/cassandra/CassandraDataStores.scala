@@ -5,21 +5,21 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
+import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
-import play.api.inject.ApplicationLifecycle
-import play.api.{Configuration, Environment, Logger}
-import storage.{DataStoreHealth, DataStores}
-import storage.inmemory._
-import env.Env
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
+import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
+import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
+import storage.inmemory._
+import storage.{DataStoreHealth, DataStores}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -116,6 +116,9 @@ class CassandraDataStores(configuration: Configuration,
 
   private lazy val _scriptDataStore             = new InMemoryScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
+
+  private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
+  override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

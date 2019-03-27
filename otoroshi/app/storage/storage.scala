@@ -16,6 +16,7 @@ import auth.AuthConfigsDataStore
 import cluster.ClusterStateDataStore
 import otoroshi.script.ScriptDataStore
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
+import otoroshi.tcp.TcpServiceDataStore
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,6 +52,7 @@ trait DataStores {
   def clusterStateDataStore: ClusterStateDataStore
   def clientCertificateValidationDataStore: ClientCertificateValidationDataStore
   def scriptDataStore: ScriptDataStore
+  def tcpServiceDataStore: TcpServiceDataStore
   def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed]
 }
 

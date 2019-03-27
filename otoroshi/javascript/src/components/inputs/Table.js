@@ -154,7 +154,12 @@ export class Table extends Component {
     this.mountShortcuts();
     this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`);
     urlTo(`/bo/dashboard/${this.props.selfUrl}/add`);
-    this.setState({ currentItem: this.props.defaultValue(), showAddForm: true });
+    const defVal = this.props.defaultValue();
+    if (defVal.then) {
+      defVal.then(v => this.setState({ currentItem: v, showAddForm: true }));
+    } else {
+      this.setState({ currentItem: defVal, showAddForm: true });
+    }
   };
 
   closeEditForm = e => {

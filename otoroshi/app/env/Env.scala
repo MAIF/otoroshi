@@ -35,7 +35,7 @@ import storage.redis.RedisDataStores
 import storage.redis.next._
 import utils.Metrics
 import utils.http._
-import utils.tcp.{TcpProxy, TcpService}
+import otoroshi.tcp.{TcpProxy, TcpService}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}

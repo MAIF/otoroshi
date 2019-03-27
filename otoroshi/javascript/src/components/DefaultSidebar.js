@@ -58,6 +58,27 @@ export function DefaultSidebar(props) {
             </a>
           </li>
         )}
+      <li>
+        <h3 style={{ marginTop: 0 }}>
+          <i className="fas fa-cubes" /> Tcp Services
+        </h3>
+      </li> 
+      <li key="all">
+        <a
+          href={`/bo/dashboard/tcp/services`}
+          className={rootClassName('tcp-services')}
+          {...createTooltip('List all Tcp services declared in Otoroshi')}>
+          {' '}
+          All services
+        </a>
+      </li> 
+      <li>
+        <a
+          href={`/bo/dashboard/tcp/services/add`}
+          {...createTooltip('Create a new Tcp service')}>
+          <i className="glyphicon glyphicon-plus" /> Add Tcp service
+        </a>
+      </li>
     </ul>
   );
 }

@@ -24,6 +24,7 @@ import javax.management.{Attribute, ObjectName}
 import models._
 import org.joda.time.DateTime
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
+import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -43,6 +44,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.{Failure, Success, Try}
 import utils.http.Implicits._
+import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 
 /**
  * # TODO:
@@ -1362,6 +1364,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
 
   private lazy val _scriptDataStore             = new InMemoryScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
+
+  private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
+  override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

@@ -1110,3 +1110,67 @@ export function fetchStats(by, id, from, to, limit = 500) {
     }
   ).then(r => r.json());
 }
+
+export function findAllTcpServices() {
+  return fetch('/bo/api/proxy/api/tcp/services', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findTcpServiceById(id) {
+  return fetch(`/bo/api/proxy/api/tcp/services/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteTcpService(ak) {
+  return fetch(`/bo/api/proxy/api/tcp/services/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createTcpService(ak) {
+  return fetch(`/bo/api/proxy/api/tcp/services`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function createNewTcpService() {
+  return fetch(`/bo/api/proxy/api/new/tcp/service `, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function updateTcpService(ak) {
+  return fetch(`/bo/api/proxy/api/tcp/services/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}

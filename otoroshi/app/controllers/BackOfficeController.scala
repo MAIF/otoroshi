@@ -236,6 +236,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
   }
 
+  case class SearchedService(name: String, id: String, groupId: String, env: String, typ: String)
+
   def searchServicesApi() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val query = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()
     Audit.send(
@@ -249,13 +251,20 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                         "query" -> query
                       ))
     )
-    val fu: Future[Seq[ServiceDescriptor]] =
-      Option(LocalCache.allServices.getIfPresent("all")).map(_.asInstanceOf[Seq[ServiceDescriptor]]) match {
+    val fu: Future[Seq[SearchedService]] =
+      Option(LocalCache.allServices.getIfPresent("all")).map(_.asInstanceOf[Seq[SearchedService]]) match {
         case Some(descriptors) => FastFuture.successful(descriptors)
-        case None =>
-          env.datastores.serviceDescriptorDataStore.findAll().andThen {
-            case Success(seq) => LocalCache.allServices.put("all", seq)
-          }
+        case None => for {
+          services <- env.datastores.serviceDescriptorDataStore.findAll()
+          tcServices <- env.datastores.tcpServiceDataStore.findAll()
+        } yield {
+          val finalServices = (
+            services.map(s => SearchedService(s.name, s.id, s.groupId, s.env, "http")) ++
+              tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp"))
+          )
+          LocalCache.allServices.put("all", finalServices)
+          finalServices
+        }
       }
     fu.map { services =>
       val filtered = services.filter { service =>
@@ -265,7 +274,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       }
       Ok(
         JsArray(
-          filtered.map(s => Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env))
+          filtered.map(s => Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env, "type" -> s.typ))
         )
       )
     }

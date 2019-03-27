@@ -39,10 +39,17 @@ export class TopBar extends Component {
       .then(r => r.json())
       .then(results => {
         const options = results.map(v => ({
+          type: v.type,
           label: v.name,
           value: v.serviceId,
           env: v.env,
-          action: () => this.gotoService({ env: v.env, value: v.serviceId }),
+          action: () => {
+            if (v.type === 'http') {
+              this.gotoService({ env: v.env, value: v.serviceId })
+            } else if (v.type === 'tcp') {
+              this.gotoTcpService({ env: v.env, value: v.serviceId })
+            }
+          },
         }));
         options.sort((a, b) => a.label.localeCompare(b.label));
         options.push({
@@ -104,6 +111,12 @@ export class TopBar extends Component {
           value: 'Services',
           env: <i className="fas fa-cubes" />,
           action: () => (window.location.href = '/bo/dashboard/services'),
+        });
+        options.push({
+          label: 'Tcp Services',
+          value: 'Tcp Services',
+          env: <i className="fas fa-cubes" />,
+          action: () => (window.location.href = '/bo/dashboard/tcp/services'),
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/map'),
@@ -186,6 +199,12 @@ export class TopBar extends Component {
   gotoService = e => {
     if (e) {
       window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
+    }
+  };
+
+  gotoTcpService = e => {
+    if (e) {
+      window.location.href = `/bo/dashboard/tcp/services/edit/${e.value}`;
     }
   };
 
