@@ -14,8 +14,9 @@ import akka.stream.{ActorMaterializer, IgnoreComplete}
 import akka.util.ByteString
 import akka.{AwesomeIncomingConnection, Done, TcpUtils}
 import env.Env
+import events.{DataInOut, Location, TcpEvent}
 import javax.net.ssl._
-import otoroshi.script.Script.logger
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -51,7 +52,7 @@ import scala.util.{Failure, Success, Try}
 - [x] We need a new admin api for tcp services
 - [x] We need a new UI for tcp services
 - [x] We need to wire routexxx functions to the new datastore
-- [ ] We need to generate access events
+- [x] We need to generate access events
 - [x] A job will request all tcp services with unique ports and stats tcp server. Servers will be shut down with otoroshi app
 - [ ] add api in swagger when feature is ready
   */
@@ -94,6 +95,7 @@ object SniSettings {
 }
 case class TcpTarget(host: String, ip: Option[String], port: Int, tls: Boolean) {
   def json: JsValue = TcpTarget.fmt.writes(this)
+  def toAnalyticsString: String = s"${host}${ip.map(v => "/" + v).getOrElse("")}:${port}"
 }
 object TcpTarget {
   def fmt: Format[TcpTarget] = new Format[TcpTarget] {
@@ -172,7 +174,7 @@ object TcpService {
       fmt.reads(value).get
     } catch {
       case e: Throwable => {
-        logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        log.error(s"Try to deserialize ${Json.prettyPrint(value)}")
         throw e
       }
     }
@@ -211,146 +213,6 @@ object TcpService {
     )
   }
 
-  private val _services = Seq(
-    TcpService(
-      enabled = true,
-      tls = TlsMode.Disabled,
-      sni = SniSettings(false, false),
-      clientAuth = ClientAuth.None,
-      port = 1201,
-      rules = Seq(TcpRule(
-        domain = "*",
-        targets = Seq(
-          TcpTarget(
-            "localhost",
-            None,
-            1301,
-            false
-          ),
-          TcpTarget(
-            "localhost",
-            None,
-            1302,
-            false
-          )
-        )
-      ))
-    ),
-    TcpService(
-      enabled = true,
-      tls = TlsMode.PassThrough,
-      sni = SniSettings(false, false),
-      clientAuth = ClientAuth.None,
-      port = 1202,
-      rules = Seq(TcpRule(
-        domain = "*",
-        targets = Seq(
-          TcpTarget(
-            "ssl.ancelin.org",
-            Some("127.0.0.1"),
-            1303,
-            false
-          ),
-          TcpTarget(
-            "ssl.ancelin.org",
-            Some("127.0.0.1"),
-            1304,
-            false
-          )
-        )
-      ))
-    ),
-    TcpService(
-      enabled = true,
-      tls = TlsMode.Enabled,
-      sni = SniSettings(false, false),
-      clientAuth = ClientAuth.None,
-      port = 1203,
-      rules = Seq(TcpRule(
-        domain = "*",
-        targets = Seq(
-          TcpTarget(
-            "localhost",
-            None,
-            1301,
-            false
-          ),
-          TcpTarget(
-            "localhost",
-            None,
-            1302,
-            false
-          )
-        )
-      ))
-    ),
-    TcpService(
-      enabled = true,
-      tls = TlsMode.Enabled,
-      sni = SniSettings(true, false),
-      clientAuth = ClientAuth.None,
-      port = 1204,
-      rules = Seq(
-        TcpRule(
-          domain = "ssl.ancelin.org",
-          targets = Seq(
-            TcpTarget(
-              "localhost",
-              None,
-              1301,
-              false
-            )
-          )
-        ),
-        TcpRule(
-          domain = "ssl2.ancelin.org",
-          targets = Seq(
-            TcpTarget(
-              "localhost",
-              None,
-              1302,
-              false
-            )
-          )
-        )
-      )
-    ),
-    TcpService(
-      enabled = true,
-      tls = TlsMode.PassThrough,
-      sni = SniSettings(true, false),
-      clientAuth = ClientAuth.None,
-      port = 1205,
-      // test with
-      // curl -v --resolve www.google.fr:1205:127.0.0.1 https://www.google.fr:1205/
-      // curl -v --resolve www.amazon.fr:1205:127.0.0.1 https://www.amazon.fr:1205/
-      rules = Seq(
-        TcpRule(
-          domain = "www.google.fr",
-          targets = Seq(
-            TcpTarget(
-              "www.google.fr",
-              None,
-              443,
-              false
-            )
-          )
-        ),
-        TcpRule(
-          domain = "www.amazon.fr",
-          targets = Seq(
-            TcpTarget(
-              "www.amazon.fr",
-              None,
-              443,
-              false
-            )
-          )
-        )
-      )
-    )
-  )
-
   def runServers(env: Env): RunningServers = {
     new RunningServers(env).start()
   }
@@ -363,7 +225,8 @@ object TcpService {
     RegexPool(matchRule).matches(domain)
   }
 
-  def routeWithoutSNI(incoming: Tcp.IncomingConnection, debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer, env: Env): Future[Done] = {
+  def routeWithoutSNI(incoming: Tcp.IncomingConnection, port: Int, id: String, tls: Boolean, start: Long, debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer, env: Env): Future[TcpEvent] = {
+    val targetRef = new AtomicReference[TcpTarget]()
     TcpService.findByPort(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled => {
         try {
@@ -372,6 +235,7 @@ object TcpService {
             val targets = service.rules.flatMap(_.targets)
             val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
             val target = targets.apply(index.toInt)
+            targetRef.set(target)
             target.tls match {
               case true => {
                 val remoteAddress = target.ip match {
@@ -389,36 +253,111 @@ object TcpService {
               }
             }
           }
+          val overhead = System.currentTimeMillis() - start
+          val target = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
           fullLayer.alsoTo(debugger("[RESP]: "))
             .joinMat(incoming.flow.alsoTo(debugger("[REQ]: ")))(Keep.left)
             .run()
-            .map(_ => Done)
+            .map(_ => TcpEvent(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@timestamp` = DateTime.now(),
+              reqId = id,
+              protocol = if (tls) "Tcp/Tls" else "Tcp",
+              to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
+              target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
+              from = incoming.remoteAddress.toString,
+              local = incoming.localAddress.toString,
+              duration = 0L,
+              overhead = overhead,
+              data = DataInOut(0L, 0L), // TODO
+              gwError = None,
+              `@serviceId` = service.id,
+              `@service` = service.name,
+              port = port,
+              service = Some(service)
+            ))
             .recover {
-              case NonFatal(ex) => Done
+              case NonFatal(ex) => TcpEvent(
+                `@id` = env.snowflakeGenerator.nextIdStr(),
+                `@timestamp` = DateTime.now(),
+                reqId = id,
+                protocol = if (tls) "Tcp/Tls" else "Tcp",
+                to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
+                target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
+                from = incoming.remoteAddress.toString,
+                local = incoming.localAddress.toString,
+                duration = 0L,
+                overhead = overhead,
+                data = DataInOut(0L, 0L), // TODO
+                gwError = Some(ex.getMessage),
+                `@serviceId` = service.id,
+                `@service` = service.name,
+                port = port,
+                service = Some(service)
+              )
             }
         } catch {
           case NonFatal(e) =>
-            log.error(s"Could not materialize handling flow for {incoming}", e)
-            throw e
+            log.error(s"Could not materialize handling flow for ${incoming}", e)
+            Future.successful(TcpEvent(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@timestamp` = DateTime.now(),
+              reqId = id,
+              protocol = if (tls) "Tcp/Tls" else "Tcp",
+              to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
+              target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
+              from = incoming.remoteAddress.toString,
+              local = incoming.localAddress.toString,
+              duration = 0L,
+              overhead = 0L,
+              data = DataInOut(0L, 0L), // TODO
+              gwError = Some(s"Could not materialize handling flow for ${incoming}: $e"),
+              `@serviceId` = "otoroshi",
+              `@service` = "otoroshi",
+              port = port,
+              service = None
+            ))
         }
       }
-      case _ => Future.failed[Done](new RuntimeException("No matching service !"))
+      case _ =>
+        Future.successful(TcpEvent(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@timestamp` = DateTime.now(),
+          reqId = id,
+          protocol = if (tls) "Tcp/Tls" else "Tcp",
+          to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
+          target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
+          from = incoming.remoteAddress.toString,
+          local = incoming.localAddress.toString,
+          duration = 0L,
+          overhead = 0L,
+          data = DataInOut(0L, 0L), // TODO
+          gwError = Some("No matching service !"),
+          `@serviceId` = "otoroshi",
+          `@service` = "otoroshi",
+          port = port,
+          service = None
+        ))
     }
   }
 
-  def routeWithSNI(incoming: AwesomeIncomingConnection, debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer, env: Env): Future[Done] = {
+  def routeWithSNI(incoming: AwesomeIncomingConnection, port: Int, id: String, tls: Boolean, start: Long, debugger: String => Sink[ByteString, Future[Done]])(implicit ec: ExecutionContext, actorSystem: ActorSystem, materializer: ActorMaterializer, env: Env): Future[TcpEvent] = {
+    val targetRef = new AtomicReference[TcpTarget]()
+    val ref = new AtomicReference[String]()
     TcpService.findByPort(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled && service.sni.enabled => {
         try {
           val fullLayer: Flow[ByteString, ByteString, Future[_]] = Flow.lazyInitAsync { () =>
             incoming.domain.map { sniDomain =>
+              ref.set(sniDomain)
               log.info(s"domain: $sniDomain, local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
               service.rules.find(r => domainMatch(r.domain, sniDomain)) match {
                 case Some(rule) => {
                   val targets = rule.targets
                   val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
                   val target = targets.apply(index.toInt)
-                   target.tls match {
+                  targetRef.set(target)
+                  target.tls match {
                     case true => {
                       val remoteAddress = target.ip match {
                         case Some(ip) => new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress), target.port)
@@ -453,26 +392,96 @@ object TcpService {
                 Flow[ByteString].flatMapConcat(_ => Source.failed(e))
             }
           }
+          val target = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
+          val overhead = System.currentTimeMillis() - start
           fullLayer.alsoTo(debugger("[RESP]: "))
             .joinMat(incoming.flow.alsoTo(debugger("[REQ]: ")))(Keep.left)
             .run()
-            .map(_ => Done)
+            .map(_ => TcpEvent(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@timestamp` = DateTime.now(),
+              reqId = id,
+              protocol = if (tls) "Tcp/Tls" else "Tcp",
+              to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
+              target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
+              from = incoming.remoteAddress.toString,
+              local = incoming.localAddress.toString,
+              duration = 0L,
+              overhead = overhead,
+              data = DataInOut(0L, 0L), // TODO
+              gwError = None,
+              `@serviceId` = service.id,
+              `@service` = service.name,
+              port = port,
+              service = Some(service)
+            ))
             .recover {
-              case NonFatal(ex) => Done
+              case NonFatal(ex) => TcpEvent(
+                `@id` = env.snowflakeGenerator.nextIdStr(),
+                `@timestamp` = DateTime.now(),
+                reqId = id,
+                protocol = if (tls) "Tcp/Tls" else "Tcp",
+                to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
+                target = Location(target, if (tls) "Tcp/Tls" else "Tcp", ""),
+                from = incoming.remoteAddress.toString,
+                local = incoming.localAddress.toString,
+                duration = 0L,
+                overhead = overhead,
+                data = DataInOut(0L, 0L), // TODO
+                gwError = Some(ex.getMessage),
+                `@serviceId` = service.id,
+                `@service` = service.name,
+                port = port,
+                service = Some(service)
+              )
             }
         } catch {
           case NonFatal(e) =>
             log.error(s"Could not materialize handling flow for ${incoming}", e)
-            throw e
+            Future.successful(TcpEvent(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@timestamp` = DateTime.now(),
+              reqId = id,
+              protocol = if (tls) "Tcp/Tls" else "Tcp",
+              to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
+              target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
+              from = incoming.remoteAddress.toString,
+              local = incoming.localAddress.toString,
+              duration = 0L,
+              overhead = 0L,
+              data = DataInOut(0L, 0L), //  TODO
+              gwError = Some(s"Could not materialize handling flow for ${incoming}: $e"),
+              `@serviceId` = "otoroshi",
+              `@service` = "otoroshi",
+              port = port,
+              service = None
+            ))
         }
       }
-      case _ => Future.failed[Done](new RuntimeException("No matching service !"))
+      case _ =>
+        Future.successful(TcpEvent(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@timestamp` = DateTime.now(),
+          reqId = id,
+          protocol = if (tls) "Tcp/Tls" else "Tcp",
+          to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
+          target = Location(Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--"), if (tls) "Tcp/Tls" else "Tcp", ""),
+          from = incoming.remoteAddress.toString,
+          local = incoming.localAddress.toString,
+          duration = 0L,
+          overhead = 0L,
+          data = DataInOut(0L, 0L), // TODO
+          gwError = Some("No matching service !"),
+          `@serviceId` = "otoroshi",
+          `@service` = "otoroshi",
+          port = port,
+          service = None
+        ))
     }
   }
 }
 
 class TcpEngineProvider {
-
   def createSSLEngine(clientAuth: ClientAuth, env: Env): SSLEngine = {
     lazy val cipherSuites = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
     lazy val protocols = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
@@ -549,7 +558,11 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
       },
       closing = IgnoreComplete
     ).mapAsyncUnordered(settings.maxConnections) { incoming =>
-      TcpService.routeWithSNI(incoming, debugger)(ec, system, mat, env)
+      val id = env.snowflakeGenerator.nextIdStr()
+      val start = System.currentTimeMillis()
+      TcpService.routeWithSNI(incoming, port, id, true, start, debugger)(ec, system, mat, env).andThen {
+        case Success(evt) => evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+      }
     }
     .to(Sink.ignore)
     .run()
@@ -570,7 +583,11 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
       },
       closing = IgnoreComplete
     ).mapAsyncUnordered(settings.maxConnections) { incoming =>
-      TcpService.routeWithoutSNI(incoming, debugger)(ec, system, mat, env)
+      val id = env.snowflakeGenerator.nextIdStr()
+      val start = System.currentTimeMillis()
+      TcpService.routeWithoutSNI(incoming, port, id, true, start, debugger)(ec, system, mat, env).andThen {
+        case Success(evt) => evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+      }
     }.to(Sink.ignore).run()
   }
 
@@ -583,7 +600,11 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
       options = settings.socketOptions,
       idleTimeout = Duration.Inf
     ).mapAsyncUnordered(settings.maxConnections) { incoming =>
-      TcpService.routeWithoutSNI(incoming, debugger)(ec, system, mat, env)
+      val id = env.snowflakeGenerator.nextIdStr()
+      val start = System.currentTimeMillis()
+      TcpService.routeWithoutSNI(incoming, port, id, false, start, debugger)(ec, system, mat, env).andThen {
+        case Success(evt) => evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+      }
     }.to(Sink.ignore).run()
   }
 
@@ -615,7 +636,11 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
         })
       ), promise.future)
     }.mapAsyncUnordered(settings.maxConnections) { incoming =>
-      TcpService.routeWithSNI(incoming, debugger)(ec, system, mat, env)
+      val id = env.snowflakeGenerator.nextIdStr()
+      val start = System.currentTimeMillis()
+      TcpService.routeWithSNI(incoming, port, id, false, start, debugger)(ec, system, mat, env).andThen {
+        case Success(evt) => evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+      }
     }.to(Sink.ignore).run()
   }
 
@@ -848,3 +873,146 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 }
+
+/*
+
+  private val _services = Seq(
+    TcpService(
+      enabled = true,
+      tls = TlsMode.Disabled,
+      sni = SniSettings(false, false),
+      clientAuth = ClientAuth.None,
+      port = 1201,
+      rules = Seq(TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "localhost",
+            None,
+            1301,
+            false
+          ),
+          TcpTarget(
+            "localhost",
+            None,
+            1302,
+            false
+          )
+        )
+      ))
+    ),
+    TcpService(
+      enabled = true,
+      tls = TlsMode.PassThrough,
+      sni = SniSettings(false, false),
+      clientAuth = ClientAuth.None,
+      port = 1202,
+      rules = Seq(TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "ssl.ancelin.org",
+            Some("127.0.0.1"),
+            1303,
+            false
+          ),
+          TcpTarget(
+            "ssl.ancelin.org",
+            Some("127.0.0.1"),
+            1304,
+            false
+          )
+        )
+      ))
+    ),
+    TcpService(
+      enabled = true,
+      tls = TlsMode.Enabled,
+      sni = SniSettings(false, false),
+      clientAuth = ClientAuth.None,
+      port = 1203,
+      rules = Seq(TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "localhost",
+            None,
+            1301,
+            false
+          ),
+          TcpTarget(
+            "localhost",
+            None,
+            1302,
+            false
+          )
+        )
+      ))
+    ),
+    TcpService(
+      enabled = true,
+      tls = TlsMode.Enabled,
+      sni = SniSettings(true, false),
+      clientAuth = ClientAuth.None,
+      port = 1204,
+      rules = Seq(
+        TcpRule(
+          domain = "ssl.ancelin.org",
+          targets = Seq(
+            TcpTarget(
+              "localhost",
+              None,
+              1301,
+              false
+            )
+          )
+        ),
+        TcpRule(
+          domain = "ssl2.ancelin.org",
+          targets = Seq(
+            TcpTarget(
+              "localhost",
+              None,
+              1302,
+              false
+            )
+          )
+        )
+      )
+    ),
+    TcpService(
+      enabled = true,
+      tls = TlsMode.PassThrough,
+      sni = SniSettings(true, false),
+      clientAuth = ClientAuth.None,
+      port = 1205,
+      // test with
+      // curl -v --resolve www.google.fr:1205:127.0.0.1 https://www.google.fr:1205/
+      // curl -v --resolve www.amazon.fr:1205:127.0.0.1 https://www.amazon.fr:1205/ --compressed
+      rules = Seq(
+        TcpRule(
+          domain = "www.google.fr",
+          targets = Seq(
+            TcpTarget(
+              "www.google.fr",
+              None,
+              443,
+              false
+            )
+          )
+        ),
+        TcpRule(
+          domain = "www.amazon.fr",
+          targets = Seq(
+            TcpTarget(
+              "www.amazon.fr",
+              None,
+              443,
+              false
+            )
+          )
+        )
+      )
+    )
+  )
+ */

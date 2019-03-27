@@ -73,7 +73,14 @@ class Targets extends Component {
     value.rules.forEach(r => {
       if (r.domain === oldRule.domain) {
         if (r.domain !== newTarget.domain) {
-          r.domain = newTarget.domain;
+          this.deleteTarget(r.domain, oldTarget, idx);
+          const rules = value.rules.filter(r => r.domain !== newTarget.domain);
+          const rule = value.rules.filter(r => r.domain === newTarget.domain)[0] || { domain: newTarget.domain, targets: [] };
+          rule.targets.push(newTarget.target);
+          rules.push(rule);
+          value.rules = rules;
+          this.props.rawOnChange(value);
+          return;
         } else {
           r.targets.forEach((target, i) => {
             if (i === idx) {
@@ -119,9 +126,10 @@ class Targets extends Component {
     return (
       <div>
         {
-          this.props.value.map(rule => {
+          this.props.value.map((rule, ridx) => {
             return rule.targets.map((target, idx) => {
               return <Target 
+                key={idx + '-' + ridx}
                 domain={rule.domain} 
                 target={target} 
                 onChange={newTarget => this.changeTarget(idx, rule, target, newTarget)} 
@@ -163,9 +171,9 @@ export class TcpServicesPage extends Component {
       content: item => item.tls,
       cell: (v, item) => {
         if (item.tls === 'Disabled') {
-          return <i className="" />
-        } else if (item.tls === 'PassThrough') {
           return <i className="fas fa-unlock-alt fa-lg" />
+        } else if (item.tls === 'PassThrough') {
+          return <i className="fas fa-lock fa-lg" />
         } else {
           return <i className="fas fa-lock fa-lg" />
         }
@@ -337,7 +345,6 @@ export class TcpServicesPage extends Component {
           navigateTo={this.gotoService}
           firstSort={0}
           extractKey={item => {
-            console.log(item.id)
             return item.id
           }}
           itemUrl={i => `/bo/dashboard/tcp/services/edit/${i.id}`}
