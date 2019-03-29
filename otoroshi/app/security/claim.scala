@@ -43,21 +43,6 @@ object OtoroshiClaim {
 
   def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(implicit env: Env): String = {
     val algorithm = jwtSettings.asAlgorithm(models.OutputMode).get
-    
-    //val builder: JWTCreator.Builder = JWT
-    //  .create()
-    //  .withIssuer(env.Headers.OtoroshiIssuer)
-    //  .withSubject(claim.sub)
-    //  .withAudience(claim.aud)
-    //  .withExpiresAt(new Date(claim.exp))
-    //  .withIssuedAt(new Date(claim.iat)) //(DateTime.now().toDate)
-    //  .withJWTId(claim.jti)
-    //val signed = claim.metadata.value.toSeq
-    //  .foldLeft[JWTCreator.Builder](builder) {
-    //    case (build, (key, value)) => build.withClaim(key, value)
-    //  }
-    //  .sign(algorithm)
-
     // Here we bypass JWT lib limitations ...
     val header = Json.obj(
       "typ" -> "JWT",
