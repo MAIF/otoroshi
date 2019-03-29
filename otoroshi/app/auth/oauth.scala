@@ -294,10 +294,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     s =>
                       Json
                         .parse(s)
-                        .as[Map[String, String]]
                   )
                   .orElse(
-                    PrivateAppsUser.select(user, authConfig.otoroshiDataField).asOpt[Map[String, String]]
+                    Option(PrivateAppsUser.select(user, authConfig.otoroshiDataField))
                   )
                 Right(
                   PrivateAppsUser(

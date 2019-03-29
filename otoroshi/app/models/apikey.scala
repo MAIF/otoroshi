@@ -71,6 +71,7 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
     env.datastores.apiKeyDataStore.withinMonthlyQuota(this)
   def withingQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.apiKeyDataStore.withingQuotas(this)
+  def metadataJson: JsValue = JsObject(metadata.mapValues(JsString.apply))
 }
 
 class ServiceNotFoundException(serviceId: String)

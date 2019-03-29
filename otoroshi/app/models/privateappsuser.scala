@@ -16,7 +16,7 @@ case class PrivateAppsUser(randomId: String,
                            profile: JsValue,
                            token: JsValue = Json.obj(),
                            realm: String,
-                           otoroshiData: Option[Map[String, String]],
+                           otoroshiData: Option[JsValue],
                            createdAt: DateTime = DateTime.now(),
                            expiredAt: DateTime = DateTime.now()) {
 
@@ -57,7 +57,7 @@ object PrivateAppsUser {
             profile = (json \ "profile").as[JsValue],
             token = (json \ "token").asOpt[JsValue].getOrElse(Json.obj()),
             realm = (json \ "realm").asOpt[String].getOrElse("none"),
-            otoroshiData = (json \ "otoroshiData").asOpt[Map[String, String]],
+            otoroshiData = (json \ "otoroshiData").asOpt[JsValue],
             createdAt = new DateTime((json \ "createdAt").as[Long]),
             expiredAt = new DateTime((json \ "expiredAt").as[Long])
           )

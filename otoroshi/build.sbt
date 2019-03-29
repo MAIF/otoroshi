@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   "io.dropwizard.metrics"    % "metrics-json"              % metricsVersion, // Apache 2.0
   "io.prometheus"            % "simpleclient_common"       % "0.5.0", // Apache 2.0
   "io.prometheus"            % "simpleclient_dropwizard"   % "0.5.0", // Apache 2.0
-  "com.auth0"                % "java-jwt"                  % "3.4.0",
+  "com.auth0"                % "java-jwt"                  % "3.8.0",
   "com.yubico"               % "u2flib-server-core"        % "0.16.0",
   "com.yubico"               % "u2flib-server-attestation" % "0.16.0",
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",

@@ -1,16 +1,14 @@
 package security
 
+import java.nio.charset.StandardCharsets
 import java.util.{Base64, Date}
 
-import com.auth0.jwt.{JWT, JWTCreator}
 import com.auth0.jwt.algorithms.Algorithm
 import env.Env
 import models.AlgoSettings
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
-
-import scala.util.Try
+import play.api.libs.json._
 
 case class OtoroshiClaim(
     iss: String, // issuer
@@ -19,18 +17,18 @@ case class OtoroshiClaim(
     exp: Long, // date d'expiration
     iat: Long = DateTime.now().getMillis, // issued at
     jti: String, // unique id forever
-    metadata: Map[String, String] = Map.empty[String, String] // private claim
+    metadata: JsObject = Json.obj() // private claim
 ) {
   def toJson: JsValue                                                 = OtoroshiClaim.format.writes(this)
   def serialize(jwtSettings: AlgoSettings)(implicit env: Env): String = OtoroshiClaim.serialize(this, jwtSettings)(env)
-  def withClaims(claims: Option[Map[String, String]]): OtoroshiClaim = claims match {
+  def withClaims(claims: JsValue): OtoroshiClaim = copy(metadata = metadata ++ claims.asOpt[JsObject].getOrElse(Json.obj()))
+  def withClaims(claims: Option[JsValue]): OtoroshiClaim = claims match {
     case Some(c) => withClaims(c)
     case None    => this
   }
-  def withClaims(claims: Map[String, String]): OtoroshiClaim = copy(metadata = metadata ++ claims)
-  def withClaim(name: String, value: String): OtoroshiClaim  = copy(metadata = metadata + (name -> value))
+  def withClaim(name: String, value: String): OtoroshiClaim  = copy(metadata = metadata ++ Json.obj(name -> value))
   def withClaim(name: String, value: Option[String]): OtoroshiClaim = value match {
-    case Some(v) => copy(metadata = metadata + (name -> v))
+    case Some(v) => copy(metadata = metadata ++ Json.obj(name -> v))
     case None    => this
   }
 }
@@ -45,30 +43,44 @@ object OtoroshiClaim {
 
   def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(implicit env: Env): String = {
     val algorithm = jwtSettings.asAlgorithm(models.OutputMode).get
-    val builder: JWTCreator.Builder = JWT
-      .create()
-      .withIssuer(env.Headers.OtoroshiIssuer)
-      .withSubject(claim.sub)
-      .withAudience(claim.aud)
-      .withExpiresAt(new Date(claim.exp))
-      .withIssuedAt(new Date(claim.iat)) //(DateTime.now().toDate)
-      .withJWTId(claim.jti)
-    val signed = claim.metadata.toSeq
-      .foldLeft[JWTCreator.Builder](builder) {
-        case (build, (key, value)) => build.withClaim(key, value)
-      }
-      .sign(algorithm)
-    // logger.trace(s"JWT: $signed")
+    
+    //val builder: JWTCreator.Builder = JWT
+    //  .create()
+    //  .withIssuer(env.Headers.OtoroshiIssuer)
+    //  .withSubject(claim.sub)
+    //  .withAudience(claim.aud)
+    //  .withExpiresAt(new Date(claim.exp))
+    //  .withIssuedAt(new Date(claim.iat)) //(DateTime.now().toDate)
+    //  .withJWTId(claim.jti)
+    //val signed = claim.metadata.value.toSeq
+    //  .foldLeft[JWTCreator.Builder](builder) {
+    //    case (build, (key, value)) => build.withClaim(key, value)
+    //  }
+    //  .sign(algorithm)
+
+    // Here we bypass JWT lib limitations ...
+    val header = Json.obj(
+      "typ" -> "JWT",
+      "alg" -> algorithm.getName
+    )
+    val payload = Json.obj(
+      "iss" -> env.Headers.OtoroshiIssuer,
+      "sub" -> claim.sub,
+      "aud" -> claim.aud,
+      "exp" -> new Date(claim.exp).getTime,
+      "iat" -> new Date(claim.iat).getTime,
+      "jti" -> claim.jti
+    ) ++ claim.metadata
+    val signed = sign(algorithm, header, payload)
+    logger.debug(s"signed: $signed")
     signed
   }
 
-  private def validate(claim: String)(implicit env: Env): Boolean =
-    Try {
-      val algorithm = Algorithm.HMAC512(env.crypto.sharedKey)
-      val verifier = JWT
-        .require(algorithm)
-        .withIssuer(env.Headers.OtoroshiIssuer)
-        .build()
-      verifier.verify(claim)
-    } isSuccess
+  private def sign(algorithm: Algorithm, headerJson: JsObject, payloadJson: JsObject): String = {
+    val header: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
+    val payload: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
+    val signatureBytes: Array[Byte] = algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
+    val signature: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(signatureBytes)
+    String.format("%s.%s.%s", header, payload, signature)
+  }
 }

@@ -950,11 +950,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       .withClaim("gender", paUsr.flatMap(_.field("gender")))
                                       .withClaim("locale", paUsr.flatMap(_.field("locale")))
                                       .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
-                                      .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadata)))
+                                      .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
                                       .withClaim("metadata",
                                                  paUsr
                                                    .flatMap(_.otoroshiData)
-                                                   .orElse(apiKey.map(_.metadata))
+                                                   .orElse(apiKey.map(_.metadataJson))
                                                    .map(m => Json.stringify(Json.toJson(m))))
                                       .withClaim("user", paUsr.map(u => Json.stringify(u.toJson)))
                                       .withClaim("apikey",

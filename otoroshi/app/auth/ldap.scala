@@ -250,7 +250,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             email = user.email,
             profile = user.asJson,
             realm = authConfig.cookieSuffix(descriptor),
-            otoroshiData = user.metadata.asOpt[Map[String, String]]
+            otoroshiData = Some(user.metadata)
           )
         )
       case None => Left(s"You're not authorized here")
