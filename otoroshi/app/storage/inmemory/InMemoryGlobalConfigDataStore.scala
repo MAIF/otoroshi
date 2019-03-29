@@ -82,7 +82,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   }
 
   override def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean] =
-    redisCli.keys(s"${_env.storageRoot}:global").map(_.isEmpty)
+    redisCli.keys(key("global").key).map(_.isEmpty)
 
   private val throttlingQuotasCache = new java.util.concurrent.atomic.AtomicLong(0L)
 

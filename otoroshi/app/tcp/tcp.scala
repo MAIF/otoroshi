@@ -16,6 +16,7 @@ import akka.{AwesomeIncomingConnection, Done, TcpUtils}
 import env.Env
 import events.{DataInOut, Location, TcpEvent}
 import javax.net.ssl._
+import models.IpFiltering
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -55,6 +56,13 @@ import scala.util.{Failure, Success, Try}
 - [x] We need to generate access events
 - [x] A job will request all tcp services with unique ports and stats tcp server. Servers will be shut down with otoroshi app
 - [ ] add api in swagger when feature is ready
+- [ ] support ClientConfig for tcp
+- [ ] support ClientValidator for tcp
+- [ ] support IpFiltering
+- [ ] support healthCheck for tcp
+- [ ] support snowMonkey for tcp
+- [ ] support live metrics (+UI)
+- [ ] support analytics in UI
   */
 case class TcpService(
   id: String = IdGenerator.token,
@@ -65,7 +73,12 @@ case class TcpService(
   clientAuth: ClientAuth,
   port: Int,
   interface: String = "0.0.0.0",
-  rules: Seq[TcpRule]
+  rules: Seq[TcpRule],
+  // clientValidatorRef: Option[String]
+  // clientConfig: ClientConfig
+  // ipFiltering: IpFiltering
+  // healthCheck
+  // snowMonkey
 ) {
   def json: JsValue = TcpService.fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
