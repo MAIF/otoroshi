@@ -11,6 +11,153 @@ function shallowDiffers(a, b) {
   return false;
 }
 
+class Mailer extends Component {
+  genericFormFlow = [
+    'url',
+    'headers'
+  ]
+  mailgunFormFlow = [
+    'eu',
+    'apiKey',
+    'domain'
+  ]
+  mailjetFormFlow = [
+    'apiKeyPublic',
+    'apiKeyPrivate'
+  ]
+  genericFormSchema = {
+    url: {
+      type: 'string',
+      props: {
+        label: 'Mailer url',
+        placeholder: 'Mailer url',
+      },
+    },
+    'headers': {
+      type: 'object',
+      props: {
+        label: 'Headers',
+      },
+    }
+  }
+  mailgunFormSchema = {
+    eu: {
+      type: 'bool',
+      props: {
+        label: 'EU',
+      },
+    },
+    apiKey: {
+      type: 'string',
+      props: {
+        label: 'Mailgun api key',
+        placeholder: 'Mailgun api key',
+      },
+    },
+    domain: {
+      type: 'string',
+      props: {
+        label: 'Mailgun domain',
+        placeholder: 'Mailgun domain',
+      },
+    },
+  }
+  mailjetFormSchema = {
+    apiKeyPublic: {
+      type: 'string',
+      props: {
+        label: 'Public api key',
+        placeholder: 'Public api key',
+      },
+    },
+    apiKeyPrivate: {
+      type: 'string',
+      props: {
+        label: 'Private api key',
+        placeholder: 'Private api key',
+      },
+    }
+  }
+  render() {
+    const settings = this.props.value;
+    const type = settings.type;
+    console.log(settings)
+    return (
+      <div>
+        <SelectInput
+          label="Type"
+          value={type}
+          onChange={e => {
+            switch (e) {
+              case 'console':
+                this.props.onChange({
+                  type: 'console'
+                });
+                break;
+              case 'generic':
+                this.props.onChange({
+                  type: 'generic',
+                  url: 'https://my.mailer.local/emails/_send',
+                  headers: {}
+                });
+                break;
+              case 'mailgun':
+                this.props.onChange({
+                  type: 'mailgun',
+                  eu: false,
+                  apiKey: '',
+                  domain: ''
+                });
+                break;
+              case 'mailjet':
+                this.props.onChange({
+                  type: 'mailjet',
+                  apiKeyPublic: '',
+                  apiKeyPrivate: ''
+                });
+                break;
+            }
+          }}
+          possibleValues={[
+            { label: 'Console', value: 'console' },
+            { label: 'Generic', value: 'generic' },
+            { label: 'Mailgun', value: 'mailgun' },
+            { label: 'Mailjet', value: 'mailjet' },
+          ]}
+          help="..."
+        />
+        {type === 'generic' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.genericFormFlow}
+            schema={this.genericFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailgun' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.mailgunFormFlow}
+            schema={this.mailgunFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailjet' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.mailjetFormFlow}
+            schema={this.mailjetFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+      </div>
+    );
+  }
+}
+
 // TODO : multi webhooks
 export class DangerZonePage extends Component {
   state = {
@@ -435,6 +582,7 @@ export class DangerZonePage extends Component {
     'proxies.authority': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.jwk': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.elastic': { type: Proxy, props: { showNonProxyHosts: true } },
+    'mailerSettings': { type: Mailer }
   };
 
   formFlow = [
@@ -482,10 +630,8 @@ export class DangerZonePage extends Component {
     '>>>Backoffice auth. settings',
     'backOfficeAuthRef',
     'backOfficeAuthButtons',
-    '>>>Mailgun settings',
-    'mailGunSettings.eu',
-    'mailGunSettings.apiKey',
-    'mailGunSettings.domain',
+    '>>>Mailer settings',
+    'mailerSettings',
     '>>>CleverCloud settings',
     'cleverSettings.consumerKey',
     'cleverSettings.consumerSecret',

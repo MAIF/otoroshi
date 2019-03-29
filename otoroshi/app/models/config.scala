@@ -7,7 +7,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import storage.BasicStore
 import security.{Auth0Config, IdGenerator}
-import utils.CleverCloudClient
+import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,30 +68,6 @@ case class CleverCloudSettings(consumerKey: String,
 
 object CleverCloudSettings {
   implicit val format = Json.format[CleverCloudSettings]
-}
-
-case class MailgunSettings(eu: Boolean, apiKey: String, domain: String)
-
-object MailgunSettings {
-  val format = new Format[MailgunSettings] {
-    override def writes(o: MailgunSettings) = Json.obj(
-      "eu"     -> o.eu,
-      "apiKey" -> o.apiKey,
-      "domain" -> o.domain
-    )
-    override def reads(json: JsValue) =
-      Try {
-        JsSuccess(
-          MailgunSettings(
-            eu = (json \ "eu").asOpt[Boolean].getOrElse(false),
-            apiKey = (json \ "password").asOpt[String].map(_.trim).get,
-            domain = (json \ "domain").asOpt[String].map(_.trim).get,
-          )
-        )
-      } recover {
-        case e => JsError(e.getMessage)
-      } get
-  }
 }
 
 case class Proxies(
@@ -166,7 +142,7 @@ case class GlobalConfig(
     kafkaConfig: Option[KafkaConfig] = None,
     backOfficeAuthRef: Option[String] = None,
     cleverSettings: Option[CleverCloudSettings] = None,
-    mailGunSettings: Option[MailgunSettings] = None,
+    mailerSettings: Option[MailerSettings] = None,
     statsdConfig: Option[StatsdConfig] = None,
     maxWebhookSize: Int = 100,
     middleFingers: Boolean = false,
@@ -204,14 +180,9 @@ object GlobalConfig {
 
   val _fmt: Format[GlobalConfig] = new Format[GlobalConfig] {
     override def writes(o: GlobalConfig): JsValue = {
-      val mailGunSettings: JsValue = o.mailGunSettings match {
+      val mailerSettings: JsValue = o.mailerSettings match {
         case None => JsNull
-        case Some(config) =>
-          Json.obj(
-            "eu"     -> config.eu,
-            "apiKey" -> config.apiKey,
-            "domain" -> config.domain
-          )
+        case Some(config) => config.json
       }
       val cleverSettings: JsValue = o.cleverSettings match {
         case None => JsNull
@@ -269,7 +240,7 @@ object GlobalConfig {
         "statsdConfig"            -> statsdConfig,
         "kafkaConfig"             -> kafkaConfig,
         "backOfficeAuthRef"       -> o.backOfficeAuthRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "mailGunSettings"         -> mailGunSettings,
+        "mailerSettings"          -> mailerSettings,
         "cleverSettings"          -> cleverSettings,
         "maxWebhookSize"          -> o.maxWebhookSize,
         "middleFingers"           -> o.middleFingers,
@@ -353,14 +324,18 @@ object GlobalConfig {
             }
           },
           backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
-          mailGunSettings = (json \ "mailGunSettings").asOpt[JsValue].flatMap { config =>
-            (
-              (config \ "eu").asOpt[Boolean].getOrElse(false),
-              (config \ "apiKey").asOpt[String].filter(_.nonEmpty),
-              (config \ "domain").asOpt[String].filter(_.nonEmpty)
-            ) match {
-              case (eu, Some(apiKey), Some(domain)) => Some(MailgunSettings(eu, apiKey, domain))
-              case _                                => None
+          mailerSettings = (json \ "mailerSettings").asOpt[JsValue].flatMap { config =>
+            MailerSettings.format.reads(config).asOpt
+          } orElse {
+            (json \ "mailGunSettings").asOpt[JsValue].flatMap { config =>
+              (
+                (config \ "eu").asOpt[Boolean].getOrElse(false),
+                (config \ "apiKey").asOpt[String].filter(_.nonEmpty),
+                (config \ "domain").asOpt[String].filter(_.nonEmpty)
+              ) match {
+                case (eu, Some(apiKey), Some(domain)) => Some(MailgunSettings(eu, apiKey, domain))
+                case _                                => None
+              }
             }
           },
           cleverSettings = (json \ "cleverSettings").asOpt[JsValue].flatMap { config =>

@@ -10,12 +10,13 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
 import akka.util.ByteString
 import env.Env
-import models.{ApiKey, BackOfficeUser, ServiceDescriptor, Target}
+import models._
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json.{JsArray, JsValue, Json, Writes}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
+import utils.EmailLocation
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -857,34 +858,12 @@ class AlertsActor(implicit env: Env) extends Actor {
       |$titles
       |$email
     """.stripMargin
-
-      env.datastores.globalConfigDataStore.singleton().flatMap { config =>
-        config.mailGunSettings match {
-          case Some(mailgunSettings) =>
-            env.Ws
-              .url(mailgunSettings.eu match {
-                case true  => s"https://api.eu.mailgun.net/v3/${mailgunSettings.domain}/messages"
-                case false => s"https://api.mailgun.net/v3/${mailgunSettings.domain}/messages"
-              })
-              .withAuth("api", mailgunSettings.apiKey, WSAuthScheme.BASIC)
-              .withMaybeProxyServer(config.proxies.alertEmails)
-              .post(
-                Map(
-                  "from"    -> Seq(s"Otoroshi Alerts <otoroshi@${env.domain}>"),
-                  "to"      -> Seq(config.alertsEmails.mkString(", ")),
-                  "subject" -> Seq(s"Otoroshi Alert - ${evts.size} new alerts"),
-                  "html"    -> Seq(emailBody)
-                )
-              )
-              .andThen {
-                case Success(res) => logger.debug("Alert email sent")
-                case Failure(e)   => logger.error("Error while sending alert email", e)
-              }
-              .fast
-              .map(_ => ())
-          case _ => FastFuture.successful(())
-        }
-      }
+      env.datastores.globalConfigDataStore.singleton().flatMap(config => config.mailerSettings.map(_.asMailer(config, env).send(
+        from = EmailLocation("Otoroshi Alerts", s"otoroshi-alerts@${env.domain}"),
+        to = config.alertsEmails.map(e => EmailLocation(e, e)),
+        subject = s"Otoroshi Alert - ${evts.size} new alerts",
+        html = emailBody
+      )).getOrElse(FastFuture.successful(())))
     }
 
   lazy val stream = Source.queue[AlertEvent](50000, OverflowStrategy.dropHead).mapAsync(5) { evt =>

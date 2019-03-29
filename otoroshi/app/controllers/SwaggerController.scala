@@ -599,13 +599,19 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
-  def MailgunSettings = Json.obj(
+  def MailerSettings = Json.obj(
     "description" -> "Configuration for mailgun api client",
     "type"        -> "object",
     "required"    -> Json.arr("apiKey", "domain"),
     "properties" -> Json.obj(
-      "apiKey" -> SimpleStringType ~~> "Mailgun Api Key",
-      "domain" -> SimpleStringType ~~> "Mailgun domain"
+      "type"   -> SimpleStringType ~~> "Type of the mailer: console, generic, mailgun, mailjet",
+      "eu"     -> SimpleBooleanType ~~> "Mailgun mailer, use EU tenant api",
+      "apiKey" -> SimpleStringType ~~> "Mailgun mailer api key",
+      "domain" -> SimpleStringType ~~> "Mailgun mailer domain",
+      "apiKeyPublic" -> SimpleStringType ~~> "Mailjet mailer public api key",
+      "apiKeyPrivate" -> SimpleStringType ~~> "Mailjet mailer private api key",
+      "url"    -> SimpleStringType ~~> "Generic mailer url",
+      "header" -> SimpleObjectType ~~> "Generic mailer headers",
     )
   )
 
@@ -663,7 +669,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "middleFingers"           -> SimpleBooleanType ~~> "Use middle finger emoji as a response character for endless HTTP responses",
       "maxLogsSize"             -> SimpleIntType ~~> "Number of events kept locally",
       "cleverSettings"          -> Ref("CleverSettings") ~~> "Optional CleverCloud configuration",
-      "mailGunSettings"         -> Ref("MailgunSettings") ~~> "Optional mailgun configuration",
+      "mailerSettings"          -> Ref("mailerSettings") ~~> "Optional mailer configuration",
       "backofficeAuth0Config"   -> Ref("Auth0Config") ~~> "Optional configuration for the backoffice Auth0 domain",
       "privateAppsAuth0Config"  -> Ref("Auth0Config") ~~> "Optional configuration for the private apps Auth0 domain"
     )
@@ -2461,7 +2467,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "ImportExport"                -> ImportExport,
         "ImportExportStats"           -> ImportExportStats,
         "IpFiltering"                 -> IpFiltering,
-        "MailgunSettings"             -> MailgunSettings,
+        "MailerSettings"              -> MailerSettings,
         "Patch"                       -> Patch,
         "Quotas"                      -> Quotas,
         "Service"                     -> Service,
