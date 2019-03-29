@@ -431,8 +431,6 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
           val validDescriptors = descriptors.filter { sr =>
             if (!sr.enabled) {
               false
-            } else if (env.redirectToDev) {
-              utils.RegexPool(sr.toDevHost).matches(query.toDevHost)
             } else {
               utils.RegexPool(sr.toHost).matches(query.toHost)
             }
@@ -442,25 +440,7 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
         }
       }
     } map { filteredDescriptors =>
-      if (env.redirectToDev) {
-        filteredDescriptors.sortWith { (a, b) =>
-          // TODO : do not use hardcoded stuff
-          (a.env, b.env) match {
-            case ("dev", _)                     => true
-            case ("preprod", "dev")             => false
-            case ("preprod", "experiments")     => false
-            case ("preprod", "prod")            => true
-            case ("preprod", "preprod")         => true
-            case ("experiments", "prod")        => true
-            case ("experiments", "preprod")     => false
-            case ("experiments", "dev")         => false
-            case ("experiments", "experiments") => false
-            case _                              => false
-          }
-        }.headOption
-      } else {
-        filteredDescriptors.headOption
-      }
+      filteredDescriptors.headOption
     } andThen {
       case _ => logger.debug(s"Found microservice in ${System.currentTimeMillis() - start} ms.")
     }

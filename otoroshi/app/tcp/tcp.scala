@@ -59,10 +59,10 @@ import scala.util.{Failure, Success, Try}
 - [ ] support ClientConfig for tcp
 - [ ] support ClientValidator for tcp
 - [ ] support IpFiltering
-- [ ] support healthCheck for tcp
+- [ ] support healthCheck for tcp (+UI)
 - [ ] support snowMonkey for tcp
 - [ ] support live metrics (+UI)
-- [ ] support analytics in UI
+- [ ] support analytics in UI (metrics + events)
   */
 case class TcpService(
   id: String = IdGenerator.token,

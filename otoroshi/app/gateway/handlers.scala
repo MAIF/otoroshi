@@ -210,8 +210,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
-          case env.backOfficeHost if !isSecured && toHttps && env.isProd           => Some(redirectToHttps())
-          case env.privateAppsHost if !isSecured && toHttps && env.isProd          => Some(redirectToHttps())
+          case env.backOfficeHost if !isSecured && toHttps                         => Some(redirectToHttps())
+          case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
           case env.adminApiHost if env.exposeAdminApi                              => super.routeRequest(request)
           case env.backOfficeHost if env.exposeAdminDashboard                      => super.routeRequest(request)
           case env.privateAppsHost                                                 => super.routeRequest(request)
@@ -780,7 +780,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                 splitToCanary(desc, trackingId, reqNumber, globalConfig).fast.flatMap { _desc =>
                                   val isUp = true
 
-                                  val descriptor = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
+                                  val descriptor = _desc
 
                                   def callDownstream(config: GlobalConfig,
                                                      apiKey: Option[ApiKey] = None,
@@ -1242,7 +1242,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                               // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                               // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
-                                              if (env.notDev && (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
+                                              if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                                                   && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
                                                   && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                                 if (resp.status == 404 && headers
@@ -1999,7 +1999,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                       )
                                     } else {
-                                      if (env.isProd && !isSecured && desc.forceHttps) {
+                                      if (!isSecured && desc.forceHttps) {
                                         val theDomain = req.domain
                                         val protocol  = getProtocolFor(req)
                                         logger.trace(

@@ -19,7 +19,7 @@ class PrivateAppsController(env: Env, PrivateAppsAction: PrivateAppsAction, cc: 
       //request.session
       //  .get("pa-redirect-after-login")
       //  .getOrElse(
-      routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+      routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
       //  )
     ) //.removingFromSession("pa-redirect-after-login")
   }

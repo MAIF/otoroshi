@@ -178,7 +178,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
             .addingToSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-                routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
               )
             )
             .future
@@ -203,7 +203,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           .Ok(views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, env))
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-              routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+              routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
           .future
@@ -282,7 +282,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             .withHeaders("WWW-Authenticate" -> "otoroshi-admin-realm")
             .addingToSession(
               "bo-redirect-after-login" -> redirect.getOrElse(
-                routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
               )
             )
             .future
@@ -307,7 +307,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
           .Ok(views.html.otoroshi.login(s"/backoffice/auth0/callback", "POST", token, env))
           .addingToSession(
             "bo-redirect-after-login" -> redirect.getOrElse(
-              routes.BackOfficeController.dashboard().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+              routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
           .future

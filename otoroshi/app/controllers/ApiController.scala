@@ -534,8 +534,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def deleteGroup(serviceGroupId: String) = ApiAction.async { ctx =>
     env.datastores.serviceGroupDataStore.findById(serviceGroupId).flatMap {
       case None => NotFound(Json.obj("error" -> s"ServiceGroup with id: '$serviceGroupId' not found")).asFuture
-      case Some(dev) =>
-        dev.delete().map { res =>
+      case Some(group) =>
+        group.delete().map { res =>
           val event: AdminApiEvent = AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
             env.env,
@@ -2431,8 +2431,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def deleteCert(CertId: String) = ApiAction.async { ctx =>
     env.datastores.certificatesDataStore.findById(CertId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Certificate with id: '$CertId' not found")).asFuture
-      case Some(dev) =>
-        dev.delete().map { res =>
+      case Some(cert) =>
+        cert.delete().map { res =>
           val event: AdminApiEvent = AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
             env.env,

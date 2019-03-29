@@ -410,7 +410,7 @@ class WebSocketHandler()(implicit env: Env) {
                           .flatMap(iu => splitToCanary(desc, trackingId, reqNumber, globalConfig).map(d => (iu, d)))
                           .flatMap { tuple =>
                             val (isUp, _desc) = tuple
-                            val descriptor = if (env.redirectToDev) _desc.copy(env = "dev") else _desc
+                            val descriptor = _desc
 
                             def callDownstream(
                                                 config: GlobalConfig,
@@ -1055,7 +1055,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                            Some("errors.too.much.requests"))
                                       .asLeft[WSFlow]
                                   } else {
-                                    if (env.isProd && !isSecured && desc.forceHttps) {
+                                    if (!isSecured && desc.forceHttps) {
                                       val theDomain = req.domain
                                       val protocol  = getWsProtocolFor(req)
                                       logger.trace(

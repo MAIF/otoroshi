@@ -144,7 +144,7 @@ object Proxies {
 }
 
 case class GlobalConfig(
-    lines: Seq[String] = Seq("dev", "sandbox", "experiments", "preprod", "prod"),
+    lines: Seq[String] = Seq("prod"),
     streamEntityOnly: Boolean = true,
     autoLinkToDefaultGroup: Boolean = true,
     limitConcurrentRequests: Boolean = false, // TODO : true by default
@@ -281,7 +281,7 @@ object GlobalConfig {
     override def reads(json: JsValue): JsResult[GlobalConfig] =
       Try {
         GlobalConfig(
-          lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("dev", "sandbox", "experiments", "preprod", "prod")),
+          lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),

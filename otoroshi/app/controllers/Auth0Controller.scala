@@ -185,7 +185,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                       val redirectTo = ctx.request.session
                         .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                         .getOrElse(
-                          routes.PrivateAppsController.home().absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                          routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
                         )
                       val url    = new java.net.URL(redirectTo)
                       val host   = url.getHost
@@ -345,7 +345,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                                   .getOrElse(
                                     routes.BackOfficeController
                                       .index()
-                                      .absoluteURL(env.isProd && env.exposedRootSchemeIsHttps)
+                                      .absoluteURL(env.exposedRootSchemeIsHttps)
                                   )
                               ).removingFromSession("bo-redirect-after-login")
                                 .addingToSession("bousr" -> boUser.randomId)

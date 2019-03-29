@@ -108,7 +108,7 @@ class Env(val configuration: Configuration,
     val ala         = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
     val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
     timeout(FiniteDuration(5, SECONDS)).andThen {
-      case _ if isProd && clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck()
+      case _ if clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck()
     }
     (aa, ala, ha)
   }
@@ -182,10 +182,6 @@ class Env(val configuration: Configuration,
   lazy val adminApiProxyHttps: Boolean = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
     configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
-  lazy val redirectToDev: Boolean = env
-    .toLowerCase() == "dev" && configuration.getOptional[Boolean]("app.redirectToDev").getOrElse(false)
-  lazy val envInUrl: String =
-    configuration.getOptional[String]("app.env").filterNot(_ == "prod").map(v => s"$v.").getOrElse("")
   lazy val domain: String = configuration.getOptional[String]("app.domain").getOrElse("foo.bar")
   lazy val adminApiSubDomain: String =
     configuration.getOptional[String]("app.adminapi.targetSubdomain").getOrElse("otoroshi-admin-internal-api")
@@ -206,9 +202,7 @@ class Env(val configuration: Configuration,
   lazy val backOfficeApiKeyClientSecret =
     configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeApiKeyClientSecret").get
 
-  def composeUrl(subdomain: String): String     = s"$subdomain.$envInUrl$domain"
-  def composeMainUrl(subdomain: String): String = if (isDev) composeUrl(subdomain) else s"$subdomain.$domain"
-  // def composeMainUrl(subdomain: String): String = composeUrl(subdomain)
+  def composeMainUrl(subdomain: String): String = s"$subdomain.$domain"
 
   lazy val adminApiExposedHost = composeMainUrl(adminApiExposedSubDomain)
   lazy val adminApiHost        = composeMainUrl(adminApiSubDomain)
@@ -304,16 +298,13 @@ class Env(val configuration: Configuration,
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
   lazy val metrics = new Metrics(this, lifecycle)
 
-  lazy val isDev  = env.toLowerCase == "dev" //environment.mode == Mode.Dev
-  lazy val isProd = !isDev
-  lazy val notDev = !isDev
   lazy val hash   = s"${System.currentTimeMillis()}"
 
   lazy val backOfficeSessionExp = configuration.getOptional[Long]("app.backoffice.session.exp").get
 
   lazy val exposedRootScheme = configuration.getOptional[String]("app.rootScheme").getOrElse("https")
 
-  def rootScheme               = if (isDev) "http://" else s"${exposedRootScheme}://"
+  def rootScheme               = s"${exposedRootScheme}://"
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
 
   def Ws = _internalClient
@@ -462,14 +453,13 @@ class Env(val configuration: Configuration,
     backOfficeGroupId
   )
 
-  private lazy val backOfficeDescriptorHostHeader: String =
-    if (isDev) s"$adminApiSubDomain.dev.$domain" else s"$adminApiSubDomain.$domain"
+  private lazy val backOfficeDescriptorHostHeader: String = s"$adminApiSubDomain.$domain"
 
   lazy val backOfficeDescriptor = ServiceDescriptor(
     id = backOfficeServiceId,
     groupId = backOfficeGroupId,
     name = "otoroshi-admin-api",
-    env = if (isDev) "dev" else "prod",
+    env = "prod",
     subdomain = adminApiExposedSubDomain,
     domain = domain,
     targets = Seq(
@@ -478,7 +468,7 @@ class Env(val configuration: Configuration,
         scheme = if (adminApiProxyHttps) "https" else "http"
       )
     ),
-    redirectToLocal = isDev,
+    redirectToLocal = false,
     localHost = s"127.0.0.1:$port",
     forceHttps = false,
     additionalHeaders = Map(
@@ -515,7 +505,7 @@ class Env(val configuration: Configuration,
         .isOtoroshiEmpty()
         .andThen {
           case Success(true) if clusterConfig.mode == ClusterMode.Worker => {
-            logger.info(s"The main datastore seems to be empty, registering default config")
+            logger.info(s"The main datastore seems to be empty, registering default config.")
             defaultConfig.save()(ec, this)
           }
           case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
@@ -609,7 +599,7 @@ class Env(val configuration: Configuration,
           }
         }
 
-      if (isProd && checkForUpdates) {
+      if (checkForUpdates) {
         otoroshiActorSystem.scheduler.schedule(5.second, 24.hours) {
           datastores.globalConfigDataStore
             .singleton()(otoroshiExecutionContext, this)
@@ -666,7 +656,6 @@ class Env(val configuration: Configuration,
               .map { certs =>
                 //val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
                 val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
-                val foundOtoroshiDomainCertDev = certs.exists(c => c.domain == s"*.dev.${this.domain}")
                 val keyPairGenerator           = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                 keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 //val keyPair1 = keyPairGenerator.generateKeyPair()
@@ -684,13 +673,6 @@ class Env(val configuration: Configuration,
                                                                        FiniteDuration(365, TimeUnit.DAYS),
                                                                        keyPair2)
                   Cert(cert1, keyPair2, None).enrich().save()
-                }
-                if (env.toLowerCase() == "dev" && !foundOtoroshiDomainCertDev) {
-                  logger.info(s"Generating a self signed SSL certificate for https://*.dev.${this.domain} ...")
-                  val cert2 = FakeKeyStore.createSelfSignedCertificate(s"*.dev.${this.domain}",
-                                                                       FiniteDuration(365, TimeUnit.DAYS),
-                                                                       keyPair3)
-                  Cert(cert2, keyPair3, None).enrich().save()
                 }
               }
         //_ <- clusterAgent.startF()

@@ -981,9 +981,7 @@ object Alerts {
   def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
     logger.trace("Alert " + Json.stringify(alert.toEnrichedJson))
     alert.toAnalytics()
-    if (env.isProd) {
-      env.alertsActor ! alert
-    }
+    env.alertsActor ! alert
   }
 }
 

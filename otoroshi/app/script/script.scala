@@ -234,7 +234,7 @@ class ScriptManager(env: Env) {
         logger.debug(s"Updating script ${script.name}")
         env.scriptCompiler.compile(script.code).map {
           case Left(err) =>
-            if (!env.isDev) logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
+            logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
             compiling.remove(script.id)
           case Right(trans) => {
             cache.put(script.id, (script.hash, trans))

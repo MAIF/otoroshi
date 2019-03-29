@@ -37,13 +37,6 @@ case class ServiceDescriptorQuery(subdomain: String,
     case s                                => s"$subdomain.$line.$domain"
   }
 
-  def toDevHost: String = subdomain match {
-    case s if s.isEmpty                   => s"dev.$domain"
-    case s if s.isEmpty && line == "prod" => s"$domain"
-    case s if line == "prod"              => s"$subdomain.$domain"
-    case s                                => s"$subdomain.dev.$domain"
-  }
-
   private val existsCache     = new java.util.concurrent.ConcurrentHashMap[String, Boolean]
   private val serviceIdsCache = new java.util.concurrent.ConcurrentHashMap[String, Seq[String]]
   private val servicesCache   = new java.util.concurrent.ConcurrentHashMap[String, Seq[ServiceDescriptor]]
@@ -834,11 +827,6 @@ case class ServiceDescriptor(
     case s if s.isEmpty && env == "prod" => s"$domain"
     case s if env == "prod"              => s"$subdomain.$domain"
     case s                               => s"$subdomain.$env.$domain"
-  }
-
-  def toDevHost: String = subdomain match {
-    case s if s.isEmpty => s"dev.$domain"
-    case s              => s"$subdomain.dev.$domain"
   }
 
   def target: Target                                    = targets.head

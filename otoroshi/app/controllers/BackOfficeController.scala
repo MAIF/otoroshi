@@ -69,7 +69,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
 
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
-    val host                   = if (env.isDev) env.adminApiExposedHost else env.adminApiExposedHost
+    val host                   = env.adminApiExposedHost
     val localUrl               = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
     val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
     lazy val currentReqHasBody = hasBody(ctx.request)
@@ -145,7 +145,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "apiReadOnly"        -> config.apiReadOnly,
             "u2fLoginOnly"       -> config.u2fLoginOnly,
             "env"                -> env.env,
-            "redirectToDev"      -> env.redirectToDev,
+            "redirectToDev"      -> false,
             "clientIdHeader"     -> env.Headers.OtoroshiClientId,
             "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
             "version"            -> env.latestVersionHolder.get()
