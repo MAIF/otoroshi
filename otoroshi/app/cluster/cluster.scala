@@ -24,7 +24,6 @@ import javax.management.{Attribute, ObjectName}
 import models._
 import org.joda.time.DateTime
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
-import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -34,13 +33,13 @@ import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
+import ssl._
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.{Failure, Success, Try}
 import utils.http.Implicits._
@@ -108,7 +107,8 @@ case class WorkerConfig(
     retries: Int = 3,
     timeout: Long = 2000,
     state: WorkerStateConfig = WorkerStateConfig(),
-    quotas: WorkerQuotasConfig = WorkerQuotasConfig()
+    quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
+    initialCacert: Option[String] = None
 )
 case class LeaderConfig(
     name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
@@ -182,7 +182,24 @@ object ClusterConfig {
           timeout = configuration.getOptional[Long]("worker.quotas.timeout").getOrElse(2000),
           retries = configuration.getOptional[Int]("worker.quotas.retries").getOrElse(3),
           pushEvery = configuration.getOptional[Long]("worker.quotas.pushEvery").getOrElse(2000L)
-        )
+        ),
+        initialCacert = configuration.getOptional[String]("worker.initialCacert").flatMap { cacert =>
+          if (cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) {
+            Some(cacert)
+          } else {
+            val file = new File(cacert)
+            if (file.exists()) {
+              val content = new String(java.nio.file.Files.readAllBytes(file.toPath))
+              if (content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) {
+                Some(content)
+              } else {
+                None
+              }
+            } else {
+              None
+            }
+          }
+        }
       )
     )
   }
@@ -1054,210 +1071,224 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   private def pollState(): Unit = {
-    if (isPollingState.compareAndSet(false, true)) {
-      Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
-      val start = System.currentTimeMillis()
-      Retry
-        .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
-               delay = 20,
-               ctx = "leader-fetch-state") { tryCount =>
-          env.Ws
-            .url(otoroshiUrl + "/api/cluster/state")
-            .withHttpHeaders(
-              "Host"   -> config.leader.host,
-              "Accept" -> "application/x-ndjson",
-              //"Accept-Encoding" -> "gzip",
-              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}"
-            )
-            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-            .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
-            .withMaybeProxyServer(config.proxy)
-            .withMethod("GET")
-            .stream()
-            .filter(_.status == 200)
-            .flatMap { resp =>
-              val store       = new ConcurrentHashMap[String, Any]()
-              val expirations = new ConcurrentHashMap[String, Long]()
-              resp.bodyAsSource
-                .via(env.clusterConfig.gunzip())
-                .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
-                .runWith(Sink.foreach { bs =>
-                  val item  = Json.parse(bs.utf8String)
-                  val key   = (item \ "k").as[String]
-                  val value = (item \ "v").as[JsValue]
-                  val what  = (item \ "w").as[String]
-                  val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-                  fromJson(what, value).foreach(v => store.put(key, v))
-                  if (ttl > -1L) {
-                    expirations.put(key, ttl)
+    try {
+      if (isPollingState.compareAndSet(false, true)) {
+        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
+        val start = System.currentTimeMillis()
+        Retry
+          .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
+                 delay = 20,
+                 ctx = "leader-fetch-state") { tryCount =>
+            env.Ws
+              .url(otoroshiUrl + "/api/cluster/state")
+              .withHttpHeaders(
+                "Host"   -> config.leader.host,
+                "Accept" -> "application/x-ndjson",
+                // "Accept-Encoding" -> "gzip",
+                ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+                ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}"
+              )
+              .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+              .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
+              .withMaybeProxyServer(config.proxy)
+              .withMethod("GET")
+              .stream()
+              .filter(_.status == 200)
+              .flatMap { resp =>
+                val store       = new ConcurrentHashMap[String, Any]()
+                val expirations = new ConcurrentHashMap[String, Long]()
+                resp.bodyAsSource
+                  .via(env.clusterConfig.gunzip())
+                  .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
+                  .runWith(Sink.foreach { bs =>
+                    val item  = Json.parse(bs.utf8String)
+                    val key   = (item \ "k").as[String]
+                    val value = (item \ "v").as[JsValue]
+                    val what  = (item \ "w").as[String]
+                    val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+                    fromJson(what, value).foreach(v => store.put(key, v))
+                    if (ttl > -1L) {
+                      expirations.put(key, ttl)
+                    }
+                  })
+                  .map { _ =>
+                    Cluster.logger.debug(
+                      s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount."
+                    )
+                    lastPoll.set(DateTime.now())
+                    if (!store.isEmpty) {
+                      firstSuccessfulStateFetchDone.compareAndSet(false, true)
+                      env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+                    }
                   }
-                })
-                .map { _ =>
-                  Cluster.logger.debug(
-                    s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount."
-                  )
-                  lastPoll.set(DateTime.now())
-                  if (!store.isEmpty) {
-                    firstSuccessfulStateFetchDone.compareAndSet(false, true)
-                    env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
-                  }
-                }
-            }
-        }
-        .recover {
-          case e =>
-            Cluster.logger.error(
-              s"[${env.clusterConfig.mode.name}] Error while trying to fetch state from Otoroshi leader cluster",
-              e
-            )
-        }
-        .andThen {
-          case _ => isPollingState.compareAndSet(true, false)
-        }
-    } else {
-      Cluster.logger.debug(
-        s"[${env.clusterConfig.mode.name}] Still fetching state from Otoroshi leader cluster, retying later ..."
-      )
+              }
+          }
+          .recover {
+            case e =>
+              Cluster.logger.error(
+                s"[${env.clusterConfig.mode.name}] Error while trying to fetch state from Otoroshi leader cluster",
+                e
+              )
+          }
+          .andThen {
+            case _ => isPollingState.compareAndSet(true, false)
+          }
+      } else {
+        Cluster.logger.debug(
+          s"[${env.clusterConfig.mode.name}] Still fetching state from Otoroshi leader cluster, retying later ..."
+        )
+      }
+    } catch {
+      case e: Throwable =>
+        isPollingState.compareAndSet(true, false)
+        Cluster.logger.error(s"Error while polling state from leader", e)
     }
   }
 
   private def pushQuotas(): Unit = {
-    implicit val _env = env
-    if (isPushingQuotas.compareAndSet(false, true)) {
-      val oldApiIncr     = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
-      val oldServiceIncr = servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
-      //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
-      val start = System.currentTimeMillis()
-      Retry
-        .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
-               delay = 20,
-               ctx = "leader-push-quotas") { tryCount =>
-          Cluster.logger.trace(
-            s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
-          )
-          val rt = Runtime.getRuntime
-          (for {
-            rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
-            duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
-            overhead                  <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
-            dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
-            dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
-            concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
-          } yield
-            ByteString(
-              Json.stringify(
-                Json.obj(
-                  "typ"               -> "globstats",
-                  "cpu_usage"         -> CpuInfo.cpuLoad(),
-                  "load_average"      -> CpuInfo.loadAverage(),
-                  "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
-                  "heap_size"         -> rt.totalMemory() / 1024 / 1024,
-                  "live_threads"      -> ManagementFactory.getThreadMXBean.getThreadCount,
-                  "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
-                  "daemon_threads"    -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
-                  "rate" -> BigDecimal(
-                    Option(rate)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "duration" -> BigDecimal(
-                    Option(duration)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "overhead" -> BigDecimal(
-                    Option(overhead)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "dataInRate" -> BigDecimal(
-                    Option(dataInRate)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "dataOutRate" -> BigDecimal(
-                    Option(dataOutRate)
-                      .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
-                      .getOrElse(0.0)
-                  ).setScale(3, RoundingMode.HALF_EVEN),
-                  "concurrentHandledRequests" -> concurrentHandledRequests
-                )
-              ) + "\n"
-            )) flatMap { stats =>
-            val apiIncrSource = Source(oldApiIncr.toList.map {
-              case (key, inc) =>
-                ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
-            })
-            val serviceIncrSource = Source(oldServiceIncr.toList.map {
-              case (key, (calls, dataIn, dataOut)) =>
-                ByteString(
-                  Json.stringify(
-                    Json.obj("typ" -> "srvincr",
-                             "srv" -> key,
-                             "c"   -> calls.get(),
-                             "di"  -> dataIn.get(),
-                             "do"  -> dataOut.get())
-                  ) + "\n"
-                )
-            })
-            val globalSource = Source.single(stats)
-            val body         = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
-            val wsBody       = SourceBody(body)
-            env.Ws
-              .url(otoroshiUrl + "/api/cluster/quotas")
-              .withHttpHeaders(
-                "Host"         -> config.leader.host,
-                "Content-Type" -> "application/x-ndjson",
-                // "Content-Encoding" -> "gzip",
-                ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
-              )
-              .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
-              .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
-              .withMaybeProxyServer(config.proxy)
-              .withMethod("PUT")
-              .withBody(wsBody)
-              .stream()
-              .filter(_.status == 200)
-              .andThen {
-                case Success(_) =>
-                  Cluster.logger.debug(
-                    s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at try $tryCount."
-                  )
-              }
-          }
-        }
-        .recover {
-          case e =>
-            oldApiIncr.foreach {
-              case (key, c) => apiIncrementsRef.get().getOrElseUpdate(key, new AtomicLong(0L)).addAndGet(c.get())
-            }
-            oldServiceIncr.foreach {
-              case (key, (counter1, counter2, counter3)) =>
-                val (c1, c2, c3) = servicesIncrementsRef
-                  .get()
-                  .getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
-                c1.addAndGet(counter1.get())
-                c2.addAndGet(counter2.get())
-                c3.addAndGet(counter3.get())
-            }
-
-            Cluster.logger.error(
-              s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
-              e
+    try {
+      implicit val _env = env
+      if (isPushingQuotas.compareAndSet(false, true)) {
+        val oldApiIncr     = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
+        val oldServiceIncr = servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
+        //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
+        val start = System.currentTimeMillis()
+        Retry
+          .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
+                 delay = 20,
+                 ctx = "leader-push-quotas") { tryCount =>
+            Cluster.logger.trace(
+              s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
             )
-        }
-        .andThen {
-          case _ => isPushingQuotas.compareAndSet(true, false)
-        }
-      //} else {
-      //  isPushingQuotas.compareAndSet(true, false)
-      //}
-    } else {
-      Cluster.logger.debug(
-        s"[${env.clusterConfig.mode.name}] Still pushing api quotas updates to Otoroshi leader cluster, retying later ..."
-      )
+            val rt = Runtime.getRuntime
+            (for {
+              rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
+              duration                  <- env.datastores.serviceDescriptorDataStore.globalCallsDuration()
+              overhead                  <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
+              dataInRate                <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor("global")
+              dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
+              concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
+            } yield
+              ByteString(
+                Json.stringify(
+                  Json.obj(
+                    "typ"               -> "globstats",
+                    "cpu_usage"         -> CpuInfo.cpuLoad(),
+                    "load_average"      -> CpuInfo.loadAverage(),
+                    "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
+                    "heap_size"         -> rt.totalMemory() / 1024 / 1024,
+                    "live_threads"      -> ManagementFactory.getThreadMXBean.getThreadCount,
+                    "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
+                    "daemon_threads"    -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
+                    "rate" -> BigDecimal(
+                      Option(rate)
+                        .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                        .getOrElse(0.0)
+                    ).setScale(3, RoundingMode.HALF_EVEN),
+                    "duration" -> BigDecimal(
+                      Option(duration)
+                        .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                        .getOrElse(0.0)
+                    ).setScale(3, RoundingMode.HALF_EVEN),
+                    "overhead" -> BigDecimal(
+                      Option(overhead)
+                        .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                        .getOrElse(0.0)
+                    ).setScale(3, RoundingMode.HALF_EVEN),
+                    "dataInRate" -> BigDecimal(
+                      Option(dataInRate)
+                        .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                        .getOrElse(0.0)
+                    ).setScale(3, RoundingMode.HALF_EVEN),
+                    "dataOutRate" -> BigDecimal(
+                      Option(dataOutRate)
+                        .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
+                        .getOrElse(0.0)
+                    ).setScale(3, RoundingMode.HALF_EVEN),
+                    "concurrentHandledRequests" -> concurrentHandledRequests
+                  )
+                ) + "\n"
+              )) flatMap { stats =>
+              val apiIncrSource = Source(oldApiIncr.toList.map {
+                case (key, inc) =>
+                  ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
+              })
+              val serviceIncrSource = Source(oldServiceIncr.toList.map {
+                case (key, (calls, dataIn, dataOut)) =>
+                  ByteString(
+                    Json.stringify(
+                      Json.obj("typ" -> "srvincr",
+                               "srv" -> key,
+                               "c"   -> calls.get(),
+                               "di"  -> dataIn.get(),
+                               "do"  -> dataOut.get())
+                    ) + "\n"
+                  )
+              })
+              val globalSource = Source.single(stats)
+              val body         = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
+              val wsBody       = SourceBody(body)
+              env.Ws
+                .url(otoroshiUrl + "/api/cluster/quotas")
+                .withHttpHeaders(
+                  "Host"         -> config.leader.host,
+                  "Content-Type" -> "application/x-ndjson",
+                  // "Content-Encoding" -> "gzip",
+                  ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+                )
+                .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+                .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
+                .withMaybeProxyServer(config.proxy)
+                .withMethod("PUT")
+                .withBody(wsBody)
+                .stream()
+                .filter(_.status == 200)
+                .andThen {
+                  case Success(_) =>
+                    Cluster.logger.debug(
+                      s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at try $tryCount."
+                    )
+                  case Failure(e) => e.printStackTrace()
+                }
+            }
+          }
+          .recover {
+            case e =>
+              e.printStackTrace()
+              oldApiIncr.foreach {
+                case (key, c) => apiIncrementsRef.get().getOrElseUpdate(key, new AtomicLong(0L)).addAndGet(c.get())
+              }
+              oldServiceIncr.foreach {
+                case (key, (counter1, counter2, counter3)) =>
+                  val (c1, c2, c3) = servicesIncrementsRef
+                    .get()
+                    .getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
+                  c1.addAndGet(counter1.get())
+                  c2.addAndGet(counter2.get())
+                  c3.addAndGet(counter3.get())
+              }
+
+              Cluster.logger.error(
+                s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
+                e
+              )
+          }
+          .andThen {
+            case _ => isPushingQuotas.compareAndSet(true, false)
+          }
+        //} else {
+        //  isPushingQuotas.compareAndSet(true, false)
+        //}
+      } else {
+        Cluster.logger.debug(
+          s"[${env.clusterConfig.mode.name}] Still pushing api quotas updates to Otoroshi leader cluster, retying later ..."
+        )
+      }
+    } catch {
+      case e: Throwable =>
+        isPushingQuotas.compareAndSet(true, false)
+        Cluster.logger.error(s"Error while pushing quotas to leader", e)
     }
   }
 
@@ -1274,19 +1305,21 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
+      env.clusterConfig.worker.initialCacert.foreach { cacert =>
+        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Importing initial CA Certificate to be able to contact leaders")
+        Await.result(env.datastores.certificatesDataStore.set(Cert(
+          id = IdGenerator.uuid,
+          chain = cacert,
+          privateKey = "",
+          caRef = None,
+          ca = true
+        ).enrich())(ec, env), FiniteDuration(5, TimeUnit.SECONDS))
+      }
       pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(
-        try {
-          pollState()
-        } catch {
-          case e: Throwable => Cluster.logger.error(s"Error while polling state from leader", e)
-        }
+        pollState()
       ))
       pushRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(
-        try {
-          pushQuotas()
-        } catch {
-          case e: Throwable => Cluster.logger.error(s"Error while pushing quotas to leader", e)
-        }
+        pushQuotas()
       ))
     }
   }

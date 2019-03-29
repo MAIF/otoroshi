@@ -16,9 +16,11 @@ import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnec
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Source}
 import akka.util.ByteString
+import com.google.common.base.Charsets
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import javax.net.ssl.SSLContext
+import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
@@ -68,6 +70,21 @@ class WsClientChooser(standardClient: WSClient,
     val protocol = scala.util.Try(url.split(":\\/\\/").apply(0)).getOrElse("http")
     urlWithProtocol(protocol, url)
   }
+
+  def akkaUrl(url: String): WSRequest = {
+    new AkkaWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(
+      akkaClient.mat
+    )
+  }
+  def akkaHttp2Url(url: String): WSRequest = {
+    new AkkaWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/2.0`)(
+      akkaClient.mat
+    )
+  }
+
+  def ahcUrl(url: String): WSRequest = getAhcInstance().url(url)
+
+  def classicUrl(url: String): WSRequest = standardClient.url(url)
 
   def urlWithProtocol(protocol: String, url: String): WSRequest = { // TODO: handle idle timeout and other timeout per request here
     protocol.toLowerCase() match {
@@ -218,7 +235,7 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
   override def contentType: String                     = _contentType
 
-  override def body[T: BodyReadable]: T      = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def body[T: BodyReadable]: T      = throw new RuntimeException("Not supported on this WSClient !!! (StreameResponse.body)")
   def body: String                           = _bodyAsString
   def bodyAsBytes: ByteString                = _bodyAsBytes
   def cookies: Seq[WSCookie]                 = _cookies
@@ -259,7 +276,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   override def json: JsValue                           = _bodyAsJson
   override def contentType: String                     = _contentType
   def cookies: Seq[WSCookie]                           = _cookies
-  override def body[T: BodyReadable]: T                = throw new RuntimeException("Not supported on this WSClient !!!")
+  override def body[T: BodyReadable]: T                = throw new RuntimeException("Not supported on this WSClient !!! (RawResponse.body)")
   def cookie(name: String): Option[WSCookie]           = _cookies.find(_.name == name)
 }
 
@@ -421,7 +438,7 @@ case class AkkaWsClientRequest(
     val akkaHeaders: List[HttpHeader] = updatedHeaders
       .flatMap {
         case (key, values) =>
-          values.map(value => HttpHeader.parse(key, value))
+          values.distinct.map(value => HttpHeader.parse(key, value))
       }
       .flatMap {
         case ParsingResult.Ok(header, _) => Option(header)
@@ -512,15 +529,19 @@ case class AkkaWsClientRequest(
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def auth: Option[(String, String, WSAuthScheme)] = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def calc: Option[WSSignatureCalculator]          = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def virtualHost: Option[String]                  = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def sign(calc: WSSignatureCalculator): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
+  override def auth: Option[(String, String, WSAuthScheme)] = throw new RuntimeException("Not supported on this WSClient !!! (Request.auth)")
+  override def calc: Option[WSSignatureCalculator]          = throw new RuntimeException("Not supported on this WSClient !!! (Request.calc)")
+  override def virtualHost: Option[String]                  = throw new RuntimeException("Not supported on this WSClient !!! (Request.virtualHost)")
+  override def sign(calc: WSSignatureCalculator): WSRequest = throw new RuntimeException("Not supported on this WSClient !!! (Request.sign)")
+  override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest = {
+    scheme match {
+      case WSAuthScheme.BASIC => addHttpHeaders("Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(Charsets.UTF_8))}")
+      case _ => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
+    }
+  }
   override def withRequestFilter(filter: WSRequestFilter): WSRequest =
-    throw new RuntimeException("Not supported on this WSClient !!!")
-  override def withVirtualHost(vh: String): WSRequest = throw new RuntimeException("Not supported on this WSClient !!!")
+    throw new RuntimeException("Not supported on this WSClient !!! (Request.withRequestFilter)")
+  override def withVirtualHost(vh: String): WSRequest = throw new RuntimeException("Not supported on this WSClient !!! (Request.withVirtualHost)")
 }
 
 object Implicits {
