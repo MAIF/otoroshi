@@ -587,7 +587,7 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
       closing = IgnoreComplete
     ).mapAsyncUnordered(settings.maxConnections) { incoming =>
       val id = env.snowflakeGenerator.nextIdStr()
-      val start = System.currentTimeMillis()
+      val start = System.currentTimeMillis() 
       val ref = new AtomicReference[TcpEvent]()
       TcpService.routeWithSNI(incoming, port, id, true, start, debugger) {
         case (in, out) => ref.get().copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out)).toAnalytics()(env)
