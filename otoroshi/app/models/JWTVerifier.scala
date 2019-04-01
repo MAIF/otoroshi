@@ -587,7 +587,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty) extends
     fields.foldLeft(
       JWT
         .require(algorithm)
-        .acceptLeeway(10000)
+        .acceptLeeway(10)
     )((a, b) => a.withClaim(b._1, b._2))
   }
 

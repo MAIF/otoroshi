@@ -763,6 +763,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   .orElse(
                                     req.headers.get("Authorization").filter(_.startsWith("Bearer "))
                                   )
+                                  .orElse(descriptor.apiKeyConstraints.jwtAuth.headerName.flatMap(name => req.headers.get(name)))
                                   .map(_.replace("Bearer ", ""))
                                   .orElse(
                                     req.queryString.get(env.Headers.OtoroshiBearerAuthorization).flatMap(_.lastOption)
@@ -774,6 +775,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   .orElse(
                                     req.headers.get("Authorization").filter(_.startsWith("Basic "))
                                   )
+                                  .orElse(descriptor.apiKeyConstraints.basicAuth.headerName.flatMap(name => req.headers.get(name)))
                                   .map(_.replace("Basic ", ""))
                                   .flatMap(e => Try(decodeBase64(e)).toOption)
                                   .orElse(
@@ -784,10 +786,15 @@ class WebSocketHandler()(implicit env: Env) {
                                   )
                                 val authByCustomHeaders = req.headers
                                   .get(env.Headers.OtoroshiClientId)
-                                  .flatMap(id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s)))
+                                  .orElse(descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName.flatMap(name => req.headers.get(name)))
+                                  .flatMap(
+                                    id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s))
+                                      .orElse(descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName.flatMap(name => req.headers.get(name)))
+                                  )
                                 val authBySimpleApiKeyClientId = req.headers
                                   .get(env.Headers.OtoroshiSimpleApiKeyClientId)
-                                if (authBySimpleApiKeyClientId.isDefined) {
+                                  .orElse(descriptor.apiKeyConstraints.clientIdAuth.headerName.flatMap(name => req.headers.get(name)))
+                                if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
                                   val clientId = authBySimpleApiKeyClientId.get
                                   env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
                                     case None =>
@@ -826,7 +833,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             .asLeft[WSFlow]
                                       }
                                   }
-                                } else if (authByCustomHeaders.isDefined) {
+                                } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
                                   val (clientId, clientSecret) = authByCustomHeaders.get
                                   env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, descriptor.id).flatMap {
                                     case None =>
@@ -867,12 +874,14 @@ class WebSocketHandler()(implicit env: Env) {
                                             .asLeft[WSFlow]
                                       }
                                   }
-                                } else if (authByJwtToken.isDefined) {
+                                } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
                                   val jwtTokenValue = authByJwtToken.get
                                   Try {
                                     JWT.decode(jwtTokenValue)
                                   } map { jwt =>
-                                    Option(jwt.getClaim("iss")).map(_.asString()) match {
+                                    Option(jwt.getClaim("iss")).filterNot(_.isNull).map(_.asString()).orElse(
+                                      Option(jwt.getClaim("clientId")).filterNot(_.isNull).map(_.asString())
+                                    ) match {
                                       case Some(clientId) =>
                                         env.datastores.apiKeyDataStore
                                           .findAuthorizeKeyFor(clientId, descriptor.id)
@@ -882,6 +891,11 @@ class WebSocketHandler()(implicit env: Env) {
                                                 case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
                                                 case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
                                               } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
+                                              val exp = Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                                              val iat = Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                                              val httpPath = Option(jwt.getClaim("httpPath")).filterNot(_.isNull).map(_.asString())
+                                              val httpVerb = Option(jwt.getClaim("httpVerb")).filterNot(_.isNull).map(_.asString())
+                                              val httpHost = Option(jwt.getClaim("httpHost")).filterNot(_.isNull).map(_.asString())
                                               val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
                                               Try(verifier.verify(jwtTokenValue)).filter { token =>
                                                 val xsrfToken = token.getClaim("xsrfToken")
@@ -890,6 +904,25 @@ class WebSocketHandler()(implicit env: Env) {
                                                   xsrfToken.asString() == xsrfTokenHeader.get
                                                 } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
                                                   false
+                                                } else {
+                                                  true
+                                                }
+                                              }.filter { _ =>
+                                                if (exp.isEmpty || iat.isEmpty) {
+                                                  false
+                                                } else {
+                                                  if ((exp.get - iat.get) < desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs) {
+                                                    true
+                                                  } else {
+                                                    false
+                                                  }
+                                                }
+                                              }.filter { _ =>
+                                                if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
+                                                  val matchPath = httpPath.exists(_ == req.relativeUri)
+                                                  val matchVerb = httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
+                                                  val matchHost = httpHost.exists(_.toLowerCase == req.host)
+                                                  matchPath && matchVerb && matchHost
                                                 } else {
                                                   true
                                                 }
@@ -950,7 +983,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       Some(descriptor),
                                       Some("errors.invalid.api.key"))
                                     .asLeft[WSFlow]
-                                } else if (authBasic.isDefined) {
+                                } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
                                   val auth = authBasic.get
                                   val id = auth.split(":").headOption.map(_.trim)
                                   val secret = auth.split(":").lastOption.map(_.trim)

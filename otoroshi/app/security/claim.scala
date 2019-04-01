@@ -52,8 +52,8 @@ object OtoroshiClaim {
       "iss" -> env.Headers.OtoroshiIssuer,
       "sub" -> claim.sub,
       "aud" -> claim.aud,
-      "exp" -> new Date(claim.exp).getTime,
-      "iat" -> new Date(claim.iat).getTime,
+      "exp" -> new Date(claim.exp).getTime / 1000,
+      "iat" -> new Date(claim.iat).getTime / 1000,
       "jti" -> claim.jti
     ) ++ claim.metadata
     val signed = sign(algorithm, header, payload)

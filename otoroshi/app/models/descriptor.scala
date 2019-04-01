@@ -543,7 +543,7 @@ case class OIDCThirdPartyApiKeyConfig(
                           maybeCauseId = Some("oidc.bad.input.algorithm.name")
                         ).asLeft[A]
                       case Some(algorithm) => {
-                        val verifier = JWT.require(algorithm).acceptLeeway(10000).build()
+                        val verifier = JWT.require(algorithm).acceptLeeway(10).build()
                         Try(verifier.verify(header)) match {
                           case Failure(e) => Errors
                             .craftResponseResult(
@@ -767,6 +767,17 @@ object ThirdPartyApiKeyConfig {
   }
 }
 
+case class BasicAuthConstraints(enabled: Boolean, headerName: Option[String])
+case class ClientIdAuthConstraints(enabled: Boolean, headerName: Option[String])
+case class CustomHeadersAuthConstraints(enabled: Boolean, clientIdHeaderName: Option[String], clientSecretHeaderName: Option[String])
+case class JwtAuthConstraints(enabled: Boolean, includeRequestAttributes: Boolean, maxJwtLifespanSecs: Long, headerName: Option[String])
+case class ApiKeyConstraints(
+  basicAuth: BasicAuthConstraints,
+  customHeadersAuth: CustomHeadersAuthConstraints,
+  clientIdAuth: ClientIdAuthConstraints,
+  jwtAuth: JwtAuthConstraints
+)
+
 case class ServiceDescriptor(
     id: String,
     groupId: String = "default",
@@ -819,7 +830,8 @@ case class ServiceDescriptor(
     clientValidatorRef: Option[String] = None,
     transformerRef: Option[String] = None,
     gzip: GzipConfig = GzipConfig(),
-    thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None)
+    thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
+    apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(jwt = JwtConstraints(true, false, 10 * 365 * 24 * 60 * 60)),
 ) {
 
   def toHost: String = subdomain match {

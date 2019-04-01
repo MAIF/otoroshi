@@ -34,7 +34,6 @@ object RemainingQuotas {
   val MaxValue: Long = 10000000L
   implicit val fmt   = Json.format[RemainingQuotas]
 }
-
 case class ApiKey(clientId: String = IdGenerator.token(16),
                   clientSecret: String = IdGenerator.token(64),
                   clientName: String,
