@@ -980,6 +980,116 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
+            label="Api Keys Constraints">
+            <BooleanInput
+              label="From basic auth."
+              value={this.state.service.apiKeyConstraints.basicAuth.enabled}
+              help="You can pass the api key in Authorization header (ie. from 'Authorization: Basic xxx' header)"
+              onChange={v => this.changeTheValue('apiKeyConstraints.basicAuth.enabled', v)}
+            />
+            <BooleanInput
+              label="Allow client id only usage"
+              value={this.state.service.apiKeyConstraints.clientIdAuth.enabled}
+              help="You can pass the api key using client id only (ie. from Otoroshi-Token header)"
+              onChange={v => this.changeTheValue('apiKeyConstraints.clientIdAuth.enabled', v)}
+            />
+            <BooleanInput
+              label="From custom headers"
+              value={this.state.service.apiKeyConstraints.customHeadersAuth.enabled}
+              help="You can pass the api key using custom headers (ie. Otoroshi-Client-Id and Otoroshi-Client-Secret headers)"
+              onChange={v => this.changeTheValue('apiKeyConstraints.customHeadersAuth.enabled', v)}
+            />
+            <BooleanInput
+              label="From JWT token"
+              value={this.state.service.apiKeyConstraints.jwtAuth.enabled}
+              help="You can pass the api key using a JWT token (ie. from 'Authorization: Bearer xxx' header)"
+              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.enabled', v)}
+            />
+            <Separator title="Basic auth. Api Key" />
+            <TextInput
+              label="Custom header name"
+              value={this.state.service.apiKeyConstraints.basicAuth.headerName}
+              help="The name of the header to get Authorization"
+              placeholder="Authorization"
+              onChange={v => this.changeTheValue('apiKeyConstraints.basicAuth.headerName', v)}
+            />
+            <TextInput
+              label="Custom query param name"
+              value={this.state.service.apiKeyConstraints.basicAuth.queryName}
+              help="The name of the query param to get Authorization"
+              placeholder="basic_auth"
+              onChange={v => this.changeTheValue('apiKeyConstraints.basicAuth.queryName', v)}
+            />
+            <Separator title="Client Id only Api Key" />
+            <TextInput
+              label="Custom header name"
+              value={this.state.service.apiKeyConstraints.clientIdAuth.headerName}
+              help="The name of the header to get the client id"
+              placeholder="x-api-key"
+              onChange={v => this.changeTheValue('apiKeyConstraints.clientIdAuth.headerName', v)}
+            />
+            <TextInput
+              label="Custom query param name"
+              value={this.state.service.apiKeyConstraints.clientIdAuth.queryName}
+              help="The name of the query param to get the client id"
+              placeholder="x-api-key"
+              onChange={v => this.changeTheValue('apiKeyConstraints.clientIdAuth.queryName', v)}
+            />
+            <Separator title="Custom headers Api Key" />
+            <TextInput
+              label="Custom client id header name"
+              value={this.state.service.apiKeyConstraints.customHeadersAuth.clientIdHeaderName}
+              help="The name of the header to get the client id"
+              placeholder="Otoroshi-Client-Id"
+              onChange={v => this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientIdHeaderName', v)}
+            />
+            <TextInput
+              label="Custom client secret header name"
+              value={this.state.service.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName}
+              help="The name of the header to get the client secret"
+              placeholder="Otoroshi-Client-Secret"
+              onChange={v => this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientSecretHeaderName', v)}
+            />
+            <Separator title="JWT Token Api Key" />
+            <BooleanInput
+              label="Include Http request attrs."
+              value={this.state.service.apiKeyConstraints.jwtAuth.includeRequestAttributes}
+              help="If enabled, you have to put the following fields in the JWT token corresponding to the current http call (httpPath, httpVerb, httpHost)"
+              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.includeRequestAttributes', v)}
+            />
+            <NumberInput
+              label="Max accepted token lifetime"
+              value={this.state.service.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs}
+              help="The maximum number of second accepted as token lifespan"
+              suffix="seconds"
+              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.maxJwtLifespanSecs', v)}
+            />
+            <TextInput
+              label="Custom header name"
+              value={this.state.service.apiKeyConstraints.jwtAuth.headerName}
+              help="The name of the header to get the jwt token"
+              placeholder="Authorization or Otoroshi-Token"
+              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.headerName', v)}
+            />
+            <TextInput
+              label="Custom query param name"
+              value={this.state.service.apiKeyConstraints.jwtAuth.queryName}
+              help="The name of the query param to get the jwt token"
+              placeholder="access_token"
+              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.queryName', v)}
+            />
+            <TextInput
+              label="Custom cookie name"
+              value={this.state.service.apiKeyConstraints.jwtAuth.cookieName}
+              help="The name of the cookie to get the jwt token"
+              placeholder="access_token"
+              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.cookieName', v)}
+            />
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="Third party Api Keys">
             <SelectInput
               label="Type"

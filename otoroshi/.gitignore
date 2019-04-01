@@ -14,3 +14,4 @@ target
 /leveldb-old
 /.ensime
 /.bloop
+/otoroshi.jks

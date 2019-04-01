@@ -767,16 +767,153 @@ object ThirdPartyApiKeyConfig {
   }
 }
 
-case class BasicAuthConstraints(enabled: Boolean = true, headerName: Option[String] = None, queryName: Option[String] = None)
-case class ClientIdAuthConstraints(enabled: Boolean = true, headerName: Option[String] = None, queryName: Option[String] = None)
-case class CustomHeadersAuthConstraints(enabled: Boolean = true, clientIdHeaderName: Option[String] = None, clientSecretHeaderName: Option[String] = None)
-case class JwtAuthConstraints(enabled: Boolean = true, includeRequestAttributes: Boolean  = false, maxJwtLifespanSecs: Long = 10 * 365 * 24 * 60 * 60, headerName: Option[String] = None, queryName: Option[String] = None, cookieName: Option[String] = None)
+case class BasicAuthConstraints(
+  enabled: Boolean = true,
+  headerName: Option[String] = None,
+  queryName: Option[String] = None
+) {
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+  )
+}
+object BasicAuthConstraints {
+  val format = new Format[BasicAuthConstraints] {
+    override def writes(o: BasicAuthConstraints): JsValue = o.json
+    override def reads(json: JsValue): JsResult[BasicAuthConstraints] = Try {
+      JsSuccess(
+        BasicAuthConstraints(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+          headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
+          queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+case class ClientIdAuthConstraints(
+  enabled: Boolean = true,
+  headerName: Option[String] = None,
+  queryName: Option[String] = None
+) {
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+  )
+}
+object ClientIdAuthConstraints {
+  val format = new Format[ClientIdAuthConstraints] {
+    override def writes(o: ClientIdAuthConstraints): JsValue = o.json
+    override def reads(json: JsValue): JsResult[ClientIdAuthConstraints] = Try {
+      JsSuccess(
+        ClientIdAuthConstraints(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+          headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
+          queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+case class CustomHeadersAuthConstraints(
+  enabled: Boolean = true,
+  clientIdHeaderName: Option[String] = None,
+  clientSecretHeaderName: Option[String] = None
+) {
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "clientIdHeaderName" -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "clientSecretHeaderName" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+  )
+}
+object CustomHeadersAuthConstraints {
+  val format = new Format[CustomHeadersAuthConstraints] {
+    override def writes(o: CustomHeadersAuthConstraints): JsValue = o.json
+    override def reads(json: JsValue): JsResult[CustomHeadersAuthConstraints] = Try {
+      JsSuccess(
+        CustomHeadersAuthConstraints(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+          clientIdHeaderName = (json \ "clientIdHeaderName").asOpt[String].filterNot(_.trim.isEmpty),
+          clientSecretHeaderName = (json \ "clientSecretHeaderName").asOpt[String].filterNot(_.trim.isEmpty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+case class JwtAuthConstraints(
+  enabled: Boolean = true,
+  includeRequestAttributes: Boolean  = false,
+  maxJwtLifespanSecs: Long = 10 * 365 * 24 * 60 * 60,
+  headerName: Option[String] = None,
+  queryName: Option[String] = None,
+  cookieName: Option[String] = None
+) {
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "includeRequestAttributes" -> includeRequestAttributes,
+    "maxJwtLifespanSecs" -> maxJwtLifespanSecs,
+    "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+  )
+}
+object JwtAuthConstraints {
+  val format = new Format[JwtAuthConstraints] {
+    override def writes(o: JwtAuthConstraints): JsValue = o.json
+    override def reads(json: JsValue): JsResult[JwtAuthConstraints] = Try {
+      JsSuccess(
+        JwtAuthConstraints(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+          includeRequestAttributes = (json \ "includeRequestAttributes").asOpt[Boolean].getOrElse(false),
+          maxJwtLifespanSecs = (json \ "maxJwtLifespanSecs").asOpt[Long].getOrElse(10 * 365 * 24 * 60 * 60),
+          headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
+          queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
+          cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
 case class ApiKeyConstraints(
   basicAuth: BasicAuthConstraints = BasicAuthConstraints(),
   customHeadersAuth: CustomHeadersAuthConstraints = CustomHeadersAuthConstraints(),
   clientIdAuth: ClientIdAuthConstraints = ClientIdAuthConstraints(),
   jwtAuth: JwtAuthConstraints = JwtAuthConstraints()
-)
+) {
+  def json: JsValue = Json.obj(
+    "basicAuth" -> basicAuth.json,
+    "customHeadersAuth" -> customHeadersAuth.json,
+    "clientIdAuth" -> clientIdAuth.json,
+    "jwtAuth" -> jwtAuth.json,
+  )
+}
+object ApiKeyConstraints {
+  val format = new Format[ApiKeyConstraints] {
+    override def writes(o: ApiKeyConstraints): JsValue = o.json
+    override def reads(json: JsValue): JsResult[ApiKeyConstraints] = Try {
+      JsSuccess(
+        ApiKeyConstraints(
+          basicAuth = (json \ "basicAuth").as(BasicAuthConstraints.format),
+          customHeadersAuth = (json \ "customHeadersAuth").as(CustomHeadersAuthConstraints.format),
+          clientIdAuth = (json \ "clientIdAuth").as(ClientIdAuthConstraints.format),
+          jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
 
 case class ServiceDescriptor(
     id: String,
@@ -1008,7 +1145,9 @@ object ServiceDescriptor {
             .reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(RedirectionSettings(false)),
           thirdPartyApiKey = ThirdPartyApiKeyConfig.format.reads((json \ "thirdPartyApiKey").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(OIDCThirdPartyApiKeyConfig(false, None))
+            .getOrElse(OIDCThirdPartyApiKeyConfig(false, None)),
+          apiKeyConstraints = ApiKeyConstraints.format.reads((json \ "apiKeyConstraints").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(ApiKeyConstraints())
         )
       } map {
         case sd => JsSuccess(sd)
@@ -1067,7 +1206,8 @@ object ServiceDescriptor {
       "authConfigRef"              -> sd.authConfigRef,
       "clientValidatorRef"         -> sd.clientValidatorRef,
       "transformerRef"             -> sd.transformerRef,
-      "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson
+      "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson,
+      "apiKeyConstraints"          -> sd.apiKeyConstraints.json
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

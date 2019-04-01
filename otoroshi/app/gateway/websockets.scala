@@ -898,7 +898,7 @@ class WebSocketHandler()(implicit env: Env) {
                                               val httpPath = Option(jwt.getClaim("httpPath")).filterNot(_.isNull).map(_.asString())
                                               val httpVerb = Option(jwt.getClaim("httpVerb")).filterNot(_.isNull).map(_.asString())
                                               val httpHost = Option(jwt.getClaim("httpHost")).filterNot(_.isNull).map(_.asString())
-                                              val verifier = JWT.require(algorithm).withIssuer(apiKey.clientName).build
+                                              val verifier = JWT.require(algorithm).withIssuer(clientId).acceptLeeway(10).build
                                               Try(verifier.verify(jwtTokenValue)).filter { token =>
                                                 val xsrfToken = token.getClaim("xsrfToken")
                                                 val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
@@ -913,7 +913,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                 if (exp.isEmpty || iat.isEmpty) {
                                                   false
                                                 } else {
-                                                  if ((exp.get - iat.get) < desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs) {
+                                                  if ((exp.get - iat.get) <= desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs) {
                                                     true
                                                   } else {
                                                     false

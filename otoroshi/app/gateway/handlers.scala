@@ -1672,7 +1672,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               )
                                             case Some(key) if !key.allowClientIdOnly => {
                                               Errors.craftResponseResult(
-                                                "Bad API key",
+                                                "Bad API key simple",
                                                 BadRequest,
                                                 req,
                                                 Some(descriptor),
@@ -1721,7 +1721,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                         descriptor)
                                               )
                                               Errors.craftResponseResult(
-                                                "Bad API key",
+                                                "Bad API key custom",
                                                 BadRequest,
                                                 req,
                                                 Some(descriptor),
@@ -1768,7 +1768,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     val httpVerb = Option(jwt.getClaim("httpVerb")).filterNot(_.isNull).map(_.asString())
                                                     val httpHost = Option(jwt.getClaim("httpHost")).filterNot(_.isNull).map(_.asString())
                                                     val verifier =
-                                                      JWT.require(algorithm).withIssuer(apiKey.clientName).acceptLeeway(10).build
+                                                      JWT.require(algorithm).withIssuer(clientId).acceptLeeway(10).build
                                                     Try(verifier.verify(jwtTokenValue)).filter { token =>
                                                       val xsrfToken       = token.getClaim("xsrfToken")
                                                       val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
@@ -1783,7 +1783,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       if (exp.isEmpty || iat.isEmpty) {
                                                         false
                                                       } else {
-                                                        if ((exp.get - iat.get) < desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs) {
+                                                        if ((exp.get - iat.get) <= desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs) {
                                                           true
                                                         } else {
                                                           false
@@ -1824,7 +1824,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                                   descriptor)
                                                         )
                                                         Errors.craftResponseResult(
-                                                          "Bad API key",
+                                                          s"Bad API key jwt $e",
                                                           BadRequest,
                                                           req,
                                                           Some(descriptor),
@@ -1838,7 +1838,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   }
                                                   case None =>
                                                     Errors.craftResponseResult(
-                                                      "Invalid ApiKey provided 1",
+                                                      "Invalid ApiKey provided",
                                                       BadRequest,
                                                       req,
                                                       Some(descriptor),
@@ -1850,7 +1850,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 }
                                             case None =>
                                               Errors.craftResponseResult(
-                                                "Invalid ApiKey provided 2",
+                                                "Invalid ApiKey provided",
                                                 BadRequest,
                                                 req,
                                                 Some(descriptor),
@@ -1860,7 +1860,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               )
                                           }
                                         } getOrElse Errors.craftResponseResult(
-                                          s"Invalid ApiKey provided 3, $authByJwtToken, $authBasic",
+                                          s"Invalid ApiKey provided",
                                           BadRequest,
                                           req,
                                           Some(descriptor),
@@ -1897,7 +1897,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                             descriptor)
                                                   )
                                                   Errors.craftResponseResult(
-                                                    "Bad API key",
+                                                    "Bad API key bsic",
                                                     BadGateway,
                                                     req,
                                                     Some(descriptor),
