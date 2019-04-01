@@ -767,15 +767,15 @@ object ThirdPartyApiKeyConfig {
   }
 }
 
-case class BasicAuthConstraints(enabled: Boolean, headerName: Option[String])
-case class ClientIdAuthConstraints(enabled: Boolean, headerName: Option[String])
-case class CustomHeadersAuthConstraints(enabled: Boolean, clientIdHeaderName: Option[String], clientSecretHeaderName: Option[String])
-case class JwtAuthConstraints(enabled: Boolean, includeRequestAttributes: Boolean, maxJwtLifespanSecs: Long, headerName: Option[String])
+case class BasicAuthConstraints(enabled: Boolean = true, headerName: Option[String] = None, queryName: Option[String] = None)
+case class ClientIdAuthConstraints(enabled: Boolean = true, headerName: Option[String] = None, queryName: Option[String] = None)
+case class CustomHeadersAuthConstraints(enabled: Boolean = true, clientIdHeaderName: Option[String] = None, clientSecretHeaderName: Option[String] = None)
+case class JwtAuthConstraints(enabled: Boolean = true, includeRequestAttributes: Boolean  = false, maxJwtLifespanSecs: Long = 10 * 365 * 24 * 60 * 60, headerName: Option[String] = None, queryName: Option[String] = None, cookieName: Option[String] = None)
 case class ApiKeyConstraints(
-  basicAuth: BasicAuthConstraints,
-  customHeadersAuth: CustomHeadersAuthConstraints,
-  clientIdAuth: ClientIdAuthConstraints,
-  jwtAuth: JwtAuthConstraints
+  basicAuth: BasicAuthConstraints = BasicAuthConstraints(),
+  customHeadersAuth: CustomHeadersAuthConstraints = CustomHeadersAuthConstraints(),
+  clientIdAuth: ClientIdAuthConstraints = ClientIdAuthConstraints(),
+  jwtAuth: JwtAuthConstraints = JwtAuthConstraints()
 )
 
 case class ServiceDescriptor(
@@ -831,7 +831,7 @@ case class ServiceDescriptor(
     transformerRef: Option[String] = None,
     gzip: GzipConfig = GzipConfig(),
     thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
-    apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(jwt = JwtConstraints(true, false, 10 * 365 * 24 * 60 * 60)),
+    apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
 ) {
 
   def toHost: String = subdomain match {

@@ -1618,43 +1618,43 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       }
                                     } else {
                                       val authByJwtToken = req.headers
-                                        .get(env.Headers.OtoroshiBearer)
+                                        .get(descriptor.apiKeyConstraints.jwtAuth.headerName.getOrElse(env.Headers.OtoroshiBearer))
                                         .orElse(
                                           req.headers.get("Authorization").filter(_.startsWith("Bearer "))
                                         )
-                                        .orElse(descriptor.apiKeyConstraints.jwtAuth.headerName.flatMap(name => req.headers.get(name)))
                                         .map(_.replace("Bearer ", ""))
                                         .orElse(
                                           req.queryString
-                                            .get(env.Headers.OtoroshiBearerAuthorization)
+                                            .get(descriptor.apiKeyConstraints.jwtAuth.queryName.getOrElse(env.Headers.OtoroshiBearerAuthorization))
                                             .flatMap(_.lastOption)
                                         )
-                                        .orElse(req.cookies.get(env.Headers.OtoroshiJWTAuthorization).map(_.value))
+                                        .orElse(req.cookies.get(descriptor.apiKeyConstraints.jwtAuth.cookieName.getOrElse(env.Headers.OtoroshiJWTAuthorization)).map(_.value))
                                         .filter(_.split("\\.").length == 3)
                                       val authBasic = req.headers
-                                        .get(env.Headers.OtoroshiAuthorization)
+                                        .get(descriptor.apiKeyConstraints.basicAuth.headerName.getOrElse(env.Headers.OtoroshiAuthorization))
                                         .orElse(
                                           req.headers.get("Authorization").filter(_.startsWith("Basic "))
                                         )
-                                        .orElse(descriptor.apiKeyConstraints.basicAuth.headerName.flatMap(name => req.headers.get(name)))
                                         .map(_.replace("Basic ", ""))
                                         .flatMap(e => Try(decodeBase64(e)).toOption)
                                         .orElse(
                                           req.queryString
-                                            .get(env.Headers.OtoroshiBasicAuthorization)
+                                            .get(descriptor.apiKeyConstraints.basicAuth.queryName.getOrElse(env.Headers.OtoroshiBasicAuthorization))
                                             .flatMap(_.lastOption)
                                             .flatMap(e => Try(decodeBase64(e)).toOption)
                                         )
                                       val authByCustomHeaders = req.headers
-                                        .get(env.Headers.OtoroshiClientId)
-                                        .orElse(descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName.flatMap(name => req.headers.get(name)))
+                                        .get(descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName.getOrElse(env.Headers.OtoroshiClientId))
                                         .flatMap(
-                                          id => req.headers.get(env.Headers.OtoroshiClientSecret).map(s => (id, s))
-                                            .orElse(descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName.flatMap(name => req.headers.get(name)))
+                                          id => req.headers.get(descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName.getOrElse(env.Headers.OtoroshiClientSecret)).map(s => (id, s))
                                         )
                                       val authBySimpleApiKeyClientId = req.headers
-                                        .get(env.Headers.OtoroshiSimpleApiKeyClientId)
-                                        .orElse(descriptor.apiKeyConstraints.clientIdAuth.headerName.flatMap(name => req.headers.get(name)))
+                                        .get(descriptor.apiKeyConstraints.clientIdAuth.headerName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId))
+                                        .orElse(
+                                          req.queryString
+                                            .get(descriptor.apiKeyConstraints.clientIdAuth.queryName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId))
+                                            .flatMap(_.lastOption)
+                                        )
                                       if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
                                         val clientId = authBySimpleApiKeyClientId.get
                                         env.datastores.apiKeyDataStore
