@@ -1672,7 +1672,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               )
                                             case Some(key) if !key.allowClientIdOnly => {
                                               Errors.craftResponseResult(
-                                                "Bad API key simple",
+                                                "Bad API key",
                                                 BadRequest,
                                                 req,
                                                 Some(descriptor),
@@ -1721,7 +1721,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                         descriptor)
                                               )
                                               Errors.craftResponseResult(
-                                                "Bad API key custom",
+                                                "Bad API key",
                                                 BadRequest,
                                                 req,
                                                 Some(descriptor),
@@ -1824,7 +1824,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                                   descriptor)
                                                         )
                                                         Errors.craftResponseResult(
-                                                          s"Bad API key jwt $e",
+                                                          s"Bad API key",
                                                           BadRequest,
                                                           req,
                                                           Some(descriptor),
@@ -1897,7 +1897,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                             descriptor)
                                                   )
                                                   Errors.craftResponseResult(
-                                                    "Bad API key bsic",
+                                                    "Bad API key",
                                                     BadGateway,
                                                     req,
                                                     Some(descriptor),
