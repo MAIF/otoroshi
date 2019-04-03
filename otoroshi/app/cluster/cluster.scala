@@ -15,6 +15,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
+import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import env.Env
@@ -127,10 +128,10 @@ case class ClusterConfig(
     leader: LeaderConfig = LeaderConfig(),
     worker: WorkerConfig = WorkerConfig()
 ) {
-  def gzip(): Flow[ByteString, ByteString, NotUsed] =
-    if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
-  def gunzip(): Flow[ByteString, ByteString, NotUsed] =
-    if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+  def gzip(): Flow[ByteString, ByteString, NotUsed] = Flow.apply[ByteString]
+    // if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
+  def gunzip(): Flow[ByteString, ByteString, NotUsed] = Flow.apply[ByteString]
+    // if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
 }
 
 object ClusterConfig {
@@ -962,7 +963,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
           env.Ws
-            .url(otoroshiUrl + s"/api/cluster/sessions/$id")
+            .akkaUrl(otoroshiUrl + s"/api/cluster/sessions/$id")
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
@@ -992,7 +993,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
           env.Ws
-            .url(otoroshiUrl + s"/api/cluster/sessions")
+            .akkaUrl(otoroshiUrl + s"/api/cluster/sessions")
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
@@ -1075,15 +1076,15 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       if (isPollingState.compareAndSet(false, true)) {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
         val start = System.currentTimeMillis()
+        Cluster.logger.debug(
+          s"[${env.clusterConfig.mode.name}] Api cluster call ..."
+        )
         Retry
           .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
                  delay = 20,
                  ctx = "leader-fetch-state") { tryCount =>
-            Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Api cluster call ..."
-            )
             env.Ws
-              .url(otoroshiUrl + "/api/cluster/state")
+              .akkaUrl(otoroshiUrl + "/api/cluster/state")
               .withHttpHeaders(
                 "Host"   -> config.leader.host,
                 "Accept" -> "application/x-ndjson",
@@ -1163,7 +1164,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start = System.currentTimeMillis()
         Retry
-          .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
+          .retry(times = if (cannotServeRequests()) 10 else config.worker.quotas.retries,
                  delay = 20,
                  ctx = "leader-push-quotas") { tryCount =>
             Cluster.logger.trace(
@@ -1238,7 +1239,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val body         = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
               val wsBody       = SourceBody(body)
               env.Ws
-                .url(otoroshiUrl + "/api/cluster/quotas")
+                .akkaUrl(otoroshiUrl + "/api/cluster/quotas")
                 .withHttpHeaders(
                   "Host"         -> config.leader.host,
                   "Content-Type" -> "application/x-ndjson",
@@ -1316,13 +1317,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
       env.clusterConfig.worker.initialCacert.foreach { cacert =>
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Importing initial CA Certificate to be able to contact leaders")
-        Await.result(env.datastores.certificatesDataStore.set(Cert(
+        Await.result(Cert(
           id = IdGenerator.uuid,
           chain = cacert,
           privateKey = "",
           caRef = None,
           ca = true
-        ).enrich())(ec, env), FiniteDuration(5, TimeUnit.SECONDS))
+        ).enrich().save()(ec, env).andThen {
+          case Success(e) => Cluster.logger.info("Successful import of initial cacert !")
+          case Failure(e) => Cluster.logger.error("Error while storing initial cacert ...", e)
+        }, FiniteDuration(5, TimeUnit.SECONDS))
       }
       pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(
         pollState()

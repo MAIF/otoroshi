@@ -338,6 +338,8 @@ object DynamicSSLEngineProvider {
 
     val optEnv = Option(currentEnv.get)
 
+    val trustAll: Boolean = optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+
     val cacertPath = optEnv
       .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
       .map(
@@ -373,7 +375,15 @@ object DynamicSSLEngineProvider {
       optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
         case false => createTrustStore(keyStore, cacertPath, cacertPassword)
-      } orNull
+      } getOrElse {
+        if (trustAll) {
+          Array[TrustManager](
+            new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+          )
+        } else {
+          createTrustStore(keyStore, cacertPath, cacertPassword)
+        }
+      }
 
     sslContext.init(keyManagers, tm, null)
     dumpPath match {
@@ -1404,6 +1414,23 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
     env.datastores.clientCertificateValidationDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
   }
 
+}
+
+class VeryNiceTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrustManager {
+
+  def checkClientTrusted(var1: Array[X509Certificate], var2: String): Unit = ()
+
+  def checkServerTrusted(var1: Array[X509Certificate], var2: String): Unit = ()
+
+  def getAcceptedIssuers: Array[X509Certificate] = managers.flatMap(_.getAcceptedIssuers).toArray
+
+  def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit = ()
+
+  def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit = ()
+
+  def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit = ()
+
+  def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit = ()
 }
 
 class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrustManager {
