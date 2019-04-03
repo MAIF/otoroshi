@@ -119,6 +119,7 @@ class Mailer extends Component {
             }
           }}
           possibleValues={[
+            { label: 'None',    value: 'none'    },
             { label: 'Console', value: 'console' },
             { label: 'Generic', value: 'generic' },
             { label: 'Mailgun', value: 'mailgun' },

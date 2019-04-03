@@ -11,6 +11,12 @@ import play.api.libs.ws.WSAuthScheme
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+case class NoneMailerSettings() extends MailerSettings {
+  override def typ: String = "none"
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new NoneMailer()
+  override def json: JsValue = NoneMailerSettings.format.writes(this)
+}
+
 case class ConsoleMailerSettings() extends MailerSettings {
   override def typ: String = "console"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new LogMailer()
@@ -59,7 +65,8 @@ trait MailerSettings {
 
 object MailerSettings {
   val format = new Format[MailerSettings] {
-    override def reads(json: JsValue): JsResult[MailerSettings] = (json \ "type").asOpt[String].getOrElse("console") match {
+    override def reads(json: JsValue): JsResult[MailerSettings] = (json \ "type").asOpt[String].getOrElse("none") match {
+      case "none"    => NoneMailerSettings.format.reads(json)
       case "console" => ConsoleMailerSettings.format.reads(json)
       case "generic" => GenericMailerSettings.format.reads(json)
       case "mailgun" => MailgunSettings.format.reads(json)
@@ -149,6 +156,20 @@ object ConsoleMailerSettings {
   }
 }
 
+object NoneMailerSettings {
+  val format = new Format[NoneMailerSettings] {
+    override def writes(o: NoneMailerSettings) = Json.obj()
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          NoneMailerSettings()
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
 case class EmailLocation(name: String, email: String) {
   def toEmailString: String = s"$name <$email>"
 }
@@ -159,6 +180,12 @@ trait Mailer {
 
 object LogMailer {
   def apply() = new LogMailer()
+}
+
+class NoneMailer() extends Mailer {
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    FastFuture.successful(())
+  }
 }
 
 class LogMailer() extends Mailer {

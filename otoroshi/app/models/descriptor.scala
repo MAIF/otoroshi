@@ -1,5 +1,7 @@
 package models
 
+import java.math.BigInteger
+
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
@@ -851,7 +853,7 @@ object CustomHeadersAuthConstraints {
 case class JwtAuthConstraints(
   enabled: Boolean = true,
   includeRequestAttributes: Boolean  = false,
-  maxJwtLifespanSecs: Long = 10 * 365 * 24 * 60 * 60,
+  maxJwtLifespanSecs: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
   headerName: Option[String] = None,
   queryName: Option[String] = None,
   cookieName: Option[String] = None
@@ -859,7 +861,7 @@ case class JwtAuthConstraints(
   def json: JsValue = Json.obj(
     "enabled" -> enabled,
     "includeRequestAttributes" -> includeRequestAttributes,
-    "maxJwtLifespanSecs" -> maxJwtLifespanSecs,
+    "maxJwtLifespanSecs" -> maxJwtLifespanSecs.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
     "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -873,7 +875,7 @@ object JwtAuthConstraints {
         JwtAuthConstraints(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
           includeRequestAttributes = (json \ "includeRequestAttributes").asOpt[Boolean].getOrElse(false),
-          maxJwtLifespanSecs = (json \ "maxJwtLifespanSecs").asOpt[Long].getOrElse(10 * 365 * 24 * 60 * 60),
+          maxJwtLifespanSecs = (json \ "maxJwtLifespanSecs").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
           headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
           queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
           cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)

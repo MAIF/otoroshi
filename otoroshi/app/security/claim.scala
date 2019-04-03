@@ -64,7 +64,7 @@ object OtoroshiClaim {
   private def sign(algorithm: Algorithm, headerJson: JsObject, payloadJson: JsObject): String = {
     val header: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
     val payload: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
-    val signatureBytes: Array[Byte] = algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
+    val signatureBytes: Array[Byte] = algorithm.sign((header + "." + payload).getBytes(StandardCharsets.UTF_8))
     val signature: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(signatureBytes)
     String.format("%s.%s.%s", header, payload, signature)
   }

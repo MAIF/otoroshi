@@ -1780,14 +1780,18 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         true
                                                       }
                                                     }.filter { _ =>
-                                                      if (exp.isEmpty || iat.isEmpty) {
-                                                        false
-                                                      } else {
-                                                        if ((exp.get - iat.get) <= desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs) {
-                                                          true
-                                                        } else {
+                                                      desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
+                                                        if (exp.isEmpty || iat.isEmpty) {
                                                           false
+                                                        } else {
+                                                          if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
+                                                            true
+                                                          } else {
+                                                            false
+                                                          }
                                                         }
+                                                      } getOrElse {
+                                                        true
                                                       }
                                                     }.filter { _ =>
                                                       if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
