@@ -335,7 +335,7 @@ class WebSocketHandler()(implicit env: Env) {
             .flatMap {
               case None =>
                 Errors
-                  .craftResponseResult(s"Downstream service not found",
+                  .craftResponseResult(s"Service not found",
                                        Results.NotFound,
                                        req,
                                        None,
