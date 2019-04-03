@@ -623,7 +623,7 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
             DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
           case _ =>
-            DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
+            DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( $sniServerName")
         }
         true
       }

@@ -1079,6 +1079,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
                  delay = 20,
                  ctx = "leader-fetch-state") { tryCount =>
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Api cluster call ..."
+            )
             env.Ws
               .url(otoroshiUrl + "/api/cluster/state")
               .withHttpHeaders(
@@ -1093,6 +1096,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .withMaybeProxyServer(config.proxy)
               .withMethod("GET")
               .stream()
+              .map { resp =>
+                Cluster.logger.debug(
+                  s"[${env.clusterConfig.mode.name}] Done api cluster call. ${resp.status}"
+                )
+                resp
+              }
               .filter(_.status == 200)
               .flatMap { resp =>
                 val store       = new ConcurrentHashMap[String, Any]()
