@@ -187,7 +187,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
       val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext)
       connectionContextHolder.set(connectionContext)
     }
-    val pool = customizer(connectionPoolSettings)
+    val pool = customizer(connectionPoolSettings).withMaxConnections(512)
     client.singleRequest(request, connectionContextHolder.get(), pool)
   }
 

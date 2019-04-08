@@ -16,7 +16,6 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
-import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import env.Env
@@ -26,11 +25,12 @@ import javax.management.{Attribute, ObjectName}
 import models._
 import org.joda.time.DateTime
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
+import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer, WSResponse}
+import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
@@ -38,14 +38,13 @@ import security.IdGenerator
 import ssl._
 import storage.inmemory._
 import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
+import utils.http.Implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.{Failure, Success, Try}
-import utils.http.Implicits._
-import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 
 /**
  * # TODO:
@@ -980,7 +979,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .get()
             .filter { resp =>
               if (resp.status != 201 && (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2"))) {
-                resp.underlying[HttpResponse].discardEntityBytes()
+                Try(resp.underlying[HttpResponse].discardEntityBytes())
               }
               resp.status == 201
             }
@@ -1016,7 +1015,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .post(user.toJson)
             .filter { resp =>
               if (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2")) {
-                resp.underlying[HttpResponse].discardEntityBytes()
+                Try(resp.underlying[HttpResponse].discardEntityBytes())
               }
               resp.status == 201
             }
@@ -1111,7 +1110,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .stream()
               .filter { resp =>
                 if (resp.status != 200 && (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2"))) {
-                  resp.underlying[HttpResponse].discardEntityBytes()
+                  Try(resp.underlying[HttpResponse].discardEntityBytes())
                 }
                 resp.status == 200
               }
@@ -1266,7 +1265,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .stream()
                 .filter { resp =>
                   if (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2")) {
-                    resp.underlying[HttpResponse].discardEntityBytes()
+                    Try(resp.underlying[HttpResponse].discardEntityBytes())
                   }
                   resp.status == 200
                 }

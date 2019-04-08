@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import actions.{PrivateAppsAction, PrivateAppsActionContext}
 import akka.NotUsed
 import akka.actor.{Actor, Props}
-import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
@@ -1247,6 +1247,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                                                   && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
                                                   && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                                                if (target.scheme.startsWith("a") || target.scheme.startsWith("http2")) {
+                                                  Try(resp.asInstanceOf[HttpResponse].discardEntityBytes())
+                                                }
                                                 if (resp.status == 404 && headers
                                                       .get("X-CleverCloudUpgrade")
                                                       .contains("true")) {
@@ -1362,7 +1365,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     user = paUsr
                                                   )
                                                   .flatMap {
-                                                    case Left(badResult) => FastFuture.successful(badResult)
+                                                    case Left(badResult) => {
+                                                      if (target.scheme.startsWith("a") || target.scheme.startsWith("http2")) {
+                                                        Try(resp.asInstanceOf[HttpResponse].discardEntityBytes())
+                                                      }
+                                                      FastFuture.successful(badResult)
+                                                    }
                                                     case Right(httpResponse) => {
                                                       val headersOut = httpResponse.headers.toSeq
                                                       val contentType =
@@ -1388,6 +1396,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
                                                               e
                                                             )
+                                                            if (target.scheme.startsWith("a") || target.scheme.startsWith("http2")) {
+                                                              Try(resp.asInstanceOf[HttpResponse].discardEntityBytes())
+                                                            }
                                                             promise.trySuccess(
                                                               ProxyDone(httpResponse.status,
                                                                         isChunked,
