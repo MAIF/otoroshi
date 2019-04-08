@@ -46,34 +46,39 @@ object Retry {
                                     failure: Option[Throwable],
                                     ctx: String,
                                     f: Int => Future[T],
-                                    counter: AtomicInteger)(implicit ec: ExecutionContext, scheduler: Scheduler): Unit =
-    (times, failure) match {
-      case (0, Some(e)) =>
-        logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => ${e.getMessage}")
-        promise.tryFailure(e)
-      case (0, None) =>
-        logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => lost exception")
-        promise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
-      case (i, _) =>
-        if (totalCalls > 1 && (times < totalCalls)) {
-          logger.warn(s"Retrying call for $ctx ($times/$totalCalls attemps)")
-        }
-        counter.incrementAndGet()
-        f((totalCalls - times) + 1).onComplete {
-          case Success(t) =>
-            promise.trySuccess(t)
-          case Failure(e) =>
-            logger.warn(s"Error calling $ctx ($times/$totalCalls attemps) : ${e.getMessage}")
-            if (delay == 0L) {
-              retryPromise[T](totalCalls, times - 1, 0L, factor, promise, Some(e), ctx, f, counter)
-            } else {
-              val newDelay: Long = delay * factor
-              Timeout.timeout(Done, delay.millis).fast.map { _ =>
-                retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f, counter)
+                                    counter: AtomicInteger)(implicit ec: ExecutionContext, scheduler: Scheduler): Unit = {
+    try {
+      (times, failure) match {
+        case (0, Some(e)) =>
+          logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => ${e.getMessage}")
+          promise.tryFailure(e)
+        case (0, None) =>
+          logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => lost exception")
+          promise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
+        case (i, _) =>
+          if (totalCalls > 1 && (times < totalCalls)) {
+            logger.warn(s"Retrying call for $ctx ($times/$totalCalls attemps)")
+          }
+          counter.incrementAndGet()
+          f((totalCalls - times) + 1).onComplete {
+            case Success(t) =>
+              promise.trySuccess(t)
+            case Failure(e) =>
+              logger.warn(s"Error calling $ctx ($times/$totalCalls attemps) : ${e.getMessage}")
+              if (delay == 0L) {
+                retryPromise[T](totalCalls, times - 1, 0L, factor, promise, Some(e), ctx, f, counter)
+              } else {
+                val newDelay: Long = delay * factor
+                Timeout.timeout(Done, delay.millis).fast.map { _ =>
+                  retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f, counter)
+                }
               }
-            }
-        }(ec)
+          }(ec)
+      }
+    } catch {
+      case e => promise.tryFailure(e)
     }
+  }
 
   def retry[T](times: Int,
                delay: Long = 0,

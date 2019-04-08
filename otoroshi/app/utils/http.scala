@@ -31,7 +31,7 @@ import ssl.DynamicSSLEngineProvider
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
 object WsClientChooser {
@@ -153,7 +153,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
 
   def url(url: String): WSRequest = new AkkaWsClientRequest(this, url)
 
-  override def close(): Unit = Await.ready(Http().shutdownAllConnectionPools(), 10.seconds)
+  override def close(): Unit = Await.ready(client.shutdownAllConnectionPools(), 10.seconds)
 
   private[utils] val wsClientConfig: WSClientConfig = config
   private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
@@ -187,7 +187,8 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
       val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext)
       connectionContextHolder.set(connectionContext)
     }
-    client.singleRequest(request, connectionContextHolder.get(), customizer(connectionPoolSettings))
+    val pool = customizer(connectionPoolSettings)
+    client.singleRequest(request, connectionContextHolder.get(), pool)
   }
 
   private[utils] def executeWsRequest[T](request: WebSocketRequest, clientFlow: Flow[Message, Message, T], customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
@@ -378,8 +379,10 @@ case class AkkaWsClientRequest(
   override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
 
   def stream(): Future[WSResponse] = {
-    client.executeRequest(buildRequest(), customizer).map(resp => AkkWsClientStreamedResponse(resp, rawUrl, client.mat))(client.ec)
-    // execute()
+    val req = buildRequest()
+    client.executeRequest(req, customizer).map { resp =>
+      AkkWsClientStreamedResponse(resp, rawUrl, client.mat)
+    }(client.ec)
   }
 
   override def execute(method: String): Future[WSResponse] = {

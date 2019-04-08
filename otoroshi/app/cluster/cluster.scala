@@ -10,6 +10,7 @@ import java.util.regex.Pattern
 import actions.ApiAction
 import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
@@ -29,7 +30,7 @@ import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
+import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer, WSResponse}
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
@@ -128,10 +129,10 @@ case class ClusterConfig(
     leader: LeaderConfig = LeaderConfig(),
     worker: WorkerConfig = WorkerConfig()
 ) {
-  def gzip(): Flow[ByteString, ByteString, NotUsed] = Flow.apply[ByteString]
-    // if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
-  def gunzip(): Flow[ByteString, ByteString, NotUsed] = Flow.apply[ByteString]
-    // if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+  def gzip(): Flow[ByteString, ByteString, NotUsed] =
+    if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
+  def gunzip(): Flow[ByteString, ByteString, NotUsed] =
+    if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
 }
 
 object ClusterConfig {
@@ -845,6 +846,8 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
   private val membershipRef = new AtomicReference[Cancellable]()
 
+  private lazy val hostAddress = InetAddress.getLocalHost().getHostAddress.toString
+
   def renewMemberShip(): Unit = {
     (for {
       rate                      <- env.datastores.serviceDescriptorDataStore.globalCallsPerSec()
@@ -896,7 +899,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         MemberView(
           name = env.clusterConfig.leader.name,
           memberType = ClusterMode.Leader,
-          location = s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}",
+          location = s"$hostAddress:${env.port}/${env.httpsPort}",
           lastSeen = DateTime.now(),
           timeout = 120.seconds,
           stats = stats
@@ -940,6 +943,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val isPushingQuotas               = new AtomicBoolean(false)
   private val firstSuccessfulStateFetchDone = new AtomicBoolean(false)
 
+  private lazy val hostAddress = InetAddress.getLocalHost().getHostAddress.toString
+
   /////////////
   private val apiIncrementsRef = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
   private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
@@ -963,17 +968,22 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
           env.Ws
-            .akkaUrl(otoroshiUrl + s"/api/cluster/sessions/$id")
+            .url(otoroshiUrl + s"/api/cluster/sessions/$id")
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
             .get()
-            .filter(_.status == 200)
+            .filter { resp =>
+              if (resp.status != 201 && (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2"))) {
+                resp.underlying[HttpResponse].discardEntityBytes()
+              }
+              resp.status == 201
+            }
             .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
         }
         .recover {
@@ -993,18 +1003,23 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
           env.Ws
-            .akkaUrl(otoroshiUrl + s"/api/cluster/sessions")
+            .url(otoroshiUrl + s"/api/cluster/sessions")
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
             .post(user.toJson)
-            .filter(_.status == 201)
+            .filter { resp =>
+              if (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2")) {
+                resp.underlying[HttpResponse].discardEntityBytes()
+              }
+              resp.status == 201
+            }
         }
         .map(_ => ())
     } else {
@@ -1076,34 +1091,30 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       if (isPollingState.compareAndSet(false, true)) {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
         val start = System.currentTimeMillis()
-        Cluster.logger.debug(
-          s"[${env.clusterConfig.mode.name}] Api cluster call ..."
-        )
         Retry
           .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
                  delay = 20,
                  ctx = "leader-fetch-state") { tryCount =>
             env.Ws
-              .akkaUrl(otoroshiUrl + "/api/cluster/state")
+              .url(otoroshiUrl + "/api/cluster/state")
               .withHttpHeaders(
                 "Host"   -> config.leader.host,
                 "Accept" -> "application/x-ndjson",
                 // "Accept-Encoding" -> "gzip",
                 ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress}:${env.port}/${env.httpsPort}"
+                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
               .withMaybeProxyServer(config.proxy)
               .withMethod("GET")
               .stream()
-              .map { resp =>
-                Cluster.logger.debug(
-                  s"[${env.clusterConfig.mode.name}] Done api cluster call. ${resp.status}"
-                )
-                resp
+              .filter { resp =>
+                if (resp.status != 200 && (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2"))) {
+                  resp.underlying[HttpResponse].discardEntityBytes()
+                }
+                resp.status == 200
               }
-              .filter(_.status == 200)
               .flatMap { resp =>
                 val store       = new ConcurrentHashMap[String, Any]()
                 val expirations = new ConcurrentHashMap[String, Long]()
@@ -1239,13 +1250,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val body         = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
               val wsBody       = SourceBody(body)
               env.Ws
-                .akkaUrl(otoroshiUrl + "/api/cluster/quotas")
+                .url(otoroshiUrl + "/api/cluster/quotas")
                 .withHttpHeaders(
                   "Host"         -> config.leader.host,
                   "Content-Type" -> "application/x-ndjson",
                   // "Content-Encoding" -> "gzip",
                   ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"${InetAddress.getLocalHost().getHostAddress()}:${env.port}/${env.httpsPort}"
+                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
                 )
                 .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
                 .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
@@ -1253,7 +1264,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .withMethod("PUT")
                 .withBody(wsBody)
                 .stream()
-                .filter(_.status == 200)
+                .filter { resp =>
+                  if (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2")) {
+                    resp.underlying[HttpResponse].discardEntityBytes()
+                  }
+                  resp.status == 200
+                }
                 .andThen {
                   case Success(_) =>
                     Cluster.logger.debug(
