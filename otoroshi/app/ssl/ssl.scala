@@ -38,6 +38,7 @@ import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
+import ssl.CertificateData.encoder
 import ssl.DynamicSSLEngineProvider.certificates
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -96,6 +97,8 @@ case class Cert(
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now()
 ) {
+  def signature: Option[String] = this.metadata.map(v => (v \ "signature").as[String])
+  def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
   def renew(duration: FiniteDuration, caOpt: Option[Cert]): Cert = {
     this match {
       case original if original.ca && original.selfSigned => {

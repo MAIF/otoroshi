@@ -109,7 +109,7 @@ case class WorkerConfig(
     timeout: Long = 2000,
     state: WorkerStateConfig = WorkerStateConfig(),
     quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
-    initialCacert: Option[String] = None
+    //initialCacert: Option[String] = None
 )
 case class LeaderConfig(
     name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
@@ -183,24 +183,7 @@ object ClusterConfig {
           timeout = configuration.getOptional[Long]("worker.quotas.timeout").getOrElse(2000),
           retries = configuration.getOptional[Int]("worker.quotas.retries").getOrElse(3),
           pushEvery = configuration.getOptional[Long]("worker.quotas.pushEvery").getOrElse(2000L)
-        ),
-        initialCacert = configuration.getOptional[String]("worker.initialCacert").flatMap { cacert =>
-          if (cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) {
-            Some(cacert)
-          } else {
-            val file = new File(cacert)
-            if (file.exists()) {
-              val content = new String(java.nio.file.Files.readAllBytes(file.toPath))
-              if (content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) {
-                Some(content)
-              } else {
-                None
-              }
-            } else {
-              None
-            }
-          }
-        }
+        )
       )
     )
   }
@@ -1330,19 +1313,6 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
-      env.clusterConfig.worker.initialCacert.foreach { cacert =>
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Importing initial CA Certificate to be able to contact leaders")
-        Await.result(Cert(
-          id = IdGenerator.uuid,
-          chain = cacert,
-          privateKey = "",
-          caRef = None,
-          ca = true
-        ).enrich().save()(ec, env).andThen {
-          case Success(e) => Cluster.logger.info("Successful import of initial cacert !")
-          case Failure(e) => Cluster.logger.error("Error while storing initial cacert ...", e)
-        }, FiniteDuration(5, TimeUnit.SECONDS))
-      }
       pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(
         pollState()
       ))
@@ -1382,12 +1352,16 @@ class SwappableInMemoryDataStores(configuration: Configuration,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     Cluster.logger.info("Now using Swappable InMemory DataStores")
     redis.start()
+    _serviceDescriptorDataStore.startCleanup(env)
+    _certificateDataStore.startSync()
     FastFuture.successful(())
   }
 
   override def after(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+    _serviceDescriptorDataStore.stopCleanup()
+    _certificateDataStore.stopSync()
     redis.stop()
     actorSystem.terminate()
     FastFuture.successful(())
