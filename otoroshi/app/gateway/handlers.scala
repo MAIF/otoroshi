@@ -640,6 +640,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     //   chain.foreach(c => logger.info(s"incoming cert chain: $c"))
     // }
     // req.clientCertificateChain.getOrElse(logger.info("no cert chain"))
+    val callDate            = DateTime.now()
     val reqNumber           = reqCounter.incrementAndGet()
     val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured           = getSecuredFor(req)
@@ -1084,6 +1085,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               reqId = snowflake,
                                               parentReqId = fromOtoroshi,
                                               `@timestamp` = DateTime.now(),
+                                              `@calledAt` = callDate,
                                               protocol = req.version,
                                               to = Location(
                                                 scheme = getProtocolFor(req),

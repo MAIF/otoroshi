@@ -48,6 +48,7 @@ object Errors {
             reqId = env.snowflakeGenerator.nextIdStr(),
             parentReqId = None,
             `@timestamp` = DateTime.now(),
+            `@calledAt` = DateTime.now(),
             protocol = req.version,
             to = Location(
               scheme = req.headers
@@ -100,6 +101,7 @@ object Errors {
             reqId = env.snowflakeGenerator.nextIdStr(),
             parentReqId = None,
             `@timestamp` = DateTime.now(),
+            `@calledAt` = DateTime.now(),
             protocol = req.version,
             to = Location(
               scheme = req.headers

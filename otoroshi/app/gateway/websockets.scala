@@ -307,6 +307,7 @@ class WebSocketHandler()(implicit env: Env) {
     logger.trace("[WEBSOCKET] proxy ws call !!!")
 
     // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
+    val calledAt         = DateTime.now()
     val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber        = reqCounter.incrementAndGet()
     val remoteAddress    = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
@@ -637,6 +638,7 @@ class WebSocketHandler()(implicit env: Env) {
                                         reqId = snowflake,
                                         parentReqId = fromOtoroshi,
                                         `@timestamp` = DateTime.now(),
+                                        `@calledAt` = calledAt,
                                         protocol = req.version,
                                         to = Location(
                                           scheme = getWsProtocolFor(req),
