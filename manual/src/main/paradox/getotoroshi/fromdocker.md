@@ -11,11 +11,7 @@ docker pull maif/otoroshi:latest
 # or 
 docker pull maif/otoroshi:jdk8-1.4.8-dev
 # or 
-docker pull maif/otoroshi:jdk9-1.4.8-dev
-# or 
-docker pull maif/otoroshi:jdk10-1.4.8-dev
-# or 
 docker pull maif/otoroshi:jdk11-1.4.8-dev
 # or 
-docker pull maif/otoroshi:graal-1.4.8-dev
+docker pull maif/otoroshi:jdk12-1.4.8-dev
 ```

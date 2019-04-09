@@ -244,14 +244,11 @@ cd otoroshi-vx.x.x
 ./bin/otoroshi
 </code></pre>
 <h2><a href="#from-jar-file" name="from-jar-file" class="anchor"><span class="anchor-link"></span></a>From .jar file</h2>
-<p>For Java 8</p>
+<p>For Java 8 & Java 11</p>
 <pre class="prettyprint"><code class="language-sh">java -jar otoroshi.jar
 </code></pre>
-<p>For Java 9 and 10</p>
-<pre class="prettyprint"><code class="language-sh">java --add-modules java.xml.bind -jar otoroshi.jar
-</code></pre>
 <h2><a href="#from-docker" name="from-docker" class="anchor"><span class="anchor-link"></span></a>From docker</h2>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1.4.7
 </code></pre>
 <p>You can also pass useful args like :</p>
 <pre><code>docker run -p &quot;8080:8080&quot; otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml

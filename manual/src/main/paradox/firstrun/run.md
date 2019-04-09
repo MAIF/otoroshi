@@ -12,22 +12,16 @@ cd otoroshi-vx.x.x
 
 ## From .jar file
 
-For Java 8
+For Java 8 & Java 11
 
 ```sh
 java -jar otoroshi.jar
 ```
 
-For Java 9 and 10
-
-```sh
-java --add-modules java.xml.bind -jar otoroshi.jar
-```
-
 ## From docker
 
 ```sh
-docker run -p "8080:8080" maif/otoroshi:1
+docker run -p "8080:8080" maif/otoroshi:1.4.8-dev
 ```
 
 You can also pass useful args like :
