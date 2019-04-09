@@ -822,6 +822,7 @@ class AlertsActor(implicit env: Env) extends Actor {
   import utils.http.Implicits._
 
   implicit val ec = env.otoroshiExecutionContext
+  implicit val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-alert-actor")
 

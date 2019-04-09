@@ -268,6 +268,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
     GatewayEvent(
       `@id` = IdGenerator.nextId(1024).toString,
       `@timestamp` = ts,
+      `@calledAt` = ts,
       reqId = IdGenerator.nextId(1024).toString,
       parentReqId = None,
       protocol = "http",

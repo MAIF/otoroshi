@@ -27,6 +27,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
   import utils.http.Implicits._
 
   implicit lazy val ec = context.dispatcher
+  implicit lazy val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-health-checker")
 

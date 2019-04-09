@@ -943,6 +943,7 @@ case class ServiceDescriptor(
     readOnly: Boolean = false,
     xForwardedHeaders: Boolean = false,
     overrideHost: Boolean = true,
+    allowHttp10: Boolean,
     secComExcludedPatterns: Seq[String] = Seq.empty[String],
     securityExcludedPatterns: Seq[String] = Seq.empty[String],
     publicPatterns: Seq[String] = Seq.empty[String],
@@ -1111,6 +1112,7 @@ object ServiceDescriptor {
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
           xForwardedHeaders = (json \ "xForwardedHeaders").asOpt[Boolean].getOrElse(false),
           overrideHost = (json \ "overrideHost").asOpt[Boolean].getOrElse(true),
+          allowHttp10 = (json \ "allowHttp10").asOpt[Boolean].getOrElse(true),
           secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           securityExcludedPatterns = (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
@@ -1185,6 +1187,7 @@ object ServiceDescriptor {
       "readOnly"                   -> sd.readOnly,
       "xForwardedHeaders"          -> sd.xForwardedHeaders,
       "overrideHost"               -> sd.overrideHost,
+      "allowHttp10"                -> sd.allowHttp10,
       "secComExcludedPatterns"     -> JsArray(sd.secComExcludedPatterns.map(JsString.apply)),
       "securityExcludedPatterns"   -> JsArray(sd.securityExcludedPatterns.map(JsString.apply)),
       "publicPatterns"             -> JsArray(sd.publicPatterns.map(JsString.apply)),
@@ -1243,6 +1246,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       sendOtoroshiHeadersBack = false, // try to hide otoroshi as much as possible
       enforceSecureCommunication = false, // try to hide otoroshi as much as possible
       forceHttps = if (env.exposedRootSchemeIsHttps) true else false,
+      allowHttp10 = true
     )
   def updateMetrics(id: String,
                     callDuration: Long,

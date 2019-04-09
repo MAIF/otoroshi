@@ -1221,7 +1221,7 @@ case class ClientCertificateValidator(
               .asOpt[String]
               .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
           case _ =>
-            resp.ignore()
+            resp.ignore()(env.otoroshiMaterializer)
             None
         }
       }

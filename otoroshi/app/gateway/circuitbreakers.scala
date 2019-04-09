@@ -76,7 +76,7 @@ object Retry {
           }(ec)
       }
     } catch {
-      case e => promise.tryFailure(e)
+      case e: Throwable => promise.tryFailure(e)
     }
   }
 

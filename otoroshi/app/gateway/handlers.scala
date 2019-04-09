@@ -1432,27 +1432,43 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       )
 
                                                       if (req.version == "HTTP/1.0") {
-                                                        logger.warn(
-                                                          s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
-                                                        )
-                                                        finalStream
-                                                          .via(
-                                                            MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt,
-                                                                             str => logger.warn(str))
+                                                        if (descriptor.allowHttp10) {
+                                                          logger.warn(
+                                                            s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
                                                           )
-                                                          .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
-                                                          .fast
-                                                          .flatMap { body =>
-                                                            val response: Result = Status(httpResponse.status)(body)
-                                                              .withHeaders(
-                                                                headersOut.filterNot(
-                                                                  h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                                ): _*
-                                                              )
-                                                              .as(contentType)
-                                                              .withCookies((withTrackingCookies ++ cookies): _*)
-                                                            desc.gzip.handleResult(req, response)
-                                                          }
+                                                          finalStream
+                                                            .via(
+                                                              MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt,
+                                                                str => logger.warn(str))
+                                                            )
+                                                            .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
+                                                            .fast
+                                                            .flatMap { body =>
+                                                              val response: Result = Status(httpResponse.status)(body)
+                                                                .withHeaders(
+                                                                  headersOut.filterNot(
+                                                                    h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                                  ): _*
+                                                                )
+                                                                .as(contentType)
+                                                                .withCookies((withTrackingCookies ++ cookies): _*)
+                                                              desc.gzip.handleResult(req, response)
+                                                            }
+                                                        } else {
+                                                          resp.ignore()
+                                                          Errors.craftResponseResult(
+                                                            "You cannot use HTTP/1.0 here",
+                                                            Forbidden,
+                                                            req,
+                                                            Some(descriptor),
+                                                            Some("errors.http.10.not.allowed"),
+                                                            duration = System.currentTimeMillis - start,
+                                                            overhead = (System
+                                                              .currentTimeMillis() - secondStart) + firstOverhead,
+                                                            cbDuration = cbDuration,
+                                                            callAttempts = callAttempts
+                                                          )
+                                                        }
                                                       } else if (globalConfig.streamEntityOnly) { // only temporary
                                                         // stream out
                                                         val response: Result = isChunked match {

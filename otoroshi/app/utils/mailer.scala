@@ -228,7 +228,7 @@ class MailgunMailer(env: Env, config: GlobalConfig) extends Mailer {
             "subject" -> Seq(subject),
             "html" -> Seq(html)
           )
-        ).map(_.ignore())
+        ).map(_.ignore()(env.otoroshiMaterializer))
     } getOrElse {
       FastFuture.successful(())
     }
@@ -272,7 +272,7 @@ class MailjetMailer(env: Env, config: GlobalConfig) extends Mailer {
               )
             )
           )
-        ).map(_.ignore())
+        ).map(_.ignore()(env.otoroshiMaterializer))
     } getOrElse {
       FastFuture.successful(())
     }
@@ -312,7 +312,7 @@ class GenericMailer(env: Env, config: GlobalConfig) extends Mailer {
             "subject" -> subject,
             "html" -> html
           )
-        ).map(_.ignore())
+        ).map(_.ignore()(env.otoroshiMaterializer))
     } getOrElse {
       FastFuture.successful(())
     }

@@ -76,6 +76,8 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   import CleverCloudClient._
 
+  implicit val mat = env.otoroshiMaterializer
+
   lazy val logger = Logger("otoroshi-clevercloud-client")
 
   def getOauthParams(tokenSecret: Option[String] = None): Map[String, String] =

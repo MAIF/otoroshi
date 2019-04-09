@@ -474,7 +474,8 @@ class Env(val configuration: Configuration,
     additionalHeaders = Map(
       "Host" -> backOfficeDescriptorHostHeader
     ),
-    publicPatterns = Seq("/health", "/metrics")
+    publicPatterns = Seq("/health", "/metrics"),
+    allowHttp10 = true
   )
 
   lazy val otoroshiVersion     = "1.4.8-dev"

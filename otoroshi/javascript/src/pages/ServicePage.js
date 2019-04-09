@@ -602,6 +602,12 @@ export class ServicePage extends Component {
                   help="Will force redirection to https:// if not present"
                   onChange={v => this.changeTheValue('forceHttps', v)}
                 />
+                <BiColumnBooleanInput
+                  label="Allow HTTP/1.0 requests"
+                  value={this.state.service.allowHttp10}
+                  help="Will return an error on HTTP/1.0 request"
+                  onChange={v => this.changeTheValue('allowHttp10', v)}
+                />
               </div>
             </div>
           </Collapse>
