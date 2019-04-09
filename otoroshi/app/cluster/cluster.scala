@@ -828,7 +828,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
   private val membershipRef = new AtomicReference[Cancellable]()
 
-  private lazy val hostAddress = InetAddress.getLocalHost().getHostAddress.toString
+  private lazy val hostAddress: String = env.configuration.getOptional[String]("otoroshi.cluster.selfAddress").getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
 
   def renewMemberShip(): Unit = {
     (for {
@@ -925,7 +925,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val isPushingQuotas               = new AtomicBoolean(false)
   private val firstSuccessfulStateFetchDone = new AtomicBoolean(false)
 
-  private lazy val hostAddress = InetAddress.getLocalHost().getHostAddress.toString
+  private lazy val hostAddress: String = env.configuration.getOptional[String]("otoroshi.cluster.selfAddress").getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
 
   /////////////
   private val apiIncrementsRef = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
@@ -961,9 +961,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .get()
             .filter { resp =>
-              if (resp.status != 201 && (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2"))) {
-                Try(resp.underlying[HttpResponse].discardEntityBytes())
-              }
+              resp.ignoreIf(resp.status != 201)
               resp.status == 201
             }
             .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
@@ -997,9 +995,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .post(user.toJson)
             .filter { resp =>
-              if (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2")) {
-                Try(resp.underlying[HttpResponse].discardEntityBytes())
-              }
+              resp.ignore()
               resp.status == 201
             }
         }
@@ -1092,9 +1088,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .withMethod("GET")
               .stream()
               .filter { resp =>
-                if (resp.status != 200 && (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2"))) {
-                  Try(resp.underlying[HttpResponse].discardEntityBytes())
-                }
+                resp.ignoreIf(resp.status != 200)
                 resp.status == 200
               }
               .flatMap { resp =>
@@ -1247,9 +1241,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .withBody(wsBody)
                 .stream()
                 .filter { resp =>
-                  if (otoroshiUrl.startsWith("a") || otoroshiUrl.startsWith("http2")) {
-                    Try(resp.underlying[HttpResponse].discardEntityBytes())
-                  }
+                  resp.ignore()
                   resp.status == 200
                 }
                 .andThen {

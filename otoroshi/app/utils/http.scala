@@ -548,11 +548,42 @@ case class AkkaWsClientRequest(
 }
 
 object Implicits {
+
+  private val logger = Logger("otoroshi-http-implicits")
+
   implicit class BetterStandaloneWSRequest[T <: StandaloneWSRequest](val req: T) extends AnyVal {
     def withMaybeProxyServer(opt: Option[WSProxyServer]): req.Self = {
       opt match {
         case Some(proxy) => req.withProxyServer(proxy)
         case None => req.asInstanceOf[req.Self]
+      }
+    }
+  }
+  implicit class BetterStandaloneWSResponse[T <: StandaloneWSResponse](val req: T) extends AnyVal {
+    def ignore()(implicit mat: Materializer): StandaloneWSResponse = {
+      req.underlying[Any] match {
+        case httpResponse: HttpResponse =>
+          Try(httpResponse.discardEntityBytes()) match {
+            case Failure(e) => logger.error("Error while discarding entity bytes ...", e)
+            case _ => ()
+          }
+          req
+        case _ => req
+      }
+    }
+    def ignoreIf(predicate: => Boolean)(implicit mat: Materializer): StandaloneWSResponse = {
+      if (predicate) {
+        req.underlying[Any] match {
+          case httpResponse: HttpResponse =>
+            Try(httpResponse.discardEntityBytes()) match {
+              case Failure(e) => logger.error("Error while discarding entity bytes ...", e)
+              case _ => ()
+            }
+            req
+          case _ => req
+        }
+      } else {
+        req
       }
     }
   }

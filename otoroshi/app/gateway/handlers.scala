@@ -1247,9 +1247,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                                                   && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
                                                   && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
-                                                if (target.scheme.startsWith("a") || target.scheme.startsWith("http2")) {
-                                                  Try(resp.asInstanceOf[HttpResponse].discardEntityBytes())
-                                                }
+                                                resp.ignore()
                                                 if (resp.status == 404 && headers
                                                       .get("X-CleverCloudUpgrade")
                                                       .contains("true")) {
@@ -1366,9 +1364,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   )
                                                   .flatMap {
                                                     case Left(badResult) => {
-                                                      if (target.scheme.startsWith("a") || target.scheme.startsWith("http2")) {
-                                                        Try(resp.asInstanceOf[HttpResponse].discardEntityBytes())
-                                                      }
+                                                      resp.ignore()
                                                       FastFuture.successful(badResult)
                                                     }
                                                     case Right(httpResponse) => {
@@ -1396,9 +1392,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
                                                               e
                                                             )
-                                                            if (target.scheme.startsWith("a") || target.scheme.startsWith("http2")) {
-                                                              Try(resp.asInstanceOf[HttpResponse].discardEntityBytes())
-                                                            }
+                                                            resp.ignore()
                                                             promise.trySuccess(
                                                               ProxyDone(httpResponse.status,
                                                                         isChunked,
