@@ -23,10 +23,8 @@ You can install and run Otoroshi with this little bash snippet
 curl -L -o otoroshi.jar 'https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.8-dev/otoroshi.jar'
 # run the following line if you want to use the admin UI in your browser
 sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar" >> /etc/hosts
-# Java 8
+# Java 8 & Java 11
 java -jar otoroshi.jar
-# Java 9 and 10
-java --add-modules java.xml.bind -jar otoroshi.jar
 ```
 
 or using docker
