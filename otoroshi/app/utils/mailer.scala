@@ -312,7 +312,7 @@ class GenericMailer(env: Env, config: GlobalConfig) extends Mailer {
             "subject" -> subject,
             "html" -> html
           )
-        ).map(_.ignore()
+        ).map(_.ignore())
     } getOrElse {
       FastFuture.successful(())
     }
