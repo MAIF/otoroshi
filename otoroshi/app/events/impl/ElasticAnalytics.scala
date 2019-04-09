@@ -135,24 +135,34 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
           .flatMap { resp =>
             resp.status match {
               case 200 =>
+                resp.ignore()
                 val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
                 tplCreated.onComplete {
                   case Success(r) if r.status >= 400 =>
                     logger.error(s"Error creating template ${r.status}: ${r.body}")
                   case Failure(e) =>
                     logger.error("Error creating template", e)
+                  case Success(r) =>
+                    r.ignore()
+                    logger.debug("Otoroshi template created")
+                    ElasticWritesAnalytics.initialized(config)
                   case _ =>
                     logger.debug("Otoroshi template created")
                     ElasticWritesAnalytics.initialized(config)
                 }
                 tplCreated.map(_ => ())
               case 404 =>
+                resp.ignore()
                 val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
                 tplCreated.onComplete {
                   case Success(r) if r.status >= 400 =>
                     logger.error(s"Error creating template ${r.status}: ${r.body}")
                   case Failure(e) =>
                     logger.error("Error creating template", e)
+                  case Success(r) =>
+                    r.ignore()
+                    logger.debug("Otoroshi template created")
+                    ElasticWritesAnalytics.initialized(config)
                   case _ =>
                     logger.debug("Otoroshi template created")
                     ElasticWritesAnalytics.initialized(config)
@@ -211,6 +221,8 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
           case Success(resp) =>
             if (resp.status >= 400) {
               logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
+            } else {
+              resp.ignore()
             }
           case Failure(e) =>
             logger.error(s"Error publishing event to elastic", e)

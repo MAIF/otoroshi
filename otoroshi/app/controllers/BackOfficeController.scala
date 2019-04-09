@@ -764,6 +764,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def fetchOpenIdConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     import scala.concurrent.duration._
+    import utils.http.Implicits._
 
     val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
     val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
@@ -780,7 +781,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               desc = desc,
               clientId = clientId,
               clientSecret = clientSecret,
-              oidConfig = None,
+              oidConfig = None
             ).asJson
           )
         )
@@ -848,6 +849,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   .asJson
               )
             } getOrElse {
+              resp.ignore()
               Ok(
                 GenericOauth2ModuleConfig(
                   id = id,
@@ -860,6 +862,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               )
             }
           } else {
+            resp.ignore()
             Ok(
               GenericOauth2ModuleConfig(
                 id = id,

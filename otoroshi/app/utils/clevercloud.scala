@@ -214,7 +214,9 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
         cleverCall(method = CleverCloudClient.PUT, endpoint = s"/organisations/$orga/applications/$id/tags/$tag")
           .andThen {
             case Failure(e) => logger.error(s"Error while creating tag $tag on app $id", e)
-            case Success(r) => logger.error(s"Result of creating tag $tag on app $id: ${r.status}")
+            case Success(r) =>
+              r.ignore()
+              logger.error(s"Result of creating tag $tag on app $id: ${r.status}")
           }
       })
       .map(_ => NotUsed)
@@ -223,7 +225,12 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/tags").fast.map(_.json.as[JsArray]).flatMap { seq =>
       FastFuture
         .sequence(seq.value.map(_.as[String]).map { tag =>
-          cleverCall(method = CleverCloudClient.DELETE, endpoint = s"/organisations/$orga/applications/$id/tags/$tag")
+          cleverCall(method = CleverCloudClient.DELETE, endpoint = s"/organisations/$orga/applications/$id/tags/$tag").andThen {
+            case Failure(e) => logger.error(s"Error while deleting tag $tag on app $id", e)
+            case Success(r) =>
+              r.ignore()
+              logger.error(s"Result of deleting tag $tag on app $id: ${r.status}")
+          }
         })
         .map(_ => NotUsed)
     }
@@ -233,7 +240,9 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       .sequence(tags.map { tag =>
         cleverCall(method = CleverCloudClient.PUT, endpoint = s"/organisations/$orga/addons/$id/tags/$tag").andThen {
           case Failure(e) => logger.error(s"Error while creating tag $tag on app $id", e)
-          case Success(r) => logger.error(s"Result of creating tag $tag on app $id: ${r.status}")
+          case Success(r) =>
+            r.ignore()
+            logger.error(s"Result of creating tag $tag on app $id: ${r.status}")
         }
       })
       .map(_ => NotUsed)
@@ -242,7 +251,12 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
     cleverCall(endpoint = s"/organisations/$orga/addons/$id/tags").fast.map(_.json.as[JsArray]).flatMap { seq =>
       FastFuture
         .sequence(seq.value.map(_.as[String]).map { tag =>
-          cleverCall(method = CleverCloudClient.DELETE, endpoint = s"/organisations/$orga/addons/$id/tags/$tag")
+          cleverCall(method = CleverCloudClient.DELETE, endpoint = s"/organisations/$orga/addons/$id/tags/$tag").andThen {
+            case Failure(e) => logger.error(s"Error while deleting tag $tag on app $id", e)
+            case Success(r) =>
+              r.ignore()
+              logger.error(s"Result of deleting tag $tag on app $id: ${r.status}")
+          }
         })
         .map(_ => NotUsed)
     }

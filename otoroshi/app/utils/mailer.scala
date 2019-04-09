@@ -7,6 +7,7 @@ import models.GlobalConfig
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme
+import utils.http.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -209,8 +210,6 @@ class LogMailer() extends Mailer {
 
 class MailgunMailer(env: Env, config: GlobalConfig) extends Mailer {
 
-  import utils.http.Implicits._
-
   lazy val logger = Logger("otoroshi-mailgun-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -229,7 +228,7 @@ class MailgunMailer(env: Env, config: GlobalConfig) extends Mailer {
             "subject" -> Seq(subject),
             "html" -> Seq(html)
           )
-        ).map(_ => ())
+        ).map(_.ignore())
     } getOrElse {
       FastFuture.successful(())
     }
@@ -273,7 +272,7 @@ class MailjetMailer(env: Env, config: GlobalConfig) extends Mailer {
               )
             )
           )
-        ).map(_ => ())
+        ).map(_.ignore())
     } getOrElse {
       FastFuture.successful(())
     }
@@ -313,7 +312,7 @@ class GenericMailer(env: Env, config: GlobalConfig) extends Mailer {
             "subject" -> subject,
             "html" -> html
           )
-        ).map(_ => ())
+        ).map(_.ignore()
     } getOrElse {
       FastFuture.successful(())
     }

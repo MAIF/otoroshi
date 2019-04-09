@@ -881,6 +881,7 @@ class AlertsActor(implicit env: Env) extends Actor {
                 .withMaybeProxyServer(config.proxies.alertWebhooks)
                 .post(Json.obj("event" -> "ALERT", "payload" -> evt.toEnrichedJson))
                 .andThen {
+                  case Success(r) => r.ignore()
                   case Failure(e) => {
                     logger.error(s"Error while sending AlertEvent at '$url'", e)
                   }

@@ -1220,7 +1220,9 @@ case class ClientCertificateValidator(
             (resp.json.as[JsObject] \ "status")
               .asOpt[String]
               .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
-          case _ => None
+          case _ =>
+            resp.ignore()
+            None
         }
       }
       .recover {

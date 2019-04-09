@@ -80,6 +80,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
               env.datastores.globalConfigDataStore.singleton().map { config =>
                 env.metrics.markString(s"services.${desc.id}.health", hce.health.getOrElse("RED"))
               }
+              res.ignore()
             }
             case Failure(error) => {
               // error.printStackTrace()
