@@ -142,7 +142,7 @@ class Prompt extends Component {
             <div className="modal-body">
               <p>{this.props.message}</p>
               {!this.props.textarea && <input
-                type="text"
+                type={this.props.type || 'text'}
                 className="form-control"
                 value={this.state.text}
                 ref={r => (this.ref = r)}
@@ -233,14 +233,15 @@ export function registerPrompt() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  window.newPrompt = (message, value, textarea, rows) => {
+  window.newPrompt = (message, opts) => {
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Prompt
           message={message}
-          value={value}
-          textarea={textarea}
-          rows={rows}
+          value={opts.value}
+          type={opts.type}
+          textarea={opts.textarea}
+          rows={opts.rows}
           ok={inputValue => {
             success(inputValue);
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));

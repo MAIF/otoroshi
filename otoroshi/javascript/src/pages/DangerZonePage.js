@@ -226,7 +226,7 @@ export class DangerZonePage extends Component {
     },
     password: {
       type: 'string',
-      props: { label: 'Password', placeholder: 'Elastic password (optional)' },
+      props: { label: 'Password', placeholder: 'Elastic password (optional)', type: 'password' },
     },
   };
 
@@ -501,6 +501,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Kafka keypass',
         placeholder: 'secret',
+        type: 'password',
         help: 'The keystore password if you use a keystore/truststore to connect to Kafka cluster',
       },
     },

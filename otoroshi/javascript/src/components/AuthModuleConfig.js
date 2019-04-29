@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { TextInput, NumberInput, SelectInput, CodeInput, BooleanInput } from './inputs';
+import { TextInput, NumberInput, SelectInput, CodeInput, BooleanInput, PasswordInput } from './inputs';
 import { Proxy } from './Proxy';
 import { Separator } from './Separator';
 import { AlgoSettings } from './JwtVerifier';
@@ -85,7 +85,7 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchKeycloakConfig = () => {
-    window.newPrompt('Keycloak config', '', true, 12).then(strConfig => {
+    window.newPrompt('Keycloak config', { value: '', textarea: true, rows: 12 }).then(strConfig => {
       if (strConfig) {
         const config = JSON.parse(strConfig);
         const serverUrl = config['auth-server-url'];
@@ -353,8 +353,8 @@ export class User extends Component {
           type="button"
           className="btn btn-sm btn-success"
           onClick={e => {
-            window.newPrompt('Type password').then(value1 => {
-              window.newPrompt('Re-type password').then(value2 => {
+            window.newPrompt('Type password', { type: 'password' }).then(value1 => {
+              window.newPrompt('Re-type password', { type: 'password' }).then(value2 => {
                 if (value1 && value2 && value1 === value2) {
                   this.props.hashPassword(this.props.user.email, value1);
                 } else {
@@ -653,7 +653,7 @@ export class LdapModuleConfig extends Component {
           help="if one"
           onChange={v => changeTheValue(path + '.adminUsername', v)}
         />
-        <TextInput
+        <PasswordInput
           label="Admin password"
           value={settings.adminPassword}
           help="if one"
