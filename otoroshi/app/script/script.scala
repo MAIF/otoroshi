@@ -6,6 +6,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 import actions.ApiAction
+import akka.NotUsed
 import akka.actor.Cancellable
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
@@ -28,13 +29,14 @@ import storage.{BasicStore, RedisLike, RedisLikeStore}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 case class HttpRequest(url: String,
                        method: String,
                        headers: Map[String, String],
                        cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
+  lazy val contentType: String         = headers.getOrElse("Content-Type", "--")
   lazy val host: String                = headers.getOrElse("Host", "")
   lazy val uri: Uri                    = Uri(url)
   lazy val scheme: String              = uri.scheme
@@ -44,6 +46,7 @@ case class HttpRequest(url: String,
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String         = uri.toRelative.toString()
 }
+
 case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
 
 trait RequestTransformer {
@@ -137,6 +140,53 @@ object CompilingRequestTransformer extends RequestTransformer {
     } else {
       Left(Results.InternalServerError(Json.obj("error" -> "not ready yet ...")))
     }
+  }
+}
+
+trait NanoApp extends RequestTransformer {
+
+  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+
+  override def transformRequest(
+    snowflake: String,
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey] = None,
+    user: Option[PrivateAppsUser] = None
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    val promise = Promise[Source[ByteString, _]]
+    awaitingRequests.put(snowflake, promise)
+    val bodySource: Source[ByteString, _] = Source.fromFuture(promise.future).flatMapConcat(s => s)
+    route(rawRequest, bodySource).map(r => Left(r))
+  }
+
+  override def transformRequestBody(
+    snowflake: String,
+    body: Source[ByteString, _],
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey] = None,
+    user: Option[PrivateAppsUser] = None
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    awaitingRequests.get(snowflake).map(_.trySuccess(body))
+    awaitingRequests.remove(snowflake)
+    body
+  }
+
+  def route(
+    request: HttpRequest,
+    body: Source[ByteString, _]
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    FastFuture.successful(routeSync(request, body))
+  }
+
+  def routeSync(
+   request: HttpRequest,
+   body: Source[ByteString, _]
+ )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Result = {
+    Results.Ok(Json.obj("message" -> "Hello World!"))
   }
 }
 
@@ -316,7 +366,7 @@ object Implicits {
         otoroshiRequest: HttpRequest,
         desc: ServiceDescriptor,
         apiKey: Option[ApiKey] = None,
-        user: Option[PrivateAppsUser] = None
+        user: Option[PrivateAppsUser] = None,
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
         case true =>

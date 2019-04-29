@@ -1172,7 +1172,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       cookies = wsCookiesIn
                                     )
                                     val upstreamStart = System.currentTimeMillis()
-                                    descriptor
+                                    val finalRequest = descriptor
                                       .transformRequest(
                                         snowflake = snowflake,
                                         rawRequest = rawRequest,
@@ -1181,23 +1181,23 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         apiKey = apiKey,
                                         user = paUsr
                                       )
-                                      .flatMap {
+                                    val finalBody = descriptor.transformRequestBody(
+                                      body = lazySource,
+                                      snowflake = snowflake,
+                                      rawRequest = rawRequest,
+                                      otoroshiRequest = otoroshiRequest,
+                                      desc = descriptor,
+                                      apiKey = apiKey,
+                                      user = paUsr
+                                    )
+                                    finalRequest.flatMap {
                                         case Left(badResult) => FastFuture.successful(badResult)
                                         case Right(httpRequest) => {
                                           val body =
-                                            if (currentReqHasBody)
-                                              SourceBody(
-                                                descriptor.transformRequestBody(
-                                                  body = lazySource,
-                                                  snowflake = snowflake,
-                                                  rawRequest = rawRequest,
-                                                  otoroshiRequest = otoroshiRequest,
-                                                  desc = descriptor,
-                                                  apiKey = apiKey,
-                                                  user = paUsr
-                                                )
-                                              )
-                                            else EmptyBody // Stream IN
+                                            if (currentReqHasBody) SourceBody(finalBody)
+                                            else EmptyBody
+
+                                          // Stream IN
 
                                           // env.gatewayClient
                                           //   .urlWithProtocol(target.scheme, url)
