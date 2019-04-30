@@ -1,8 +1,91 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table } from '../components/inputs';
+import {SelectInput, Table} from '../components/inputs';
 import faker from 'faker';
+import bcrypt from "bcryptjs";
+
+const basicTransformer = `import akka.stream.Materializer
+import env.Env
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script._
+import play.api.Logger
+import play.api.mvc.{Result, Results}
+import scala.util._
+import scala.concurrent.{ExecutionContext, Future}
+
+/**
+ * Your own request transformer
+ */
+class MyTransformer extends RequestTransformer {
+
+  val logger = Logger("my-transformer")
+
+  override def transformRequestSync(
+    snowflake: String,
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey],
+    user: Option[PrivateAppsUser]
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
+    logger.info(s"Request incoming with id: $snowflake")
+    // Here add a new header to the request between otoroshi and the target
+    Right(otoroshiRequest.copy(
+      headers = otoroshiRequest.headers + ("Hello" -> "World")
+    ))
+  }
+}
+
+// don't forget to return an instance of the transformer to make it work
+new MyTransformer()
+`;
+
+const basicNanoApp = `import akka.stream.Materializer
+import akka.stream.scaladsl._
+import akka.util.ByteString
+import env.Env
+import otoroshi.script._
+import utils.future.Implicits._
+import play.api.mvc._
+import play.api.mvc.Results._
+import play.api.libs.json._
+import scala.concurrent.{ExecutionContext, Future}
+
+class MyApp extends NanoApp {
+
+  import kaleidoscope._
+
+  def sayHello()(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    Ok("Hello World!").future
+  }
+
+  def sayHelloTo(name: String)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    Ok(s"Hello $name!").future
+  }
+
+  def displayBody(body: Source[ByteString, _])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    body.runFold(ByteString.empty)(_ ++ _).map(_.utf8String).map { bodyStr =>
+      val json = Json.parse(bodyStr)
+      Ok(Json.obj("body" -> json))
+    }
+  }
+
+  override def route(
+    request: HttpRequest,
+    body: Source[ByteString, _]
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    (request.method, request.path) match {
+      case ("GET",  "/hello")              => sayHello()
+      case ("GET", r"/hello/${name}@(.*)") => sayHelloTo(name)
+      case ("POST", "/body")               => displayBody(body)
+      case (_, _)                          => NotFound("Not Found !").future
+    }
+  }
+}
+
+new MyApp()
+`;
 
 class CompilationTools extends Component {
   state = {
@@ -100,7 +183,35 @@ export class Warning extends Component {
   }
 }
 
+class ScriptTypeSelector extends Component {
+  state = { type: this.props.rawValue.code.indexOf('NanoApp') > -1 ? 'app' : 'transformer' };
+  render() {
+    return (
+      <SelectInput
+        label="Type"
+        value={this.state.type}
+        help="..."
+        onChange={t => {
+          if (t === 'app') {
+            this.setState({ type: 'app' });
+            this.props.rawOnChange({ ...this.props.rawValue, code: basicNanoApp });
+          }
+          if (t === 'transformer') {
+            this.setState({ type: 'transformer' });
+            this.props.rawOnChange({ ...this.props.rawValue, code: basicTransformer });
+          }
+        }}
+        possibleValues={[
+          { label: "Request transformer", value: 'transformer' },
+          { label: "Nano app", value: 'app' }
+        ]}
+      />
+    )
+  }
+}
+
 export class ScriptsPage extends Component {
+
   state = {
     annotations: [],
   };
@@ -117,6 +228,9 @@ export class ScriptsPage extends Component {
     desc: {
       type: 'string',
       props: { label: 'Script description', placeholder: 'Description of the Script' },
+    },
+    type: {
+      type: ScriptTypeSelector,
     },
     code: {
       type: 'code',
@@ -154,7 +268,7 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
-  formFlow = ['warning', 'id', 'name', 'desc', 'compilation', 'code'];
+  formFlow = ['warning', 'id', 'name', 'desc', 'type', 'compilation', 'code'];
 
   componentDidMount() {
     this.props.setTitle(`All Scripts (experimental)`);
@@ -171,41 +285,7 @@ export class ScriptsPage extends Component {
           id: faker.random.alphaNumeric(64),
           name: 'My Script',
           desc: 'A script',
-          code: `import akka.stream.Materializer
-import env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.script._
-import play.api.Logger
-import play.api.mvc.{Result, Results}
-import scala.util._
-import scala.concurrent.{ExecutionContext, Future}
-
-/**
- * Your own request transformer
- */
-class MyTransformer extends RequestTransformer {
-
-  val logger = Logger("my-transformer")
-
-  override def transformRequestSync(
-    snowflake: String,
-    rawRequest: HttpRequest,
-    otoroshiRequest: HttpRequest,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey],
-    user: Option[PrivateAppsUser]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
-    logger.info(s"Request incoming with id: $snowflake")
-    // Here add a new header to the request between otoroshi and the target
-    Right(otoroshiRequest.copy(
-      headers = otoroshiRequest.headers + ("Hello" -> "World")
-    ))
-  }
-}
-
-// don't forget to return an instance of the transformer to make it work
-new MyTransformer()
-`,
+          code: basicTransformer,
         })}
         itemName="script"
         formSchema={this.formSchema}
