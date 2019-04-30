@@ -36,6 +36,7 @@ import storage.redis.next._
 import utils.Metrics
 import utils.http._
 import otoroshi.tcp.{TcpProxy, TcpService}
+import storage.file.FileDbDataStores
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -380,6 +381,8 @@ class Env(val configuration: Configuration,
         new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader =>
         new LevelDbDataStores(configuration, environment, lifecycle, this)
+      case "file" if clusterConfig.mode == ClusterMode.Leader =>
+        new FileDbDataStores(configuration, environment, lifecycle, this)
       case "cassandra" if clusterConfig.mode == ClusterMode.Leader =>
         throw new RuntimeException("Cassandra datastore is not supported yet as Otoroshi leader datastore")
       case "mongo" if clusterConfig.mode == ClusterMode.Leader =>
@@ -387,6 +390,7 @@ class Env(val configuration: Configuration,
       case "redis"             => new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"           => new LevelDbDataStores(configuration, environment, lifecycle, this)
+      case "file"              => new FileDbDataStores(configuration, environment, lifecycle, this)
       case "cassandra"         => new CassandraDataStores(configuration, environment, lifecycle, this)
       case "mongo"             => new MongoDataStores(configuration, environment, lifecycle, this)
       case "redis-pool"        => new RedisCPDataStores(configuration, environment, lifecycle, this)

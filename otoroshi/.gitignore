@@ -11,6 +11,7 @@ target
 /ensime-langserver.log
 /pc.stdout.log
 /leveldb
+/filedb
 /leveldb-old
 /.ensime
 /.bloop
