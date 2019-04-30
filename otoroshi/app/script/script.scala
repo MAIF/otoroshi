@@ -36,7 +36,7 @@ case class HttpRequest(url: String,
                        method: String,
                        headers: Map[String, String],
                        cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
-  lazy val contentType: String         = headers.getOrElse("Content-Type", "--")
+  lazy val contentType: Option[String] = headers.get("Content-Type")
   lazy val host: String                = headers.getOrElse("Host", "")
   lazy val uri: Uri                    = Uri(url)
   lazy val scheme: String              = uri.scheme

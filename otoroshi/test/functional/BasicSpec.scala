@@ -1,14 +1,21 @@
 package functional
 
+import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 
+import akka.http.scaladsl.model.headers.RawHeader
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import models.{ServiceDescriptor, Target}
+import models.{SecComVersion, ServiceDescriptor, Target}
+import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
+import play.api.libs.json.Json
+import security.IdGenerator
 
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 class BasicSpec(name: String, configurationSpec: => Configuration)
     extends PlaySpec
@@ -1104,6 +1111,141 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       resp3.body mustBe body
       resp3.status mustBe 200
       resp3.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Validate sec. communication in V1" in {
+      val counter = new AtomicInteger(0)
+      val body    = """{"message":"hello world"}"""
+      val server = TargetService.full(None, "/api", "application/json", { r =>
+        val state = r.getHeader("Otoroshi-State").get()
+        counter.incrementAndGet()
+        (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))
+      }).await()
+      val service = ServiceDescriptor(
+        id = "seccom-v1-test",
+        name = "seccom-v1-test",
+        env = "prod",
+        subdomain = "seccom",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = true,
+        publicPatterns = Seq("/.*")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "seccom.foo.bar"
+        )
+        .get()
+        .futureValue
+
+      resp1.status mustBe 200
+      resp1.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Validate sec. communication in V2" in {
+      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      val counter = new AtomicInteger(0)
+      val body    = """{"message":"hello world"}"""
+      val server = TargetService.full(None, "/api", "application/json", { r =>
+        val state = r.getHeader("Otoroshi-State").get()
+        val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+        val stateValue = (tokenBody \ "state").as[String]
+        val respToken: String = JWT.create()
+          .withJWTId(IdGenerator.uuid)
+          .withAudience("Otoroshi")
+          .withClaim("state-resp", stateValue)
+          .withIssuedAt(DateTime.now().toDate)
+          .withExpiresAt(DateTime.now().plusSeconds(30).toDate)
+          .sign(Algorithm.HMAC512("secret"))
+        counter.incrementAndGet()
+        (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
+      }).await()
+      val service = ServiceDescriptor(
+        id = "seccom-v1-test",
+        name = "seccom-v1-test",
+        env = "prod",
+        subdomain = "seccom",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = true,
+        secComVersion = SecComVersion.V2,
+        publicPatterns = Seq("/.*")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "seccom.foo.bar"
+        )
+        .get()
+        .futureValue
+
+      resp1.status mustBe 200
+      resp1.body mustBe body
+
+      deleteOtoroshiService(service).futureValue
+      server.stop()
+    }
+
+    "Deny sec. communication in V2" in {
+      val counter = new AtomicInteger(0)
+      val body    = """{"message":"hello world"}"""
+      val server = TargetService.full(None, "/api", "application/json", { r =>
+        val state = r.getHeader("Otoroshi-State").get()
+        counter.incrementAndGet()
+        (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))
+      }).await()
+      val service = ServiceDescriptor(
+        id = "seccom-v1-test",
+        name = "seccom-v1-test",
+        env = "prod",
+        subdomain = "seccom",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = true,
+        secComVersion = SecComVersion.V2,
+        publicPatterns = Seq("/.*")
+      )
+      createOtoroshiService(service).futureValue
+
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "seccom.foo.bar"
+        )
+        .get()
+        .futureValue
+
+      resp1.status mustBe 502
+      resp1.body.contains("Downstream microservice does not seems to be secured. Cancelling request !") mustBe true
 
       deleteOtoroshiService(service).futureValue
       server.stop()

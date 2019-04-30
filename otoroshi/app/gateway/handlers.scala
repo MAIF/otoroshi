@@ -632,6 +632,32 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
+  def stateRespValid(stateValue: String, stateResp: Option[String], jti: String, descriptor: ServiceDescriptor): Boolean = {
+    stateResp match {
+      case None => false
+      case Some(resp) => descriptor.secComVersion match {
+        case SecComVersion.V1 => stateValue == resp
+        case SecComVersion.V2 => descriptor.secComSettings.asAlgorithm(models.OutputMode)(env) match {
+          case None => false
+          case Some(algo) => {
+            Try {
+              JWT.require(algo)
+                .withAudience(env.Headers.OtoroshiIssuer)
+                //.withIssuer(???)
+                .withClaim("state-resp", stateValue)
+                .acceptLeeway(10)
+                .build()
+                .verify(resp)
+            } match {
+              case Success(_) => true
+              case Failure(e) => false
+            }
+          }
+        }
+      }
+    }
+  }
+
   def forwardCall() = actionBuilder.async(sourceBodyParser) { req =>
     // TODO : add metrics + JMX
     // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
@@ -914,7 +940,19 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                              callAttempts: Int): Future[Result] = {
                                     val snowflake        = env.snowflakeGenerator.nextIdStr()
                                     val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-                                    val state            = IdGenerator.extendedToken(128)
+                                    val jti              = IdGenerator.uuid
+                                    val stateValue       = IdGenerator.extendedToken(128)
+                                    val stateToken: String = descriptor.secComVersion match {
+                                      case SecComVersion.V1 => stateValue
+                                      case SecComVersion.V2 => OtoroshiClaim(
+                                        iss = env.Headers.OtoroshiIssuer,
+                                        sub = env.Headers.OtoroshiIssuer,
+                                        aud = descriptor.name,
+                                        exp = DateTime.now().plusSeconds(30).toDate.getTime,
+                                        iat = DateTime.now().toDate.getTime,
+                                        jti = jti
+                                      ).withClaim("state", stateValue).serialize(descriptor.secComSettings)
+                                    }
                                     val rawUri           = req.relativeUri.substring(1)
                                     val uriParts         = rawUri.split("/").toSeq
                                     val uri: String =
@@ -989,7 +1027,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
                                     ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
                                             Map(
-                                              env.Headers.OtoroshiState -> state,
+                                              env.Headers.OtoroshiState -> stateToken,
                                               env.Headers.OtoroshiClaim -> claim
                                             )
                                           } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
@@ -1244,9 +1282,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                               // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                               // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
+                                              val stateResp = headers.get(env.Headers.OtoroshiStateResp)
                                               if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                                                   && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
-                                                  && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                                                  && !stateRespValid(stateValue, stateResp, jti, descriptor)) {
+                                                  // && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                                 resp.ignore()
                                                 if (resp.status == 404 && headers
                                                       .get("X-CleverCloudUpgrade")
@@ -1269,7 +1309,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Json.obj(
                                                       "uri"   -> req.relativeUri,
                                                       "url"   -> url,
-                                                      "state" -> state,
+                                                      "state" -> stateValue,
                                                       "reveivedState" -> JsString(
                                                         headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
                                                       ),

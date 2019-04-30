@@ -917,6 +917,26 @@ object ApiKeyConstraints {
   }
 }
 
+sealed trait SecComVersion {
+  def version: Int
+  def json: JsValue
+}
+object SecComVersion {
+  object V1 extends SecComVersion {
+    def version: Int = 1
+    def json: JsValue = JsNumber(1)
+  }
+  object V2 extends SecComVersion {
+    def version: Int = 2
+    def json: JsValue = JsNumber(2)
+  }
+  def apply(version: Int): Option[SecComVersion] = version match {
+    case 1 => Some(V1)
+    case 2 => Some(V2)
+    case _ => None
+  }
+}
+
 case class ServiceDescriptor(
     id: String,
     groupId: String = "default",
@@ -943,7 +963,8 @@ case class ServiceDescriptor(
     readOnly: Boolean = false,
     xForwardedHeaders: Boolean = false,
     overrideHost: Boolean = true,
-    allowHttp10: Boolean,
+    allowHttp10: Boolean = true,
+    secComVersion: SecComVersion = SecComVersion.V1,
     secComExcludedPatterns: Seq[String] = Seq.empty[String],
     securityExcludedPatterns: Seq[String] = Seq.empty[String],
     publicPatterns: Seq[String] = Seq.empty[String],
@@ -1113,6 +1134,7 @@ object ServiceDescriptor {
           xForwardedHeaders = (json \ "xForwardedHeaders").asOpt[Boolean].getOrElse(false),
           overrideHost = (json \ "overrideHost").asOpt[Boolean].getOrElse(true),
           allowHttp10 = (json \ "allowHttp10").asOpt[Boolean].getOrElse(true),
+          secComVersion = (json \ "secComVersion").asOpt[Int].flatMap(SecComVersion.apply).getOrElse(SecComVersion.V1),
           secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           securityExcludedPatterns = (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
@@ -1188,6 +1210,7 @@ object ServiceDescriptor {
       "xForwardedHeaders"          -> sd.xForwardedHeaders,
       "overrideHost"               -> sd.overrideHost,
       "allowHttp10"                -> sd.allowHttp10,
+      "secComVersion"              -> sd.secComVersion.json,
       "secComExcludedPatterns"     -> JsArray(sd.secComExcludedPatterns.map(JsString.apply)),
       "securityExcludedPatterns"   -> JsArray(sd.securityExcludedPatterns.map(JsString.apply)),
       "publicPatterns"             -> JsArray(sd.publicPatterns.map(JsString.apply)),

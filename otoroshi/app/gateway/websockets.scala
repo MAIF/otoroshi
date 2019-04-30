@@ -508,7 +508,18 @@ class WebSocketHandler()(implicit env: Env) {
                                                       ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                               logger.trace("[WEBSOCKET] Call downstream !!!")
                               val snowflake = env.snowflakeGenerator.nextIdStr()
-                              val state = IdGenerator.extendedToken(128)
+                              val stateValue         = IdGenerator.extendedToken(128)
+                              val stateToken: String = descriptor.secComVersion match {
+                                case SecComVersion.V1 => stateValue
+                                case SecComVersion.V2 => OtoroshiClaim(
+                                  iss = env.Headers.OtoroshiIssuer,
+                                  sub = env.Headers.OtoroshiIssuer,
+                                  aud = descriptor.name,
+                                  exp = DateTime.now().plusSeconds(30).toDate.getTime,
+                                  iat = DateTime.now().toDate.getTime,
+                                  jti = IdGenerator.uuid
+                                ).withClaim("state", stateValue).serialize(descriptor.secComSettings)
+                              }
                               val rawUri = req.relativeUri.substring(1)
                               val uriParts = rawUri.split("/").toSeq
                               val uri: String =
@@ -577,7 +588,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
                                 ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
                                   Map(
-                                    env.Headers.OtoroshiState -> state,
+                                    env.Headers.OtoroshiState -> stateToken,
                                     env.Headers.OtoroshiClaim -> claim
                                   )
                                 } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {

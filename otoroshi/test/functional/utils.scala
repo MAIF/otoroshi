@@ -409,7 +409,7 @@ class TargetService(val port: Int,
                     host: Option[String],
                     path: String,
                     contentType: String,
-                    result: HttpRequest => String) {
+                    result: HttpRequest => (Int, String, List[HttpHeader])) {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
@@ -421,29 +421,32 @@ class TargetService(val port: Int,
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
       case (HttpMethods.GET, p) if host.isEmpty => {
+        val (code, body, headers) = result(request)
         FastFuture.successful(
           HttpResponse(
-            200,
-            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
-                                ByteString(result(request)))
+            code,
+            headers = headers,
+            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           )
         )
       }
       case (HttpMethods.GET, p) if TargetService.extractHost(request) == host.get => {
+        val (code, body, headers) = result(request)
         FastFuture.successful(
           HttpResponse(
-            200,
-            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
-                                ByteString(result(request)))
+            code,
+            headers = headers,
+            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           )
         )
       }
       case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get => {
+        val (code, body, headers) = result(request)
         FastFuture.successful(
           HttpResponse(
-            200,
-            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`),
-                                ByteString(result(request)))
+            code,
+            headers = headers,
+            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           )
         )
       }
@@ -625,6 +628,10 @@ object TargetService {
   import Implicits._
 
   def apply(host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
+    new TargetService(TargetService.freePort, host, path, contentType, r => (200, result(r), List.empty[HttpHeader]))
+  }
+
+  def full(host: Option[String], path: String, contentType: String, result: HttpRequest => (Int, String, List[HttpHeader])): TargetService = {
     new TargetService(TargetService.freePort, host, path, contentType, result)
   }
 
@@ -633,7 +640,7 @@ object TargetService {
                path: String,
                contentType: String,
                result: HttpRequest => String): TargetService = {
-    new TargetService(port, host, path, contentType, result)
+    new TargetService(port, host, path, contentType, r => (200, result(r), List.empty[HttpHeader]))
   }
 
   def freePort: Int = {

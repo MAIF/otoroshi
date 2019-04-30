@@ -895,6 +895,16 @@ export class ServicePage extends Component {
               help="When disbaled, Otoroshi will not check if target service respond with sent random value."
               onChange={v => this.changeTheValue('sendStateChallenge', v)}
             />
+            <SelectInput
+              label="Challenge version"
+              value={this.state.service.secComVersion}
+              help="Version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future."
+              onChange={arr => this.changeTheValue('secComVersion', arr)}
+              possibleValues={[
+                { label: "V1 - simple values exchange", value: 1 },
+                { label: "V2 - signed JWT tokens exchange", value: 2 }
+              ]}
+            />
             <ArrayInput
               label="Excluded patterns"
               placeholder="URI pattern"
