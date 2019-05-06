@@ -21,10 +21,7 @@ You can install and run Otoroshi with this little bash snippet
 
 ```sh
 curl -L -o otoroshi.jar 'https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.9-dev/otoroshi.jar'
-# run the following line if you want to use the admin UI in your browser
-sudo echo "127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar privateapps.foo.bar" >> /etc/hosts
-# Java 8 & Java 11
-java -jar otoroshi.jar
+java -Dapp.domain=oto.tools -jar otoroshi.jar
 ```
 
 or using docker
@@ -33,7 +30,7 @@ or using docker
 docker run -p "8080:8080" maif/otoroshi:1.4.9-dev
 ```
 
-now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
+now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
 
 You can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
 

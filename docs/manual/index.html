@@ -242,15 +242,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>You can download the latest build of Otoroshi as a <a href="https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.8/otoroshi.jar">fat jar</a>, as a <a href="https://dl.bintray.com/maif/binaries/otoroshi-dist/1.4.8/otoroshi-dist.zip">zip package</a> or as a <a href="getotoroshi/fromdocker.html">docker image</a>.</p>
 <p>You can install and run Otoroshi with this little bash snippet</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://dl.bintray.com/maif/binaries/otoroshi.jar/1.4.8/otoroshi.jar&#39;
-# run the following line if you want to use the admin UI in your browser
-sudo echo &quot;127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar privateapps.foo.bar&quot; &gt;&gt; /etc/hosts
-# Java 8 &amp; Java 11
-java -jar otoroshi.jar
+java -Dapp.domain=oto.tools -jar otoroshi.jar
 </code></pre>
 <p>or using docker</p>
 <pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi:1.4.8
 </code></pre>
-<p>now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.foo.bar:8080/">http://otoroshi.foo.bar:8080/</a></a>, <strong>log in with the credential generated in the logs</strong> and explore by yourself, if you want better instructions, just go to the <a href="quickstart.html">Quick Start</a> or directly to the <a href="getotoroshi/index.html">installation instructions</a></p>
+<p>now open your browser to <a href="http://otoroshi.foo.bar:8080/" target="_blank"><a href="http://otoroshi.oto.tools:8080/">http://otoroshi.oto.tools:8080/</a></a>, <strong>log in with the credential generated in the logs</strong> and explore by yourself, if you want better instructions, just go to the <a href="quickstart.html">Quick Start</a> or directly to the <a href="getotoroshi/index.html">installation instructions</a></p>
 <p>You can also try Otoroshi online with Google Cloud Shell if you&rsquo;re a user of the Google Cloud Platform</p><div class="centered-img">
 <p><a href="https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&tutorial=tutorial.md"><img src="http://gstatic.com/cloudssh/images/open-btn.svg" alt="Open in Cloud Shell" /></a></p></div>
 <h2><a href="#documentation" name="documentation" class="anchor"><span class="anchor-link"></span></a>Documentation</h2>
