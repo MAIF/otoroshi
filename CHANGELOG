@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.8] - 2019-05-06
+
+https://github.com/MAIF/otoroshi/milestone/20?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.7...v1.4.8
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.8
+
+### Added
+- Support datastores other than redis for clusterings cluster
+- Support enterprise proxy to access outside world enterprise
+- Introduce secure exchange v2 enhancement
+- Provide a "serverless" trait for request transformer
+- Disable HTTP/1.0 per service
+- Provide a root CA to trust at startup through config.
+- Add api key constraints
+- Third party apikeys (OIDC) verification module 
+- Support Mailjet as alert mailer
+- Implements /me endpoint for private apps 
+
+### Changed
+- Drop support for leveldb store datastore
+- Consider using a JsValue instead of Option[String, String] in private apps sesssions 
+- Remove dev centric features 
+- Add last sync date in /health of cluster workers 
+- OAuth: do not send client_secret if not specified
+- Display event content in service events
+- Add query param to filter response body on analytics apis
+- Add documentation about /metrics and /health  
+
+
+### Fixed
+- Use password input in 'in memory auth. module'
+- Fix missing doc in request transformer scripts section
+- Fix self signed certificate 
+- Fix certificate generation at startup 
+- Disabled service should not be used in routing
+
 ## [1.4.7] - 2019-03-08
 
 https://github.com/MAIF/otoroshi/milestone/19?closed=1
