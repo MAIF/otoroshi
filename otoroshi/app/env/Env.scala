@@ -486,7 +486,7 @@ class Env(val configuration: Configuration,
     allowHttp10 = true
   )
 
-  lazy val otoroshiVersion     = "1.4.8-dev"
+  lazy val otoroshiVersion     = "1.4.8"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 
