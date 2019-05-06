@@ -29,19 +29,13 @@ it will build
 
 ## Build Otoroshi in dev mode
 
-first, modify you host file
-
-```sh
-sudo echo "127.0.0.1    otoroshi-api.dev.foo.bar otoroshi.dev.foo.bar otoroshi-admin-internal-api.dev.foo.bar" >> /etc/hosts
-```
-
 then open two bash session, in the first one run the following commands
 
 ```sh
 cd ./otorosohi
 sbt
 
-[otoroshi] $ ~run -Dapp.storage=leveldb -Dapp.domain=foo.bar -Dplay.http.session.domain=.dev.foo.bar -Dapp.env=dev
+[otoroshi] $ ~run -Dapp.storage=file -Dapp.liveJs=true -Dhttps.port=9998 -Dapp.privateapps.port=9999 -Dapp.adminPassword=password -Dapp.domain=oto.tools
 ```
 
 it will run the play app in dev mode with hot reload
@@ -56,7 +50,7 @@ yarn start
 
 it will run a build server for the JS app of the admin dashboard
 
-then open your browser at <a href="" target="_blank">http://otoroshi.dev.foo.bar:9999</a>
+then open your browser at <a href="" target="_blank">http://otoroshi.dev.oto.tools:9999</a>
 
 ## Build the CLI
 
