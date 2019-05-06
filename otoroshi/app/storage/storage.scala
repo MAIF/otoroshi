@@ -54,6 +54,18 @@ trait DataStores {
   def scriptDataStore: ScriptDataStore
   def tcpServiceDataStore: TcpServiceDataStore
   def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed]
+  def rawDataStore: RawDataStore 
+}
+
+trait RawDataStore {
+  def exists(key: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]]
+  def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]]
+  def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = incrby(key, 1L)
+  def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
 }
 
 trait BasicStore[T] {

@@ -26,7 +26,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
-import storage.{DataStoreHealth, DataStores}
+import storage.{DataStoreHealth, DataStores, RawDataStore}
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import storage.inmemory._
 
@@ -177,6 +177,9 @@ class FileDbDataStores(configuration: Configuration,
 
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
+
+  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore        = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

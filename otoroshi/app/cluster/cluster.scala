@@ -37,7 +37,7 @@ import redis.RedisClientMasterSlaves
 import security.IdGenerator
 import ssl._
 import storage.inmemory._
-import storage.{DataStoreHealth, DataStores, Healthy, RedisLike}
+import storage._
 import utils.http.Implicits._
 
 import scala.collection.concurrent.TrieMap
@@ -1394,6 +1394,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
 
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
+
+  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore        = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

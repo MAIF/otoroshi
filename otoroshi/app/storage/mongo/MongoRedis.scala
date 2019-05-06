@@ -8,6 +8,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logger
+import play.api.libs.json.{JsObject, JsValue}
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{Cursor, DefaultDB, MongoConnection}
@@ -84,6 +85,16 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   }
 
   override def flushall(): Future[Boolean] = withValuesCollection(_.drop(false)).map(_ => true)
+
+  def rawGet(key: String): Future[Option[BSONDocument]] = withValuesCollection { coll =>
+    coll
+      .find(
+        BSONDocument(
+          "key" -> key
+        )
+      )
+      .one[BSONDocument]
+  }
 
   override def get(key: String): Future[Option[ByteString]] = withValuesCollection { coll =>
     coll

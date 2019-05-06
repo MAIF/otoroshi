@@ -20,7 +20,7 @@ import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
 import storage.inmemory._
-import storage.{DataStoreHealth, DataStores, RedisLike, RedisLikeStore}
+import storage._
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 
 import scala.concurrent.duration._
@@ -124,6 +124,9 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
+  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore        = _rawDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
@@ -144,9 +147,74 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
   override def rawExport(
-      group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] =
-    throw new RuntimeException("Cluster mode not supported for Mongo datastore")
+                          group: Int
+                        )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+    Source
+      .fromFuture(
+        redis.keys(s"${env.storageRoot}:*")
+      )
+      .mapConcat(_.toList)
+      .grouped(group)
+      .mapAsync(1) {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+        case keys => {
+          Future.sequence(
+            keys
+              .filterNot { key =>
+                key == s"${env.storageRoot}:cluster:" ||
+                  key == s"${env.storageRoot}:events:audit" ||
+                  key == s"${env.storageRoot}:events:alerts" ||
+                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                  key.startsWith(s"${env.storageRoot}:admins:") ||
+                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
+              .map { key =>
+                redis.rawGet(key).flatMap {
+                  case None => FastFuture.successful(JsNull)
+                  case Some(rawDoc) => {
+                    val currentTime = System.currentTimeMillis()
+                    val ttl = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
+                    val typ = rawDoc.getAs[String]("type").get
+                    fetchValueForType(typ, key).map {
+                      case JsNull => JsNull
+                      case value =>
+                        Json.obj(
+                          "k" -> key,
+                          "v" -> value,
+                          "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                          "w" -> typ
+                        )
+
+                    }
+                  }
+                }
+              }
+          )
+        }
+      }
+      .map(_.filterNot(_ == JsNull))
+      .mapConcat(_.toList)
+  }
+
+  private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
+    typ match {
+      case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
+      case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "set"  => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "string" =>
+        redis.get(key).map {
+          case None    => JsNull
+          case Some(a) => JsString(a.utf8String)
+        }
+      case _ => FastFuture.successful(JsNull)
+    }
+  }
 }
 
 class InMemoryApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends InMemoryApiKeyDataStore(redisCli, _env) {

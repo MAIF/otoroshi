@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster.{ClusterStateDataStore, RedisClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
@@ -18,8 +19,9 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
-import storage.{DataStoreHealth, DataStores, Healthy, Unreachable}
+import storage._
 import otoroshi.tcp.{RedisTcpServiceDataStoreDataStore, TcpServiceDataStore}
+import storage.inmemory.InMemoryRawDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -114,6 +116,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _tcpServiceDataStore                 = new RedisTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
+  private lazy val _rawDataStore                 = new RedisRawDataStore(redis)
+  override def rawDataStore: RawDataStore        = _rawDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore           = _serviceGroupDataStore
@@ -200,4 +205,21 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
       case _ => FastFuture.successful(JsNull)
     }
   }
+}
+
+class RedisRawDataStore(redis: RedisClientMasterSlaves) extends RawDataStore {
+
+  override def exists(key: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redis.exists(key)
+
+  override def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]] = redis.get(key)
+
+  override def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]] = redis.mget(keys:_*)
+
+  override def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redis.set(key, value, pxMilliseconds = ttl)
+
+  override def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.del(keys:_*)
+
+  override def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.incrby(key, incr)
+
+  override def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]] = redis.keys(pattern)
 }

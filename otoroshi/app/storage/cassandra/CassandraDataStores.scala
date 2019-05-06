@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
@@ -19,7 +20,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
 import storage.inmemory._
-import storage.{DataStoreHealth, DataStores}
+import storage.{DataStoreHealth, DataStores, RawDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -120,6 +121,9 @@ class CassandraDataStores(configuration: Configuration,
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
+  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore        = _rawDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
@@ -140,7 +144,69 @@ class CassandraDataStores(configuration: Configuration,
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
   override def rawExport(
-      group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] =
-    throw new RuntimeException("Cluster mode not supported for Cassandra datastore")
+                          group: Int
+                        )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+    Source
+      .fromFuture(
+        redis.keys(s"${env.storageRoot}:*")
+      )
+      .mapConcat(_.toList)
+      .grouped(group)
+      .mapAsync(1) {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+        case keys => {
+          Future.sequence(
+            keys
+              .filterNot { key =>
+                key == s"${env.storageRoot}:cluster:" ||
+                  key == s"${env.storageRoot}:events:audit" ||
+                  key == s"${env.storageRoot}:events:alerts" ||
+                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                  key.startsWith(s"${env.storageRoot}:admins:") ||
+                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              }
+              .map { key =>
+                redis.rawGet(key).flatMap {
+                  case None => FastFuture.successful(JsNull)
+                  case Some((typ, ttl, value)) => {
+                    fetchValueForType(key, typ, value).map {
+                      case JsNull => JsNull
+                      case value =>
+                        Json.obj(
+                          "k" -> key,
+                          "v" -> value,
+                          "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                          "w" -> typ
+                        )
+
+                    }
+                  }
+                }
+              }
+          )
+        }
+      }
+      .map(_.filterNot(_ == JsNull))
+      .mapConcat(_.toList)
+  }
+
+  private def fetchValueForType(key: String, typ: String, value: Any)(implicit ec: ExecutionContext): Future[JsValue] = {
+    (typ, value) match {
+      case ("hash", v: Map[String, ByteString]) => FastFuture.successful(JsObject(v.map(t => (t._1, JsString(t._2.utf8String)))))
+      case ("list", v: Seq[ByteString]) => FastFuture.successful(JsArray(v.map(s => JsString(s.utf8String))))
+      case ("set", v: Set[ByteString])  => FastFuture.successful(JsArray(v.toSeq.map(s => JsString(s.utf8String))))
+      case ("string", v: ByteString) =>
+        Option(v) match {
+          case None    => FastFuture.successful(JsNull)
+          case Some(a) => FastFuture.successful(JsString(a.utf8String))
+        }
+      case _ => FastFuture.successful(JsNull)
+    }
+  }
 }

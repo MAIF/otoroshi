@@ -9,6 +9,7 @@ import akka.util.ByteString
 import com.datastax.driver.core.policies.LoadBalancingPolicy
 import com.datastax.driver.core.{ResultSet, ResultSetFuture}
 import play.api.Logger
+import play.api.libs.json.JsValue
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -207,6 +208,32 @@ class CassandraRedis(actorSystem: ActorSystem,
         .getOrElse(Map.empty[String, ByteString])
     }
 
+  private def getCounterOptAt(key: String): Future[Option[Long]] =
+    session.executeAsync(s"SELECT value from otoroshi.counters where key = '$key';").asFuture.map { rs =>
+      Try(rs.one().getLong("value")).toOption.flatMap(o => Option(o))
+    }
+
+  private def getListOptAt(key: String): Future[Option[Seq[ByteString]]] =
+    session.executeAsync(s"SELECT value from otoroshi.lists where key = '$key';").asFuture.map { rs =>
+      Try(rs.one().getList("value", classOf[String])).toOption
+        .flatMap(o => Option(o))
+        .map(_.asScala.map(ByteString.apply).toSeq)
+    }
+
+  private def getSetOptAt(key: String): Future[Option[Set[ByteString]]] =
+    session.executeAsync(s"SELECT value from otoroshi.sets where key = '$key';").asFuture.map { rs =>
+      Try(rs.one().getSet("value", classOf[String])).toOption
+        .flatMap(o => Option(o))
+        .map(_.asScala.toSet.map((e: String) => ByteString(e)))
+    }
+
+  private def getMapOptAt(key: String): Future[Option[Map[String, ByteString]]] =
+    session.executeAsync(s"SELECT value from otoroshi.hashs where key = '$key';").asFuture.map { rs =>
+      Try(rs.one().getMap("value", classOf[String], classOf[String])).toOption
+        .flatMap(o => Option(o))
+        .map(_.asScala.toMap.mapValues(ByteString.apply))
+    }
+
   override def flushall(): Future[Boolean] =
     for {
       _ <- session.executeAsync("TRUNCATE otoroshi.values").asFuture
@@ -218,6 +245,27 @@ class CassandraRedis(actorSystem: ActorSystem,
     } yield true
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  def rawGet(key: String): Future[Option[(String, Long, Any)]] = {
+    getExpirationAt(key).flatMap { ttl =>
+      getValueAt(key).flatMap {
+        case Some(value) => FastFuture.successful(Some(("string", ttl, value)))
+        case None => getCounterOptAt(key).flatMap {
+          case Some(value) => FastFuture.successful(Some(("string", ttl, value)))
+          case None => getListOptAt(key).flatMap {
+            case Some(value) => FastFuture.successful(Some(("list", ttl, value)))
+            case None => getSetOptAt(key).flatMap {
+              case Some(value) => FastFuture.successful(Some(("set", ttl, value)))
+              case None => getMapOptAt(key).map {
+                case Some(value) => Some(("hash", ttl, value))
+                case None => None
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   override def get(key: String): Future[Option[ByteString]] = getValueAt(key).map(_.map(ByteString.apply))
 
