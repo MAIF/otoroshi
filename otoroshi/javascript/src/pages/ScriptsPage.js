@@ -1,9 +1,9 @@
 import React, { Component, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import {SelectInput, Table} from '../components/inputs';
+import { SelectInput, Table } from '../components/inputs';
 import faker from 'faker';
-import bcrypt from "bcryptjs";
+import bcrypt from 'bcryptjs';
 
 const basicTransformer = `import akka.stream.Materializer
 import env.Env
@@ -202,16 +202,15 @@ class ScriptTypeSelector extends Component {
           }
         }}
         possibleValues={[
-          { label: "Request transformer", value: 'transformer' },
-          { label: "Nano app", value: 'app' }
+          { label: 'Request transformer', value: 'transformer' },
+          { label: 'Nano app', value: 'app' },
         ]}
       />
-    )
+    );
   }
 }
 
 export class ScriptsPage extends Component {
-
   state = {
     annotations: [],
   };

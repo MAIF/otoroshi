@@ -13,10 +13,9 @@ import storage.{DataStoreHealth, Healthy, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 class Memory(
-  val store: ConcurrentHashMap[String, Any],
-  val expirations: ConcurrentHashMap[String, Long]
+    val store: ConcurrentHashMap[String, Any],
+    val expirations: ConcurrentHashMap[String, Long]
 )
 
 object Memory {
@@ -66,7 +65,9 @@ class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLi
     val oldSize = store.keySet.size
     _storeHolder.updateAndGet(_ => memory)
     val newSize = store.keySet.size
-    SwappableInMemoryRedis.logger.debug(s"[${env.clusterConfig.mode.name}] Swapping store instance now ! ($oldSize / $newSize)")
+    SwappableInMemoryRedis.logger.debug(
+      s"[${env.clusterConfig.mode.name}] Swapping store instance now ! ($oldSize / $newSize)"
+    )
   }
 
   override def stop(): Unit =
@@ -559,4 +560,4 @@ class InMemoryRedisExperimental(actorSystem: ActorSystem, logger: Logger) extend
 
   def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 }
-*/
+ */

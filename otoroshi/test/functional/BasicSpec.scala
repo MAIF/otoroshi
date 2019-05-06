@@ -1119,11 +1119,17 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Validate sec. communication in V1" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService.full(None, "/api", "application/json", { r =>
-        val state = r.getHeader("Otoroshi-State").get()
-        counter.incrementAndGet()
-        (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))
-      }).await()
+      val server = TargetService
+        .full(
+          None,
+          "/api",
+          "application/json", { r =>
+            val state = r.getHeader("Otoroshi-State").get()
+            counter.incrementAndGet()
+            (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))
+          }
+        )
+        .await()
       val service = ServiceDescriptor(
         id = "seccom-v1-test",
         name = "seccom-v1-test",
@@ -1161,20 +1167,28 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService.full(None, "/api", "application/json", { r =>
-        val state = r.getHeader("Otoroshi-State").get()
-        val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-        val stateValue = (tokenBody \ "state").as[String]
-        val respToken: String = JWT.create()
-          .withJWTId(IdGenerator.uuid)
-          .withAudience("Otoroshi")
-          .withClaim("state-resp", stateValue)
-          .withIssuedAt(DateTime.now().toDate)
-          .withExpiresAt(DateTime.now().plusSeconds(30).toDate)
-          .sign(Algorithm.HMAC512("secret"))
-        counter.incrementAndGet()
-        (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
-      }).await()
+      val server = TargetService
+        .full(
+          None,
+          "/api",
+          "application/json", { r =>
+            val state = r.getHeader("Otoroshi-State").get()
+            val tokenBody =
+              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+            val stateValue = (tokenBody \ "state").as[String]
+            val respToken: String = JWT
+              .create()
+              .withJWTId(IdGenerator.uuid)
+              .withAudience("Otoroshi")
+              .withClaim("state-resp", stateValue)
+              .withIssuedAt(DateTime.now().toDate)
+              .withExpiresAt(DateTime.now().plusSeconds(30).toDate)
+              .sign(Algorithm.HMAC512("secret"))
+            counter.incrementAndGet()
+            (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
+          }
+        )
+        .await()
       val service = ServiceDescriptor(
         id = "seccom-v1-test",
         name = "seccom-v1-test",
@@ -1212,11 +1226,17 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Deny sec. communication in V2" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService.full(None, "/api", "application/json", { r =>
-        val state = r.getHeader("Otoroshi-State").get()
-        counter.incrementAndGet()
-        (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))
-      }).await()
+      val server = TargetService
+        .full(
+          None,
+          "/api",
+          "application/json", { r =>
+            val state = r.getHeader("Otoroshi-State").get()
+            counter.incrementAndGet()
+            (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))
+          }
+        )
+        .await()
       val service = ServiceDescriptor(
         id = "seccom-v1-test",
         name = "seccom-v1-test",

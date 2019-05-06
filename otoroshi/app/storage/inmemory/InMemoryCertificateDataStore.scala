@@ -67,7 +67,12 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
         ca = true
       ).enrich()
       findAll().map { certs =>
-        val found = certs.map(_.enrich()).exists(c => (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber))
+        val found = certs
+          .map(_.enrich())
+          .exists(
+            c =>
+              (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
+          )
         if (!found) {
           cert.save()(ec, env).andThen {
             case Success(e) => logger.info("Successful import of initial cacert !")
@@ -78,7 +83,7 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
     }
     for {
       certContent <- readCertOrKey("otoroshi.ssl.initialCert", env)
-      keyContent <- readCertOrKey("otoroshi.ssl.initialCertKey", env)
+      keyContent  <- readCertOrKey("otoroshi.ssl.initialCertKey", env)
     } yield {
       val cert = Cert(
         id = IdGenerator.uuid,
@@ -87,7 +92,12 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
         caRef = None
       ).enrich()
       findAll().map { certs =>
-        val found = certs.map(_.enrich()).exists(c => (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber))
+        val found = certs
+          .map(_.enrich())
+          .exists(
+            c =>
+              (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
+          )
         if (!found) {
           cert.save()(ec, env).andThen {
             case Success(e) => logger.info("Successful import of initial cert !")

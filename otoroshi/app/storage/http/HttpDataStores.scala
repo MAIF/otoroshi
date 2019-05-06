@@ -36,14 +36,18 @@ class HttpDbDataStores(configuration: Configuration,
                        environment: Environment,
                        lifecycle: ApplicationLifecycle,
                        env: Env)
-  extends DataStores {
+    extends DataStores {
 
-  private val logger = Logger("otoroshi-http-db-datastores")
-  private val redisStatsItems: Int  = configuration.get[Option[Int]]("app.httpdb.windowSize").getOrElse(99)
-  private val stateUrl: String = configuration.getOptional[String]("app.httpdb.url").getOrElse("http://127.0.0.1:8888/worker-0/state.json")
-  private val stateHeaders: Map[String, String] = configuration.getOptional[Map[String, String]]("app.httpdb.headers").getOrElse(Map.empty[String, String])
-  private val stateTimeout: FiniteDuration = configuration.getOptional[Long]("app.httpdb.timeout").map(_.millis).getOrElse(10.seconds)
-  private val statePoll: FiniteDuration = configuration.getOptional[Long]("app.httpdb.pollEvery").map(_.millis).getOrElse(10.seconds)
+  private val logger               = Logger("otoroshi-http-db-datastores")
+  private val redisStatsItems: Int = configuration.get[Option[Int]]("app.httpdb.windowSize").getOrElse(99)
+  private val stateUrl: String =
+    configuration.getOptional[String]("app.httpdb.url").getOrElse("http://127.0.0.1:8888/worker-0/state.json")
+  private val stateHeaders: Map[String, String] =
+    configuration.getOptional[Map[String, String]]("app.httpdb.headers").getOrElse(Map.empty[String, String])
+  private val stateTimeout: FiniteDuration =
+    configuration.getOptional[Long]("app.httpdb.timeout").map(_.millis).getOrElse(10.seconds)
+  private val statePoll: FiniteDuration =
+    configuration.getOptional[Long]("app.httpdb.pollEvery").map(_.millis).getOrElse(10.seconds)
   private val actorSystem =
     ActorSystem(
       "otoroshi-http-db-system",
@@ -53,20 +57,27 @@ class HttpDbDataStores(configuration: Configuration,
         .getOrElse(ConfigFactory.empty)
     )
   private val materializer = ActorMaterializer.create(actorSystem)
-  private val redis = new SwappableInMemoryRedis(env, actorSystem)
-  private val cancelRef = new AtomicReference[Cancellable]()
-  private val lastHash = new AtomicReference[Int](0)
+  private val redis        = new SwappableInMemoryRedis(env, actorSystem)
+  private val cancelRef    = new AtomicReference[Cancellable]()
+  private val lastHash     = new AtomicReference[Int](0)
 
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec  = actorSystem.dispatcher
     implicit val mat = materializer
     logger.info(s"Now using HttpDb DataStores (loading from '$stateUrl')")
     readStateFromHttp().map { _ =>
-      cancelRef.set(Source.tick(1.second, statePoll, ()).mapAsync(1)(_ => writeStateToHttp()).recover {
-        case t => logger.error(s"Error while scheduling writeStateToHttp: $t")
-      }.toMat(Sink.ignore)(Keep.left).run())
+      cancelRef.set(
+        Source
+          .tick(1.second, statePoll, ())
+          .mapAsync(1)(_ => writeStateToHttp())
+          .recover {
+            case t => logger.error(s"Error while scheduling writeStateToHttp: $t")
+          }
+          .toMat(Sink.ignore)(Keep.left)
+          .run()
+      )
       // cancelRef.set(actorSystem.scheduler.schedule(1.second, statePoll) {
       //   writeStateToHttp()
       // }(actorSystem.dispatcher))
@@ -77,12 +88,10 @@ class HttpDbDataStores(configuration: Configuration,
     }
   }
 
-
-
   override def after(configuration: Configuration,
                      environment: Environment,
                      lifecycle: ApplicationLifecycle): Future[Unit] = {
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec  = actorSystem.dispatcher
     implicit val mat = materializer
     _certificateDataStore.stopSync()
     _serviceDescriptorDataStore.stopCleanup()
@@ -96,16 +105,17 @@ class HttpDbDataStores(configuration: Configuration,
 
   private def readStateFromHttp(): Future[Unit] = {
     logger.debug("Reading state from http db ...")
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec  = actorSystem.dispatcher
     implicit val mat = materializer
-    val store       = new ConcurrentHashMap[String, Any]()
-    val expirations = new ConcurrentHashMap[String, Long]()
+    val store        = new ConcurrentHashMap[String, Any]()
+    val expirations  = new ConcurrentHashMap[String, Long]()
     val headers = stateHeaders.toSeq ++ Seq(
       "Accept" -> "application/x-ndjson"
     )
-    env.Ws.url(stateUrl)
+    env.Ws
+      .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers:_*)
+      .withHttpHeaders(headers: _*)
       .withMethod("GET")
       .stream()
       .flatMap {
@@ -115,19 +125,21 @@ class HttpDbDataStores(configuration: Configuration,
           FastFuture.successful(())
         case resp if resp.status == 200 =>
           val source = resp.bodyAsSource.via(Framing.delimiter(ByteString("\n"), 1000000, false))
-          source.runForeach { raw =>
-            val item  = Json.parse(raw.utf8String)
-            val key   = (item \ "k").as[String]
-            val value = (item \ "v").as[JsValue]
-            val what  = (item \ "w").as[String]
-            val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-            fromJson(what, value).foreach(v => store.put(key, v))
-            if (ttl > -1L) {
-              expirations.put(key, ttl)
+          source
+            .runForeach { raw =>
+              val item  = Json.parse(raw.utf8String)
+              val key   = (item \ "k").as[String]
+              val value = (item \ "v").as[JsValue]
+              val what  = (item \ "w").as[String]
+              val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+              fromJson(what, value).foreach(v => store.put(key, v))
+              if (ttl > -1L) {
+                expirations.put(key, ttl)
+              }
             }
-          }.map { _ =>
-            redis.swap(Memory(store, expirations))
-          }
+            .map { _ =>
+              redis.swap(Memory(store, expirations))
+            }
       }
   }
 
@@ -157,7 +169,7 @@ class HttpDbDataStores(configuration: Configuration,
   }
 
   private def writeStateToHttp(): Future[Unit] = {
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec  = actorSystem.dispatcher
     implicit val mat = materializer
     val source = completeExport(100)(ec, mat, env).map { item =>
       ByteString(Json.stringify(item) + "\n")
@@ -166,19 +178,20 @@ class HttpDbDataStores(configuration: Configuration,
     val headers = stateHeaders.toSeq ++ Seq(
       "Content-Type" -> "application/x-ndjson"
     )
-    env.Ws.url(stateUrl)
+    env.Ws
+      .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers:_*)
+      .withHttpHeaders(headers: _*)
       .withMethod("POST")
       .withBody(SourceBody(source))
       .stream()
-        .map {
-          case resp if resp.status != 200 =>
-            logger.error("Error while syncing data with http db, will retry later")
-            resp.ignore()
-          case resp if resp.status == 200 =>
-            resp.ignore()
-        }
+      .map {
+        case resp if resp.status != 200 =>
+          logger.error("Error while syncing data with http db, will retry later")
+          resp.ignore()
+        case resp if resp.status == 200 =>
+          resp.ignore()
+      }
   }
 
   private lazy val _privateAppsUserDataStore   = new InMemoryPrivateAppsUserDataStore(redis, env)
@@ -213,8 +226,8 @@ class HttpDbDataStores(configuration: Configuration,
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
-  override def rawDataStore: RawDataStore        = _rawDataStore
+  private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -235,7 +248,9 @@ class HttpDbDataStores(configuration: Configuration,
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -249,17 +264,17 @@ class HttpDbDataStores(configuration: Configuration,
             keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
-                  key == s"${env.storageRoot}:events:audit" ||
-                  key == s"${env.storageRoot}:events:alerts" ||
-                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                  key.startsWith(s"${env.storageRoot}:admins:") ||
-                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 redis.rawGet(key).flatMap {
@@ -270,9 +285,9 @@ class HttpDbDataStores(configuration: Configuration,
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
                           Json.obj("k" -> key,
-                            "v" -> jsonValue,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> what)
+                                   "v" -> jsonValue,
+                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                   "w" -> what)
                         }
                     }
                   }
@@ -285,7 +300,9 @@ class HttpDbDataStores(configuration: Configuration,
       .mapConcat(_.toList)
   }
 
-  def completeExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  def completeExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -306,9 +323,9 @@ class HttpDbDataStores(configuration: Configuration,
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
                           Json.obj("k" -> key,
-                            "v" -> jsonValue,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> what)
+                                   "v" -> jsonValue,
+                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                   "w" -> what)
                         }
                     }
                   }
@@ -320,7 +337,6 @@ class HttpDbDataStores(configuration: Configuration,
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
   }
-
 
   private def toJson(value: Any): (String, JsValue) = {
 

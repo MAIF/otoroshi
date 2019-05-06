@@ -98,8 +98,8 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
-  override def rawDataStore: RawDataStore        = _rawDataStore
+  private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

@@ -604,14 +604,14 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     "type"        -> "object",
     "required"    -> Json.arr("apiKey", "domain"),
     "properties" -> Json.obj(
-      "type"   -> SimpleStringType ~~> "Type of the mailer: console, generic, mailgun, mailjet",
-      "eu"     -> SimpleBooleanType ~~> "Mailgun mailer, use EU tenant api",
-      "apiKey" -> SimpleStringType ~~> "Mailgun mailer api key",
-      "domain" -> SimpleStringType ~~> "Mailgun mailer domain",
-      "apiKeyPublic" -> SimpleStringType ~~> "Mailjet mailer public api key",
+      "type"          -> SimpleStringType ~~> "Type of the mailer: console, generic, mailgun, mailjet",
+      "eu"            -> SimpleBooleanType ~~> "Mailgun mailer, use EU tenant api",
+      "apiKey"        -> SimpleStringType ~~> "Mailgun mailer api key",
+      "domain"        -> SimpleStringType ~~> "Mailgun mailer domain",
+      "apiKeyPublic"  -> SimpleStringType ~~> "Mailjet mailer public api key",
       "apiKeyPrivate" -> SimpleStringType ~~> "Mailjet mailer private api key",
-      "url"    -> SimpleStringType ~~> "Generic mailer url",
-      "header" -> SimpleObjectType ~~> "Generic mailer headers",
+      "url"           -> SimpleStringType ~~> "Generic mailer url",
+      "header"        -> SimpleObjectType ~~> "Generic mailer headers",
     )
   )
 

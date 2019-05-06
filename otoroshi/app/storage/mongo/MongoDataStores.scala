@@ -18,7 +18,12 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
+import ssl.{
+  CertificateDataStore,
+  ClientCertificateValidationDataStore,
+  InMemoryClientCertificateValidationDataStore,
+  RedisClientCertificateValidationDataStore
+}
 import storage.inmemory._
 import storage._
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
@@ -124,8 +129,8 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
-  override def rawDataStore: RawDataStore        = _rawDataStore
+  private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -147,8 +152,8 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
   override def rawExport(
-                          group: Int
-                        )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -162,25 +167,25 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
             keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
-                  key == s"${env.storageRoot}:events:audit" ||
-                  key == s"${env.storageRoot}:events:alerts" ||
-                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                  key.startsWith(s"${env.storageRoot}:admins:") ||
-                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 redis.rawGet(key).flatMap {
                   case None => FastFuture.successful(JsNull)
                   case Some(rawDoc) => {
                     val currentTime = System.currentTimeMillis()
-                    val ttl = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
-                    val typ = rawDoc.getAs[String]("type").get
+                    val ttl         = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
+                    val typ         = rawDoc.getAs[String]("type").get
                     fetchValueForType(typ, key).map {
                       case JsNull => JsNull
                       case value =>

@@ -57,11 +57,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           config.analyticsWebhooks.map(c => new WebHookAnalytics(c, config)) ++
           config.elasticWritesConfigs.map(
             c =>
-              new ElasticWritesAnalytics(c,
-                                         env.environment,
-                                         env,
-                                         env.otoroshiExecutionContext,
-                                         env.otoroshiActorSystem)
+              new ElasticWritesAnalytics(c, env.environment, env, env.otoroshiExecutionContext, env.otoroshiActorSystem)
           )
         ) {
           _.publish(evts)
@@ -259,46 +255,46 @@ object GatewayEvent {
 }
 
 case class TcpEvent(
-  `@type`: String = "TcpEvent",
-  `@id`: String,
-  `@timestamp`: DateTime,
-  reqId: String,
-  protocol: String,
-  port: Int,
-  to: Location,
-  target: Location,
-  remote: String,
-  local: String,
-  duration: Long,
-  overhead: Long,
-  data: DataInOut,
-  gwError: Option[String] = None,
-  `@serviceId`: String,
-  `@service`: String,
-  service: Option[TcpService],
+    `@type`: String = "TcpEvent",
+    `@id`: String,
+    `@timestamp`: DateTime,
+    reqId: String,
+    protocol: String,
+    port: Int,
+    to: Location,
+    target: Location,
+    remote: String,
+    local: String,
+    duration: Long,
+    overhead: Long,
+    data: DataInOut,
+    gwError: Option[String] = None,
+    `@serviceId`: String,
+    `@service`: String,
+    service: Option[TcpService],
 ) extends AnalyticEvent {
   def toJson(implicit _env: Env): JsValue = TcpEvent.writes(this, _env)
 }
 
 object TcpEvent {
   def writes(o: TcpEvent, env: Env): JsValue = Json.obj(
-    "@type"           -> o.`@type`,
-    "@id"             -> o.`@id`,
-    "@timestamp"      -> o.`@timestamp`,
-    "reqId"           -> o.reqId,
-    "protocol"        -> o.protocol,
-    "port"            -> o.port,
-    "to"              -> Location.format.writes(o.to),
-    "target"          -> Location.format.writes(o.target),
-    "remote"          -> o.remote,
-    "local"           -> o.local,
-    "duration"        -> o.duration,
-    "overhead"        -> o.overhead,
-    "data"            -> DataInOut.fmt.writes(o.data),
-    "gwError"         -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "@serviceId"      -> o.`@serviceId`,
-    "@service"        -> o.`@service`,
-    "service"         -> o.service.map(_.json).getOrElse(JsNull).as[JsValue],
+    "@type"      -> o.`@type`,
+    "@id"        -> o.`@id`,
+    "@timestamp" -> o.`@timestamp`,
+    "reqId"      -> o.reqId,
+    "protocol"   -> o.protocol,
+    "port"       -> o.port,
+    "to"         -> Location.format.writes(o.to),
+    "target"     -> Location.format.writes(o.target),
+    "remote"     -> o.remote,
+    "local"      -> o.local,
+    "duration"   -> o.duration,
+    "overhead"   -> o.overhead,
+    "data"       -> DataInOut.fmt.writes(o.data),
+    "gwError"    -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "@serviceId" -> o.`@serviceId`,
+    "@service"   -> o.`@service`,
+    "service"    -> o.service.map(_.json).getOrElse(JsNull).as[JsValue],
   )
 }
 

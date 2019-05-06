@@ -821,7 +821,7 @@ class AlertsActor(implicit env: Env) extends Actor {
   import events.KafkaWrapper
   import utils.http.Implicits._
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-alert-actor")
@@ -859,12 +859,21 @@ class AlertsActor(implicit env: Env) extends Actor {
       |$titles
       |$email
     """.stripMargin
-      env.datastores.globalConfigDataStore.singleton().flatMap(config => config.mailerSettings.map(_.asMailer(config, env).send(
-        from = EmailLocation("Otoroshi Alerts", s"otoroshi-alerts@${env.domain}"),
-        to = config.alertsEmails.map(e => EmailLocation(e, e)),
-        subject = s"Otoroshi Alert - ${evts.size} new alerts",
-        html = emailBody
-      )).getOrElse(FastFuture.successful(())))
+      env.datastores.globalConfigDataStore
+        .singleton()
+        .flatMap(
+          config =>
+            config.mailerSettings
+              .map(
+                _.asMailer(config, env).send(
+                  from = EmailLocation("Otoroshi Alerts", s"otoroshi-alerts@${env.domain}"),
+                  to = config.alertsEmails.map(e => EmailLocation(e, e)),
+                  subject = s"Otoroshi Alert - ${evts.size} new alerts",
+                  html = emailBody
+                )
+              )
+              .getOrElse(FastFuture.successful(()))
+        )
     }
 
   lazy val stream = Source.queue[AlertEvent](50000, OverflowStrategy.dropHead).mapAsync(5) { evt =>

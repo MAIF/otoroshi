@@ -62,7 +62,7 @@ export function DefaultSidebar(props) {
         <h3 style={{ marginTop: 0 }}>
           <i className="fas fa-cubes" /> Tcp Services
         </h3>
-      </li> 
+      </li>
       <li key="all">
         <a
           href={`/bo/dashboard/tcp/services`}
@@ -71,11 +71,9 @@ export function DefaultSidebar(props) {
           {' '}
           All services
         </a>
-      </li> 
+      </li>
       <li>
-        <a
-          href={`/bo/dashboard/tcp/services/add`}
-          {...createTooltip('Create a new Tcp service')}>
+        <a href={`/bo/dashboard/tcp/services/add`} {...createTooltip('Create a new Tcp service')}>
           <i className="glyphicon glyphicon-plus" /> Add Tcp service
         </a>
       </li>

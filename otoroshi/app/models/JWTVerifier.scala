@@ -484,7 +484,9 @@ case class JWKSAlgoSettings(url: String,
               .urlWithProtocol(protocol, url)
               .withRequestTimeout(timeout)
               .withHttpHeaders(headers.toSeq: _*)
-              .withMaybeProxyServer(proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk)))
+              .withMaybeProxyServer(
+                proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk))
+              )
               .get()
               .map { resp =>
                 val stop = System.currentTimeMillis() + ttl.toMillis

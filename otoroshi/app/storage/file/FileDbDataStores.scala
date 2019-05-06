@@ -34,14 +34,14 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.hashing.MurmurHash3
 
 class FileDbDataStores(configuration: Configuration,
-                         environment: Environment,
-                         lifecycle: ApplicationLifecycle,
-                         env: Env)
-  extends DataStores {
+                       environment: Environment,
+                       lifecycle: ApplicationLifecycle,
+                       env: Env)
+    extends DataStores {
 
-  private val logger = Logger("otoroshi-file-db-datastores")
+  private val logger               = Logger("otoroshi-file-db-datastores")
   private val dbPath: String       = configuration.getOptional[String]("app.filedb.path").getOrElse("./filedb/state.ndjson")
-  private val redisStatsItems: Int  = configuration.get[Option[Int]]("app.filedb.windowSize").getOrElse(99)
+  private val redisStatsItems: Int = configuration.get[Option[Int]]("app.filedb.windowSize").getOrElse(99)
   private val actorSystem =
     ActorSystem(
       "otoroshi-file-db-system",
@@ -51,9 +51,9 @@ class FileDbDataStores(configuration: Configuration,
         .getOrElse(ConfigFactory.empty)
     )
   private val materializer = ActorMaterializer.create(actorSystem)
-  private val redis = new SwappableInMemoryRedis(env, actorSystem)
-  private val cancelRef = new AtomicReference[Cancellable]()
-  private val lastHash = new AtomicReference[Int](0)
+  private val redis        = new SwappableInMemoryRedis(env, actorSystem)
+  private val cancelRef    = new AtomicReference[Cancellable]()
+  private val lastHash     = new AtomicReference[Int](0)
 
   override def before(configuration: Configuration,
                       environment: Environment,
@@ -133,16 +133,19 @@ class FileDbDataStores(configuration: Configuration,
 
   private def writeStateToDisk()(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val file = new File(dbPath)
-    completeExport(100)(ec, mat, env).map { item =>
-      Json.stringify(item) + "\n"
-    }.runFold("")(_ + _).map { content =>
-      val hash = MurmurHash3.stringHash(content)
-      if (hash != lastHash.get()) {
-        logger.debug("Writing state to disk ...")
-        Files.write(file.toPath, content.getBytes(Charsets.UTF_8))
-        lastHash.set(hash)
+    completeExport(100)(ec, mat, env)
+      .map { item =>
+        Json.stringify(item) + "\n"
       }
-    }
+      .runFold("")(_ + _)
+      .map { content =>
+        val hash = MurmurHash3.stringHash(content)
+        if (hash != lastHash.get()) {
+          logger.debug("Writing state to disk ...")
+          Files.write(file.toPath, content.getBytes(Charsets.UTF_8))
+          lastHash.set(hash)
+        }
+      }
   }
 
   private lazy val _privateAppsUserDataStore   = new InMemoryPrivateAppsUserDataStore(redis, env)
@@ -177,8 +180,8 @@ class FileDbDataStores(configuration: Configuration,
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
-  override def rawDataStore: RawDataStore        = _rawDataStore
+  private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -199,7 +202,9 @@ class FileDbDataStores(configuration: Configuration,
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -213,17 +218,17 @@ class FileDbDataStores(configuration: Configuration,
             keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
-                  key == s"${env.storageRoot}:events:audit" ||
-                  key == s"${env.storageRoot}:events:alerts" ||
-                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                  key.startsWith(s"${env.storageRoot}:admins:") ||
-                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 redis.rawGet(key).flatMap {
@@ -234,9 +239,9 @@ class FileDbDataStores(configuration: Configuration,
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
                           Json.obj("k" -> key,
-                            "v" -> jsonValue,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> what)
+                                   "v" -> jsonValue,
+                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                   "w" -> what)
                         }
                     }
                   }
@@ -249,7 +254,9 @@ class FileDbDataStores(configuration: Configuration,
       .mapConcat(_.toList)
   }
 
-  def completeExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  def completeExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -270,9 +277,9 @@ class FileDbDataStores(configuration: Configuration,
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
                           Json.obj("k" -> key,
-                            "v" -> jsonValue,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> what)
+                                   "v" -> jsonValue,
+                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                   "w" -> what)
                         }
                     }
                   }
@@ -284,7 +291,6 @@ class FileDbDataStores(configuration: Configuration,
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
   }
-
 
   private def toJson(value: Any): (String, JsValue) = {
 

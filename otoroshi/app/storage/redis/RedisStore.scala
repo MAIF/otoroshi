@@ -139,21 +139,22 @@ trait RedisStore[T] extends BasicStore[T] {
       //   )
     }
   }
-  def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = ids match {
-    case keys if keys.isEmpty => FastFuture.successful(Seq.empty[T])
-    case keys if _findAllCached && findAllCache.get() != null => {
-      // TODO: was true, but high impact on perfs, so ...
-      findAll(force) // TODO : update findAllCache ??? FIXME ???
-      FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
-    }
-    case keys => {
-      _redis.mget(keys.map(keyStr): _*).fast.map { values: Seq[Option[ByteString]] =>
-        values.flatMap { opt =>
-          opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
+  def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
+    ids match {
+      case keys if keys.isEmpty => FastFuture.successful(Seq.empty[T])
+      case keys if _findAllCached && findAllCache.get() != null => {
+        // TODO: was true, but high impact on perfs, so ...
+        findAll(force) // TODO : update findAllCache ??? FIXME ???
+        FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
+      }
+      case keys => {
+        _redis.mget(keys.map(keyStr): _*).fast.map { values: Seq[Option[ByteString]] =>
+          values.flatMap { opt =>
+            opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
+          }
         }
       }
     }
-  }
   def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long] =
     findKeys(key("*").key).flatMap { keys =>
       _redis.del(keys: _*)

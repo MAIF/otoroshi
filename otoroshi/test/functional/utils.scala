@@ -426,7 +426,8 @@ class TargetService(val port: Int,
           HttpResponse(
             code,
             headers = headers,
-            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+            entity =
+              HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           )
         )
       }
@@ -436,7 +437,8 @@ class TargetService(val port: Int,
           HttpResponse(
             code,
             headers = headers,
-            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+            entity =
+              HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           )
         )
       }
@@ -446,7 +448,8 @@ class TargetService(val port: Int,
           HttpResponse(
             code,
             headers = headers,
-            entity = HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+            entity =
+              HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           )
         )
       }
@@ -631,7 +634,10 @@ object TargetService {
     new TargetService(TargetService.freePort, host, path, contentType, r => (200, result(r), List.empty[HttpHeader]))
   }
 
-  def full(host: Option[String], path: String, contentType: String, result: HttpRequest => (Int, String, List[HttpHeader])): TargetService = {
+  def full(host: Option[String],
+           path: String,
+           contentType: String,
+           result: HttpRequest => (Int, String, List[HttpHeader])): TargetService = {
     new TargetService(TargetService.freePort, host, path, contentType, result)
   }
 

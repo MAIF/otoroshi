@@ -3,7 +3,7 @@ import { Help } from './Help';
 
 export class PasswordInput extends Component {
   render() {
-    return <TextInput {...this.props} type="password"  />;
+    return <TextInput {...this.props} type="password" />;
   }
 }
 

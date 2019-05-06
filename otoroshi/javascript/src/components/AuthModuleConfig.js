@@ -1,6 +1,13 @@
 import React, { Component } from 'react';
 
-import { TextInput, NumberInput, SelectInput, CodeInput, BooleanInput, PasswordInput } from './inputs';
+import {
+  TextInput,
+  NumberInput,
+  SelectInput,
+  CodeInput,
+  BooleanInput,
+  PasswordInput,
+} from './inputs';
 import { Proxy } from './Proxy';
 import { Separator } from './Separator';
 import { AlgoSettings } from './JwtVerifier';
@@ -85,14 +92,16 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchKeycloakConfig = () => {
-    window.newPrompt('Keycloak config', { value: '', textarea: true, rows: 12 }).then(strConfig => {
+    window.newPrompt('Keycloak config', { value: '', textarea: true, rows: 12 }).then(strConfig => {
       if (strConfig) {
         const config = JSON.parse(strConfig);
         const serverUrl = config['auth-server-url'];
         const realm = config.realm;
         const configUrl = `${serverUrl}/realms/${realm}/.well-known/openid-configuration`;
         const clientId = config.resource;
-        const clientSecret = (config.credentials ? (config.credentials.secret ? config.credentials.secret : '') : '');
+        const clientSecret = config.credentials
+          ? config.credentials.secret ? config.credentials.secret : ''
+          : '';
         return fetch(`/bo/api/oidc/_fetchConfig`, {
           method: 'POST',
           credentials: 'include',
@@ -282,10 +291,7 @@ export class Oauth2ModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
         />
         <Separator title="Proxy" />
-        <Proxy 
-          value={settings.proxy}
-          onChange={v => changeTheValue(path + '.proxy', v)}
-        />
+        <Proxy value={settings.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />
         <Separator title="OIDC Config" />
         <TextInput
           label="OIDC config url"

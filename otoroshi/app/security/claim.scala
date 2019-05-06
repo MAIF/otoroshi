@@ -21,12 +21,13 @@ case class OtoroshiClaim(
 ) {
   def toJson: JsValue                                                 = OtoroshiClaim.format.writes(this)
   def serialize(jwtSettings: AlgoSettings)(implicit env: Env): String = OtoroshiClaim.serialize(this, jwtSettings)(env)
-  def withClaims(claims: JsValue): OtoroshiClaim = copy(metadata = metadata ++ claims.asOpt[JsObject].getOrElse(Json.obj()))
+  def withClaims(claims: JsValue): OtoroshiClaim =
+    copy(metadata = metadata ++ claims.asOpt[JsObject].getOrElse(Json.obj()))
   def withClaims(claims: Option[JsValue]): OtoroshiClaim = claims match {
     case Some(c) => withClaims(c)
     case None    => this
   }
-  def withClaim(name: String, value: String): OtoroshiClaim  = copy(metadata = metadata ++ Json.obj(name -> value))
+  def withClaim(name: String, value: String): OtoroshiClaim = copy(metadata = metadata ++ Json.obj(name -> value))
   def withClaim(name: String, value: Option[String]): OtoroshiClaim = value match {
     case Some(v) => copy(metadata = metadata ++ Json.obj(name -> v))
     case None    => this
@@ -62,10 +63,10 @@ object OtoroshiClaim {
   }
 
   private def sign(algorithm: Algorithm, headerJson: JsObject, payloadJson: JsObject): String = {
-    val header: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
-    val payload: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
+    val header: String              = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(headerJson))
+    val payload: String             = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(Json.toBytes(payloadJson))
     val signatureBytes: Array[Byte] = algorithm.sign((header + "." + payload).getBytes(StandardCharsets.UTF_8))
-    val signature: String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(signatureBytes)
+    val signature: String           = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(signatureBytes)
     String.format("%s.%s.%s", header, payload, signature)
   }
 }

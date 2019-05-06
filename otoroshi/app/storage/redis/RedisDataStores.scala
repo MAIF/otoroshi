@@ -116,8 +116,8 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _tcpServiceDataStore                 = new RedisTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore                 = new RedisRawDataStore(redis)
-  override def rawDataStore: RawDataStore        = _rawDataStore
+  private lazy val _rawDataStore          = new RedisRawDataStore(redis)
+  override def rawDataStore: RawDataStore = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
@@ -213,13 +213,17 @@ class RedisRawDataStore(redis: RedisClientMasterSlaves) extends RawDataStore {
 
   override def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]] = redis.get(key)
 
-  override def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]] = redis.mget(keys:_*)
+  override def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]] =
+    redis.mget(keys: _*)
 
-  override def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redis.set(key, value, pxMilliseconds = ttl)
+  override def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
+                                                                      env: Env): Future[Boolean] =
+    redis.set(key, value, pxMilliseconds = ttl)
 
-  override def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.del(keys:_*)
+  override def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.del(keys: _*)
 
-  override def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.incrby(key, incr)
+  override def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+    redis.incrby(key, incr)
 
   override def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]] = redis.keys(pattern)
 }

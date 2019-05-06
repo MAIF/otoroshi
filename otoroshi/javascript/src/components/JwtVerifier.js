@@ -277,10 +277,7 @@ export class AlgoSettings extends Component {
             possibleValues={[{ label: 'RSA', value: 'RSA' }, { label: 'EC', value: 'EC' }]}
           />,
           <Separator title="Proxy" />,
-          <Proxy 
-            value={algo.proxy}
-            onChange={v => changeTheValue(path + '.proxy', v)}
-          />
+          <Proxy value={algo.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />,
         ]}
       </div>
     );

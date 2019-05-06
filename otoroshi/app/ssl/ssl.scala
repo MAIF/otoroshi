@@ -20,7 +20,13 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
+import com.typesafe.sslconfig.ssl.{
+  KeyManagerConfig,
+  KeyStoreConfig,
+  SSLConfigSettings,
+  TrustManagerConfig,
+  TrustStoreConfig
+}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -97,7 +103,7 @@ case class Cert(
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now()
 ) {
-  def signature: Option[String] = this.metadata.map(v => (v \ "signature").as[String])
+  def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
   def renew(duration: FiniteDuration, caOpt: Option[Cert]): Cert = {
     this match {
@@ -341,7 +347,8 @@ object DynamicSSLEngineProvider {
 
     val optEnv = Option(currentEnv.get)
 
-    val trustAll: Boolean = optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+    val trustAll: Boolean =
+      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
     val cacertPath = optEnv
       .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
@@ -375,18 +382,18 @@ object DynamicSSLEngineProvider {
       m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
     )
     val tm: Array[TrustManager] =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
-        case true  => Array[TrustManager](noCATrustManager)
-        case false => createTrustStore(keyStore, cacertPath, cacertPassword)
-      } getOrElse {
-        if (trustAll) {
-          Array[TrustManager](
-            new VeryNiceTrustManager(Seq.empty[X509TrustManager])
-          )
-        } else {
-          createTrustStore(keyStore, cacertPath, cacertPassword)
-        }
+    optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+      case true  => Array[TrustManager](noCATrustManager)
+      case false => createTrustStore(keyStore, cacertPath, cacertPassword)
+    } getOrElse {
+      if (trustAll) {
+        Array[TrustManager](
+          new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+        )
+      } else {
+        createTrustStore(keyStore, cacertPath, cacertPassword)
       }
+    }
 
     sslContext.init(keyManagers, tm, null)
     dumpPath match {
@@ -811,7 +818,7 @@ object FakeKeyStore {
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
     if (!host.contains("*")) {
-      val extensions = new CertificateExtensions()
+      val extensions   = new CertificateExtensions()
       val generalNames = new GeneralNames()
       generalNames.add(new GeneralName(new DNSName(host)))
       extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
@@ -859,7 +866,7 @@ object FakeKeyStore {
     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
 
     if (!host.contains("*")) {
-      val extensions = new CertificateExtensions()
+      val extensions   = new CertificateExtensions()
       val generalNames = new GeneralNames()
       generalNames.add(new GeneralName(new DNSName(host)))
       extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))

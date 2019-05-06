@@ -172,8 +172,12 @@ class Env(val configuration: Configuration,
   lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
   lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
-  lazy val liveJs: Boolean                 = configuration.getOptional[String]("app.env").filter(_ == "dev").map(_ => true)
-                                              .orElse(configuration.getOptional[Boolean]("app.liveJs")).getOrElse(false)
+  lazy val liveJs: Boolean = configuration
+    .getOptional[String]("app.env")
+    .filter(_ == "dev")
+    .map(_ => true)
+    .orElse(configuration.getOptional[Boolean]("app.liveJs"))
+    .getOrElse(false)
 
   lazy val exposeAdminApi: Boolean =
     if (clusterConfig.mode.isWorker) false
@@ -300,7 +304,7 @@ class Env(val configuration: Configuration,
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
   lazy val metrics = new Metrics(this, lifecycle)
 
-  lazy val hash   = s"${System.currentTimeMillis()}"
+  lazy val hash = s"${System.currentTimeMillis()}"
 
   lazy val backOfficeSessionExp = configuration.getOptional[Long]("app.backoffice.session.exp").get
 
@@ -620,7 +624,8 @@ class Env(val configuration: Configuration,
                   v.replace(".", "").replace("-dev", "").replace("v", "").toDouble - 0.5
                 case v => v.replace(".", "").replace("-dev", "").replace("v", "").replace("-snapshot", "").toDouble
               }
-              _internalClient.url("https://updates.otoroshi.io/api/versions/latest")
+              _internalClient
+                .url("https://updates.otoroshi.io/api/versions/latest")
                 .withRequestTimeout(10.seconds)
                 .withHttpHeaders(
                   "Otoroshi-Version" -> otoroshiVersion,
@@ -663,9 +668,9 @@ class Env(val configuration: Configuration,
         _ <- datastores.certificatesDataStore
               .findAll()
               .map { certs =>
-                val foundOtoroshiCa            = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
-                val foundOtoroshiDomainCert    = certs.exists(c => c.domain == s"*.${this.domain}")
-                val keyPairGenerator           = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+                val foundOtoroshiCa         = certs.exists(c => c.ca && c.id == Cert.OtoroshiCA)
+                val foundOtoroshiDomainCert = certs.exists(c => c.domain == s"*.${this.domain}")
+                val keyPairGenerator        = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                 keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 val keyPair1 = keyPairGenerator.generateKeyPair()
                 val keyPair2 = keyPairGenerator.generateKeyPair()
@@ -679,8 +684,10 @@ class Env(val configuration: Configuration,
                 if (!foundOtoroshiDomainCert) {
                   logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
                   val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
-                                                                       FiniteDuration(365, TimeUnit.DAYS),
-                                                                       keyPair2, ca, keyPair1)
+                                                                   FiniteDuration(365, TimeUnit.DAYS),
+                                                                   keyPair2,
+                                                                   ca,
+                                                                   keyPair1)
                   Cert(cert1, keyPair2, None).enrich().save()
                 }
               }

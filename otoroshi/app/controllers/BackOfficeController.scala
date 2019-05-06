@@ -254,17 +254,18 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     val fu: Future[Seq[SearchedService]] =
       Option(LocalCache.allServices.getIfPresent("all")).map(_.asInstanceOf[Seq[SearchedService]]) match {
         case Some(descriptors) => FastFuture.successful(descriptors)
-        case None => for {
-          services <- env.datastores.serviceDescriptorDataStore.findAll()
-          tcServices <- env.datastores.tcpServiceDataStore.findAll()
-        } yield {
-          val finalServices = (
-            services.map(s => SearchedService(s.name, s.id, s.groupId, s.env, "http")) ++
+        case None =>
+          for {
+            services   <- env.datastores.serviceDescriptorDataStore.findAll()
+            tcServices <- env.datastores.tcpServiceDataStore.findAll()
+          } yield {
+            val finalServices = (
+              services.map(s => SearchedService(s.name, s.id, s.groupId, s.env, "http")) ++
               tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp"))
-          )
-          LocalCache.allServices.put("all", finalServices)
-          finalServices
-        }
+            )
+            LocalCache.allServices.put("all", finalServices)
+            finalServices
+          }
       }
     fu.map { services =>
       val filtered = services.filter { service =>
@@ -274,7 +275,10 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       }
       Ok(
         JsArray(
-          filtered.map(s => Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env, "type" -> s.typ))
+          filtered.map(
+            s =>
+              Json.obj("groupId" -> s.groupId, "serviceId" -> s.id, "name" -> s.name, "env" -> s.env, "type" -> s.typ)
+          )
         )
       )
     }
@@ -796,13 +800,13 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 desc = desc,
                 oidConfig = Some(url)
               )
-              val body         = Json.parse(resp.body)
-              val issuer       = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
-              val tokenUrl     = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
-              val authorizeUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
-              val userInfoUrl  = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
-              val introspectionUrl  = (body \ "introspection_endpoint").asOpt[String].getOrElse(config.introspectionUrl)
-              val loginUrl     = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
+              val body             = Json.parse(resp.body)
+              val issuer           = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
+              val tokenUrl         = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
+              val authorizeUrl     = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
+              val userInfoUrl      = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
+              val introspectionUrl = (body \ "introspection_endpoint").asOpt[String].getOrElse(config.introspectionUrl)
+              val loginUrl         = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
               val logoutUrl = (body \ "end_session_endpoint")
                 .asOpt[String]
                 .orElse((body \ "ping_end_session_endpoint").asOpt[String])
@@ -825,10 +829,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                     introspectionUrl = introspectionUrl,
                     loginUrl = loginUrl,
                     logoutUrl = logoutUrl,
-                    callbackUrl = s"${env.rootScheme}${env.privateAppsHost}${env.privateAppsPort.map(v => ":" + v).getOrElse("")}/privateapps/generic/callback",
+                    callbackUrl =
+                      s"${env.rootScheme}${env.privateAppsHost}${env.privateAppsPort.map(v => ":" + v).getOrElse("")}/privateapps/generic/callback",
                     scope = scope,
                     claims = "",
-                    accessTokenField = "access_token",// jwksUri.map(_ => "id_token").getOrElse("access_token"),
+                    accessTokenField = "access_token", // jwksUri.map(_ => "id_token").getOrElse("access_token"),
                     useJson = false,
                     useCookie = false,
                     readProfileFromToken = false,

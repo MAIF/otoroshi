@@ -2,15 +2,9 @@ import React, { Component } from 'react';
 import _ from 'lodash';
 import deepSet from 'set-value';
 
-import {
-  ArrayInput,
-  TextInput,
-  PasswordInput,
-  NumberInput,
-} from './inputs';
+import { ArrayInput, TextInput, PasswordInput, NumberInput } from './inputs';
 
 export class Proxy extends Component {
-
   changeTheValue = (name, value) => {
     const proxy = _.cloneDeep(this.props.value || {});
     const newProxy = deepSet(proxy, name, value);
@@ -75,13 +69,15 @@ export class Proxy extends Component {
           onChange={v => this.changeTheValue('encoding', v)}
         />
         */}
-        {this.props.showNonProxyHosts && <ArrayInput
-          label="Non proxy host"
-          placeholder="IP address that can access the service"
-          value={proxy.nonProxyHosts}
-          help="List of non proxyable host"
-          onChange={arr => this.changeTheValue('nonProxyHosts', arr)}
-        />}
+        {this.props.showNonProxyHosts && (
+          <ArrayInput
+            label="Non proxy host"
+            placeholder="IP address that can access the service"
+            value={proxy.nonProxyHosts}
+            help="List of non proxyable host"
+            onChange={arr => this.changeTheValue('nonProxyHosts', arr)}
+          />
+        )}
       </div>
     );
   }

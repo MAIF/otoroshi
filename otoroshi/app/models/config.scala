@@ -71,15 +71,15 @@ object CleverCloudSettings {
 }
 
 case class Proxies(
-  alertEmails: Option[WSProxyServer] = None,
-  alertWebhooks: Option[WSProxyServer] = None,
-  eventsWebhooks: Option[WSProxyServer] = None,
-  clevercloud: Option[WSProxyServer] = None,
-  services: Option[WSProxyServer] = None,
-  auth: Option[WSProxyServer] = None,
-  authority: Option[WSProxyServer] = None,
-  jwk: Option[WSProxyServer] = None,
-  elastic: Option[WSProxyServer] = None,
+    alertEmails: Option[WSProxyServer] = None,
+    alertWebhooks: Option[WSProxyServer] = None,
+    eventsWebhooks: Option[WSProxyServer] = None,
+    clevercloud: Option[WSProxyServer] = None,
+    services: Option[WSProxyServer] = None,
+    auth: Option[WSProxyServer] = None,
+    authority: Option[WSProxyServer] = None,
+    jwk: Option[WSProxyServer] = None,
+    elastic: Option[WSProxyServer] = None,
 ) {
   def toJson: JsValue = Proxies.format.writes(this)
 }
@@ -88,15 +88,15 @@ object Proxies {
 
   val format = new Format[Proxies] {
     override def writes(o: Proxies) = Json.obj(
-      "alertEmails" -> WSProxyServerJson.maybeProxyToJson(o.alertEmails),
-      "alertWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.alertWebhooks),
+      "alertEmails"    -> WSProxyServerJson.maybeProxyToJson(o.alertEmails),
+      "alertWebhooks"  -> WSProxyServerJson.maybeProxyToJson(o.alertWebhooks),
       "eventsWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.eventsWebhooks),
-      "clevercloud" -> WSProxyServerJson.maybeProxyToJson(o.clevercloud),
-      "services" -> WSProxyServerJson.maybeProxyToJson(o.services),
-      "auth" -> WSProxyServerJson.maybeProxyToJson(o.auth),
-      "authority" -> WSProxyServerJson.maybeProxyToJson(o.authority),
-      "jwk" -> WSProxyServerJson.maybeProxyToJson(o.jwk),
-      "elastic" -> WSProxyServerJson.maybeProxyToJson(o.elastic),
+      "clevercloud"    -> WSProxyServerJson.maybeProxyToJson(o.clevercloud),
+      "services"       -> WSProxyServerJson.maybeProxyToJson(o.services),
+      "auth"           -> WSProxyServerJson.maybeProxyToJson(o.auth),
+      "authority"      -> WSProxyServerJson.maybeProxyToJson(o.authority),
+      "jwk"            -> WSProxyServerJson.maybeProxyToJson(o.jwk),
+      "elastic"        -> WSProxyServerJson.maybeProxyToJson(o.elastic),
     )
     override def reads(json: JsValue) =
       Try {
@@ -181,7 +181,7 @@ object GlobalConfig {
   val _fmt: Format[GlobalConfig] = new Format[GlobalConfig] {
     override def writes(o: GlobalConfig): JsValue = {
       val mailerSettings: JsValue = o.mailerSettings match {
-        case None => JsNull
+        case None         => JsNull
         case Some(config) => config.json
       }
       val cleverSettings: JsValue = o.cleverSettings match {

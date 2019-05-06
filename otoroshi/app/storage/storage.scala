@@ -54,7 +54,7 @@ trait DataStores {
   def scriptDataStore: ScriptDataStore
   def tcpServiceDataStore: TcpServiceDataStore
   def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed]
-  def rawDataStore: RawDataStore 
+  def rawDataStore: RawDataStore
 }
 
 trait RawDataStore {
@@ -197,7 +197,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
           seq =>
             seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
               case JsSuccess(i, _) => i
-            }
+          }
         )
     }
 
@@ -229,20 +229,21 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       actualFindAll()
     }
   }
-  def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = ids match {
-    case keys if keys.isEmpty => FastFuture.successful(Seq.empty[T])
-    case keys if _findAllCached && findAllCache.get() != null => {
-      // TODO: was true, but high impact on perfs, so ...
-      findAll(force) // TODO : update findAllCache ??? FIXME ???
-      FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
-    }
-    case keys =>
-      redisLike.mget(keys.map(keyStr): _*).map { values: Seq[Option[ByteString]] =>
-        values.flatMap { opt =>
-          opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
-        }
+  def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
+    ids match {
+      case keys if keys.isEmpty => FastFuture.successful(Seq.empty[T])
+      case keys if _findAllCached && findAllCache.get() != null => {
+        // TODO: was true, but high impact on perfs, so ...
+        findAll(force) // TODO : update findAllCache ??? FIXME ???
+        FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
       }
-  }
+      case keys =>
+        redisLike.mget(keys.map(keyStr): _*).map { values: Seq[Option[ByteString]] =>
+          values.flatMap { opt =>
+            opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
+          }
+        }
+    }
   def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]] =
     redisLike.get(key(id).key).map(_.flatMap(v => fromJsonSafe(Json.parse(v.utf8String)).asOpt))
 
@@ -300,8 +301,8 @@ trait RedisLikeStore[T] extends BasicStore[T] {
 
 class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
-  override def start(): Unit = redis.start()
-  override def stop(): Unit = redis.stop()
+  override def start(): Unit                                                    = redis.start()
+  override def stop(): Unit                                                     = redis.stop()
 
   override def flushall(): Future[Boolean] = {
     env.metrics.counter("redis.ops").inc()
@@ -313,25 +314,25 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   }
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
     env.metrics.counter("redis.ops").inc()
-    redis.mget(keys:_*)
+    redis.mget(keys: _*)
   }
   override def set(key: String,
-          value: String,
-          exSeconds: Option[Long] = None,
-          pxMilliseconds: Option[Long] = None): Future[Boolean] = {
+                   value: String,
+                   exSeconds: Option[Long] = None,
+                   pxMilliseconds: Option[Long] = None): Future[Boolean] = {
     env.metrics.counter("redis.ops").inc()
     redis.set(key, value, exSeconds, pxMilliseconds)
   }
   override def setBS(key: String,
-            value: ByteString,
-            exSeconds: Option[Long] = None,
-            pxMilliseconds: Option[Long] = None): Future[Boolean] = {
+                     value: ByteString,
+                     exSeconds: Option[Long] = None,
+                     pxMilliseconds: Option[Long] = None): Future[Boolean] = {
     env.metrics.counter("redis.ops").inc()
     redis.setBS(key, value, exSeconds, pxMilliseconds)
   }
   override def del(keys: String*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.del(keys:_*)
+    redis.del(keys: _*)
   }
   override def incr(key: String): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
@@ -351,7 +352,7 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   }
   override def hdel(key: String, fields: String*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.hdel(key, fields:_*)
+    redis.hdel(key, fields: _*)
   }
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
     env.metrics.counter("redis.ops").inc()
@@ -371,15 +372,15 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   }
   override def lpush(key: String, values: String*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.lpush(key, values:_*)
+    redis.lpush(key, values: _*)
   }
   override def lpushLong(key: String, values: Long*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.lpushLong(key, values:_*)
+    redis.lpushLong(key, values: _*)
   }
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.lpushBS(key, values:_*)
+    redis.lpushBS(key, values: _*)
   }
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     env.metrics.counter("redis.ops").inc()
@@ -407,11 +408,11 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   }
   override def sadd(key: String, members: String*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.sadd(key, members:_*)
+    redis.sadd(key, members: _*)
   }
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.saddBS(key, members:_*)
+    redis.saddBS(key, members: _*)
   }
   override def sismember(key: String, member: String): Future[Boolean] = {
     env.metrics.counter("redis.ops").inc()
@@ -427,11 +428,11 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   }
   override def srem(key: String, members: String*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.srem(key, members:_*)
+    redis.srem(key, members: _*)
   }
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
-    redis.sremBS(key, members:_*)
+    redis.sremBS(key, members: _*)
   }
   override def scard(key: String): Future[Long] = {
     env.metrics.counter("redis.ops").inc()

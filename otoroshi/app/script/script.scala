@@ -148,12 +148,12 @@ trait NanoApp extends RequestTransformer {
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def transformRequest(
-    snowflake: String,
-    rawRequest: HttpRequest,
-    otoroshiRequest: HttpRequest,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey] = None,
-    user: Option[PrivateAppsUser] = None
+      snowflake: String,
+      rawRequest: HttpRequest,
+      otoroshiRequest: HttpRequest,
+      desc: ServiceDescriptor,
+      apiKey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val promise = Promise[Source[ByteString, _]]
     awaitingRequests.put(snowflake, promise)
@@ -162,13 +162,13 @@ trait NanoApp extends RequestTransformer {
   }
 
   override def transformRequestBody(
-    snowflake: String,
-    body: Source[ByteString, _],
-    rawRequest: HttpRequest,
-    otoroshiRequest: HttpRequest,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey] = None,
-    user: Option[PrivateAppsUser] = None
+      snowflake: String,
+      body: Source[ByteString, _],
+      rawRequest: HttpRequest,
+      otoroshiRequest: HttpRequest,
+      desc: ServiceDescriptor,
+      apiKey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     awaitingRequests.get(snowflake).map(_.trySuccess(body))
     awaitingRequests.remove(snowflake)
@@ -176,16 +176,16 @@ trait NanoApp extends RequestTransformer {
   }
 
   def route(
-    request: HttpRequest,
-    body: Source[ByteString, _]
+      request: HttpRequest,
+      body: Source[ByteString, _]
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     FastFuture.successful(routeSync(request, body))
   }
 
   def routeSync(
-   request: HttpRequest,
-   body: Source[ByteString, _]
- )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Result = {
+      request: HttpRequest,
+      body: Source[ByteString, _]
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Result = {
     Results.Ok(Json.obj("message" -> "Hello World!"))
   }
 }

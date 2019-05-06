@@ -82,7 +82,7 @@ export class ClientValidatorsPage extends Component {
     },
     proxy: {
       type: Proxy,
-    }
+    },
   };
 
   formFlow = [
@@ -100,7 +100,7 @@ export class ClientValidatorsPage extends Component {
     'goodTtl',
     'badTtl',
     '-- Proxy',
-    'proxy'
+    'proxy',
   ];
 
   componentDidMount() {

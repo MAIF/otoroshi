@@ -26,7 +26,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
 
   import utils.http.Implicits._
 
-  implicit lazy val ec = context.dispatcher
+  implicit lazy val ec  = context.dispatcher
   implicit lazy val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-health-checker")
@@ -53,7 +53,9 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
             env.Headers.OtoroshiClaim                -> claim,
             env.Headers.OtoroshiHealthCheckLogicTest -> value
           )
-          .withMaybeProxyServer(desc.clientConfig.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services)))
+          .withMaybeProxyServer(
+            desc.clientConfig.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
+          )
           .get()
           .andThen {
             case Success(res) => {

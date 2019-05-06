@@ -80,18 +80,18 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         FastFuture.successful(Seq.empty[MemberView])
       }
       for {
-        _health <- env.datastores.health()
+        _health  <- env.datastores.health()
         overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
-        members <- membersF
+        members  <- membersF
       } yield {
         val cluster = env.clusterConfig.mode match {
-          case ClusterMode.Off => Json.obj()
+          case ClusterMode.Off    => Json.obj()
           case ClusterMode.Worker => Json.obj("cluster" -> Json.obj("lastSync" -> env.clusterAgent.lastSync.toString()))
           case ClusterMode.Leader => {
-            val healths = members.map(_.health)
+            val healths     = members.map(_.health)
             val foundOrange = healths.contains("orange")
-            val foundRed = healths.contains("red")
-            val health = if (foundRed) "unhealthy" else (if (foundOrange) "notthathealthy" else "healthy")
+            val foundRed    = healths.contains("red")
+            val health      = if (foundRed) "unhealthy" else (if (foundOrange) "notthathealthy" else "healthy")
             Json.obj("cluster" -> Json.obj("health" -> health))
           }
         }
@@ -99,13 +99,13 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Json.obj(
             "otoroshi" -> JsString(_health match {
               case Healthy if overhead <= env.healthLimit => "healthy"
-              case Healthy if overhead > env.healthLimit => "unhealthy"
-              case Unhealthy => "unhealthy"
-              case Unreachable => "down"
+              case Healthy if overhead > env.healthLimit  => "unhealthy"
+              case Unhealthy                              => "unhealthy"
+              case Unreachable                            => "down"
             }),
             "datastore" -> JsString(_health match {
-              case Healthy => "healthy"
-              case Unhealthy => "unhealthy"
+              case Healthy     => "healthy"
+              case Unhealthy   => "unhealthy"
               case Unreachable => "unreachable"
             })
           ) ++ cluster
@@ -1284,7 +1284,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                       s"User created an ApiKey",
                       ctx.from,
                       Json.obj(
-                        "desc" -> desc.toJson,
+                        "desc"   -> desc.toJson,
                         "apikey" -> apiKey.toJson
                       )
                     )
@@ -1335,7 +1335,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   s"User created an ApiKey",
                   ctx.from,
                   Json.obj(
-                    "group" -> group.toJson,
+                    "group"  -> group.toJson,
                     "apikey" -> apiKey.toJson
                   )
                 )
@@ -1382,7 +1382,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   s"User updated an ApiKey",
                   ctx.from,
                   Json.obj(
-                    "desc" -> desc.toJson,
+                    "desc"   -> desc.toJson,
                     "apikey" -> apiKey.toJson
                   )
                 )
@@ -1429,7 +1429,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   s"User updated an ApiKey",
                   ctx.from,
                   Json.obj(
-                    "desc" -> desc.toJson,
+                    "desc"   -> desc.toJson,
                     "apikey" -> apiKey.toJson
                   )
                 )
@@ -1471,7 +1471,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   s"User updated an ApiKey",
                   ctx.from,
                   Json.obj(
-                    "group" -> group.toJson,
+                    "group"  -> group.toJson,
                     "apikey" -> apiKey.toJson
                   )
                 )
@@ -1516,7 +1516,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   s"User updated an ApiKey",
                   ctx.from,
                   Json.obj(
-                    "group" -> group.toJson,
+                    "group"  -> group.toJson,
                     "apikey" -> apiKey.toJson
                   )
                 )
@@ -1553,7 +1553,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               s"User deleted an ApiKey",
               ctx.from,
               Json.obj(
-                "group" -> group.toJson,
+                "group"  -> group.toJson,
                 "apikey" -> apiKey.toJson
               )
             )
@@ -1591,7 +1591,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               s"User deleted an ApiKey",
               ctx.from,
               Json.obj(
-                "desc" -> desc.toJson,
+                "desc"   -> desc.toJson,
                 "apikey" -> apiKey.toJson
               )
             )
@@ -1861,7 +1861,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   s"User updated an ApiKey",
                   ctx.from,
                   Json.obj(
-                    "desc" -> desc.toJson,
+                    "desc"   -> desc.toJson,
                     "apikey" -> apiKey.toJson
                   )
                 )

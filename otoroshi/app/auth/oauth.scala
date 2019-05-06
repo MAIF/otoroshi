@@ -46,7 +46,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           authorizeUrl = (json \ "authorizeUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/authorize"),
           tokenUrl = (json \ "tokenUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/token"),
           userInfoUrl = (json \ "userInfoUrl").asOpt[String].getOrElse("http://localhost:8082/userinfo"),
-          introspectionUrl = (json \ "introspectionUrl").asOpt[String].getOrElse("http://localhost:8082/token/introspect"),
+          introspectionUrl =
+            (json \ "introspectionUrl").asOpt[String].getOrElse("http://localhost:8082/token/introspect"),
           loginUrl = (json \ "loginUrl").asOpt[String].getOrElse("http://localhost:8082/login"),
           logoutUrl = (json \ "logoutUrl").asOpt[String].getOrElse("http://localhost:8082/logout"),
           accessTokenField = (json \ "accessTokenField").asOpt[String].getOrElse("access_token"),
@@ -224,30 +225,31 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            val builder = env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+            val builder =
+              env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
-                  "code"          -> code,
-                  "grant_type"    -> "authorization_code",
-                  "client_id"     -> clientId,
-                  "redirect_uri"  -> redirectUri
+                  "code"         -> code,
+                  "grant_type"   -> "authorization_code",
+                  "client_id"    -> clientId,
+                  "redirect_uri" -> redirectUri
                 ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
               )
             } else {
               builder.post(
                 Map(
-                  "code"          -> code,
-                  "grant_type"    -> "authorization_code",
-                  "client_id"     -> clientId,
-                  "redirect_uri"  -> redirectUri
+                  "code"         -> code,
+                  "grant_type"   -> "authorization_code",
+                  "client_id"    -> clientId,
+                  "redirect_uri" -> redirectUri
                 ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
               )(writeableOf_urlEncodedSimpleForm)
             }
             future1
               .flatMap { resp =>
                 val rawToken: JsValue = resp.json
-                val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
+                val accessToken       = (rawToken \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
                   // println(accessToken)
                   val algoSettings = authConfig.jwtVerifier.get
@@ -268,7 +270,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
                   }
                 } else {
-                  val builder2 = env.Ws.url(authConfig.userInfoUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+                  val builder2 = env.Ws
+                    .url(authConfig.userInfoUrl)
+                    .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
                   val future2 = if (authConfig.useJson) {
                     builder2.post(
                       Json.obj(
@@ -332,23 +336,24 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            val builder = env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+            val builder =
+              env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
-                  "code"          -> code,
-                  "grant_type"    -> "authorization_code",
-                  "client_id"     -> clientId,
-                  "redirect_uri"  -> redirectUri
+                  "code"         -> code,
+                  "grant_type"   -> "authorization_code",
+                  "client_id"    -> clientId,
+                  "redirect_uri" -> redirectUri
                 ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
               )
             } else {
               builder.post(
                 Map(
-                  "code"          -> code,
-                  "grant_type"    -> "authorization_code",
-                  "client_id"     -> clientId,
-                  "redirect_uri"  -> redirectUri
+                  "code"         -> code,
+                  "grant_type"   -> "authorization_code",
+                  "client_id"    -> clientId,
+                  "redirect_uri" -> redirectUri
                 ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
               )(writeableOf_urlEncodedSimpleForm)
             }
@@ -374,7 +379,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
                   }
                 } else {
-                  val builder2 = env.Ws.url(authConfig.userInfoUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+                  val builder2 = env.Ws
+                    .url(authConfig.userInfoUrl)
+                    .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
                   val future2 = if (authConfig.useJson) {
                     builder2.post(
                       Json.obj(

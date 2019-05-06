@@ -45,9 +45,9 @@ export class TopBar extends Component {
           env: v.env,
           action: () => {
             if (v.type === 'http') {
-              this.gotoService({ env: v.env, value: v.serviceId })
+              this.gotoService({ env: v.env, value: v.serviceId });
             } else if (v.type === 'tcp') {
-              this.gotoTcpService({ env: v.env, value: v.serviceId })
+              this.gotoTcpService({ env: v.env, value: v.serviceId });
             }
           },
         }));

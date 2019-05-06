@@ -110,7 +110,8 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
   private implicit val mat                      = ActorMaterializer()(system)
 
   private def url(url: String): WSRequest = {
-    val builder = env.Ws.url(url).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
+    val builder =
+      env.Ws.url(url).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
     authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
@@ -196,7 +197,9 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
   }
 
   override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val builder = env.Ws.url(urlFromPath("/_bulk")).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
+    val builder = env.Ws
+      .url(urlFromPath("/_bulk"))
+      .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
 
     val clientInstance = authHeader()
       .fold {

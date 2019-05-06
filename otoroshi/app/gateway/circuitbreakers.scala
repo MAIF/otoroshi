@@ -38,15 +38,17 @@ object Retry {
 
   lazy val logger = Logger("otoroshi-circuit-breaker")
 
-  private[this] def retryPromise[T](totalCalls: Int,
-                                    times: Int,
-                                    delay: Long,
-                                    factor: Long,
-                                    promise: Promise[T],
-                                    failure: Option[Throwable],
-                                    ctx: String,
-                                    f: Int => Future[T],
-                                    counter: AtomicInteger)(implicit ec: ExecutionContext, scheduler: Scheduler): Unit = {
+  private[this] def retryPromise[T](
+      totalCalls: Int,
+      times: Int,
+      delay: Long,
+      factor: Long,
+      promise: Promise[T],
+      failure: Option[Throwable],
+      ctx: String,
+      f: Int => Future[T],
+      counter: AtomicInteger
+  )(implicit ec: ExecutionContext, scheduler: Scheduler): Unit = {
     try {
       (times, failure) match {
         case (0, Some(e)) =>

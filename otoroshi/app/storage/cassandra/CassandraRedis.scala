@@ -83,9 +83,9 @@ class CassandraRedis(actorSystem: ActorSystem,
     .withPort(contactPort)
     .withPoolingOptions(poolingOptions)
     .withoutJMXReporting()
-    //.withReconnectionPolicy()
-    //.withRetryPolicy()
-    //.withLoadBalancingPolicy(LoadBalancingPolicy.)
+  //.withReconnectionPolicy()
+  //.withRetryPolicy()
+  //.withLoadBalancingPolicy(LoadBalancingPolicy.)
 
   val cluster: Cluster = (for {
     username <- mayBeUsername
@@ -250,19 +250,23 @@ class CassandraRedis(actorSystem: ActorSystem,
     getExpirationAt(key).flatMap { ttl =>
       getValueAt(key).flatMap {
         case Some(value) => FastFuture.successful(Some(("string", ttl, value)))
-        case None => getCounterOptAt(key).flatMap {
-          case Some(value) => FastFuture.successful(Some(("string", ttl, value)))
-          case None => getListOptAt(key).flatMap {
-            case Some(value) => FastFuture.successful(Some(("list", ttl, value)))
-            case None => getSetOptAt(key).flatMap {
-              case Some(value) => FastFuture.successful(Some(("set", ttl, value)))
-              case None => getMapOptAt(key).map {
-                case Some(value) => Some(("hash", ttl, value))
-                case None => None
+        case None =>
+          getCounterOptAt(key).flatMap {
+            case Some(value) => FastFuture.successful(Some(("string", ttl, value)))
+            case None =>
+              getListOptAt(key).flatMap {
+                case Some(value) => FastFuture.successful(Some(("list", ttl, value)))
+                case None =>
+                  getSetOptAt(key).flatMap {
+                    case Some(value) => FastFuture.successful(Some(("set", ttl, value)))
+                    case None =>
+                      getMapOptAt(key).map {
+                        case Some(value) => Some(("hash", ttl, value))
+                        case None        => None
+                      }
+                  }
               }
-            }
           }
-        }
       }
     }
   }

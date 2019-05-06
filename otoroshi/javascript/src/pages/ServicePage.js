@@ -307,16 +307,18 @@ export class ServicePage extends Component {
 
   deleteService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newPrompt(`Type the name of the service (${this.state.service.name})to delete it`).then(name => {
-      if (name && name === this.state.service.name) {
-        BackOfficeServices.deleteService(this.state.service).then(() => {
-          window.location.href = `/bo/dashboard/services`;
-          // this.props.history.push({
-          //   pathname: `/lines/${this.state.service.env}/services`
-          // });
-        });
-      }
-    });
+    window
+      .newPrompt(`Type the name of the service (${this.state.service.name})to delete it`)
+      .then(name => {
+        if (name && name === this.state.service.name) {
+          BackOfficeServices.deleteService(this.state.service).then(() => {
+            window.location.href = `/bo/dashboard/services`;
+            // this.props.history.push({
+            //   pathname: `/lines/${this.state.service.env}/services`
+            // });
+          });
+        }
+      });
   };
 
   duplicateService = e => {
@@ -901,8 +903,8 @@ export class ServicePage extends Component {
               help="Version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future."
               onChange={arr => this.changeTheValue('secComVersion', arr)}
               possibleValues={[
-                { label: "V1 - simple values exchange", value: 1 },
-                { label: "V2 - signed JWT tokens exchange", value: 2 }
+                { label: 'V1 - simple values exchange', value: 1 },
+                { label: 'V2 - signed JWT tokens exchange', value: 2 },
               ]}
             />
             <ArrayInput
@@ -1057,21 +1059,27 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.customHeadersAuth.clientIdHeaderName}
               help="The name of the header to get the client id"
               placeholder="Otoroshi-Client-Id"
-              onChange={v => this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientIdHeaderName', v)}
+              onChange={v =>
+                this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientIdHeaderName', v)
+              }
             />
             <TextInput
               label="Custom client secret header name"
               value={this.state.service.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName}
               help="The name of the header to get the client secret"
               placeholder="Otoroshi-Client-Secret"
-              onChange={v => this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientSecretHeaderName', v)}
+              onChange={v =>
+                this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientSecretHeaderName', v)
+              }
             />
             <Separator title="JWT Token Api Key" />
             <BooleanInput
               label="Include Http request attrs."
               value={this.state.service.apiKeyConstraints.jwtAuth.includeRequestAttributes}
               help="If enabled, you have to put the following fields in the JWT token corresponding to the current http call (httpPath, httpVerb, httpHost)"
-              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.includeRequestAttributes', v)}
+              onChange={v =>
+                this.changeTheValue('apiKeyConstraints.jwtAuth.includeRequestAttributes', v)
+              }
             />
             <NumberInput
               label="Max accepted token lifetime"
@@ -1110,9 +1118,7 @@ export class ServicePage extends Component {
             <SelectInput
               label="Type"
               value={this.state.service.thirdPartyApiKey.type}
-              possibleValues={[
-                { label: 'OpenID Connect JWT tokens', value: 'OIDC' },
-              ]}
+              possibleValues={[{ label: 'OpenID Connect JWT tokens', value: 'OIDC' }]}
               help="..."
             />
             {this.state.service.thirdPartyApiKey.type === 'OIDC' && (
@@ -1128,9 +1134,13 @@ export class ServicePage extends Component {
                   value={this.state.service.thirdPartyApiKey.mode}
                   onChange={e => this.changeTheValue('thirdPartyApiKey.mode', e)}
                   possibleValues={[
-                    { value: 'Tmp', label: 'Temporary api keys (api keys will not be stored)'},
-                    { value: 'Hybrid', label: 'Hybrid api keys (api keys will not be stored, but will be used if they already exists)'},
-                    { value: 'Persistent', label: 'Persistent api keys (will be stored)'},
+                    { value: 'Tmp', label: 'Temporary api keys (api keys will not be stored)' },
+                    {
+                      value: 'Hybrid',
+                      label:
+                        'Hybrid api keys (api keys will not be stored, but will be used if they already exists)',
+                    },
+                    { value: 'Persistent', label: 'Persistent api keys (will be stored)' },
                   ]}
                   help="..."
                 />
@@ -1152,7 +1162,9 @@ export class ServicePage extends Component {
                     )}
                     {this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a
-                        href={`/bo/dashboard/auth-configs/edit/${this.state.service.thirdPartyApiKey.oidcConfigRef}`}
+                        href={`/bo/dashboard/auth-configs/edit/${
+                          this.state.service.thirdPartyApiKey.oidcConfigRef
+                        }`}
                         className="btn btn-sm btn-success">
                         <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
                       </a>
@@ -1544,7 +1556,7 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('clientConfig.sampleInterval', v)}
             />
             <Separator title="Proxy settings" />
-            <Proxy 
+            <Proxy
               value={this.state.service.clientConfig.proxy}
               onChange={v => this.changeTheValue('clientConfig.proxy', v)}
             />

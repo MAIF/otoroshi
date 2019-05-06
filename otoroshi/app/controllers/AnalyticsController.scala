@@ -15,14 +15,15 @@ import scala.concurrent.{ExecutionContext, Future}
 case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
   def call(req: RequestHeader)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
     req.getQueryString("fields") match {
-      case None => f().map {
-        case Some(res) => Json.obj(fieldName -> res)
-        case None => Json.obj()
-      }
-      case Some(fieldsStr) if fieldsStr.toLowerCase().split(",").toSeq.contains(fieldName.toLowerCase())=> {
+      case None =>
         f().map {
           case Some(res) => Json.obj(fieldName -> res)
-          case None => Json.obj()
+          case None      => Json.obj()
+        }
+      case Some(fieldsStr) if fieldsStr.toLowerCase().split(",").toSeq.contains(fieldName.toLowerCase()) => {
+        f().map {
+          case Some(res) => Json.obj(fieldName -> res)
+          case None      => Json.obj()
         }
       }
       case _ => FastFuture.successful(Json.obj())
@@ -353,29 +354,46 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
             val toDate   = to.map(f => new DateTime(f.toLong))
 
             val parts = Seq(
-              Part("statusesPiechart", () => analyticsService.fetchStatusesPiechart(Some(filterable), fromDate, toDate)),
-              Part("statusesHistogram", () => analyticsService.fetchStatusesHistogram(Some(filterable), fromDate, toDate)),
-              Part("overheadPercentiles", () => analyticsService.fetchOverheadPercentilesHistogram(Some(filterable), fromDate, toDate)),
-              Part("overheadStats", () => analyticsService.fetchOverheadStatsHistogram(Some(filterable), fromDate, toDate)),
-              Part("durationPercentiles", () => analyticsService.fetchDurationPercentilesHistogram(Some(filterable), fromDate, toDate)),
-              Part("durationStats", () => analyticsService.fetchDurationStatsHistogram(Some(filterable), fromDate, toDate)),
+              Part("statusesPiechart",
+                   () => analyticsService.fetchStatusesPiechart(Some(filterable), fromDate, toDate)),
+              Part("statusesHistogram",
+                   () => analyticsService.fetchStatusesHistogram(Some(filterable), fromDate, toDate)),
+              Part("overheadPercentiles",
+                   () => analyticsService.fetchOverheadPercentilesHistogram(Some(filterable), fromDate, toDate)),
+              Part("overheadStats",
+                   () => analyticsService.fetchOverheadStatsHistogram(Some(filterable), fromDate, toDate)),
+              Part("durationPercentiles",
+                   () => analyticsService.fetchDurationPercentilesHistogram(Some(filterable), fromDate, toDate)),
+              Part("durationStats",
+                   () => analyticsService.fetchDurationStatsHistogram(Some(filterable), fromDate, toDate)),
               Part("dataInStats", () => analyticsService.fetchDataInStatsHistogram(Some(filterable), fromDate, toDate)),
-              Part("dataOutStats", () => analyticsService.fetchDataOutStatsHistogram(Some(filterable), fromDate, toDate)),
+              Part("dataOutStats",
+                   () => analyticsService.fetchDataOutStatsHistogram(Some(filterable), fromDate, toDate)),
               Part("hits", () => analyticsService.fetchHits(Some(filterable), fromDate, toDate)),
               Part("dataIn", () => analyticsService.fetchDataIn(Some(filterable), fromDate, toDate)),
               Part("dataOut", () => analyticsService.fetchDataOut(Some(filterable), fromDate, toDate)),
               Part("avgDuration", () => analyticsService.fetchAvgDuration(Some(filterable), fromDate, toDate)),
               Part("avgOverhead", () => analyticsService.fetchAvgOverhead(Some(filterable), fromDate, toDate)),
-              Part("apiKeyPiechart", () => (serviceId, apiKeyId, groupId) match {
-                case (Some(id), _, _) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
-                case (_, _, Some(id)) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
-                case _ => FastFuture.successful(None)
-              }),
-              Part("servicePiechart", () => (serviceId, apiKeyId, groupId) match {
-                case (_, Some(id), _) => analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
-                case (_, _, Some(id)) => analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
-                case _ => FastFuture.successful(None)
-              }),
+              Part(
+                "apiKeyPiechart",
+                () =>
+                  (serviceId, apiKeyId, groupId) match {
+                    case (Some(id), _, _) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
+                    case (_, _, Some(id)) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
+                    case _                => FastFuture.successful(None)
+                }
+              ),
+              Part(
+                "servicePiechart",
+                () =>
+                  (serviceId, apiKeyId, groupId) match {
+                    case (_, Some(id), _) =>
+                      analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
+                    case (_, _, Some(id)) =>
+                      analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
+                    case _ => FastFuture.successful(None)
+                }
+              ),
               Part("userPiechart", () => analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate))
             )
             FastFuture.sequence(parts.map(_.call(ctx.request))).map { pts =>

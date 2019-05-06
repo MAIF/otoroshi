@@ -829,7 +829,9 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
   private val membershipRef = new AtomicReference[Cancellable]()
 
-  private lazy val hostAddress: String = env.configuration.getOptional[String]("otoroshi.cluster.selfAddress").getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
+  private lazy val hostAddress: String = env.configuration
+    .getOptional[String]("otoroshi.cluster.selfAddress")
+    .getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
 
   def renewMemberShip(): Unit = {
     (for {
@@ -842,14 +844,14 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     } yield {
       val rt = Runtime.getRuntime
       Json.obj(
-        "typ" -> "globstats",
-        "cpu_usage" -> CpuInfo.cpuLoad(),
-        "load_average" -> CpuInfo.loadAverage(),
-        "heap_used" -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
-        "heap_size" -> rt.totalMemory() / 1024 / 1024,
-        "live_threads" -> ManagementFactory.getThreadMXBean.getThreadCount,
+        "typ"               -> "globstats",
+        "cpu_usage"         -> CpuInfo.cpuLoad(),
+        "load_average"      -> CpuInfo.loadAverage(),
+        "heap_used"         -> (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024,
+        "heap_size"         -> rt.totalMemory() / 1024 / 1024,
+        "live_threads"      -> ManagementFactory.getThreadMXBean.getThreadCount,
         "live_peak_threads" -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
-        "daemon_threads" -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
+        "daemon_threads"    -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
         "rate" -> BigDecimal(
           Option(rate)
             .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
@@ -894,13 +896,16 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   def start(): Unit = {
     if (config.mode == ClusterMode.Leader) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
-      membershipRef.set(env.otoroshiScheduler.schedule(1.second, 30.seconds)(
-        try {
-          renewMemberShip()
-        } catch {
-          case e: Throwable => Cluster.logger.error(s"Error while renewing leader membership of ${env.clusterConfig.leader.name}", e)
-        }
-      ))
+      membershipRef.set(
+        env.otoroshiScheduler.schedule(1.second, 30.seconds)(
+          try {
+            renewMemberShip()
+          } catch {
+            case e: Throwable =>
+              Cluster.logger.error(s"Error while renewing leader membership of ${env.clusterConfig.leader.name}", e)
+          }
+        )
+      )
     }
   }
   def stop(): Unit = {
@@ -926,7 +931,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val isPushingQuotas               = new AtomicBoolean(false)
   private val firstSuccessfulStateFetchDone = new AtomicBoolean(false)
 
-  private lazy val hostAddress: String = env.configuration.getOptional[String]("otoroshi.cluster.selfAddress").getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
+  private lazy val hostAddress: String = env.configuration
+    .getOptional[String]("otoroshi.cluster.selfAddress")
+    .getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
 
   /////////////
   private val apiIncrementsRef = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
@@ -1147,8 +1154,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     try {
       implicit val _env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
-        val oldApiIncr     = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
-        val oldServiceIncr = servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
+        val oldApiIncr = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
+        val oldServiceIncr =
+          servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
         //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start = System.currentTimeMillis()
         Retry
@@ -1306,12 +1314,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
-      pollRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(
-        pollState()
-      ))
-      pushRef.set(env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(
-        pushQuotas()
-      ))
+      pollRef.set(
+        env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(
+          pollState()
+        )
+      )
+      pushRef.set(
+        env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(
+          pushQuotas()
+        )
+      )
     }
   }
   def stop(): Unit = {
@@ -1396,8 +1408,8 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore                 = new InMemoryRawDataStore(redis)
-  override def rawDataStore: RawDataStore        = _rawDataStore
+  private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
+  override def rawDataStore: RawDataStore = _rawDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
@@ -1418,7 +1430,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
-  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  override def rawExport(
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -1432,17 +1446,17 @@ class SwappableInMemoryDataStores(configuration: Configuration,
             keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
-                  key == s"${env.storageRoot}:events:audit" ||
-                  key == s"${env.storageRoot}:events:alerts" ||
-                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                  key.startsWith(s"${env.storageRoot}:admins:") ||
-                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 redis.rawGet(key).flatMap {
@@ -1453,9 +1467,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
                           Json.obj("k" -> key,
-                            "v" -> jsonValue,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> what)
+                                   "v" -> jsonValue,
+                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                   "w" -> what)
                         }
                     }
                   }

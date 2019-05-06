@@ -24,7 +24,7 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{Logger, libs}
+import play.api.{libs, Logger}
 import play.shaded.ahc.org.asynchttpclient.util.{Assertions, MiscUtils}
 import ssl.DynamicSSLEngineProvider
 
@@ -62,7 +62,9 @@ class WsClientChooser(standardClient: WSClient,
     connectionContextHolder.get()
   }
 
-  def ws[T](request: WebSocketRequest,  clientFlow: Flow[Message, Message, T], customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
+  def ws[T](request: WebSocketRequest,
+            clientFlow: Flow[Message, Message, T],
+            customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
     akkaClient.executeWsRequest(request, clientFlow, customizer)
   }
 
@@ -180,7 +182,10 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
     .withMaxRetries(0)
     .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
 
-  private[utils] def executeRequest[T](request: HttpRequest, customizer: ConnectionPoolSettings => ConnectionPoolSettings): Future[HttpResponse] = {
+  private[utils] def executeRequest[T](
+      request: HttpRequest,
+      customizer: ConnectionPoolSettings => ConnectionPoolSettings
+  ): Future[HttpResponse] = {
     val currentSslContext = DynamicSSLEngineProvider.current
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
@@ -191,7 +196,11 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
     client.singleRequest(request, connectionContextHolder.get(), pool)
   }
 
-  private[utils] def executeWsRequest[T](request: WebSocketRequest, clientFlow: Flow[Message, Message, T], customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
+  private[utils] def executeWsRequest[T](
+      request: WebSocketRequest,
+      clientFlow: Flow[Message, Message, T],
+      customizer: ClientConnectionSettings => ClientConnectionSettings
+  ): (Future[WebSocketUpgradeResponse], T) = {
     val currentSslContext = DynamicSSLEngineProvider.current
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
@@ -236,7 +245,8 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
   override def contentType: String                     = _contentType
 
-  override def body[T: BodyReadable]: T      = throw new RuntimeException("Not supported on this WSClient !!! (StreameResponse.body)")
+  override def body[T: BodyReadable]: T =
+    throw new RuntimeException("Not supported on this WSClient !!! (StreameResponse.body)")
   def body: String                           = _bodyAsString
   def bodyAsBytes: ByteString                = _bodyAsBytes
   def cookies: Seq[WSCookie]                 = _cookies
@@ -277,8 +287,9 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   override def json: JsValue                           = _bodyAsJson
   override def contentType: String                     = _contentType
   def cookies: Seq[WSCookie]                           = _cookies
-  override def body[T: BodyReadable]: T                = throw new RuntimeException("Not supported on this WSClient !!! (RawResponse.body)")
-  def cookie(name: String): Option[WSCookie]           = _cookies.find(_.name == name)
+  override def body[T: BodyReadable]: T =
+    throw new RuntimeException("Not supported on this WSClient !!! (RawResponse.body)")
+  def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
 }
 
 object CaseInsensitiveOrdered extends Ordering[String] {
@@ -295,7 +306,7 @@ object WSProxyServerUtils {
     Assertions.assertNotNull(hostname, "hostname")
     if (nonProxyHosts.nonEmpty) {
       val var2: Iterator[_] = nonProxyHosts.iterator
-      while ( {
+      while ({
         var2.hasNext
       }) {
         val nonProxyHost: String = var2.next.asInstanceOf[String]
@@ -307,8 +318,14 @@ object WSProxyServerUtils {
 
   private def matchNonProxyHost(targetHost: String, nonProxyHost: String): Boolean = {
     if (nonProxyHost.length > 1) {
-      if (nonProxyHost.charAt(0) == '*') return targetHost.regionMatches(true, targetHost.length - nonProxyHost.length + 1, nonProxyHost, 1, nonProxyHost.length - 1)
-      if (nonProxyHost.charAt(nonProxyHost.length - 1) == '*') return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length - 1)
+      if (nonProxyHost.charAt(0) == '*')
+        return targetHost.regionMatches(true,
+                                        targetHost.length - nonProxyHost.length + 1,
+                                        nonProxyHost,
+                                        1,
+                                        nonProxyHost.length - 1)
+      if (nonProxyHost.charAt(nonProxyHost.length - 1) == '*')
+        return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length - 1)
     }
     nonProxyHost.equalsIgnoreCase(targetHost)
   }
@@ -333,27 +350,34 @@ case class AkkaWsClientRequest(
   private val _uri = Uri(rawUrl)
 
   private def customizer: ConnectionPoolSettings => ConnectionPoolSettings = {
-    proxy.filter(p => WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))).map { proxySettings =>
-      val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
-      val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
-        case (Some(principal), Some(password)) => {
-          val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
-          //val realmBuilder = new Realm.Builder(proxySettings.principal.orNull, proxySettings.password.orNull)
-          //val scheme: Realm.AuthScheme = proxySettings.protocol.getOrElse("http").toLowerCase(java.util.Locale.ENGLISH) match {
-          //  case "http" | "https" => Realm.AuthScheme.BASIC
-          //  case "kerberos" => Realm.AuthScheme.KERBEROS
-          //  case "ntlm" => Realm.AuthScheme.NTLM
-          //  case "spnego" => Realm.AuthScheme.SPNEGO
-          //  case _ => scala.sys.error("Unrecognized protocol!")
-          //}
-          //realmBuilder.setScheme(scheme)
-          ClientTransport.httpsProxy(proxyAddress, auth)
+    proxy
+      .filter(
+        p =>
+          WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(),
+                                              p.nonProxyHosts.getOrElse(Seq.empty))
+      )
+      .map { proxySettings =>
+        val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+        val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
+          case (Some(principal), Some(password)) => {
+            val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+            //val realmBuilder = new Realm.Builder(proxySettings.principal.orNull, proxySettings.password.orNull)
+            //val scheme: Realm.AuthScheme = proxySettings.protocol.getOrElse("http").toLowerCase(java.util.Locale.ENGLISH) match {
+            //  case "http" | "https" => Realm.AuthScheme.BASIC
+            //  case "kerberos" => Realm.AuthScheme.KERBEROS
+            //  case "ntlm" => Realm.AuthScheme.NTLM
+            //  case "spnego" => Realm.AuthScheme.SPNEGO
+            //  case _ => scala.sys.error("Unrecognized protocol!")
+            //}
+            //realmBuilder.setScheme(scheme)
+            ClientTransport.httpsProxy(proxyAddress, auth)
+          }
+          case _ => ClientTransport.httpsProxy(proxyAddress)
         }
-        case _ => ClientTransport.httpsProxy(proxyAddress)
-      }
-      a: ConnectionPoolSettings => a.withTransport(httpsProxyTransport)
-    } getOrElse {
-      a: ConnectionPoolSettings => a
+        a: ConnectionPoolSettings =>
+          a.withTransport(httpsProxyTransport)
+      } getOrElse { a: ConnectionPoolSettings =>
+      a
     }
   }
 
@@ -380,9 +404,11 @@ case class AkkaWsClientRequest(
 
   def stream(): Future[WSResponse] = {
     val req = buildRequest()
-    client.executeRequest(req, customizer).map { resp =>
-      AkkWsClientStreamedResponse(resp, rawUrl, client.mat)
-    }(client.ec)
+    client
+      .executeRequest(req, customizer)
+      .map { resp =>
+        AkkWsClientStreamedResponse(resp, rawUrl, client.mat)
+      }(client.ec)
   }
 
   override def execute(method: String): Future[WSResponse] = {
@@ -522,7 +548,7 @@ case class AkkaWsClientRequest(
     copy(rawUrl = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
   }
   override def withProxyServer(proxyServer: WSProxyServer): WSRequest = copy(proxy = Option(proxyServer))
-  override def proxyServer: Option[WSProxyServer] = proxy
+  override def proxyServer: Option[WSProxyServer]                     = proxy
   override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
     post[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
   override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
@@ -532,19 +558,27 @@ case class AkkaWsClientRequest(
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def auth: Option[(String, String, WSAuthScheme)] = throw new RuntimeException("Not supported on this WSClient !!! (Request.auth)")
-  override def calc: Option[WSSignatureCalculator]          = throw new RuntimeException("Not supported on this WSClient !!! (Request.calc)")
-  override def virtualHost: Option[String]                  = throw new RuntimeException("Not supported on this WSClient !!! (Request.virtualHost)")
-  override def sign(calc: WSSignatureCalculator): WSRequest = throw new RuntimeException("Not supported on this WSClient !!! (Request.sign)")
+  override def auth: Option[(String, String, WSAuthScheme)] =
+    throw new RuntimeException("Not supported on this WSClient !!! (Request.auth)")
+  override def calc: Option[WSSignatureCalculator] =
+    throw new RuntimeException("Not supported on this WSClient !!! (Request.calc)")
+  override def virtualHost: Option[String] =
+    throw new RuntimeException("Not supported on this WSClient !!! (Request.virtualHost)")
+  override def sign(calc: WSSignatureCalculator): WSRequest =
+    throw new RuntimeException("Not supported on this WSClient !!! (Request.sign)")
   override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest = {
     scheme match {
-      case WSAuthScheme.BASIC => addHttpHeaders("Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(Charsets.UTF_8))}")
+      case WSAuthScheme.BASIC =>
+        addHttpHeaders(
+          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(Charsets.UTF_8))}"
+        )
       case _ => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }
   }
   override def withRequestFilter(filter: WSRequestFilter): WSRequest =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.withRequestFilter)")
-  override def withVirtualHost(vh: String): WSRequest = throw new RuntimeException("Not supported on this WSClient !!! (Request.withVirtualHost)")
+  override def withVirtualHost(vh: String): WSRequest =
+    throw new RuntimeException("Not supported on this WSClient !!! (Request.withVirtualHost)")
 }
 
 object Implicits {
@@ -555,7 +589,7 @@ object Implicits {
     def withMaybeProxyServer(opt: Option[WSProxyServer]): req.Self = {
       opt match {
         case Some(proxy) => req.withProxyServer(proxy)
-        case None => req.asInstanceOf[req.Self]
+        case None        => req.asInstanceOf[req.Self]
       }
     }
   }
@@ -565,7 +599,7 @@ object Implicits {
         case httpResponse: HttpResponse =>
           Try(httpResponse.discardEntityBytes()) match {
             case Failure(e) => logger.error("Error while discarding entity bytes ...", e)
-            case _ => ()
+            case _          => ()
           }
           req
         case _ => req
@@ -577,7 +611,7 @@ object Implicits {
           case httpResponse: HttpResponse =>
             Try(httpResponse.discardEntityBytes()) match {
               case Failure(e) => logger.error("Error while discarding entity bytes ...", e)
-              case _ => ()
+              case _          => ()
             }
             req
           case _ => req

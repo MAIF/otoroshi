@@ -4,14 +4,7 @@ import { Table, Form } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
 class Target extends Component {
-
-  formFlow = [
-    'domain',
-    'target.host',
-    'target.ip',
-    'target.port',
-    'target.tls',
-  ]
+  formFlow = ['domain', 'target.host', 'target.ip', 'target.port', 'target.tls'];
 
   formSchema = {
     domain: {
@@ -44,13 +37,20 @@ class Target extends Component {
         label: 'TLS call',
       },
     },
-  }
+  };
 
   render() {
     const domain = this.props.domain;
     const target = this.props.target;
     return (
-      <div style={{ backgroundColor: 'rgb(65, 65, 65)', borderRadius: 4, padding: 10, width: '100%', marginBottom: 5 }}>
+      <div
+        style={{
+          backgroundColor: 'rgb(65, 65, 65)',
+          borderRadius: 4,
+          padding: 10,
+          width: '100%',
+          marginBottom: 5,
+        }}>
         <Form
           value={{ domain, target }}
           onChange={this.props.onChange}
@@ -58,8 +58,16 @@ class Target extends Component {
           schema={this.formSchema}
           style={{ marginTop: 5 }}
         />
-        <div style={{ display: 'flex', width: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <button type="button" className="btn btn-danger" onClick={this.props.delete}><i className="glyphicon glyphicon-trash" /></button>
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+          }}>
+          <button type="button" className="btn btn-danger" onClick={this.props.delete}>
+            <i className="glyphicon glyphicon-trash" />
+          </button>
         </div>
       </div>
     );
@@ -67,7 +75,6 @@ class Target extends Component {
 }
 
 class Targets extends Component {
-
   changeTarget = (idx, oldRule, oldTarget, newTarget) => {
     const value = this.props.rawValue;
     value.rules.forEach(r => {
@@ -75,7 +82,10 @@ class Targets extends Component {
         if (r.domain !== newTarget.domain) {
           this.deleteTarget(r.domain, oldTarget, idx);
           const rules = value.rules.filter(r => r.domain !== newTarget.domain);
-          const rule = value.rules.filter(r => r.domain === newTarget.domain)[0] || { domain: newTarget.domain, targets: [] };
+          const rule = value.rules.filter(r => r.domain === newTarget.domain)[0] || {
+            domain: newTarget.domain,
+            targets: [],
+          };
           rule.targets.push(newTarget.target);
           rules.push(rule);
           value.rules = rules;
@@ -94,7 +104,7 @@ class Targets extends Component {
       }
     });
     this.props.rawOnChange(value);
-  }
+  };
 
   deleteTarget = (domain, target, idx) => {
     const value = this.props.rawValue;
@@ -105,49 +115,56 @@ class Targets extends Component {
     });
     value.rules = value.rules.filter(r => r.targets.length > 0);
     this.props.rawOnChange(value);
-  }
+  };
 
   addTarget = () => {
     const value = this.props.rawValue;
     const rules = value.rules.filter(r => r.domain !== '*');
     const rule = value.rules.filter(r => r.domain === '*')[0] || { domain: '*', targets: [] };
-    rule.targets.push({ 
+    rule.targets.push({
       host: 'my.new.host',
       ip: null,
       port: 1234,
-      tls: false
+      tls: false,
     });
     rules.push(rule);
     value.rules = rules;
     this.props.rawOnChange(value);
-  }
+  };
 
   render() {
     return (
       <div>
-        {
-          this.props.value.map((rule, ridx) => {
-            return rule.targets.map((target, idx) => {
-              return <Target 
+        {this.props.value.map((rule, ridx) => {
+          return rule.targets.map((target, idx) => {
+            return (
+              <Target
                 key={idx + '-' + ridx}
-                domain={rule.domain} 
-                target={target} 
-                onChange={newTarget => this.changeTarget(idx, rule, target, newTarget)} 
-                delete={() => this.deleteTarget(rule.domain, target, idx)} 
+                domain={rule.domain}
+                target={target}
+                onChange={newTarget => this.changeTarget(idx, rule, target, newTarget)}
+                delete={() => this.deleteTarget(rule.domain, target, idx)}
               />
-            });
-          })
-        }
-        <div style={{ display: 'flex', width: '100%', justifyContent: 'center', alignItems: 'center' }}>
-          <button type="button" className="btn btn-primary" onClick={this.addTarget}><i className="glyphicon glyphicon-plus-sign" /></button>
+            );
+          });
+        })}
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <button type="button" className="btn btn-primary" onClick={this.addTarget}>
+            <i className="glyphicon glyphicon-plus-sign" />
+          </button>
         </div>
       </div>
-    )
+    );
   }
 }
 
 export class TcpServicesPage extends Component {
-
   columns = [
     {
       title: 'Name',
@@ -156,12 +173,12 @@ export class TcpServicesPage extends Component {
     {
       title: 'Port',
       style: { textAlign: 'center', width: 80 },
-      content: item => item.port
+      content: item => item.port,
     },
     {
       title: 'Interface',
       style: { textAlign: 'center', width: 80 },
-      content: item => item.interface
+      content: item => item.interface,
     },
     {
       title: 'Tls',
@@ -171,13 +188,13 @@ export class TcpServicesPage extends Component {
       content: item => item.tls,
       cell: (v, item) => {
         if (item.tls === 'Disabled') {
-          return <i className="fas fa-unlock-alt fa-lg" />
+          return <i className="fas fa-unlock-alt fa-lg" />;
         } else if (item.tls === 'PassThrough') {
-          return <i className="fas fa-lock fa-lg" />
+          return <i className="fas fa-lock fa-lg" />;
         } else {
-          return <i className="fas fa-lock fa-lg" />
+          return <i className="fas fa-lock fa-lg" />;
         }
-      }
+      },
     },
     {
       title: 'Client Auth.',
@@ -187,13 +204,13 @@ export class TcpServicesPage extends Component {
       content: item => item.clientAuth,
       cell: (v, item) => {
         if (item.clientAuth === 'None') {
-          return <i className="" />
+          return <i className="" />;
         } else if (item.clientAuth === 'Want') {
-          return <span className="glyphicon glyphicon-ok-sign" /> 
+          return <span className="glyphicon glyphicon-ok-sign" />;
         } else {
-          return <span className="glyphicon glyphicon-ok-sign" /> 
+          return <span className="glyphicon glyphicon-ok-sign" />;
         }
-      }
+      },
     },
     {
       title: 'SNI routing',
@@ -203,12 +220,12 @@ export class TcpServicesPage extends Component {
       content: item => item.clientAuth,
       cell: (v, item) => {
         if (!item.sni.enabled) {
-          return <i className="" />
+          return <i className="" />;
         } else {
-          return <span className="glyphicon glyphicon-ok-sign" /> 
+          return <span className="glyphicon glyphicon-ok-sign" />;
         }
-      }
-    }
+      },
+    },
   ];
 
   deleteService = (service, table) => {
@@ -224,7 +241,7 @@ export class TcpServicesPage extends Component {
   };
 
   componentDidMount() {
-    this.props.setTitle("All Tcp Services");
+    this.props.setTitle('All Tcp Services');
   }
 
   gotoService = service => {
@@ -279,8 +296,8 @@ export class TcpServicesPage extends Component {
           { label: 'Disabled', value: 'Disabled' },
           { label: 'PassThrough', value: 'PassThrough' },
           { label: 'Enabled', value: 'Enabled' },
-        ]
-      }
+        ],
+      },
     },
     'sni.enabled': {
       type: 'bool',
@@ -314,12 +331,12 @@ export class TcpServicesPage extends Component {
           { label: 'None', value: 'None' },
           { label: 'Want', value: 'Want' },
           { label: 'Need', value: 'Need' },
-        ]
-      }
+        ],
+      },
     },
-    rules: {
-      type: Targets
-    }
+    rules: {
+      type: Targets,
+    },
   };
 
   render() {
@@ -345,7 +362,7 @@ export class TcpServicesPage extends Component {
           navigateTo={this.gotoService}
           firstSort={0}
           extractKey={item => {
-            return item.id
+            return item.id;
           }}
           itemUrl={i => `/bo/dashboard/tcp/services/edit/${i.id}`}
         />

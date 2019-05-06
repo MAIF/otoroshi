@@ -12,19 +12,9 @@ function shallowDiffers(a, b) {
 }
 
 class Mailer extends Component {
-  genericFormFlow = [
-    'url',
-    'headers'
-  ]
-  mailgunFormFlow = [
-    'eu',
-    'apiKey',
-    'domain'
-  ]
-  mailjetFormFlow = [
-    'apiKeyPublic',
-    'apiKeyPrivate'
-  ]
+  genericFormFlow = ['url', 'headers'];
+  mailgunFormFlow = ['eu', 'apiKey', 'domain'];
+  mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
   genericFormSchema = {
     url: {
       type: 'string',
@@ -33,13 +23,13 @@ class Mailer extends Component {
         placeholder: 'Mailer url',
       },
     },
-    'headers': {
+    headers: {
       type: 'object',
       props: {
         label: 'Headers',
       },
-    }
-  }
+    },
+  };
   mailgunFormSchema = {
     eu: {
       type: 'bool',
@@ -61,7 +51,7 @@ class Mailer extends Component {
         placeholder: 'Mailgun domain',
       },
     },
-  }
+  };
   mailjetFormSchema = {
     apiKeyPublic: {
       type: 'string',
@@ -76,12 +66,12 @@ class Mailer extends Component {
         label: 'Private api key',
         placeholder: 'Private api key',
       },
-    }
-  }
+    },
+  };
   render() {
     const settings = this.props.value;
     const type = settings.type;
-    console.log(settings)
+    console.log(settings);
     return (
       <div>
         <SelectInput
@@ -91,14 +81,14 @@ class Mailer extends Component {
             switch (e) {
               case 'console':
                 this.props.onChange({
-                  type: 'console'
+                  type: 'console',
                 });
                 break;
               case 'generic':
                 this.props.onChange({
                   type: 'generic',
                   url: 'https://my.mailer.local/emails/_send',
-                  headers: {}
+                  headers: {},
                 });
                 break;
               case 'mailgun':
@@ -106,20 +96,20 @@ class Mailer extends Component {
                   type: 'mailgun',
                   eu: false,
                   apiKey: '',
-                  domain: ''
+                  domain: '',
                 });
                 break;
               case 'mailjet':
                 this.props.onChange({
                   type: 'mailjet',
                   apiKeyPublic: '',
-                  apiKeyPrivate: ''
+                  apiKeyPrivate: '',
                 });
                 break;
             }
           }}
           possibleValues={[
-            { label: 'None',    value: 'none'    },
+            { label: 'None', value: 'none' },
             { label: 'Console', value: 'console' },
             { label: 'Generic', value: 'generic' },
             { label: 'Mailgun', value: 'mailgun' },
@@ -584,7 +574,7 @@ export class DangerZonePage extends Component {
     'proxies.authority': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.jwk': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.elastic': { type: Proxy, props: { showNonProxyHosts: true } },
-    'mailerSettings': { type: Mailer }
+    mailerSettings: { type: Mailer },
   };
 
   formFlow = [

@@ -320,11 +320,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     .map { id =>
                       env.datastores.privateAppsUserDataStore.findById(id).flatMap {
                         case Some(session) => FastFuture.successful(Ok(session.profile))
-                        case None => Errors.craftResponseResult(s"Session not found", NotFound, req, None, Some("errors.session.not.found"))
+                        case None =>
+                          Errors.craftResponseResult(s"Session not found",
+                                                     NotFound,
+                                                     req,
+                                                     None,
+                                                     Some("errors.session.not.found"))
                       }
                     } getOrElse {
-                      Errors.craftResponseResult(s"Session not found", NotFound, req, None, Some("errors.session.not.found"))
-                    }
+                    Errors
+                      .craftResponseResult(s"Session not found", NotFound, req, None, Some("errors.session.not.found"))
+                  }
                 }
               }
               case _ => {
@@ -632,29 +638,35 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def stateRespValid(stateValue: String, stateResp: Option[String], jti: String, descriptor: ServiceDescriptor): Boolean = {
+  def stateRespValid(stateValue: String,
+                     stateResp: Option[String],
+                     jti: String,
+                     descriptor: ServiceDescriptor): Boolean = {
     stateResp match {
       case None => false
-      case Some(resp) => descriptor.secComVersion match {
-        case SecComVersion.V1 => stateValue == resp
-        case SecComVersion.V2 => descriptor.secComSettings.asAlgorithm(models.OutputMode)(env) match {
-          case None => false
-          case Some(algo) => {
-            Try {
-              JWT.require(algo)
-                .withAudience(env.Headers.OtoroshiIssuer)
-                //.withIssuer(???)
-                .withClaim("state-resp", stateValue)
-                .acceptLeeway(10)
-                .build()
-                .verify(resp)
-            } match {
-              case Success(_) => true
-              case Failure(e) => false
+      case Some(resp) =>
+        descriptor.secComVersion match {
+          case SecComVersion.V1 => stateValue == resp
+          case SecComVersion.V2 =>
+            descriptor.secComSettings.asAlgorithm(models.OutputMode)(env) match {
+              case None => false
+              case Some(algo) => {
+                Try {
+                  JWT
+                    .require(algo)
+                    .withAudience(env.Headers.OtoroshiIssuer)
+                    //.withIssuer(???)
+                    .withClaim("state-resp", stateValue)
+                    .acceptLeeway(10)
+                    .build()
+                    .verify(resp)
+                } match {
+                  case Success(_) => true
+                  case Failure(e) => false
+                }
+              }
             }
-          }
         }
-      }
     }
   }
 
@@ -712,11 +724,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
         ServiceLocation(req.host, globalConfig) match {
           case None =>
-            Errors.craftResponseResult(s"Service not found",
-                                       NotFound,
-                                       req,
-                                       None,
-                                       Some("errors.service.not.found"))
+            Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
             val uriParts = req.relativeUri.split("/").toSeq
 
@@ -727,11 +735,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 case None =>
                   // val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap)
                   // logger.info(s"Downstream service not found for $query")
-                  Errors.craftResponseResult(s"Service not found",
-                                             NotFound,
-                                             req,
-                                             None,
-                                             Some("errors.service.not.found"))
+                  Errors
+                    .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
                 case Some(desc) if !desc.enabled =>
                   Errors
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
@@ -944,17 +949,18 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     val stateValue       = IdGenerator.extendedToken(128)
                                     val stateToken: String = descriptor.secComVersion match {
                                       case SecComVersion.V1 => stateValue
-                                      case SecComVersion.V2 => OtoroshiClaim(
-                                        iss = env.Headers.OtoroshiIssuer,
-                                        sub = env.Headers.OtoroshiIssuer,
-                                        aud = descriptor.name,
-                                        exp = DateTime.now().plusSeconds(30).toDate.getTime,
-                                        iat = DateTime.now().toDate.getTime,
-                                        jti = jti
-                                      ).withClaim("state", stateValue).serialize(descriptor.secComSettings)
+                                      case SecComVersion.V2 =>
+                                        OtoroshiClaim(
+                                          iss = env.Headers.OtoroshiIssuer,
+                                          sub = env.Headers.OtoroshiIssuer,
+                                          aud = descriptor.name,
+                                          exp = DateTime.now().plusSeconds(30).toDate.getTime,
+                                          iat = DateTime.now().toDate.getTime,
+                                          jti = jti
+                                        ).withClaim("state", stateValue).serialize(descriptor.secComSettings)
                                     }
-                                    val rawUri           = req.relativeUri.substring(1)
-                                    val uriParts         = rawUri.split("/").toSeq
+                                    val rawUri   = req.relativeUri.substring(1)
+                                    val uriParts = rawUri.split("/").toSeq
                                     val uri: String =
                                       descriptor.matchingRoot.map(m => req.relativeUri.replace(m, "")).getOrElse(rawUri)
                                     val scheme =
@@ -1229,449 +1235,451 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       user = paUsr
                                     )
                                     finalRequest.flatMap {
-                                        case Left(badResult) => FastFuture.successful(badResult)
-                                        case Right(httpRequest) => {
-                                          val body =
-                                            if (currentReqHasBody) SourceBody(finalBody)
-                                            else EmptyBody
+                                      case Left(badResult) => FastFuture.successful(badResult)
+                                      case Right(httpRequest) => {
+                                        val body =
+                                          if (currentReqHasBody) SourceBody(finalBody)
+                                          else EmptyBody
 
-                                          // Stream IN
+                                        // Stream IN
 
-                                          // env.gatewayClient
-                                          //   .urlWithProtocol(target.scheme, url)
-                                          //   //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
-                                          //   .withRequestTimeout(6.hour) // we should monitor leaks
-                                          //   .withMethod(req.method)
-                                          //   // .withQueryString(queryString: _*)
-                                          //   .withHttpHeaders(headersIn: _*)
-                                          //   .withBody(body)
-                                          //   .withFollowRedirects(false)
-                                          //   .stream()
+                                        // env.gatewayClient
+                                        //   .urlWithProtocol(target.scheme, url)
+                                        //   //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
+                                        //   .withRequestTimeout(6.hour) // we should monitor leaks
+                                        //   .withMethod(req.method)
+                                        //   // .withQueryString(queryString: _*)
+                                        //   .withHttpHeaders(headersIn: _*)
+                                        //   .withBody(body)
+                                        //   .withFollowRedirects(false)
+                                        //   .stream()
 
-                                          val builder = env.gatewayClient
-                                            .urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url))
-                                            .withRequestTimeout(env.requestTimeout) // we should monitor leaks
-                                            .withMethod(httpRequest.method)
-                                            .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
-                                            .withCookies(wsCookiesIn: _*)
-                                            .withFollowRedirects(false)
-                                            .withMaybeProxyServer(descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services))
+                                        val builder = env.gatewayClient
+                                          .urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url))
+                                          .withRequestTimeout(env.requestTimeout) // we should monitor leaks
+                                          .withMethod(httpRequest.method)
+                                          .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
+                                          .withCookies(wsCookiesIn: _*)
+                                          .withFollowRedirects(false)
+                                          .withMaybeProxyServer(
+                                            descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services)
+                                          )
 
-                                          // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
-                                          val builderWithBody = if (currentReqHasBody) {
-                                            builder.withBody(body)
-                                          } else {
-                                            builder
-                                          }
+                                        // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
+                                        val builderWithBody = if (currentReqHasBody) {
+                                          builder.withBody(body)
+                                        } else {
+                                          builder
+                                        }
 
-                                          builderWithBody
-                                            .stream()
-                                            .flatMap(resp => quotas.fast.map(q => (resp, q)))
-                                            .flatMap { tuple =>
-                                              val (resp, remainingQuotas) = tuple
-                                              // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-                                              val headers = resp.headers.mapValues(_.head)
-                                              val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
-                                                c => c._2.map(v => (c._1, v))
-                                              ) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head)
-                                              val rawResponse = otoroshi.script.HttpResponse(
-                                                status = resp.status,
-                                                headers = headers.toMap,
-                                                cookies = resp.cookies
-                                              )
-                                              // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
-                                              // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
-                                              // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
-                                              val stateResp = headers.get(env.Headers.OtoroshiStateResp)
-                                              if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
-                                                  && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
-                                                  && !stateRespValid(stateValue, stateResp, jti, descriptor)) {
-                                                  // && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
-                                                resp.ignore()
-                                                if (resp.status == 404 && headers
-                                                      .get("X-CleverCloudUpgrade")
-                                                      .contains("true")) {
-                                                  Errors.craftResponseResult(
-                                                    "No service found for the specified target host, the service descriptor should be verified !",
-                                                    NotFound,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.no.service.found"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    cbDuration = cbDuration,
-                                                    callAttempts = callAttempts
-                                                  )
-                                                } else if (isUp) {
-                                                  // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
-                                                  val exchange = Json.prettyPrint(
-                                                    Json.obj(
-                                                      "uri"   -> req.relativeUri,
-                                                      "url"   -> url,
-                                                      "state" -> stateValue,
-                                                      "reveivedState" -> JsString(
-                                                        headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
-                                                      ),
-                                                      "claim"  -> claim,
-                                                      "method" -> req.method,
-                                                      "query"  -> req.rawQueryString,
-                                                      "status" -> resp.status,
-                                                      "headersIn" -> JsArray(
-                                                        req.headers.toSimpleMap
-                                                          .map(t => Json.obj("name" -> t._1, "value" -> t._2))
-                                                          .toSeq
-                                                      ),
-                                                      "headersOut" -> JsArray(
-                                                        headers
-                                                          .map(t => Json.obj("name" -> t._1, "values" -> t._2))
-                                                          .toSeq
-                                                      )
+                                        builderWithBody
+                                          .stream()
+                                          .flatMap(resp => quotas.fast.map(q => (resp, q)))
+                                          .flatMap { tuple =>
+                                            val (resp, remainingQuotas) = tuple
+                                            // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
+                                            val headers = resp.headers.mapValues(_.head)
+                                            val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
+                                              c => c._2.map(v => (c._1, v))
+                                            ) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head)
+                                            val rawResponse = otoroshi.script.HttpResponse(
+                                              status = resp.status,
+                                              headers = headers.toMap,
+                                              cookies = resp.cookies
+                                            )
+                                            // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
+                                            // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                                            // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
+                                            val stateResp = headers.get(env.Headers.OtoroshiStateResp)
+                                            if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
+                                                && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
+                                                && !stateRespValid(stateValue, stateResp, jti, descriptor)) {
+                                              // && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                                              resp.ignore()
+                                              if (resp.status == 404 && headers
+                                                    .get("X-CleverCloudUpgrade")
+                                                    .contains("true")) {
+                                                Errors.craftResponseResult(
+                                                  "No service found for the specified target host, the service descriptor should be verified !",
+                                                  NotFound,
+                                                  req,
+                                                  Some(descriptor),
+                                                  Some("errors.no.service.found"),
+                                                  duration = System.currentTimeMillis - start,
+                                                  overhead = (System
+                                                    .currentTimeMillis() - secondStart) + firstOverhead,
+                                                  cbDuration = cbDuration,
+                                                  callAttempts = callAttempts
+                                                )
+                                              } else if (isUp) {
+                                                // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
+                                                val exchange = Json.prettyPrint(
+                                                  Json.obj(
+                                                    "uri"   -> req.relativeUri,
+                                                    "url"   -> url,
+                                                    "state" -> stateValue,
+                                                    "reveivedState" -> JsString(
+                                                      headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
+                                                    ),
+                                                    "claim"  -> claim,
+                                                    "method" -> req.method,
+                                                    "query"  -> req.rawQueryString,
+                                                    "status" -> resp.status,
+                                                    "headersIn" -> JsArray(
+                                                      req.headers.toSimpleMap
+                                                        .map(t => Json.obj("name" -> t._1, "value" -> t._2))
+                                                        .toSeq
+                                                    ),
+                                                    "headersOut" -> JsArray(
+                                                      headers
+                                                        .map(t => Json.obj("name" -> t._1, "values" -> t._2))
+                                                        .toSeq
                                                     )
                                                   )
-                                                  logger
-                                                    .error(
-                                                      s"\n\nError while talking with downstream service :(\n\n$exchange\n\n"
-                                                    )
-                                                  Errors.craftResponseResult(
-                                                    "Downstream microservice does not seems to be secured. Cancelling request !",
-                                                    BadGateway,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.service.not.secured"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    cbDuration = cbDuration,
-                                                    callAttempts = callAttempts
+                                                )
+                                                logger
+                                                  .error(
+                                                    s"\n\nError while talking with downstream service :(\n\n$exchange\n\n"
+                                                  )
+                                                Errors.craftResponseResult(
+                                                  "Downstream microservice does not seems to be secured. Cancelling request !",
+                                                  BadGateway,
+                                                  req,
+                                                  Some(descriptor),
+                                                  Some("errors.service.not.secured"),
+                                                  duration = System.currentTimeMillis - start,
+                                                  overhead = (System
+                                                    .currentTimeMillis() - secondStart) + firstOverhead,
+                                                  cbDuration = cbDuration,
+                                                  callAttempts = callAttempts
+                                                )
+                                              } else {
+                                                Errors.craftResponseResult(
+                                                  "The service seems to be down :( come back later",
+                                                  Forbidden,
+                                                  req,
+                                                  Some(descriptor),
+                                                  Some("errors.service.down"),
+                                                  duration = System.currentTimeMillis - start,
+                                                  overhead = (System
+                                                    .currentTimeMillis() - secondStart) + firstOverhead,
+                                                  cbDuration = cbDuration,
+                                                  callAttempts = callAttempts
+                                                )
+                                              }
+                                            } else {
+                                              val upstreamLatency = System.currentTimeMillis() - upstreamStart
+                                              val _headersOut: Seq[(String, String)] = _headersForOut
+                                                .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
+                                                if (descriptor.sendOtoroshiHeadersBack) {
+                                                  Seq(
+                                                    env.Headers.OtoroshiRequestId        -> snowflake,
+                                                    env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
+                                                    env.Headers.OtoroshiProxyLatency     -> s"$overhead",
+                                                    env.Headers.OtoroshiUpstreamLatency  -> s"$upstreamLatency" //,
+                                                    //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
                                                   )
                                                 } else {
-                                                  Errors.craftResponseResult(
-                                                    "The service seems to be down :( come back later",
-                                                    Forbidden,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.service.down"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    cbDuration = cbDuration,
-                                                    callAttempts = callAttempts
-                                                  )
+                                                  Seq.empty[(String, String)]
                                                 }
-                                              } else {
-                                                val upstreamLatency = System.currentTimeMillis() - upstreamStart
-                                                val _headersOut: Seq[(String, String)] = _headersForOut
-                                                  .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
-                                                  if (descriptor.sendOtoroshiHeadersBack) {
-                                                    Seq(
-                                                      env.Headers.OtoroshiRequestId        -> snowflake,
-                                                      env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-                                                      env.Headers.OtoroshiProxyLatency     -> s"$overhead",
-                                                      env.Headers.OtoroshiUpstreamLatency  -> s"$upstreamLatency" //,
-                                                      //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
-                                                    )
-                                                  } else {
-                                                    Seq.empty[(String, String)]
-                                                  }
-                                                ) ++ Some(trackingId)
-                                                  .filter(_ => desc.canary.enabled)
-                                                  .map(
-                                                    _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
-                                                  ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                                                          Seq(
-                                                            env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
-                                                            env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                                                          )
-                                                        } else {
-                                                          Seq.empty[(String, String)]
-                                                        }) ++ descriptor.cors
-                                                  .asHeaders(req) ++ desc.additionalHeadersOut.toSeq
-
-                                                val otoroshiResponse = otoroshi.script.HttpResponse(
-                                                  status = resp.status,
-                                                  headers = _headersOut.toMap,
-                                                  cookies = resp.cookies
-                                                )
-                                                descriptor
-                                                  .transformResponse(
-                                                    snowflake = snowflake,
-                                                    rawResponse = rawResponse,
-                                                    otoroshiResponse = otoroshiResponse,
-                                                    desc = descriptor,
-                                                    apiKey = apiKey,
-                                                    user = paUsr
-                                                  )
-                                                  .flatMap {
-                                                    case Left(badResult) => {
-                                                      resp.ignore()
-                                                      FastFuture.successful(badResult)
-                                                    }
-                                                    case Right(httpResponse) => {
-                                                      val headersOut = httpResponse.headers.toSeq
-                                                      val contentType =
-                                                        httpResponse.headers.getOrElse("Content-Type", MimeTypes.TEXT)
-                                                      // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
-                                                      // meterOut.mark(responseHeader.length)
-                                                      // counterOut.addAndGet(responseHeader.length)
-                                                      val isChunked =
-                                                        resp.header("Transfer-Encoding").contains("chunked")
-                                                      val theStream: Source[ByteString, _] = resp.bodyAsSource
-                                                        .concat(snowMonkeyContext.trailingResponseBodyStream)
-                                                        .alsoTo(Sink.onComplete {
-                                                          case Success(_) =>
-                                                            // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
-                                                            promise.trySuccess(
-                                                              ProxyDone(httpResponse.status,
-                                                                        isChunked,
-                                                                        upstreamLatency,
-                                                                        headersOut.map(Header.apply))
-                                                            )
-                                                          case Failure(e) =>
-                                                            logger.error(
-                                                              s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
-                                                              e
-                                                            )
-                                                            resp.ignore()
-                                                            promise.trySuccess(
-                                                              ProxyDone(httpResponse.status,
-                                                                        isChunked,
-                                                                        upstreamLatency,
-                                                                        headersOut.map(Header.apply))
-                                                            )
-                                                        })
-                                                        .map { bs =>
-                                                          // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
-                                                          // meterOut.mark(bs.length)
-                                                          counterOut.addAndGet(bs.length)
-                                                          bs
-                                                        }
-
-                                                      val finalStream = descriptor.transformResponseBody(
-                                                        snowflake = snowflake,
-                                                        rawResponse = rawResponse,
-                                                        otoroshiResponse = otoroshiResponse,
-                                                        desc = descriptor,
-                                                        apiKey = apiKey,
-                                                        user = paUsr,
-                                                        body = theStream
-                                                      )
-
-                                                      val cookies = httpResponse.cookies.map(
-                                                        c =>
-                                                          Cookie(
-                                                            name = c.name,
-                                                            value = c.value,
-                                                            maxAge = c.maxAge.map(_.toInt),
-                                                            path = c.path.getOrElse("/"),
-                                                            domain = c.domain,
-                                                            secure = c.secure,
-                                                            httpOnly = c.httpOnly,
-                                                            sameSite = None
+                                              ) ++ Some(trackingId)
+                                                .filter(_ => desc.canary.enabled)
+                                                .map(
+                                                  _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
+                                                ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
+                                                        Seq(
+                                                          env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                                          env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
                                                         )
-                                                      )
-
-                                                      if (req.version == "HTTP/1.0") {
-                                                        if (descriptor.allowHttp10) {
-                                                          logger.warn(
-                                                            s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
-                                                          )
-                                                          finalStream
-                                                            .via(
-                                                              MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt,
-                                                                str => logger.warn(str))
-                                                            )
-                                                            .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
-                                                            .fast
-                                                            .flatMap { body =>
-                                                              val response: Result = Status(httpResponse.status)(body)
-                                                                .withHeaders(
-                                                                  headersOut.filterNot(
-                                                                    h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                                  ): _*
-                                                                )
-                                                                .as(contentType)
-                                                                .withCookies((withTrackingCookies ++ cookies): _*)
-                                                              desc.gzip.handleResult(req, response)
-                                                            }
-                                                        } else {
-                                                          resp.ignore()
-                                                          Errors.craftResponseResult(
-                                                            "You cannot use HTTP/1.0 here",
-                                                            Forbidden,
-                                                            req,
-                                                            Some(descriptor),
-                                                            Some("errors.http.10.not.allowed"),
-                                                            duration = System.currentTimeMillis - start,
-                                                            overhead = (System
-                                                              .currentTimeMillis() - secondStart) + firstOverhead,
-                                                            cbDuration = cbDuration,
-                                                            callAttempts = callAttempts
-                                                          )
-                                                        }
-                                                      } else if (globalConfig.streamEntityOnly) { // only temporary
-                                                        // stream out
-                                                        val response: Result = isChunked match {
-                                                          case true => {
-                                                            // stream out
-                                                            Status(httpResponse.status)
-                                                              .chunked(finalStream)
-                                                              .withHeaders(
-                                                                headersOut.filterNot(h => h._1 == "Set-Cookie")
-                                                                ++ (if (isChunked)
-                                                                      Seq(("Transfer-Encoding" -> "chunked"))
-                                                                    else Seq.empty): _*
-                                                              )
-                                                              .withCookies((withTrackingCookies ++ cookies): _*)
-                                                              .as(contentType)
-                                                          }
-                                                          case false => {
-                                                            // stream out
-                                                            Status(httpResponse.status)
-                                                              .sendEntity(
-                                                                HttpEntity.Streamed(
-                                                                  finalStream,
-                                                                  httpResponse.headers
-                                                                    .get("Content-Length")
-                                                                    //.flatMap(_.lastOption)
-                                                                    .map(
-                                                                      _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                                    ),
-                                                                  httpResponse.headers.get("Content-Type")
-                                                                )
-                                                              )
-                                                              .withHeaders(
-                                                                headersOut.filterNot(
-                                                                  h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                                ): _*
-                                                              )
-                                                              .withCookies((withTrackingCookies ++ cookies): _*)
-                                                              .as(contentType)
-                                                          }
-                                                        }
-                                                        desc.gzip.handleResult(req, response)
-                                                        // val entity =
-                                                        //   if (isChunked) {
-                                                        //     HttpEntity.Chunked(
-                                                        //       finalStream
-                                                        //         .map(i => play.api.http.HttpChunk.Chunk(i))
-                                                        //         .concat(
-                                                        //           Source.single(
-                                                        //             play.api.http.HttpChunk
-                                                        //               .LastChunk(play.api.mvc.Headers())
-                                                        //           )
-                                                        //         ),
-                                                        //       Some(contentType) // contentTypeOpt
-                                                        //     )
-                                                        //   } else {
-                                                        //     HttpEntity.Streamed(
-                                                        //       finalStream,
-                                                        //       httpResponse.headers
-                                                        //         .get("Content-Length")
-                                                        //         //.flatMap(_.lastOption)
-                                                        //         .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
-                                                        //       Some(contentType) // contentTypeOpt
-                                                        //     )
-                                                        //   }
-                                                        // val response: Result = Status(httpResponse.status)
-                                                        //   .sendEntity(entity)
-                                                        //   .withHeaders(
-                                                        //     headersOut.filterNot(
-                                                        //       h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                        //     ) ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
-                                                        //   )
-                                                        //   .as(contentType)
-                                                        //   .withCookies((withTrackingCookies ++ cookies): _*)
-                                                        // desc.gzip.handleResult(req, response)
-                                                        // FastFuture.successful(response)
                                                       } else {
-                                                        val response: Result = isChunked match {
-                                                          case true => {
-                                                            // stream out
-                                                            Status(httpResponse.status)
-                                                              .chunked(finalStream)
-                                                              .withHeaders(
-                                                                headersOut.filterNot(h => h._1 == "Set-Cookie")
-                                                                ++ (if (isChunked)
-                                                                      Seq(("Transfer-Encoding" -> "chunked"))
-                                                                    else Seq.empty): _*
-                                                              )
-                                                              .withCookies((withTrackingCookies ++ cookies): _*)
-                                                              .as(contentType)
-                                                          }
-                                                          case false => {
-                                                            // stream out
-                                                            Status(httpResponse.status)
-                                                              .sendEntity(
-                                                                HttpEntity.Streamed(
-                                                                  finalStream,
-                                                                  httpResponse.headers
-                                                                    .get("Content-Length")
-                                                                    //.flatMap(_.lastOption)
-                                                                    .map(
-                                                                      _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                                    ),
-                                                                  httpResponse.headers.get("Content-Type")
-                                                                )
-                                                              )
+                                                        Seq.empty[(String, String)]
+                                                      }) ++ descriptor.cors
+                                                .asHeaders(req) ++ desc.additionalHeadersOut.toSeq
+
+                                              val otoroshiResponse = otoroshi.script.HttpResponse(
+                                                status = resp.status,
+                                                headers = _headersOut.toMap,
+                                                cookies = resp.cookies
+                                              )
+                                              descriptor
+                                                .transformResponse(
+                                                  snowflake = snowflake,
+                                                  rawResponse = rawResponse,
+                                                  otoroshiResponse = otoroshiResponse,
+                                                  desc = descriptor,
+                                                  apiKey = apiKey,
+                                                  user = paUsr
+                                                )
+                                                .flatMap {
+                                                  case Left(badResult) => {
+                                                    resp.ignore()
+                                                    FastFuture.successful(badResult)
+                                                  }
+                                                  case Right(httpResponse) => {
+                                                    val headersOut = httpResponse.headers.toSeq
+                                                    val contentType =
+                                                      httpResponse.headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                                                    // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
+                                                    // meterOut.mark(responseHeader.length)
+                                                    // counterOut.addAndGet(responseHeader.length)
+                                                    val isChunked =
+                                                      resp.header("Transfer-Encoding").contains("chunked")
+                                                    val theStream: Source[ByteString, _] = resp.bodyAsSource
+                                                      .concat(snowMonkeyContext.trailingResponseBodyStream)
+                                                      .alsoTo(Sink.onComplete {
+                                                        case Success(_) =>
+                                                          // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
+                                                          promise.trySuccess(
+                                                            ProxyDone(httpResponse.status,
+                                                                      isChunked,
+                                                                      upstreamLatency,
+                                                                      headersOut.map(Header.apply))
+                                                          )
+                                                        case Failure(e) =>
+                                                          logger.error(
+                                                            s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
+                                                            e
+                                                          )
+                                                          resp.ignore()
+                                                          promise.trySuccess(
+                                                            ProxyDone(httpResponse.status,
+                                                                      isChunked,
+                                                                      upstreamLatency,
+                                                                      headersOut.map(Header.apply))
+                                                          )
+                                                      })
+                                                      .map { bs =>
+                                                        // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
+                                                        // meterOut.mark(bs.length)
+                                                        counterOut.addAndGet(bs.length)
+                                                        bs
+                                                      }
+
+                                                    val finalStream = descriptor.transformResponseBody(
+                                                      snowflake = snowflake,
+                                                      rawResponse = rawResponse,
+                                                      otoroshiResponse = otoroshiResponse,
+                                                      desc = descriptor,
+                                                      apiKey = apiKey,
+                                                      user = paUsr,
+                                                      body = theStream
+                                                    )
+
+                                                    val cookies = httpResponse.cookies.map(
+                                                      c =>
+                                                        Cookie(
+                                                          name = c.name,
+                                                          value = c.value,
+                                                          maxAge = c.maxAge.map(_.toInt),
+                                                          path = c.path.getOrElse("/"),
+                                                          domain = c.domain,
+                                                          secure = c.secure,
+                                                          httpOnly = c.httpOnly,
+                                                          sameSite = None
+                                                      )
+                                                    )
+
+                                                    if (req.version == "HTTP/1.0") {
+                                                      if (descriptor.allowHttp10) {
+                                                        logger.warn(
+                                                          s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
+                                                        )
+                                                        finalStream
+                                                          .via(
+                                                            MaxLengthLimiter(globalConfig.maxHttp10ResponseSize.toInt,
+                                                                             str => logger.warn(str))
+                                                          )
+                                                          .runWith(Sink.reduce[ByteString]((bs, n) => bs.concat(n)))
+                                                          .fast
+                                                          .flatMap { body =>
+                                                            val response: Result = Status(httpResponse.status)(body)
                                                               .withHeaders(
                                                                 headersOut.filterNot(
                                                                   h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
                                                                 ): _*
                                                               )
-                                                              .withCookies((withTrackingCookies ++ cookies): _*)
                                                               .as(contentType)
+                                                              .withCookies((withTrackingCookies ++ cookies): _*)
+                                                            desc.gzip.handleResult(req, response)
                                                           }
-                                                        }
-                                                        desc.gzip.handleResult(req, response)
-                                                        // val response: Result = httpResponse.headers
-                                                        //   .get("Transfer-Encoding")
-                                                        //   //.flatMap(_.lastOption)
-                                                        //   .filter(_ == "chunked")
-                                                        //   .map { _ =>
-                                                        //     // stream out
-                                                        //     logger.warn(s"2: Chunking response for ${desc.name} ${req.relativeUri}")
-                                                        //     Status(httpResponse.status)
-                                                        //       .chunked(finalStream)
-                                                        //       .withHeaders(
-                                                        //         headersOut.filterNot(h => h._1 == "Set-Cookie")
-                                                        //           ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
-                                                        //       )
-                                                        //       .withCookies((withTrackingCookies ++ cookies): _*)
-                                                        //       .as(contentType)
-                                                        //   } getOrElse {
-                                                        //   // stream out
-                                                        //   Status(httpResponse.status)
-                                                        //     .sendEntity(
-                                                        //       HttpEntity.Streamed(
-                                                        //         finalStream,
-                                                        //         httpResponse.headers
-                                                        //           .get("Content-Length")
-                                                        //           //.flatMap(_.lastOption)
-                                                        //           .map(
-                                                        //             _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                        //           ),
-                                                        //         httpResponse.headers.get("Content-Type")
-                                                        //       )
-                                                        //     )
-                                                        //     .withHeaders(
-                                                        //       headersOut.filterNot(
-                                                        //         h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                        //       ): _*
-                                                        //     )
-                                                        //     .withCookies((withTrackingCookies ++ cookies): _*)
-                                                        //     .as(contentType)
-                                                        // }
-                                                        // desc.gzip.handleResult(req, response)
-                                                        //FastFuture.successful(response)
+                                                      } else {
+                                                        resp.ignore()
+                                                        Errors.craftResponseResult(
+                                                          "You cannot use HTTP/1.0 here",
+                                                          Forbidden,
+                                                          req,
+                                                          Some(descriptor),
+                                                          Some("errors.http.10.not.allowed"),
+                                                          duration = System.currentTimeMillis - start,
+                                                          overhead = (System
+                                                            .currentTimeMillis() - secondStart) + firstOverhead,
+                                                          cbDuration = cbDuration,
+                                                          callAttempts = callAttempts
+                                                        )
                                                       }
+                                                    } else if (globalConfig.streamEntityOnly) { // only temporary
+                                                      // stream out
+                                                      val response: Result = isChunked match {
+                                                        case true => {
+                                                          // stream out
+                                                          Status(httpResponse.status)
+                                                            .chunked(finalStream)
+                                                            .withHeaders(
+                                                              headersOut.filterNot(h => h._1 == "Set-Cookie")
+                                                              ++ (if (isChunked)
+                                                                    Seq(("Transfer-Encoding" -> "chunked"))
+                                                                  else Seq.empty): _*
+                                                            )
+                                                            .withCookies((withTrackingCookies ++ cookies): _*)
+                                                            .as(contentType)
+                                                        }
+                                                        case false => {
+                                                          // stream out
+                                                          Status(httpResponse.status)
+                                                            .sendEntity(
+                                                              HttpEntity.Streamed(
+                                                                finalStream,
+                                                                httpResponse.headers
+                                                                  .get("Content-Length")
+                                                                  //.flatMap(_.lastOption)
+                                                                  .map(
+                                                                    _.toLong + snowMonkeyContext.trailingResponseBodySize
+                                                                  ),
+                                                                httpResponse.headers.get("Content-Type")
+                                                              )
+                                                            )
+                                                            .withHeaders(
+                                                              headersOut.filterNot(
+                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                              ): _*
+                                                            )
+                                                            .withCookies((withTrackingCookies ++ cookies): _*)
+                                                            .as(contentType)
+                                                        }
+                                                      }
+                                                      desc.gzip.handleResult(req, response)
+                                                      // val entity =
+                                                      //   if (isChunked) {
+                                                      //     HttpEntity.Chunked(
+                                                      //       finalStream
+                                                      //         .map(i => play.api.http.HttpChunk.Chunk(i))
+                                                      //         .concat(
+                                                      //           Source.single(
+                                                      //             play.api.http.HttpChunk
+                                                      //               .LastChunk(play.api.mvc.Headers())
+                                                      //           )
+                                                      //         ),
+                                                      //       Some(contentType) // contentTypeOpt
+                                                      //     )
+                                                      //   } else {
+                                                      //     HttpEntity.Streamed(
+                                                      //       finalStream,
+                                                      //       httpResponse.headers
+                                                      //         .get("Content-Length")
+                                                      //         //.flatMap(_.lastOption)
+                                                      //         .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
+                                                      //       Some(contentType) // contentTypeOpt
+                                                      //     )
+                                                      //   }
+                                                      // val response: Result = Status(httpResponse.status)
+                                                      //   .sendEntity(entity)
+                                                      //   .withHeaders(
+                                                      //     headersOut.filterNot(
+                                                      //       h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                      //     ) ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
+                                                      //   )
+                                                      //   .as(contentType)
+                                                      //   .withCookies((withTrackingCookies ++ cookies): _*)
+                                                      // desc.gzip.handleResult(req, response)
+                                                      // FastFuture.successful(response)
+                                                    } else {
+                                                      val response: Result = isChunked match {
+                                                        case true => {
+                                                          // stream out
+                                                          Status(httpResponse.status)
+                                                            .chunked(finalStream)
+                                                            .withHeaders(
+                                                              headersOut.filterNot(h => h._1 == "Set-Cookie")
+                                                              ++ (if (isChunked)
+                                                                    Seq(("Transfer-Encoding" -> "chunked"))
+                                                                  else Seq.empty): _*
+                                                            )
+                                                            .withCookies((withTrackingCookies ++ cookies): _*)
+                                                            .as(contentType)
+                                                        }
+                                                        case false => {
+                                                          // stream out
+                                                          Status(httpResponse.status)
+                                                            .sendEntity(
+                                                              HttpEntity.Streamed(
+                                                                finalStream,
+                                                                httpResponse.headers
+                                                                  .get("Content-Length")
+                                                                  //.flatMap(_.lastOption)
+                                                                  .map(
+                                                                    _.toLong + snowMonkeyContext.trailingResponseBodySize
+                                                                  ),
+                                                                httpResponse.headers.get("Content-Type")
+                                                              )
+                                                            )
+                                                            .withHeaders(
+                                                              headersOut.filterNot(
+                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                              ): _*
+                                                            )
+                                                            .withCookies((withTrackingCookies ++ cookies): _*)
+                                                            .as(contentType)
+                                                        }
+                                                      }
+                                                      desc.gzip.handleResult(req, response)
+                                                      // val response: Result = httpResponse.headers
+                                                      //   .get("Transfer-Encoding")
+                                                      //   //.flatMap(_.lastOption)
+                                                      //   .filter(_ == "chunked")
+                                                      //   .map { _ =>
+                                                      //     // stream out
+                                                      //     logger.warn(s"2: Chunking response for ${desc.name} ${req.relativeUri}")
+                                                      //     Status(httpResponse.status)
+                                                      //       .chunked(finalStream)
+                                                      //       .withHeaders(
+                                                      //         headersOut.filterNot(h => h._1 == "Set-Cookie")
+                                                      //           ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
+                                                      //       )
+                                                      //       .withCookies((withTrackingCookies ++ cookies): _*)
+                                                      //       .as(contentType)
+                                                      //   } getOrElse {
+                                                      //   // stream out
+                                                      //   Status(httpResponse.status)
+                                                      //     .sendEntity(
+                                                      //       HttpEntity.Streamed(
+                                                      //         finalStream,
+                                                      //         httpResponse.headers
+                                                      //           .get("Content-Length")
+                                                      //           //.flatMap(_.lastOption)
+                                                      //           .map(
+                                                      //             _.toLong + snowMonkeyContext.trailingResponseBodySize
+                                                      //           ),
+                                                      //         httpResponse.headers.get("Content-Type")
+                                                      //       )
+                                                      //     )
+                                                      //     .withHeaders(
+                                                      //       headersOut.filterNot(
+                                                      //         h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                      //       ): _*
+                                                      //     )
+                                                      //     .withCookies((withTrackingCookies ++ cookies): _*)
+                                                      //     .as(contentType)
+                                                      // }
+                                                      // desc.gzip.handleResult(req, response)
+                                                      //FastFuture.successful(response)
                                                     }
                                                   }
-                                              }
-
+                                                }
                                             }
-                                        }
+
+                                          }
                                       }
+                                    }
                                   }
 
                                   def passWithApiKey(config: GlobalConfig): Future[Result] = {
@@ -1681,20 +1689,36 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       }
                                     } else {
                                       val authByJwtToken = req.headers
-                                        .get(descriptor.apiKeyConstraints.jwtAuth.headerName.getOrElse(env.Headers.OtoroshiBearer))
+                                        .get(
+                                          descriptor.apiKeyConstraints.jwtAuth.headerName
+                                            .getOrElse(env.Headers.OtoroshiBearer)
+                                        )
                                         .orElse(
                                           req.headers.get("Authorization").filter(_.startsWith("Bearer "))
                                         )
                                         .map(_.replace("Bearer ", ""))
                                         .orElse(
                                           req.queryString
-                                            .get(descriptor.apiKeyConstraints.jwtAuth.queryName.getOrElse(env.Headers.OtoroshiBearerAuthorization))
+                                            .get(
+                                              descriptor.apiKeyConstraints.jwtAuth.queryName
+                                                .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+                                            )
                                             .flatMap(_.lastOption)
                                         )
-                                        .orElse(req.cookies.get(descriptor.apiKeyConstraints.jwtAuth.cookieName.getOrElse(env.Headers.OtoroshiJWTAuthorization)).map(_.value))
+                                        .orElse(
+                                          req.cookies
+                                            .get(
+                                              descriptor.apiKeyConstraints.jwtAuth.cookieName
+                                                .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+                                            )
+                                            .map(_.value)
+                                        )
                                         .filter(_.split("\\.").length == 3)
                                       val authBasic = req.headers
-                                        .get(descriptor.apiKeyConstraints.basicAuth.headerName.getOrElse(env.Headers.OtoroshiAuthorization))
+                                        .get(
+                                          descriptor.apiKeyConstraints.basicAuth.headerName
+                                            .getOrElse(env.Headers.OtoroshiAuthorization)
+                                        )
                                         .orElse(
                                           req.headers.get("Authorization").filter(_.startsWith("Basic "))
                                         )
@@ -1702,20 +1726,38 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         .flatMap(e => Try(decodeBase64(e)).toOption)
                                         .orElse(
                                           req.queryString
-                                            .get(descriptor.apiKeyConstraints.basicAuth.queryName.getOrElse(env.Headers.OtoroshiBasicAuthorization))
+                                            .get(
+                                              descriptor.apiKeyConstraints.basicAuth.queryName
+                                                .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+                                            )
                                             .flatMap(_.lastOption)
                                             .flatMap(e => Try(decodeBase64(e)).toOption)
                                         )
                                       val authByCustomHeaders = req.headers
-                                        .get(descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName.getOrElse(env.Headers.OtoroshiClientId))
+                                        .get(
+                                          descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
+                                            .getOrElse(env.Headers.OtoroshiClientId)
+                                        )
                                         .flatMap(
-                                          id => req.headers.get(descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName.getOrElse(env.Headers.OtoroshiClientSecret)).map(s => (id, s))
+                                          id =>
+                                            req.headers
+                                              .get(
+                                                descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName
+                                                  .getOrElse(env.Headers.OtoroshiClientSecret)
+                                              )
+                                              .map(s => (id, s))
                                         )
                                       val authBySimpleApiKeyClientId = req.headers
-                                        .get(descriptor.apiKeyConstraints.clientIdAuth.headerName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId))
+                                        .get(
+                                          descriptor.apiKeyConstraints.clientIdAuth.headerName
+                                            .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+                                        )
                                         .orElse(
                                           req.queryString
-                                            .get(descriptor.apiKeyConstraints.clientIdAuth.queryName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId))
+                                            .get(
+                                              descriptor.apiKeyConstraints.clientIdAuth.queryName
+                                                .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+                                            )
                                             .flatMap(_.lastOption)
                                         )
                                       if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
@@ -1755,7 +1797,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some(descriptor),
                                                     Some("errors.too.much.requests"),
                                                     duration = System.currentTimeMillis - start,
-                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                               }
                                           }
@@ -1804,7 +1847,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some(descriptor),
                                                     Some("errors.too.much.requests"),
                                                     duration = System.currentTimeMillis - start,
-                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                               }
                                           }
@@ -1813,9 +1857,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         Try {
                                           JWT.decode(jwtTokenValue)
                                         } map { jwt =>
-                                          Option(jwt.getClaim("iss")).filterNot(_.isNull).map(_.asString()).orElse(
-                                            Option(jwt.getClaim("clientId")).filterNot(_.isNull).map(_.asString())
-                                          ) match {
+                                          Option(jwt.getClaim("iss"))
+                                            .filterNot(_.isNull)
+                                            .map(_.asString())
+                                            .orElse(
+                                              Option(jwt.getClaim("clientId")).filterNot(_.isNull).map(_.asString())
+                                            ) match {
                                             case Some(clientId) =>
                                               env.datastores.apiKeyDataStore
                                                 .findAuthorizeKeyFor(clientId, descriptor.id)
@@ -1825,47 +1872,60 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
                                                       case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
                                                     } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
-                                                    val exp = Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
-                                                    val iat = Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
-                                                    val httpPath = Option(jwt.getClaim("httpPath")).filterNot(_.isNull).map(_.asString())
-                                                    val httpVerb = Option(jwt.getClaim("httpVerb")).filterNot(_.isNull).map(_.asString())
-                                                    val httpHost = Option(jwt.getClaim("httpHost")).filterNot(_.isNull).map(_.asString())
+                                                    val exp =
+                                                      Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                                                    val iat =
+                                                      Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                                                    val httpPath = Option(jwt.getClaim("httpPath"))
+                                                      .filterNot(_.isNull)
+                                                      .map(_.asString())
+                                                    val httpVerb = Option(jwt.getClaim("httpVerb"))
+                                                      .filterNot(_.isNull)
+                                                      .map(_.asString())
+                                                    val httpHost = Option(jwt.getClaim("httpHost"))
+                                                      .filterNot(_.isNull)
+                                                      .map(_.asString())
                                                     val verifier =
                                                       JWT.require(algorithm).withIssuer(clientId).acceptLeeway(10).build
-                                                    Try(verifier.verify(jwtTokenValue)).filter { token =>
-                                                      val xsrfToken       = token.getClaim("xsrfToken")
-                                                      val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                                                      if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
-                                                        xsrfToken.asString() == xsrfTokenHeader.get
-                                                      } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
-                                                        false
-                                                      } else {
-                                                        true
-                                                      }
-                                                    }.filter { _ =>
-                                                      desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
-                                                        if (exp.isEmpty || iat.isEmpty) {
+                                                    Try(verifier.verify(jwtTokenValue))
+                                                      .filter { token =>
+                                                        val xsrfToken       = token.getClaim("xsrfToken")
+                                                        val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                                                        if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                                                          xsrfToken.asString() == xsrfTokenHeader.get
+                                                        } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
                                                           false
                                                         } else {
-                                                          if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
-                                                            true
-                                                          } else {
-                                                            false
-                                                          }
+                                                          true
                                                         }
-                                                      } getOrElse {
-                                                        true
                                                       }
-                                                    }.filter { _ =>
-                                                      if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
-                                                        val matchPath = httpPath.exists(_ == req.relativeUri)
-                                                        val matchVerb = httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
-                                                        val matchHost = httpHost.exists(_.toLowerCase == req.host)
-                                                        matchPath && matchVerb && matchHost
-                                                      } else {
-                                                        true
+                                                      .filter { _ =>
+                                                        desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
+                                                          maxJwtLifespanSecs =>
+                                                            if (exp.isEmpty || iat.isEmpty) {
+                                                              false
+                                                            } else {
+                                                              if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
+                                                                true
+                                                              } else {
+                                                                false
+                                                              }
+                                                            }
+                                                        } getOrElse {
+                                                          true
+                                                        }
                                                       }
-                                                    } match {
+                                                      .filter { _ =>
+                                                        if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
+                                                          val matchPath = httpPath.exists(_ == req.relativeUri)
+                                                          val matchVerb =
+                                                            httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
+                                                          val matchHost = httpHost.exists(_.toLowerCase == req.host)
+                                                          matchPath && matchVerb && matchHost
+                                                        } else {
+                                                          true
+                                                        }
+                                                      } match {
                                                       case Success(_) =>
                                                         apiKey.withingQuotas().flatMap {
                                                           case true => callDownstream(config, Some(apiKey))
@@ -1952,7 +2012,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some(descriptor),
                                                     Some("errors.invalid.api.key"),
                                                     duration = System.currentTimeMillis - start,
-                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                                 case Some(key) if key.isInvalid(apiKeySecret) => {
                                                   Alerts.send(
@@ -1970,7 +2031,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some(descriptor),
                                                     Some("errors.bad.api.key"),
                                                     duration = System.currentTimeMillis - start,
-                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                                 }
                                                 case Some(key) if key.isValid(apiKeySecret) =>
