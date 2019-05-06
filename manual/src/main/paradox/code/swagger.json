@@ -50,7 +50,7 @@
     "name" : "auth-config",
     "description" : "Everything about Otoroshi global auth. module config"
   }, {
-    "name" : "script",
+    "name" : "scripts",
     "description" : "Everything about Otoroshi request transformer scripts"
   }, {
     "name" : "certificates",
@@ -3464,57 +3464,57 @@
       "required" : [ "clientId", "clientSecret", "clientName", "authorizedGroup", "enabled" ],
       "properties" : {
         "clientId" : {
+          "description" : "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything"
+          "example" : "a string value"
         },
         "clientSecret" : {
+          "description" : "The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything"
+          "example" : "a string value"
         },
         "clientName" : {
+          "description" : "The name of the api key, for humans ;-)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The name of the api key, for humans ;-)"
+          "example" : "a string value"
         },
         "authorizedGroup" : {
+          "description" : "The group id on which the key is authorized",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The group id on which the key is authorized"
+          "example" : "a string value"
         },
         "enabled" : {
+          "description" : "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key"
+          "example" : true
         },
         "throttlingQuota" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Authorized number of calls per second, measured on 10 seconds"
+          "description" : "Authorized number of calls per second, measured on 10 seconds",
+          "type" : "integer",
+          "example" : 123
         },
         "dailyQuota" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Authorized number of calls per day"
+          "description" : "Authorized number of calls per day",
+          "type" : "integer",
+          "example" : 123
         },
         "monthlyQuota" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Authorized number of calls per month"
+          "description" : "Authorized number of calls per month",
+          "type" : "integer",
+          "example" : 123
         },
         "metadata" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Bunch of metadata for the key",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Bunch of metadata for the key"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -3524,24 +3524,24 @@
       "required" : [ "clientId", "clientSecret", "domain", "callbackUrl" ],
       "properties" : {
         "clientId" : {
+          "description" : "Auth0 client id",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Auth0 client id"
+          "example" : "a string value"
         },
         "clientSecret" : {
+          "description" : "Auth0 client secret",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Auth0 client secret"
+          "example" : "a string value"
         },
         "domain" : {
+          "description" : "Auth0 domain",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Auth0 domain"
+          "example" : "a string value"
         },
         "callbackUrl" : {
+          "description" : "Auth0 callback URL",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Auth0 callback URL"
+          "example" : "a string value"
         }
       }
     },
@@ -3551,27 +3551,27 @@
       "required" : [ "enabled", "traffic", "targets", "root" ],
       "properties" : {
         "enabled" : {
+          "description" : "Use canary mode for this service",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Use canary mode for this service"
+          "example" : true
         },
         "traffic" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Ratio of traffic that will be sent to canary targets."
+          "description" : "Ratio of traffic that will be sent to canary targets.",
+          "type" : "integer",
+          "example" : 123123
         },
         "targets" : {
+          "description" : "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/Target"
-          },
-          "description" : "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
+          }
         },
         "root" : {
+          "description" : "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
+          "example" : "a string value"
         }
       }
     },
@@ -3581,29 +3581,29 @@
       "required" : [ "consumerKey", "consumerSecret", "token", "secret", "orgaId" ],
       "properties" : {
         "consumerKey" : {
+          "description" : "CleverCloud consumer key",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "CleverCloud consumer key"
+          "example" : "a string value"
         },
         "consumerSecret" : {
+          "description" : "CleverCloud consumer token",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "CleverCloud consumer token"
+          "example" : "a string value"
         },
         "token" : {
+          "description" : "CleverCloud oauth token",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "CleverCloud oauth token"
+          "example" : "a string value"
         },
         "secret" : {
+          "description" : "CleverCloud oauth secret",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "CleverCloud oauth secret"
+          "example" : "a string value"
         },
         "orgaId" : {
+          "description" : "CleverCloud organization id",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "CleverCloud organization id"
+          "example" : "a string value"
         }
       }
     },
@@ -3613,51 +3613,51 @@
       "required" : [ "useCircuitBreaker", "retries", "maxErrors", "retryInitialDelay", "backoffFactor", "callTimeout", "globalTimeout", "sampleInterval" ],
       "properties" : {
         "useCircuitBreaker" : {
+          "description" : "Use a circuit breaker to avoid cascading failure when calling chains of services. Highly recommended !",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Use a circuit breaker to avoid cascading failure when calling chains of services. Highly recommended !"
+          "example" : true
         },
         "retries" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up."
+          "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up.",
+          "type" : "integer",
+          "example" : 123123
         },
         "maxErrors" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Specify how many errors can pass before opening the circuit breaker"
+          "description" : "Specify how many errors can pass before opening the circuit breaker",
+          "type" : "integer",
+          "example" : 123123
         },
         "retryInitialDelay" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor"
+          "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor",
+          "type" : "integer",
+          "example" : 123123
         },
         "backoffFactor" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Specify the factor to multiply the delay for each retry"
+          "description" : "Specify the factor to multiply the delay for each retry",
+          "type" : "integer",
+          "example" : 123123
         },
         "callTimeout" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Specify how long each call should last at most in milliseconds"
+          "description" : "Specify how long each call should last at most in milliseconds",
+          "type" : "integer",
+          "example" : 123123
         },
         "globalTimeout" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
+          "description" : "Specify how long the global call (with retries) should last at most in milliseconds",
+          "type" : "integer",
+          "example" : 123123
         },
         "sampleInterval" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
+          "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
+          "type" : "integer",
+          "example" : 123123
         }
       }
     },
@@ -3692,39 +3692,39 @@
       "required" : [ "serviceId", "template40x", "template50x", "templateBuild", "templateMaintenance", "messages" ],
       "properties" : {
         "serviceId" : {
+          "description" : "The Id of the service for which the error template is enabled",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The Id of the service for which the error template is enabled"
+          "example" : "a string value"
         },
         "template40x" : {
+          "description" : "The html template for 40x errors",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The html template for 40x errors"
+          "example" : "a string value"
         },
         "template50x" : {
+          "description" : "The html template for 50x errors",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The html template for 50x errors"
+          "example" : "a string value"
         },
         "templateBuild" : {
+          "description" : "The html template for build page",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The html template for build page"
+          "example" : "a string value"
         },
         "templateMaintenance" : {
+          "description" : "The html template for maintenance page",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The html template for maintenance page"
+          "example" : "a string value"
         },
         "messages" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Map for custom messages",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Map for custom messages"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -3734,15 +3734,15 @@
       "required" : [ "exposeApi" ],
       "properties" : {
         "exposeApi" : {
+          "description" : "Whether or not the current service expose an API with an Open API descriptor",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not the current service expose an API with an Open API descriptor"
+          "example" : true
         },
         "openApiDescriptorUrl" : {
-          "type" : "string",
           "format" : "uri",
-          "example" : "http://www.google.com",
-          "description" : "The URL of the Open API descriptor"
+          "description" : "The URL of the Open API descriptor",
+          "type" : "string",
+          "example" : "http://www.google.com"
         }
       }
     },
@@ -3752,139 +3752,139 @@
       "description" : "The global config object of Otoroshi, used to customize settings of the current Otoroshi instance",
       "properties" : {
         "lines" : {
+          "description" : "Possibles lines for Otoroshi",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "Possibles lines for Otoroshi"
+          }
         },
         "streamEntityOnly" : {
+          "description" : "HTTP will be streamed only. Doesn't work with old browsers",
           "type" : "boolean",
-          "example" : true,
-          "description" : "HTTP will be streamed only. Doesn't work with old browsers"
+          "example" : true
         },
         "autoLinkToDefaultGroup" : {
+          "description" : "If not defined, every new service descriptor will be added to the default group",
           "type" : "boolean",
-          "example" : true,
-          "description" : "If not defined, every new service descriptor will be added to the default group"
+          "example" : true
         },
         "limitConcurrentRequests" : {
+          "description" : "If enabled, Otoroshi will reject new request if too much at the same time",
           "type" : "boolean",
-          "example" : true,
-          "description" : "If enabled, Otoroshi will reject new request if too much at the same time"
+          "example" : true
         },
         "maxConcurrentRequests" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The number of authorized request processed at the same time"
+          "description" : "The number of authorized request processed at the same time",
+          "type" : "integer",
+          "example" : 123
         },
         "maxHttp10ResponseSize" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The max size in bytes of an HTTP 1.0 response"
+          "description" : "The max size in bytes of an HTTP 1.0 response",
+          "type" : "integer",
+          "example" : 123
         },
         "useCircuitBreakers" : {
+          "description" : "If enabled, services will be authorized to use circuit breakers",
           "type" : "boolean",
-          "example" : true,
-          "description" : "If enabled, services will be authorized to use circuit breakers"
+          "example" : true
         },
         "apiReadOnly" : {
+          "description" : "If enabled, Admin API won't be able to write/update/delete entities",
           "type" : "boolean",
-          "example" : true,
-          "description" : "If enabled, Admin API won't be able to write/update/delete entities"
+          "example" : true
         },
         "u2fLoginOnly" : {
+          "description" : "If enabled, login to backoffice through Auth0 will be disabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "If enabled, login to backoffice through Auth0 will be disabled"
+          "example" : true
         },
         "ipFiltering" : {
           "$ref" : "#/definitions/IpFiltering"
         },
         "throttlingQuota" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Authorized number of calls per second globally, measured on 10 seconds"
+          "description" : "Authorized number of calls per second globally, measured on 10 seconds",
+          "type" : "integer",
+          "example" : 123
         },
         "perIpThrottlingQuota" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds"
+          "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds",
+          "type" : "integer",
+          "example" : 123
         },
         "elasticWritesConfigs" : {
+          "description" : "Configs. for Elastic writes",
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/ElasticConfig"
-          },
-          "description" : "Configs. for Elastic writes"
+          }
         },
         "elasticReadsConfig" : {
-          "$ref" : "#/definitions/ElasticConfig",
-          "description" : "Config. for elastic reads"
+          "description" : "Config. for elastic reads",
+          "$ref" : "#/definitions/ElasticConfig"
         },
         "analyticsWebhooks" : {
+          "description" : "Webhook that will receive all internal Otoroshi events",
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/Webhook"
-          },
-          "description" : "Webhook that will receive all internal Otoroshi events"
+          }
         },
         "alertsWebhooks" : {
+          "description" : "Webhook that will receive all Otoroshi alert events",
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/Webhook"
-          },
-          "description" : "Webhook that will receive all Otoroshi alert events"
+          }
         },
         "alertsEmails" : {
+          "description" : "Email addresses that will receive all Otoroshi alert events",
           "type" : "array",
           "items" : {
             "type" : "string",
             "format" : "email",
             "example" : "admin@otoroshi.io"
-          },
-          "description" : "Email addresses that will receive all Otoroshi alert events"
+          }
         },
         "endlessIpAddresses" : {
+          "description" : "IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros",
           "type" : "array",
           "items" : {
             "type" : "string",
             "format" : "ipv4",
             "example" : "192.192.192.192"
-          },
-          "description" : "IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros"
+          }
         },
         "middleFingers" : {
+          "description" : "Use middle finger emoji as a response character for endless HTTP responses",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Use middle finger emoji as a response character for endless HTTP responses"
+          "example" : true
         },
         "maxLogsSize" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Number of events kept locally"
+          "description" : "Number of events kept locally",
+          "type" : "integer",
+          "example" : 123123
         },
         "cleverSettings" : {
-          "$ref" : "#/definitions/CleverSettings",
-          "description" : "Optional CleverCloud configuration"
+          "description" : "Optional CleverCloud configuration",
+          "$ref" : "#/definitions/CleverSettings"
         },
-        "mailGunSettings" : {
-          "$ref" : "#/definitions/MailgunSettings",
-          "description" : "Optional mailgun configuration"
+        "mailerSettings" : {
+          "description" : "Optional mailer configuration",
+          "$ref" : "#/definitions/mailerSettings"
         },
         "backofficeAuth0Config" : {
-          "$ref" : "#/definitions/Auth0Config",
-          "description" : "Optional configuration for the backoffice Auth0 domain"
+          "description" : "Optional configuration for the backoffice Auth0 domain",
+          "$ref" : "#/definitions/Auth0Config"
         },
         "privateAppsAuth0Config" : {
-          "$ref" : "#/definitions/Auth0Config",
-          "description" : "Optional configuration for the private apps Auth0 domain"
+          "description" : "Optional configuration for the private apps Auth0 domain",
+          "$ref" : "#/definitions/Auth0Config"
         }
       }
     },
@@ -3894,19 +3894,19 @@
       "required" : [ "id", "name" ],
       "properties" : {
         "id" : {
+          "description" : "The unique id of the group. Usually 64 random alpha numerical characters, but can be anything",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The unique id of the group. Usually 64 random alpha numerical characters, but can be anything"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "The name of the group",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The name of the group"
+          "example" : "a string value"
         },
         "description" : {
+          "description" : "The descriptoin of the group",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The descriptoin of the group"
+          "example" : "a string value"
         }
       }
     },
@@ -3916,15 +3916,15 @@
       "required" : [ "enabled" ],
       "properties" : {
         "enabled" : {
+          "description" : "Whether or not healthcheck is enabled on the current service descriptor",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not healthcheck is enabled on the current service descriptor"
+          "example" : true
         },
         "url" : {
-          "type" : "string",
           "format" : "uri",
-          "example" : "http://www.google.com",
-          "description" : "The URL to check"
+          "description" : "The URL to check",
+          "type" : "string",
+          "example" : "http://www.google.com"
         }
       }
     },
@@ -3963,24 +3963,25 @@
           "example" : "2017-07-21T17:32:28Z"
         },
         "stats" : {
-          "$ref" : "#/definitions/ImportExportStats",
-          "description" : "Current global stats at the time of export"
+          "description" : "Current global stats at the time of export",
+          "$ref" : "#/definitions/ImportExportStats"
         },
         "config" : {
-          "$ref" : "#/definitions/GlobalConfig",
-          "description" : "Current global config at the time of export"
+          "description" : "Current global config at the time of export",
+          "$ref" : "#/definitions/GlobalConfig"
         },
         "appConfig" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Current env variables at the time of export",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Current env variables at the time of export"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "admins" : {
+          "description" : "Current U2F admin at the time of export",
           "type" : "array",
           "items" : {
             "description" : "Administrator using FIDO U2F device to access Otoroshi",
@@ -3988,41 +3989,41 @@
             "required" : [ "username", "label", "password", "createdAt", "registration" ],
             "properties" : {
               "username" : {
+                "description" : "The email address of the user",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The email address of the user"
+                "example" : "a string value"
               },
               "label" : {
+                "description" : "The label for the user",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The label for the user"
+                "example" : "a string value"
               },
               "password" : {
+                "description" : "The hashed password of the user",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The hashed password of the user"
+                "example" : "a string value"
               },
               "createdAt" : {
-                "type" : "integer",
                 "format" : "int64",
-                "example" : 123,
-                "description" : "The creation date of the user"
+                "description" : "The creation date of the user",
+                "type" : "integer",
+                "example" : 123
               },
               "registration" : {
-                "type" : "object",
-                "example" : {
-                  "key" : "value"
-                },
+                "description" : "The U2F registration slug",
                 "additionalProperties" : {
                   "type" : "string"
                 },
-                "description" : "The U2F registration slug"
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                }
               }
             }
-          },
-          "description" : "Current U2F admin at the time of export"
+          }
         },
         "simpleAdmins" : {
+          "description" : "Current simple admins at the time of export",
           "type" : "array",
           "items" : {
             "description" : "Administrator using just login/password tuple to access Otoroshi",
@@ -4030,31 +4031,31 @@
             "required" : [ "username", "label", "password", "createdAt" ],
             "properties" : {
               "username" : {
+                "description" : "The email address of the user",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The email address of the user"
+                "example" : "a string value"
               },
               "label" : {
+                "description" : "The label for the user",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The label for the user"
+                "example" : "a string value"
               },
               "password" : {
+                "description" : "The hashed password of the user",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The hashed password of the user"
+                "example" : "a string value"
               },
               "createdAt" : {
-                "type" : "integer",
                 "format" : "int64",
-                "example" : 123,
-                "description" : "The creation date of the user"
+                "description" : "The creation date of the user",
+                "type" : "integer",
+                "example" : 123
               }
             }
-          },
-          "description" : "Current simple admins at the time of export"
+          }
         },
         "serviceGroups" : {
+          "description" : "Current service groups at the time of export",
           "type" : "array",
           "items" : {
             "description" : "An Otoroshi service group is just a group of service descriptor. It is useful to be able to define Api Keys for the whole group",
@@ -4062,25 +4063,25 @@
             "required" : [ "id", "name" ],
             "properties" : {
               "id" : {
+                "description" : "The unique id of the group. Usually 64 random alpha numerical characters, but can be anything",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The unique id of the group. Usually 64 random alpha numerical characters, but can be anything"
+                "example" : "a string value"
               },
               "name" : {
+                "description" : "The name of the group",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The name of the group"
+                "example" : "a string value"
               },
               "description" : {
+                "description" : "The descriptoin of the group",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The descriptoin of the group"
+                "example" : "a string value"
               }
             }
-          },
-          "description" : "Current service groups at the time of export"
+          }
         },
         "apiKeys" : {
+          "description" : "Current apik keys at the time of export",
           "type" : "array",
           "items" : {
             "description" : "An Otoroshi Api Key. An Api Key is defined for a group of services to allow usage of the same Api Key for multiple services.",
@@ -4088,63 +4089,63 @@
             "required" : [ "clientId", "clientSecret", "clientName", "authorizedGroup", "enabled" ],
             "properties" : {
               "clientId" : {
+                "description" : "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything"
+                "example" : "a string value"
               },
               "clientSecret" : {
+                "description" : "The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything"
+                "example" : "a string value"
               },
               "clientName" : {
+                "description" : "The name of the api key, for humans ;-)",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The name of the api key, for humans ;-)"
+                "example" : "a string value"
               },
               "authorizedGroup" : {
+                "description" : "The group id on which the key is authorized",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The group id on which the key is authorized"
+                "example" : "a string value"
               },
               "enabled" : {
+                "description" : "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key"
+                "example" : true
               },
               "throttlingQuota" : {
-                "type" : "integer",
                 "format" : "int64",
-                "example" : 123,
-                "description" : "Authorized number of calls per second, measured on 10 seconds"
+                "description" : "Authorized number of calls per second, measured on 10 seconds",
+                "type" : "integer",
+                "example" : 123
               },
               "dailyQuota" : {
-                "type" : "integer",
                 "format" : "int64",
-                "example" : 123,
-                "description" : "Authorized number of calls per day"
+                "description" : "Authorized number of calls per day",
+                "type" : "integer",
+                "example" : 123
               },
               "monthlyQuota" : {
-                "type" : "integer",
                 "format" : "int64",
-                "example" : 123,
-                "description" : "Authorized number of calls per month"
+                "description" : "Authorized number of calls per month",
+                "type" : "integer",
+                "example" : 123
               },
               "metadata" : {
-                "type" : "object",
-                "example" : {
-                  "key" : "value"
-                },
+                "description" : "Bunch of metadata for the key",
                 "additionalProperties" : {
                   "type" : "string"
                 },
-                "description" : "Bunch of metadata for the key"
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                }
               }
             }
-          },
-          "description" : "Current apik keys at the time of export"
+          }
         },
         "serviceDescriptors" : {
+          "description" : "Current service descriptors at the time of export",
           "type" : "array",
           "items" : {
             "description" : "An otoroshi service descriptor. Represent a forward HTTP call on a domain to another location with some optional api management mecanism",
@@ -4152,141 +4153,141 @@
             "required" : [ "id", "groupId", "name", "env", "domain", "subdomain", "targets", "root", "enabled", "privateApp", "forceHttps", "maintenanceMode", "buildMode", "enforceSecureCommunication" ],
             "properties" : {
               "id" : {
-                "type" : "string",
                 "format" : "uuid",
-                "example" : "110e8400-e29b-11d4-a716-446655440000",
-                "description" : "A unique random string to identify your service"
+                "description" : "A unique random string to identify your service",
+                "type" : "string",
+                "example" : "110e8400-e29b-11d4-a716-446655440000"
               },
               "groupId" : {
+                "description" : "Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group"
+                "example" : "a string value"
               },
               "name" : {
+                "description" : "The name of your service. Only for debug and human readability purposes",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The name of your service. Only for debug and human readability purposes"
+                "example" : "a string value"
               },
               "env" : {
+                "description" : "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'"
+                "example" : "a string value"
               },
               "domain" : {
+                "description" : "The domain on which the service is available.",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The domain on which the service is available."
+                "example" : "a string value"
               },
               "subdomain" : {
+                "description" : "The subdomain on which the service is available",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The subdomain on which the service is available"
+                "example" : "a string value"
               },
               "targets" : {
+                "description" : "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
                 "type" : "array",
                 "items" : {
                   "$ref" : "#/definitions/Target"
-                },
-                "description" : "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
+                }
               },
               "root" : {
+                "description" : "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
+                "example" : "a string value"
               },
               "matchingRoot" : {
+                "description" : "The root path on which the service is available",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The root path on which the service is available"
+                "example" : "a string value"
               },
               "localHost" : {
+                "description" : "The host used localy, mainly localhost:xxxx",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The host used localy, mainly localhost:xxxx"
+                "example" : "a string value"
               },
               "localScheme" : {
+                "description" : "The scheme used localy, mainly http",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The scheme used localy, mainly http"
+                "example" : "a string value"
               },
               "redirectToLocal" : {
+                "description" : "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests"
+                "example" : true
               },
               "enabled" : {
+                "description" : "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist"
+                "example" : true
               },
               "userFacing" : {
+                "description" : "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey"
+                "example" : true
               },
               "privateApp" : {
+                "description" : "When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain"
+                "example" : true
               },
               "forceHttps" : {
+                "description" : "Will force redirection to https:// if not present",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "Will force redirection to https:// if not present"
+                "example" : true
               },
               "maintenanceMode" : {
+                "description" : "Display a maintainance page when a user try to use the service",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "Display a maintainance page when a user try to use the service"
+                "example" : true
               },
               "buildMode" : {
+                "description" : "Display a construction page when a user try to use the service",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "Display a construction page when a user try to use the service"
+                "example" : true
               },
               "enforceSecureCommunication" : {
+                "description" : "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside"
+                "example" : true
               },
               "sendOtoroshiHeadersBack" : {
+                "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
+                "example" : true
               },
               "xForwardedHeaders" : {
+                "description" : "Send X-Forwarded-* headers",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "Send X-Forwarded-* headers"
+                "example" : true
               },
               "overrideHost" : {
+                "description" : "Host header will be overriden with Host of the target",
                 "type" : "boolean",
-                "example" : true,
-                "description" : "Host header will be overriden with Host of the target"
+                "example" : true
               },
               "secComExcludedPatterns" : {
+                "description" : "URI patterns excluded from secured communications",
                 "type" : "array",
                 "items" : {
                   "type" : "string",
                   "example" : "a string value"
-                },
-                "description" : "URI patterns excluded from secured communications"
+                }
               },
               "publicPatterns" : {
+                "description" : "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'",
                 "type" : "array",
                 "items" : {
                   "type" : "string",
                   "example" : "a string value"
-                },
-                "description" : "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'"
+                }
               },
               "privatePatterns" : {
+                "description" : "If you define a public pattern that is a little bit too much, you can make some of public URL private again",
                 "type" : "array",
                 "items" : {
                   "type" : "string",
                   "example" : "a string value"
-                },
-                "description" : "If you define a public pattern that is a little bit too much, you can make some of public URL private again"
+                }
               },
               "ipFiltering" : {
                 "$ref" : "#/definitions/IpFiltering"
@@ -4328,49 +4329,49 @@
                 } ]
               },
               "metadata" : {
-                "type" : "object",
-                "example" : {
-                  "key" : "value"
-                },
+                "description" : "Just a bunch of random properties",
                 "additionalProperties" : {
                   "type" : "string"
                 },
-                "description" : "Just a bunch of random properties"
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                }
               },
               "matchingHeaders" : {
-                "type" : "object",
-                "example" : {
-                  "key" : "value"
-                },
+                "description" : "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
                 "additionalProperties" : {
                   "type" : "string"
                 },
-                "description" : "Specify headers that MUST be present on client request to route it. Useful to implement versioning"
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                }
               },
               "additionalHeaders" : {
-                "type" : "object",
-                "example" : {
-                  "key" : "value"
-                },
+                "description" : "Specify headers that will be added to each client request. Useful to add authentication",
                 "additionalProperties" : {
                   "type" : "string"
                 },
-                "description" : "Specify headers that will be added to each client request. Useful to add authentication"
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                }
               },
               "authConfigRef" : {
+                "description" : "A reference to a global auth module config",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "A reference to a global auth module config"
+                "example" : "a string value"
               },
               "transformerRef" : {
+                "description" : "A reference to a request transformer",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "A reference to a request transformer"
+                "example" : "a string value"
               },
               "clientValidatorRef" : {
+                "description" : "A reference to validation authority",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "A reference to validation authority"
+                "example" : "a string value"
               },
               "cors" : {
                 "$ref" : "#/definitions/CorsSettings"
@@ -4382,20 +4383,20 @@
                 "$ref" : "#/definitions/Gzip"
               },
               "headersVerification" : {
-                "type" : "object",
-                "example" : {
-                  "key" : "value"
-                },
+                "description" : "Specify headers that will be verified after routing.",
                 "additionalProperties" : {
                   "type" : "string"
                 },
-                "description" : "Specify headers that will be verified after routing."
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                }
               }
             }
-          },
-          "description" : "Current service descriptors at the time of export"
+          }
         },
         "errorTemplates" : {
+          "description" : "Current error templates at the time of export",
           "type" : "array",
           "items" : {
             "description" : "Error templates for a service descriptor",
@@ -4403,43 +4404,42 @@
             "required" : [ "serviceId", "template40x", "template50x", "templateBuild", "templateMaintenance", "messages" ],
             "properties" : {
               "serviceId" : {
+                "description" : "The Id of the service for which the error template is enabled",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The Id of the service for which the error template is enabled"
+                "example" : "a string value"
               },
               "template40x" : {
+                "description" : "The html template for 40x errors",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The html template for 40x errors"
+                "example" : "a string value"
               },
               "template50x" : {
+                "description" : "The html template for 50x errors",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The html template for 50x errors"
+                "example" : "a string value"
               },
               "templateBuild" : {
+                "description" : "The html template for build page",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The html template for build page"
+                "example" : "a string value"
               },
               "templateMaintenance" : {
+                "description" : "The html template for maintenance page",
                 "type" : "string",
-                "example" : "a string value",
-                "description" : "The html template for maintenance page"
+                "example" : "a string value"
               },
               "messages" : {
-                "type" : "object",
-                "example" : {
-                  "key" : "value"
-                },
+                "description" : "Map for custom messages",
                 "additionalProperties" : {
                   "type" : "string"
                 },
-                "description" : "Map for custom messages"
+                "type" : "object",
+                "example" : {
+                  "key" : "value"
+                }
               }
             }
-          },
-          "description" : "Current error templates at the time of export"
+          }
         }
       }
     },
@@ -4449,22 +4449,22 @@
       "required" : [ "calls", "dataIn", "dataOut" ],
       "properties" : {
         "calls" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Number of calls to Otoroshi globally"
+          "description" : "Number of calls to Otoroshi globally",
+          "type" : "integer",
+          "example" : 123
         },
         "dataIn" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The amount of data sent to Otoroshi globally"
+          "description" : "The amount of data sent to Otoroshi globally",
+          "type" : "integer",
+          "example" : 123
         },
         "dataOut" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The amount of data sent from Otoroshi globally"
+          "description" : "The amount of data sent from Otoroshi globally",
+          "type" : "integer",
+          "example" : 123
         }
       }
     },
@@ -4474,39 +4474,74 @@
       "required" : [ "whitelist", "blacklist" ],
       "properties" : {
         "whitelist" : {
+          "description" : "Whitelisted IP addresses",
           "type" : "array",
           "items" : {
             "type" : "string",
             "format" : "ipv4",
             "example" : "192.192.192.192"
-          },
-          "description" : "Whitelisted IP addresses"
+          }
         },
         "blacklist" : {
+          "description" : "Blacklisted IP addresses",
           "type" : "array",
           "items" : {
             "type" : "string",
             "format" : "ipv4",
             "example" : "192.192.192.192"
-          },
-          "description" : "Blacklisted IP addresses"
+          }
         }
       }
     },
-    "MailgunSettings" : {
+    "MailerSettings" : {
       "description" : "Configuration for mailgun api client",
       "type" : "object",
       "required" : [ "apiKey", "domain" ],
       "properties" : {
-        "apiKey" : {
+        "type" : {
+          "description" : "Type of the mailer: console, generic, mailgun, mailjet",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Mailgun Api Key"
+          "example" : "a string value"
+        },
+        "eu" : {
+          "description" : "Mailgun mailer, use EU tenant api",
+          "type" : "boolean",
+          "example" : true
+        },
+        "apiKey" : {
+          "description" : "Mailgun mailer api key",
+          "type" : "string",
+          "example" : "a string value"
         },
         "domain" : {
+          "description" : "Mailgun mailer domain",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Mailgun domain"
+          "example" : "a string value"
+        },
+        "apiKeyPublic" : {
+          "description" : "Mailjet mailer public api key",
+          "type" : "string",
+          "example" : "a string value"
+        },
+        "apiKeyPrivate" : {
+          "description" : "Mailjet mailer private api key",
+          "type" : "string",
+          "example" : "a string value"
+        },
+        "url" : {
+          "description" : "Generic mailer url",
+          "type" : "string",
+          "example" : "a string value"
+        },
+        "header" : {
+          "description" : "Generic mailer headers",
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -4535,58 +4570,58 @@
       "required" : [ "authorizedCallsPerSec", "currentCallsPerSec", "remainingCallsPerSec", "authorizedCallsPerDay", "currentCallsPerDay", "remainingCallsPerDay", "authorizedCallsPerMonth", "currentCallsPerMonth", "remainingCallsPerMonth" ],
       "properties" : {
         "authorizedCallsPerSec" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The number of authorized calls per second"
+          "description" : "The number of authorized calls per second",
+          "type" : "integer",
+          "example" : 123
         },
         "currentCallsPerSec" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The current number of calls per second"
+          "description" : "The current number of calls per second",
+          "type" : "integer",
+          "example" : 123
         },
         "remainingCallsPerSec" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The remaining number of calls per second"
+          "description" : "The remaining number of calls per second",
+          "type" : "integer",
+          "example" : 123
         },
         "authorizedCallsPerDay" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The number of authorized calls per day"
+          "description" : "The number of authorized calls per day",
+          "type" : "integer",
+          "example" : 123
         },
         "currentCallsPerDay" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The current number of calls per day"
+          "description" : "The current number of calls per day",
+          "type" : "integer",
+          "example" : 123
         },
         "remainingCallsPerDay" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The remaining number of calls per day"
+          "description" : "The remaining number of calls per day",
+          "type" : "integer",
+          "example" : 123
         },
         "authorizedCallsPerMonth" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The number of authorized calls per month"
+          "description" : "The number of authorized calls per month",
+          "type" : "integer",
+          "example" : 123
         },
         "currentCallsPerMonth" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The current number of calls per month"
+          "description" : "The current number of calls per month",
+          "type" : "integer",
+          "example" : 123
         },
         "remainingCallsPerMonth" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The number of authorized calls per month"
+          "description" : "The number of authorized calls per month",
+          "type" : "integer",
+          "example" : 123
         }
       }
     },
@@ -4596,141 +4631,141 @@
       "required" : [ "id", "groupId", "name", "env", "domain", "subdomain", "targets", "root", "enabled", "privateApp", "forceHttps", "maintenanceMode", "buildMode", "enforceSecureCommunication" ],
       "properties" : {
         "id" : {
-          "type" : "string",
           "format" : "uuid",
-          "example" : "110e8400-e29b-11d4-a716-446655440000",
-          "description" : "A unique random string to identify your service"
+          "description" : "A unique random string to identify your service",
+          "type" : "string",
+          "example" : "110e8400-e29b-11d4-a716-446655440000"
         },
         "groupId" : {
+          "description" : "Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "The name of your service. Only for debug and human readability purposes",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The name of your service. Only for debug and human readability purposes"
+          "example" : "a string value"
         },
         "env" : {
+          "description" : "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'"
+          "example" : "a string value"
         },
         "domain" : {
+          "description" : "The domain on which the service is available.",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The domain on which the service is available."
+          "example" : "a string value"
         },
         "subdomain" : {
+          "description" : "The subdomain on which the service is available",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The subdomain on which the service is available"
+          "example" : "a string value"
         },
         "targets" : {
+          "description" : "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/Target"
-          },
-          "description" : "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
+          }
         },
         "root" : {
+          "description" : "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
+          "example" : "a string value"
         },
         "matchingRoot" : {
+          "description" : "The root path on which the service is available",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The root path on which the service is available"
+          "example" : "a string value"
         },
         "localHost" : {
+          "description" : "The host used localy, mainly localhost:xxxx",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The host used localy, mainly localhost:xxxx"
+          "example" : "a string value"
         },
         "localScheme" : {
+          "description" : "The scheme used localy, mainly http",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The scheme used localy, mainly http"
+          "example" : "a string value"
         },
         "redirectToLocal" : {
+          "description" : "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests",
           "type" : "boolean",
-          "example" : true,
-          "description" : "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests"
+          "example" : true
         },
         "enabled" : {
+          "description" : "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist"
+          "example" : true
         },
         "userFacing" : {
+          "description" : "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey",
           "type" : "boolean",
-          "example" : true,
-          "description" : "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey"
+          "example" : true
         },
         "privateApp" : {
+          "description" : "When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain",
           "type" : "boolean",
-          "example" : true,
-          "description" : "When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain"
+          "example" : true
         },
         "forceHttps" : {
+          "description" : "Will force redirection to https:// if not present",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Will force redirection to https:// if not present"
+          "example" : true
         },
         "maintenanceMode" : {
+          "description" : "Display a maintainance page when a user try to use the service",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Display a maintainance page when a user try to use the service"
+          "example" : true
         },
         "buildMode" : {
+          "description" : "Display a construction page when a user try to use the service",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Display a construction page when a user try to use the service"
+          "example" : true
         },
         "enforceSecureCommunication" : {
+          "description" : "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
           "type" : "boolean",
-          "example" : true,
-          "description" : "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside"
+          "example" : true
         },
         "sendOtoroshiHeadersBack" : {
+          "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...",
           "type" : "boolean",
-          "example" : true,
-          "description" : "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
+          "example" : true
         },
         "xForwardedHeaders" : {
+          "description" : "Send X-Forwarded-* headers",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Send X-Forwarded-* headers"
+          "example" : true
         },
         "overrideHost" : {
+          "description" : "Host header will be overriden with Host of the target",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Host header will be overriden with Host of the target"
+          "example" : true
         },
         "secComExcludedPatterns" : {
+          "description" : "URI patterns excluded from secured communications",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "URI patterns excluded from secured communications"
+          }
         },
         "publicPatterns" : {
+          "description" : "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'"
+          }
         },
         "privatePatterns" : {
+          "description" : "If you define a public pattern that is a little bit too much, you can make some of public URL private again",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "If you define a public pattern that is a little bit too much, you can make some of public URL private again"
+          }
         },
         "ipFiltering" : {
           "$ref" : "#/definitions/IpFiltering"
@@ -4772,49 +4807,49 @@
           } ]
         },
         "metadata" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Just a bunch of random properties",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Just a bunch of random properties"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "matchingHeaders" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Specify headers that MUST be present on client request to route it. Useful to implement versioning"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "additionalHeaders" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Specify headers that will be added to each client request. Useful to add authentication",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Specify headers that will be added to each client request. Useful to add authentication"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "authConfigRef" : {
+          "description" : "A reference to a global auth module config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "A reference to a global auth module config"
+          "example" : "a string value"
         },
         "transformerRef" : {
+          "description" : "A reference to a request transformer",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "A reference to a request transformer"
+          "example" : "a string value"
         },
         "clientValidatorRef" : {
+          "description" : "A reference to validation authority",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "A reference to validation authority"
+          "example" : "a string value"
         },
         "cors" : {
           "$ref" : "#/definitions/CorsSettings"
@@ -4826,14 +4861,14 @@
           "$ref" : "#/definitions/Gzip"
         },
         "headersVerification" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Specify headers that will be verified after routing.",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Specify headers that will be verified after routing."
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -4843,25 +4878,25 @@
       "required" : [ "username", "label", "password", "createdAt" ],
       "properties" : {
         "username" : {
+          "description" : "The email address of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The email address of the user"
+          "example" : "a string value"
         },
         "label" : {
+          "description" : "The label for the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The label for the user"
+          "example" : "a string value"
         },
         "password" : {
+          "description" : "The hashed password of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The hashed password of the user"
+          "example" : "a string value"
         },
         "createdAt" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The creation date of the user"
+          "description" : "The creation date of the user",
+          "type" : "integer",
+          "example" : 123
         }
       }
     },
@@ -4871,58 +4906,58 @@
       "required" : [ "calls", "dataIn", "dataOut", "rate", "duration", "overhead", "dataInRate", "dataOutRate", "concurrentHandledRequests" ],
       "properties" : {
         "calls" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Number of calls on the specified service or globally"
+          "description" : "Number of calls on the specified service or globally",
+          "type" : "integer",
+          "example" : 123
         },
         "dataIn" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The amount of data sent to the specified service or Otoroshi globally"
+          "description" : "The amount of data sent to the specified service or Otoroshi globally",
+          "type" : "integer",
+          "example" : 123
         },
         "dataOut" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The amount of data sent from the specified service or Otoroshi globally"
+          "description" : "The amount of data sent from the specified service or Otoroshi globally",
+          "type" : "integer",
+          "example" : 123
         },
         "rate" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The rate of data sent from and to the specified service or Otoroshi globally"
+          "description" : "The rate of data sent from and to the specified service or Otoroshi globally",
+          "type" : "integer",
+          "example" : 42.2
         },
         "duration" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The average duration for a call"
+          "description" : "The average duration for a call",
+          "type" : "integer",
+          "example" : 42.2
         },
         "overhead" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The average overhead time induced by Otoroshi for each call"
+          "description" : "The average overhead time induced by Otoroshi for each call",
+          "type" : "integer",
+          "example" : 42.2
         },
         "dataInRate" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The rate of data sent to the specified service or Otoroshi globally"
+          "description" : "The rate of data sent to the specified service or Otoroshi globally",
+          "type" : "integer",
+          "example" : 42.2
         },
         "dataOutRate" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The rate of data sent from the specified service or Otoroshi globally"
+          "description" : "The rate of data sent from the specified service or Otoroshi globally",
+          "type" : "integer",
+          "example" : 42.2
         },
         "concurrentHandledRequests" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The number of concurrent request currently"
+          "description" : "The number of concurrent request currently",
+          "type" : "integer",
+          "example" : 123
         }
       }
     },
@@ -4932,20 +4967,20 @@
       "required" : [ "host", "port", "datadog" ],
       "properties" : {
         "host" : {
+          "description" : "The host of the StatsD agent",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The host of the StatsD agent"
+          "example" : "a string value"
         },
         "port" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The port of the StatsD agent"
+          "description" : "The port of the StatsD agent",
+          "type" : "integer",
+          "example" : 123123
         },
         "datadog" : {
+          "description" : "Datadog agent",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Datadog agent"
+          "example" : true
         }
       }
     },
@@ -4955,15 +4990,15 @@
       "required" : [ "host", "scheme" ],
       "properties" : {
         "host" : {
-          "type" : "string",
           "format" : "hostname",
-          "example" : "www.google.com",
-          "description" : "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port"
+          "description" : "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
+          "type" : "string",
+          "example" : "www.google.com"
         },
         "scheme" : {
+          "description" : "The protocol used for communication. Can be http or https",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The protocol used for communication. Can be http or https"
+          "example" : "a string value"
         }
       }
     },
@@ -4973,35 +5008,35 @@
       "required" : [ "username", "label", "password", "createdAt", "registration" ],
       "properties" : {
         "username" : {
+          "description" : "The email address of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The email address of the user"
+          "example" : "a string value"
         },
         "label" : {
+          "description" : "The label for the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The label for the user"
+          "example" : "a string value"
         },
         "password" : {
+          "description" : "The hashed password of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The hashed password of the user"
+          "example" : "a string value"
         },
         "createdAt" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The creation date of the user"
+          "description" : "The creation date of the user",
+          "type" : "integer",
+          "example" : 123
         },
         "registration" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The U2F registration slug",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The U2F registration slug"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -5011,20 +5046,20 @@
       "required" : [ "url", "headers" ],
       "properties" : {
         "url" : {
-          "type" : "string",
           "format" : "uri",
-          "example" : "http://www.google.com",
-          "description" : "The URL where events are posted"
+          "description" : "The URL where events are posted",
+          "type" : "string",
+          "example" : "http://www.google.com"
         },
         "headers" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Headers to authorize the call or whatever",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Headers to authorize the call or whatever"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -5034,25 +5069,25 @@
       "required" : [ "status", "body", "headers" ],
       "properties" : {
         "status" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The HTTP status for the response"
+          "description" : "The HTTP status for the response",
+          "type" : "integer",
+          "example" : 123123
         },
         "body" : {
+          "description" : "The body of the HTTP response",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The body of the HTTP response"
+          "example" : "a string value"
         },
         "headers" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The HTTP headers of the response",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The HTTP headers of the response"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -5062,16 +5097,16 @@
       "required" : [ "ratio", "additionalRequestSize" ],
       "properties" : {
         "ratio" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+          "type" : "integer",
+          "example" : 42.2
         },
         "additionalRequestSize" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The size added to the request body in bytes. Added payload will be spaces only."
+          "description" : "The size added to the request body in bytes. Added payload will be spaces only.",
+          "type" : "integer",
+          "example" : 123123
         }
       }
     },
@@ -5081,16 +5116,16 @@
       "required" : [ "ratio", "additionalResponseSize" ],
       "properties" : {
         "ratio" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+          "type" : "integer",
+          "example" : 42.2
         },
         "additionalRequestSize" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The size added to the response body in bytes. Added payload will be spaces only."
+          "description" : "The size added to the response body in bytes. Added payload will be spaces only.",
+          "type" : "integer",
+          "example" : 123123
         }
       }
     },
@@ -5100,22 +5135,22 @@
       "required" : [ "ratio", "from", "to" ],
       "properties" : {
         "ratio" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+          "type" : "integer",
+          "example" : 42.2
         },
         "from" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The start range of latency added to the request"
+          "description" : "The start range of latency added to the request",
+          "type" : "integer",
+          "example" : 123123
         },
         "to" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The end range of latency added to the request"
+          "description" : "The end range of latency added to the request",
+          "type" : "integer",
+          "example" : 123123
         }
       }
     },
@@ -5125,17 +5160,17 @@
       "required" : [ "ratio", "responses" ],
       "properties" : {
         "ratio" : {
-          "type" : "integer",
           "format" : "double",
-          "example" : 42.2,
-          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+          "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+          "type" : "integer",
+          "example" : 42.2
         },
         "responses" : {
+          "description" : "The possibles responses",
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/BadResponse"
-          },
-          "description" : "The possibles responses"
+          }
         }
       }
     },
@@ -5145,9 +5180,9 @@
       "required" : [ "enabled" ],
       "properties" : {
         "enabled" : {
+          "description" : "Whether or not this config is enabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not this config is enabled"
+          "example" : true
         },
         "largeRequestFaultConfig" : {
           "$ref" : "#/definitions/LargeRequestFaultConfig"
@@ -5173,61 +5208,61 @@
       "required" : [ "enabled", "outageStrategy", "includeUserFacingDescriptors", "dryRun", "timesPerDay", "startTime", "stopTime", "outageDurationFrom", "outageDurationTo", "targetGroups", "chaosConfig" ],
       "properties" : {
         "enabled" : {
+          "description" : "Whether or not this config is enabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not this config is enabled"
+          "example" : true
         },
         "outageStrategy" : {
-          "$ref" : "#/definitions/OutageStrategy",
-          "description" : ""
+          "description" : "",
+          "$ref" : "#/definitions/OutageStrategy"
         },
         "includeUserFacingDescriptors" : {
+          "description" : "Whether or not user facing apps. will be impacted by Snow Monkey",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not user facing apps. will be impacted by Snow Monkey"
+          "example" : true
         },
         "dryRun" : {
+          "description" : "Whether or not outages will actualy impact requests",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not outages will actualy impact requests"
+          "example" : true
         },
         "timesPerDay" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Number of time per day each service will be outage"
+          "description" : "Number of time per day each service will be outage",
+          "type" : "integer",
+          "example" : 123123
         },
         "startTime" : {
-          "type" : "string",
           "format" : "time",
-          "example" : "17:32:28.000",
-          "description" : "Start time of Snow Monkey each day"
+          "description" : "Start time of Snow Monkey each day",
+          "type" : "string",
+          "example" : "17:32:28.000"
         },
         "stopTime" : {
-          "type" : "string",
           "format" : "time",
-          "example" : "17:32:28.000",
-          "description" : "Stop time of Snow Monkey each day"
+          "description" : "Stop time of Snow Monkey each day",
+          "type" : "string",
+          "example" : "17:32:28.000"
         },
         "outageDurationFrom" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Start of outage duration range"
+          "description" : "Start of outage duration range",
+          "type" : "integer",
+          "example" : 123123
         },
         "outageDurationTo" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "End of outage duration range"
+          "description" : "End of outage duration range",
+          "type" : "integer",
+          "example" : 123123
         },
         "targetGroups" : {
+          "description" : "Groups impacted by Snow Monkey. If empty, all groups will be impacted",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "Groups impacted by Snow Monkey. If empty, all groups will be impacted"
+          }
         },
         "chaosConfig" : {
           "$ref" : "#/definitions/ChaosConfig"
@@ -5240,26 +5275,26 @@
       "required" : [ "descriptorId", "descriptorName", "until", "duration" ],
       "properties" : {
         "descriptorId" : {
+          "description" : "The service impacted by outage",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The service impacted by outage"
+          "example" : "a string value"
         },
         "descriptorName" : {
+          "description" : "The name of service impacted by outage",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The name of service impacted by outage"
+          "example" : "a string value"
         },
         "until" : {
-          "type" : "string",
           "format" : "time",
-          "example" : "17:32:28.000",
-          "description" : "The end of the outage"
+          "description" : "The end of the outage",
+          "type" : "string",
+          "example" : "17:32:28.000"
         },
         "duration" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The duration of the outage"
+          "description" : "The duration of the outage",
+          "type" : "integer",
+          "example" : 123123
         }
       }
     },
@@ -5269,19 +5304,19 @@
       "required" : [ "type", "id", "enabled" ],
       "properties" : {
         "type" : {
+          "description" : "A string with value 'ref'",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "A string with value 'ref'"
+          "example" : "a string value"
         },
         "id" : {
+          "description" : "The id of the GlobalJWTVerifier",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The id of the GlobalJWTVerifier"
+          "example" : "a string value"
         },
         "enabled" : {
+          "description" : "Is it enabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Is it enabled"
+          "example" : true
         }
       }
     },
@@ -5291,19 +5326,19 @@
       "required" : [ "type", "enabled", "strict", "source", "algoSettings", "strategy" ],
       "properties" : {
         "type" : {
+          "description" : "A string with value 'local'",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "A string with value 'local'"
+          "example" : "a string value"
         },
         "enabled" : {
+          "description" : "Is it enabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Is it enabled"
+          "example" : true
         },
         "strict" : {
+          "description" : "Does it fail if JWT not found",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Does it fail if JWT not found"
+          "example" : true
         },
         "source" : {
           "oneOf" : [ {
@@ -5342,14 +5377,14 @@
       "required" : [ "type", "name" ],
       "properties" : {
         "type" : {
+          "description" : "String with value InQueryParam",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value InQueryParam"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "Name of the query param",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the query param"
+          "example" : "a string value"
         }
       }
     },
@@ -5359,19 +5394,19 @@
       "required" : [ "type", "name", "remove" ],
       "properties" : {
         "type" : {
+          "description" : "String with value InHeader",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value InHeader"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "Name of the header",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the header"
+          "example" : "a string value"
         },
         "remove" : {
+          "description" : "Remove regex inside the value, like 'Bearer '",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Remove regex inside the value, like 'Bearer '"
+          "example" : "a string value"
         }
       }
     },
@@ -5381,14 +5416,14 @@
       "required" : [ "type", "name" ],
       "properties" : {
         "type" : {
+          "description" : "String with value InCookie",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value InCookie"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "Name of the cookie",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the cookie"
+          "example" : "a string value"
         }
       }
     },
@@ -5398,20 +5433,20 @@
       "required" : [ "type", "size", "secret" ],
       "properties" : {
         "type" : {
+          "description" : "String with value HSAlgoSettings",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value HSAlgoSettings"
+          "example" : "a string value"
         },
         "size" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Size for SHA function. can be 256, 384 or 512"
+          "description" : "Size for SHA function. can be 256, 384 or 512",
+          "type" : "integer",
+          "example" : 123123
         },
         "secret" : {
+          "description" : "The secret value for the HMAC function",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The secret value for the HMAC function"
+          "example" : "a string value"
         }
       }
     },
@@ -5421,25 +5456,25 @@
       "required" : [ "type", "size", "publicKey" ],
       "properties" : {
         "type" : {
+          "description" : "String with value RSAlgoSettings",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value RSAlgoSettings"
+          "example" : "a string value"
         },
         "size" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Size for SHA function. can be 256, 384 or 512"
+          "description" : "Size for SHA function. can be 256, 384 or 512",
+          "type" : "integer",
+          "example" : 123123
         },
         "publicKey" : {
+          "description" : "The public key for the RSA function",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The public key for the RSA function"
+          "example" : "a string value"
         },
         "privateKey" : {
+          "description" : "The private key for the RSA function",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The private key for the RSA function"
+          "example" : "a string value"
         }
       }
     },
@@ -5449,25 +5484,25 @@
       "required" : [ "type", "size", "publicKey" ],
       "properties" : {
         "type" : {
+          "description" : "String with value ESAlgoSettings",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value ESAlgoSettings"
+          "example" : "a string value"
         },
         "size" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Size for SHA function. can be 256, 384 or 512"
+          "description" : "Size for SHA function. can be 256, 384 or 512",
+          "type" : "integer",
+          "example" : 123123
         },
         "publicKey" : {
+          "description" : "The public key for the RSA function",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The public key for the RSA function"
+          "example" : "a string value"
         },
         "privateKey" : {
+          "description" : "The private key for the RSA function",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The private key for the RSA function"
+          "example" : "a string value"
         }
       }
     },
@@ -5477,41 +5512,41 @@
       "required" : [ "type", "size", "publicKey" ],
       "properties" : {
         "type" : {
+          "description" : "String with value JWKSAlgoSettings",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value JWKSAlgoSettings"
+          "example" : "a string value"
         },
         "url" : {
+          "description" : "The url for the http call",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The url for the http call"
+          "example" : "a string value"
         },
         "headers" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The headers for the http call",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The headers for the http call"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "timeout" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The timeout of the http call"
+          "description" : "The timeout of the http call",
+          "type" : "integer",
+          "example" : 123
         },
         "ttl" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The ttl of the keyset"
+          "description" : "The ttl of the keyset",
+          "type" : "integer",
+          "example" : 123
         },
         "kty" : {
+          "description" : "The type of key: RSA or EC",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The type of key: RSA or EC"
+          "example" : "a string value"
         }
       }
     },
@@ -5521,32 +5556,32 @@
       "required" : [ "map", "values", "remove" ],
       "properties" : {
         "map" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Fields to rename",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Fields to rename"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "values" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Fields to set",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Fields to set"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "remove" : {
+          "description" : "Fields to remove",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "Fields to remove"
+          }
         }
       }
     },
@@ -5575,14 +5610,14 @@
       "required" : [ "fields" ],
       "properties" : {
         "fields" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Fields to verify with their values",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Fields to verify with their values"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "mappingSettings" : {
           "$ref" : "#/definitions/MappingSettings"
@@ -5595,9 +5630,9 @@
       "required" : [ "type", "verificationSettings" ],
       "properties" : {
         "type" : {
+          "description" : "String with value PassThrough",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value PassThrough"
+          "example" : "a string value"
         },
         "verificationSettings" : {
           "$ref" : "#/definitions/VerificationSettings"
@@ -5610,9 +5645,9 @@
       "required" : [ "type", "verificationSettings", "algoSettings" ],
       "properties" : {
         "type" : {
+          "description" : "String with value Sign",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value Sign"
+          "example" : "a string value"
         },
         "verificationSettings" : {
           "$ref" : "#/definitions/VerificationSettings"
@@ -5636,9 +5671,9 @@
       "required" : [ "type", "verificationSettings", "algoSettings" ],
       "properties" : {
         "type" : {
+          "description" : "String with value Transform",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "String with value Transform"
+          "example" : "a string value"
         },
         "verificationSettings" : {
           "$ref" : "#/definitions/VerificationSettings"
@@ -5665,29 +5700,29 @@
       "required" : [ "type", "id", "name", "desc", "enabled", "strict", "source", "algoSettings", "strategy" ],
       "properties" : {
         "id" : {
+          "description" : "Verifier id",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Verifier id"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "Verifier name",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Verifier name"
+          "example" : "a string value"
         },
         "desc" : {
+          "description" : "Verifier description",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Verifier description"
+          "example" : "a string value"
         },
         "enabled" : {
+          "description" : "Is it enabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Is it enabled"
+          "example" : true
         },
         "strict" : {
+          "description" : "Does it fail if JWT not found",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Does it fail if JWT not found"
+          "example" : true
         },
         "source" : {
           "oneOf" : [ {
@@ -5726,120 +5761,120 @@
       "required" : [ "type", "id", "name", "desc", "sessionMaxAge", "clientId", "clientSecret", "authorizeUrl", "tokenUrl", "userInfoUrl", "loginUrl", "logoutUrl", "callbackUrl", "accessTokenField", "nameField", "emailField", "otoroshiDataField" ],
       "properties" : {
         "type" : {
+          "description" : "Type of settings. value is oauth2",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Type of settings. value is oauth2"
+          "example" : "a string value"
         },
         "id" : {
+          "description" : "Unique id of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Unique id of the config"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "Name of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the config"
+          "example" : "a string value"
         },
         "desc" : {
+          "description" : "Description of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Description of the config"
+          "example" : "a string value"
         },
         "sessionMaxAge" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Max age of the session"
+          "description" : "Max age of the session",
+          "type" : "integer",
+          "example" : 123123
         },
         "clientId" : {
+          "description" : "OAuth Client id",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "OAuth Client id"
+          "example" : "a string value"
         },
         "clientSecret" : {
+          "description" : "OAuth Client secret",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "OAuth Client secret"
+          "example" : "a string value"
         },
         "authorizeUrl" : {
+          "description" : "OAuth authorize URL",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "OAuth authorize URL"
+          "example" : "a string value"
         },
         "tokenUrl" : {
+          "description" : "OAuth token URL",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "OAuth token URL"
+          "example" : "a string value"
         },
         "userInfoUrl" : {
+          "description" : "OAuth userinfo to get user profile",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "OAuth userinfo to get user profile"
+          "example" : "a string value"
         },
         "loginUrl" : {
+          "description" : "OAuth login URL",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "OAuth login URL"
+          "example" : "a string value"
         },
         "logoutUrl" : {
+          "description" : "OAuth logout URL",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "OAuth logout URL"
+          "example" : "a string value"
         },
         "callbackUrl" : {
+          "description" : "Otoroshi callback URL",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Otoroshi callback URL"
+          "example" : "a string value"
         },
         "scope" : {
+          "description" : "The scope of the token",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The scope of the token"
+          "example" : "a string value"
         },
         "claims" : {
+          "description" : "The claims of the token",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The claims of the token"
+          "example" : "a string value"
         },
         "accessTokenField" : {
+          "description" : "Field name to get access token",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Field name to get access token"
+          "example" : "a string value"
         },
         "nameField" : {
+          "description" : "Field name to get name from user profile",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Field name to get name from user profile"
+          "example" : "a string value"
         },
         "emailField" : {
+          "description" : "Field name to get email from user profile",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Field name to get email from user profile"
+          "example" : "a string value"
         },
         "otoroshiDataField" : {
+          "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
+          "example" : "a string value"
         },
         "oidConfig" : {
+          "description" : "URL of the OIDC config. file",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "URL of the OIDC config. file"
+          "example" : "a string value"
         },
         "useJson" : {
+          "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider"
+          "example" : true
         },
         "useCookies" : {
+          "description" : "Use for redirection to actual service",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Use for redirection to actual service"
+          "example" : true
         },
         "readProfileFromToken" : {
+          "description" : "The user profile will be read from the JWT token in id_token",
           "type" : "boolean",
-          "example" : true,
-          "description" : "The user profile will be read from the JWT token in id_token"
+          "example" : true
         },
         "jwtVerifier" : {
           "oneOf" : [ {
@@ -5861,36 +5896,36 @@
       "required" : [ "type", "id", "name", "desc", "users", "sessionMaxAge" ],
       "properties" : {
         "type" : {
+          "description" : "Type of settings. value is basic",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Type of settings. value is basic"
+          "example" : "a string value"
         },
         "id" : {
+          "description" : "Unique id of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Unique id of the config"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "Name of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the config"
+          "example" : "a string value"
         },
         "desc" : {
+          "description" : "Description of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Description of the config"
+          "example" : "a string value"
         },
         "sessionMaxAge" : {
+          "description" : "Max age of the session",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Max age of the session"
+          "example" : "a string value"
         },
         "users" : {
+          "description" : "List of users",
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/InMemoryUser"
-          },
-          "description" : "List of users"
+          }
         }
       }
     },
@@ -5900,80 +5935,80 @@
       "required" : [ "type", "id", "name", "desc", "sessionMaxAge", "serverUrl", "searchBase", "userBase", "groupFilter", "searchFilter", "adminUsername", "adminPassword", "nameField", "emailField", "metadataField" ],
       "properties" : {
         "type" : {
+          "description" : "Type of settings. value is ldap",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Type of settings. value is ldap"
+          "example" : "a string value"
         },
         "id" : {
+          "description" : "Unique id of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Unique id of the config"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "Name of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the config"
+          "example" : "a string value"
         },
         "desc" : {
+          "description" : "Description of the config",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Description of the config"
+          "example" : "a string value"
         },
         "sessionMaxAge" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Max age of the session"
+          "description" : "Max age of the session",
+          "type" : "integer",
+          "example" : 123123
         },
         "serverUrl" : {
+          "description" : "URL of the ldap server",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "URL of the ldap server"
+          "example" : "a string value"
         },
         "searchBase" : {
+          "description" : "LDAP search base",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "LDAP search base"
+          "example" : "a string value"
         },
         "userBase" : {
+          "description" : "LDAP user base DN",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "LDAP user base DN"
+          "example" : "a string value"
         },
         "groupFilter" : {
+          "description" : "Filter for groups",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Filter for groups"
+          "example" : "a string value"
         },
         "searchFilter" : {
+          "description" : "Filter for users",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Filter for users"
+          "example" : "a string value"
         },
         "adminUsername" : {
+          "description" : "The admin username",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The admin username"
+          "example" : "a string value"
         },
         "adminPassword" : {
+          "description" : "The admin password",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The admin password"
+          "example" : "a string value"
         },
         "nameField" : {
+          "description" : "Field name to get name from user profile",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Field name to get name from user profile"
+          "example" : "a string value"
         },
         "emailField" : {
+          "description" : "Field name to get email from user profile",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Field name to get email from user profile"
+          "example" : "a string value"
         },
         "otoroshiDataField" : {
+          "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
+          "example" : "a string value"
         }
       }
     },
@@ -5983,57 +6018,57 @@
       "required" : [ "enabled", "allowOrigin", "exposeHeaders", "allowHeaders", "allowMethods", "excludedPatterns", "maxAge", "allowCredentials" ],
       "properties" : {
         "enabled" : {
+          "description" : "Whether or not cors is enabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not cors is enabled"
+          "example" : true
         },
         "allowOrigin" : {
+          "description" : "The cors allowed origin",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The cors allowed origin"
+          "example" : "a string value"
         },
         "exposeHeaders" : {
+          "description" : "The cors exposed header",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "The cors exposed header"
+          }
         },
         "allowHeaders" : {
+          "description" : "The cors allowed headers",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "The cors allowed headers"
+          }
         },
         "allowMethods" : {
+          "description" : "The cors allowed methods",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "The cors allowed methods"
+          }
         },
         "excludedPatterns" : {
+          "description" : "The cors excluded patterns",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "The cors excluded patterns"
+          }
         },
         "maxAge" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Cors max age"
+          "description" : "Cors max age",
+          "type" : "integer",
+          "example" : 123123
         },
         "allowCredentials" : {
+          "description" : "Allow to pass credentials",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Allow to pass credentials"
+          "example" : true
         }
       }
     },
@@ -6043,20 +6078,20 @@
       "required" : [ "enabled", "to", "code" ],
       "properties" : {
         "enabled" : {
+          "description" : "Whether or not redirection is enabled",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether or not redirection is enabled"
+          "example" : true
         },
         "to" : {
+          "description" : "The location for redirection",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The location for redirection"
+          "example" : "a string value"
         },
         "code" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "The http redirect code"
+          "description" : "The http redirect code",
+          "type" : "integer",
+          "example" : 123123
         }
       }
     },
@@ -6066,29 +6101,29 @@
       "required" : [ "name", "password", "email", "metadata" ],
       "properties" : {
         "name" : {
+          "description" : "Name of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the user"
+          "example" : "a string value"
         },
         "email" : {
+          "description" : "Email of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Email of the user"
+          "example" : "a string value"
         },
         "password" : {
+          "description" : "Password of the user (BCrypt hash)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Password of the user (BCrypt hash)"
+          "example" : "a string value"
         },
         "metadata" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Metadata of the user",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Metadata of the user"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -6098,24 +6133,24 @@
       "required" : [ "name", "email", "metadata" ],
       "properties" : {
         "name" : {
+          "description" : "Name of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Name of the user"
+          "example" : "a string value"
         },
         "email" : {
+          "description" : "Email of the user",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Email of the user"
+          "example" : "a string value"
         },
         "metadata" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "Metadata of the user",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "Metadata of the user"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -6125,51 +6160,51 @@
       "required" : [ "enabled", "excludedPatterns", "whiteList", "blackList", "bufferSize", "chunkedThreshold", "compressionLevel" ],
       "properties" : {
         "enabled" : {
+          "description" : "Whether gzip compression is enabled or not",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Whether gzip compression is enabled or not"
+          "example" : true
         },
         "excludedPatterns" : {
+          "description" : "Patterns that are excluded from gzipping",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "Patterns that are excluded from gzipping"
+          }
         },
         "whiteList" : {
+          "description" : "Whitelisted mime types. Wildcard supported",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "Whitelisted mime types. Wildcard supported"
+          }
         },
         "blackList" : {
+          "description" : "Blacklisted mime types. Wildcard supported",
           "type" : "array",
           "items" : {
             "type" : "string",
             "example" : "a string value"
-          },
-          "description" : "Blacklisted mime types. Wildcard supported"
+          }
         },
         "bufferSize" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Size of the GZip buffer"
+          "description" : "Size of the GZip buffer",
+          "type" : "integer",
+          "example" : 123
         },
         "chunkedThreshold" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "Threshold for chunking data"
+          "description" : "Threshold for chunking data",
+          "type" : "integer",
+          "example" : 123
         },
         "compressionLevel" : {
-          "type" : "integer",
           "format" : "int32",
-          "example" : 123123,
-          "description" : "Compression level. From 0 to 9"
+          "description" : "Compression level. From 0 to 9",
+          "type" : "integer",
+          "example" : 123123
         }
       }
     },
@@ -6179,34 +6214,34 @@
       "required" : [ "id", "name", "desc", "code" ],
       "properties" : {
         "id" : {
+          "description" : "The id of the script",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The id of the script"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "The name of the script",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The name of the script"
+          "example" : "a string value"
         },
         "desc" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The description of the script",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The description of the script"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "code" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The code of the script",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The code of the script"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -6216,9 +6251,9 @@
       "required" : [ "done" ],
       "properties" : {
         "done" : {
+          "description" : "Is the task done or not",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Is the task done or not"
+          "example" : true
         },
         "error" : {
           "$ref" : "#/definitions/ScriptCompilationError"
@@ -6231,44 +6266,44 @@
       "required" : [ "line", "column", "file", "rawMessage", "message" ],
       "properties" : {
         "line" : {
+          "description" : "The line of the error",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The line of the error"
+          "example" : "a string value"
         },
         "column" : {
+          "description" : "The column of the error",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The column of the error"
+          "example" : "a string value"
         },
         "file" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The file where the error is located",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The file where the error is located"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "rawMessage" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The raw message from the compiler",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The raw message from the compiler"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         },
         "message" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "The message to display for the error",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "The message to display for the error"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     },
@@ -6278,64 +6313,64 @@
       "required" : [ "id", "chain", "privateKey", "caRef", "domain", "selfSigned", "ca", "valid", "autoRenew", "subject", "from", "to" ],
       "properties" : {
         "id" : {
+          "description" : "Id of the certificate",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Id of the certificate"
+          "example" : "a string value"
         },
         "chain" : {
+          "description" : "Certificate chain of trust in PEM format",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Certificate chain of trust in PEM format"
+          "example" : "a string value"
         },
         "privateKey" : {
+          "description" : "PKCS8 private key in PEM format",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "PKCS8 private key in PEM format"
+          "example" : "a string value"
         },
         "caRef" : {
+          "description" : "Reference for a CA certificate in otoroshi",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Reference for a CA certificate in otoroshi"
+          "example" : "a string value"
         },
         "autoRenew" : {
+          "description" : "Allow Otoroshi to renew the certificate (if self signed)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Allow Otoroshi to renew the certificate (if self signed)"
+          "example" : "a string value"
         },
         "domain" : {
+          "description" : "Domain of the certificate (read only)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Domain of the certificate (read only)"
+          "example" : "a string value"
         },
         "selfSigned" : {
+          "description" : "Certificate is self signed  read only)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Certificate is self signed  read only)"
+          "example" : "a string value"
         },
         "ca" : {
+          "description" : "Certificate is a CA (read only)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Certificate is a CA (read only)"
+          "example" : "a string value"
         },
         "valid" : {
+          "description" : "Certificate is valid (read only)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Certificate is valid (read only)"
+          "example" : "a string value"
         },
         "subject" : {
+          "description" : "Subject of the certificate (read only)",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Subject of the certificate (read only)"
+          "example" : "a string value"
         },
         "from" : {
+          "description" : "Start date of validity",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "Start date of validity"
+          "example" : "a string value"
         },
         "to" : {
+          "description" : "End date of validity",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "End date of validity"
+          "example" : "a string value"
         }
       }
     },
@@ -6345,77 +6380,77 @@
       "required" : [ "id", "name", "description", "url", "host", "goodTtl", "badTtl", "method", "path", "timeout", "noCache", "alwaysValid", "headers" ],
       "properties" : {
         "id" : {
+          "description" : "The id of the settings",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The id of the settings"
+          "example" : "a string value"
         },
         "name" : {
+          "description" : "The name of the settings",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The name of the settings"
+          "example" : "a string value"
         },
         "description" : {
+          "description" : "The description of the settings",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The description of the settings"
+          "example" : "a string value"
         },
         "url" : {
+          "description" : "The URL of the server",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The URL of the server"
+          "example" : "a string value"
         },
         "host" : {
+          "description" : "The host of the server",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The host of the server"
+          "example" : "a string value"
         },
         "goodTtl" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The TTL for valid access response caching"
+          "description" : "The TTL for valid access response caching",
+          "type" : "integer",
+          "example" : 123
         },
         "badTtl" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The TTL for invalid access response caching"
+          "description" : "The TTL for invalid access response caching",
+          "type" : "integer",
+          "example" : 123
         },
         "method" : {
+          "description" : "The HTTP method",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The HTTP method"
+          "example" : "a string value"
         },
         "path" : {
+          "description" : "The URL path",
           "type" : "string",
-          "example" : "a string value",
-          "description" : "The URL path"
+          "example" : "a string value"
         },
         "timeout" : {
-          "type" : "integer",
           "format" : "int64",
-          "example" : 123,
-          "description" : "The call timeout"
+          "description" : "The call timeout",
+          "type" : "integer",
+          "example" : 123
         },
         "noCache" : {
+          "description" : "Avoid caching responses",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Avoid caching responses"
+          "example" : true
         },
         "alwaysValid" : {
+          "description" : "Bypass http calls, every certificates are valids",
           "type" : "boolean",
-          "example" : true,
-          "description" : "Bypass http calls, every certificates are valids"
+          "example" : true
         },
         "headers" : {
-          "type" : "object",
-          "example" : {
-            "key" : "value"
-          },
+          "description" : "HTTP call headers",
           "additionalProperties" : {
             "type" : "string"
           },
-          "description" : "HTTP call headers"
+          "type" : "object",
+          "example" : {
+            "key" : "value"
+          }
         }
       }
     }
