@@ -65,9 +65,7 @@ class HttpDbDataStores(configuration: Configuration,
     logger.info(s"Now using HttpDb DataStores (loading from '$stateUrl')")
     readStateFromHttp().map { _ =>
       cancelRef.set(Source.tick(1.second, statePoll, ()).mapAsync(1)(_ => writeStateToHttp()).recover {
-        case t =>
-          logger.error(s"Error while scheduling writeStateToHttp: $t")
-          ()
+        case t => logger.error(s"Error while scheduling writeStateToHttp: $t")
       }.toMat(Sink.ignore)(Keep.left).run())
       // cancelRef.set(actorSystem.scheduler.schedule(1.second, statePoll) {
       //   writeStateToHttp()
