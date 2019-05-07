@@ -413,13 +413,13 @@ https.createServer(options, (req, res) =&gt; {
 [info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:8443
 [info] otoroshi-env - Generating a self signed SSL certificate for https://*.foo.bar ...
 </code></pre>
-<p>and log into otoroshi with the tuple <code>admin@otoroshi.io / xxxxxxxxxxxx</code> displayed in the logs. Once logged in, create a new public service exposed on <code>http://api.frontend.lol</code> that targets <code>ahc:https://api.backend.lol:8444/</code>.</p><div class="centered-img">
+<p>and log into otoroshi with the tuple <code>admin@otoroshi.io / xxxxxxxxxxxx</code> displayed in the logs. Once logged in, create a new public service exposed on <code>http://api.frontend.lol</code> that targets <code>ahttps://api.backend.lol:8444/</code>.</p><div class="centered-img">
 <img src="../img/mtls-service-1.png" /></div>
 <p>and test it</p>
 <pre class="prettyprint"><code class="language-sh">curl http://api.frontend.lol:8080/
 # the following error should be returned: {&quot;Otoroshi-Error&quot;:&quot;Something went wrong, you should try later. Thanks for your understanding.&quot;}
 </code></pre><div class="callout warning "><div class="callout-title">Warning</div>
-<p>As seen before, the target of the otoroshi service is <code>ahc:https://api.backend.lol:8444/</code>. <code>ahc:https://</code> is not a typo and is intended. This tells otoroshi to use its experimental <code>http client</code> with dynamic tls support to fetch this resource.</p></div>
+<p>As seen before, the target of the otoroshi service is <code>ahttps://api.backend.lol:8444/</code>. <code>ahttps://</code> is not a typo and is intended. This tells otoroshi to use its experimental <code>http client</code> with dynamic tls support to fetch this resource.</p></div>
 <p>you should get an error due to the fact that Otoroshi doesn&rsquo;t know about the server certificate or the client certificate expected by the server.</p>
 <p>We have to add the client certificate for <code>https://api.backend.lol</code> to Otoroshi. Go to <a href="http://otoroshi.foo.bar:8080/bo/dashboard/certificates">http://otoroshi.foo.bar:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./client/_.backend.lol.cer</code> and <code>./client/_.backend.lol.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p><div class="centered-img">
 <img src="../img/mtls-cert-client-backend-1.png" /></div>
@@ -634,7 +634,7 @@ https.createServer(options, call).listen(8445);
   &quot;id&quot;: &quot;r7m8j31rh66hhdia3ormfm0wfevu1kvg0zgaxsp3oxb6ivf7fy8kvygmvnrlxv81&quot;,
   &quot;name&quot;: &quot;Actual validation authority&quot;,
   &quot;description&quot;: &quot;Actual validation authority&quot;,
-  &quot;url&quot;: &quot;ahc:https://validation.backend.lol:8445&quot;,
+  &quot;url&quot;: &quot;ahttps://validation.backend.lol:8445&quot;,
   &quot;host&quot;: &quot;validation.backend.lol&quot;,
   &quot;goodTtl&quot;: 600000,
   &quot;badTtl&quot;: 60000,

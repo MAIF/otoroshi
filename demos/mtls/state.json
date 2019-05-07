@@ -262,7 +262,7 @@
       "targets": [
         {
           "host": "api.backend.lol:8444",
-          "scheme": "ahc:https"
+          "scheme": "ahttps"
         }
       ],
       "root": "/",
@@ -376,7 +376,7 @@
       "targets": [
         {
           "host": "www.backend.lol:8446",
-          "scheme": "ahc:https"
+          "scheme": "ahttps"
         }
       ],
       "root": "/",
@@ -565,7 +565,7 @@
       "id": "r7m8j31rh66hhdia3ormfm0wfevu1kvg0zgaxsp3oxb6ivf7fy8kvygmvnrlxv81",
       "name": "Actual validation authority",
       "description": "Actual validation authority",
-      "url": "ahc:https://validation.backend.lol:8445",
+      "url": "ahttps://validation.backend.lol:8445",
       "host": "validation.backend.lol",
       "goodTtl": 600000,
       "badTtl": 60000,

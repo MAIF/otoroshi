@@ -216,7 +216,7 @@ java -jar otoroshi.jar
 [info] otoroshi-env - Generating a self signed SSL certificate for https://*.foo.bar ...
 ```
 
-and log into otoroshi with the tuple `admin@otoroshi.io / xxxxxxxxxxxx` displayed in the logs. Once logged in, create a new public service exposed on `http://api.frontend.lol` that targets `ahc:https://api.backend.lol:8444/`.
+and log into otoroshi with the tuple `admin@otoroshi.io / xxxxxxxxxxxx` displayed in the logs. Once logged in, create a new public service exposed on `http://api.frontend.lol` that targets `ahttps://api.backend.lol:8444/`.
 
 @@@ div { .centered-img }
 <img src="../img/mtls-service-1.png" />
@@ -230,7 +230,7 @@ curl http://api.frontend.lol:8080/
 ```
 
 @@@ warning
-As seen before, the target of the otoroshi service is `ahc:https://api.backend.lol:8444/`. `ahc:https://` is not a typo and is intended. This tells otoroshi to use its experimental `http client` with dynamic tls support to fetch this resource.
+As seen before, the target of the otoroshi service is `ahttps://api.backend.lol:8444/`. `ahttps://` is not a typo and is intended. This tells otoroshi to use its experimental `http client` with dynamic tls support to fetch this resource.
 @@@
 
 you should get an error due to the fact that Otoroshi doesn't know about the server certificate or the client certificate expected by the server.
@@ -500,7 +500,7 @@ the corresponding authority validation can be created in Otoroshi like
   "id": "r7m8j31rh66hhdia3ormfm0wfevu1kvg0zgaxsp3oxb6ivf7fy8kvygmvnrlxv81",
   "name": "Actual validation authority",
   "description": "Actual validation authority",
-  "url": "ahc:https://validation.backend.lol:8445",
+  "url": "ahttps://validation.backend.lol:8445",
   "host": "validation.backend.lol",
   "goodTtl": 600000,
   "badTtl": 60000,
