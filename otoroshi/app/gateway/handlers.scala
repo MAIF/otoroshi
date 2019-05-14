@@ -1278,7 +1278,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .flatMap { tuple =>
                                             val (resp, remainingQuotas) = tuple
                                             // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-                                            if (descriptor.name.contains("akko")) logger.info(resp.headers.toString())
                                             val headers = resp.headers.mapValues(_.head)
                                             val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
                                               c => c._2.map(v => (c._1, v))
@@ -1314,14 +1313,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 )
                                               } else if (isUp) {
                                                 // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
-                                                val exchange = Json.prettyPrint(
+                                                val exchange = Json.stringify(
                                                   Json.obj(
                                                     "uri"   -> req.relativeUri,
                                                     "url"   -> url,
                                                     "state" -> stateValue,
-                                                    "reveivedState" -> JsString(
-                                                      headers.getOrElse(env.Headers.OtoroshiStateResp, "--")
-                                                    ),
+                                                    "reveivedState" -> JsString(stateResp.getOrElse("--")),
                                                     "claim"  -> claim,
                                                     "method" -> req.method,
                                                     "query"  -> req.rawQueryString,
