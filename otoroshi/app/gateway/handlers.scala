@@ -1278,6 +1278,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .flatMap { tuple =>
                                             val (resp, remainingQuotas) = tuple
                                             // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
+                                            logger.info(resp.headers.toString())
                                             val headers = resp.headers.mapValues(_.head)
                                             val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
                                               c => c._2.map(v => (c._1, v))
@@ -1290,7 +1291,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
                                             // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
                                             // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
-                                            val stateResp = headers.get(env.Headers.OtoroshiStateResp)
+                                            val stateResp = headers.get(env.Headers.OtoroshiStateResp).orElse(headers.get(env.Headers.OtoroshiStateResp.toLowerCase))
                                             if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                                                 && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
                                                 && !stateRespValid(stateValue, stateResp, jti, descriptor)) {
