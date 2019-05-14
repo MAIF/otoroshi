@@ -1278,7 +1278,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .flatMap { tuple =>
                                             val (resp, remainingQuotas) = tuple
                                             // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-                                            logger.info(resp.headers.toString())
+                                            if (descriptor.name.contains("akko")) logger.info(resp.headers.toString())
                                             val headers = resp.headers.mapValues(_.head)
                                             val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
                                               c => c._2.map(v => (c._1, v))
