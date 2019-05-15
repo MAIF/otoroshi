@@ -237,7 +237,7 @@ export function registerPrompt() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  window.newPrompt = (message, opts) => {
+  window.newPrompt = (message, opts = {}) => {
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Prompt

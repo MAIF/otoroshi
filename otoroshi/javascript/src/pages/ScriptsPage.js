@@ -77,7 +77,7 @@ class MyApp extends NanoApp {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     (request.method, request.path) match {
       case ("GET",  "/hello")              => sayHello()
-      case ("GET", r"/hello/${name}@(.*)") => sayHelloTo(name)
+      case ("GET", r"/hello/\${name}@(.*)") => sayHelloTo(name)
       case ("POST", "/body")               => displayBody(body)
       case (_, _)                          => NotFound("Not Found !").future
     }
