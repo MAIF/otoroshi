@@ -33,7 +33,12 @@ case class PrivateAppsUser(randomId: String,
     env.datastores.privateAppsUserDataStore.delete(randomId)
 
   def toJson: JsValue = PrivateAppsUser.fmt.writes(this)
-
+  def asJsonCleaned: JsValue = Json.obj(
+    "name" -> name,
+    "email" -> email,
+    "profile" -> profile,
+    "metadata" -> otoroshiData
+  )
 }
 
 object PrivateAppsUser {

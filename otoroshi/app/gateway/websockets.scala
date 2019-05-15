@@ -569,7 +569,7 @@ class WebSocketHandler()(implicit env: Env) {
                                              .flatMap(_.otoroshiData)
                                              .orElse(apiKey.map(_.metadataJson))
                                              .map(m => Json.stringify(Json.toJson(m))))
-                                .withClaim("user", paUsr.map(u => Json.stringify(u.toJson)))
+                                .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
                                 .withClaim("apikey",
                                            apiKey.map(
                                              ak =>
