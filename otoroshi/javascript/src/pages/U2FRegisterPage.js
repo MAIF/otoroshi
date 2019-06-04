@@ -40,7 +40,7 @@ export class U2FRegisterPage extends Component {
         ) : (
           <i className="far fa-user" />
         ),
-      props: { width: 30, textAlign: 'center' },
+      style: { width: 50, textAlign: 'center' },
     },
     {
       title: 'Action',
