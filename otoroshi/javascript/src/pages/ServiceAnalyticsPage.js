@@ -58,6 +58,11 @@ export class ServiceAnalyticsPage extends Component {
           dataInStats: { series: [] },
           productPiechart: { series: [] },
           servicePiechart: { series: [] },
+          hits: { count: 0 },
+          avgDuration: { duration: 0 },
+          avgOverhead: { overhead: 0 },
+          dataIn: { 'data.dataIn': 0 },
+          dataOut: { 'data.dataOut': 0 },
         },
         ...rawData,
       };
@@ -100,15 +105,17 @@ export class ServiceAnalyticsPage extends Component {
   };
 
   render() {
+    const defaultData = {
+      hits: { count: 0 },
+      avgDuration: { duration: 0 },
+      avgOverhead: { overhead: 0 },
+      dataIn: { 'data.dataIn': 0 },
+      dataOut: { 'data.dataOut': 0 },
+    };
+    const stateData = this.state.data || {};
     const data = {
-      ...{
-        hits: { count: 0 },
-        avgDuration: { duration: 0 },
-        avgOverhead: { overhead: 0 },
-        dataIn: { 'data.dataIn': 0 },
-        dataOut: { 'data.dataOut': 0 },
-      },
-      ...this.state.data,
+      ...defaultData,
+      ...stateData,
     };
 
     const hits = data.hits && data.hits.count ? data.hits.count.prettify() : 0;

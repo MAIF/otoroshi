@@ -19,7 +19,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}
 import org.slf4j.LoggerFactory
 import play.api.ApplicationLoader.Context
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.libs.ws.{WSAuthScheme, WSClient}
 import play.api.{BuiltInComponents, Configuration, Logger}
 
@@ -697,4 +697,13 @@ class BodySizeService() {
     Await.result(http.shutdownAllConnectionPools(), 60.seconds)
     Await.result(system.terminate(), 60.seconds)
   }
+}
+
+object TestRegex  {
+
+
+  import java.util.regex.Pattern
+  val pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,1000}$")
+  val matches = pattern.matcher("FifouFifou1!").matches()
+  println(matches)
 }
