@@ -59,7 +59,7 @@ export function DefaultSidebar(props) {
           </li>
         )}
       <li>
-        <h3 style={{ marginTop: 0 }}>
+        <h3 style={{ marginTop: 20 }}>
           <i className="fas fa-cubes" /> Tcp Services
         </h3>
       </li>
