@@ -8,5 +8,13 @@
   }
   .dropdown-menu>li>a {
     color: $colorGris;
-  
-  }
+    &:hover .monkeyMenu .st1{
+      fill:#262626;
+    }
+    &:hover .monkeyMenu .st0{
+      fill:#9e9e9e;
+    }
+    .monkeyMenu{
+      margin-left: -8px;
+    }
+}

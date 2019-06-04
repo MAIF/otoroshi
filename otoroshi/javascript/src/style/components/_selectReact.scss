@@ -11,6 +11,10 @@
 .Select-option.is-focused {
     color: #fff;
     background-color: $fondNavbar;
+
+    &:hover .st1{
+      fill:#fff;
+    }
 }
 
 .Select-option.is-focused:hover{
@@ -32,6 +36,9 @@
 // couleur de text du select
 .Select-option {
  color: #8C8C8B;
+ .monkeyMenu .st1{
+   fill:#8C8C8B;
+ }
 }
 
 .Select-value,.Select.has-value.Select--single > .Select-control .Select-value .Select-value-label, .Select.has-value.is-pseudo-focused.Select--single > .Select-control .Select-value .Select-value-label {
