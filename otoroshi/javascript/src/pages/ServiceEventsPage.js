@@ -164,7 +164,7 @@ export class ServiceEventsPage extends Component {
     return (
       <div>
         <div className="row" style={{ marginBottom: 30 }}>
-          <div className="" style={{ display: 'flex' }}>
+          <div className="col-xs-12" style={{ display: 'flex',alignItems:'center' }}>
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
               from={this.state.from}
