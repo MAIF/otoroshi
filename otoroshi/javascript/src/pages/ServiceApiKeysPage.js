@@ -107,6 +107,7 @@ class CopyCredentials extends Component {
             style={{ position: 'fixed', left: 0, top: -250 }}
             type="text"
             value={props.rawValue.clientId + ':' + props.rawValue.clientSecret}
+            alt="copy credentials"
           />
           <button
             type="button"
@@ -115,7 +116,7 @@ class CopyCredentials extends Component {
               this.clipboard.select();
               document.execCommand('Copy');
             }}>
-            <i className="glyphicon glyphicon-copy" /> Copy credentials to clipboard
+            <i className="fas fa-copy" /> Copy credentials to clipboard
           </button>
         </div>
       </div>
@@ -134,12 +135,13 @@ class CopyFromLineItem extends Component {
           this.clipboard.select();
           document.execCommand('Copy');
         }}>
-        <i className="glyphicon glyphicon-copy" />
+        <i className="fas fa-copy" />
         <input
           type="text"
           ref={r => (this.clipboard = r)}
           style={{ position: 'fixed', left: 0, top: -250 }}
           value={item.clientId + ':' + item.clientSecret}
+          alt="copy credentials"
         />
       </button>
     );
@@ -420,7 +422,7 @@ export class ServiceApiKeysPage extends Component {
     },
     {
       title: 'Active',
-      style: { textAlign: 'center', width: 70 },
+      style: { display:'flex',alignItems:'center', flexDirection:'column-reverse',justifyContent:'flex-start' },
       notFilterable: true,
       content: item => item.enabled,
       cell: (v, item, table) => (
