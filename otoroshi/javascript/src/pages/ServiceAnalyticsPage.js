@@ -46,27 +46,27 @@ export class ServiceAnalyticsPage extends Component {
       this.state.from,
       this.state.to
     ).then(rawData => {
+      const defaultData = {
+        statusesPiechart: { series: [] },
+        statusesHistogram: { series: [] },
+        durationStats: { series: [] },
+        durationPercentiles: { series: [] },
+        overheadStats: { series: [] },
+        overheadPercentiles: { series: [] },
+        dataOutStats: { series: [] },
+        dataInStats: { series: [] },
+        productPiechart: { series: [] },
+        servicePiechart: { series: [] },
+        hits: { count: 0 },
+        avgDuration: { duration: 0 },
+        avgOverhead: { overhead: 0 },
+        dataIn: { 'data.dataIn': 0 },
+        dataOut: { 'data.dataOut': 0 },
+      };
       const data = {
-        ...{
-          statusesPiechart: { series: [] },
-          statusesHistogram: { series: [] },
-          durationStats: { series: [] },
-          durationPercentiles: { series: [] },
-          overheadStats: { series: [] },
-          overheadPercentiles: { series: [] },
-          dataOutStats: { series: [] },
-          dataInStats: { series: [] },
-          productPiechart: { series: [] },
-          servicePiechart: { series: [] },
-          hits: { count: 0 },
-          avgDuration: { duration: 0 },
-          avgOverhead: { overhead: 0 },
-          dataIn: { 'data.dataIn': 0 },
-          dataOut: { 'data.dataOut': 0 },
-        },
+        ...defaultData,
         ...rawData,
       };
-
       this.setState({ data, loading: false });
     });
   };
