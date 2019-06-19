@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import {
+  CodeInput,
   ArrayInput,
   ObjectInput,
   BooleanInput,
@@ -1896,6 +1897,9 @@ export class ServicePage extends Component {
                   <i className="glyphicon glyphicon-link" /> all scripts.
                 </a>
               </div>
+            </div>
+            <div className="form-group">
+              <CodeInput label="Configuration" mode="json" value={JSON.stringify(this.state.service.transformerConfig, null, 2)} onChange={e => this.changeTheValue('transformerConfig', JSON.parse(e))} />
             </div>
           </Collapse>
         </form>

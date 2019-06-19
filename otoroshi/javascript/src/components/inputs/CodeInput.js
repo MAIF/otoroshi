@@ -19,7 +19,7 @@ export class CodeInput extends Component {
     if (this.props.mode === 'json') {
       try {
         const parsed = JSON.parse(e);
-        this.setState({ value: null }, () => {
+        this.setState({ value: e }, () => {
           this.props.onChange(e);
         });
       } catch (ex) {
@@ -40,7 +40,7 @@ export class CodeInput extends Component {
         </label>
         <div className="col-sm-10">
           <AceEditor
-            mode={this.props.mode || 'javascript'}
+            mode={this.props.mode ? (this.props.mode === 'json' ? 'javascript' : this.props.mode) : 'javascript'}
             theme="monokai"
             onChange={this.onChange}
             value={code}
