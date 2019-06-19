@@ -130,9 +130,8 @@ class WsClientChooser(standardClient: WSClient,
           akkaClient.mat
         )
 
-      case _ if fullAkka => new AkkaWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
-
-      case _ if !fullAkka => standardClient.url(url)
+      case _ if useAkkaHttpClient || fullAkka => new AkkaWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+      case _ if !(useAkkaHttpClient || fullAkka) => standardClient.url(url)
     }
   }
 
