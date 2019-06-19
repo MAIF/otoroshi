@@ -8,9 +8,10 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import env.Env
-import models.{Key, ServiceDescriptor, ServiceDescriptorDataStore, ServiceDescriptorQuery}
+import models._
 import play.api.Logger
 import play.api.libs.json.Format
+import play.api.mvc.RequestHeader
 import storage.{RedisLike, RedisLikeStore}
 import utils.RegexPool
 
@@ -379,7 +380,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
   }
 
   @inline
-  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery): Seq[ServiceDescriptor] = {
+  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[ServiceDescriptor] = {
     // val sers = services
     //   .sortWith {
     //     case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
@@ -398,12 +399,13 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
     //   }
     val allSers = services
       .filter { sr =>
+        val apiKeyMatched = matchApiKeyRouting(sr, query, requestHeader)
         val allHeadersMatched = matchAllHeaders(sr, query)
         val rootMatched = sr.matchingRoot match {
           case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
           case None               => true
         }
-        allHeadersMatched && rootMatched
+        apiKeyMatched && allHeadersMatched && rootMatched
       }
     val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
     val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
@@ -416,7 +418,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
   }
 
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
-  override def find(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext,
+  override def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
                                                    env: Env): Future[Option[ServiceDescriptor]] = {
     val start = System.currentTimeMillis()
     query.exists().flatMap {
@@ -425,7 +427,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
         query
           .getServices(false)
           .fast
-          .map(services => sortServices(services, query))
+          .map(services => sortServices(services, query, requestHeader))
       }
       case false => {
         logger.debug("Full scan of services, should not pass here anymore ...")
@@ -438,7 +440,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
             }
           }
           query.addServices(validDescriptors)
-          sortServices(validDescriptors, query)
+          sortServices(validDescriptors, query, requestHeader)
         }
       }
     } map { filteredDescriptors =>

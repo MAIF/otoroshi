@@ -373,6 +373,14 @@ export class ServiceApiKeysPage extends Component {
         help: 'Some useful metadata for downstream services',
       },
     },
+    roles: {
+      type: 'array',
+      props: {
+        label: 'Roles',
+        placeholder: 'admin',
+        help: 'The roles assigned to thiss apikey',
+      },
+    },
     throttlingQuota: {
       type: 'number',
       props: {
@@ -467,6 +475,7 @@ export class ServiceApiKeysPage extends Component {
     'readOnly',
     'allowClientIdOnly',
     '---',
+    'roles',
     'metadata',
     '>>>Service Group settings',
     'authorizedGroup',

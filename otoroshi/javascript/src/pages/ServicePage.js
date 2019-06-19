@@ -1116,6 +1116,31 @@ export class ServicePage extends Component {
               placeholder="access_token"
               onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.cookieName', v)}
             />
+            <Separator title="Routing constraints" />
+            <ArrayInput
+              label="One Role in"
+              value={this.state.service.apiKeyConstraints.routing.oneRoleIn}
+              help="Api used should have at least one of the following roles"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneRoleIn', v)}
+            />
+            <ArrayInput
+              label="All Roles in"
+              value={this.state.service.apiKeyConstraints.routing.allRolesIn}
+              help="Api used should have all of the following roles"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allRolesIn', v)}
+            />
+            <ObjectInput
+              label="One Meta. in"
+              value={this.state.service.apiKeyConstraints.routing.oneMetaIn}
+              help="Api used should have at least one of the following metadata entries"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneMetaIn', v)}
+            />
+            <ObjectInput
+              label="All Meta. in"
+              value={this.state.service.apiKeyConstraints.routing.allMetaIn}
+              help="Api used should have all of the following metadata entries"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allMetaIn', v)}
+            />
           </Collapse>
           <Collapse
             notVisible={this.state.service.redirection.enabled}

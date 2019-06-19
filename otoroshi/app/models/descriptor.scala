@@ -21,6 +21,7 @@ import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.TooManyRequests
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -886,17 +887,52 @@ object JwtAuthConstraints {
     } get
   }
 }
+
+case class ApiKeyRouteMatcher(
+  oneRoleIn: Seq[String] = Seq.empty,
+  allRolesIn: Seq[String] = Seq.empty,
+  oneMetaIn: Map[String, String] = Map.empty,
+  allMetaIn: Map[String, String] = Map.empty
+) extends {
+  def json: JsValue = ApiKeyRouteMatcher.format.writes(this)
+}
+
+object ApiKeyRouteMatcher {
+  val format = new Format[ApiKeyRouteMatcher] {
+    override def writes(o: ApiKeyRouteMatcher): JsValue = Json.obj(
+      "oneRoleIn" -> JsArray(o.oneRoleIn.map(JsString.apply)),
+      "allRolesIn" -> JsArray(o.allRolesIn.map(JsString.apply)),
+      "oneMetaIn" -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
+      "allMetaIn" -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
+    )
+    override def reads(json: JsValue): JsResult[ApiKeyRouteMatcher] = Try {
+      JsSuccess(
+        ApiKeyRouteMatcher(
+          oneRoleIn = (json \ "oneRoleIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allRolesIn = (json \ "allRolesIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+
 case class ApiKeyConstraints(
   basicAuth: BasicAuthConstraints = BasicAuthConstraints(),
   customHeadersAuth: CustomHeadersAuthConstraints = CustomHeadersAuthConstraints(),
   clientIdAuth: ClientIdAuthConstraints = ClientIdAuthConstraints(),
-  jwtAuth: JwtAuthConstraints = JwtAuthConstraints()
+  jwtAuth: JwtAuthConstraints = JwtAuthConstraints(),
+  routing: ApiKeyRouteMatcher = ApiKeyRouteMatcher()
 ) {
   def json: JsValue = Json.obj(
     "basicAuth" -> basicAuth.json,
     "customHeadersAuth" -> customHeadersAuth.json,
     "clientIdAuth" -> clientIdAuth.json,
     "jwtAuth" -> jwtAuth.json,
+    "routing" -> routing.json
   )
 }
 object ApiKeyConstraints {
@@ -908,7 +944,8 @@ object ApiKeyConstraints {
           basicAuth = (json \ "basicAuth").as(BasicAuthConstraints.format),
           customHeadersAuth = (json \ "customHeadersAuth").as(CustomHeadersAuthConstraints.format),
           clientIdAuth = (json \ "clientIdAuth").as(ClientIdAuthConstraints.format),
-          jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format)
+          jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format),
+          routing = (json \ "routing").as(ApiKeyRouteMatcher.format)
         )
       )
     } recover {
@@ -1310,7 +1347,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def globalDataOut()(implicit ec: ExecutionContext, env: Env): Future[Long]
   def dataInFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def dataOutFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def find(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]]
+  def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]]
   def findByEnv(env: String)(implicit ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]]
   def findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]]
 
@@ -1322,4 +1359,30 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
                                                                                          env: Env): Future[Boolean]
 
   def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
+
+  @inline
+  def matchApiKeyRouting(sr: ServiceDescriptor, query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Boolean = {
+
+    import SeqImplicits._
+    import scala.concurrent.duration._
+
+    val apiKeyOpt: Option[ApiKey] = scala.concurrent.Await.result(ApiKeyHelper.extractApiKey(requestHeader, sr), 10.seconds)
+    apiKeyOpt match {
+      case None => true
+      case Some(apiKey) => {
+        val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneRoleIn).filter(_.nonEmpty).map(roles => apiKey.roles.findOne(roles)).getOrElse(true)
+        val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allRolesIn).filter(_.nonEmpty).map(roles => apiKey.roles.findAll(roles)).getOrElse(true)
+        val matchOnMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findOne(metas)).getOrElse(true)
+        val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findAll(metas)).getOrElse(true)
+        matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta
+      }
+    }
+  }
+}
+
+object SeqImplicits {
+  implicit class BetterSeq[A](val seq: Seq[A]) extends AnyVal {
+    def findOne(in: Seq[A]): Boolean = seq.intersect(in).nonEmpty
+    def findAll(in: Seq[A]): Boolean = seq.intersect(in).toSet.size == in.size
+  }
 }

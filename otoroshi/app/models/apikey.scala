@@ -1,14 +1,22 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.google.common.base.Charsets
 import env.Env
+import events.{Alerts, RevokedApiKeyUsageAlert}
+import gateway.Errors
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
-import security.IdGenerator
+import play.api.mvc.RequestHeader
+import play.api.mvc.Results.{BadGateway, BadRequest, TooManyRequests}
+import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
     // secCalls: Long = RemainingQuotas.MaxValue,
@@ -44,6 +52,7 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   throttlingQuota: Long = RemainingQuotas.MaxValue,
                   dailyQuota: Long = RemainingQuotas.MaxValue,
                   monthlyQuota: Long = RemainingQuotas.MaxValue,
+                  roles: Seq[String] = Seq.empty[String],
                   metadata: Map[String, String] = Map.empty[String, String]) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.delete(this)
@@ -94,6 +103,7 @@ object ApiKey {
       "throttlingQuota"   -> apk.throttlingQuota,
       "dailyQuota"        -> apk.dailyQuota,
       "monthlyQuota"      -> apk.monthlyQuota,
+      "roles"             -> JsArray(apk.roles.map(JsString.apply)),
       "metadata"          -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[ApiKey] =
@@ -109,6 +119,7 @@ object ApiKey {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(m => m.filter(_._1.nonEmpty))
@@ -162,4 +173,206 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   def addFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+}
+
+object ApiKeyHelper {
+
+  import utils.RequestImplicits._
+
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+
+  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Option[ApiKey]] = {
+    val authByJwtToken = req.headers
+      .get(
+        descriptor.apiKeyConstraints.jwtAuth.headerName
+          .getOrElse(env.Headers.OtoroshiBearer)
+      )
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+      )
+      .map(_.replace("Bearer ", ""))
+      .orElse(
+        req.queryString
+          .get(
+            descriptor.apiKeyConstraints.jwtAuth.queryName
+              .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+          )
+          .flatMap(_.lastOption)
+      )
+      .orElse(
+        req.cookies
+          .get(
+            descriptor.apiKeyConstraints.jwtAuth.cookieName
+              .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+          )
+          .map(_.value)
+      )
+      .filter(_.split("\\.").length == 3)
+    val authBasic = req.headers
+      .get(
+        descriptor.apiKeyConstraints.basicAuth.headerName
+          .getOrElse(env.Headers.OtoroshiAuthorization)
+      )
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Basic "))
+      )
+      .map(_.replace("Basic ", ""))
+      .flatMap(e => Try(decodeBase64(e)).toOption)
+      .orElse(
+        req.queryString
+          .get(
+            descriptor.apiKeyConstraints.basicAuth.queryName
+              .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+          )
+          .flatMap(_.lastOption)
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
+    val authByCustomHeaders = req.headers
+      .get(
+        descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
+          .getOrElse(env.Headers.OtoroshiClientId)
+      )
+      .flatMap(
+        id =>
+          req.headers
+            .get(
+              descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName
+                .getOrElse(env.Headers.OtoroshiClientSecret)
+            )
+            .map(s => (id, s))
+      )
+    val authBySimpleApiKeyClientId = req.headers
+      .get(
+        descriptor.apiKeyConstraints.clientIdAuth.headerName
+          .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+      )
+      .orElse(
+        req.queryString
+          .get(
+            descriptor.apiKeyConstraints.clientIdAuth.queryName
+              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+          )
+          .flatMap(_.lastOption)
+      )
+    if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
+      val clientId = authBySimpleApiKeyClientId.get
+      env.datastores.apiKeyDataStore
+        .findAuthorizeKeyFor(clientId, descriptor.id)
+        .flatMap {
+          case None => FastFuture.successful(None)
+          case Some(key) if !key.allowClientIdOnly => FastFuture.successful(None)
+          case Some(key) if key.allowClientIdOnly => FastFuture.successful(Some(key))
+        }
+    } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
+      val (clientId, clientSecret) = authByCustomHeaders.get
+      env.datastores.apiKeyDataStore
+        .findAuthorizeKeyFor(clientId, descriptor.id)
+        .flatMap {
+          case None => FastFuture.successful(None)
+          case Some(key) if key.isInvalid(clientSecret) =>  FastFuture.successful(None)
+          case Some(key) if key.isValid(clientSecret) => FastFuture.successful(Some(key))
+        }
+    } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
+      val jwtTokenValue = authByJwtToken.get
+      Try {
+        JWT.decode(jwtTokenValue)
+      } map { jwt =>
+        Option(jwt.getClaim("iss"))
+          .filterNot(_.isNull)
+          .map(_.asString())
+          .orElse(
+            Option(jwt.getClaim("clientId")).filterNot(_.isNull).map(_.asString())
+          ) match {
+          case Some(clientId) =>
+            env.datastores.apiKeyDataStore
+              .findAuthorizeKeyFor(clientId, descriptor.id)
+              .flatMap {
+                case Some(apiKey) => {
+                  val algorithm = Option(jwt.getAlgorithm).map {
+                    case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
+                    case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
+                  } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
+                  val exp =
+                    Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                  val iat =
+                    Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                  val httpPath = Option(jwt.getClaim("httpPath"))
+                    .filterNot(_.isNull)
+                    .map(_.asString())
+                  val httpVerb = Option(jwt.getClaim("httpVerb"))
+                    .filterNot(_.isNull)
+                    .map(_.asString())
+                  val httpHost = Option(jwt.getClaim("httpHost"))
+                    .filterNot(_.isNull)
+                    .map(_.asString())
+                  val verifier =
+                    JWT.require(algorithm).withIssuer(clientId).acceptLeeway(10).build
+                  Try(verifier.verify(jwtTokenValue))
+                    .filter { token =>
+                      val xsrfToken       = token.getClaim("xsrfToken")
+                      val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                      if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                        xsrfToken.asString() == xsrfTokenHeader.get
+                      } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                        false
+                      } else {
+                        true
+                      }
+                    }
+                    .filter { _ =>
+                      descriptor.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
+                        maxJwtLifespanSecs =>
+                          if (exp.isEmpty || iat.isEmpty) {
+                            false
+                          } else {
+                            if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
+                              true
+                            } else {
+                              false
+                            }
+                          }
+                      } getOrElse {
+                        true
+                      }
+                    }
+                    .filter { _ =>
+                      if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
+                        val matchPath = httpPath.exists(_ == req.relativeUri)
+                        val matchVerb =
+                          httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
+                        val matchHost = httpHost.exists(_.toLowerCase == req.host)
+                        matchPath && matchVerb && matchHost
+                      } else {
+                        true
+                      }
+                    } match {
+                    case Success(_) => FastFuture.successful(Some(apiKey))
+                    case Failure(e) => FastFuture.successful(None)
+                  }
+                }
+                case None => FastFuture.successful(None)
+              }
+          case None => FastFuture.successful(None)
+        }
+      } getOrElse FastFuture.successful(None)
+    } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
+      val auth   = authBasic.get
+      val id     = auth.split(":").headOption.map(_.trim)
+      val secret = auth.split(":").lastOption.map(_.trim)
+      (id, secret) match {
+        case (Some(apiKeyClientId), Some(apiKeySecret)) => {
+          env.datastores.apiKeyDataStore
+            .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
+            .flatMap {
+              case None => FastFuture.successful(None)
+              case Some(key) if key.isInvalid(apiKeySecret) => FastFuture.successful(None)
+              case Some(key) if key.isValid(apiKeySecret) => FastFuture.successful(Some(key))
+            }
+        }
+        case _ => FastFuture.successful(None)
+      }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
 }

@@ -337,7 +337,7 @@ class WebSocketHandler()(implicit env: Env) {
           val uriParts = req.relativeUri.split("/").toSeq
 
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req)
             .flatMap {
               case None =>
                 Errors

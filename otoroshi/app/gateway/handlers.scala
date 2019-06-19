@@ -298,7 +298,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
@@ -358,7 +358,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
@@ -729,7 +729,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
             val uriParts = req.relativeUri.split("/").toSeq
 
             env.datastores.serviceDescriptorDataStore
-              .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap))
+              .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req)
               .fast
               .flatMap {
                 case None =>
