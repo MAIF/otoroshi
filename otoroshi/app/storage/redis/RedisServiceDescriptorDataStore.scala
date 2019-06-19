@@ -411,22 +411,40 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     // }
     // sersWithMatchingRoot ++ sersWithoutMatchingRoot
 
-    FastFuture.sequence(services.map(sr => matchApiKeyRouting(sr, query, requestHeader).map(m => (sr, m)))).map { srvics =>
-      val allSers = srvics.filter {
-        case (sr, apiKeyMatched) =>
-          val allHeadersMatched = matchAllHeaders(sr, query)
-          val rootMatched = sr.matchingRoot match {
-            case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-            case None => true
-          }
-          apiKeyMatched && allHeadersMatched && rootMatched
-      }.map(_._1)
+    FastFuture.sequence(services.filter { sr =>
+      val allHeadersMatched = matchAllHeaders(sr, query)
+      val rootMatched = sr.matchingRoot match {
+        case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+        case None => true
+      }
+      allHeadersMatched && rootMatched
+    }.map { sr =>
+      matchApiKeyRouting(sr, query, requestHeader).map(m => (sr, m))
+    }).map { s =>
+      val allSers = s.filter(_._2).map(_._1)
       val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
       val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
         case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
       }
       sersWithMatchingRoot ++ sersWithoutMatchingRoot
     }
+
+    // sFastFuture.sequence(services.map(sr => matchApiKeyRouting(sr, query, requestHeader).map(m => (sr, m)))).map { srvics =>
+    // s  val allSers = srvics.filter {
+    // s    case (sr, apiKeyMatched) =>
+    // s      val allHeadersMatched = matchAllHeaders(sr, query)
+    // s      val rootMatched = sr.matchingRoot match {
+    // s        case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+    // s        case None => true
+    // s      }
+    // s      apiKeyMatched && allHeadersMatched && rootMatched
+    // s  }.map(_._1)
+    // s  val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
+    // s  val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
+    // s    case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+    // s  }
+    // s  sersWithMatchingRoot ++ sersWithoutMatchingRoot
+    // s}
 
     // val sers = (sersWithMatchingRoot ++ sersWithoutMatchingRoot)
     // logger.debug(s"for query $query, services are :\n\n${sers.map(a => "  * " + a.name).mkString("\n")}\n\n")
