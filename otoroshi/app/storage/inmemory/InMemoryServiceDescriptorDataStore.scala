@@ -380,7 +380,7 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
   }
 
   @inline
-  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[ServiceDescriptor] = {
+  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     // val sers = services
     //   .sortWith {
     //     case (a, b) if a.matchingRoot.isDefined && b.matchingRoot.isDefined =>
@@ -397,21 +397,39 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
     //     }
     //     allHeadersMatched && rootMatched
     //   }
-    val allSers = services
-      .filter { sr =>
-        val apiKeyMatched = matchApiKeyRouting(sr, query, requestHeader)
-        val allHeadersMatched = matchAllHeaders(sr, query)
-        val rootMatched = sr.matchingRoot match {
-          case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-          case None               => true
-        }
-        apiKeyMatched && allHeadersMatched && rootMatched
+
+    // val allSers = services
+    //   .filter { sr =>
+    //     val allHeadersMatched = matchAllHeaders(sr, query)
+    //     val rootMatched = sr.matchingRoot match {
+    //       case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+    //       case None               => true
+    //     }
+    //     apiKeyMatched && allHeadersMatched && rootMatched
+    //   }
+    // val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
+    // val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
+    //   case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+    // }
+    // sersWithMatchingRoot ++ sersWithoutMatchingRoot
+
+    FastFuture.sequence(services.map(sr => matchApiKeyRouting(sr, query, requestHeader).map(m => (sr, m)))).map { srvics =>
+      val allSers = srvics.filter {
+        case (sr, apiKeyMatched) =>
+          val allHeadersMatched = matchAllHeaders(sr, query)
+          val rootMatched = sr.matchingRoot match {
+            case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+            case None => true
+          }
+          apiKeyMatched && allHeadersMatched && rootMatched
+      }.map(_._1)
+      val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
+      val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
+        case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
       }
-    val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
-    val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
-      case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+      sersWithMatchingRoot ++ sersWithoutMatchingRoot
     }
-    sersWithMatchingRoot ++ sersWithoutMatchingRoot
+    
     // val sers = (sersWithMatchingRoot ++ sersWithoutMatchingRoot)
     // logger.debug(s"for query $query, services are :\n\n${sers.map(a => "  * " + a.name).mkString("\n")}\n\n")
     // sers
@@ -427,11 +445,11 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
         query
           .getServices(false)
           .fast
-          .map(services => sortServices(services, query, requestHeader))
+          .flatMap(services => sortServices(services, query, requestHeader))
       }
       case false => {
         logger.debug("Full scan of services, should not pass here anymore ...")
-        findAll().map { descriptors =>
+        findAll().flatMap { descriptors =>
           val validDescriptors = descriptors.filter { sr =>
             if (!sr.enabled) {
               false

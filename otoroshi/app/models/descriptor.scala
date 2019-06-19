@@ -1361,13 +1361,12 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
 
   @inline
-  def matchApiKeyRouting(sr: ServiceDescriptor, query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Boolean = {
+  def matchApiKeyRouting(sr: ServiceDescriptor, query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
 
     import SeqImplicits._
     import scala.concurrent.duration._
 
-    val apiKeyOpt: Option[ApiKey] = scala.concurrent.Await.result(ApiKeyHelper.extractApiKey(requestHeader, sr), 10.seconds)
-    apiKeyOpt match {
+    ApiKeyHelper.extractApiKey(requestHeader, sr).map {
       case None => true
       case Some(apiKey) => {
         val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneRoleIn).filter(_.nonEmpty).map(roles => apiKey.roles.findOne(roles)).getOrElse(true)
