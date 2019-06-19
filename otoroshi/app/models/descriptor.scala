@@ -957,15 +957,23 @@ case class ServiceDescriptor(
     maintenanceMode: Boolean = false,
     buildMode: Boolean = false,
     strictlyPrivate: Boolean = false,
-    enforceSecureCommunication: Boolean = true,
     sendStateChallenge: Boolean = true,
     sendOtoroshiHeadersBack: Boolean = true,
     readOnly: Boolean = false,
     xForwardedHeaders: Boolean = false,
     overrideHost: Boolean = true,
     allowHttp10: Boolean = true,
+    logAnalyticsOnServer: Boolean = false,
+    // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
+    enforceSecureCommunication: Boolean = true,
+    // secComHeaders: SecComHeaders,
     secComVersion: SecComVersion = SecComVersion.V1,
     secComExcludedPatterns: Seq[String] = Seq.empty[String],
+    secComSettings: AlgoSettings = HSAlgoSettings(
+      512,
+      "${config.app.claim.sharedKey}"
+    ),
+    ////////////
     securityExcludedPatterns: Seq[String] = Seq.empty[String],
     publicPatterns: Seq[String] = Seq.empty[String],
     privatePatterns: Seq[String] = Seq.empty[String],
@@ -981,15 +989,12 @@ case class ServiceDescriptor(
     metadata: Map[String, String] = Map.empty[String, String],
     chaosConfig: ChaosConfig = ChaosConfig(),
     jwtVerifier: JwtVerifier = RefJwtVerifier(),
-    secComSettings: AlgoSettings = HSAlgoSettings(
-      512,
-      "${config.app.claim.sharedKey}"
-    ),
     authConfigRef: Option[String] = None,
     cors: CorsSettings = CorsSettings(false),
     redirection: RedirectionSettings = RedirectionSettings(false),
     clientValidatorRef: Option[String] = None,
     transformerRef: Option[String] = None,
+    transformerConfig: JsValue = Json.obj(),
     gzip: GzipConfig = GzipConfig(),
     thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
     apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
@@ -1124,6 +1129,7 @@ object ServiceDescriptor {
           userFacing = (json \ "userFacing").asOpt[Boolean].getOrElse(false),
           privateApp = (json \ "privateApp").asOpt[Boolean].getOrElse(false),
           forceHttps = (json \ "forceHttps").asOpt[Boolean].getOrElse(true),
+          logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           buildMode = (json \ "buildMode").asOpt[Boolean].getOrElse(false),
           strictlyPrivate = (json \ "strictlyPrivate").asOpt[Boolean].getOrElse(false),
@@ -1166,6 +1172,7 @@ object ServiceDescriptor {
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
           transformerRef = (json \ "transformerRef").asOpt[String].filterNot(_.trim.isEmpty),
+          transformerConfig = (json \ "transformerConfig").asOpt[JsObject].getOrElse(Json.obj()),
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
           redirection = RedirectionSettings.format
             .reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull))
@@ -1200,6 +1207,7 @@ object ServiceDescriptor {
       "userFacing"                 -> sd.userFacing,
       "privateApp"                 -> sd.privateApp,
       "forceHttps"                 -> sd.forceHttps,
+      "logAnalyticsOnServer"       -> sd.logAnalyticsOnServer,
       "maintenanceMode"            -> sd.maintenanceMode,
       "buildMode"                  -> sd.buildMode,
       "strictlyPrivate"            -> sd.strictlyPrivate,
@@ -1234,6 +1242,7 @@ object ServiceDescriptor {
       "authConfigRef"              -> sd.authConfigRef,
       "clientValidatorRef"         -> sd.clientValidatorRef,
       "transformerRef"             -> sd.transformerRef,
+      "transformerConfig"          -> sd.transformerConfig,
       "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson,
       "apiKeyConstraints"          -> sd.apiKeyConstraints.json
     )

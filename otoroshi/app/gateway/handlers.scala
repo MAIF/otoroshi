@@ -1124,7 +1124,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               fromLbl = fromLbl,
                                               fromTo = s"$fromLbl###${descriptor.name}"
                                             )
-                                            GatewayEvent(
+                                            val evt = GatewayEvent(
                                               `@id` = env.snowflakeGenerator.nextIdStr(),
                                               reqId = snowflake,
                                               parentReqId = fromOtoroshi,
@@ -1183,7 +1183,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               `@product` = descriptor.metadata.getOrElse("product", "--"),
                                               remainingQuotas = q,
                                               viz = Some(viz)
-                                            ).toAnalytics()
+                                            )
+                                            evt.toAnalytics()
+                                            if (descriptor.logAnalyticsOnServer) {
+                                              evt.log()
+                                            }
                                           }
                                         }(env.otoroshiExecutionContext) // pressure EC
                                       }
@@ -1235,7 +1239,43 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       user = paUsr
                                     )
                                     finalRequest.flatMap {
-                                      case Left(badResult) => FastFuture.successful(badResult)
+                                      case Left(badResult) => {
+                                        quotas.fast.map { remainingQuotas =>
+                                          val _headersOut: Seq[(String, String)] = badResult.header.headers.toSeq
+                                            .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
+                                            if (descriptor.sendOtoroshiHeadersBack) {
+                                              Seq(
+                                                env.Headers.OtoroshiRequestId        -> snowflake,
+                                                env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
+                                                env.Headers.OtoroshiProxyLatency     -> s"$overhead",
+                                                env.Headers.OtoroshiUpstreamLatency  -> s"0"
+                                              )
+                                            } else {
+                                              Seq.empty[(String, String)]
+                                            }
+                                            ) ++ Some(trackingId)
+                                            .filter(_ => desc.canary.enabled)
+                                            .map(
+                                              _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
+                                            ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
+                                            Seq(
+                                              env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                              env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                            )
+                                          } else {
+                                            Seq.empty[(String, String)]
+                                          }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut.toSeq
+                                          promise.trySuccess(
+                                            ProxyDone(
+                                              badResult.header.status,
+                                              false,
+                                              0,
+                                              _headersOut.map(Header.apply)
+                                            )
+                                          )
+                                          badResult.withHeaders(_headersOut: _*)
+                                        }
+                                      }
                                       case Right(httpRequest) => {
                                         val body =
                                           if (currentReqHasBody) SourceBody(finalBody)

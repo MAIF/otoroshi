@@ -669,7 +669,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "middleFingers"           -> SimpleBooleanType ~~> "Use middle finger emoji as a response character for endless HTTP responses",
       "maxLogsSize"             -> SimpleIntType ~~> "Number of events kept locally",
       "cleverSettings"          -> Ref("CleverSettings") ~~> "Optional CleverCloud configuration",
-      "mailerSettings"          -> Ref("mailerSettings") ~~> "Optional mailer configuration",
+      "mailerSettings"          -> Ref("MailerSettings") ~~> "Optional mailer configuration",
       "backofficeAuth0Config"   -> Ref("Auth0Config") ~~> "Optional configuration for the backoffice Auth0 domain",
       "privateAppsAuth0Config"  -> Ref("Auth0Config") ~~> "Optional configuration for the private apps Auth0 domain"
     )

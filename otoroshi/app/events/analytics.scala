@@ -1,6 +1,7 @@
 package events
 
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.{Actor, PoisonPill, Props, Terminated}
 import akka.http.scaladsl.util.FastFuture
@@ -35,6 +36,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
 
   lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.otoroshiActorSystem, env, _.analyticsTopic)
   lazy val kafkaWrapperAudit     = new KafkaWrapper(env.otoroshiActorSystem, env, _.auditTopic)
+
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
@@ -85,6 +87,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           logger.error(s"SEND_TO_ANALYTICS_ERROR: analytics actor error : ${e}")
           context.stop(myself)
       }
+      env.datastores.globalConfigDataStore.latestSafe.filter(_.logAnalyticsOnServer).foreach(_ => ge.log())
     }
     case _ =>
   }
@@ -123,6 +126,10 @@ object AnalyticsActorSupervizer {
   def props(implicit env: Env) = Props(new AnalyticsActorSupervizer(env))
 }
 
+object AnalyticEvent {
+  lazy val logger = Logger("otoroshi-analytics-event")
+}
+
 trait AnalyticEvent {
 
   def `@type`: String
@@ -146,6 +153,10 @@ trait AnalyticEvent {
   def toAnalytics()(implicit env: Env): Unit = {
     if (true) env.analyticsActor ! this
     // Logger("otoroshi-analytics").debug(s"${this.`@type`} ${Json.stringify(toJson)}")
+  }
+
+  def log()(implicit _env: Env): Unit = {
+    AnalyticEvent.logger.info(Json.stringify(toEnrichedJson))
   }
 }
 

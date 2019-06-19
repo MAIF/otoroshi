@@ -361,6 +361,14 @@ export class DangerZonePage extends Component {
         help: 'Only use HTTP streaming for response, no additional chunking',
       },
     },
+    logAnalyticsOnServer: {
+      type: 'bool',
+      props: {
+        label: 'Log analytics on servers',
+        placeholder: '--',
+        help: 'All analytics will be logged on the servers',
+      },
+    },
     autoLinkToDefaultGroup: {
       type: 'bool',
       props: {
@@ -585,6 +593,7 @@ export class DangerZonePage extends Component {
     'streamEntityOnly',
     'autoLinkToDefaultGroup',
     'useCircuitBreakers',
+    'logAnalyticsOnServer',
     'middleFingers',
     'limitConcurrentRequests',
     'maxConcurrentRequests',

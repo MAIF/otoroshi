@@ -578,6 +578,12 @@ export class ServicePage extends Component {
                   help="Display a construction page when a user try to use the service"
                   onChange={v => this.changeTheValue('buildMode', v)}
                 />
+                <BiColumnBooleanInput
+                  label="Log analytics"
+                  value={this.state.service.logAnalyticsOnServer}
+                  help="Log analytics events for this service on the servers"
+                  onChange={v => this.changeTheValue('logAnalyticsOnServer', v)}
+                />
               </div>
               <div className="col-md-6">
                 <BiColumnBooleanInput

@@ -650,7 +650,7 @@ class WebSocketHandler()(implicit env: Env) {
                                         fromLbl = fromLbl,
                                         fromTo = s"$fromLbl###${descriptor.name}"
                                       )
-                                      GatewayEvent(
+                                      val evt = GatewayEvent(
                                         `@id` = env.snowflakeGenerator.nextIdStr(),
                                         reqId = snowflake,
                                         parentReqId = fromOtoroshi,
@@ -709,7 +709,11 @@ class WebSocketHandler()(implicit env: Env) {
                                         `@product` = descriptor.metadata.getOrElse("product", "--"),
                                         remainingQuotas = q,
                                         viz = Some(viz)
-                                      ).toAnalytics()
+                                      )
+                                      evt.toAnalytics()
+                                      if (descriptor.logAnalyticsOnServer) {
+                                        evt.log()
+                                      }
                                     }
                                   }
                                 }
@@ -750,7 +754,43 @@ class WebSocketHandler()(implicit env: Env) {
                                   user = paUsr
                                 )
                                 .flatMap {
-                                  case Left(badResult) => FastFuture.successful(badResult).asLeft[WSFlow]
+                                  case Left(badResult) => {
+                                    quotas.map { remainingQuotas =>
+                                      val _headersOut: Seq[(String, String)] = badResult.header.headers.toSeq
+                                        .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
+                                        if (descriptor.sendOtoroshiHeadersBack) {
+                                          Seq(
+                                            env.Headers.OtoroshiRequestId        -> snowflake,
+                                            env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
+                                            env.Headers.OtoroshiProxyLatency     -> s"$overhead",
+                                            env.Headers.OtoroshiUpstreamLatency  -> s"0"
+                                          )
+                                        } else {
+                                          Seq.empty[(String, String)]
+                                        }
+                                        ) ++ Some(trackingId)
+                                        .filter(_ => desc.canary.enabled)
+                                        .map(
+                                          _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
+                                        ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
+                                        Seq(
+                                          env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                          env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                        )
+                                      } else {
+                                        Seq.empty[(String, String)]
+                                      }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut.toSeq
+                                      promise.trySuccess(
+                                        ProxyDone(
+                                          badResult.header.status,
+                                          false,
+                                          0,
+                                          _headersOut.map(Header.apply)
+                                        )
+                                      )
+                                      badResult.withHeaders(_headersOut: _*)
+                                    }.asLeft[WSFlow]
+                                  }
                                   case Right(httpRequest) => {
                                     FastFuture.successful(
                                       Right(

@@ -147,7 +147,7 @@ Once your Redis Cluster is created, it would look like the image below.
 
 For applications in the same security group as your cluster, redis cluster is accessible via the **Primary Endpoint**. Don't worry the default security group is fine, you don't need any configuration to access the cluster from Otoroshi.
 
-To make Otoroshi use the created cluster, you can either use Envs `REDIS_HOST` and `REDIS_PORT`, or set `app.redis.host` and `app.redis.port` in your otoroshi.conf.
+To make Otoroshi use the created cluster, you can either use Envs `APP_STORAGE=redis`, `REDIS_HOST` and `REDIS_PORT`, or set `app.storage=redis`, `app.redis.host` and `app.redis.port` in your otoroshi.conf.
 
 ## Create SSL certificate and configure your domain
 
