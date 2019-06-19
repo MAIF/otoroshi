@@ -258,7 +258,8 @@ class Env(val configuration: Configuration,
           )
         )(otoroshiMaterializer)
       },
-      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false)
+      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
+      this
     )
   }
 
@@ -297,7 +298,8 @@ class Env(val configuration: Configuration,
           )
         )(otoroshiMaterializer)
       },
-      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false)
+      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
+      this
     )
   }
 

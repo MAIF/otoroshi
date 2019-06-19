@@ -369,6 +369,14 @@ export class DangerZonePage extends Component {
         help: 'All analytics will be logged on the servers',
       },
     },
+    useAkkaHttpClient: {
+      type: 'bool',
+      props: {
+        label: 'Use Akka Http as the default Http client (experimental)',
+        placeholder: '--',
+        help: 'All http calls will use Akka Http client by default',
+      },
+    },
     autoLinkToDefaultGroup: {
       type: 'bool',
       props: {
@@ -594,6 +602,7 @@ export class DangerZonePage extends Component {
     'autoLinkToDefaultGroup',
     'useCircuitBreakers',
     'logAnalyticsOnServer',
+    'useAkkaHttpClient',
     'middleFingers',
     'limitConcurrentRequests',
     'maxConcurrentRequests',

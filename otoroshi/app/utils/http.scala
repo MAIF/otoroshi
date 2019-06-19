@@ -19,12 +19,13 @@ import akka.util.ByteString
 import com.google.common.base.Charsets
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
+import env.Env
 import javax.net.ssl.SSLContext
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{libs, Logger}
+import play.api.{Logger, libs}
 import play.shaded.ahc.org.asynchttpclient.util.{Assertions, MiscUtils}
 import ssl.DynamicSSLEngineProvider
 
@@ -38,13 +39,14 @@ object WsClientChooser {
   def apply(standardClient: WSClient,
             akkaClient: AkkWsClient,
             ahcCreator: SSLConfigSettings => WSClient,
-            fullAkka: Boolean): WsClientChooser = new WsClientChooser(standardClient, akkaClient, ahcCreator, fullAkka)
+            fullAkka: Boolean, env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, ahcCreator, fullAkka, env)
 }
 
 class WsClientChooser(standardClient: WSClient,
                       akkaClient: AkkWsClient,
                       ahcCreator: SSLConfigSettings => WSClient,
-                      fullAkka: Boolean)
+                      fullAkka: Boolean,
+                      env: Env)
     extends WSClient {
 
   private[utils] val logger                  = Logger("otoroshi-WsClientChooser")
@@ -89,10 +91,17 @@ class WsClientChooser(standardClient: WSClient,
   def classicUrl(url: String): WSRequest = standardClient.url(url)
 
   def urlWithProtocol(protocol: String, url: String): WSRequest = { // TODO: handle idle timeout and other timeout per request here
+    val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     protocol.toLowerCase() match {
 
-      case "http"  => standardClient.url(url)
-      case "https" => standardClient.url(url)
+      case "http"  if useAkkaHttpClient || fullAkka => new AkkaWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+      case "https" if useAkkaHttpClient || fullAkka => new AkkaWsClientRequest(akkaClient, url, HttpProtocols.`HTTP/1.1`)(akkaClient.mat)
+
+      case "http"  if !useAkkaHttpClient => standardClient.url(url)
+      case "https" if !useAkkaHttpClient => standardClient.url(url)
+
+      case "standard:http"  => standardClient.url(url.replace("standard:http://", "http://"))
+      case "standard:https" => standardClient.url(url.replace("standard:https://", "https://"))
 
       // case "ahc:http"  => getAhcInstance().url(url.replace("ahc:http://", "http://"))
       // case "ahc:https" => getAhcInstance().url(url.replace("ahc:https://", "https://"))
