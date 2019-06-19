@@ -1354,6 +1354,8 @@ class WebSocketProxyActor(url: String,
                           env: Env)
     extends Actor {
 
+  import scala.concurrent.duration._
+
   lazy val source = Source.queue[Message](50000, OverflowStrategy.dropTail)
   lazy val logger = Logger("otoroshi-websocket-handler-actor")
 
@@ -1406,9 +1408,10 @@ class WebSocketProxyActor(url: String,
             }
             // TODO: use proxy transport when akka http will be updated
             a: ClientConnectionSettings =>
-              a //.withTransport(httpsProxyTransport)
+              //a //.withTransport(httpsProxyTransport)
+            a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis).withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
           } getOrElse { a: ClientConnectionSettings =>
-          a
+          a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis).withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
         }
       )
       queueRef.set(materialized._2)

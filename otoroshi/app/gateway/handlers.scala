@@ -1294,9 +1294,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         //   .withFollowRedirects(false)
                                         //   .stream()
 
-                                        val builder = env.gatewayClient
-                                          .urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url))
-                                          .withRequestTimeout(env.requestTimeout) // we should monitor leaks
+                                        val clientReq = descriptor.useAkkaHttpClient match {
+                                          case true => env.gatewayClient.akkaUrl(UrlSanitizer.sanitize(httpRequest.url), descriptor.clientConfig)
+                                          case false => env.gatewayClient.urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url), descriptor.clientConfig)
+                                        }
+
+                                        val builder = clientReq
+                                          .withRequestTimeout(descriptor.clientConfig.globalTimeout.millis)
+                                          //.withRequestTimeout(env.requestTimeout) // we should monitor leaks
                                           .withMethod(httpRequest.method)
                                           .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
                                           .withCookies(wsCookiesIn: _*)

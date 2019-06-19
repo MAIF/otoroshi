@@ -617,6 +617,12 @@ export class ServicePage extends Component {
                   help="Will return an error on HTTP/1.0 request"
                   onChange={v => this.changeTheValue('allowHttp10', v)}
                 />
+                <BiColumnBooleanInput
+                  label="Use Akka Http Client (experimental)"
+                  value={this.state.service.useAkkaHttpClient}
+                  help="Will use Akka Http Client for every request"
+                  onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
+                />
               </div>
             </div>
           </Collapse>
@@ -1551,6 +1557,20 @@ export class ServicePage extends Component {
               help="Specify how long each call should last at most in milliseconds."
               value={this.state.service.clientConfig.callTimeout}
               onChange={v => this.changeTheValue('clientConfig.callTimeout', v)}
+            />
+            <NumberInput
+              suffix="ms."
+              label="Client connection timeout"
+              help="Specify how long each connection should last at most in milliseconds."
+              value={this.state.service.clientConfig.connectionTimeout}
+              onChange={v => this.changeTheValue('clientConfig.connectionTimeout', v)}
+            />
+            <NumberInput
+              suffix="ms."
+              label="Client idle timeout"
+              help="Specify how long each connection can stay in idle state at most in milliseconds."
+              value={this.state.service.clientConfig.idleTimeout}
+              onChange={v => this.changeTheValue('clientConfig.idleTimeout', v)}
             />
             <NumberInput
               suffix="ms."
