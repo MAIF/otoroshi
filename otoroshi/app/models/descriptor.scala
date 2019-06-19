@@ -1375,14 +1375,38 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     import SeqImplicits._
     import scala.concurrent.duration._
 
-    ApiKeyHelper.extractApiKey(requestHeader, sr).map {
-      case None => true
-      case Some(apiKey) => {
-        val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneRoleIn).filter(_.nonEmpty).map(roles => apiKey.roles.findOne(roles)).getOrElse(true)
-        val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allRolesIn).filter(_.nonEmpty).map(roles => apiKey.roles.findAll(roles)).getOrElse(true)
-        val matchOnMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findOne(metas)).getOrElse(true)
-        val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findAll(metas)).getOrElse(true)
-        matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta
+    lazy val shouldSearchForAndApiKey = if (sr.isPrivate && sr.authConfigRef.isDefined && !sr.isExcludedFromSecurity(requestHeader.path)) {
+      if (sr.isUriPublic(requestHeader.path)) {
+        false
+      } else {
+        true // false positive in 33% of the cases
+      }
+    } else {
+      if (sr.isUriPublic(requestHeader.path)) {
+        false
+      } else {
+        true
+      }
+    }
+
+    val shouldNotSearchForAnApiKey = sr.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
+      sr.apiKeyConstraints.routing.allMetaIn.isEmpty &&
+      sr.apiKeyConstraints.routing.oneRoleIn.isEmpty &&
+      sr.apiKeyConstraints.routing.allRolesIn.isEmpty &&
+      !shouldSearchForAndApiKey
+
+    if (shouldNotSearchForAnApiKey) {
+      FastFuture.successful(true)
+    } else {
+      ApiKeyHelper.extractApiKey(requestHeader, sr).map {
+        case None => true
+        case Some(apiKey) => {
+          val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneRoleIn).filter(_.nonEmpty).map(roles => apiKey.roles.findOne(roles)).getOrElse(true)
+          val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allRolesIn).filter(_.nonEmpty).map(roles => apiKey.roles.findAll(roles)).getOrElse(true)
+          val matchOnMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findOne(metas)).getOrElse(true)
+          val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findAll(metas)).getOrElse(true)
+          matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta
+        }
       }
     }
   }
