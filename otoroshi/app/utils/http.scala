@@ -51,16 +51,16 @@ class WsClientChooser(standardClient: WSClient,
   private[utils] val lastSslConfig           = new AtomicReference[SSLConfigSettings](null)
   private[utils] val connectionContextHolder = new AtomicReference[WSClient](null)
 
-  private def getAhcInstance(): WSClient = {
-    val currentSslContext = DynamicSSLEngineProvider.sslConfigSettings
-    if (currentSslContext != null && !currentSslContext.equals(lastSslConfig.get())) {
-      lastSslConfig.set(currentSslContext)
-      logger.debug("Building new client instance")
-      val client = ahcCreator(currentSslContext)
-      connectionContextHolder.set(client)
-    }
-    connectionContextHolder.get()
-  }
+  // private def getAhcInstance(): WSClient = {
+  //   val currentSslContext = DynamicSSLEngineProvider.sslConfigSettings
+  //   if (currentSslContext != null && !currentSslContext.equals(lastSslConfig.get())) {
+  //     lastSslConfig.set(currentSslContext)
+  //     logger.debug("Building new client instance")
+  //     val client = ahcCreator(currentSslContext)
+  //     connectionContextHolder.set(client)
+  //   }
+  //   connectionContextHolder.get()
+  // }
 
   def ws[T](request: WebSocketRequest,
             clientFlow: Flow[Message, Message, T],
@@ -84,7 +84,7 @@ class WsClientChooser(standardClient: WSClient,
     )
   }
 
-  def ahcUrl(url: String): WSRequest = getAhcInstance().url(url)
+  // def ahcUrl(url: String): WSRequest = getAhcInstance().url(url)
 
   def classicUrl(url: String): WSRequest = standardClient.url(url)
 
@@ -94,8 +94,15 @@ class WsClientChooser(standardClient: WSClient,
       case "http"  => standardClient.url(url)
       case "https" => standardClient.url(url)
 
-      case "ahc:http"  => getAhcInstance().url(url.replace("ahc:http://", "http://"))
-      case "ahc:https" => getAhcInstance().url(url.replace("ahc:https://", "https://"))
+      // case "ahc:http"  => getAhcInstance().url(url.replace("ahc:http://", "http://"))
+      // case "ahc:https" => getAhcInstance().url(url.replace("ahc:https://", "https://"))
+
+      case "ahc:http" => new AkkaWsClientRequest(akkaClient, url.replace("ahc:http://", "http://"), HttpProtocols.`HTTP/1.1`)(
+        akkaClient.mat
+      )
+      case "ahc:https" => new AkkaWsClientRequest(akkaClient, url.replace("ahc:https://", "http://"), HttpProtocols.`HTTP/1.1`)(
+        akkaClient.mat
+      )
 
       case "ahttp" =>
         new AkkaWsClientRequest(akkaClient, url.replace("ahttp://", "http://"), HttpProtocols.`HTTP/1.1`)(
