@@ -80,6 +80,26 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
   def withingQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.apiKeyDataStore.withingQuotas(this)
   def metadataJson: JsValue = JsObject(metadata.mapValues(JsString.apply))
+
+  def matchRouting(sr: ServiceDescriptor): Boolean = {
+
+    import SeqImplicits._
+
+    val shouldNotSearchForAnApiKey = sr.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
+      sr.apiKeyConstraints.routing.allMetaIn.isEmpty &&
+      sr.apiKeyConstraints.routing.oneRoleIn.isEmpty &&
+      sr.apiKeyConstraints.routing.allRolesIn.isEmpty
+
+    if (shouldNotSearchForAnApiKey) {
+      true
+    } else {
+      val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneRoleIn).filter(_.nonEmpty).map(roles => this.roles.findOne(roles)).getOrElse(true)
+      val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allRolesIn).filter(_.nonEmpty).map(roles => this.roles.findAll(roles)).getOrElse(true)
+      val matchOnMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(true)
+      val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findAll(metas)).getOrElse(true)
+      matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta
+    }
+  }
 }
 
 class ServiceNotFoundException(serviceId: String)

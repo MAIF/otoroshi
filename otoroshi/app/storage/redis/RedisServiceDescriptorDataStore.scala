@@ -411,22 +411,34 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     // }
     // sersWithMatchingRoot ++ sersWithoutMatchingRoot
 
-    FastFuture.sequence(services.filter { sr =>
+    val filtered1 = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
       val rootMatched = sr.matchingRoot match {
         case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
         case None => true
       }
       allHeadersMatched && rootMatched
-    }.map { sr =>
-      matchApiKeyRouting(sr, query, requestHeader).map(m => (sr, m))
+    }
+    val sersWithoutMatchingRoot = filtered1.filter(_.matchingRoot.isEmpty)
+    val sersWithMatchingRoot = filtered1.filter(_.matchingRoot.isDefined).sortWith {
+      case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+    }
+    val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
+    FastFuture.sequence(filtered.map { sr =>
+      matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
     }).map { s =>
       val allSers = s.filter(_._2).map(_._1)
-      val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
-      val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
-        case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+      if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+        // let apikey check in handler produce an Unauthorized response instead of service not found
+        Seq(filtered.last)
+      } else {
+        allSers
       }
-      sersWithMatchingRoot ++ sersWithoutMatchingRoot
+      //val sersWithoutMatchingRoot = allSers.filter(_.matchingRoot.isEmpty)
+      //val sersWithMatchingRoot = allSers.filter(_.matchingRoot.isDefined).sortWith {
+      //  case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+      //}
+      //sersWithMatchingRoot ++ sersWithoutMatchingRoot
     }
 
     // sFastFuture.sequence(services.map(sr => matchApiKeyRouting(sr, query, requestHeader).map(m => (sr, m)))).map { srvics =>

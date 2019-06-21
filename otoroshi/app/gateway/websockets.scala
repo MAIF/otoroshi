@@ -22,14 +22,9 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests}
+import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
 import play.api.mvc._
 import play.api.libs.json.Json
 import security.{IdGenerator, OtoroshiClaim}
@@ -899,7 +894,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       Errors
                                         .craftResponseResult(
                                           "Invalid API key",
-                                          BadGateway,
+                                          Results.Unauthorized,
                                           req,
                                           Some(descriptor),
                                           Some("errors.invalid.api.key")
@@ -909,12 +904,21 @@ class WebSocketHandler()(implicit env: Env) {
                                       Errors
                                         .craftResponseResult(
                                           "Bad API key",
-                                          BadGateway,
+                                          Results.BadRequest,
                                           req,
                                           Some(descriptor),
                                           Some("errors.bad.api.key")
                                         )
                                         .asLeft[WSFlow]
+                                    }
+                                    case Some(key) if !key.matchRouting(descriptor) => {
+                                      Errors.craftResponseResult(
+                                        "Invalid API key",
+                                        Unauthorized,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.bad.api.key")
+                                      ).asLeft[WSFlow]
                                     }
                                     case Some(key) if key.allowClientIdOnly =>
                                       key.withingQuotas().flatMap {
@@ -937,7 +941,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     case None =>
                                       Errors
                                         .craftResponseResult("Invalid API key",
-                                                             Results.BadGateway,
+                                                             Results.Unauthorized,
                                                              req,
                                                              Some(descriptor),
                                                              Some("errors.invalid.api.key"))
@@ -953,11 +957,20 @@ class WebSocketHandler()(implicit env: Env) {
                                       )
                                       Errors
                                         .craftResponseResult("Bad API key",
-                                                             Results.BadGateway,
+                                                             Results.BadRequest,
                                                              req,
                                                              Some(descriptor),
                                                              Some("errors.bad.api.key"))
                                         .asLeft[WSFlow]
+                                    }
+                                    case Some(key) if !key.matchRouting(descriptor) => {
+                                      Errors.craftResponseResult(
+                                        "Invalid API key",
+                                        Unauthorized,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.bad.api.key")
+                                      ).asLeft[WSFlow]
                                     }
                                     case Some(key) if key.isValid(clientSecret) =>
                                       key.withingQuotas().flatMap {
@@ -1041,6 +1054,15 @@ class WebSocketHandler()(implicit env: Env) {
                                                     true
                                                   }
                                                 } match {
+                                                case Success(_) if !apiKey.matchRouting(descriptor) => {
+                                                  Errors.craftResponseResult(
+                                                    "Invalid API key",
+                                                    Unauthorized,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.bad.api.key")
+                                                  ).asLeft[WSFlow]
+                                                }
                                                 case Success(_) =>
                                                   apiKey.withingQuotas().flatMap {
                                                     case true => callDownstream(config, Some(apiKey))
@@ -1064,7 +1086,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                   )
                                                   Errors
                                                     .craftResponseResult("Bad API key",
-                                                                         Results.BadGateway,
+                                                                         Results.BadRequest,
                                                                          req,
                                                                          Some(descriptor),
                                                                          Some("errors.bad.api.key"))
@@ -1075,7 +1097,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             case None =>
                                               Errors
                                                 .craftResponseResult("Invalid ApiKey provided",
-                                                                     Results.BadRequest,
+                                                                     Results.Unauthorized,
                                                                      req,
                                                                      Some(descriptor),
                                                                      Some("errors.invalid.api.key"))
@@ -1084,7 +1106,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       case None =>
                                         Errors
                                           .craftResponseResult("Invalid ApiKey provided",
-                                                               Results.BadRequest,
+                                                               Results.Unauthorized,
                                                                req,
                                                                Some(descriptor),
                                                                Some("errors.invalid.api.key"))
@@ -1092,7 +1114,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     }
                                   } getOrElse Errors
                                     .craftResponseResult("Invalid ApiKey provided",
-                                                         Results.BadRequest,
+                                                         Results.Unauthorized,
                                                          req,
                                                          Some(descriptor),
                                                          Some("errors.invalid.api.key"))
@@ -1109,7 +1131,7 @@ class WebSocketHandler()(implicit env: Env) {
                                           case None =>
                                             Errors
                                               .craftResponseResult("Invalid API key",
-                                                                   Results.BadGateway,
+                                                                   Results.Unauthorized,
                                                                    req,
                                                                    Some(descriptor),
                                                                    Some("errors.invalid.api.key"))
@@ -1125,11 +1147,20 @@ class WebSocketHandler()(implicit env: Env) {
                                             )
                                             Errors
                                               .craftResponseResult("Bad API key",
-                                                                   Results.BadGateway,
+                                                                   Results.BadRequest,
                                                                    req,
                                                                    Some(descriptor),
                                                                    Some("errors.bad.api.key"))
                                               .asLeft[WSFlow]
+                                          }
+                                          case Some(key) if !key.matchRouting(descriptor) => {
+                                            Errors.craftResponseResult(
+                                              "Invalid API key",
+                                              Unauthorized,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.bad.api.key")
+                                            ).asLeft[WSFlow]
                                           }
                                           case Some(key) if key.isValid(apiKeySecret) =>
                                             key.withingQuotas().flatMap {

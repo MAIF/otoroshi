@@ -1431,7 +1431,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
 
   @inline
-  def matchApiKeyRouting(sr: ServiceDescriptor, query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
 
     import SeqImplicits._
     import scala.concurrent.duration._

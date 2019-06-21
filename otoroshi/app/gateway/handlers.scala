@@ -1814,7 +1814,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             case None =>
                                               Errors.craftResponseResult(
                                                 "Invalid API key",
-                                                BadRequest,
+                                                Unauthorized,
                                                 req,
                                                 Some(descriptor),
                                                 Some("errors.invalid.api.key"),
@@ -1825,6 +1825,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               Errors.craftResponseResult(
                                                 "Bad API key",
                                                 BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            }
+                                            case Some(key) if !key.matchRouting(descriptor) => {
+                                              Errors.craftResponseResult(
+                                                "Invalid API key",
+                                                Unauthorized,
                                                 req,
                                                 Some(descriptor),
                                                 Some("errors.bad.api.key"),
@@ -1856,7 +1867,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             case None =>
                                               Errors.craftResponseResult(
                                                 "Invalid API key",
-                                                BadRequest,
+                                                Unauthorized,
                                                 req,
                                                 Some(descriptor),
                                                 Some("errors.invalid.api.key"),
@@ -1875,6 +1886,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               Errors.craftResponseResult(
                                                 "Bad API key",
                                                 BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            }
+                                            case Some(key) if !key.matchRouting(descriptor) => {
+                                              Errors.craftResponseResult(
+                                                "Bad API key",
+                                                Unauthorized,
                                                 req,
                                                 Some(descriptor),
                                                 Some("errors.bad.api.key"),
@@ -1972,6 +1994,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           true
                                                         }
                                                       } match {
+                                                      case Success(_) if !apiKey.matchRouting(descriptor) => {
+                                                        Errors.craftResponseResult(
+                                                          "Invalid API key",
+                                                          Unauthorized,
+                                                          req,
+                                                          Some(descriptor),
+                                                          Some("errors.bad.api.key"),
+                                                          duration = System.currentTimeMillis - start,
+                                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                        )
+                                                      }
                                                       case Success(_) =>
                                                         apiKey.withingQuotas().flatMap {
                                                           case true => callDownstream(config, Some(apiKey))
@@ -2012,7 +2045,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   case None =>
                                                     Errors.craftResponseResult(
                                                       "Invalid ApiKey provided",
-                                                      BadRequest,
+                                                      Unauthorized,
                                                       req,
                                                       Some(descriptor),
                                                       Some("errors.invalid.api.key"),
@@ -2024,7 +2057,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             case None =>
                                               Errors.craftResponseResult(
                                                 "Invalid ApiKey provided",
-                                                BadRequest,
+                                                Unauthorized,
                                                 req,
                                                 Some(descriptor),
                                                 Some("errors.invalid.api.key"),
@@ -2034,7 +2067,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           }
                                         } getOrElse Errors.craftResponseResult(
                                           s"Invalid ApiKey provided",
-                                          BadRequest,
+                                          Unauthorized,
                                           req,
                                           Some(descriptor),
                                           Some("errors.invalid.api.key"),
@@ -2053,7 +2086,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 case None =>
                                                   Errors.craftResponseResult(
                                                     "Invalid API key",
-                                                    BadGateway,
+                                                    Unauthorized,
                                                     req,
                                                     Some(descriptor),
                                                     Some("errors.invalid.api.key"),
@@ -2079,6 +2112,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     duration = System.currentTimeMillis - start,
                                                     overhead = (System
                                                       .currentTimeMillis() - secondStart) + firstOverhead
+                                                  )
+                                                }
+                                                case Some(key) if !key.matchRouting(descriptor) => {
+                                                  Errors.craftResponseResult(
+                                                    "Invalid API key",
+                                                    Unauthorized,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.bad.api.key"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                                 }
                                                 case Some(key) if key.isValid(apiKeySecret) =>
