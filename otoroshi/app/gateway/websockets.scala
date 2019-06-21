@@ -428,10 +428,13 @@ class WebSocketHandler()(implicit env: Env) {
                                   if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                     val cbStart = System.currentTimeMillis()
                                     val counter = new AtomicInteger(0)
+                                    val relUri = req.relativeUri
+                                    val cachedPath: String = descriptor.clientConfig.timeouts(relUri).map(_ => relUri).getOrElse("")
                                     env.circuitBeakersHolder
-                                      .get(descriptor.id, () => new ServiceDescriptorCircuitBreaker())
+                                      .get(descriptor.id + cachedPath, () => new ServiceDescriptorCircuitBreaker())
                                       .callWS(
                                         descriptor,
+                                        req.relativeUri,
                                         s"WS ${req.method} ${req.relativeUri}",
                                         counter,
                                         (t, attempts) =>

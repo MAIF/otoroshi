@@ -5,7 +5,7 @@ import models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.libs.json.{JsSuccess, Json, Reads}
+import play.api.libs.json.{JsArray, JsSuccess, Json, Reads}
 
 class AdminApiSpec(name: String, configurationSpec: => Configuration)
     extends PlaySpec

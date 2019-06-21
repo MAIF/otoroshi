@@ -21,6 +21,7 @@ import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.TooManyRequests
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -179,6 +180,52 @@ object HealthCheck {
   implicit val format = Json.format[HealthCheck]
 }
 
+case class CustomTimeouts(
+  path: String = "*",
+  connectionTimeout: Long = 10000,
+  idleTimeout: Long = 60000,
+  callAndStreamTimeout: Long = 120000,
+  callTimeout: Long = 30000,
+  globalTimeout: Long = 30000,
+) {
+  def toJson: JsValue = CustomTimeouts.format.writes(this)
+}
+
+object CustomTimeouts {
+
+  lazy val logger = Logger("otoroshi-custom-timeouts")
+
+  implicit val format = new Format[CustomTimeouts] {
+
+    override def reads(json: JsValue): JsResult[CustomTimeouts] =
+      Try {
+        CustomTimeouts(
+          path = (json \ "path").asOpt[String].getOrElse("*"),
+          connectionTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(10000),
+          idleTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(60000),
+          callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(120000),
+          callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
+          globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000)
+        )
+      } map {
+        case sd => JsSuccess(sd)
+      } recover {
+        case t =>
+          logger.error("Error while reading CustomTimeouts", t)
+          JsError(t.getMessage)
+      } get
+
+    override def writes(o: CustomTimeouts): JsValue = Json.obj(
+      "path"              -> o.path,
+      "callTimeout"       -> o.callTimeout,
+      "callAndStreamTimeout" -> o.callAndStreamTimeout,
+      "connectionTimeout" -> o.connectionTimeout,
+      "idleTimeout"       -> o.idleTimeout,
+      "globalTimeout"     -> o.globalTimeout
+    )
+  }
+}
+
 case class ClientConfig(
     useCircuitBreaker: Boolean = true,
     retries: Int = 1,
@@ -187,12 +234,20 @@ case class ClientConfig(
     backoffFactor: Long = 2,
     connectionTimeout: Long = 10000,
     idleTimeout: Long = 60000,
-    callTimeout: Long = 30000,
-    globalTimeout: Long = 30000,
+    callAndStreamTimeout: Long = 120000, // http client timeout per call with streaming from otoroshi to client included (actually end the call)
+    callTimeout: Long = 30000, // circuit breaker timeout per call (soft, streaming from otoroshi to client not included)
+    globalTimeout: Long = 30000, // circuit breaker timeout around all calls (soft, streaming from otoroshi to client not included)
     sampleInterval: Long = 2000,
-    proxy: Option[WSProxyServer] = None
+    proxy: Option[WSProxyServer] = None,
+    customTimeouts: Seq[CustomTimeouts] = Seq.empty[CustomTimeouts]
 ) {
   def toJson = ClientConfig.format.writes(this)
+  def timeouts(path: String): Option[CustomTimeouts] = {
+    if (customTimeouts.isEmpty) None
+    else customTimeouts.find(c => utils.RegexPool(c.path).matches(path))
+  }
+  def extractTimeout(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): FiniteDuration = timeouts(path).map(f).getOrElse(f2(this)).millis
+  def extractTimeoutLong(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): Long = timeouts(path).map(f).getOrElse(f2(this))
 }
 
 object WSProxyServerJson {
@@ -249,11 +304,15 @@ object ClientConfig {
           retryInitialDelay = (json \ "retryInitialDelay").asOpt[Long].getOrElse(50),
           backoffFactor = (json \ "backoffFactor").asOpt[Long].getOrElse(2),
           connectionTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(10000),
-          idleTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(60000),
+          idleTimeout = (json \ "idleTimeout").asOpt[Long].getOrElse(60000),
+          callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(120000),
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000),
           sampleInterval = (json \ "sampleInterval").asOpt[Long].getOrElse(2000),
-          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
+          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+          customTimeouts = (json \ "customTimeouts").asOpt[JsArray]
+            .map(_.value.map(e => CustomTimeouts.format.reads(e).get))
+            .getOrElse(Seq.empty[CustomTimeouts])
         )
       } map {
         case sd => JsSuccess(sd)
@@ -270,11 +329,13 @@ object ClientConfig {
       "retryInitialDelay" -> o.retryInitialDelay,
       "backoffFactor"     -> o.backoffFactor,
       "callTimeout"       -> o.callTimeout,
+      "callAndStreamTimeout" -> o.callAndStreamTimeout,
       "connectionTimeout" -> o.connectionTimeout,
       "idleTimeout"       -> o.idleTimeout,
       "globalTimeout"     -> o.globalTimeout,
       "sampleInterval"    -> o.sampleInterval,
-      "proxy"             -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue]
+      "proxy"             -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
+      "customTimeouts"    -> JsArray(o.customTimeouts.map(_.toJson))
     )
   }
 }

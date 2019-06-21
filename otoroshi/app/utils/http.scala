@@ -372,6 +372,9 @@ case class AkkaWsClientRequest(
   private val _uri = Uri(rawUrl)
 
   private def customizer: ConnectionPoolSettings => ConnectionPoolSettings = {
+    val relUri = _uri.toRelative.toString()
+    val idleTimeout = clientConfig.extractTimeout(relUri, _.idleTimeout,_.idleTimeout)
+    val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
     proxy
       .filter(
         p =>
@@ -396,17 +399,18 @@ case class AkkaWsClientRequest(
           }
           case _ => ClientTransport.httpsProxy(proxyAddress)
         }
-        a: ConnectionPoolSettings => a
-          .withTransport(httpsProxyTransport)
-          .withIdleTimeout(clientConfig.idleTimeout.millis)
-          .withConnectionSettings(a.connectionSettings
-            .withConnectingTimeout(clientConfig.connectionTimeout.millis)
-            .withIdleTimeout(clientConfig.idleTimeout.millis))
+        a: ConnectionPoolSettings => {
+          a.withTransport(httpsProxyTransport)
+            .withIdleTimeout(idleTimeout)
+            .withConnectionSettings(a.connectionSettings
+              .withConnectingTimeout(connectionTimeout)
+              .withIdleTimeout(idleTimeout))
+        }
       } getOrElse { a: ConnectionPoolSettings =>
-        a.withIdleTimeout(clientConfig.idleTimeout.millis)
+        a.withIdleTimeout(idleTimeout)
           .withConnectionSettings(a.connectionSettings
-            .withConnectingTimeout(clientConfig.connectionTimeout.millis)
-            .withIdleTimeout(clientConfig.idleTimeout.millis))
+            .withConnectingTimeout(connectionTimeout)
+            .withIdleTimeout(idleTimeout))
       }
   }
 

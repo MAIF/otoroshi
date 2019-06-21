@@ -110,7 +110,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
 
   def clear(): Unit = breakers.clear()
 
-  def chooseTarget(descriptor: ServiceDescriptor): Option[(Target, AkkaCircuitBreaker)] = {
+  def chooseTarget(descriptor: ServiceDescriptor, path: String): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = descriptor.targets
       .filterNot(t => breakers.get(t.host).exists(_.isOpen))
     val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
@@ -123,7 +123,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         val cb = new AkkaCircuitBreaker(
           scheduler = scheduler,
           maxFailures = descriptor.clientConfig.maxErrors,
-          callTimeout = descriptor.clientConfig.callTimeout.millis,
+          callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
           resetTimeout = descriptor.clientConfig.sampleInterval.millis
         )
         cb.onOpen {
@@ -176,6 +176,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def call(descriptor: ServiceDescriptor,
+           path: String,
            bodyAlreadyConsumed: AtomicBoolean,
            ctx: String,
            counter: AtomicInteger,
@@ -183,7 +184,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       implicit env: Env
   ): Future[Result] = {
     val failure = Timeout
-      .timeout(Done, descriptor.clientConfig.globalTimeout.millis)
+      .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
                                    descriptor.clientConfig.retryInitialDelay,
@@ -193,7 +194,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       if (bodyAlreadyConsumed.get) {
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
-        chooseTarget(descriptor) match {
+        chooseTarget(descriptor, path) match {
           case Some((target, breaker)) =>
             breaker.withCircuitBreaker {
               logger.debug(s"Try to call target : $target")
@@ -207,20 +208,21 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def callWS(descriptor: ServiceDescriptor,
+             path: String,
              ctx: String,
              counter: AtomicInteger,
              f: (Target, Int) => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
       implicit env: Env
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val failure = Timeout
-      .timeout(Done, descriptor.clientConfig.globalTimeout.millis)
+      .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
                                    descriptor.clientConfig.retryInitialDelay,
                                    descriptor.clientConfig.backoffFactor,
                                    descriptor.name + " : " + ctx,
                                    counter) { attempts =>
-      chooseTarget(descriptor) match {
+      chooseTarget(descriptor, path) match {
         case Some((target, breaker)) =>
           logger.debug(s"Try to call WS target : $target")
           breaker.withCircuitBreaker(f(target, attempts))

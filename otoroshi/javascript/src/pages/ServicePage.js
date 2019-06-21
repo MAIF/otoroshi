@@ -1560,6 +1560,14 @@ export class ServicePage extends Component {
             />
             <NumberInput
               suffix="ms."
+              label="Client call and stream timeout"
+              help="Specify how long each call should last at most in milliseconds for handling the request and streaming the response."
+              value={this.state.service.clientConfig.callAndStreamTimeout}
+              onChange={v => this.changeTheValue('clientConfig.callAndStreamTimeout', v)}
+            />
+            callAndStreamTimeout
+            <NumberInput
+              suffix="ms."
               label="Client connection timeout"
               help="Specify how long each connection should last at most in milliseconds."
               value={this.state.service.clientConfig.connectionTimeout}

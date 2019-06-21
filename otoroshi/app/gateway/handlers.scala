@@ -822,10 +822,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                           val cbStart = System.currentTimeMillis()
                                           val counter = new AtomicInteger(0)
+                                          val relUri = req.relativeUri
+                                          val cachedPath: String = descriptor.clientConfig.timeouts(relUri).map(_ => relUri).getOrElse("")
                                           env.circuitBeakersHolder
-                                            .get(desc.id, () => new ServiceDescriptorCircuitBreaker())
+                                            .get(desc.id + cachedPath, () => new ServiceDescriptorCircuitBreaker())
                                             .call(
                                               descriptor,
+                                              req.relativeUri,
                                               bodyAlreadyConsumed,
                                               s"${req.method} ${req.relativeUri}",
                                               counter,
@@ -1300,7 +1303,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         }
 
                                         val builder = clientReq
-                                          .withRequestTimeout(descriptor.clientConfig.globalTimeout.millis)
+                                          .withRequestTimeout(descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout))
                                           //.withRequestTimeout(env.requestTimeout) // we should monitor leaks
                                           .withMethod(httpRequest.method)
                                           .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
