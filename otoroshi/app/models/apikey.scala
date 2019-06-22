@@ -85,10 +85,7 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
 
     import SeqImplicits._
 
-    val shouldNotSearchForAnApiKey = sr.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
-      sr.apiKeyConstraints.routing.allMetaIn.isEmpty &&
-      sr.apiKeyConstraints.routing.oneRoleIn.isEmpty &&
-      sr.apiKeyConstraints.routing.allRolesIn.isEmpty
+    val shouldNotSearchForAnApiKey = sr.hasRoutingConstraints
 
     if (shouldNotSearchForAnApiKey) {
       true

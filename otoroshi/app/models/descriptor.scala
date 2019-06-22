@@ -3,6 +3,7 @@ package models
 import java.math.BigInteger
 
 import akka.http.scaladsl.util.FastFuture
+import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import auth._
@@ -14,7 +15,7 @@ import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import storage.BasicStore
-import utils.{GzipConfig, ReplaceAllWith}
+import utils.{GzipConfig, RegexPool, ReplaceAllWith}
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
@@ -1124,6 +1125,12 @@ case class ServiceDescriptor(
   // env.datastores.healthCheckDataStore.findLast(this).map(_.map(_.isUp).getOrElse(true))
   // TODO : check perfs
   // def isUriPublic(uri: String): Boolean = !privatePatterns.exists(p => uri.matches(p)) && publicPatterns.exists(p => uri.matches(p))
+
+  lazy val hasRoutingConstraints: Boolean = this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
+    this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
+    this.apiKeyConstraints.routing.oneRoleIn.isEmpty &&
+    this.apiKeyConstraints.routing.allRolesIn.isEmpty
+
   def isUriPublic(uri: String): Boolean =
     !privatePatterns.exists(p => utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
       p => utils.RegexPool.regex(p).matches(uri)
@@ -1367,6 +1374,10 @@ object ServiceDescriptor {
   def fromJsonSafe(value: JsValue): JsResult[ServiceDescriptor] = _fmt.reads(value)
 }
 
+object ServiceDescriptorDataStore {
+  val logger = Logger("otoroshi-service-descriptor-datastore")
+}
+
 trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor =
     ServiceDescriptor(
@@ -1417,7 +1428,6 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def globalDataOut()(implicit ec: ExecutionContext, env: Env): Future[Long]
   def dataInFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def dataOutFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]]
   def findByEnv(env: String)(implicit ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]]
   def findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]]
 
@@ -1429,6 +1439,90 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
                                                                                          env: Env): Future[Boolean]
 
   def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
+
+  @inline
+  def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery): Boolean = {
+    val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
+    val allHeadersMatched: Boolean =
+      sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall {
+        case (key, value) =>
+          val regex = RegexPool.regex(value)
+          headersSeq.get(key).exists(h => regex.matches(h))
+      }
+    allHeadersMatched
+  }
+
+  @inline
+  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+    services.exists(_.hasRoutingConstraints) match {
+      case false => {
+        val filtered1 = services.filter { sr =>
+          val allHeadersMatched = matchAllHeaders(sr, query)
+          val rootMatched = sr.matchingRoot match {
+            case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+            case None => true
+          }
+          allHeadersMatched && rootMatched
+        }
+        val sersWithoutMatchingRoot = filtered1.filter(_.matchingRoot.isEmpty)
+        val sersWithMatchingRoot = filtered1.filter(_.matchingRoot.isDefined).sortWith {
+          case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+        }
+        sersWithMatchingRoot ++ sersWithoutMatchingRoot
+      }
+      case true => {
+        val filtered1 = services.filter { sr =>
+          val allHeadersMatched = matchAllHeaders(sr, query)
+          val rootMatched = sr.matchingRoot match {
+            case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+            case None => true
+          }
+          allHeadersMatched && rootMatched
+        }
+        val sersWithoutMatchingRoot = filtered1.filter(_.matchingRoot.isEmpty)
+        val sersWithMatchingRoot = filtered1.filter(_.matchingRoot.isDefined).sortWith {
+          case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+        }
+        val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
+        FastFuture.sequence(filtered.map { sr =>
+          matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
+        }).map { s =>
+          val allSers = s.filter(_._2).map(_._1)
+          if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+            // let apikey check in handler produce an Unauthorized response instead of service not found
+            Seq(filtered.last)
+          } else {
+            allSers
+          }
+        }
+      }
+    }
+
+    val filtered1 = services.filter { sr =>
+      val allHeadersMatched = matchAllHeaders(sr, query)
+      val rootMatched = sr.matchingRoot match {
+        case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
+        case None => true
+      }
+      allHeadersMatched && rootMatched
+    }
+    val sersWithoutMatchingRoot = filtered1.filter(_.matchingRoot.isEmpty)
+    val sersWithMatchingRoot = filtered1.filter(_.matchingRoot.isDefined).sortWith {
+      case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
+    }
+    val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
+    FastFuture.sequence(filtered.map { sr =>
+      matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
+    }).map { s =>
+      val allSers = s.filter(_._2).map(_._1)
+      if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+        // let apikey check in handler produce an Unauthorized response instead of service not found
+        Seq(filtered.last)
+      } else {
+        allSers
+      }
+    }
+  }
 
   @inline
   def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
@@ -1450,25 +1544,48 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
     }
 
-    val shouldNotSearchForAnApiKey = sr.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
-      sr.apiKeyConstraints.routing.allMetaIn.isEmpty &&
-      sr.apiKeyConstraints.routing.oneRoleIn.isEmpty &&
-      sr.apiKeyConstraints.routing.allRolesIn.isEmpty &&
-      !shouldSearchForAndApiKey
+    val shouldNotSearchForAnApiKey = sr.hasRoutingConstraints && !shouldSearchForAndApiKey
 
     if (shouldNotSearchForAnApiKey) {
       FastFuture.successful(true)
     } else {
       ApiKeyHelper.extractApiKey(requestHeader, sr).map {
         case None => true
-        case Some(apiKey) => {
-          val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneRoleIn).filter(_.nonEmpty).map(roles => apiKey.roles.findOne(roles)).getOrElse(true)
-          val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allRolesIn).filter(_.nonEmpty).map(roles => apiKey.roles.findAll(roles)).getOrElse(true)
-          val matchOnMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findOne(metas)).getOrElse(true)
-          val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => apiKey.metadata.toSeq.findAll(metas)).getOrElse(true)
-          matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta
+        case Some(apiKey) => apiKey.matchRouting(sr)
+      }
+    }
+  }
+
+  // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
+  def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
+                                                                                 env: Env): Future[Option[ServiceDescriptor]] = {
+    val start = System.currentTimeMillis()
+    query.exists().flatMap {
+      case true => {
+        ServiceDescriptorDataStore.logger.debug(s"Service descriptors exists for fast lookups ${query.asKey}")
+        query
+          .getServices(false)
+          .fast
+          .flatMap(services => sortServices(services, query, requestHeader))
+      }
+      case false => {
+        ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
+        findAll().flatMap { descriptors =>
+          val validDescriptors = descriptors.filter { sr =>
+            if (!sr.enabled) {
+              false
+            } else {
+              utils.RegexPool(sr.toHost).matches(query.toHost)
+            }
+          }
+          query.addServices(validDescriptors)
+          sortServices(validDescriptors, query, requestHeader)
         }
       }
+    } map { filteredDescriptors =>
+      filteredDescriptors.headOption
+    } andThen {
+      case _ => ServiceDescriptorDataStore.logger.debug(s"Found microservice in ${System.currentTimeMillis() - start} ms.")
     }
   }
 }

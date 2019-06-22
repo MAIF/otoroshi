@@ -365,6 +365,7 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
   override def dataOutFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.get(dataOutForServiceKey(id)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L))
 
+  /*
   @inline
   def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery): Boolean = {
     val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
@@ -494,7 +495,7 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     } andThen {
       case _ => logger.debug(s"Found microservice in ${System.currentTimeMillis() - start} ms.")
     }
-  }
+  }*/
 
   // TODO : rewrite with less naïve implem
   override def findByEnv(env: String)(implicit ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]] =
