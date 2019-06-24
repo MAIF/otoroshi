@@ -649,6 +649,12 @@ export class ServicePage extends Component {
                   help="Log analytics events for this service on the servers"
                   onChange={v => this.changeTheValue('logAnalyticsOnServer', v)}
                 />
+                <BiColumnBooleanInput
+                  label="Use experimental client"
+                  value={this.state.service.useAkkaHttpClient}
+                  help="Will use Akka Http Client for every request"
+                  onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
+                />
               </div>
               <div className="col-md-6">
                 <BiColumnBooleanInput
@@ -680,12 +686,6 @@ export class ServicePage extends Component {
                   value={this.state.service.allowHttp10}
                   help="Will return an error on HTTP/1.0 request"
                   onChange={v => this.changeTheValue('allowHttp10', v)}
-                />
-                <BiColumnBooleanInput
-                  label="Use Akka Http Client (experimental)"
-                  value={this.state.service.useAkkaHttpClient}
-                  help="Will use Akka Http Client for every request"
-                  onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
                 />
               </div>
             </div>
@@ -1190,14 +1190,20 @@ export class ServicePage extends Component {
             <ArrayInput
               label="One Tag in"
               value={this.state.service.apiKeyConstraints.routing.oneTagIn}
-              help="Api used should have at least one of the following roles"
+              help="Api used should have at least one of the following tags"
               onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneTagIn', v)}
             />
             <ArrayInput
               label="All Tags in"
               value={this.state.service.apiKeyConstraints.routing.allTagsIn}
-              help="Api used should have all of the following roles"
+              help="Api used should have all of the following tags"
               onChange={v => this.changeTheValue('apiKeyConstraints.routing.allTagsIn', v)}
+            />
+            <ArrayInput
+              label="No Tags in"
+              value={this.state.service.apiKeyConstraints.routing.noneTagIn}
+              help="Api used should not have one of the following tags"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneTagIn', v)}
             />
             <ObjectInput
               label="One Meta. in"
@@ -1210,6 +1216,12 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.routing.allMetaIn}
               help="Api used should have all of the following metadata entries"
               onChange={v => this.changeTheValue('apiKeyConstraints.routing.allMetaIn', v)}
+            />
+            <ObjectInput
+              label="No Meta. in"
+              value={this.state.service.apiKeyConstraints.routing.noneMetaIn}
+              help="Api used should not have one of the following metadata entries"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaIn', v)}
             />
           </Collapse>
           <Collapse
