@@ -27,6 +27,57 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+object HeadersExpressionLanguage {
+
+  import kaleidoscope._
+  import utils.RequestImplicits._
+
+  lazy val logger = Logger("otoroshi-headers-el")
+
+  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
+
+  def apply(value: String, service: ServiceDescriptor, apiKey: Option[ApiKey], user: Option[PrivateAppsUser]): String = {
+    value match {
+      case v if v.contains("${") =>
+        Try {
+          expressionReplacer.replaceOn(value) { expression =>
+            expression match {
+              case "service.domain"                                    => service._domain
+              case "service.subdomain"                                 => service.subdomain
+              case "service.tld"                                       => service.domain
+              case "service.env"                                       => service.env
+              case "service.group"                                     => service.groupId
+              case "service.id"                                        => service.id
+              case "service.name"                                      => service.name
+              case r"service.metadata.$field@(.*)"                     => service.metadata.get(field).getOrElse(s"$${service.metadata.$field}")
+
+              case "apikey.name" if apiKey.isDefined                   => apiKey.get.clientName
+              case "apikey.id" if apiKey.isDefined                     => apiKey.get.clientId
+              case r"apikey.metadata.$field@(.*)" if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse(s"$${apikey.metadata.$field}")
+              case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined => Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"$${apikey.tags.$field}")
+
+              case "user.name" if user.isDefined                       => user.get.name
+              case "user.email" if user.isDefined                      => user.get.email
+              case r"user.metadata.$field@(.*)" if user.isDefined      => user.flatMap(_.otoroshiData).map(json => (json \ field).asOpt[JsValue] match {
+                case Some(JsNumber(number)) => number.toString()
+                case Some(JsString(str))    => str
+                case Some(JsBoolean(b))     => b.toString
+                case _                      => s"$${user.metadata.${field}}"
+              }).getOrElse(s"$${user.metadata.${field}}")
+
+              case expr                                                => s"$${$expr}"
+            }
+          }
+        } recover {
+          case e =>
+            logger.error(s"Error while parsing expression, returning raw value: $value", e)
+            value
+        } get
+      case _ => value
+    }
+  }
+}
+
 case class ServiceDescriptorQuery(subdomain: String,
                                   line: String = "prod",
                                   domain: String,
@@ -1171,8 +1222,9 @@ case class ServiceDescriptor(
                                                             config)
   def theScheme: String     = if (forceHttps) "https://" else "http://"
   def theLine: String       = if (env == "prod") "" else s".$env"
-  def theDomain             = if (s"$subdomain$theLine".isEmpty) domain else s".$$subdomain$theLine"
+  def theDomain             = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
   def exposedDomain: String = s"$theScheme://$subdomain$theLine$theDomain"
+  lazy val _domain: String = s"$subdomain$theLine$theDomain"
 
   def validateClientCertificates(
       req: RequestHeader,

@@ -582,6 +582,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     if (desc.headersVerification.isEmpty) {
       f
     } else {
+      // TODO: add headers el
       desc.headersVerification.map(tuple => req.headers.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>
           Errors.craftResponseResult(
@@ -1054,7 +1055,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         )
                                       })
                                       .getOrElse(Map.empty[String, String]) ++
-                                    descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty) ++ fromOtoroshi
+                                    descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty)
+                                      .mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)) ++ fromOtoroshi
                                       .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                       .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
                                       .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(
@@ -1267,7 +1269,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             )
                                           } else {
                                             Seq.empty[(String, String)]
-                                          }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut.toSeq
+                                          }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut.mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)).toSeq
                                           promise.trySuccess(
                                             ProxyDone(
                                               badResult.header.status,
@@ -1440,7 +1442,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       } else {
                                                         Seq.empty[(String, String)]
                                                       }) ++ descriptor.cors
-                                                .asHeaders(req) ++ desc.additionalHeadersOut.toSeq
+                                                .asHeaders(req) ++ desc.additionalHeadersOut.mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)).toSeq
 
                                               val otoroshiResponse = otoroshi.script.HttpResponse(
                                                 status = resp.status,
