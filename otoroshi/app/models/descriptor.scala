@@ -40,33 +40,31 @@ object HeadersExpressionLanguage {
     value match {
       case v if v.contains("${") =>
         Try {
-          expressionReplacer.replaceOn(value) { expression =>
-            expression match {
-              case "service.domain"                                    => service._domain
-              case "service.subdomain"                                 => service.subdomain
-              case "service.tld"                                       => service.domain
-              case "service.env"                                       => service.env
-              case "service.group"                                     => service.groupId
-              case "service.id"                                        => service.id
-              case "service.name"                                      => service.name
-              case r"service.metadata.$field@(.*)"                     => service.metadata.get(field).getOrElse(s"$${service.metadata.$field}")
+          expressionReplacer.replaceOn(value) {
+            case "service.domain"                                    => service._domain
+            case "service.subdomain"                                 => service.subdomain
+            case "service.tld"                                       => service.domain
+            case "service.env"                                       => service.env
+            case "service.group"                                     => service.groupId
+            case "service.id"                                        => service.id
+            case "service.name"                                      => service.name
+            case r"service.metadata.$field@(.*)"                     => service.metadata.get(field).getOrElse("bad-expr")
 
-              case "apikey.name" if apiKey.isDefined                   => apiKey.get.clientName
-              case "apikey.id" if apiKey.isDefined                     => apiKey.get.clientId
-              case r"apikey.metadata.$field@(.*)" if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse(s"$${apikey.metadata.$field}")
-              case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined => Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"$${apikey.tags.$field}")
+            case "apikey.name" if apiKey.isDefined                   => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined                     => apiKey.get.clientId
+            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse("bad-expr")
+            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined => Option(apiKey.get.tags.apply(field.toInt)).getOrElse("bad-expr")
 
-              case "user.name" if user.isDefined                       => user.get.name
-              case "user.email" if user.isDefined                      => user.get.email
-              case r"user.metadata.$field@(.*)" if user.isDefined      => user.flatMap(_.otoroshiData).map(json => (json \ field).asOpt[JsValue] match {
-                case Some(JsNumber(number)) => number.toString()
-                case Some(JsString(str))    => str
-                case Some(JsBoolean(b))     => b.toString
-                case _                      => s"$${user.metadata.${field}}"
-              }).getOrElse(s"$${user.metadata.${field}}")
+            case "user.name" if user.isDefined                       => user.get.name
+            case "user.email" if user.isDefined                      => user.get.email
+            case r"user.metadata.$field@(.*)" if user.isDefined      => user.flatMap(_.otoroshiData).map(json => (json \ field).asOpt[JsValue] match {
+              case Some(JsNumber(number)) => number.toString()
+              case Some(JsString(str))    => str
+              case Some(JsBoolean(b))     => b.toString
+              case _                      => "bad-expr"
+            }).getOrElse("bad-expr")
 
-              case expr                                                => s"$${$expr}"
-            }
+            case expr                                                => "bad-expr" //s"$${$expr}"
           }
         } recover {
           case e =>
