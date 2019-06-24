@@ -36,6 +36,70 @@ function shallowDiffers(a, b) {
   return false;
 }
 
+class CustomTimeoutComponent extends Component {
+  changeTheValue = (key, value) => {
+    const arrayValue = [...this.props.value];
+    const item = arrayValue[this.props.idx];
+    item[key] = value;
+    this.props.onChange(arrayValue);
+  }
+  render() {
+    const value = this.props.itemValue;
+    return (
+      <div style={{ marginLeft: 5, marginRight: 5 }}>
+        <TextInput 
+          label="Path"
+          placeholder="/"
+          value={value.path}
+          help="The path on which the timeout will be active"
+          onChange={e => this.changeTheValue('path', e)}
+        />
+        <NumberInput 
+          suffix="ms."
+          label="Client connection timeout"
+          placeholder="10000"
+          value={value.connectionTimeout}
+          help="Specify how long each connection should last at most in milliseconds."
+          onChange={e => this.changeTheValue('connectionTimeout', e)}
+        />
+        <NumberInput 
+          suffix="ms."
+          label="Client idle timeout"
+          placeholder="10000"
+          value={value.idleTimeout}
+          help="Specify how long each connection can stay in idle state at most in milliseconds."
+          onChange={e => this.changeTheValue('idleTimeout', e)}
+        />
+        <NumberInput 
+          suffix="ms."
+          label="Client call and stream timeout"
+          placeholder="10000"
+          value={value.callAndStreamTimeout}
+          help="Specify how long each call should last at most in milliseconds for handling the request and streaming the response."
+          onChange={e => this.changeTheValue('callAndStreamTimeout', e)}
+        />
+        <NumberInput 
+          suffix="ms."
+          label="Call timeout"
+          placeholder="10000"
+          value={value.callTimeout}
+          help="Specify how long each call should last at most in milliseconds."
+          onChange={e => this.changeTheValue('callTimeout', e)}
+        />
+        <NumberInput 
+          suffix="ms."
+          label="Client global timeout"
+          placeholder="10000"
+          value={value.globalTimeout}
+          help="Specify how long the global call (with retries) should last at most in milliseconds."
+          onChange={e => this.changeTheValue('globalTimeout', e)}
+        />
+        <Separator />
+      </div>
+    );
+  }
+}
+
 class CanaryCampaign extends Component {
   state = {
     campaign: null,
@@ -1124,16 +1188,16 @@ export class ServicePage extends Component {
             />
             <Separator title="Routing constraints" />
             <ArrayInput
-              label="One Role in"
-              value={this.state.service.apiKeyConstraints.routing.oneRoleIn}
+              label="One Tag in"
+              value={this.state.service.apiKeyConstraints.routing.oneTagIn}
               help="Api used should have at least one of the following roles"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneRoleIn', v)}
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneTagIn', v)}
             />
             <ArrayInput
-              label="All Roles in"
-              value={this.state.service.apiKeyConstraints.routing.allRolesIn}
+              label="All Tags in"
+              value={this.state.service.apiKeyConstraints.routing.allTagsIn}
               help="Api used should have all of the following roles"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allRolesIn', v)}
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allTagsIn', v)}
             />
             <ObjectInput
               label="One Meta. in"
@@ -1565,7 +1629,6 @@ export class ServicePage extends Component {
               value={this.state.service.clientConfig.callAndStreamTimeout}
               onChange={v => this.changeTheValue('clientConfig.callAndStreamTimeout', v)}
             />
-            callAndStreamTimeout
             <NumberInput
               suffix="ms."
               label="Client connection timeout"
@@ -1614,6 +1677,22 @@ export class ServicePage extends Component {
               value={this.state.service.clientConfig.sampleInterval}
               help="Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
               onChange={v => this.changeTheValue('clientConfig.sampleInterval', v)}
+            />
+            <Separator title="Custom timeout settings" />
+            <ArrayInput 
+              label=""
+              value={this.state.service.clientConfig.customTimeouts}
+              help=""
+              defaultValue={{
+                path: "/*",
+                connectionTimeout: 10000,
+                idleTimeout: 60000,
+                callAndStreamTimeout: 120000,
+                callTimeout: 30000,
+                globalTimeout: 30000,
+              }}
+              component={CustomTimeoutComponent}
+              onChange={v => this.changeTheValue('clientConfig.customTimeouts', v)}
             />
             <Separator title="Proxy settings" />
             <Proxy

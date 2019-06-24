@@ -52,7 +52,8 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   throttlingQuota: Long = RemainingQuotas.MaxValue,
                   dailyQuota: Long = RemainingQuotas.MaxValue,
                   monthlyQuota: Long = RemainingQuotas.MaxValue,
-                  roles: Seq[String] = Seq.empty[String],
+                  constrainedServicesOnly: Boolean = false,
+                  tags: Seq[String] = Seq.empty[String],
                   metadata: Map[String, String] = Map.empty[String, String]) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.delete(this)
@@ -85,16 +86,22 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
 
     import SeqImplicits._
 
-    val shouldNotSearchForAnApiKey = sr.hasRoutingConstraints
+    val shouldNotSearchForAnApiKey = sr.hasNoRoutingConstraints
 
-    if (shouldNotSearchForAnApiKey) {
+    if (shouldNotSearchForAnApiKey && constrainedServicesOnly) {
+      false
+    } else if (shouldNotSearchForAnApiKey) {
       true
     } else {
-      val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneRoleIn).filter(_.nonEmpty).map(roles => this.roles.findOne(roles)).getOrElse(true)
-      val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allRolesIn).filter(_.nonEmpty).map(roles => this.roles.findAll(roles)).getOrElse(true)
+      val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneTagIn).filter(_.nonEmpty).map(tags => this.tags.findOne(tags)).getOrElse(true)
+      val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allTagsIn).filter(_.nonEmpty).map(tags => this.tags.findAll(tags)).getOrElse(true)
       val matchOnMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(true)
       val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findAll(metas)).getOrElse(true)
-      matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta
+
+      val matchNoneRole: Boolean = !Option(sr.apiKeyConstraints.routing.noneTagIn).filter(_.nonEmpty).map(tags => this.tags.findOne(tags)).getOrElse(false)
+      val matchNoneMeta: Boolean = !Option(sr.apiKeyConstraints.routing.noneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(false)
+
+      matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta && matchNoneRole && matchNoneMeta
     }
   }
 }
@@ -120,7 +127,8 @@ object ApiKey {
       "throttlingQuota"   -> apk.throttlingQuota,
       "dailyQuota"        -> apk.dailyQuota,
       "monthlyQuota"      -> apk.monthlyQuota,
-      "roles"             -> JsArray(apk.roles.map(JsString.apply)),
+      "constrainedServicesOnly" -> apk.constrainedServicesOnly,
+      "tags"              -> JsArray(apk.tags.map(JsString.apply)),
       "metadata"          -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[ApiKey] =
@@ -136,7 +144,8 @@ object ApiKey {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(m => m.filter(_._1.nonEmpty))

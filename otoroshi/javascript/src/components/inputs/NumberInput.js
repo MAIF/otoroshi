@@ -5,10 +5,18 @@ export class NumberInput extends Component {
   onChange = e => {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
-    if (value.indexOf('.') > -1) {
-      this.props.onChange(parseFloat(value));
-    } else {
-      this.props.onChange(parseInt(value, 10));
+    let oldValue = this.props.value;
+    try {
+      if (value.indexOf('.') > -1) {
+        oldValue = parseFloat(value);
+      } else {
+        oldValue = parseInt(value, 10);
+      }
+      if (oldValue !== NaN) {
+        this.props.onChange(oldValue);
+      }
+    } catch(e) {
+      console.log('error while parsing number', e);
     }
   };
 

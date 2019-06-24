@@ -364,6 +364,14 @@ export class ServiceApiKeysPage extends Component {
           'Here you allow client to only pass client id in a specific header in order to grant access to the underlying api',
       },
     },
+    constrainedServicesOnly: {
+      type: 'bool',
+      props: {
+        label: 'Constrained services only',
+        help:
+          'This apikey can only be used on services using apikey routing constraints',
+      },
+    },
     metadata: {
       type: 'object',
       props: {
@@ -373,12 +381,12 @@ export class ServiceApiKeysPage extends Component {
         help: 'Some useful metadata for downstream services',
       },
     },
-    roles: {
+    tags: {
       type: 'array',
       props: {
-        label: 'Roles',
+        label: 'Tags',
         placeholder: 'admin',
-        help: 'The roles assigned to thiss apikey',
+        help: 'The tags assigned to this apikey',
       },
     },
     throttlingQuota: {
@@ -474,8 +482,9 @@ export class ServiceApiKeysPage extends Component {
     'enabled',
     'readOnly',
     'allowClientIdOnly',
-    '---',
-    'roles',
+    'constrainedServicesOnly',
+    '>>> Metadata and tags',
+    'tags',
     'metadata',
     '>>>Service Group settings',
     'authorizedGroup',

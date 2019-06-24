@@ -182,7 +182,7 @@ object HealthCheck {
 }
 
 case class CustomTimeouts(
-  path: String = "*",
+  path: String = "/*",
   connectionTimeout: Long = 10000,
   idleTimeout: Long = 60000,
   callAndStreamTimeout: Long = 120000,
@@ -957,8 +957,10 @@ object JwtAuthConstraints {
 }
 
 case class ApiKeyRouteMatcher(
-  oneRoleIn: Seq[String] = Seq.empty,
-  allRolesIn: Seq[String] = Seq.empty,
+  noneTagIn: Seq[String] = Seq.empty,
+  oneTagIn: Seq[String] = Seq.empty,
+  allTagsIn: Seq[String] = Seq.empty,
+  noneMetaIn: Map[String, String] = Map.empty,
   oneMetaIn: Map[String, String] = Map.empty,
   allMetaIn: Map[String, String] = Map.empty
 ) extends {
@@ -968,16 +970,20 @@ case class ApiKeyRouteMatcher(
 object ApiKeyRouteMatcher {
   val format = new Format[ApiKeyRouteMatcher] {
     override def writes(o: ApiKeyRouteMatcher): JsValue = Json.obj(
-      "oneRoleIn" -> JsArray(o.oneRoleIn.map(JsString.apply)),
-      "allRolesIn" -> JsArray(o.allRolesIn.map(JsString.apply)),
+      "noneTagIn" -> JsArray(o.noneTagIn.map(JsString.apply)),
+      "oneTagIn" -> JsArray(o.oneTagIn.map(JsString.apply)),
+      "allTagsIn" -> JsArray(o.allTagsIn.map(JsString.apply)),
+      "noneMetaIn" -> JsObject(o.noneMetaIn.mapValues(JsString.apply)),
       "oneMetaIn" -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
       "allMetaIn" -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
     )
     override def reads(json: JsValue): JsResult[ApiKeyRouteMatcher] = Try {
       JsSuccess(
         ApiKeyRouteMatcher(
-          oneRoleIn = (json \ "oneRoleIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allRolesIn = (json \ "allRolesIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allTagsIn = (json \ "allTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          noneMetaIn = (json \ "noneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
         )
@@ -1126,10 +1132,12 @@ case class ServiceDescriptor(
   // TODO : check perfs
   // def isUriPublic(uri: String): Boolean = !privatePatterns.exists(p => uri.matches(p)) && publicPatterns.exists(p => uri.matches(p))
 
-  lazy val hasRoutingConstraints: Boolean = this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
+  lazy val hasNoRoutingConstraints: Boolean = this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
     this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
-    this.apiKeyConstraints.routing.oneRoleIn.isEmpty &&
-    this.apiKeyConstraints.routing.allRolesIn.isEmpty
+    this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
+    this.apiKeyConstraints.routing.allTagsIn.isEmpty &&
+    this.apiKeyConstraints.routing.noneTagIn.isEmpty &&
+    this.apiKeyConstraints.routing.noneMetaIn.isEmpty
 
   def isUriPublic(uri: String): Boolean =
     !privatePatterns.exists(p => utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
@@ -1454,8 +1462,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
   @inline
   def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
-    services.exists(_.hasRoutingConstraints) match {
-      case false => {
+    services.exists(_.hasNoRoutingConstraints) match {
+      case true => {
         val filtered1 = services.filter { sr =>
           val allHeadersMatched = matchAllHeaders(sr, query)
           val rootMatched = sr.matchingRoot match {
@@ -1470,7 +1478,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         }
         sersWithMatchingRoot ++ sersWithoutMatchingRoot
       }
-      case true => {
+      case false => {
         val filtered1 = services.filter { sr =>
           val allHeadersMatched = matchAllHeaders(sr, query)
           val rootMatched = sr.matchingRoot match {
@@ -1544,7 +1552,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
     }
 
-    val shouldNotSearchForAnApiKey = sr.hasRoutingConstraints && !shouldSearchForAndApiKey
+    val shouldNotSearchForAnApiKey = sr.hasNoRoutingConstraints && !shouldSearchForAndApiKey
 
     if (shouldNotSearchForAnApiKey) {
       FastFuture.successful(true)

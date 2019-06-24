@@ -507,9 +507,9 @@ case class AkkaWsClientRequest(
         case _                           => None
       }
       .filter { h =>
-        h.isNot(`Content-Type`.lowercaseName) && h.isNot(`Content-Length`.lowercaseName) && h.isNot(
-          `User-Agent`.lowercaseName
-        )
+        h.isNot(`Content-Type`.lowercaseName) &&
+        h.isNot(`Content-Length`.lowercaseName) &&
+        h.isNot(`User-Agent`.lowercaseName)
       }
       .toList ++ ua
 

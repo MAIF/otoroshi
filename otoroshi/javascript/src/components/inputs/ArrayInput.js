@@ -53,6 +53,7 @@ export class ArrayInput extends Component {
 
   render() {
     const values = this.props.value || [];
+    const Component = this.props.component;
     return (
       <div>
         {values.length === 0 && (
@@ -83,7 +84,7 @@ export class ArrayInput extends Component {
             {idx > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
             <div className="col-sm-10">
               <div className="input-group">
-                {!this.props.valuesFrom && (
+                {!this.props.valuesFrom && !this.props.component && (
                   <div className="input-group" style={{ width: '100%' }}>
                     {this.props.prefix && (
                       <div className="input-group-addon">{this.props.prefix}</div>
@@ -103,7 +104,7 @@ export class ArrayInput extends Component {
                     )}
                   </div>
                 )}
-                {this.props.valuesFrom && (
+                {this.props.valuesFrom && !this.props.component && (
                   <Select
                     name={`selector-${idx}`}
                     value={value}
@@ -113,6 +114,9 @@ export class ArrayInput extends Component {
                     options={this.state.values}
                     onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
                   />
+                )}
+                {this.props.component && (
+                  <Component idx={idx} itemValue={value} {...this.props} />
                 )}
                 <span className="input-group-btn">
                   <button
