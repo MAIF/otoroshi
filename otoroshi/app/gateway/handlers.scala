@@ -829,6 +829,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             .get(desc.id + cachedPath, () => new ServiceDescriptorCircuitBreaker())
                                             .call(
                                               descriptor,
+                                              reqNumber.toString,
                                               req.relativeUri,
                                               bodyAlreadyConsumed,
                                               s"${req.method} ${req.relativeUri}",
@@ -931,10 +932,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               )
                                           }
                                         } else {
-                                          val targets: Seq[Target] = descriptor.targets.flatMap(t => Seq.fill(t.weight)(t))
-                                          val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+                                          val targets: Seq[Target] = descriptor.targets.filter(_.predicate.matches(reqNumber.toString)).flatMap(t => Seq.fill(t.weight)(t))
+                                          val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, targets)
+                                          //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                           // Round robin loadbalancing is happening here !!!!!
-                                          val target = targets.apply(index.toInt)
+                                          //val target = targets.apply(index.toInt)
                                           actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
                                         }
                                       }
@@ -1299,8 +1301,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         //   .stream()
 
                                         val clientReq = descriptor.useAkkaHttpClient match {
-                                          case true => env.gatewayClient.akkaUrl(UrlSanitizer.sanitize(httpRequest.url), descriptor.clientConfig)
-                                          case false => env.gatewayClient.urlWithProtocol(target.scheme, UrlSanitizer.sanitize(httpRequest.url), descriptor.clientConfig)
+                                          case true => env.gatewayClient.akkaUrlWithTarget(UrlSanitizer.sanitize(httpRequest.url), target, descriptor.clientConfig)
+                                          case false => env.gatewayClient.urlWithTarget(UrlSanitizer.sanitize(httpRequest.url), target, descriptor.clientConfig)
                                         }
 
                                         val builder = clientReq

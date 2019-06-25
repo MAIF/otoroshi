@@ -110,16 +110,18 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
 
   def clear(): Unit = breakers.clear()
 
-  def chooseTarget(descriptor: ServiceDescriptor, path: String): Option[(Target, AkkaCircuitBreaker)] = {
+  def chooseTarget(descriptor: ServiceDescriptor, path: String, reqId: String): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = descriptor.targets
+      .filter(_.predicate.matches(reqId))
       .filterNot(t => breakers.get(t.host).exists(_.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
-    val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+    // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     // Round robin loadbalancing is happening here !!!!!
     if (targets.isEmpty) {
       None
     } else {
-      val target = targets.apply(index.toInt)
+      val target = descriptor.targetsLoadBalancing.select(reqId, targets)
+      //val target = targets.apply(index.toInt)
       if (!breakers.contains(target.host)) {
         val cb = new AkkaCircuitBreaker(
           scheduler = scheduler,
@@ -177,6 +179,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def call(descriptor: ServiceDescriptor,
+           reqId: String,
            path: String,
            bodyAlreadyConsumed: AtomicBoolean,
            ctx: String,
@@ -195,7 +198,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       if (bodyAlreadyConsumed.get) {
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
-        chooseTarget(descriptor, path) match {
+        chooseTarget(descriptor, path, reqId) match {
           case Some((target, breaker)) =>
             breaker.withCircuitBreaker {
               logger.debug(s"Try to call target : $target")
@@ -209,6 +212,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def callWS(descriptor: ServiceDescriptor,
+             reqId: String,
              path: String,
              ctx: String,
              counter: AtomicInteger,
@@ -223,7 +227,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
                                    descriptor.clientConfig.backoffFactor,
                                    descriptor.name + " : " + ctx,
                                    counter) { attempts =>
-      chooseTarget(descriptor, path) match {
+      chooseTarget(descriptor, path, reqId) match {
         case Some((target, breaker)) =>
           logger.debug(s"Try to call WS target : $target")
           breaker.withCircuitBreaker(f(target, attempts))

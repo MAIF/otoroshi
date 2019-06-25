@@ -1,5 +1,7 @@
 package models
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
@@ -202,16 +204,48 @@ object BaseQuotas {
   val MaxValue: Long  = RemainingQuotas.MaxValue
 }
 
+trait LoadBalancing {
+  def toJson: JsValue
+  def select(reqId: String, targets: Seq[Target]): Target
+}
+
+object LoadBalancing {
+  val format: Format[LoadBalancing] = new Format[LoadBalancing] {
+    override def writes(o: LoadBalancing): JsValue = o.toJson
+    override def reads(json: JsValue): JsResult[LoadBalancing] = (json \ "type").as[String] match {
+      case "RoundRobin" => JsSuccess(RoundRobin)
+      case _            => JsSuccess(RoundRobin)
+    }
+  }
+}
+
+object RoundRobin extends LoadBalancing {
+  private val reqCounter = new AtomicInteger(0)
+  override def toJson: JsValue = Json.obj("type" -> "RoundRobin")
+  override def select(reqId: String, targets: Seq[Target]): Target = {
+    val index: Int = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+    targets.apply(index)
+  }
+}
+
 trait TargetPredicate {
+  def matches(reqId: String): Boolean
   def toJson: JsValue
 }
 
 object TargetPredicate {
-  val format: Format[TargetPredicate] = ???
+  val format: Format[TargetPredicate] = new Format[TargetPredicate] {
+    override def writes(o: TargetPredicate): JsValue = o.toJson
+    override def reads(json: JsValue): JsResult[TargetPredicate] = (json \ "type").as[String] match {
+      case "AlwaysMatch" => JsSuccess(AlwaysMatch)
+      case _             => JsSuccess(AlwaysMatch)
+    }
+  }
 }
 
 object AlwaysMatch extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "AlwaysMatch")
+  override def matches(reqId: String): Boolean = true
 }
 
 case class Target(
@@ -1143,6 +1177,7 @@ case class ServiceDescriptor(
     env: String,
     domain: String,
     subdomain: String,
+    targetsLoadBalancing: LoadBalancing = RoundRobin,
     targets: Seq[Target] = Seq.empty[Target],
     root: String = "/",
     matchingRoot: Option[String] = None,
@@ -1325,6 +1360,7 @@ object ServiceDescriptor {
           env = (json \ "env").asOpt[String].getOrElse("prod"),
           domain = (json \ "domain").as[String],
           subdomain = (json \ "subdomain").as[String],
+          targetsLoadBalancing = (json \ "targetsLoadBalancing").asOpt(LoadBalancing.format).getOrElse(RoundRobin),
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => Target.format.reads(e).get))
@@ -1407,6 +1443,7 @@ object ServiceDescriptor {
       "env"                        -> sd.env,
       "domain"                     -> sd.domain,
       "subdomain"                  -> sd.subdomain,
+      "targetsLoadBalancing"       -> sd.targetsLoadBalancing.toJson,
       "targets"                    -> JsArray(sd.targets.map(_.toJson)),
       "root"                       -> sd.root,
       "matchingRoot"               -> sd.matchingRoot,

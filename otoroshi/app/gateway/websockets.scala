@@ -429,6 +429,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       .get(descriptor.id + cachedPath, () => new ServiceDescriptorCircuitBreaker())
                                       .callWS(
                                         descriptor,
+                                        reqNumber.toString,
                                         req.relativeUri,
                                         s"WS ${req.method} ${req.relativeUri}",
                                         counter,
@@ -491,12 +492,13 @@ class WebSocketHandler()(implicit env: Env) {
                                           .asLeft[WSFlow]
                                     }
                                   } else {
-                                    val targets: Seq[Target] = descriptor.targets.flatMap(t => Seq.fill(t.weight)(t))
-                                    val index = reqCounter.get() % (if (targets.nonEmpty)
-                                                                      targets.size
-                                                                    else 1)
+                                    val targets: Seq[Target] = descriptor.targets.filter(_.predicate.matches(reqNumber.toString)).flatMap(t => Seq.fill(t.weight)(t))
+                                    //val index = reqCounter.get() % (if (targets.nonEmpty)
+                                    //                                  targets.size
+                                    //                                else 1)
                                     // Round robin loadbalancing is happening here !!!!!
-                                    val target = targets.apply(index.toInt)
+                                    //val target = targets.apply(index.toInt)
+                                    val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, targets)
                                     actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                                   }
                                 }
