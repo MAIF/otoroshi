@@ -36,6 +36,136 @@ function shallowDiffers(a, b) {
   return false;
 }
 
+class Target extends Component {
+
+  state = { showMore: false }
+
+  changeTheValue = (key, value) => {
+    const arrayValue = [...this.props.value];
+    const item = arrayValue[this.props.idx];
+    item[key] = value;
+    this.props.onChange(arrayValue);
+  }
+
+  changeTheUrl = (t) => {
+    if (t.indexOf('://') > -1) {
+      const scheme = (t.split('://')[0] || '').replace('://', '');
+      const host = (t.split('://')[1] || '').replace('://', '');
+      this.changeTheValue('scheme', scheme);
+      this.changeTheValue('host', host);
+    } else {
+      this.changeTheValue('scheme', t);
+    }
+  }
+
+  render() {
+    const value = this.props.itemValue;
+    if (!this.state.showMore) {
+      return (
+        <div style={{ marginLeft: 5, marginRight: 5 }}>
+          <TextInput 
+            label="URL"
+            placeholder="https://changeme.foo.bar"
+            value={value.scheme + '://' + value.host}
+            help="The URL of the target"
+            onChange={e => this.changeTheUrl(e)}
+          />
+          <div className="form-group">
+            <label className="col-xs-12 col-sm-2 control-label"></label>
+            <div className="col-sm-10" style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                type="button"
+                className="btn btn-primary btn-xs"
+                onClick={e => this.setState({ showMore: !this.state.showMore })}>
+                <i className="glyphicon glyphicon-eye-open" /> show more
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div style={{ marginLeft: 5, marginRight: 5 }}>
+        <TextInput 
+          label="URL"
+          placeholder="https://changeme.foo.bar"
+          value={value.scheme + '://' + value.host}
+          help="The URL of the target"
+          onChange={e => this.changeTheUrl(e)}
+        />
+        <div className="form-group">
+          <label className="col-xs-12 col-sm-2 control-label"></label>
+          <div className="col-sm-10" style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-primary btn-xs"
+              onClick={e => this.setState({ showMore: !this.state.showMore })}>
+              <i className="glyphicon glyphicon-eye-close" /> show less
+            </button>
+          </div>
+        </div>
+        <TextInput 
+          label="Host"
+          placeholder="changeme.foo.bar"
+          value={value.host}
+          help="The host of the target"
+          onChange={e => this.changeTheValue('host', e)}
+        />
+        <TextInput 
+          label="Scheme"
+          placeholder="https"
+          value={value.scheme}
+          help="The Scheme of the target"
+          onChange={e => this.changeTheValue('scheme', e)}
+        />
+        <NumberInput 
+          label="Weight"
+          placeholder="1"
+          value={value.weight}
+          help="The weight of the target in the sequence of targets"
+          onChange={e => this.changeTheValue('weight', e)}
+        />
+        <SelectInput
+          label="Protocol"
+          placeholder="HTTP/1.1"
+          value={value.protocol}
+          possibleValues={[{
+            value: 'HTTP/1.0',
+            label: 'HTTP/1.0'
+          }, {
+            value: 'HTTP/1.1',
+            label: 'HTTP/1.1'
+          }, {
+            value: 'HTTP/2.0',
+            label: 'HTTP/2.0'
+          }]}
+          help="The protocol of the target"
+          onChange={e => this.changeTheValue('protocol', e)}
+        />
+        <SelectInput
+          label="Predicate"
+          placeholder="AlwaysMatch"
+          value={value.predicate.type}
+          possibleValues={[{
+            value: 'AlwaysMatch',
+            label: 'AlwaysMatch'
+          }]}
+          help="The predicate of the target"
+          onChange={e => this.changeTheValue('predicate', { type: e })}
+        />
+        <TextInput 
+          label="IP Address"
+          placeholder="127.0.0.1"
+          value={value.ipAddress}
+          help="The ip address of the target. Could be useful to perform manual DNS resolution"
+          onChange={e => this.changeTheValue('ipAddress', e)}
+        />
+        <Separator />
+      </div>
+    );
+  }
+}
+
 class CustomTimeoutComponent extends Component {
   changeTheValue = (key, value) => {
     const arrayValue = [...this.props.value];
@@ -882,12 +1012,34 @@ export class ServicePage extends Component {
             />
             {!this.state.service.redirectToLocal && (
               <div>
+                <SelectInput
+                  label="Load balancing"
+                  placeholder="RoundRobin"
+                  value={this.state.service.targetsLoadBalancing.type}
+                  possibleValues={[{
+                    value: 'RoundRobin',
+                    label: 'RoundRobin'
+                  }]}
+                  help="The load balancing algorithm used"
+                  onChange={e => this.changeTheValue('targetsLoadBalancing', { type: e })}
+                />
                 <ArrayInput
                   label="Targets"
                   placeholder="Target URL"
-                  value={this.state.service.targets.map(this.transformTarget)}
+                  old_value={this.state.service.targets.map(this.transformTarget)}
+                  value={this.state.service.targets}
                   help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
-                  onChange={this.changeTargetsValue}
+                  component={Target}
+                  defaultValue={{
+                    host: 'changeme.foo.bar', 
+                    scheme: 'https', 
+                    weight: 1, 
+                    protocol: 'HTTP/1.1', 
+                    predicate: 'AlwaysMatch', 
+                    ipAddress: null, 
+                  }}
+                  old_onChange={this.changeTargetsValue}
+                  onChange={e => this.changeTheValue('targets', e)}
                 />
               </div>
             )}

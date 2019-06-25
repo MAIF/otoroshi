@@ -54,6 +54,61 @@ export class ArrayInput extends Component {
   render() {
     const values = this.props.value || [];
     const Component = this.props.component;
+    if (Component) {
+      return (
+        <div style={{ marginRight: 10 }}>
+          <div className="form-group">
+            <label className="col-xs-12 col-sm-2 control-label">
+              {this.props.label} <Help text={this.props.help} />
+            </label>
+            <div className="col-sm-10" style={{ marginBottom: 20 }}>
+              {values.length === 0 && (
+                <div className="col-sm-10">
+                  <button
+                    disabled={this.props.disabled}
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={this.addFirst}>
+                    <i className="glyphicon glyphicon-plus-sign" />{' '}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="form-group" style={{ marginLeft: 30 }}>
+          {values.map((value, idx) => (
+            <div className="form-group" key={idx}>
+              <div className="col-sm-12">
+                <div className="input-group">
+                  {this.props.component && (
+                    <Component idx={idx} itemValue={value} {...this.props} />
+                  )}
+                  <span className="input-group-btn">
+                    <button
+                      disabled={this.props.disabled}
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={e => this.remove(e, idx)}>
+                      <i className="glyphicon glyphicon-trash" />
+                    </button>
+                    {idx === values.length - 1 && (
+                      <button
+                        disabled={this.props.disabled}
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={this.addNext}>
+                        <i className="glyphicon glyphicon-plus-sign" />{' '}
+                      </button>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      );
+    }
     return (
       <div>
         {values.length === 0 && (
