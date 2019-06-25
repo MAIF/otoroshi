@@ -931,11 +931,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               )
                                           }
                                         } else {
-                                          val index = reqCounter.get() % (if (descriptor.targets.nonEmpty)
-                                                                            descriptor.targets.size
-                                                                          else 1)
+                                          val targets: Seq[Target] = descriptor.targets.flatMap(t => Seq.fill(t.weight)(t))
+                                          val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                           // Round robin loadbalancing is happening here !!!!!
-                                          val target = descriptor.targets.apply(index.toInt)
+                                          val target = targets.apply(index.toInt)
                                           actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
                                         }
                                       }

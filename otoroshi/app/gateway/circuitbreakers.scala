@@ -113,6 +113,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   def chooseTarget(descriptor: ServiceDescriptor, path: String): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = descriptor.targets
       .filterNot(t => breakers.get(t.host).exists(_.isOpen))
+      .flatMap(t => Seq.fill(t.weight)(t))
     val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     // Round robin loadbalancing is happening here !!!!!
     if (targets.isEmpty) {
