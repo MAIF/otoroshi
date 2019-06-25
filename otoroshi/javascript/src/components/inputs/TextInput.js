@@ -22,7 +22,7 @@ export class TextInput extends Component {
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10">
+        <div className="col-sm-10" style={{ display: 'flex' }}>
           {(this.props.prefix || this.props.suffix) && (
             <div className="input-group">
               {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
@@ -49,6 +49,7 @@ export class TextInput extends Component {
               onChange={this.onChange}
             />
           )}
+          {!!this.props.after && this.props.after()}
         </div>
       </div>
     );

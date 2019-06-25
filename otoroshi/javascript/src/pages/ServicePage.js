@@ -62,48 +62,44 @@ class Target extends Component {
     const value = this.props.itemValue;
     if (!this.state.showMore) {
       return (
-        <div style={{ marginLeft: 5, marginRight: 5 }}>
+        <div style={{ marginLeft: 0, marginRight: 0 }}>
           <TextInput 
-            label="URL"
+            label={`Target ${this.props.idx + 1}`}
             placeholder="https://changeme.foo.bar"
             value={value.scheme + '://' + value.host}
             help="The URL of the target"
             onChange={e => this.changeTheUrl(e)}
-          />
-          <div className="form-group">
-            <label className="col-xs-12 col-sm-2 control-label"></label>
-            <div className="col-sm-10" style={{ display: 'flex', justifyContent: 'center' }}>
+            after={() => (
               <button
                 type="button"
                 className="btn btn-primary btn-xs"
+                style={{ marginLeft: 5, height: 32, marginTop: 1 }}
                 onClick={e => this.setState({ showMore: !this.state.showMore })}>
-                <i className="glyphicon glyphicon-eye-open" /> show more
+                <i className="glyphicon glyphicon-eye-close" /> Show more
               </button>
-            </div>
-          </div>
+            )}
+          />
         </div>
       );
     }
     return (
-      <div style={{ marginLeft: 5, marginRight: 5 }}>
+      <div style={{ marginLeft: 0, marginRight: 0 }}>
         <TextInput 
-          label="URL"
+          label={`Target ${this.props.idx + 1}`}
           placeholder="https://changeme.foo.bar"
           value={value.scheme + '://' + value.host}
           help="The URL of the target"
           onChange={e => this.changeTheUrl(e)}
-        />
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label"></label>
-          <div className="col-sm-10" style={{ display: 'flex', justifyContent: 'center' }}>
+          after={() => (
             <button
               type="button"
               className="btn btn-primary btn-xs"
+              style={{ marginLeft: 5 }}
               onClick={e => this.setState({ showMore: !this.state.showMore })}>
-              <i className="glyphicon glyphicon-eye-close" /> show less
+              <i className="glyphicon glyphicon-eye-close" /> Show less
             </button>
-          </div>
-        </div>
+          )}
+        />
         <TextInput 
           label="Host"
           placeholder="changeme.foo.bar"

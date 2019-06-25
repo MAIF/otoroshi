@@ -75,33 +75,35 @@ export class ArrayInput extends Component {
               )}
             </div>
           </div>
-          <div className="form-group" style={{ marginLeft: 30 }}>
+          <div className="form-group" style={{ marginLeft: 0 }}>
           {values.map((value, idx) => (
             <div className="form-group" key={idx}>
               <div className="col-sm-12">
-                <div className="input-group">
+                {/*<div className="input-groupp">*/}
                   {this.props.component && (
                     <Component idx={idx} itemValue={value} {...this.props} />
                   )}
-                  <span className="input-group-btn">
-                    <button
-                      disabled={this.props.disabled}
-                      type="button"
-                      className="btn btn-danger"
-                      onClick={e => this.remove(e, idx)}>
-                      <i className="glyphicon glyphicon-trash" />
-                    </button>
-                    {idx === values.length - 1 && (
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', paddingRight: 0 }}>
+                    <span className="input-group-btnn">
                       <button
                         disabled={this.props.disabled}
                         type="button"
-                        className="btn btn-primary"
-                        onClick={this.addNext}>
-                        <i className="glyphicon glyphicon-plus-sign" />{' '}
+                        className="btn btn-danger"
+                        onClick={e => this.remove(e, idx)}>
+                        <i className="glyphicon glyphicon-trash" />
                       </button>
-                    )}
-                  </span>
-                </div>
+                      {idx === values.length - 1 && (
+                        <button
+                          disabled={this.props.disabled}
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={this.addNext}>
+                          <i className="glyphicon glyphicon-plus-sign" />{' '}
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                {/*</div>*/}
               </div>
             </div>
           ))}
