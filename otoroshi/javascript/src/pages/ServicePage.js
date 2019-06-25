@@ -75,7 +75,7 @@ class Target extends Component {
                 className="btn btn-primary btn-xs"
                 style={{ marginLeft: 5, height: 32, marginTop: 1 }}
                 onClick={e => this.setState({ showMore: !this.state.showMore })}>
-                <i className="glyphicon glyphicon-eye-close" /> Show more
+                <i className="glyphicon glyphicon-eye-open" /> Show more
               </button>
             )}
           />
@@ -118,7 +118,7 @@ class Target extends Component {
           label="Weight"
           placeholder="1"
           value={value.weight}
-          help="The weight of the target in the sequence of targets"
+          help="The weight of the target in the sequence of targets. Only used with experimental client"
           onChange={e => this.changeTheValue('weight', e)}
         />
         <SelectInput
@@ -135,7 +135,7 @@ class Target extends Component {
             value: 'HTTP/2.0',
             label: 'HTTP/2.0'
           }]}
-          help="The protocol of the target"
+          help="The protocol of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('protocol', e)}
         />
         <SelectInput
@@ -146,14 +146,14 @@ class Target extends Component {
             value: 'AlwaysMatch',
             label: 'AlwaysMatch'
           }]}
-          help="The predicate of the target"
+          help="The predicate of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('predicate', { type: e })}
         />
         <TextInput 
           label="IP Address"
           placeholder="127.0.0.1"
           value={value.ipAddress}
-          help="The ip address of the target. Could be useful to perform manual DNS resolution"
+          help="The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client"
           onChange={e => this.changeTheValue('ipAddress', e)}
         />
         <Separator />

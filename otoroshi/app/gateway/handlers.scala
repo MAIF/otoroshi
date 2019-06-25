@@ -1545,7 +1545,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             val response: Result = Status(httpResponse.status)(body)
                                                               .withHeaders(
                                                                 headersOut.filterNot(
-                                                                  h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                                  h => h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                                 ): _*
                                                               )
                                                               .as(contentType)
@@ -1575,10 +1575,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           Status(httpResponse.status)
                                                             .chunked(finalStream)
                                                             .withHeaders(
-                                                              headersOut.filterNot(h => h._1 == "Set-Cookie")
-                                                              ++ (if (isChunked)
+                                                              headersOut.filterNot(h => h._1 == "Set-Cookie" || h._1 == "Content-Type"): _*
+                                                              /* ++ (if (isChunked)
                                                                     Seq(("Transfer-Encoding" -> "chunked"))
-                                                                  else Seq.empty): _*
+                                                                  else Seq.empty): _* */
                                                             )
                                                             .withCookies((withTrackingCookies ++ cookies): _*)
                                                             .as(contentType)
@@ -1600,7 +1600,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             )
                                                             .withHeaders(
                                                               headersOut.filterNot(
-                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                               ): _*
                                                             )
                                                             .withCookies((withTrackingCookies ++ cookies): _*)
@@ -1649,10 +1649,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           Status(httpResponse.status)
                                                             .chunked(finalStream)
                                                             .withHeaders(
-                                                              headersOut.filterNot(h => h._1 == "Set-Cookie")
-                                                              ++ (if (isChunked)
+                                                              headersOut.filterNot(h => h._1 == "Set-Cookie" || h._1 == "Content-Type"): _*
+                                                              /* ++ (if (isChunked)
                                                                     Seq(("Transfer-Encoding" -> "chunked"))
-                                                                  else Seq.empty): _*
+                                                                  else Seq.empty): _* */
                                                             )
                                                             .withCookies((withTrackingCookies ++ cookies): _*)
                                                             .as(contentType)
@@ -1674,7 +1674,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             )
                                                             .withHeaders(
                                                               headersOut.filterNot(
-                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
+                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                               ): _*
                                                             )
                                                             .withCookies((withTrackingCookies ++ cookies): _*)
