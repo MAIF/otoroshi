@@ -431,6 +431,7 @@ class WebSocketHandler()(implicit env: Env) {
                                         descriptor,
                                         reqNumber.toString,
                                         req.relativeUri,
+                                        req,
                                         s"WS ${req.method} ${req.relativeUri}",
                                         counter,
                                         (t, attempts) =>
@@ -498,7 +499,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     //                                else 1)
                                     // Round robin loadbalancing is happening here !!!!!
                                     //val target = targets.apply(index.toInt)
-                                    val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, targets)
+                                    val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, req, targets)
                                     actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                                   }
                                 }

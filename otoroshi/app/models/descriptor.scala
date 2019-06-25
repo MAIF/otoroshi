@@ -206,7 +206,7 @@ object BaseQuotas {
 
 trait LoadBalancing {
   def toJson: JsValue
-  def select(reqId: String, targets: Seq[Target]): Target
+  def select(reqId: String, requestHeader: RequestHeader, targets: Seq[Target]): Target
 }
 
 object LoadBalancing {
@@ -222,7 +222,7 @@ object LoadBalancing {
 object RoundRobin extends LoadBalancing {
   private val reqCounter = new AtomicInteger(0)
   override def toJson: JsValue = Json.obj("type" -> "RoundRobin")
-  override def select(reqId: String, targets: Seq[Target]): Target = {
+  override def select(reqId: String, requestHeader: RequestHeader, targets: Seq[Target]): Target = {
     val index: Int = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }

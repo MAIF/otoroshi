@@ -831,6 +831,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               descriptor,
                                               reqNumber.toString,
                                               req.relativeUri,
+                                              req,
                                               bodyAlreadyConsumed,
                                               s"${req.method} ${req.relativeUri}",
                                               counter,
@@ -933,7 +934,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           }
                                         } else {
                                           val targets: Seq[Target] = descriptor.targets.filter(_.predicate.matches(reqNumber.toString)).flatMap(t => Seq.fill(t.weight)(t))
-                                          val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, targets)
+                                          val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, req, targets)
                                           //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                           // Round robin loadbalancing is happening here !!!!!
                                           //val target = targets.apply(index.toInt)
