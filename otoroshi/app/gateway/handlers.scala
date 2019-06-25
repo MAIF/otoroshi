@@ -578,12 +578,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def passWithHeadersVerification(desc: ServiceDescriptor, req: RequestHeader)(f: => Future[Result]): Future[Result] = {
+  def passWithHeadersVerification(desc: ServiceDescriptor, req: RequestHeader, apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser])(f: => Future[Result]): Future[Result] = {
     if (desc.headersVerification.isEmpty) {
       f
     } else {
-      // TODO: add headers el
-      desc.headersVerification.map(tuple => req.headers.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
+      val inputHeaders = req.headers.toSimpleMap.mapValues(v => HeadersExpressionLanguage.apply(v, desc, apiKey, paUsr))
+      desc.headersVerification.map(tuple => inputHeaders.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>
           Errors.craftResponseResult(
             "Missing header(s)",
@@ -758,7 +758,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       Some("errors.service.in.maintenance")
                     )
                   } else {
-                    passWithHeadersVerification(rawDesc, req) {
+                    passWithHeadersVerification(rawDesc, req, None, None) {
                       passWithReadOnly(rawDesc.readOnly, req) {
                         applyJwtVerifier(rawDesc, req) { jwtInjection =>
                           applySidecar(rawDesc, remoteAddress, req) { desc =>

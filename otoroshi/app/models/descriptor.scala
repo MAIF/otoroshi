@@ -1,7 +1,6 @@
 package models
 
-import java.math.BigInteger
-
+import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
@@ -11,26 +10,24 @@ import com.auth0.jwt.JWT
 import env.Env
 import gateway.Errors
 import play.api.Logger
+import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
+import play.api.mvc.Results.TooManyRequests
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import storage.BasicStore
 import utils.{GzipConfig, RegexPool, ReplaceAllWith}
-import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
-import play.api.mvc.Results.TooManyRequests
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object HeadersExpressionLanguage {
 
   import kaleidoscope._
-  import utils.RequestImplicits._
 
   lazy val logger = Logger("otoroshi-headers-el")
 
@@ -205,13 +202,55 @@ object BaseQuotas {
   val MaxValue: Long  = RemainingQuotas.MaxValue
 }
 
-case class Target(host: String, scheme: String = "https") {
+trait TargetPredicate {
+  def toJson: JsValue
+}
+
+object TargetPredicate {
+  val format: Format[TargetPredicate] = ???
+}
+
+object AlwaysMatch extends TargetPredicate {
+  def toJson: JsValue = Json.obj("type" -> "AlwaysMatch")
+}
+
+case class Target(
+  host: String,
+  scheme: String = "https",
+  weight: Int = 0,
+  protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
+  predicate: TargetPredicate = AlwaysMatch,
+  ipAddress: Option[String] = None
+) {
   def toJson = Target.format.writes(this)
   def asUrl  = s"${scheme}://$host"
 }
 
 object Target {
-  implicit val format = Json.format[Target]
+  val format = new Format[Target] {
+    override def writes(o: Target): JsValue = Json.obj(
+      "host" -> o.host,
+      "scheme" -> o.scheme,
+      "weight" -> o.weight,
+      "protocol" -> o.protocol.value,
+      "predicate" -> o.predicate.toJson,
+      "ipAddress" -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    )
+    override def reads(json: JsValue): JsResult[Target] = Try {
+      Target(
+        host = (json \ "host").as[String],
+        scheme = (json \ "scheme").asOpt[String].getOrElse("https"),
+        weight = (json \ "weight").asOpt[Int].getOrElse(1),
+        protocol = (json \ "protocol").asOpt[String].map(s => HttpProtocol.apply(s)).getOrElse(HttpProtocols.`HTTP/1.1`),
+        predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
+        ipAddress = (json \ "ipAddress").asOpt[String]
+      )
+    } map {
+      case sd => JsSuccess(sd)
+    } recover {
+      case t => JsError(t.getMessage)
+    } get
+  }
 }
 
 case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Seq[String] = Seq.empty[String]) {
@@ -1584,9 +1623,6 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
   @inline
   def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-
-    import SeqImplicits._
-    import scala.concurrent.duration._
 
     lazy val shouldSearchForAndApiKey = if (sr.isPrivate && sr.authConfigRef.isDefined && !sr.isExcludedFromSecurity(requestHeader.path)) {
       if (sr.isUriPublic(requestHeader.path)) {
