@@ -141,6 +141,9 @@ trait AnalyticEvent {
   def toJson(implicit _env: Env): JsValue
   def toEnrichedJson(implicit _env: Env): JsValue = {
     toJson(_env).as[JsObject] ++ Json.obj(
+      "instance-name" -> _env.name,
+      "instance-zone" -> _env.zone,
+      "instance-region" -> _env.region,
       "cluster-mode" -> _env.clusterConfig.mode.name,
       "cluster-name" -> (_env.clusterConfig.mode match {
         case ClusterMode.Worker => _env.clusterConfig.worker.name

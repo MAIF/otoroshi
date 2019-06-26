@@ -43,7 +43,9 @@ class Target extends Component {
   changeTheValue = (key, value) => {
     const arrayValue = [...this.props.value];
     const item = arrayValue[this.props.idx];
-    item[key] = value;
+    const newItem = deepSet(item, key, value);
+    arrayValue[this.props.idx] = newItem
+    // item[key] = value;
     this.props.onChange(arrayValue);
   }
 
@@ -145,10 +147,37 @@ class Target extends Component {
           possibleValues={[{
             value: 'AlwaysMatch',
             label: 'AlwaysMatch'
+          }, {
+            value: 'RegionMatch',
+            label: 'RegionMatch'
+          }, {
+            value: 'ZoneMatch',
+            label: 'ZoneMatch'
+          }, {
+            value: 'RegionAndZoneMatch',
+            label: 'RegionAndZoneMatch'
           }]}
           help="The predicate of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('predicate', { type: e })}
         />
+        {(value.predicate.type === 'RegionMatch' || value.predicate.type === 'RegionAndZoneMatch') && (
+          <TextInput 
+            label="Region"
+            placeholder="local"
+            value={value.predicate.region}
+            help="The region of this target (based on the region value in the otoroshi configuration)"
+            onChange={e => this.changeTheValue('predicate.region', e)}
+          />
+        )}
+        {(value.predicate.type === 'ZoneMatch' || value.predicate.type === 'RegionAndZoneMatch') && (
+          <TextInput 
+            label="Zone"
+            placeholder="local"
+            value={value.predicate.zone}
+            help="The zone of this target (based on the zone value in the otoroshi configuration)"
+            onChange={e => this.changeTheValue('predicate.zone', e)}
+          />
+        )}
         <TextInput 
           label="IP Address"
           placeholder="127.0.0.1"
@@ -1018,6 +1047,15 @@ export class ServicePage extends Component {
                   }, {
                     value: 'Random',
                     label: 'Random'
+                  }, {
+                    value: 'Sticky',
+                    label: 'Sticky'
+                  }, {
+                    value: 'IpAddressHash',
+                    label: 'IpAddressHash'
+                  }, {
+                    value: 'BestResponseTime',
+                    label: 'BestResponseTime'
                   }]}
                   help="The load balancing algorithm used"
                   onChange={e => this.changeTheValue('targetsLoadBalancing', { type: e })}
@@ -1025,7 +1063,6 @@ export class ServicePage extends Component {
                 <ArrayInput
                   label="Targets"
                   placeholder="Target URL"
-                  old_value={this.state.service.targets.map(this.transformTarget)}
                   value={this.state.service.targets}
                   help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
                   component={Target}
@@ -1034,10 +1071,9 @@ export class ServicePage extends Component {
                     scheme: 'https', 
                     weight: 1, 
                     protocol: 'HTTP/1.1', 
-                    predicate: 'AlwaysMatch', 
+                    predicate: { type: 'AlwaysMatch' }, 
                     ipAddress: null, 
                   }}
-                  old_onChange={this.changeTargetsValue}
                   onChange={e => this.changeTheValue('targets', e)}
                 />
               </div>

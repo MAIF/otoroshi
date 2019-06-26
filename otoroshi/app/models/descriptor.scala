@@ -1,6 +1,6 @@
 package models
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
@@ -9,11 +9,14 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import auth._
 import com.auth0.jwt.JWT
+import com.google.common.hash.Hashing
 import env.Env
 import gateway.Errors
+import models.Random.random
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
+import play.api.libs.typedmap.TypedKey
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.TooManyRequests
@@ -205,8 +208,9 @@ object BaseQuotas {
 }
 
 trait LoadBalancing {
+  def needTrackingCookie: Boolean
   def toJson: JsValue
-  def select(reqId: String, requestHeader: RequestHeader, targets: Seq[Target]): Target
+  def select(reqId: String, trackingId: String, requestHeader: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target
 }
 
 object LoadBalancing {
@@ -215,6 +219,7 @@ object LoadBalancing {
     override def reads(json: JsValue): JsResult[LoadBalancing] = (json \ "type").as[String] match {
       case "RoundRobin" => JsSuccess(RoundRobin)
       case "Random"     => JsSuccess(Random)
+      case "Sticky"     => JsSuccess(Sticky)
       case _            => JsSuccess(RoundRobin)
     }
   }
@@ -222,40 +227,130 @@ object LoadBalancing {
 
 object RoundRobin extends LoadBalancing {
   private val reqCounter = new AtomicInteger(0)
+  override def needTrackingCookie: Boolean = false
   override def toJson: JsValue = Json.obj("type" -> "RoundRobin")
-  override def select(reqId: String, requestHeader: RequestHeader, targets: Seq[Target]): Target = {
+  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
     val index: Int = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }
+
 }
 
 object Random extends LoadBalancing {
   private val random = new scala.util.Random
+  override def needTrackingCookie: Boolean = false
   override def toJson: JsValue = Json.obj("type" -> "Random")
-  override def select(reqId: String, requestHeader: RequestHeader, targets: Seq[Target]): Target = {
+  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
     val index = random.nextInt(targets.length)
     targets.apply(index)
   }
 }
 
+object Sticky extends LoadBalancing {
+  override def needTrackingCookie: Boolean = true
+  override def toJson: JsValue = Json.obj("type" -> "Sticky")
+  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
+    val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+    val index: Int = Hashing.consistentHash(hash, targets.size)
+    targets.apply(index)
+  }
+}
+
+object IpAddressHash extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue = Json.obj("type" -> "IpAddressHash")
+  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
+    val remoteAddress = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
+    val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
+    val index: Int = Hashing.consistentHash(hash, targets.size)
+    targets.apply(index)
+  }
+}
+
+case class AtomicAverage(count: AtomicLong, sum: AtomicLong) {
+  def incrBy(v: Long): Unit = {
+    count.incrementAndGet()
+    sum.addAndGet(v)
+  }
+  def average: Long = sum.get / count.get
+}
+
+object BestResponseTime extends LoadBalancing {
+
+  private val random = new scala.util.Random
+  private val responseTimes = new TrieMap[String, AtomicAverage]()
+
+  def incrementAverage(desc: ServiceDescriptor, target: Target, responseTime: Long): Unit = {
+    val key = s"${desc.id}-${target.asKey}"
+    val avg = responseTimes.getOrElseUpdate(key, AtomicAverage(new AtomicLong(0), new AtomicLong(0)))
+    avg.incrBy(responseTime)
+  }
+
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue = Json.obj("type" -> "BestResponseTime")
+  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
+    val possibleTargets = responseTimes.toSeq.filter(t => t._1.startsWith(s"${desc.id}-"))
+    val (key, average) = possibleTargets.minBy(_._2.average)
+    val maybeTarget = targets.find(_.asKey == key)
+    maybeTarget.getOrElse {
+      val index = random.nextInt(targets.length)
+      targets.apply(index)
+    }
+  }
+}
+
 trait TargetPredicate {
-  def matches(reqId: String): Boolean
+  def matches(reqId: String)(implicit env: Env): Boolean
   def toJson: JsValue
 }
 
 object TargetPredicate {
   val format: Format[TargetPredicate] = new Format[TargetPredicate] {
     override def writes(o: TargetPredicate): JsValue = o.toJson
-    override def reads(json: JsValue): JsResult[TargetPredicate] = (json \ "type").as[String] match {
-      case "AlwaysMatch" => JsSuccess(AlwaysMatch)
-      case _             => JsSuccess(AlwaysMatch)
+    override def reads(json: JsValue): JsResult[TargetPredicate] = {
+      (json \ "type").as[String] match {
+        case "AlwaysMatch" => JsSuccess(AlwaysMatch)
+        case "RegionMatch" => JsSuccess(RegionMatch(
+          region = (json \ "region").asOpt[String].getOrElse("local")
+        ))
+        case "ZoneMatch" => JsSuccess(ZoneMatch(
+          zone = (json \ "zone").asOpt[String].getOrElse("local")
+        ))
+        case "RegionAndZoneMatch" => JsSuccess(RegionAndZoneMatch(
+          region = (json \ "region").asOpt[String].getOrElse("local"),
+          zone = (json \ "zone").asOpt[String].getOrElse("local"),
+        ))
+        case _ => JsSuccess(AlwaysMatch)
+      }
     }
   }
 }
 
 object AlwaysMatch extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "AlwaysMatch")
-  override def matches(reqId: String): Boolean = true
+  override def matches(reqId: String)(implicit env: Env): Boolean = true
+}
+
+case class RegionMatch(region: String) extends TargetPredicate {
+  def toJson: JsValue = Json.obj("type" -> "RegionMatch", "region" -> region)
+  override def matches(reqId: String)(implicit env: Env): Boolean = {
+    env.region.trim.toLowerCase == region.trim.toLowerCase
+  }
+}
+
+case class ZoneMatch(zone: String) extends TargetPredicate {
+  def toJson: JsValue = Json.obj("type" -> "ZoneMatch", "zone" -> zone)
+  override def matches(reqId: String)(implicit env: Env): Boolean = {
+    env.zone.trim.toLowerCase == zone.trim.toLowerCase
+  }
+}
+
+case class RegionAndZoneMatch(region: String, zone: String) extends TargetPredicate {
+  def toJson: JsValue = Json.obj("type" -> "RegionAndZoneMatch", "region" -> region, "zone" -> zone)
+  override def matches(reqId: String)(implicit env: Env): Boolean = {
+    env.region.trim.toLowerCase == region.trim.toLowerCase &&
+      env.zone.trim.toLowerCase == zone.trim.toLowerCase
+  }
 }
 
 case class Target(
@@ -267,7 +362,8 @@ case class Target(
   ipAddress: Option[String] = None
 ) {
   def toJson = Target.format.writes(this)
-  def asUrl  = s"${scheme}://$host"
+  def asUrl = s"${scheme}://$host"
+  def asKey = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
 }
 
 object Target {
@@ -292,7 +388,9 @@ object Target {
     } map {
       case sd => JsSuccess(sd)
     } recover {
-      case t => JsError(t.getMessage)
+      case t =>
+        t.printStackTrace()
+        JsError(t.getMessage)
     } get
   }
 }

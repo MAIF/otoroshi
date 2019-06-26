@@ -172,6 +172,9 @@ class Env(val configuration: Configuration,
   lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
   lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
+  lazy val name: String                    = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")
+  lazy val zone: String                    = configuration.getOptional[String]("app.instance.zone").getOrElse("local")
+  lazy val region: String                  = configuration.getOptional[String]("app.instance.region").getOrElse("local")
   lazy val liveJs: Boolean = configuration
     .getOptional[String]("app.env")
     .filter(_ == "dev")

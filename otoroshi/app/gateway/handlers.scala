@@ -765,8 +765,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             val firstOverhead = System.currentTimeMillis() - start
                             snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) {
                               snowMonkeyContext =>
+
                                 val secondStart = System.currentTimeMillis()
-                                val maybeTrackingId = req.cookies
+                                val maybeCanaryId: Option[String] = req.cookies
                                   .get("otoroshi-canary")
                                   .map(_.value)
                                   .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
@@ -780,20 +781,25 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       false
                                     }
                                   } map (value => value.split("::")(1))
-                                val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
+                                val canaryId: String = maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
 
-                                if (maybeTrackingId.isDefined) {
-                                  logger.debug(s"request already has tracking id : $trackingId")
+                                val trackingId: String = req.cookies
+                                  .get("otoroshi-tracking")
+                                  .map(_.value)
+                                  .getOrElse(IdGenerator.uuid + "-" + reqNumber)
+
+                                if (maybeCanaryId.isDefined) {
+                                  logger.debug(s"request already has canary id : $canaryId")
                                 } else {
-                                  logger.debug(s"request has a new tracking id : $trackingId")
+                                  logger.debug(s"request has a new canary id : $canaryId")
                                 }
 
-                                val withTrackingCookies: Seq[Cookie] =
+                                val withTrackingCookies: Seq[Cookie] = {
                                   if (!desc.canary.enabled)
                                     jwtInjection.additionalCookies
                                       .map(t => Cookie(t._1, t._2))
                                       .toSeq //Seq.empty[play.api.mvc.Cookie]
-                                  else if (maybeTrackingId.isDefined)
+                                  else if (maybeCanaryId.isDefined)
                                     jwtInjection.additionalCookies
                                       .map(t => Cookie(t._1, t._2))
                                       .toSeq //Seq.empty[play.api.mvc.Cookie]
@@ -801,16 +807,30 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     Seq(
                                       play.api.mvc.Cookie(
                                         name = "otoroshi-canary",
-                                        value = s"${env.sign(trackingId)}::$trackingId",
+                                        value = s"${env.sign(canaryId)}::$canaryId",
                                         maxAge = Some(2592000),
                                         path = "/",
-                                        domain = Some(req.host),
+                                        domain = Some(req.domain),
                                         httpOnly = false
                                       )
                                     ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
+                                } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                                  Seq(
+                                    play.api.mvc.Cookie(
+                                      name = "otoroshi-tracking",
+                                      value = trackingId,
+                                      maxAge = Some(2592000),
+                                      path = "/",
+                                      domain = Some(req.domain),
+                                      httpOnly = false
+                                    )
+                                  )
+                                } else {
+                                  Seq.empty[Cookie]
+                                })
 
                                 //desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).fast.map(d => (iu, d))).fast.flatMap {
-                                splitToCanary(desc, trackingId, reqNumber, globalConfig).fast.flatMap { _desc =>
+                                splitToCanary(desc, canaryId, reqNumber, globalConfig).fast.flatMap { _desc =>
                                   val isUp = true
 
                                   val descriptor = _desc
@@ -830,6 +850,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             .call(
                                               descriptor,
                                               reqNumber.toString,
+                                              trackingId,
                                               req.relativeUri,
                                               req,
                                               bodyAlreadyConsumed,
@@ -934,7 +955,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           }
                                         } else {
                                           val targets: Seq[Target] = descriptor.targets.filter(_.predicate.matches(reqNumber.toString)).flatMap(t => Seq.fill(t.weight)(t))
-                                          val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, req, targets)
+                                          val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, trackingId, req, targets, descriptor)
                                           //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                           // Round robin loadbalancing is happening here !!!!!
                                           //val target = targets.apply(index.toInt)
@@ -1260,10 +1281,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             } else {
                                               Seq.empty[(String, String)]
                                             }
-                                            ) ++ Some(trackingId)
+                                            ) ++ Some(canaryId)
                                             .filter(_ => desc.canary.enabled)
                                             .map(
-                                              _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
+                                              _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
                                             ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
                                             Seq(
                                               env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
@@ -1432,10 +1453,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 } else {
                                                   Seq.empty[(String, String)]
                                                 }
-                                              ) ++ Some(trackingId)
+                                              ) ++ Some(canaryId)
                                                 .filter(_ => desc.canary.enabled)
                                                 .map(
-                                                  _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
+                                                  _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
                                                 ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
                                                         Seq(
                                                           env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,

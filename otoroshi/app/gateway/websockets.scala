@@ -364,8 +364,8 @@ class WebSocketHandler()(implicit env: Env) {
                   passWithReadOnly(rawDesc.readOnly, req) {
                     applyJwtVerifier(rawDesc, req) { jwtInjection =>
                       applySidecar(rawDesc, remoteAddress, req) { desc =>
-                        val maybeTrackingId = req.cookies
-                          .get("oto-client")
+                        val maybeCanaryId = req.cookies
+                          .get("otoroshi-canary")
                           .map(_.value)
                           .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
                           .filter { value =>
@@ -378,20 +378,23 @@ class WebSocketHandler()(implicit env: Env) {
                               false
                             }
                           } map (value => value.split("::")(1))
-                        val trackingId: String = maybeTrackingId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
-
-                        if (maybeTrackingId.isDefined) {
-                          logger.debug(s"request already has tracking id : $trackingId")
+                        val canaryId: String = maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
+                        val trackingId: String = req.cookies
+                          .get("otoroshi-tracking")
+                          .map(_.value)
+                          .getOrElse(IdGenerator.uuid + "-" + reqNumber)
+                        if (maybeCanaryId.isDefined) {
+                          logger.debug(s"request already has tracking id : $canaryId")
                         } else {
-                          logger.debug(s"request has a new tracking id : $trackingId")
+                          logger.debug(s"request has a new tracking id : $canaryId")
                         }
 
-                        val withTrackingCookies: Seq[Cookie] =
+                        val withTrackingCookies: Seq[Cookie] = {
                           if (!desc.canary.enabled)
                             jwtInjection.additionalCookies
                               .map(t => Cookie(t._1, t._2))
                               .toSeq //Seq.empty[play.api.mvc.Cookie]
-                          else if (maybeTrackingId.isDefined)
+                          else if (maybeCanaryId.isDefined)
                             jwtInjection.additionalCookies
                               .map(t => Cookie(t._1, t._2))
                               .toSeq //Seq.empty[play.api.mvc.Cookie]
@@ -399,16 +402,30 @@ class WebSocketHandler()(implicit env: Env) {
                             Seq(
                               play.api.mvc.Cookie(
                                 name = "otoroshi-canary",
-                                value = s"${env.sign(trackingId)}::$trackingId",
+                                value = s"${env.sign(canaryId)}::$canaryId",
                                 maxAge = Some(2592000),
                                 path = "/",
                                 domain = Some(req.host),
                                 httpOnly = false
                               )
                             ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
+                        } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                          Seq(
+                            play.api.mvc.Cookie(
+                              name = "otoroshi-tracking",
+                              value = trackingId,
+                              maxAge = Some(2592000),
+                              path = "/",
+                              domain = Some(req.domain),
+                              httpOnly = false
+                            )
+                          )
+                        } else {
+                          Seq.empty[Cookie]
+                        })
 
                         desc.isUp
-                          .flatMap(iu => splitToCanary(desc, trackingId, reqNumber, globalConfig).map(d => (iu, d)))
+                          .flatMap(iu => splitToCanary(desc, canaryId, reqNumber, globalConfig).map(d => (iu, d)))
                           .flatMap { tuple =>
                             val (isUp, _desc) = tuple
                             val descriptor    = _desc
@@ -430,6 +447,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       .callWS(
                                         descriptor,
                                         reqNumber.toString,
+                                        trackingId,
                                         req.relativeUri,
                                         req,
                                         s"WS ${req.method} ${req.relativeUri}",
@@ -499,7 +517,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     //                                else 1)
                                     // Round robin loadbalancing is happening here !!!!!
                                     //val target = targets.apply(index.toInt)
-                                    val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, req, targets)
+                                    val target = descriptor.targetsLoadBalancing.select(reqNumber.toString, trackingId, req, targets, descriptor)
                                     actuallyCallDownstream(target, apiKey, paUsr, 0, 1)
                                   }
                                 }
@@ -770,10 +788,10 @@ class WebSocketHandler()(implicit env: Env) {
                                         } else {
                                           Seq.empty[(String, String)]
                                         }
-                                        ) ++ Some(trackingId)
+                                        ) ++ Some(canaryId)
                                         .filter(_ => desc.canary.enabled)
                                         .map(
-                                          _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(trackingId)}::$trackingId"
+                                          _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
                                         ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
                                         Seq(
                                           env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
