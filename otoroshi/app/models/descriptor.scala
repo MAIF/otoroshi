@@ -214,6 +214,7 @@ object LoadBalancing {
     override def writes(o: LoadBalancing): JsValue = o.toJson
     override def reads(json: JsValue): JsResult[LoadBalancing] = (json \ "type").as[String] match {
       case "RoundRobin" => JsSuccess(RoundRobin)
+      case "Random"     => JsSuccess(Random)
       case _            => JsSuccess(RoundRobin)
     }
   }
@@ -224,6 +225,15 @@ object RoundRobin extends LoadBalancing {
   override def toJson: JsValue = Json.obj("type" -> "RoundRobin")
   override def select(reqId: String, requestHeader: RequestHeader, targets: Seq[Target]): Target = {
     val index: Int = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+    targets.apply(index)
+  }
+}
+
+object Random extends LoadBalancing {
+  private val random = new scala.util.Random
+  override def toJson: JsValue = Json.obj("type" -> "Random")
+  override def select(reqId: String, requestHeader: RequestHeader, targets: Seq[Target]): Target = {
+    val index = random.nextInt(targets.length)
     targets.apply(index)
   }
 }

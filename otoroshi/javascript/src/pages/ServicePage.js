@@ -1015,6 +1015,9 @@ export class ServicePage extends Component {
                   possibleValues={[{
                     value: 'RoundRobin',
                     label: 'RoundRobin'
+                  }, {
+                    value: 'Random',
+                    label: 'Random'
                   }]}
                   help="The load balancing algorithm used"
                   onChange={e => this.changeTheValue('targetsLoadBalancing', { type: e })}
