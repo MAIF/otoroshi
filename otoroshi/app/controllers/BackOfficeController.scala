@@ -109,7 +109,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             )
           )
           .withHeaders(
-            res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type").filter(_._1 != "Content-Length"): _*
+            res.headers.mapValues(_.head).toSeq.filter(_._1 != "Content-Type").filter(_._1 != "Content-Length").filter(_._1 != "Transfer-Encoding"): _*
           )
           .as(ctype)
       }
