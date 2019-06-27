@@ -2100,12 +2100,28 @@ export class ServicePage extends Component {
               value={this.state.service.canary.traffic}
               onChange={v => this.changeTheValue('canary.traffic', v)}
             />
-            <ArrayInput
+            {/*<ArrayInput
               label="Targets"
               placeholder="Target URL"
               value={this.state.service.canary.targets.map(this.transformTarget)}
               help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
               onChange={this.changeCanaryTargetsValue}
+            />*/}
+            <ArrayInput
+              label="Targets"
+              placeholder="Target URL"
+              value={this.state.service.canary.targets}
+              help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
+              component={Target}
+              defaultValue={{
+                host: 'changeme.foo.bar', 
+                scheme: 'https', 
+                weight: 1, 
+                protocol: 'HTTP/1.1', 
+                predicate: { type: 'AlwaysMatch' }, 
+                ipAddress: null, 
+              }}
+              onChange={e => this.changeTheValue('canary.targets', e)}
             />
             <TextInput
               label="Targets root"

@@ -1141,6 +1141,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                              resp.upstreamLatency,
                                                                              globalConfig)
 
+                                        BestResponseTime.incrementAverage(descriptor, target, duration)
+
                                         quotas.andThen {
                                           case Success(q) => {
                                             val fromLbl =
