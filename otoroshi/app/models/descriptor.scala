@@ -230,7 +230,7 @@ object RoundRobin extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue = Json.obj("type" -> "RoundRobin")
   override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
-    val index: Int = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+    val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }
 
@@ -356,7 +356,7 @@ case class RegionAndZoneMatch(region: String, zone: String) extends TargetPredic
 case class Target(
   host: String,
   scheme: String = "https",
-  weight: Int = 0,
+  weight: Int = 1,
   protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
   predicate: TargetPredicate = AlwaysMatch,
   ipAddress: Option[String] = None

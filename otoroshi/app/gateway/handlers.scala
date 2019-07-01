@@ -653,6 +653,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               case None => false
               case Some(algo) => {
                 Try {
+                  // TODO: enforce TTL
                   JWT
                     .require(algo)
                     .withAudience(env.Headers.OtoroshiIssuer)

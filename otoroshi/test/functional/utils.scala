@@ -177,7 +177,11 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       // if (response.status != 200) {
       //   println(response.body)
       // }
-      response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+      try {
+        response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+      } catch {
+        case e: Throwable => Seq.empty
+      }
     }
   }
 
