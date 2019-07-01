@@ -26,7 +26,7 @@ import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessa
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
 import play.api.mvc._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, JsString, Json}
 import security.{IdGenerator, OtoroshiClaim}
 import utils.{Metrics, UrlSanitizer}
 import utils.future.Implicits._
@@ -589,6 +589,7 @@ class WebSocketHandler()(implicit env: Env) {
                                              .flatMap(_.otoroshiData)
                                              .orElse(apiKey.map(_.metadataJson))
                                              .map(m => Json.stringify(Json.toJson(m))))
+                                .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
                                 .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
                                 .withClaim("apikey",
                                            apiKey.map(
@@ -597,7 +598,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                  Json.obj(
                                                    "clientId"   -> ak.clientId,
                                                    "clientName" -> ak.clientName,
-                                                   "metadata"   -> ak.metadata
+                                                   "metadata"   -> ak.metadata,
+                                                   "tags"       -> ak.tags
                                                  )
                                              )
                                            ))

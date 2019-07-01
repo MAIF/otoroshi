@@ -1029,6 +1029,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                    .flatMap(_.otoroshiData)
                                                    .orElse(apiKey.map(_.metadataJson))
                                                    .map(m => Json.stringify(Json.toJson(m))))
+                                      .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
                                       .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
                                       .withClaim("apikey",
                                                  apiKey.map(
@@ -1037,7 +1038,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                        Json.obj(
                                                          "clientId"   -> ak.clientId,
                                                          "clientName" -> ak.clientName,
-                                                         "metadata"   -> ak.metadata
+                                                         "metadata"   -> ak.metadata,
+                                                         "tags" -> ak.tags
                                                        )
                                                    )
                                                  ))

@@ -730,8 +730,6 @@ object OIDCThirdPartyApiKeyConfigMode {
   }
 }
 
-// TODO: roles validation (json path selector + array of possible roles)
-// TODO: quotasEnabled
 case class OIDCThirdPartyApiKeyConfig(
   enabled: Boolean = false,
   oidcConfigRef: Option[String],
