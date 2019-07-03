@@ -869,6 +869,7 @@ case class OIDCThirdPartyApiKeyConfig(
                               throttlingQuota = throttlingQuota,
                               dailyQuota = dailyQuota,
                               monthlyQuota = monthlyQuota,
+                              // TODO: tags ???
                               metadata = Map(
                                 "type" -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
                                 "iss" -> iss,
@@ -877,6 +878,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                 "descName" -> descriptor.name,
                                 "auth" -> oidcAuth.id,
                                 "authName" -> oidcAuth.name
+                                // TODO: meta from the token ???
                               )
                             )
                             val tokenScopes = (tokenBody \ "scope").asOpt[String].map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
