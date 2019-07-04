@@ -453,6 +453,14 @@ export class JwtVerifier extends Component {
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
+          <ObjectInput
+            label="Verify token array value"
+            placeholderKey="Field name"
+            placeholderValue="One value in the array"
+            value={verifier.strategy.verificationSettings.arrayFields}
+            help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
+          />,
         ]}
         {verifier.strategy.type === 'Sign' && [
           <ObjectInput
@@ -462,6 +470,14 @@ export class JwtVerifier extends Component {
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
+          />,
+          <ObjectInput
+            label="Verify token array value"
+            placeholderKey="Field name"
+            placeholderValue="One value in the array"
+            value={verifier.strategy.verificationSettings.arrayFields}
+            help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
           />,
           <Separator title="Re-sign settings" />,
           <AlgoSettings
@@ -479,6 +495,14 @@ export class JwtVerifier extends Component {
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
+          />,
+          <ObjectInput
+            label="Verify token array value"
+            placeholderKey="Field name"
+            placeholderValue="One value in the array"
+            value={verifier.strategy.verificationSettings.arrayFields}
+            help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
           />,
           <Separator title="Re-sign settings" />,
           <AlgoSettings

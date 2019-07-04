@@ -577,7 +577,8 @@ object VerificationSettings extends FromJson[VerificationSettings] {
     Try {
       Right(
         VerificationSettings(
-          (json \ "fields").as[Map[String, String]]
+          (json \ "fields").as[Map[String, String]],
+          (json \ "arrayFields").as[Map[String, String]]
         )
       )
     } recover {
@@ -585,17 +586,19 @@ object VerificationSettings extends FromJson[VerificationSettings] {
     } get
 }
 
-case class VerificationSettings(fields: Map[String, String] = Map.empty) extends AsJson {
+case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFields: Map[String, String] = Map.empty) extends AsJson {
   def asVerification(algorithm: Algorithm): Verification = {
-    fields.foldLeft(
+    val verification = fields.foldLeft(
       JWT
         .require(algorithm)
         .acceptLeeway(10)
     )((a, b) => a.withClaim(b._1, b._2))
+    arrayFields.foldLeft(verification)((a, b) => a.withArrayClaim(b._1, b._2))
   }
 
   override def asJson = Json.obj(
-    "fields" -> JsObject(this.fields.mapValues(JsString.apply))
+    "fields" -> JsObject(this.fields.mapValues(JsString.apply)),
+    "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply)),
   )
 }
 
