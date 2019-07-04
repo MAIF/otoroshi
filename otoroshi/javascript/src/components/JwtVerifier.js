@@ -456,7 +456,7 @@ export class JwtVerifier extends Component {
           <ObjectInput
             label="Verify token array value"
             placeholderKey="Field name"
-            placeholderValue="One value in the array"
+            placeholderValue="One or more comma separated values in the array"
             value={verifier.strategy.verificationSettings.arrayFields}
             help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
@@ -474,7 +474,7 @@ export class JwtVerifier extends Component {
           <ObjectInput
             label="Verify token array value"
             placeholderKey="Field name"
-            placeholderValue="One value in the array"
+            placeholderValue="One or more comma separated values in the array"
             value={verifier.strategy.verificationSettings.arrayFields}
             help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
@@ -499,7 +499,7 @@ export class JwtVerifier extends Component {
           <ObjectInput
             label="Verify token array value"
             placeholderKey="Field name"
-            placeholderValue="One value in the array"
+            placeholderValue="One or more comma separated values in the array"
             value={verifier.strategy.verificationSettings.arrayFields}
             help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
             onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}

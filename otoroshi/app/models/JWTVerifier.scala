@@ -593,7 +593,14 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
         .require(algorithm)
         .acceptLeeway(10)
     )((a, b) => a.withClaim(b._1, b._2))
-    arrayFields.foldLeft(verification)((a, b) => a.withArrayClaim(b._1, b._2))
+    arrayFields.foldLeft(verification)((a, b) => {
+      if (b._2.contains(",")) {
+        val values = b._2.split(",").map(_.trim)
+        a.withArrayClaim(b._1,values: _*)
+      } else {
+        a.withArrayClaim(b._1, b._2)
+      }
+    })
   }
 
   override def asJson = Json.obj(
