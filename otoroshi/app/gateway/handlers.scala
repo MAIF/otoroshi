@@ -653,17 +653,28 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               case None => false
               case Some(algo) => {
                 Try {
-                  // TODO: enforce TTL
-                  JWT
+                  val jwt = JWT
                     .require(algo)
                     .withAudience(env.Headers.OtoroshiIssuer)
-                    //.withIssuer(???)
                     .withClaim("state-resp", stateValue)
                     .acceptLeeway(10)
                     .build()
                     .verify(resp)
+                  val exp =
+                    Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                  val iat =
+                    Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                  if (exp.isEmpty || iat.isEmpty) {
+                    false
+                  } else {
+                    if ((exp.get - iat.get) <= 10) { // seconds
+                      true
+                    } else {
+                      false
+                    }
+                  }
                 } match {
-                  case Success(_) => true
+                  case Success(v) => v
                   case Failure(e) => false
                 }
               }
