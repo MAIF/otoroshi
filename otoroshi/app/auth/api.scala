@@ -88,6 +88,8 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def nameField: String
   def emailField: String
   def otoroshiDataField: String
+  def apiKeyMetaField: String
+  def apiKeyTagsField: String
   def callbackUrl: String
   def oidConfig: Option[String]
   def proxy: Option[WSProxyServer]

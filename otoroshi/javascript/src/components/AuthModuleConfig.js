@@ -43,6 +43,8 @@ export class Oauth2ModuleConfig extends Component {
     },
     nameField: 'name',
     emailField: 'email',
+    apiKeyMetaField: 'apkMeta',
+    apiKeyTagsField: 'apkTags',
     otoroshiDataField: 'app_metadata | otoroshi_data',
   };
 
@@ -289,6 +291,18 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.otoroshiDataField}
           help="..."
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
+        />
+        <TextInput
+          label="Api key metadata field name"
+          value={settings.apiKeyMetaField}
+          help="..."
+          onChange={v => changeTheValue(path + '.apiKeyMetaField', v)}
+        />
+        <TextInput
+          label="Api key tags field name"
+          value={settings.apiKeyTagsField}
+          help="..."
+          onChange={v => changeTheValue(path + '.apiKeyTagsField', v)}
         />
         <Separator title="Proxy" />
         <Proxy value={settings.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />

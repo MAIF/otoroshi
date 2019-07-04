@@ -855,6 +855,22 @@ case class OIDCThirdPartyApiKeyConfig(
                           case Success(_) => {
                             val iss = (tokenBody \ "iss").as[String]
                             val subject = (tokenBody \ "sub").as[String]
+                            val possibleMoreMeta: Seq[(String, String)] = (tokenBody \ oidcAuth.apiKeyMetaField).asOpt[JsObject].getOrElse(Json.obj()).value.toSeq.collect {
+                              case (key, JsString(str)) => (key, str)
+                              case (key, JsNumber(nbr)) => (key, nbr.toString())
+                              case (key, JsBoolean(b)) => (key, b.toString())
+                              case (key, arr@JsArray(_)) => (key, Json.stringify(arr))
+                              case (key, obj@JsObject(_)) => (key, Json.stringify(obj))
+                              case (key, JsNull) => (key, "null")
+                            }
+                            val possibleMoreTags: Seq[String] = (tokenBody \ oidcAuth.apiKeyTagsField).asOpt[JsArray].getOrElse(JsArray()).value.collect {
+                              case JsString(str) => str
+                              case JsNumber(nbr) => nbr.toString()
+                              case JsBoolean(b) => b.toString()
+                              case arr@JsArray(_) => Json.stringify(arr)
+                              case obj@JsObject(_) => Json.stringify(obj)
+                              case JsNull => "null"
+                            }
                             val _apiKey = ApiKey(
                               clientId = uniqueApiKey match {
                                 case true => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}"
@@ -869,7 +885,7 @@ case class OIDCThirdPartyApiKeyConfig(
                               throttlingQuota = throttlingQuota,
                               dailyQuota = dailyQuota,
                               monthlyQuota = monthlyQuota,
-                              // TODO: tags ???
+                              tags = possibleMoreTags,
                               metadata = Map(
                                 "type" -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
                                 "iss" -> iss,
@@ -878,8 +894,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                 "descName" -> descriptor.name,
                                 "auth" -> oidcAuth.id,
                                 "authName" -> oidcAuth.name
-                                // TODO: meta from the token ???
-                              )
+                              ) ++ possibleMoreMeta
                             )
                             val tokenScopes = (tokenBody \ "scope").asOpt[String].map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
                             val tokenRoles: Seq[String] = rolesPath.flatMap(p => findAt(tokenBody, p)).collect {

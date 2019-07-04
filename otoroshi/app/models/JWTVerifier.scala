@@ -27,6 +27,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import scala.annotation.meta.field
 
 trait AsJson {
   def asJson: JsValue
@@ -804,6 +805,9 @@ sealed trait JwtVerifier extends AsJson {
                           case (key, JsString(str))   => (key, str)
                           case (key, JsBoolean(bool)) => (key, bool.toString)
                           case (key, JsNumber(nbr))   => (key, nbr.toString())
+                          case (key, arr@JsArray(_))  => (key, Json.stringify(arr))
+                          case (key, obj@JsObject(_)) => (key, Json.stringify(obj))
+                          case (key, JsNull)          => (key, "null")
                         } toMap
                         val evaluatedValues: JsObject =
                           JwtExpressionLanguage(tSettings.mappingSettings.values, context).as[JsObject]
