@@ -667,7 +667,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   if (exp.isEmpty || iat.isEmpty) {
                     false
                   } else {
-                    if ((exp.get - iat.get) <= 30) { // seconds
+                    if ((exp.get - iat.get) <= 10) { // seconds
                       true
                     } else {
                       false
@@ -993,7 +993,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           iss = env.Headers.OtoroshiIssuer,
                                           sub = env.Headers.OtoroshiIssuer,
                                           aud = descriptor.name,
-                                          exp = DateTime.now().plusSeconds(30).toDate.getTime,
+                                          exp = DateTime.now().plusSeconds(10).toDate.getTime,
                                           iat = DateTime.now().toDate.getTime,
                                           jti = jti
                                         ).withClaim("state", stateValue).serialize(descriptor.secComSettings)

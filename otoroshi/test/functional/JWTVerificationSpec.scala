@@ -216,6 +216,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       val (status3, body3) = callServerWithBadJWT2()
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
+      println(body1)
       status1 mustBe 200
       body1.contains("hello world 1") mustBe true
       status2 mustBe 400

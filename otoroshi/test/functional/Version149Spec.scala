@@ -382,7 +382,29 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
               .withAudience("Otoroshi")
               .withClaim("state-resp", stateValue)
               .withIssuedAt(DateTime.now().toDate)
-              .withExpiresAt(DateTime.now().plusSeconds(30).toDate)
+              .withExpiresAt(DateTime.now().plusSeconds(10).toDate)
+              .sign(Algorithm.HMAC512("secret"))
+            counter.incrementAndGet()
+            (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
+          }
+        )
+        .await()
+      val server2 = TargetService
+        .full(
+          None,
+          "/api",
+          "application/json", { r =>
+            val state = r.getHeader("Otoroshi-State").get()
+            val tokenBody =
+              Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
+            val stateValue = (tokenBody \ "state").as[String]
+            val respToken: String = JWT
+              .create()
+              .withJWTId(IdGenerator.uuid)
+              .withAudience("Otoroshi")
+              .withClaim("state-resp", stateValue)
+              .withIssuedAt(DateTime.now().toDate)
+              .withExpiresAt(DateTime.now().plusSeconds(20).toDate)
               .sign(Algorithm.HMAC512("secret"))
             counter.incrementAndGet()
             (200, body, List(RawHeader("Otoroshi-State-Resp", respToken)))
@@ -406,7 +428,25 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )
+      val service2 = ServiceDescriptor(
+        id = "seccom-v2-test",
+        name = "seccom-v2-test",
+        env = "prod",
+        subdomain = "seccomv2",
+        domain = "foo.bar",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${server2.port}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = true,
+        secComVersion = SecComVersion.V2,
+        publicPatterns = Seq("/.*")
+      )
       createOtoroshiService(service).futureValue
+      createOtoroshiService(service2).futureValue
 
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
@@ -418,9 +458,23 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
       resp1.status mustBe 200
       resp1.body mustBe body
+      counter.get() mustBe 1
+
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api")
+        .withHttpHeaders(
+          "Host" -> "seccomv2.foo.bar"
+        )
+        .get()
+        .futureValue
+
+      resp2.status mustBe 502
+      counter.get() mustBe 2
 
       deleteOtoroshiService(service).futureValue
+      deleteOtoroshiService(service2).futureValue
       server.stop()
+      server2.stop()
     }
   }
 

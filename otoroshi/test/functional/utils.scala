@@ -68,6 +68,23 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
   lazy implicit val ec = otoroshiComponents.env.otoroshiExecutionContext
   lazy val logger      = Logger("otoroshi-spec-helper")
 
+  private var _servers: Set[TargetService] = Set.empty
+  def server(): (TargetService, Int, AtomicInteger) = {
+    val counter           = new AtomicInteger(0)
+    val body = """{"message":"hello world"}"""
+    val server = TargetService(None, "/api", "application/json", { r =>
+      counter.incrementAndGet()
+      body
+    }).await()
+    _servers = _servers + server
+    (server, server.port, counter)
+  }
+
+  def stopServers(): Unit = {
+    _servers.foreach(_.stop())
+  }
+
+
   def await(duration: FiniteDuration): Unit = {
     val p = Promise[Unit]
     otoroshiComponents.env.otoroshiScheduler.scheduleOnce(duration) {
