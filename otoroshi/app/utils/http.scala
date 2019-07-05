@@ -213,7 +213,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
   private[utils] val clientConnectionSettings: ClientConnectionSettings = ClientConnectionSettings(system)
     .withConnectingTimeout(FiniteDuration(config.connectionTimeout._1, config.connectionTimeout._2))
     .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
-    .withUserAgentHeader(config.userAgent.map(`User-Agent`(_)))
+    .withUserAgentHeader(Some(`User-Agent`("Otoroshi-akka"))) // config.userAgent.map(_ => `User-Agent`(_)))
 
   private[utils] val connectionPoolSettings: ConnectionPoolSettings = ConnectionPoolSettings(system)
     .withConnectionSettings(clientConnectionSettings)
@@ -524,7 +524,7 @@ case class AkkaWsClientRequest(
   }
 
   def buildRequest(): HttpRequest = {
-    val internalUri = Uri(rawUrl)
+    // val internalUri = Uri(rawUrl)
     val ct          = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
     val cl          = realContentLength
     val ua          = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
@@ -546,13 +546,14 @@ case class AkkaWsClientRequest(
       .filter { h =>
         h.isNot(`Content-Type`.lowercaseName) &&
         h.isNot(`Content-Length`.lowercaseName) &&
-        h.isNot(`User-Agent`.lowercaseName)
+        h.isNot(`User-Agent`.lowercaseName) &&
+        !(h.is(Cookie.lowercaseName) && h.value().trim.isEmpty)
       }
       .toList ++ ua
 
     HttpRequest(
       method = _method,
-      uri = internalUri,
+      uri = _uri,
       headers = akkaHeaders,
       entity = akkaHttpEntity,
       protocol = target.map(_.protocol).getOrElse(protocol)
@@ -597,7 +598,7 @@ case class AkkaWsClientRequest(
   override lazy val uri: URI                    = new URI(_uri.toRelative.toString())
   override lazy val contentType: Option[String] = realContentType.map(_.value)
   override lazy val cookies: Seq[WSCookie] = {
-    headers.get("Cookies").map { headers =>
+    headers.get("Cookie").map { headers =>
       headers.flatMap { header =>
         header.split(";").map { value =>
           val parts = value.split("=")

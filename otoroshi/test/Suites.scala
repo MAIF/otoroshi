@@ -91,7 +91,8 @@ object OtoroshiTests {
         new ApiKeysSpec(name, Configurations.LevelDBConfiguration),
         new SidecarSpec(name, Configurations.LevelDBConfiguration),
         new JWTVerificationSpec(name, Configurations.LevelDBConfiguration),
-        new SnowMonkeySpec(name, Configurations.LevelDBConfiguration)
+        new SnowMonkeySpec(name, Configurations.LevelDBConfiguration),
+        new Version149Spec(name, Configurations.LevelDBConfiguration)
         // new WebsocketSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
@@ -107,7 +108,8 @@ object OtoroshiTests {
         new QuotasSpec(name, config),
         new SidecarSpec(name, config),
         new JWTVerificationSpec(name, config),
-        new SnowMonkeySpec(name, config)
+        new SnowMonkeySpec(name, config),
+        new Version149Spec(name, config)
         // new WebsocketSpec(name, config)
       )
     }
@@ -132,6 +134,6 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 // class DevOtoroshiTests
 //      extends Suites(
-//        new BasicSpec("DEV", Configurations.InMemoryConfiguration),
+//        new Version149Spec("DEV", Configurations.InMemoryConfiguration),
 //      )
 

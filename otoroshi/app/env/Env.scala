@@ -227,6 +227,7 @@ class Env(val configuration: Configuration,
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
+      userAgent = Some("Otoroshi-akka"),
       compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
       idleTimeout =
         configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
@@ -273,6 +274,7 @@ class Env(val configuration: Configuration,
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
+      userAgent = Some("Otoroshi-akka"),
       compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
       idleTimeout =
         configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),

@@ -667,7 +667,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   if (exp.isEmpty || iat.isEmpty) {
                     false
                   } else {
-                    if ((exp.get - iat.get) <= 10) { // seconds
+                    if ((exp.get - iat.get) <= 30) { // seconds
                       true
                     } else {
                       false

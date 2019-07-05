@@ -8,7 +8,8 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.interfaces.Verification
+import com.auth0.jwt.exceptions.InvalidClaimException
+import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import env.Env
 import gateway.Errors
@@ -587,6 +588,24 @@ object VerificationSettings extends FromJson[VerificationSettings] {
 }
 
 case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFields: Map[String, String] = Map.empty) extends AsJson {
+  def additionalVerification(jwt: DecodedJWT): DecodedJWT = {
+    val token: JsObject = Try(Json.parse(ApacheBase64.decodeBase64(jwt.getPayload)).as[JsObject]).getOrElse(Json.obj())
+    arrayFields.foldLeft(jwt)((a, b) => {
+      val values: Set[String] = (token \ b._1).as[JsArray].value.collect {
+        case JsNumber(nbr) => nbr.toString()
+        case JsBoolean(b) => b.toString
+        case JsString(str) => str
+      } toSet
+      val expectedValues: Set[String] = if (b._2.contains(",")) {
+        b._2.split(",").map(_.trim).toSet
+      } else {
+        Set(b._2)
+      }
+      if (values.intersect(expectedValues) != expectedValues)
+        throw new InvalidClaimException(String.format("The Claim '%s' value doesn't match the required one.", b._1))
+      jwt
+    })
+  }
   def asVerification(algorithm: Algorithm): Verification = {
     val verification = fields.foldLeft(
       JWT
@@ -596,7 +615,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {
         val values = b._2.split(",").map(_.trim)
-        a.withArrayClaim(b._1,values: _*)
+        a.withArrayClaim(b._1, values: _*)
       } else {
         a.withArrayClaim(b._1, b._2)
       }
