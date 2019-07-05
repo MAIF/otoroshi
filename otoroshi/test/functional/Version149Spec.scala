@@ -24,7 +24,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     with IntegrationPatience {
 
   lazy val serviceHost = "quotas.foo.bar"
-  lazy val ws          = otoroshiComponents.wsClient
+  implicit lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
   import scala.concurrent.duration._
@@ -514,7 +514,48 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
 
     "allow weighting (#309, #77)" in {
-      // TODO
+      val (server1, port1, counter1, call1) = testServer("weighting.oto.tools", port)
+      val (server2, port2, counter2, call2) = testServer("weighting.oto.tools", port)
+      val (server3, port3, counter3, call3) = testServer("weighting.oto.tools", port)
+      val serviceweight = ServiceDescriptor(
+        id = "weighting-test",
+        name = "weighting-test",
+        env = "prod",
+        subdomain = "weighting",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http",
+            weight = 3
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http",
+            weight = 2
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http",
+            weight = 1
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false
+      )
+      createOtoroshiService(serviceweight).futureValue
+      call1(Map.empty)
+      call1(Map.empty)
+      call1(Map.empty)
+      call1(Map.empty)
+      call1(Map.empty)
+      call1(Map.empty)
+      counter1.get() mustBe 3
+      counter2.get() mustBe 2
+      counter3.get() mustBe 1
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "allow better timeout management (#301)" in {
@@ -522,7 +563,43 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
 
     "support random load balancing (#79)" in {
-      // TODO
+      val (_, port1, counter1, call1) = testServer("random.oto.tools", port)
+      val (_, port2, counter2, _)     = testServer("random.oto.tools", port)
+      val (_, port3, counter3, _)     = testServer("random.oto.tools", port)
+      val serviceweight = ServiceDescriptor(
+        id = "random-test",
+        name = "random-test",
+        env = "prod",
+        subdomain = "random",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = Random
+      )
+      createOtoroshiService(serviceweight).futureValue
+      (0 to 30).foreach { _ =>
+        call1(Map.empty)
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      (counter1.get() == 10 && counter2.get() == 10 &&counter3.get() == 10) mustBe false
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "support sticky session load balancing (#79)" in {

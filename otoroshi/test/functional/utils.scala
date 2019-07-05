@@ -20,7 +20,7 @@ import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneSe
 import org.slf4j.LoggerFactory
 import play.api.ApplicationLoader.Context
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.libs.ws.{WSAuthScheme, WSClient}
+import play.api.libs.ws.{WSAuthScheme, WSClient, WSResponse}
 import play.api.{BuiltInComponents, Configuration, Logger}
 
 import scala.concurrent.duration._
@@ -69,7 +69,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
   lazy val logger      = Logger("otoroshi-spec-helper")
 
   private var _servers: Set[TargetService] = Set.empty
-  def server(): (TargetService, Int, AtomicInteger) = {
+
+  def testServer(host: String, port: Int)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter           = new AtomicInteger(0)
     val body = """{"message":"hello world"}"""
     val server = TargetService(None, "/api", "application/json", { r =>
@@ -77,13 +78,18 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       body
     }).await()
     _servers = _servers + server
-    (server, server.port, counter)
+    (server, server.port, counter, (headers: Map[String, String]) => {
+      val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
+      ws.url(s"http://127.0.0.1:${port}/api")
+        .withHttpHeaders(finalHeaders: _*)
+        .get()
+        .futureValue
+    })
   }
 
   def stopServers(): Unit = {
     _servers.foreach(_.stop())
   }
-
 
   def await(duration: FiniteDuration): Unit = {
     val p = Promise[Unit]
