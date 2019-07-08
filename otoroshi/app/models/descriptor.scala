@@ -10,13 +10,12 @@ import akka.stream.scaladsl.Flow
 import auth._
 import com.auth0.jwt.JWT
 import com.google.common.hash.Hashing
+import com.risksense.ipaddr.{IpNetwork, IpRange}
 import env.Env
 import gateway.Errors
-import models.Random.random
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
-import play.api.libs.typedmap.TypedKey
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.TooManyRequests
@@ -222,6 +221,7 @@ object LoadBalancing {
       case "Sticky"           => JsSuccess(Sticky)
       case "IpAddressHash"    => JsSuccess(IpAddressHash)
       case "BestResponseTime" => JsSuccess(BestResponseTime)
+      case "WeightedBestResponseTime" => JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
       case _                  => JsSuccess(RoundRobin)
     }
   }
@@ -279,8 +279,8 @@ case class AtomicAverage(count: AtomicLong, sum: AtomicLong) {
 
 object BestResponseTime extends LoadBalancing {
 
-  private val random = new scala.util.Random
-  private val responseTimes = new TrieMap[String, AtomicAverage]()
+  private[models] val random = new scala.util.Random
+  private[models] val responseTimes = new TrieMap[String, AtomicAverage]()
 
   def incrementAverage(desc: ServiceDescriptor, target: Target, responseTime: Long): Unit = {
     val key = s"${desc.id}-${target.asKey}"
@@ -291,12 +291,47 @@ object BestResponseTime extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue = Json.obj("type" -> "BestResponseTime")
   override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
-    val possibleTargets = responseTimes.toSeq.filter(t => t._1.startsWith(s"${desc.id}-"))
-    val (key, average) = possibleTargets.minBy(_._2.average)
-    val maybeTarget = targets.find(_.asKey == key)
-    maybeTarget.getOrElse {
-      val index = random.nextInt(targets.length)
-      targets.apply(index)
+    val keys = targets.map(t => s"${desc.id}-${t.asKey}")
+    val existing = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
+    val nonExisting: Seq[String] = keys.filterNot(k => responseTimes.contains(k))
+    if (existing.size != targets.size) {
+      nonExisting.headOption.flatMap(h => targets.find(t => s"${desc.id}-${t.asKey}" == h)).getOrElse {
+        val index = random.nextInt(targets.length)
+        targets.apply(index)
+      }
+    } else {
+      val possibleTargets: Seq[(String, Long)] = existing.map(t => (t._1, t._2.average))
+      val (key, _) = possibleTargets.minBy(_._2)
+      targets.find(t => s"${desc.id}-${t.asKey}" == key).getOrElse {
+        val index = random.nextInt(targets.length)
+        targets.apply(index)
+      }
+    }
+  }
+}
+
+case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue = Json.obj("type" -> "WeightedBestResponseTime", "ratio" -> ratio)
+  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
+    val keys = targets.map(t => s"${desc.id}-${t.asKey}")
+    val existing = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
+    val nonExisting: Seq[String] = keys.filterNot(k => BestResponseTime.responseTimes.contains(k))
+    if (existing.size != targets.size) {
+      nonExisting.headOption.flatMap(h => targets.find(t => s"${desc.id}-${t.asKey}" == h)).getOrElse {
+        val index: Int = BestResponseTime.random.nextInt(targets.length)
+        targets.apply(index)
+      }
+    } else {
+      val possibleTargets: Seq[(String, Long)] = existing.map(t => (t._1, t._2.average))
+      val (key, _) = possibleTargets.minBy(_._2)
+      val cleanRatio: Double = if (ratio < 0.0) 0.0 else if (ratio > 0.99) 0.99 else ratio
+      val times: Int = Math.round(targets.size / (1 - cleanRatio)).toInt - targets.size
+      val bestTarget: Option[Target] = targets.find(t => s"${desc.id}-${t.asKey}" == key)
+      val fill: Seq[Target] = bestTarget.map(t => Seq.fill(times)(t)).getOrElse(Seq.empty[Target])
+      val newTargets: Seq[Target] = targets ++ fill
+      val index: Int = BestResponseTime.random.nextInt(newTargets.length)
+      newTargets.apply(index)
     }
   }
 }
@@ -399,10 +434,53 @@ object Target {
 
 case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Seq[String] = Seq.empty[String]) {
   def toJson = IpFiltering.format.writes(this)
+  def matchesWhitelist(ipAddress: String): Boolean = {
+    if (whitelist.nonEmpty) {
+      whitelist.exists { ip =>
+        if (ip.contains("/")) {
+          IpFiltering.network(ip).contains(ipAddress)
+        } else {
+          utils.RegexPool(ip).matches(ipAddress)
+        }
+      }
+    } else {
+      false
+    }
+  }
+  def notMatchesWhitelist(ipAddress: String): Boolean = {
+    if (whitelist.nonEmpty) {
+      !whitelist.exists { ip =>
+        if (ip.contains("/")) {
+          IpFiltering.network(ip).contains(ipAddress)
+        } else {
+          utils.RegexPool(ip).matches(ipAddress)
+        }
+      }
+    } else {
+      false
+    }
+  }
+  def matchesBlacklist(ipAddress: String): Boolean = {
+    if (blacklist.nonEmpty) {
+      blacklist.exists { ip =>
+        if (ip.contains("/")) {
+          IpFiltering.network(ip).contains(ipAddress)
+        } else {
+          utils.RegexPool(ip).matches(ipAddress)
+        }
+      }
+    } else {
+      false
+    }
+  }
 }
 
 object IpFiltering {
   implicit val format = Json.format[IpFiltering]
+  private val networkCache = new TrieMap[String, IpNetwork]()
+  def network(cidr: String): IpNetwork = {
+    networkCache.getOrElseUpdate(cidr, IpNetwork(cidr))
+  }
 }
 
 case class HealthCheck(enabled: Boolean, url: String) {

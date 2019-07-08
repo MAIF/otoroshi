@@ -254,7 +254,7 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
   }
 }
 
-case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl: String, mat: Materializer)
+case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl: String, mat: Materializer, requestTimeout: FiniteDuration)
     extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
@@ -278,7 +278,7 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl
   def statusText: String                               = httpResponse.status.defaultMessage()
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
-  def bodyAsSource: Source[ByteString, _]              = httpResponse.entity.dataBytes
+  def bodyAsSource: Source[ByteString, _]              = httpResponse.entity.dataBytes.takeWithin(requestTimeout)
   override def header(name: String): Option[String]    = headerValues(name).headOption
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
   override def contentType: String                     = _contentType
@@ -477,7 +477,7 @@ case class AkkaWsClientRequest(
     client
       .executeRequest(req, customizer)
       .map { resp =>
-        AkkWsClientStreamedResponse(resp, rawUrl, client.mat)
+        AkkWsClientStreamedResponse(resp, rawUrl, client.mat, requestTimeout.map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(365, TimeUnit.DAYS))) // yeah that's infinity ...
       }(client.ec)
   }
 

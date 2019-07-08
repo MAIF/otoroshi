@@ -34,6 +34,7 @@ libraryDependencies ++= Seq(
   "io.github.classgraph"     % "classgraph"                % "4.6.13",
   "com.auth0"                % "jwks-rsa"                  % "0.7.0", // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"             % "nimbus-jose-jwt"           % "6.0",
+  "com.risksense"            %% "ipaddr"                   % "1.0.2",
   // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "javax.xml.bind"         % "jaxb-api"              % "2.3.0",
   "com.sun.xml.bind"       % "jaxb-core"             % "2.3.0",

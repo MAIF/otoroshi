@@ -4,6 +4,7 @@ import java.net.ServerSocket
 import java.util.Optional
 import java.util.concurrent.atomic.AtomicInteger
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
@@ -24,7 +25,7 @@ import play.api.libs.ws.{WSAuthScheme, WSClient, WSResponse}
 import play.api.{BuiltInComponents, Configuration, Logger}
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Random, Try}
 
@@ -70,12 +71,21 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
   private var _servers: Set[TargetService] = Set.empty
 
-  def testServer(host: String, port: Int)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
+  def testServer(host: String, port: Int, delay: FiniteDuration = 0.millis, streamDelay: FiniteDuration = 0.millis)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter           = new AtomicInteger(0)
     val body = """{"message":"hello world"}"""
-    val server = TargetService(None, "/api", "application/json", { r =>
+    val server = TargetService.streamed(None, "/api", "application/json", { r =>
       counter.incrementAndGet()
-      body
+      if (delay.toMillis > 0L) {
+        await(delay)
+      }
+      if (streamDelay.toMillis > 0L) {
+        val head = body.head.toString
+        val tail = body.tail
+        Source.single(ByteString(head)).concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
+      } else {
+        Source(List(ByteString(body)))
+      }
     }).await()
     _servers = _servers + server
     (server, server.port, counter, (headers: Map[String, String]) => {
@@ -89,6 +99,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
   def stopServers(): Unit = {
     _servers.foreach(_.stop())
+    _servers = Set.empty
   }
 
   def await(duration: FiniteDuration): Unit = {
@@ -436,7 +447,7 @@ class TargetService(val port: Int,
                     host: Option[String],
                     path: String,
                     contentType: String,
-                    result: HttpRequest => (Int, String, List[HttpHeader])) {
+                    result: HttpRequest => (Int, String, Option[Source[ByteString, _]], List[HttpHeader])) {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
@@ -448,35 +459,44 @@ class TargetService(val port: Int,
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
       case (HttpMethods.GET, p) if host.isEmpty => {
-        val (code, body, headers) = result(request)
+        val (code, body, source, headers) = result(request)
+        val entity = source match {
+          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
+        }
         FastFuture.successful(
           HttpResponse(
             code,
             headers = headers,
-            entity =
-              HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+            entity = entity
           )
         )
       }
       case (HttpMethods.GET, p) if TargetService.extractHost(request) == host.get => {
-        val (code, body, headers) = result(request)
+        val (code, body, source, headers) = result(request)
+        val entity = source match {
+          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
+        }
         FastFuture.successful(
           HttpResponse(
             code,
             headers = headers,
-            entity =
-              HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+            entity = entity
           )
         )
       }
       case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get => {
-        val (code, body, headers) = result(request)
+        val (code, body, source, headers) = result(request)
+        val entity = source match {
+          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
+        }
         FastFuture.successful(
           HttpResponse(
             code,
             headers = headers,
-            entity =
-              HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+            entity = entity
           )
         )
       }
@@ -494,9 +514,15 @@ class TargetService(val port: Int,
   }
 
   def stop(): Unit = {
-    Await.result(bound, 60.seconds).unbind()
-    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
-    Await.result(system.terminate(), 60.seconds)
+    Await.result(stopAsync(), 10.seconds)
+  }
+
+  def stopAsync(): Future[Unit] = {
+    for {
+      _ <- bound.map(_.unbind())
+      _ <- http.shutdownAllConnectionPools()
+      _ <- system.terminate()
+    } yield ()
   }
 }
 
@@ -658,14 +684,20 @@ object TargetService {
   import Implicits._
 
   def apply(host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
-    new TargetService(TargetService.freePort, host, path, contentType, r => (200, result(r), List.empty[HttpHeader]))
+    new TargetService(TargetService.freePort, host, path, contentType, r => (200, result(r), None, List.empty[HttpHeader]))
+  }
+
+  def streamed(host: Option[String], path: String, contentType: String, result: HttpRequest => Source[ByteString, NotUsed]): TargetService = {
+    new TargetService(TargetService.freePort, host, path, contentType, r => (200, "", Some(result(r)), List.empty[HttpHeader]))
   }
 
   def full(host: Option[String],
            path: String,
            contentType: String,
            result: HttpRequest => (Int, String, List[HttpHeader])): TargetService = {
-    new TargetService(TargetService.freePort, host, path, contentType, result)
+    new TargetService(TargetService.freePort, host, path, contentType, r => result(r) match {
+      case (p, b, h) => (p, b, None, h)
+    })
   }
 
   def withPort(port: Int,
@@ -673,7 +705,7 @@ object TargetService {
                path: String,
                contentType: String,
                result: HttpRequest => String): TargetService = {
-    new TargetService(port, host, path, contentType, r => (200, result(r), List.empty[HttpHeader]))
+    new TargetService(port, host, path, contentType, r => (200, result(r), None, List.empty[HttpHeader]))
   }
 
   def freePort: Int = {

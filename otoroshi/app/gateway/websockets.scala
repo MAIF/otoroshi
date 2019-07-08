@@ -1279,8 +1279,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Some(descriptor),
                                                              Some("errors.too.much.requests"))
                                         .asLeft[WSFlow]
-                                    } else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
-                                                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                    } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+                                    /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
+                                                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                       Errors
                                         .craftResponseResult("Your IP address is not allowed",
                                                              Results.Forbidden,
@@ -1288,8 +1289,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Some(descriptor),
                                                              Some("errors.ip.address.not.allowed"))
                                         .asLeft[WSFlow] // global whitelist
-                                    } else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
-                                                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                    } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+                                      /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
+                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                       Errors
                                         .craftResponseResult("Your IP address is not allowed",
                                                              Results.Forbidden,
@@ -1297,8 +1299,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Some(descriptor),
                                                              Some("errors.ip.address.not.allowed"))
                                         .asLeft[WSFlow] // global blacklist
-                                    } else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
-                                                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                    } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+                                      /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
+                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                       Errors
                                         .craftResponseResult("Your IP address is not allowed",
                                                              Results.Forbidden,
@@ -1306,8 +1309,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Some(descriptor),
                                                              Some("errors.ip.address.not.allowed"))
                                         .asLeft[WSFlow] // service whitelist
-                                    } else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
-                                                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                    } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+                                      /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
+                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                       Errors
                                         .craftResponseResult("Your IP address is not allowed",
                                                              Results.Forbidden,
@@ -1315,8 +1319,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Some(descriptor),
                                                              Some("errors.ip.address.not.allowed"))
                                         .asLeft[WSFlow] // service blacklist
-                                    } else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
-                                                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                    } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
+                                      /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
+                                                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                       val gigas: Long = 128L * 1024L * 1024L * 1024L
                                       val middleFingers = ByteString.fromString(
                                         "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"

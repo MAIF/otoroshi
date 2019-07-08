@@ -1056,10 +1056,23 @@ export class ServicePage extends Component {
                   }, {
                     value: 'BestResponseTime',
                     label: 'BestResponseTime'
+                  }, {
+                    value: 'WeightedBestResponseTime',
+                    label: 'WeightedBestResponseTime'
                   }]}
                   help="The load balancing algorithm used"
                   onChange={e => this.changeTheValue('targetsLoadBalancing', { type: e })}
                 />
+                {this.state.service.targetsLoadBalancing.type === 'WeightedBestResponseTime' && (
+                  <NumberInput
+                    label="Weight ratio"
+                    value={this.state.service.targetsLoadBalancing.ratio}
+                    help="The percentage of targets in with the best response in the whole target pool to choose. If 0,5, then more than 50% of the calls will happen on the target with the best response time."
+                    from={0.0}
+                    to={0.99}
+                    onChange={v => this.changeTheValue('targetsLoadBalancing.ratio', v)}
+                  />
+                )}
                 <ArrayInput
                   label="Targets"
                   placeholder="Target URL"

@@ -350,7 +350,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   if (!dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
-    await ensureStep('PUSH_TO_BINTRAY', releaseFile, () => pushToBintray(location, to));
+    // await ensureStep('PUSH_TO_BINTRAY', releaseFile, () => pushToBintray(location, to));
     await ensureStep('PUBLISH_LIBRARIES', releaseFile, () => publishSbt(location, to));
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
     // await ensureStep('PUBLISH_DOCKER_OTOROSHI_CLI', releaseFile, () => publishDockerCli(location, to));

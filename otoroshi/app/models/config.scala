@@ -1,5 +1,6 @@
 package models
 
+import com.risksense.ipaddr.IpNetwork
 import env.Env
 import events._
 import play.api.Logger
@@ -175,6 +176,19 @@ case class GlobalConfig(
         Some(CleverCloudClient(env, this, cleverSetting, settings.orgaId))
       }
     }
+  def matchesEndlessIpAddresses(ipAddress: String): Boolean = {
+    if (endlessIpAddresses.nonEmpty) {
+      endlessIpAddresses.exists { ip =>
+        if (ip.contains("/")) {
+          IpFiltering.network(ip).contains(ipAddress)
+        } else {
+          utils.RegexPool(ip).matches(ipAddress)
+        }
+      }
+    } else {
+      false
+    }
+  }
 }
 
 object GlobalConfig {

@@ -1155,7 +1155,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                              resp.upstreamLatency,
                                                                              globalConfig)
 
-                                        BestResponseTime.incrementAverage(descriptor, target, duration)
+                                        descriptor.targetsLoadBalancing match {
+                                          case BestResponseTime => BestResponseTime.incrementAverage(descriptor, target, duration)
+                                          case WeightedBestResponseTime(_) => BestResponseTime.incrementAverage(descriptor, target, duration)
+                                          case _ =>
+                                        }
 
                                         quotas.andThen {
                                           case Success(q) => {
@@ -2309,8 +2313,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           duration = System.currentTimeMillis - start,
                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                         )
-                                      } else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
-                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                      } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+                                        /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
+                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                         Errors.craftResponseResult(
                                           "Your IP address is not allowed",
                                           Forbidden,
@@ -2320,8 +2325,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           duration = System.currentTimeMillis - start,
                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                         ) // global whitelist
-                                      } else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
-                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                      } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+                                        /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
+                                                     .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                         Errors.craftResponseResult(
                                           "Your IP address is not allowed",
                                           Forbidden,
@@ -2331,8 +2337,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           duration = System.currentTimeMillis - start,
                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                         ) // global blacklist
-                                      } else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
-                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                      } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+                                      /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
+                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                         Errors.craftResponseResult(
                                           "Your IP address is not allowed",
                                           Forbidden,
@@ -2342,8 +2349,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           duration = System.currentTimeMillis - start,
                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                         ) // service whitelist
-                                      } else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
-                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {
+                                      } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
+                                      /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
+                                                   .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
                                         Errors.craftResponseResult(
                                           "Your IP address is not allowed",
                                           Forbidden,
@@ -2353,8 +2361,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           duration = System.currentTimeMillis - start,
                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                         ) // service blacklist
-                                      } else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
-                                                   .exists(ip => RegexPool(ip).matches(remoteAddress))) {
+                                      } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
+                                      /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
+                                                   .exists(ip => RegexPool(ip).matches(remoteAddress))) {*/
                                         val gigas: Long = 128L * 1024L * 1024L * 1024L
                                         val middleFingers = ByteString.fromString(
                                           "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"

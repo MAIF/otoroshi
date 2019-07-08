@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.google.common.hash.Hashing
 import com.typesafe.config.ConfigFactory
 import models._
 import org.joda.time.DateTime
@@ -15,6 +16,7 @@ import play.api.Configuration
 import play.api.libs.json.Json
 import security.IdGenerator
 
+import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
 class Version149Spec(name: String, configurationSpec: => Configuration)
@@ -35,6 +37,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
                       |{
                       |  http.port=$port
                       |  play.server.http.port=$port
+                      |  app.instance.region=eu-west-1
+                      |  app.instance.zone=dc1
                       |}
        """.stripMargin)
       .resolve()
@@ -480,35 +484,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
   s"[$name] Otoroshi new targets" should {
 
-    val counter = new AtomicInteger(0)
-    val body    = """{"message":"hello world"}"""
-    val server = TargetService(None, "/api", "application/json", { r =>
-      if (r.getHeader("Host").get().value().startsWith("www.google.fr:")) {
-        counter.incrementAndGet()
-      }
-      counter.incrementAndGet()
-      body
-    }).await()
-
-    val service = ServiceDescriptor(
-      id = "target-test",
-      name = "target-test",
-      env = "prod",
-      subdomain = "target-test",
-      domain = "oto.tools",
-      useAkkaHttpClient = true,
-      targets = Seq(
-        Target(
-          host = s"www.google.fr:${server.port}",
-          scheme = "http",
-          ipAddress = Some("127.0.0.1")
-        )
-      ),
-      publicPatterns = Seq("/.*"),
-      forceHttps = false,
-      enforceSecureCommunication = false
-    )
-
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
     }
@@ -558,8 +533,201 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       stopServers()
     }
 
-    "allow better timeout management (#301)" in {
-      // TODO
+    "allow better timeout management : callTimeout (#301)" in {
+      val (_, port1, counter1, call1) = testServer("calltimeout.oto.tools", port, 2000.millis)
+      val (_, port2, counter2, _) = testServer("calltimeout.oto.tools", port, 200.millis)
+      val serviceweight = ServiceDescriptor(
+        id = "callTimeout-test",
+        name = "callTimeout-test",
+        env = "prod",
+        subdomain = "calltimeout",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        useAkkaHttpClient = false,
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callTimeout = 1000
+        )
+      )
+      createOtoroshiService(serviceweight).futureValue
+      val resp1 = call1(Map.empty)
+      val resp2 = call1(Map.empty)
+      // counter1.get() mustBe 1
+      // counter2.get() mustBe 1
+      resp1.status mustBe 200
+      resp2.status mustBe 502
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
+    }
+
+    "allow better timeout management : callTimeout with akka-http (#301)" in {
+      val (_, port1, counter1, call1) = testServer("calltimeout.oto.tools", port, 2000.millis)
+      val (_, port2, counter2, _) = testServer("calltimeout.oto.tools", port, 200.millis)
+      val serviceweight = ServiceDescriptor(
+        id = "callTimeout-test",
+        name = "callTimeout-test",
+        env = "prod",
+        subdomain = "calltimeout",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        useAkkaHttpClient = true,
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callTimeout = 1000
+        )
+      )
+      createOtoroshiService(serviceweight).futureValue
+      val resp1 = call1(Map.empty)
+      val resp2 = call1(Map.empty)
+      // counter1.get() mustBe 1
+      // counter2.get() mustBe 1
+      resp1.status mustBe 200
+      resp2.status mustBe 502
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
+    }
+
+    "allow better timeout management : idleTimeout (#301)" in {
+      val (_, port1, counter1, call1) = testServer("idletimeout.oto.tools", port, 2000.millis)
+      val (_, port2, counter2, _) = testServer("idletimeout.oto.tools", port, 200.millis)
+      val serviceweight = ServiceDescriptor(
+        id = "idleTimeout-test",
+        name = "idleTimeout-test",
+        env = "prod",
+        subdomain = "idletimeout",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        useAkkaHttpClient = true,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          idleTimeout = 1000
+        )
+      )
+      createOtoroshiService(serviceweight).futureValue
+      val resp1 = call1(Map.empty)
+      val resp2 = call1(Map.empty)
+      // counter1.get() mustBe 1
+      // counter2.get() mustBe 1
+      resp1.status mustBe 200
+      resp2.status mustBe 502
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
+    }
+
+    "allow better timeout management : callAndStreamTimeout (#301)" in {
+      val (_, port1, counter1, call1) = testServer("callandstreamtimeout.oto.tools", port, 0.millis, 2000.millis)
+      val (_, port2, counter2, _) = testServer("callandstreamtimeout.oto.tools", port, 0.millis)
+      val serviceweight = ServiceDescriptor(
+        id = "callAndStreamTimeout-test",
+        name = "callAndStreamTimeout-test",
+        env = "prod",
+        subdomain = "callandstreamtimeout",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        useAkkaHttpClient = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callAndStreamTimeout = 1000
+        )
+      )
+      createOtoroshiService(serviceweight).futureValue
+      val resp1 = call1(Map.empty)
+      val resp2 = call1(Map.empty)
+      // counter1.get() mustBe 1
+      // counter2.get() mustBe 1
+      resp1.status mustBe 200
+      resp2.status mustBe 200
+      resp2.body == "{" mustBe true
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
+    }
+
+    "allow better timeout management : callAndStreamTimeout with akka-http (#301)" in {
+      val (_, port1, counter1, call1) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis, 2000.millis)
+      val (_, port2, counter2, _) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
+      val serviceweight = ServiceDescriptor(
+        id = "callandstreamtimeout2-test",
+        name = "callandstreamtimeout2-test",
+        env = "prod",
+        subdomain = "callandstreamtimeout2",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        useAkkaHttpClient = true,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callAndStreamTimeout = 1000
+        )
+      )
+      createOtoroshiService(serviceweight).futureValue
+      val resp1 = call1(Map.empty)
+      val resp2 = call1(Map.empty)
+      // counter1.get() mustBe 1
+      // counter2.get() mustBe 1
+      resp1.status mustBe 200
+      resp2.status mustBe 200
+      resp2.body == "{" mustBe true
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "support random load balancing (#79)" in {
@@ -592,7 +760,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         targetsLoadBalancing = Random
       )
       createOtoroshiService(serviceweight).futureValue
-      (0 to 30).foreach { _ =>
+      (0 to 29).foreach { _ =>
         call1(Map.empty)
         await(100.millis)
       }
@@ -603,30 +771,451 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
 
     "support sticky session load balancing (#79)" in {
-      // TODO
+      val (_, port1, counter1, call1) = testServer("sticky.oto.tools", port)
+      val (_, port2, counter2, _)     = testServer("sticky.oto.tools", port)
+      val (_, port3, counter3, _)     = testServer("sticky.oto.tools", port)
+      val serviceweight = ServiceDescriptor(
+        id = "sticky-test",
+        name = "sticky-test",
+        env = "prod",
+        subdomain = "sticky",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = Sticky
+      )
+      createOtoroshiService(serviceweight).futureValue
+
+      val resp1 = call1(Map.empty)
+      val resp2 = call1(Map.empty)
+      val resp3 = call1(Map.empty)
+
+      val sessionId1Opt = resp1.cookie("otoroshi-tracking").map(_.value)
+      val sessionId2Opt = resp2.cookie("otoroshi-tracking").map(_.value)
+      val sessionId3Opt = resp3.cookie("otoroshi-tracking").map(_.value)
+      println(sessionId1Opt, sessionId2Opt, sessionId3Opt)
+
+      sessionId1Opt.isDefined mustBe true
+      sessionId2Opt.isDefined mustBe true
+      sessionId3Opt.isDefined mustBe true
+      (sessionId1Opt == sessionId2Opt && sessionId1Opt == sessionId3Opt) mustBe false
+      (sessionId2Opt == sessionId1Opt && sessionId2Opt == sessionId3Opt) mustBe false
+      (sessionId3Opt == sessionId1Opt && sessionId3Opt == sessionId2Opt) mustBe false
+
+      (counter1.get() + counter2.get() + counter3.get()) mustBe 3
+
+      counter1.set(0)
+      counter2.set(0)
+      counter3.set(0)
+
+      def findNiceTrackingId(expected: Int): String = {
+        var counter = 0
+        var index = -1
+        var trackingId = IdGenerator.uuid
+        while (index != expected) {
+          if (counter > 100) {
+            throw new RuntimeException("Too much iterations ...")
+          }
+          trackingId = IdGenerator.uuid
+          val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+          index = Hashing.consistentHash(hash, 3)
+          counter = counter + 1
+        }
+        trackingId
+      }
+
+      val sessionId1 = findNiceTrackingId(0)
+      val sessionId2 = findNiceTrackingId(1)
+      val sessionId3 = findNiceTrackingId(2)
+
+      (0 to 9).foreach { _ =>
+        call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId1"))
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      (0 to 9).foreach { _ =>
+        call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId2"))
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 10
+      counter3.get() mustBe 0
+      (0 to 9).foreach { _ =>
+        call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId3"))
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 10
+      counter3.get() mustBe 10
+
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "support ip address hash load balancing (#309)" in {
-      // TODO
+      val (_, port1, counter1, call1) = testServer("iphash.oto.tools", port)
+      val (_, port2, counter2, _)     = testServer("iphash.oto.tools", port)
+      val (_, port3, counter3, _)     = testServer("iphash.oto.tools", port)
+      val serviceweight = ServiceDescriptor(
+        id = "iphash-test",
+        name = "iphash-test",
+        env = "prod",
+        subdomain = "iphash",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = IpAddressHash
+      )
+      createOtoroshiService(serviceweight).futureValue
+      (0 to 9).foreach { _ =>
+        call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      (0 to 9).foreach { _ =>
+        call1(Map("X-Forwarded-For" -> "2.2.2.2"))
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 10
+      counter3.get() mustBe 0
+      (0 to 9).foreach { _ =>
+        call1(Map("X-Forwarded-For" -> "3.3.3.3"))
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 10
+      counter3.get() mustBe 10
+      // (counter1.get() == 10 && counter2.get() == 10 &&counter3.get() == 10) mustBe false
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "support best response time load balancing (#309)" in {
-      // TODO
+      val (_, port1, counter1, call1) = testServer("bestresponsetime.oto.tools", port, 200.millis)
+      val (_, port2, counter2, _)     = testServer("bestresponsetime.oto.tools", port, 300.millis)
+      val (_, port3, counter3, _)     = testServer("bestresponsetime.oto.tools", port, 100.millis)
+      val serviceweight = ServiceDescriptor(
+        id = "bestresponsetime-test",
+        name = "bestresponsetime-test",
+        env = "prod",
+        subdomain = "bestresponsetime",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = BestResponseTime
+      )
+      createOtoroshiService(serviceweight).futureValue
+      (0 to 29).foreach { _ =>
+        call1(Map.empty)
+        await(100.millis)
+      }
+      counter1.get() mustBe 1
+      counter2.get() mustBe 1
+      counter3.get() mustBe 28
+
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
+    }
+
+    "support weighted best response time load balancing (#309)" in {
+      val (_, port1, counter1, call1) = testServer("wbestresponsetime.oto.tools", port, 200.millis)
+      val (_, port2, counter2, _)     = testServer("wbestresponsetime.oto.tools", port, 300.millis)
+      val (_, port3, counter3, _)     = testServer("wbestresponsetime.oto.tools", port, 100.millis)
+      val serviceweight = ServiceDescriptor(
+        id = "wbestresponsetime-test",
+        name = "wbestresponsetime-test",
+        env = "prod",
+        subdomain = "wbestresponsetime",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = WeightedBestResponseTime(0.8)
+      )
+      createOtoroshiService(serviceweight).futureValue
+      (0 to 29).foreach { _ =>
+        call1(Map.empty)
+        await(10.millis)
+      }
+
+      val computedRatio = BigDecimal(counter3.get() / 30.0).setScale(1, RoundingMode.HALF_EVEN).toDouble
+      computedRatio >= 0.7 mustBe true
+      computedRatio <= 0.9 mustBe true
+      val computedInvertRatio = BigDecimal((counter1.get() + counter2.get()) / 30.0).setScale(1, RoundingMode.HALF_EVEN).toDouble
+      computedInvertRatio >= 0.1 mustBe true
+      computedInvertRatio <= 0.3 mustBe true
+
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "support target predicates based on zones (#309)" in {
-      // TODO
+      val (_, port1, counter1, call1) = testServer("zones.oto.tools", port)
+      val (_, port2, counter2, _)     = testServer("zones.oto.tools", port)
+      val (_, port3, counter3, _)     = testServer("zones.oto.tools", port)
+      val serviceweight = ServiceDescriptor(
+        id = "zones-test",
+        name = "zones-test",
+        env = "prod",
+        subdomain = "zones",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http",
+            predicate = ZoneMatch("dc1")
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http",
+            predicate = ZoneMatch("dc2")
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http",
+            predicate = ZoneMatch("dc3")
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin
+      )
+      createOtoroshiService(serviceweight).futureValue
+      counter1.get() mustBe 0
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      (0 to 9).foreach { _ =>
+        call1(Map.empty)
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "support target predicates based on regions (#309)" in {
-      // TODO
+      val (_, port1, counter1, call1) = testServer("regions.oto.tools", port)
+      val (_, port2, counter2, _)     = testServer("regions.oto.tools", port)
+      val (_, port3, counter3, _)     = testServer("regions.oto.tools", port)
+      val serviceweight = ServiceDescriptor(
+        id = "regions-test",
+        name = "regions-test",
+        env = "prod",
+        subdomain = "regions",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http",
+            predicate = RegionMatch("eu-west-1")
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http",
+            predicate = RegionMatch("eu-west-2")
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http",
+            predicate = RegionMatch("eu-west-3")
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin
+      )
+      createOtoroshiService(serviceweight).futureValue
+      counter1.get() mustBe 0
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      (0 to 9).foreach { _ =>
+        call1(Map.empty)
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "support target predicates based on regions and zones (#309)" in {
-      // TODO
+      val (_, port1, counter1, call1) = testServer("regionsandzones.oto.tools", port)
+      val (_, port2, counter2, _)     = testServer("regionsandzones.oto.tools", port)
+      val (_, port3, counter3, _)     = testServer("regionsandzones.oto.tools", port)
+      val (_, port4, counter4, _)     = testServer("regionsandzones.oto.tools", port)
+      val (_, port5, counter5, _)     = testServer("regionsandzones.oto.tools", port)
+      val (_, port6, counter6, _)     = testServer("regionsandzones.oto.tools", port)
+      val serviceweight = ServiceDescriptor(
+        id = "regionsandzones-test",
+        name = "regionsandzones-test",
+        env = "prod",
+        subdomain = "regionsandzones",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http",
+            predicate = RegionAndZoneMatch("eu-west-1", "dc1")
+          ),
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http",
+            predicate = RegionAndZoneMatch("eu-west-1", "dc2")
+          ),
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http",
+            predicate = RegionAndZoneMatch("eu-west-1", "dc3")
+          ),
+          Target(
+            host = s"127.0.0.1:${port4}",
+            scheme = "http",
+            predicate = RegionAndZoneMatch("eu-west-2", "dc1")
+          ),
+          Target(
+            host = s"127.0.0.1:${port5}",
+            scheme = "http",
+            predicate = RegionAndZoneMatch("eu-west-3", "dc1")
+          ),
+          Target(
+            host = s"127.0.0.1:${port6}",
+            scheme = "http",
+            predicate = RegionAndZoneMatch("eu-west-4", "dc1")
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin
+      )
+      createOtoroshiService(serviceweight).futureValue
+      counter1.get() mustBe 0
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      counter4.get() mustBe 0
+      counter5.get() mustBe 0
+      counter6.get() mustBe 0
+      (0 to 9).foreach { _ =>
+        call1(Map.empty)
+        await(100.millis)
+      }
+      println(counter1.get(), counter2.get(), counter3.get())
+      counter1.get() mustBe 10
+      counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      counter4.get() mustBe 0
+      counter5.get() mustBe 0
+      counter6.get() mustBe 0
+      deleteOtoroshiService(serviceweight).futureValue
+      stopServers()
     }
 
     "allow manual DNS resolution (#309, #310)" in {
+      val counter = new AtomicInteger(0)
+      val body    = """{"message":"hello world"}"""
+      val server = TargetService(None, "/api", "application/json", { r =>
+        if (r.getHeader("Host").get().value().startsWith("www.google.fr:")) {
+          counter.incrementAndGet()
+        }
+        counter.incrementAndGet()
+        body
+      }).await()
+
+      val service = ServiceDescriptor(
+        id = "target-test",
+        name = "target-test",
+        env = "prod",
+        subdomain = "target-test",
+        domain = "oto.tools",
+        useAkkaHttpClient = true,
+        targets = Seq(
+          Target(
+            host = s"www.google.fr:${server.port}",
+            scheme = "http",
+            ipAddress = Some("127.0.0.1")
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false
+      )
       createOtoroshiService(service).futureValue
       val resp = ws.url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
@@ -638,11 +1227,204 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       resp.status mustBe 200
       counter.get() mustBe 2
       deleteOtoroshiService(service).futureValue
+      server.stop()
     }
 
     "stop servers" in {
-      server.stop()
       system.terminate()
+    }
+  }
+
+  s"[$name] Otoroshi ip address features" should {
+    "block blacklisted ip addresses (#318)" in {
+      val (_, port1, counter1, call1) = testServer("blockblackip.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "blockblackip-test",
+        name = "blockblackip-test",
+        env = "prod",
+        subdomain = "blockblackip",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        ipFiltering = IpFiltering(
+          blacklist = Seq("1.1.1.1")
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      resp1.status mustBe 403
+      resp2.status mustBe 200
+      counter1.get() mustBe 1
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "block blacklisted ip addresses with wildcard (#318)" in {
+      val (_, port1, counter1, call1) = testServer("blockblackipwild.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "blockblackipwild-test",
+        name = "blockblackipwild-test",
+        env = "prod",
+        subdomain = "blockblackipwild",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        ipFiltering = IpFiltering(
+          blacklist = Seq("1.1.1.*")
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.2.2"))
+      resp1.status mustBe 403
+      resp2.status mustBe 403
+      resp3.status mustBe 200
+      counter1.get() mustBe 1
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "block blacklisted ip addresses from range (#318)" in {
+      val (_, port1, counter1, call1) = testServer("blockblackiprange.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "blockblackiprange-test",
+        name = "blockblackiprange-test",
+        env = "prod",
+        subdomain = "blockblackiprange",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        ipFiltering = IpFiltering(
+          blacklist = Seq("1.1.1.128/26")
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.128"))
+      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.191"))
+      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.1.192"))
+      resp1.status mustBe 403
+      resp2.status mustBe 403
+      resp3.status mustBe 200
+      counter1.get() mustBe 1
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "allow whitelisted ip addresses (#318)" in {
+      val (_, port1, counter1, call1) = testServer("allowwhiteip.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "allowwhiteip-test",
+        name = "allowwhiteip-test",
+        env = "prod",
+        subdomain = "allowwhiteip",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        ipFiltering = IpFiltering(
+          whitelist = Seq("1.1.1.1")
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.1.3"))
+      resp1.status mustBe 200
+      resp2.status mustBe 403
+      resp3.status mustBe 403
+      counter1.get() mustBe 1
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "allow whitelisted ip addresses with wildcard (#318)" in {
+      val (_, port1, counter1, call1) = testServer("allowwhiteipwild.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "allowwhiteipwild-test",
+        name = "allowwhiteipwild-test",
+        env = "prod",
+        subdomain = "allowwhiteipwild",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        ipFiltering = IpFiltering(
+          whitelist = Seq("1.1.1.*")
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.2.3"))
+      resp1.status mustBe 200
+      resp2.status mustBe 200
+      resp3.status mustBe 403
+      counter1.get() mustBe 2
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "allow whitelisted ip addresses from range (#318)" in {
+      val (_, port1, counter1, call1) = testServer("allowwhiteiprange.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "allowwhiteiprange-test",
+        name = "allowwhiteiprange-test",
+        env = "prod",
+        subdomain = "allowwhiteiprange",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        ipFiltering = IpFiltering(
+          whitelist = Seq("1.1.1.128/26")
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.128"))
+      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.191"))
+      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.2.192"))
+      resp1.status mustBe 200
+      resp2.status mustBe 200
+      resp3.status mustBe 403
+      counter1.get() mustBe 2
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
     }
   }
 }
