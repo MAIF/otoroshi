@@ -1047,20 +1047,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       )
                                     } else {
                                       Map.empty[String, String]
-                                    }) ++
-                                      // (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-                                      //   Map(
-                                      //     stateRequestHeaderName -> stateToken,
-                                      //     claimRequestHeaderName -> claim
-                                      //   )
-                                      // } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
-                                      //   Map(
-                                      //     claimRequestHeaderName -> claim
-                                      //   )
-                                      // } else {
-                                      //   Map.empty[String, String]
-                                      // }) ++
-                                    req.headers
+                                    }) ++ req.headers
                                       .get("Content-Length")
                                       .map(l => {
                                         Map(

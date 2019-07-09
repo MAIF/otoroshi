@@ -589,20 +589,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 )
                               } else {
                                 Map.empty[String, String]
-                              }) ++
-                                // (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-                                //   Map(
-                                //     stateRequestHeaderName -> stateToken,
-                                //     claimRequestHeaderName -> claim
-                                //   )
-                                // } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
-                                //   Map(
-                                //     claimRequestHeaderName -> claim
-                                //   )
-                                // } else {
-                                //   Map.empty[String, String]
-                                // }) ++
-                              descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty).mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)) ++ fromOtoroshi
+                              }) ++ descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty).mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)) ++ fromOtoroshi
                                 .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                 .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
                                 .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc,
