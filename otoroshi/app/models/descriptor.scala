@@ -1,5 +1,6 @@
 package models
 
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
@@ -10,9 +11,10 @@ import akka.stream.scaladsl.Flow
 import auth._
 import com.auth0.jwt.JWT
 import com.google.common.hash.Hashing
-import com.risksense.ipaddr.{IpNetwork, IpRange}
+import com.risksense.ipaddr.IpNetwork
 import env.Env
 import gateway.Errors
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -20,7 +22,7 @@ import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.TooManyRequests
 import play.api.mvc.{RequestHeader, Result, Results}
-import security.IdGenerator
+import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
 import utils.{GzipConfig, RegexPool, ReplaceAllWith}
 
@@ -1373,6 +1375,55 @@ object SecComVersion {
   }
 }
 
+sealed trait SecComInfoTokenVersion {
+  def version: String
+  def json: JsValue = JsString(version)
+}
+object SecComInfoTokenVersion {
+  object Legacy extends SecComInfoTokenVersion {
+    def version: String = "Legacy"
+  }
+  object Latest extends SecComInfoTokenVersion {
+    def version: String = "Latest"
+  }
+  def apply(version: String): Option[SecComInfoTokenVersion] = version match {
+    case "Legacy" => Some(Legacy)
+    case "legacy" => Some(Legacy)
+    case "Latest" => Some(Latest)
+    case "latest" => Some(Latest)
+    case _ => None
+  }
+}
+
+case class SecComHeaders(
+  claimRequestName: Option[String] = None,
+  stateRequestName: Option[String] = None,
+  stateResponseName: Option[String] = None
+) {
+  def json: JsValue = Json.obj(
+    "claimRequestName" -> claimRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "stateRequestName" -> stateRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "stateResponseName" -> stateResponseName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+  )
+}
+
+object SecComHeaders {
+  val format = new Format[SecComHeaders] {
+    override def writes(o: SecComHeaders): JsValue = o.json
+    override def reads(json: JsValue): JsResult[SecComHeaders] = Try {
+      JsSuccess(
+        SecComHeaders(
+          claimRequestName = (json \ "claimRequestName").asOpt[String],
+          stateRequestName = (json \ "stateRequestName").asOpt[String],
+          stateResponseName = (json \ "stateResponseName").asOpt[String]
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+
 case class ServiceDescriptor(
     id: String,
     groupId: String = "default",
@@ -1394,7 +1445,6 @@ case class ServiceDescriptor(
     maintenanceMode: Boolean = false,
     buildMode: Boolean = false,
     strictlyPrivate: Boolean = false,
-    sendStateChallenge: Boolean = true,
     sendOtoroshiHeadersBack: Boolean = true,
     readOnly: Boolean = false,
     xForwardedHeaders: Boolean = false,
@@ -1404,8 +1454,12 @@ case class ServiceDescriptor(
     useAkkaHttpClient: Boolean = false,
     // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
     enforceSecureCommunication: Boolean = true,
-    // secComHeaders: SecComHeaders,
+    sendInfoToken: Boolean = true,
+    sendStateChallenge: Boolean = true,
+    secComHeaders: SecComHeaders = SecComHeaders(),
+    secComTtl: FiniteDuration = 30.seconds,
     secComVersion: SecComVersion = SecComVersion.V1,
+    secComInfoTokenVersion: SecComInfoTokenVersion = SecComInfoTokenVersion.Legacy,
     secComExcludedPatterns: Seq[String] = Seq.empty[String],
     secComSettings: AlgoSettings = HSAlgoSettings(
       512,
@@ -1546,6 +1600,82 @@ case class ServiceDescriptor(
       }
     } getOrElse f
   }
+
+  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser])(implicit env: Env): String = {
+    secComInfoTokenVersion match {
+      case SecComInfoTokenVersion.Legacy => {
+        OtoroshiClaim(
+          iss = env.Headers.OtoroshiIssuer,
+          sub = paUsr
+            .filter(_ => this.privateApp)
+            .map(k => s"pa:${k.email}")
+            .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
+            .getOrElse("--"),
+          aud = this.name,
+          exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
+          iat = DateTime.now().toDate.getTime,
+          jti = IdGenerator.uuid
+        ).withClaim("email", paUsr.map(_.email))
+          .withClaim("name", paUsr.map(_.name).orElse(apiKey.map(_.clientName)))
+          .withClaim("picture", paUsr.flatMap(_.picture))
+          .withClaim("user_id", paUsr.flatMap(_.userId).orElse(apiKey.map(_.clientId)))
+          .withClaim("given_name", paUsr.flatMap(_.field("given_name")))
+          .withClaim("family_name", paUsr.flatMap(_.field("family_name")))
+          .withClaim("gender", paUsr.flatMap(_.field("gender")))
+          .withClaim("locale", paUsr.flatMap(_.field("locale")))
+          .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
+          .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
+          .withClaim("metadata",
+            paUsr
+              .flatMap(_.otoroshiData)
+              .orElse(apiKey.map(_.metadataJson))
+              .map(m => Json.stringify(Json.toJson(m))))
+          .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
+          .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
+          .withClaim("apikey",
+            apiKey.map(
+              ak =>
+                Json.stringify(
+                  Json.obj(
+                    "clientId"   -> ak.clientId,
+                    "clientName" -> ak.clientName,
+                    "metadata"   -> ak.metadata,
+                    "tags" -> ak.tags
+                  )
+                )
+            ))
+          .serialize(this.secComSettings)(env)
+      }
+      case SecComInfoTokenVersion.Latest => {
+        OtoroshiClaim(
+          iss = env.Headers.OtoroshiIssuer,
+          sub = paUsr
+            .filter(_ => this.privateApp)
+            .map(k => k.email)
+            .orElse(apiKey.map(k => k.clientName))
+            .getOrElse("public"),
+          aud = this.name,
+          exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
+          iat = DateTime.now().toDate.getTime,
+          jti = IdGenerator.uuid
+        )
+        .withClaim("access_type", (apiKey, paUsr) match {
+          case (Some(_), Some(_)) => "both" // should never happen
+          case (None, Some(_)) => "user"
+          case (Some(_), None) => "apikey"
+          case (None, None) => "public"
+        })
+        .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
+        .withJsObjectClaim("apikey", apiKey.map(ak => Json.obj(
+          "clientId"   -> ak.clientId,
+          "clientName" -> ak.clientName,
+          "metadata"   -> ak.metadata,
+          "tags" -> ak.tags
+        )))
+        .serialize(this.secComSettings)(env)
+      }
+    }
+  }
 }
 
 object ServiceDescriptor {
@@ -1583,13 +1713,17 @@ object ServiceDescriptor {
           buildMode = (json \ "buildMode").asOpt[Boolean].getOrElse(false),
           strictlyPrivate = (json \ "strictlyPrivate").asOpt[Boolean].getOrElse(false),
           enforceSecureCommunication = (json \ "enforceSecureCommunication").asOpt[Boolean].getOrElse(true),
+          sendInfoToken = (json \ "sendInfoToken").asOpt[Boolean].getOrElse(true),
           sendStateChallenge = (json \ "sendStateChallenge").asOpt[Boolean].getOrElse(true),
           sendOtoroshiHeadersBack = (json \ "sendOtoroshiHeadersBack").asOpt[Boolean].getOrElse(true),
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
           xForwardedHeaders = (json \ "xForwardedHeaders").asOpt[Boolean].getOrElse(false),
           overrideHost = (json \ "overrideHost").asOpt[Boolean].getOrElse(true),
           allowHttp10 = (json \ "allowHttp10").asOpt[Boolean].getOrElse(true),
+          secComHeaders = (json \ "secComHeaders").asOpt(SecComHeaders.format).getOrElse(SecComHeaders()),
+          secComTtl = (json \ "secComTtl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(30.seconds),
           secComVersion = (json \ "secComVersion").asOpt[Int].flatMap(SecComVersion.apply).getOrElse(SecComVersion.V1),
+          secComInfoTokenVersion = (json \ "secComInfoTokenVersion").asOpt[String].flatMap(SecComInfoTokenVersion.apply).getOrElse(SecComInfoTokenVersion.Legacy),
           secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           securityExcludedPatterns = (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
@@ -1663,13 +1797,17 @@ object ServiceDescriptor {
       "buildMode"                  -> sd.buildMode,
       "strictlyPrivate"            -> sd.strictlyPrivate,
       "enforceSecureCommunication" -> sd.enforceSecureCommunication,
+      "sendInfoToken"              -> sd.sendInfoToken,
       "sendStateChallenge"         -> sd.sendStateChallenge,
       "sendOtoroshiHeadersBack"    -> sd.sendOtoroshiHeadersBack,
       "readOnly"                   -> sd.readOnly,
       "xForwardedHeaders"          -> sd.xForwardedHeaders,
       "overrideHost"               -> sd.overrideHost,
       "allowHttp10"                -> sd.allowHttp10,
+      "secComHeaders"              -> sd.secComHeaders.json,
+      "secComTtl"                  -> sd.secComTtl.toMillis,
       "secComVersion"              -> sd.secComVersion.json,
+      "secComInfoTokenVersion"     -> sd.secComInfoTokenVersion.json,
       "secComExcludedPatterns"     -> JsArray(sd.secComExcludedPatterns.map(JsString.apply)),
       "securityExcludedPatterns"   -> JsArray(sd.securityExcludedPatterns.map(JsString.apply)),
       "publicPatterns"             -> JsArray(sd.publicPatterns.map(JsString.apply)),
@@ -1927,6 +2065,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 object SeqImplicits {
   implicit class BetterSeq[A](val seq: Seq[A]) extends AnyVal {
     def findOne(in: Seq[A]): Boolean = seq.intersect(in).nonEmpty
-    def findAll(in: Seq[A]): Boolean = seq.intersect(in).toSet.size == in.size
+    def findAll(in: Seq[A]): Boolean = {
+      // println(s"trying to find ${in} in ${seq} => ${seq.intersect(in).toSet.size == in.size}")
+      seq.intersect(in).toSet.size == in.size
+    }
   }
 }

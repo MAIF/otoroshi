@@ -667,7 +667,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   if (exp.isEmpty || iat.isEmpty) {
                     false
                   } else {
-                    if ((exp.get - iat.get) <= 10) { // seconds
+                    if ((exp.get - iat.get) <= descriptor.secComTtl.toSeconds) { // seconds
                       true
                     } else {
                       false
@@ -1014,48 +1014,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                                     val promise = Promise[ProxyDone]
 
-                                    val claim = OtoroshiClaim(
-                                      iss = env.Headers.OtoroshiIssuer,
-                                      sub = paUsr
-                                        .filter(_ => descriptor.privateApp)
-                                        .map(k => s"pa:${k.email}")
-                                        .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
-                                        .getOrElse("--"),
-                                      aud = descriptor.name,
-                                      exp = DateTime.now().plusSeconds(30).toDate.getTime,
-                                      iat = DateTime.now().toDate.getTime,
-                                      jti = IdGenerator.uuid
-                                    ).withClaim("email", paUsr.map(_.email))
-                                      .withClaim("name", paUsr.map(_.name).orElse(apiKey.map(_.clientName)))
-                                      .withClaim("picture", paUsr.flatMap(_.picture))
-                                      .withClaim("user_id", paUsr.flatMap(_.userId).orElse(apiKey.map(_.clientId)))
-                                      .withClaim("given_name", paUsr.flatMap(_.field("given_name")))
-                                      .withClaim("family_name", paUsr.flatMap(_.field("family_name")))
-                                      .withClaim("gender", paUsr.flatMap(_.field("gender")))
-                                      .withClaim("locale", paUsr.flatMap(_.field("locale")))
-                                      .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
-                                      .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
-                                      .withClaim("metadata",
-                                                 paUsr
-                                                   .flatMap(_.otoroshiData)
-                                                   .orElse(apiKey.map(_.metadataJson))
-                                                   .map(m => Json.stringify(Json.toJson(m))))
-                                      .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
-                                      .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
-                                      .withClaim("apikey",
-                                                 apiKey.map(
-                                                   ak =>
-                                                     Json.stringify(
-                                                       Json.obj(
-                                                         "clientId"   -> ak.clientId,
-                                                         "clientName" -> ak.clientName,
-                                                         "metadata"   -> ak.metadata,
-                                                         "tags" -> ak.tags
-                                                       )
-                                                   )
-                                                 ))
-                                      .serialize(desc.secComSettings)(env)
+                                    val claim = descriptor.generateInfoToken(apiKey, paUsr)
                                     logger.trace(s"Claim is : $claim")
+                                    val stateRequestHeaderName = descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
+                                    val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName.getOrElse(env.Headers.OtoroshiStateResp)
+                                    val claimRequestHeaderName = descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
                                     val headersIn: Seq[(String, String)] =
                                     (req.headers.toMap.toSeq
                                       .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
@@ -1065,25 +1028,38 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           else if (t._1.toLowerCase == "content-length") true
                                           else false
                                       )
-                                      .filterNot(t => headersInFiltered.contains(t._1.toLowerCase)) ++ Map(
+                                      .filterNot(t => (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName)).contains(t._1.toLowerCase)) ++ Map(
                                       env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
                                       //"Host"                               -> host,
                                       "Host" -> (if (desc.overrideHost) host
                                                  else req.headers.get("Host").getOrElse("--")),
                                       env.Headers.OtoroshiRequestId        -> snowflake,
                                       env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                                    ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-                                            Map(
-                                              env.Headers.OtoroshiState -> stateToken,
-                                              env.Headers.OtoroshiClaim -> claim
-                                            )
-                                          } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
-                                            Map(
-                                              env.Headers.OtoroshiClaim -> claim
-                                            )
-                                          } else {
-                                            Map.empty[String, String]
-                                          }) ++
+                                    ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
+                                      Map(
+                                        claimRequestHeaderName -> claim
+                                      )
+                                    } else {
+                                      Map.empty[String, String]
+                                    }) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
+                                      Map(
+                                        stateRequestHeaderName -> stateToken
+                                      )
+                                    } else {
+                                      Map.empty[String, String]
+                                    }) ++
+                                      // (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
+                                      //   Map(
+                                      //     stateRequestHeaderName -> stateToken,
+                                      //     claimRequestHeaderName -> claim
+                                      //   )
+                                      // } else if (descriptor.enforceSecureCommunication && !descriptor.sendStateChallenge) {
+                                      //   Map(
+                                      //     claimRequestHeaderName -> claim
+                                      //   )
+                                      // } else {
+                                      //   Map.empty[String, String]
+                                      // }) ++
                                     req.headers
                                       .get("Content-Length")
                                       .map(l => {
@@ -1290,7 +1266,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       case Left(badResult) => {
                                         quotas.fast.map { remainingQuotas =>
                                           val _headersOut: Seq[(String, String)] = badResult.header.headers.toSeq
-                                            .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
+                                            .filterNot(t => (headersOutFiltered :+ stateResponseHeaderName).contains(t._1.toLowerCase)) ++ (
                                             if (descriptor.sendOtoroshiHeadersBack) {
                                               Seq(
                                                 env.Headers.OtoroshiRequestId        -> snowflake,
@@ -1381,13 +1357,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               cookies = resp.cookies
                                             )
                                             // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
-                                            // if (env.notDev && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
-                                            // val validState = headers.get(env.Headers.OtoroshiStateResp).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(env.Headers.OtoroshiStateResp).contains(state)).getOrElse(false)
-                                            val stateResp = headers.get(env.Headers.OtoroshiStateResp).orElse(headers.get(env.Headers.OtoroshiStateResp.toLowerCase))
+                                            // if (env.notDev && !headers.get(stateRespHeaderName).contains(state)) {
+                                            // val validState = headers.get(stateRespHeaderName).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(stateRespHeaderName).contains(state)).getOrElse(false)
+                                            val stateRespHeaderName = descriptor.secComHeaders.stateResponseName.getOrElse(env.Headers.OtoroshiStateResp)
+                                            val stateResp = headers.get(stateRespHeaderName).orElse(headers.get(stateRespHeaderName.toLowerCase))
                                             if ((descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                                                 && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
                                                 && !stateRespValid(stateValue, stateResp, jti, descriptor)) {
-                                              // && !headers.get(env.Headers.OtoroshiStateResp).contains(state)) {
+                                              // && !headers.get(stateRespHeaderName).contains(state)) {
                                               resp.ignore()
                                               if (resp.status == 404 && headers
                                                     .get("X-CleverCloudUpgrade")

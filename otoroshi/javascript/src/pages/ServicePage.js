@@ -1174,8 +1174,14 @@ export class ServicePage extends Component {
               help="When disbaled, Otoroshi will not check if target service respond with sent random value."
               onChange={v => this.changeTheValue('sendStateChallenge', v)}
             />
+            <BooleanInput
+              label="Send challenge"
+              value={this.state.service.sendInfoToken}
+              help="When enabled, Otoroshi add an additional header containing current call informations"
+              onChange={v => this.changeTheValue('sendInfoToken', v)}
+            />
             <SelectInput
-              label="Challenge version"
+              label="Challenge token version"
               value={this.state.service.secComVersion}
               help="Version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future."
               onChange={arr => this.changeTheValue('secComVersion', arr)}
@@ -1183,6 +1189,45 @@ export class ServicePage extends Component {
                 { label: 'V1 - simple values exchange', value: 1 },
                 { label: 'V2 - signed JWT tokens exchange', value: 2 },
               ]}
+            />
+            <SelectInput
+              label="Info. token version"
+              value={this.state.service.secComInfoTokenVersion}
+              help="Version the otoroshi exchange protocol info token. This option will be set to Latest in a near future."
+              onChange={arr => this.changeTheValue('secComInfoTokenVersion', arr)}
+              possibleValues={[
+                { label: 'Legacy - legacy version of the info token with flattened values', value: "Legacy" },
+                { label: 'Latest - latest version of the info token json values', value: "Latest" },
+              ]}
+            />
+            <NumberInput 
+              label="Tokens TTL"
+              value={this.state.service.secComTtl}
+              help="The number of seconds for tokens (state and info) lifes"
+              placeholder="10"
+              suffix="seconds"
+              onChange={v => this.changeTheValue('secComTtl', v)}
+            />
+            <TextInput 
+              label="State token header name"
+              value={this.state.service.secComHeaders.stateRequestName}
+              help="The name of the header containing the state token"
+              placeholder="Otoroshi-State"
+              onChange={v => this.changeTheValue('secComHeaders.stateRequestName', v)}
+            />
+            <TextInput 
+              label="State token response header name"
+              value={this.state.service.secComHeaders.stateResponseName}
+              help="The name of the header containing the state response token"
+              placeholder="Otoroshi-State-Resp"
+              onChange={v => this.changeTheValue('secComHeaders.stateResponseName', v)}
+            />
+            <TextInput 
+              label="Info token header name"
+              value={this.state.service.secComHeaders.claimRequestName}
+              help="The name of the header containing the info token"
+              placeholder="Otoroshi-Claim"
+              onChange={v => this.changeTheValue('secComHeaders.claimRequestName', v)}
             />
             <ArrayInput
               label="Excluded patterns"

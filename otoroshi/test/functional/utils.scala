@@ -71,11 +71,13 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
   private var _servers: Set[TargetService] = Set.empty
 
-  def testServer(host: String, port: Int, delay: FiniteDuration = 0.millis, streamDelay: FiniteDuration = 0.millis)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
+  def testServer(host: String, port: Int, delay: FiniteDuration = 0.millis, streamDelay: FiniteDuration = 0.millis, validate: HttpRequest => Boolean = _ => true)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter           = new AtomicInteger(0)
     val body = """{"message":"hello world"}"""
     val server = TargetService.streamed(None, "/api", "application/json", { r =>
-      counter.incrementAndGet()
+      if (validate(r)) {
+        counter.incrementAndGet()
+      }
       if (delay.toMillis > 0L) {
         await(delay)
       }

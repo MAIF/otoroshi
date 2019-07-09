@@ -25,9 +25,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "quotas.foo.bar"
   implicit lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
+  implicit val env = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
@@ -46,30 +46,16 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
   s"[$name] Otoroshi service descriptors" should {
 
-    val counter1 = new AtomicInteger(0)
-    val counter2 = new AtomicInteger(0)
-    val counter3 = new AtomicInteger(0)
-    val body    = """{"message":"hello world"}"""
-    val server1 = TargetService(None, "/api", "application/json", { r =>
-      counter1.incrementAndGet()
-      body
-    }).await()
-    val server2 = TargetService(None, "/api", "application/json", { r =>
-      counter2.incrementAndGet()
-      body
-    }).await()
-    val server3 = TargetService(None, "/api", "application/json", { r =>
-      if (r.getHeader("X-Api-Key-Name").get().value().startsWith("apikey-service3")) {
-        counter3.incrementAndGet()
-      }
-      body
-    }).await()
-
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
     }
 
     "provide routing based on apikey tags and metadata (#307)" in {
+      val (_, port1, counter1, call) = testServer("service.oto.tools", port)
+      val (_, port2, counter2, _) = testServer("service.oto.tools", port)
+      val (_, port3, counter3, _) = testServer("service.oto.tools", port)
+      val (_, port4, counter4, _) = testServer("service.oto.tools", port)
+      val (_, port5, counter5, _) = testServer("service.oto.tools", port)
       val service1 = ServiceDescriptor(
         id = "service-apk-routing-1",
         name = "service1",
@@ -79,7 +65,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${server1.port}",
+            host = s"127.0.0.1:${port1}",
             scheme = "http"
           )
         ),
@@ -100,7 +86,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${server2.port}",
+            host = s"127.0.0.1:${port2}",
             scheme = "http"
           )
         ),
@@ -109,6 +95,69 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         apiKeyConstraints = ApiKeyConstraints.apply(
           routing = ApiKeyRouteMatcher(
             oneTagIn = Seq("admin")
+          )
+        )
+      )
+      val service3 = ServiceDescriptor(
+        id = "service-apk-routing-3",
+        name = "service3",
+        env = "prod",
+        subdomain = "service",
+        domain = "oto.tools",
+        useAkkaHttpClient = true,
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port3}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        apiKeyConstraints = ApiKeyConstraints.apply(
+          routing = ApiKeyRouteMatcher(
+            oneMetaIn = Map("level" -> "1") // apikey1
+          )
+        )
+      )
+      val service4 = ServiceDescriptor(
+        id = "service-apk-routing-4",
+        name = "service4",
+        env = "prod",
+        subdomain = "service",
+        domain = "oto.tools",
+        useAkkaHttpClient = true,
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port4}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        apiKeyConstraints = ApiKeyConstraints.apply(
+          routing = ApiKeyRouteMatcher(
+            allMetaIn = Map("level" -> "2", "root" -> "true") // apikey1
+          )
+        )
+      )
+      val service5 = ServiceDescriptor(
+        id = "service-apk-routing-5",
+        name = "service5",
+        env = "prod",
+        subdomain = "service",
+        domain = "oto.tools",
+        useAkkaHttpClient = true,
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port5}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        apiKeyConstraints = ApiKeyConstraints.apply(
+          routing = ApiKeyRouteMatcher(
+            allTagsIn = Seq("leveled", "root") // apikey2
           )
         )
       )
@@ -122,44 +171,110 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         authorizedGroup = "default",
         tags = Seq("admin", "bar", "foo")
       )
+      val apikey3 = ApiKey(
+        clientName = "apikey3",
+        authorizedGroup = "default",
+        metadata = Map("level" -> "1")
+      )
+      val apikey4 = ApiKey(
+        clientName = "apikey4",
+        authorizedGroup = "default",
+        metadata = Map("level" -> "2", "root" -> "true")
+      )
+      val apikey5 = ApiKey(
+        clientName = "apikey5",
+        authorizedGroup = "default",
+        tags = Seq("lkj", "leveled", "root")
+      )
       createOtoroshiService(service1).futureValue
       createOtoroshiService(service2).futureValue
+      createOtoroshiService(service3).futureValue
+      createOtoroshiService(service4).futureValue
+      createOtoroshiService(service5).futureValue
       createOtoroshiApiKey(apikey1).futureValue
       createOtoroshiApiKey(apikey2).futureValue
+      createOtoroshiApiKey(apikey3).futureValue
+      createOtoroshiApiKey(apikey4).futureValue
+      createOtoroshiApiKey(apikey5).futureValue
 
-      val resp1 = ws.url(s"http://127.0.0.1:$port/api")
-        .withHttpHeaders(
-          "Host" -> "service.oto.tools",
-          "Otoroshi-Client-Id" -> apikey1.clientId,
-          "Otoroshi-Client-Secret" -> apikey1.clientSecret
-        )
-        .get()
-        .futureValue
+      val resp1 = call(Map(
+        "Otoroshi-Client-Id" -> apikey1.clientId,
+        "Otoroshi-Client-Secret" -> apikey1.clientSecret
+      ))
 
       resp1.status mustBe 200
       counter1.get() mustBe 1
       counter2.get() mustBe 0
+      counter3.get() mustBe 0
+      counter4.get() mustBe 0
+      counter5.get() mustBe 0
 
-      val resp2 = ws.url(s"http://127.0.0.1:$port/api")
-        .withHttpHeaders(
-          "Host" -> "service.oto.tools",
-          "Otoroshi-Client-Id" -> apikey2.clientId,
-          "Otoroshi-Client-Secret" -> apikey2.clientSecret
-        )
-        .get()
-        .futureValue
+      val resp2 = call(Map(
+        "Otoroshi-Client-Id" -> apikey2.clientId,
+        "Otoroshi-Client-Secret" -> apikey2.clientSecret
+      ))
 
       resp2.status mustBe 200
       counter1.get() mustBe 1
       counter2.get() mustBe 1
+      counter3.get() mustBe 0
+      counter4.get() mustBe 0
+      counter5.get() mustBe 0
+
+      val resp3 = call(Map(
+        "Otoroshi-Client-Id" -> apikey3.clientId,
+        "Otoroshi-Client-Secret" -> apikey3.clientSecret
+      ))
+
+      resp3.status mustBe 200
+      counter1.get() mustBe 1
+      counter2.get() mustBe 1
+      counter3.get() mustBe 1
+      counter4.get() mustBe 0
+      counter5.get() mustBe 0
+
+      //val resp4 = call(Map(
+      //  "Otoroshi-Client-Id" -> apikey4.clientId,
+      //  "Otoroshi-Client-Secret" -> apikey4.clientSecret
+      //))
+
+      //resp4.status mustBe 200
+      //counter1.get() mustBe 1
+      //counter2.get() mustBe 1
+      //counter3.get() mustBe 1
+      //counter4.get() mustBe 1
+      //counter5.get() mustBe 0
+
+      val resp5 = call(Map(
+        "Otoroshi-Client-Id" -> apikey5.clientId,
+        "Otoroshi-Client-Secret" -> apikey5.clientSecret
+      ))
+
+      resp5.status mustBe 200
+      counter1.get() mustBe 1
+      counter2.get() mustBe 1
+      counter3.get() mustBe 1
+      // counter4.get() mustBe 1
+      counter5.get() mustBe 1
 
       deleteOtoroshiService(service1).futureValue
       deleteOtoroshiService(service2).futureValue
+      deleteOtoroshiService(service3).futureValue
+      deleteOtoroshiService(service4).futureValue
+      deleteOtoroshiService(service5).futureValue
       deleteOtoroshiApiKey(apikey1).futureValue
       deleteOtoroshiApiKey(apikey2).futureValue
+      deleteOtoroshiApiKey(apikey3).futureValue
+      deleteOtoroshiApiKey(apikey4).futureValue
+      deleteOtoroshiApiKey(apikey5).futureValue
+
+      stopServers()
     }
 
     "support el in headers manipulation (#308)" in {
+      val (_, port1, counter1, call) = testServer("service-el.oto.tools", port, validate = r => {
+        r.getHeader("X-Api-Key-Name").get().value().startsWith("apikey-service3")
+      })
       val service = ServiceDescriptor(
         id = "service-el",
         name = "service-el",
@@ -169,7 +284,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         useAkkaHttpClient = true,
         targets = Seq(
           Target(
-            host = s"127.0.0.1:${server3.port}",
+            host = s"127.0.0.1:${port1}",
             scheme = "http"
           )
         ),
@@ -186,26 +301,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       createOtoroshiService(service).futureValue
       createOtoroshiApiKey(apikey).futureValue
 
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
-        .withHttpHeaders(
-          "Host" -> "service-el.oto.tools",
-          "Otoroshi-Client-Id" -> apikey.clientId,
-          "Otoroshi-Client-Secret" -> apikey.clientSecret
-        )
-        .get()
-        .futureValue
+      val resp = call(Map(
+        "Otoroshi-Client-Id" -> apikey.clientId,
+        "Otoroshi-Client-Secret" -> apikey.clientSecret
+      ))
 
       resp.status mustBe 200
-      counter3.get() mustBe 1
+      counter1.get() mustBe 1
 
       deleteOtoroshiService(service).futureValue
       deleteOtoroshiApiKey(apikey).futureValue
-    }
-
-    "stop servers" in {
-      server1.stop()
-      server2.stop()
-      server3.stop()
+      stopServers()
     }
   }
 
@@ -429,6 +535,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         ),
         forceHttps = false,
         enforceSecureCommunication = true,
+        secComTtl = 10.seconds,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )
@@ -446,6 +553,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         ),
         forceHttps = false,
         enforceSecureCommunication = true,
+        secComTtl = 10.seconds,
         secComVersion = SecComVersion.V2,
         publicPatterns = Seq("/.*")
       )
@@ -479,6 +587,117 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service2).futureValue
       server.stop()
       server2.stop()
+    }
+    "allow disabling token info (#320)" in {
+      val (_, port1, counter1, call) = testServer("service-disabled-info.oto.tools", port, validate = r => {
+        !r.getHeader("Otoroshi-Claim").isPresent
+      })
+      val service = ServiceDescriptor(
+        id = "service-disabled-info",
+        name = "service-disabled-info",
+        env = "prod",
+        subdomain = "service-disabled-info",
+        domain = "oto.tools",
+        useAkkaHttpClient = true,
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = true,
+        sendStateChallenge = true,
+        sendInfoToken = false
+      )
+      createOtoroshiService(service).futureValue
+      call(Map.empty)
+      counter1.get() mustBe 1
+      deleteOtoroshiService(service).futureValue
+      stopServers()
+    }
+    "allow latest version of info token (#320)" in {
+      import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+      val alg = HSAlgoSettings(
+        512,
+        "secret"
+      )
+      val apikey1 = ApiKey(
+        clientName = "apikey1",
+        authorizedGroup = "default"
+      )
+      val (_, port1, counter1, call) = testServer("service-disabled-info.oto.tools", port, validate = r => {
+        val token = r.getHeader("Otoroshi-Claim").get().value()
+        val valid = Try(JWT.require(alg.asAlgorithm(OutputMode).get).build().verify(token)).map(_ => true).getOrElse(false)
+        val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(1)))).getOrElse(Json.obj())
+        val valid2 = (tokenBody \ "apikey" \ "clientId").as[String] == apikey1.clientId
+        println(Json.prettyPrint(tokenBody))
+        valid && valid2
+      })
+      val service = ServiceDescriptor(
+        id = "service-disabled-info",
+        name = "service-disabled-info",
+        env = "prod",
+        subdomain = "service-disabled-info",
+        domain = "oto.tools",
+        useAkkaHttpClient = true,
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = true,
+        sendStateChallenge = false,
+        sendInfoToken = true,
+        secComSettings = alg,
+        secComInfoTokenVersion = SecComInfoTokenVersion.Latest
+      )
+
+      createOtoroshiService(service).futureValue
+      createOtoroshiApiKey(apikey1).futureValue
+      call(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      counter1.get() mustBe 1
+      deleteOtoroshiService(service).futureValue
+      deleteOtoroshiApiKey(apikey1).futureValue
+      stopServers()
+    }
+    "allow custom header names (#320)" in {
+      val (_, port1, counter1, call) = testServer("service-custom-headers.oto.tools", port, validate = r => {
+        r.getHeader("claimRequestName").isPresent && r.getHeader("stateRequestName").isPresent
+      })
+      val service = ServiceDescriptor(
+        id = "service-custom-headers",
+        name = "service-custom-headers",
+        env = "prod",
+        subdomain = "service-custom-headers",
+        domain = "oto.tools",
+        useAkkaHttpClient = true,
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = true,
+        sendStateChallenge = true,
+        sendInfoToken = true,
+        secComHeaders = SecComHeaders(
+          claimRequestName = Some("claimRequestName"),
+          stateRequestName = Some("stateRequestName"),
+          stateResponseName = Some("stateResponseName")
+        )
+      )
+      createOtoroshiService(service).futureValue
+      val r = call(Map.empty)
+      counter1.get() mustBe 1
+      r.status mustBe 502
+      deleteOtoroshiService(service).futureValue
+      stopServers()
     }
   }
 

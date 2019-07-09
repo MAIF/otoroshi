@@ -93,15 +93,17 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
     } else if (shouldNotSearchForAnApiKey) {
       true
     } else {
-      val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneTagIn).filter(_.nonEmpty).map(tags => this.tags.findOne(tags)).getOrElse(true)
+
+      val matchOnRole: Boolean   = Option(sr.apiKeyConstraints.routing.oneTagIn).filter(_.nonEmpty).map(tags => this.tags.findOne(tags)).getOrElse(true)
       val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allTagsIn).filter(_.nonEmpty).map(tags => this.tags.findAll(tags)).getOrElse(true)
-      val matchOnMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(true)
-      val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findAll(metas)).getOrElse(true)
+
+      val matchOneMeta: Boolean  = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(true)
+      val matchAllMeta: Boolean  = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findAll(metas)).getOrElse(true)
 
       val matchNoneRole: Boolean = !Option(sr.apiKeyConstraints.routing.noneTagIn).filter(_.nonEmpty).map(tags => this.tags.findOne(tags)).getOrElse(false)
       val matchNoneMeta: Boolean = !Option(sr.apiKeyConstraints.routing.noneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(false)
 
-      matchOnRole && matchAllRoles && matchOnMeta && matchAllMeta && matchNoneRole && matchNoneMeta
+      matchOnRole && matchAllRoles && matchOneMeta && matchAllMeta && matchNoneRole && matchNoneMeta
     }
   }
 }

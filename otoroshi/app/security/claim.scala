@@ -32,6 +32,14 @@ case class OtoroshiClaim(
     case Some(v) => copy(metadata = metadata ++ Json.obj(name -> v))
     case None    => this
   }
+  def withJsObjectClaim(name: String, value: Option[JsObject]): OtoroshiClaim = value match {
+    case Some(v) => copy(metadata = metadata ++ Json.obj(name -> v))
+    case None    => this
+  }
+  def withJsArrayClaim(name: String, value: Option[JsArray]): OtoroshiClaim = value match {
+    case Some(v) => copy(metadata = metadata ++ Json.obj(name -> v))
+    case None    => this
+  }
 }
 
 object OtoroshiClaim {
@@ -55,6 +63,7 @@ object OtoroshiClaim {
       "aud" -> claim.aud,
       "exp" -> new Date(claim.exp).getTime / 1000,
       "iat" -> new Date(claim.iat).getTime / 1000,
+      "nbr" -> new Date(claim.iat).getTime / 1000,
       "jti" -> claim.jti
     ) ++ claim.metadata
     val signed = sign(algorithm, header, payload)
