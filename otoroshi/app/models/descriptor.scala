@@ -1309,7 +1309,7 @@ object ApiKeyRouteMatcher {
         ApiKeyRouteMatcher(
           noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allTagsIn = (json \ "allTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          allTagsIn = (json \ "allTagsIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           noneMetaIn = (json \ "noneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
@@ -1512,7 +1512,8 @@ case class ServiceDescriptor(
   // TODO : check perfs
   // def isUriPublic(uri: String): Boolean = !privatePatterns.exists(p => uri.matches(p)) && publicPatterns.exists(p => uri.matches(p))
 
-  lazy val hasNoRoutingConstraints: Boolean = this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
+  lazy val hasNoRoutingConstraints: Boolean =
+    this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
     this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
     this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
     this.apiKeyConstraints.routing.allTagsIn.isEmpty &&

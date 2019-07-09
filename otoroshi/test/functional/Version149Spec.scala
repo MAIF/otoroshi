@@ -157,7 +157,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         enforceSecureCommunication = false,
         apiKeyConstraints = ApiKeyConstraints.apply(
           routing = ApiKeyRouteMatcher(
-            allTagsIn = Seq("leveled", "root") // apikey2
+            allTagsIn = Seq("leveled", "root")
           )
         )
       )
@@ -233,18 +233,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       counter4.get() mustBe 0
       counter5.get() mustBe 0
 
-      //val resp4 = call(Map(
-      //  "Otoroshi-Client-Id" -> apikey4.clientId,
-      //  "Otoroshi-Client-Secret" -> apikey4.clientSecret
-      //))
-
-      //resp4.status mustBe 200
-      //counter1.get() mustBe 1
-      //counter2.get() mustBe 1
-      //counter3.get() mustBe 1
-      //counter4.get() mustBe 1
-      //counter5.get() mustBe 0
-
       val resp5 = call(Map(
         "Otoroshi-Client-Id" -> apikey5.clientId,
         "Otoroshi-Client-Secret" -> apikey5.clientSecret
@@ -254,7 +242,19 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       counter1.get() mustBe 1
       counter2.get() mustBe 1
       counter3.get() mustBe 1
-      // counter4.get() mustBe 1
+      counter4.get() mustBe 0
+      counter5.get() mustBe 1
+
+      val resp4 = call(Map(
+        "Otoroshi-Client-Id" -> apikey4.clientId,
+        "Otoroshi-Client-Secret" -> apikey4.clientSecret
+      ))
+
+      resp4.status mustBe 200
+      counter1.get() mustBe 1
+      counter2.get() mustBe 1
+      counter3.get() mustBe 1
+      counter4.get() mustBe 1
       counter5.get() mustBe 1
 
       deleteOtoroshiService(service1).futureValue
