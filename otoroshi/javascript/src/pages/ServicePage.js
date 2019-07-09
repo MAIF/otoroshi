@@ -805,7 +805,7 @@ export class ServicePage extends Component {
                   onChange={v => this.changeTheValue('logAnalyticsOnServer', v)}
                 />
                 <BiColumnBooleanInput
-                  label="Use experimental client"
+                  label="Use new http client"
                   value={this.state.service.useAkkaHttpClient}
                   help="Will use Akka Http Client for every request"
                   onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
