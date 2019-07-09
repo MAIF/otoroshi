@@ -1211,21 +1211,21 @@ export class ServicePage extends Component {
             <TextInput 
               label="State token header name"
               value={this.state.service.secComHeaders.stateRequestName}
-              help="The name of the header containing the state token"
+              help="The name of the header containing the state token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.state)"
               placeholder="Otoroshi-State"
               onChange={v => this.changeTheValue('secComHeaders.stateRequestName', v)}
             />
             <TextInput 
               label="State token response header name"
               value={this.state.service.secComHeaders.stateResponseName}
-              help="The name of the header containing the state response token"
+              help="The name of the header containing the state response token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.stateresp)"
               placeholder="Otoroshi-State-Resp"
               onChange={v => this.changeTheValue('secComHeaders.stateResponseName', v)}
             />
             <TextInput 
               label="Info token header name"
               value={this.state.service.secComHeaders.claimRequestName}
-              help="The name of the header containing the info token"
+              help="The name of the header containing the info token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.claim)"
               placeholder="Otoroshi-Claim"
               onChange={v => this.changeTheValue('secComHeaders.claimRequestName', v)}
             />
