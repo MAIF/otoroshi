@@ -1731,11 +1731,11 @@ case class ServiceDescriptor(
           "subjectCN"    ->  Option(c.getSubjectDN.getName)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
             .map(_.replace("CN=", ""))
-            .getOrElse(c.getSubjectDN.getName),
+            .getOrElse(c.getSubjectDN.getName).asInstanceOf[String],
           "issuerCN"    ->  Option(c.getIssuerDN.getName)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
             .map(_.replace("CN=", ""))
-            .getOrElse(c.getIssuerDN.getName)
+            .getOrElse(c.getIssuerDN.getName).asInstanceOf[String]
         )))))
         .serialize(this.secComSettings)(env)
       }
