@@ -1,6 +1,7 @@
 package gateway
 
 import java.net.URLEncoder
+import java.util.Base64
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 
 import actions.{PrivateAppsAction, PrivateAppsActionContext}
@@ -40,6 +41,7 @@ import utils.RequestImplicits._
 import otoroshi.script.Implicits._
 import utils.http.Implicits._
 import play.libs.ws.WSCookie
+import ssl.PemHeaders
 
 case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header])
 
@@ -1014,7 +1016,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                                     val promise = Promise[ProxyDone]
 
-                                    val claim = descriptor.generateInfoToken(apiKey, paUsr)
+                                    val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                                     logger.trace(s"Claim is : $claim")
                                     val stateRequestHeaderName = descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
                                     val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName.getOrElse(env.Headers.OtoroshiStateResp)
@@ -1047,6 +1049,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       )
                                     } else {
                                       Map.empty[String, String]
+                                    }) ++ (req.clientCertificateChain match {
+                                      case Some(chain) => Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
+                                      case None => Map.empty[String, String]
                                     }) ++ req.headers
                                       .get("Content-Length")
                                       .map(l => {
@@ -1193,7 +1198,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               descriptor = Some(descriptor),
                                               `@product` = descriptor.metadata.getOrElse("product", "--"),
                                               remainingQuotas = q,
-                                              viz = Some(viz)
+                                              viz = Some(viz),
+                                              clientCertChain = req.clientCertChainPem
                                             )
                                             evt.toAnalytics()
                                             if (descriptor.logAnalyticsOnServer) {

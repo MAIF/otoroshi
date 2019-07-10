@@ -141,11 +141,14 @@ trait AnalyticEvent {
   def toJson(implicit _env: Env): JsValue
   def toEnrichedJson(implicit _env: Env): JsValue = {
     toJson(_env).as[JsObject] ++ Json.obj(
-      "instance-name" -> _env.name,
-      "instance-zone" -> _env.zone,
+      "instance-name"   -> _env.name,
+      "instance-zone"   -> _env.zone,
       "instance-region" -> _env.region,
-      "cluster-mode" -> _env.clusterConfig.mode.name,
-      "cluster-name" -> (_env.clusterConfig.mode match {
+      "instance-dc"     -> _env.dataCenter,
+      "instance-provider" -> _env.infraProvider,
+      "instance-rack"   -> _env.rack,
+      "cluster-mode"    -> _env.clusterConfig.mode.name,
+      "cluster-name"    -> (_env.clusterConfig.mode match {
         case ClusterMode.Worker => _env.clusterConfig.worker.name
         case ClusterMode.Leader => _env.clusterConfig.leader.name
         case _                  => "none"
@@ -227,7 +230,8 @@ case class GatewayEvent(
     descriptor: Option[ServiceDescriptor],
     `@product`: String = "--",
     remainingQuotas: RemainingQuotas,
-    viz: Option[OtoroshiViz]
+    viz: Option[OtoroshiViz],
+    clientCertChain: Seq[String] = Seq.empty[String]
 ) extends AnalyticEvent {
   def toJson(implicit _env: Env): JsValue = GatewayEvent.writes(this, _env)
 }
@@ -264,7 +268,8 @@ object GatewayEvent {
     "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
     "cbDuration"      -> o.cbDuration,
     "overheadWoCb"    -> o.overheadWoCb,
-    "callAttempts"    -> o.callAttempts
+    "callAttempts"    -> o.callAttempts,
+    "clientCertChain" -> o.clientCertChain
   )
 }
 

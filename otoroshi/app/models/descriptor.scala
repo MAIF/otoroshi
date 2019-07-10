@@ -355,9 +355,21 @@ object TargetPredicate {
         case "ZoneMatch" => JsSuccess(ZoneMatch(
           zone = (json \ "zone").asOpt[String].getOrElse("local")
         ))
-        case "RegionAndZoneMatch" => JsSuccess(RegionAndZoneMatch(
-          region = (json \ "region").asOpt[String].getOrElse("local"),
-          zone = (json \ "zone").asOpt[String].getOrElse("local"),
+        case "DataCenterMatch" => JsSuccess(ZoneMatch(
+          zone = (json \ "dc").asOpt[String].getOrElse("local")
+        ))
+        case "InfraMatch" => JsSuccess(ZoneMatch(
+          zone = (json \ "provider").asOpt[String].getOrElse("local")
+        ))
+        case "RackMatch" => JsSuccess(ZoneMatch(
+          zone = (json \ "rack").asOpt[String].getOrElse("local")
+        ))
+        case "NetworkLocationMatch" => JsSuccess(NetworkLocationMatch(
+          provider = (json \ "provider").asOpt[String].getOrElse("*"),
+          region = (json \ "region").asOpt[String].getOrElse("*"),
+          zone = (json \ "zone").asOpt[String].getOrElse("*"),
+          dataCenter = (json \ "dc").asOpt[String].getOrElse("*"),
+          rack = (json \ "rack").asOpt[String].getOrElse("*")
         ))
         case _ => JsSuccess(AlwaysMatch)
       }
@@ -384,11 +396,48 @@ case class ZoneMatch(zone: String) extends TargetPredicate {
   }
 }
 
-case class RegionAndZoneMatch(region: String, zone: String) extends TargetPredicate {
-  def toJson: JsValue = Json.obj("type" -> "RegionAndZoneMatch", "region" -> region, "zone" -> zone)
+case class DataCenterMatch(dc: String) extends TargetPredicate {
+  def toJson: JsValue = Json.obj("type" -> "DataCenterMatch", "dc" -> dc)
   override def matches(reqId: String)(implicit env: Env): Boolean = {
-    env.region.trim.toLowerCase == region.trim.toLowerCase &&
-      env.zone.trim.toLowerCase == zone.trim.toLowerCase
+    env.dataCenter.trim.toLowerCase == dc.trim.toLowerCase
+  }
+}
+
+case class InfraProviderMatch(provider: String) extends TargetPredicate {
+  def toJson: JsValue = Json.obj("type" -> "InfraProviderMatch", "provider" -> provider)
+  override def matches(reqId: String)(implicit env: Env): Boolean = {
+    env.infraProvider.trim.toLowerCase == provider.trim.toLowerCase
+  }
+}
+
+case class RackMatch(rack: String) extends TargetPredicate {
+  def toJson: JsValue = Json.obj("type" -> "RackMatch", "rack" -> rack)
+  override def matches(reqId: String)(implicit env: Env): Boolean = {
+    env.rack.trim.toLowerCase == rack.trim.toLowerCase
+  }
+}
+
+case class NetworkLocationMatch(
+  provider: String = "*",
+  region: String = "*",
+  zone: String = "*",
+  dataCenter: String = "*",
+  rack: String = "*",
+) extends TargetPredicate {
+  def toJson: JsValue = Json.obj(
+    "type" -> "NetworkLocationMatch",
+    "provider" -> provider,
+    "region" -> region,
+    "zone" -> zone,
+    "dc" -> dataCenter,
+    "rack" -> rack,
+  )
+  override def matches(reqId: String)(implicit env: Env): Boolean = {
+    utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
+      utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
+      utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
+      utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.dataCenter.trim.toLowerCase) &&
+      utils.RegexPool(rack.trim.toLowerCase).matches(env.rack.trim.toLowerCase)
   }
 }
 
@@ -1602,7 +1651,7 @@ case class ServiceDescriptor(
     } getOrElse f
   }
 
-  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser])(implicit env: Env): String = {
+  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader])(implicit env: Env): String = {
     secComInfoTokenVersion match {
       case SecComInfoTokenVersion.Legacy => {
         OtoroshiClaim(
@@ -1673,6 +1722,21 @@ case class ServiceDescriptor(
           "metadata"   -> ak.metadata,
           "tags" -> ak.tags
         )))
+        .withJsArrayClaim("clientCertChain", requestHeader.flatMap(_.clientCertificateChain).map(chain => JsArray(chain.map(c => Json.obj(
+          "subjectDN"    -> c.getSubjectDN.getName,
+          "issuerDN"     -> c.getIssuerDN.getName,
+          "notAfter"     -> c.getNotAfter.getTime,
+          "notBefore"    -> c.getNotBefore.getTime,
+          "serialNumber" -> c.getSerialNumber.toString(16),
+          "subjectCN"    ->  Option(c.getSubjectDN.getName)
+            .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+            .map(_.replace("CN=", ""))
+            .getOrElse(c.getSubjectDN.getName),
+          "issuerCN"    ->  Option(c.getIssuerDN.getName)
+            .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+            .map(_.replace("CN=", ""))
+            .getOrElse(c.getIssuerDN.getName)
+        )))))
         .serialize(this.secComSettings)(env)
       }
     }

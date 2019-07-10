@@ -1351,32 +1351,32 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http",
-            predicate = RegionAndZoneMatch("eu-west-1", "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-1", zone = "dc1")
           ),
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http",
-            predicate = RegionAndZoneMatch("eu-west-1", "dc2")
+            predicate = NetworkLocationMatch(region = "eu-west-1", zone = "dc2")
           ),
           Target(
             host = s"127.0.0.1:${port3}",
             scheme = "http",
-            predicate = RegionAndZoneMatch("eu-west-1", "dc3")
+            predicate = NetworkLocationMatch(region = "eu-west-1", zone = "dc3")
           ),
           Target(
             host = s"127.0.0.1:${port4}",
             scheme = "http",
-            predicate = RegionAndZoneMatch("eu-west-2", "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-2", zone = "dc1")
           ),
           Target(
             host = s"127.0.0.1:${port5}",
             scheme = "http",
-            predicate = RegionAndZoneMatch("eu-west-3", "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-3", zone = "dc1")
           ),
           Target(
             host = s"127.0.0.1:${port6}",
             scheme = "http",
-            predicate = RegionAndZoneMatch("eu-west-4", "dc1")
+            predicate = NetworkLocationMatch(region = "eu-west-4", zone = "dc1")
           )
         ),
         publicPatterns = Seq("/.*"),

@@ -1,6 +1,7 @@
 package gateway
 
 import java.net.InetSocketAddress
+import java.util.Base64
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
@@ -36,6 +37,7 @@ import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
 import play.api.libs.ws.DefaultWSCookie
+import ssl.PemHeaders
 import utils.http.WSProxyServerUtils
 
 class WebSocketHandler()(implicit env: Env) {
@@ -563,7 +565,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                               val promise = Promise[ProxyDone]
 
-                              val claim = descriptor.generateInfoToken(apiKey, paUsr)
+                              val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                               logger.trace(s"Claim is : $claim")
                               val stateRequestHeaderName = descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
                               val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName.getOrElse(env.Headers.OtoroshiStateResp)
@@ -589,6 +591,9 @@ class WebSocketHandler()(implicit env: Env) {
                                 )
                               } else {
                                 Map.empty[String, String]
+                              }) ++ (req.clientCertificateChain match {
+                                case Some(chain) => Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
+                                case None => Map.empty[String, String]
                               }) ++ descriptor.additionalHeaders.filter(t => t._1.trim.nonEmpty).mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)) ++ fromOtoroshi
                                 .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                 .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
@@ -693,7 +698,8 @@ class WebSocketHandler()(implicit env: Env) {
                                         descriptor = Some(descriptor),
                                         `@product` = descriptor.metadata.getOrElse("product", "--"),
                                         remainingQuotas = q,
-                                        viz = Some(viz)
+                                        viz = Some(viz),
+                                        clientCertChain = req.clientCertChainPem
                                       )
                                       evt.toAnalytics()
                                       if (descriptor.logAnalyticsOnServer) {

@@ -1,9 +1,11 @@
 package utils
 
+import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.http.scaladsl.model.Uri
 import play.api.mvc.RequestHeader
+import ssl.PemHeaders
 
 import scala.util.Try
 
@@ -31,5 +33,14 @@ object RequestImplicits {
         }
         .getOrElse("http")
     }
+    def clientCertChainPem: Seq[String] = {
+      requestHeader.clientCertificateChain.map(chain =>
+        chain.map { cert =>
+          s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+        }
+      ).getOrElse(Seq.empty[String])
+    }
+
+    def clientCertChainPemString: String = clientCertChainPem.mkString("\n")
   }
 }

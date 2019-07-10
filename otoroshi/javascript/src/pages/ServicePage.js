@@ -140,28 +140,98 @@ class Target extends Component {
           help="The protocol of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('protocol', e)}
         />
+        <TextInput
+          label="IP Address"
+          placeholder="127.0.0.1"
+          value={value.ipAddress}
+          help="The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client"
+          onChange={e => this.changeTheValue('ipAddress', e)}
+        />
+        <Separator title="Target filter" />,
         <SelectInput
           label="Predicate"
           placeholder="AlwaysMatch"
           value={value.predicate.type}
-          possibleValues={[{
-            value: 'AlwaysMatch',
-            label: 'AlwaysMatch'
-          }, {
-            value: 'RegionMatch',
-            label: 'RegionMatch'
-          }, {
-            value: 'ZoneMatch',
-            label: 'ZoneMatch'
-          }, {
-            value: 'RegionAndZoneMatch',
-            label: 'RegionAndZoneMatch'
-          }]}
+          possibleValues={[
+            { value: 'AlwaysMatch', label: 'AlwaysMatch'},
+            // { value: 'RegionMatch', label: 'RegionMatch' },
+            // { value: 'ZoneMatch',label: 'ZoneMatch' },
+            // { label: 'DataCenterMatch', value: 'DataCenterMatch' },
+            // { label: 'InfraMatch', value: 'InfraMatch' },
+            // { label: 'RackMatch', value: 'RackMatch' },
+            { value: 'NetworkLocationMatch', label: 'NetworkLocationMatch' }
+          ]}
           help="The predicate of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('predicate', { type: e })}
         />
-        {(value.predicate.type === 'RegionMatch' || value.predicate.type === 'RegionAndZoneMatch') && (
-          <TextInput 
+        {(value.predicate.type === 'NetworkLocationMatch') && (
+          [
+            <TextInput
+              label="Provider"
+              placeholder="local"
+              value={value.predicate.provider}
+              help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
+              onChange={e => this.changeTheValue('predicate.provider', e)}
+            />,
+            <TextInput
+              label="Region"
+              placeholder="local"
+              value={value.predicate.region}
+              help="The region of this target (based on the region value in the otoroshi configuration) app.instance"
+              onChange={e => this.changeTheValue('predicate.region', e)}
+            />,
+            <TextInput
+              label="Zone"
+              placeholder="local"
+              value={value.predicate.zone}
+              help="The zone of this target (based on the zone value in the otoroshi configuration) app.instance"
+              onChange={e => this.changeTheValue('predicate.zone', e)}
+            />,
+            <TextInput
+              label="Data center"
+              placeholder="local"
+              value={value.predicate.dc}
+              help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
+              onChange={e => this.changeTheValue('dc.dc', e)}
+            />,
+            <TextInput
+              label="Rack"
+              placeholder="local"
+              value={value.predicate.rack}
+              help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
+              onChange={e => this.changeTheValue('dc.rack', e)}
+            />
+          ]
+        )}
+        {(value.predicate.type === 'InfraMatch') && (
+        <TextInput
+          label="Provider"
+          placeholder="local"
+          value={value.predicate.provider}
+          help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
+          onChange={e => this.changeTheValue('predicate.provider', e)}
+        />
+        )}
+        {(value.predicate.type === 'DataCenterMatch') && (
+        <TextInput
+          label="Data center"
+          placeholder="local"
+          value={value.predicate.dc}
+          help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
+          onChange={e => this.changeTheValue('dc.dc', e)}
+        />
+        )}
+        {(value.predicate.type === 'RackMatch') && (
+        <TextInput
+          label="Rack"
+          placeholder="local"
+          value={value.predicate.rack}
+          help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
+          onChange={e => this.changeTheValue('dc.rack', e)}
+        />
+        )}
+        {(value.predicate.type === 'RegionMatch') && (
+          <TextInput
             label="Region"
             placeholder="local"
             value={value.predicate.region}
@@ -169,7 +239,7 @@ class Target extends Component {
             onChange={e => this.changeTheValue('predicate.region', e)}
           />
         )}
-        {(value.predicate.type === 'ZoneMatch' || value.predicate.type === 'RegionAndZoneMatch') && (
+        {(value.predicate.type === 'ZoneMatch') && (
           <TextInput 
             label="Zone"
             placeholder="local"
@@ -178,13 +248,6 @@ class Target extends Component {
             onChange={e => this.changeTheValue('predicate.zone', e)}
           />
         )}
-        <TextInput 
-          label="IP Address"
-          placeholder="127.0.0.1"
-          value={value.ipAddress}
-          help="The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client"
-          onChange={e => this.changeTheValue('ipAddress', e)}
-        />
         <Separator />
       </div>
     );

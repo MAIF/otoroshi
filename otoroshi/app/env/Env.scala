@@ -173,6 +173,9 @@ class Env(val configuration: Configuration,
   lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
   lazy val name: String                    = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")
+  lazy val rack: String                    = configuration.getOptional[String]("app.instance.rack").getOrElse("local")
+  lazy val infraProvider: String           = configuration.getOptional[String]("app.instance.provider").getOrElse("local")
+  lazy val dataCenter: String              = configuration.getOptional[String]("app.instance.dc").getOrElse("local")
   lazy val zone: String                    = configuration.getOptional[String]("app.instance.zone").getOrElse("local")
   lazy val region: String                  = configuration.getOptional[String]("app.instance.region").getOrElse("local")
   lazy val liveJs: Boolean = configuration
@@ -365,6 +368,7 @@ class Env(val configuration: Configuration,
       configuration.getOptional[String]("otoroshi.headers.healthcheck.testresult").get
     lazy val OtoroshiIssuer    = configuration.getOptional[String]("otoroshi.headers.jwt.issuer").get
     lazy val OtoroshiTrackerId = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
+    lazy val OtoroshiClientCertChain = configuration.getOptional[String]("otoroshi.headers.client.cert.chain").get
   }
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
