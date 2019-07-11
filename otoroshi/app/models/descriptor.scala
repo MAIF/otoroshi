@@ -1652,6 +1652,21 @@ case class ServiceDescriptor(
   }
 
   def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader])(implicit env: Env): String = {
+    val clientCertChain = requestHeader.flatMap(_.clientCertificateChain).map(chain => JsArray(chain.map(c => Json.obj(
+      "subjectDN"    -> c.getSubjectDN.getName,
+      "issuerDN"     -> c.getIssuerDN.getName,
+      "notAfter"     -> c.getNotAfter.getTime,
+      "notBefore"    -> c.getNotBefore.getTime,
+      "serialNumber" -> c.getSerialNumber.toString(16),
+      "subjectCN"    ->  Option(c.getSubjectDN.getName)
+        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+        .map(_.replace("CN=", ""))
+        .getOrElse(c.getSubjectDN.getName).asInstanceOf[String],
+      "issuerCN"    ->  Option(c.getIssuerDN.getName)
+        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+        .map(_.replace("CN=", ""))
+        .getOrElse(c.getIssuerDN.getName).asInstanceOf[String]
+    ))))
     secComInfoTokenVersion match {
       case SecComInfoTokenVersion.Legacy => {
         OtoroshiClaim(
@@ -1675,6 +1690,7 @@ case class ServiceDescriptor(
           .withClaim("locale", paUsr.flatMap(_.field("locale")))
           .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
           .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
+          .withJsArrayClaim("clientCertChain", clientCertChain)
           .withClaim("metadata",
             paUsr
               .flatMap(_.otoroshiData)
@@ -1722,21 +1738,7 @@ case class ServiceDescriptor(
           "metadata"   -> ak.metadata,
           "tags" -> ak.tags
         )))
-        .withJsArrayClaim("clientCertChain", requestHeader.flatMap(_.clientCertificateChain).map(chain => JsArray(chain.map(c => Json.obj(
-          "subjectDN"    -> c.getSubjectDN.getName,
-          "issuerDN"     -> c.getIssuerDN.getName,
-          "notAfter"     -> c.getNotAfter.getTime,
-          "notBefore"    -> c.getNotBefore.getTime,
-          "serialNumber" -> c.getSerialNumber.toString(16),
-          "subjectCN"    ->  Option(c.getSubjectDN.getName)
-            .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-            .map(_.replace("CN=", ""))
-            .getOrElse(c.getSubjectDN.getName).asInstanceOf[String],
-          "issuerCN"    ->  Option(c.getIssuerDN.getName)
-            .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-            .map(_.replace("CN=", ""))
-            .getOrElse(c.getIssuerDN.getName).asInstanceOf[String]
-        )))))
+        .withJsArrayClaim("clientCertChain", clientCertChain)
         .serialize(this.secComSettings)(env)
       }
     }
