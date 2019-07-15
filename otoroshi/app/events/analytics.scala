@@ -37,7 +37,6 @@ class AnalyticsActor(implicit env: Env) extends Actor {
   lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.otoroshiActorSystem, env, _.analyticsTopic)
   lazy val kafkaWrapperAudit     = new KafkaWrapper(env.otoroshiActorSystem, env, _.auditTopic)
 
-
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
     .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS))
@@ -141,14 +140,14 @@ trait AnalyticEvent {
   def toJson(implicit _env: Env): JsValue
   def toEnrichedJson(implicit _env: Env): JsValue = {
     toJson(_env).as[JsObject] ++ Json.obj(
-      "instance-name"   -> _env.name,
-      "instance-zone"   -> _env.zone,
-      "instance-region" -> _env.region,
-      "instance-dc"     -> _env.dataCenter,
+      "instance-name"     -> _env.name,
+      "instance-zone"     -> _env.zone,
+      "instance-region"   -> _env.region,
+      "instance-dc"       -> _env.dataCenter,
       "instance-provider" -> _env.infraProvider,
-      "instance-rack"   -> _env.rack,
-      "cluster-mode"    -> _env.clusterConfig.mode.name,
-      "cluster-name"    -> (_env.clusterConfig.mode match {
+      "instance-rack"     -> _env.rack,
+      "cluster-mode"      -> _env.clusterConfig.mode.name,
+      "cluster-name" -> (_env.clusterConfig.mode match {
         case ClusterMode.Worker => _env.clusterConfig.worker.name
         case ClusterMode.Leader => _env.clusterConfig.leader.name
         case _                  => "none"

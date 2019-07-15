@@ -587,14 +587,18 @@ object VerificationSettings extends FromJson[VerificationSettings] {
     } get
 }
 
-case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFields: Map[String, String] = Map.empty) extends AsJson {
+case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFields: Map[String, String] = Map.empty)
+    extends AsJson {
   def additionalVerification(jwt: DecodedJWT): DecodedJWT = {
     val token: JsObject = Try(Json.parse(ApacheBase64.decodeBase64(jwt.getPayload)).as[JsObject]).getOrElse(Json.obj())
     arrayFields.foldLeft(jwt)((a, b) => {
-      val values: Set[String] = (token \ b._1).as[JsArray].value.collect {
-        case JsNumber(nbr) => nbr.toString()
-        case JsBoolean(b) => b.toString
-        case JsString(str) => str
+      val values: Set[String] = (token \ b._1)
+        .as[JsArray]
+        .value
+        .collect {
+          case JsNumber(nbr) => nbr.toString()
+          case JsBoolean(b)  => b.toString
+        case JsString(str)   => str
       } toSet
       val expectedValues: Set[String] = if (b._2.contains(",")) {
         b._2.split(",").map(_.trim).toSet
@@ -623,7 +627,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
   }
 
   override def asJson = Json.obj(
-    "fields" -> JsObject(this.fields.mapValues(JsString.apply)),
+    "fields"      -> JsObject(this.fields.mapValues(JsString.apply)),
     "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply)),
   )
 }
@@ -831,12 +835,12 @@ sealed trait JwtVerifier extends AsJson {
                       case Some(outputAlgorithm) => {
                         val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
                         val context: Map[String, String] = jsonToken.value.toSeq.collect {
-                          case (key, JsString(str))   => (key, str)
-                          case (key, JsBoolean(bool)) => (key, bool.toString)
-                          case (key, JsNumber(nbr))   => (key, nbr.toString())
-                          case (key, arr@JsArray(_))  => (key, Json.stringify(arr))
-                          case (key, obj@JsObject(_)) => (key, Json.stringify(obj))
-                          case (key, JsNull)          => (key, "null")
+                          case (key, JsString(str))     => (key, str)
+                          case (key, JsBoolean(bool))   => (key, bool.toString)
+                          case (key, JsNumber(nbr))     => (key, nbr.toString())
+                          case (key, arr @ JsArray(_))  => (key, Json.stringify(arr))
+                          case (key, obj @ JsObject(_)) => (key, Json.stringify(obj))
+                          case (key, JsNull)            => (key, "null")
                         } toMap
                         val evaluatedValues: JsObject =
                           JwtExpressionLanguage(tSettings.mappingSettings.values, context).as[JsObject]

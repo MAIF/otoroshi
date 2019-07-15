@@ -369,8 +369,7 @@ export class ServiceApiKeysPage extends Component {
       type: 'bool',
       props: {
         label: 'Constrained services only',
-        help:
-          'This apikey can only be used on services using apikey routing constraints',
+        help: 'This apikey can only be used on services using apikey routing constraints',
       },
     },
     metadata: {
@@ -419,7 +418,7 @@ export class ServiceApiKeysPage extends Component {
       },
     },
     remainingMonthlyQuota: { type: 'label', props: { label: 'Monthly quota' } },
-    restrictions: { type: Restrictions, props: {   } },
+    restrictions: { type: Restrictions, props: {} },
   };
 
   columns = [
@@ -440,7 +439,12 @@ export class ServiceApiKeysPage extends Component {
     },
     {
       title: 'Active',
-      style: { display:'flex',alignItems:'center', flexDirection:'column-reverse',justifyContent:'flex-start' },
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        flexDirection: 'column-reverse',
+        justifyContent: 'flex-start',
+      },
       notFilterable: true,
       content: item => item.enabled,
       cell: (v, item, table) => (

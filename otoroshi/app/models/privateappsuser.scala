@@ -34,9 +34,9 @@ case class PrivateAppsUser(randomId: String,
 
   def toJson: JsValue = PrivateAppsUser.fmt.writes(this)
   def asJsonCleaned: JsValue = Json.obj(
-    "name" -> name,
-    "email" -> email,
-    "profile" -> profile,
+    "name"     -> name,
+    "email"    -> email,
+    "profile"  -> profile,
     "metadata" -> otoroshiData
   )
 }

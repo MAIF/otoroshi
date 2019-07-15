@@ -95,14 +95,32 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
       true
     } else {
 
-      val matchOnRole: Boolean   = Option(sr.apiKeyConstraints.routing.oneTagIn).filter(_.nonEmpty).map(tags => this.tags.findOne(tags)).getOrElse(true)
-      val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allTagsIn).filter(_.nonEmpty).map(tags => this.tags.findAll(tags)).getOrElse(true)
+      val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneTagIn)
+        .filter(_.nonEmpty)
+        .map(tags => this.tags.findOne(tags))
+        .getOrElse(true)
+      val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allTagsIn)
+        .filter(_.nonEmpty)
+        .map(tags => this.tags.findAll(tags))
+        .getOrElse(true)
 
-      val matchOneMeta: Boolean  = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(true)
-      val matchAllMeta: Boolean  = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findAll(metas)).getOrElse(true)
+      val matchOneMeta: Boolean = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq)
+        .filter(_.nonEmpty)
+        .map(metas => this.metadata.toSeq.findOne(metas))
+        .getOrElse(true)
+      val matchAllMeta: Boolean = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq)
+        .filter(_.nonEmpty)
+        .map(metas => this.metadata.toSeq.findAll(metas))
+        .getOrElse(true)
 
-      val matchNoneRole: Boolean = !Option(sr.apiKeyConstraints.routing.noneTagIn).filter(_.nonEmpty).map(tags => this.tags.findOne(tags)).getOrElse(false)
-      val matchNoneMeta: Boolean = !Option(sr.apiKeyConstraints.routing.noneMetaIn.toSeq).filter(_.nonEmpty).map(metas => this.metadata.toSeq.findOne(metas)).getOrElse(false)
+      val matchNoneRole: Boolean = !Option(sr.apiKeyConstraints.routing.noneTagIn)
+        .filter(_.nonEmpty)
+        .map(tags => this.tags.findOne(tags))
+        .getOrElse(false)
+      val matchNoneMeta: Boolean = !Option(sr.apiKeyConstraints.routing.noneMetaIn.toSeq)
+        .filter(_.nonEmpty)
+        .map(metas => this.metadata.toSeq.findOne(metas))
+        .getOrElse(false)
 
       matchOnRole && matchAllRoles && matchOneMeta && matchAllMeta && matchNoneRole && matchNoneMeta
     }
@@ -120,20 +138,20 @@ object ApiKey {
 
   val _fmt: Format[ApiKey] = new Format[ApiKey] {
     override def writes(apk: ApiKey): JsValue = Json.obj(
-      "clientId"          -> apk.clientId,
-      "clientSecret"      -> apk.clientSecret,
-      "clientName"        -> apk.clientName,
-      "authorizedGroup"   -> apk.authorizedGroup,
-      "enabled"           -> apk.enabled,
-      "readOnly"          -> apk.readOnly,
-      "allowClientIdOnly" -> apk.allowClientIdOnly,
-      "throttlingQuota"   -> apk.throttlingQuota,
-      "dailyQuota"        -> apk.dailyQuota,
-      "monthlyQuota"      -> apk.monthlyQuota,
+      "clientId"                -> apk.clientId,
+      "clientSecret"            -> apk.clientSecret,
+      "clientName"              -> apk.clientName,
+      "authorizedGroup"         -> apk.authorizedGroup,
+      "enabled"                 -> apk.enabled,
+      "readOnly"                -> apk.readOnly,
+      "allowClientIdOnly"       -> apk.allowClientIdOnly,
+      "throttlingQuota"         -> apk.throttlingQuota,
+      "dailyQuota"              -> apk.dailyQuota,
+      "monthlyQuota"            -> apk.monthlyQuota,
       "constrainedServicesOnly" -> apk.constrainedServicesOnly,
-      "restrictions"      -> apk.restrictions.json,
-      "tags"              -> JsArray(apk.tags.map(JsString.apply)),
-      "metadata"          -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+      "restrictions"            -> apk.restrictions.json,
+      "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
+      "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
@@ -149,7 +167,9 @@ object ApiKey {
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
-          restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions()),
+          restrictions = Restrictions.format
+            .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(Restrictions()),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
@@ -212,7 +232,8 @@ object ApiKeyHelper {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Option[ApiKey]] = {
+  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext,
+                                                                       env: Env): Future[Option[ApiKey]] = {
     val authByJwtToken = req.headers
       .get(
         descriptor.apiKeyConstraints.jwtAuth.headerName
@@ -290,18 +311,18 @@ object ApiKeyHelper {
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None => FastFuture.successful(None)
+          case None                                => FastFuture.successful(None)
           case Some(key) if !key.allowClientIdOnly => FastFuture.successful(None)
-          case Some(key) if key.allowClientIdOnly => FastFuture.successful(Some(key))
+          case Some(key) if key.allowClientIdOnly  => FastFuture.successful(Some(key))
         }
     } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
       val (clientId, clientSecret) = authByCustomHeaders.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None => FastFuture.successful(None)
-          case Some(key) if key.isInvalid(clientSecret) =>  FastFuture.successful(None)
-          case Some(key) if key.isValid(clientSecret) => FastFuture.successful(Some(key))
+          case None                                     => FastFuture.successful(None)
+          case Some(key) if key.isInvalid(clientSecret) => FastFuture.successful(None)
+          case Some(key) if key.isValid(clientSecret)   => FastFuture.successful(Some(key))
         }
     } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
       val jwtTokenValue = authByJwtToken.get
@@ -351,17 +372,16 @@ object ApiKeyHelper {
                       }
                     }
                     .filter { _ =>
-                      descriptor.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
-                        maxJwtLifespanSecs =>
-                          if (exp.isEmpty || iat.isEmpty) {
-                            false
+                      descriptor.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
+                        if (exp.isEmpty || iat.isEmpty) {
+                          false
+                        } else {
+                          if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
+                            true
                           } else {
-                            if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
-                              true
-                            } else {
-                              false
-                            }
+                            false
                           }
+                        }
                       } getOrElse {
                         true
                       }
@@ -395,9 +415,9 @@ object ApiKeyHelper {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
             .flatMap {
-              case None => FastFuture.successful(None)
+              case None                                     => FastFuture.successful(None)
               case Some(key) if key.isInvalid(apiKeySecret) => FastFuture.successful(None)
-              case Some(key) if key.isValid(apiKeySecret) => FastFuture.successful(Some(key))
+              case Some(key) if key.isValid(apiKeySecret)   => FastFuture.successful(Some(key))
             }
         }
         case _ => FastFuture.successful(None)

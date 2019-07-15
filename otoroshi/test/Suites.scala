@@ -136,4 +136,3 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 //      extends Suites(
 //        new Version149Spec("DEV", Configurations.InMemoryConfiguration),
 //      )
-

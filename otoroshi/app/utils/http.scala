@@ -27,7 +27,7 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{Logger, libs}
+import play.api.{libs, Logger}
 import play.shaded.ahc.org.asynchttpclient.util.{Assertions, MiscUtils}
 import ssl.DynamicSSLEngineProvider
 
@@ -41,7 +41,8 @@ object WsClientChooser {
   def apply(standardClient: WSClient,
             akkaClient: AkkWsClient,
             ahcCreator: SSLConfigSettings => WSClient,
-            fullAkka: Boolean, env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, ahcCreator, fullAkka, env)
+            fullAkka: Boolean,
+            env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, ahcCreator, fullAkka, env)
 }
 
 class WsClientChooser(standardClient: WSClient,
@@ -117,10 +118,16 @@ class WsClientChooser(standardClient: WSClient,
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     protocol.toLowerCase() match {
 
-      case "http"  if useAkkaHttpClient || fullAkka => new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(akkaClient.mat)
-      case "https" if useAkkaHttpClient || fullAkka => new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(akkaClient.mat)
+      case "http" if useAkkaHttpClient || fullAkka =>
+        new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(
+          akkaClient.mat
+        )
+      case "https" if useAkkaHttpClient || fullAkka =>
+        new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(
+          akkaClient.mat
+        )
 
-      case "http"  if !useAkkaHttpClient => standardClient.url(url)
+      case "http" if !useAkkaHttpClient  => standardClient.url(url)
       case "https" if !useAkkaHttpClient => standardClient.url(url)
 
       case "standard:http"  => standardClient.url(url.replace("standard:http://", "http://"))
@@ -129,31 +136,60 @@ class WsClientChooser(standardClient: WSClient,
       // case "ahc:http"  => getAhcInstance().url(url.replace("ahc:http://", "http://"))
       // case "ahc:https" => getAhcInstance().url(url.replace("ahc:https://", "https://"))
 
-      case "ahc:http" => new AkkaWsClientRequest(akkaClient, url.replace("ahc:http://", "http://"), None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(
-        akkaClient.mat
-      )
-      case "ahc:https" => new AkkaWsClientRequest(akkaClient, url.replace("ahc:https://", "http://"), None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(
-        akkaClient.mat
-      )
+      case "ahc:http" =>
+        new AkkaWsClientRequest(akkaClient,
+                                url.replace("ahc:http://", "http://"),
+                                None,
+                                HttpProtocols.`HTTP/1.1`,
+                                clientConfig = clientConfig)(
+          akkaClient.mat
+        )
+      case "ahc:https" =>
+        new AkkaWsClientRequest(akkaClient,
+                                url.replace("ahc:https://", "http://"),
+                                None,
+                                HttpProtocols.`HTTP/1.1`,
+                                clientConfig = clientConfig)(
+          akkaClient.mat
+        )
 
       case "ahttp" =>
-        new AkkaWsClientRequest(akkaClient, url.replace("ahttp://", "http://"), None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(
+        new AkkaWsClientRequest(akkaClient,
+                                url.replace("ahttp://", "http://"),
+                                None,
+                                HttpProtocols.`HTTP/1.1`,
+                                clientConfig = clientConfig)(
           akkaClient.mat
         )
       case "ahttps" =>
-        new AkkaWsClientRequest(akkaClient, url.replace("ahttps://", "https://"), None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(
+        new AkkaWsClientRequest(akkaClient,
+                                url.replace("ahttps://", "https://"),
+                                None,
+                                HttpProtocols.`HTTP/1.1`,
+                                clientConfig = clientConfig)(
           akkaClient.mat
         )
       case "http2" =>
-        new AkkaWsClientRequest(akkaClient, url.replace("http2://", "http://"), None, HttpProtocols.`HTTP/2.0`, clientConfig = clientConfig)(
+        new AkkaWsClientRequest(akkaClient,
+                                url.replace("http2://", "http://"),
+                                None,
+                                HttpProtocols.`HTTP/2.0`,
+                                clientConfig = clientConfig)(
           akkaClient.mat
         )
       case "http2s" =>
-        new AkkaWsClientRequest(akkaClient, url.replace("http2s://", "https://"), None, HttpProtocols.`HTTP/2.0`, clientConfig = clientConfig)(
+        new AkkaWsClientRequest(akkaClient,
+                                url.replace("http2s://", "https://"),
+                                None,
+                                HttpProtocols.`HTTP/2.0`,
+                                clientConfig = clientConfig)(
           akkaClient.mat
         )
 
-      case _ if useAkkaHttpClient || fullAkka => new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(akkaClient.mat)
+      case _ if useAkkaHttpClient || fullAkka =>
+        new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig)(
+          akkaClient.mat
+        )
       case _ if !(useAkkaHttpClient || fullAkka) => standardClient.url(url)
     }
   }
@@ -254,7 +290,10 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
   }
 }
 
-case class AkkWsClientStreamedResponse(httpResponse: HttpResponse, underlyingUrl: String, mat: Materializer, requestTimeout: FiniteDuration)
+case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
+                                       underlyingUrl: String,
+                                       mat: Materializer,
+                                       requestTimeout: FiniteDuration)
     extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
@@ -409,8 +448,8 @@ case class AkkaWsClientRequest(
   }
 
   private def customizer: ConnectionPoolSettings => ConnectionPoolSettings = {
-    val relUri = _uri.toRelative.toString()
-    val idleTimeout = clientConfig.extractTimeout(relUri, _.idleTimeout,_.idleTimeout)
+    val relUri            = _uri.toRelative.toString()
+    val idleTimeout       = clientConfig.extractTimeout(relUri, _.idleTimeout, _.idleTimeout)
     val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
     proxy
       .filter(
@@ -436,19 +475,24 @@ case class AkkaWsClientRequest(
           }
           case _ => ClientTransport.httpsProxy(proxyAddress)
         }
-        a: ConnectionPoolSettings => {
-          a.withTransport(httpsProxyTransport)
-            .withIdleTimeout(idleTimeout)
-            .withConnectionSettings(a.connectionSettings
-              .withConnectingTimeout(connectionTimeout)
-              .withIdleTimeout(idleTimeout))
-        }
+        a: ConnectionPoolSettings =>
+          {
+            a.withTransport(httpsProxyTransport)
+              .withIdleTimeout(idleTimeout)
+              .withConnectionSettings(
+                a.connectionSettings
+                  .withConnectingTimeout(connectionTimeout)
+                  .withIdleTimeout(idleTimeout)
+              )
+          }
       } getOrElse { a: ConnectionPoolSettings =>
-        a.withIdleTimeout(idleTimeout)
-          .withConnectionSettings(a.connectionSettings
+      a.withIdleTimeout(idleTimeout)
+        .withConnectionSettings(
+          a.connectionSettings
             .withConnectingTimeout(connectionTimeout)
-            .withIdleTimeout(idleTimeout))
-      }
+            .withIdleTimeout(idleTimeout)
+        )
+    }
   }
 
   def withMethod(method: String): AkkaWsClientRequest = {
@@ -477,7 +521,12 @@ case class AkkaWsClientRequest(
     client
       .executeRequest(req, customizer)
       .map { resp =>
-        AkkWsClientStreamedResponse(resp, rawUrl, client.mat, requestTimeout.map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(365, TimeUnit.DAYS))) // yeah that's infinity ...
+        AkkWsClientStreamedResponse(resp,
+                                    rawUrl,
+                                    client.mat,
+                                    requestTimeout
+                                      .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
+                                      .getOrElse(FiniteDuration(365, TimeUnit.DAYS))) // yeah that's infinity ...
       }(client.ec)
   }
 
@@ -525,9 +574,9 @@ case class AkkaWsClientRequest(
 
   def buildRequest(): HttpRequest = {
     // val internalUri = Uri(rawUrl)
-    val ct          = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
-    val cl          = realContentLength
-    val ua          = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
+    val ct = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
+    val cl = realContentLength
+    val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
     val (akkaHttpEntity, updatedHeaders) = body match {
       case EmptyBody                         => (HttpEntity.Empty, headers)
       case InMemoryBody(bytes)               => (HttpEntity.apply(ct, bytes), headers)

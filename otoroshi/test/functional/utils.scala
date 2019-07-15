@@ -71,24 +71,38 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
   private var _servers: Set[TargetService] = Set.empty
 
-  def testServer(host: String, port: Int, delay: FiniteDuration = 0.millis, streamDelay: FiniteDuration = 0.millis, validate: HttpRequest => Boolean = _ => true)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
-    val counter           = new AtomicInteger(0)
-    val body = """{"message":"hello world"}"""
-    val server = TargetService.streamed(None, "/api", "application/json", { r =>
-      if (validate(r)) {
-        counter.incrementAndGet()
-      }
-      if (delay.toMillis > 0L) {
-        await(delay)
-      }
-      if (streamDelay.toMillis > 0L) {
-        val head = body.head.toString
-        val tail = body.tail
-        Source.single(ByteString(head)).concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
-      } else {
-        Source(List(ByteString(body)))
-      }
-    }).await()
+  def testServer(
+      host: String,
+      port: Int,
+      delay: FiniteDuration = 0.millis,
+      streamDelay: FiniteDuration = 0.millis,
+      validate: HttpRequest => Boolean = _ => true
+  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
+    val counter = new AtomicInteger(0)
+    val body    = """{"message":"hello world"}"""
+    val server = TargetService
+      .streamed(
+        None,
+        "/api",
+        "application/json", { r =>
+          if (validate(r)) {
+            counter.incrementAndGet()
+          }
+          if (delay.toMillis > 0L) {
+            await(delay)
+          }
+          if (streamDelay.toMillis > 0L) {
+            val head = body.head.toString
+            val tail = body.tail
+            Source
+              .single(ByteString(head))
+              .concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
+          } else {
+            Source(List(ByteString(body)))
+          }
+        }
+      )
+      .await()
     _servers = _servers + server
     (server, server.port, counter, (headers: Map[String, String]) => {
       val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
@@ -99,32 +113,50 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     })
   }
 
-  def testServerWithClientPath(host: String, port: Int, delay: FiniteDuration = 0.millis, streamDelay: FiniteDuration = 0.millis, validate: HttpRequest => Boolean = _ => true)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
-    val counter           = new AtomicInteger(0)
-    val body = """{"message":"hello world"}"""
-    val server = TargetService.streamed(None, "/api", "application/json", { r =>
-      if (validate(r)) {
-        counter.incrementAndGet()
-      }
-      if (delay.toMillis > 0L) {
-        await(delay)
-      }
-      if (streamDelay.toMillis > 0L) {
-        val head = body.head.toString
-        val tail = body.tail
-        Source.single(ByteString(head)).concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
-      } else {
-        Source(List(ByteString(body)))
-      }
-    }).await()
+  def testServerWithClientPath(
+      host: String,
+      port: Int,
+      delay: FiniteDuration = 0.millis,
+      streamDelay: FiniteDuration = 0.millis,
+      validate: HttpRequest => Boolean = _ => true
+  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
+    val counter = new AtomicInteger(0)
+    val body    = """{"message":"hello world"}"""
+    val server = TargetService
+      .streamed(
+        None,
+        "/api",
+        "application/json", { r =>
+          if (validate(r)) {
+            counter.incrementAndGet()
+          }
+          if (delay.toMillis > 0L) {
+            await(delay)
+          }
+          if (streamDelay.toMillis > 0L) {
+            val head = body.head.toString
+            val tail = body.tail
+            Source
+              .single(ByteString(head))
+              .concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
+          } else {
+            Source(List(ByteString(body)))
+          }
+        }
+      )
+      .await()
     _servers = _servers + server
-    (server, server.port, counter, (path: String) => (headers: Map[String, String]) => {
-      val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
-      ws.url(s"http://127.0.0.1:${port}$path")
-        .withHttpHeaders(finalHeaders: _*)
-        .get()
-        .futureValue
-    })
+    (server,
+     server.port,
+     counter,
+     (path: String) =>
+       (headers: Map[String, String]) => {
+         val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
+         ws.url(s"http://127.0.0.1:${port}$path")
+           .withHttpHeaders(finalHeaders: _*)
+           .get()
+           .futureValue
+     })
   }
 
   def stopServers(): Unit = {
@@ -491,7 +523,8 @@ class TargetService(val port: Int,
       case (HttpMethods.GET, p) if host.isEmpty => {
         val (code, body, source, headers) = result(request)
         val entity = source match {
-          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case None =>
+            HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
         }
         FastFuture.successful(
@@ -505,7 +538,8 @@ class TargetService(val port: Int,
       case (HttpMethods.GET, p) if TargetService.extractHost(request) == host.get => {
         val (code, body, source, headers) = result(request)
         val entity = source match {
-          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case None =>
+            HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
         }
         FastFuture.successful(
@@ -519,7 +553,8 @@ class TargetService(val port: Int,
       case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get => {
         val (code, body, source, headers) = result(request)
         val entity = source match {
-          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case None =>
+            HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
         }
         FastFuture.successful(
@@ -533,7 +568,8 @@ class TargetService(val port: Int,
       case (HttpMethods.DELETE, p) => {
         val (code, body, source, headers) = result(request)
         val entity = source match {
-          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case None =>
+            HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
           case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
         }
         FastFuture.successful(
@@ -728,20 +764,36 @@ object TargetService {
   import Implicits._
 
   def apply(host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
-    new TargetService(TargetService.freePort, host, path, contentType, r => (200, result(r), None, List.empty[HttpHeader]))
+    new TargetService(TargetService.freePort,
+                      host,
+                      path,
+                      contentType,
+                      r => (200, result(r), None, List.empty[HttpHeader]))
   }
 
-  def streamed(host: Option[String], path: String, contentType: String, result: HttpRequest => Source[ByteString, NotUsed]): TargetService = {
-    new TargetService(TargetService.freePort, host, path, contentType, r => (200, "", Some(result(r)), List.empty[HttpHeader]))
+  def streamed(host: Option[String],
+               path: String,
+               contentType: String,
+               result: HttpRequest => Source[ByteString, NotUsed]): TargetService = {
+    new TargetService(TargetService.freePort,
+                      host,
+                      path,
+                      contentType,
+                      r => (200, "", Some(result(r)), List.empty[HttpHeader]))
   }
 
   def full(host: Option[String],
            path: String,
            contentType: String,
            result: HttpRequest => (Int, String, List[HttpHeader])): TargetService = {
-    new TargetService(TargetService.freePort, host, path, contentType, r => result(r) match {
-      case (p, b, h) => (p, b, None, h)
-    })
+    new TargetService(TargetService.freePort,
+                      host,
+                      path,
+                      contentType,
+                      r =>
+                        result(r) match {
+                          case (p, b, h) => (p, b, None, h)
+                      })
   }
 
   def withPort(port: Int,
@@ -802,8 +854,7 @@ class BodySizeService() {
   }
 }
 
-object TestRegex  {
-
+object TestRegex {
 
   import java.util.regex.Pattern
   val pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,1000}$")

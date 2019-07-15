@@ -176,12 +176,15 @@ object Errors {
               )
           )
         } else {
-          val body = if (emptyBody) status.apply("") else status.apply(
-            views.html.otoroshi.error(
-              message = message,
-              _env = env
-            )
-          )
+          val body =
+            if (emptyBody) status.apply("")
+            else
+              status.apply(
+                views.html.otoroshi.error(
+                  message = message,
+                  _env = env
+                )
+              )
           FastFuture.successful(
             body
               .withHeaders(
@@ -219,8 +222,8 @@ object Errors {
                 .as("text/html")
                 .withHeaders(
                   env.Headers.OtoroshiGatewayError -> "true",
-                  env.Headers.OtoroshiErrorMsg -> message,
-                  env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+                  env.Headers.OtoroshiErrorMsg     -> message,
+                  env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
                 )
             )
           } else {
@@ -232,7 +235,7 @@ object Errors {
                 )
                 .withHeaders(
                   env.Headers.OtoroshiGatewayError -> "true",
-                  env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+                  env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
                 )
             )
           }

@@ -176,4 +176,3 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
     }
   }
 }
-

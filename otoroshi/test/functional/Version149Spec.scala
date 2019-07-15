@@ -20,21 +20,20 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
 class Version149Spec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
   implicit lazy val ws = otoroshiComponents.wsClient
-  implicit val system = ActorSystem("otoroshi-test")
-  implicit val env = otoroshiComponents.env
+  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val env     = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
-      .parseString(
-        s"""
+      .parseString(s"""
            |{
            |  http.port=$port
            |  play.server.http.port=$port
@@ -53,10 +52,10 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "provide routing based on apikey tags and metadata (#307)" in {
       val (_, port1, counter1, call) = testServer("service.oto.tools", port)
-      val (_, port2, counter2, _) = testServer("service.oto.tools", port)
-      val (_, port3, counter3, _) = testServer("service.oto.tools", port)
-      val (_, port4, counter4, _) = testServer("service.oto.tools", port)
-      val (_, port5, counter5, _) = testServer("service.oto.tools", port)
+      val (_, port2, counter2, _)    = testServer("service.oto.tools", port)
+      val (_, port3, counter3, _)    = testServer("service.oto.tools", port)
+      val (_, port4, counter4, _)    = testServer("service.oto.tools", port)
+      val (_, port5, counter5, _)    = testServer("service.oto.tools", port)
       val service1 = ServiceDescriptor(
         id = "service-apk-routing-1",
         name = "service1",
@@ -198,10 +197,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       createOtoroshiApiKey(apikey4).futureValue
       createOtoroshiApiKey(apikey5).futureValue
 
-      val resp1 = call(Map(
-        "Otoroshi-Client-Id" -> apikey1.clientId,
-        "Otoroshi-Client-Secret" -> apikey1.clientSecret
-      ))
+      val resp1 = call(
+        Map(
+          "Otoroshi-Client-Id"     -> apikey1.clientId,
+          "Otoroshi-Client-Secret" -> apikey1.clientSecret
+        )
+      )
 
       resp1.status mustBe 200
       counter1.get() mustBe 1
@@ -210,10 +211,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       counter4.get() mustBe 0
       counter5.get() mustBe 0
 
-      val resp2 = call(Map(
-        "Otoroshi-Client-Id" -> apikey2.clientId,
-        "Otoroshi-Client-Secret" -> apikey2.clientSecret
-      ))
+      val resp2 = call(
+        Map(
+          "Otoroshi-Client-Id"     -> apikey2.clientId,
+          "Otoroshi-Client-Secret" -> apikey2.clientSecret
+        )
+      )
 
       resp2.status mustBe 200
       counter1.get() mustBe 1
@@ -222,10 +225,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       counter4.get() mustBe 0
       counter5.get() mustBe 0
 
-      val resp3 = call(Map(
-        "Otoroshi-Client-Id" -> apikey3.clientId,
-        "Otoroshi-Client-Secret" -> apikey3.clientSecret
-      ))
+      val resp3 = call(
+        Map(
+          "Otoroshi-Client-Id"     -> apikey3.clientId,
+          "Otoroshi-Client-Secret" -> apikey3.clientSecret
+        )
+      )
 
       resp3.status mustBe 200
       counter1.get() mustBe 1
@@ -234,10 +239,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       counter4.get() mustBe 0
       counter5.get() mustBe 0
 
-      val resp5 = call(Map(
-        "Otoroshi-Client-Id" -> apikey5.clientId,
-        "Otoroshi-Client-Secret" -> apikey5.clientSecret
-      ))
+      val resp5 = call(
+        Map(
+          "Otoroshi-Client-Id"     -> apikey5.clientId,
+          "Otoroshi-Client-Secret" -> apikey5.clientSecret
+        )
+      )
 
       resp5.status mustBe 200
       counter1.get() mustBe 1
@@ -246,10 +253,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       counter4.get() mustBe 0
       counter5.get() mustBe 1
 
-      val resp4 = call(Map(
-        "Otoroshi-Client-Id" -> apikey4.clientId,
-        "Otoroshi-Client-Secret" -> apikey4.clientSecret
-      ))
+      val resp4 = call(
+        Map(
+          "Otoroshi-Client-Id"     -> apikey4.clientId,
+          "Otoroshi-Client-Secret" -> apikey4.clientSecret
+        )
+      )
 
       resp4.status mustBe 200
       counter1.get() mustBe 1
@@ -302,10 +311,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       createOtoroshiService(service).futureValue
       createOtoroshiApiKey(apikey).futureValue
 
-      val resp = call(Map(
-        "Otoroshi-Client-Id" -> apikey.clientId,
-        "Otoroshi-Client-Secret" -> apikey.clientSecret
-      ))
+      val resp = call(
+        Map(
+          "Otoroshi-Client-Id"     -> apikey.clientId,
+          "Otoroshi-Client-Secret" -> apikey.clientSecret
+        )
+      )
 
       resp.status mustBe 200
       counter1.get() mustBe 1
@@ -319,7 +330,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi global config" should {
 
     val counter1 = new AtomicInteger(0)
-    val body    = """{"message":"hello world"}"""
+    val body     = """{"message":"hello world"}"""
     val server1 = TargetService(None, "/api", "application/json", { r =>
       // println(r.getHeaders())
       counter1.incrementAndGet()
@@ -350,7 +361,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       createOtoroshiService(service).futureValue
       val config = getOtoroshiConfig().futureValue
 
-      val resp1 = ws.url(s"http://127.0.0.1:$port/api")
+      val resp1 = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> "service-switch.oto.tools"
         )
@@ -364,7 +376,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
       await(10.seconds)
 
-      val resp2 = ws.url(s"http://127.0.0.1:$port/api")
+      val resp2 = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> "service-switch.oto.tools"
         )
@@ -386,8 +399,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi jwt verifier" should {
     "verify items in arrays (#316)" in {
 
-      val counter           = new AtomicInteger(0)
-      val body = """{"message":"hello world 1"}"""
+      val counter = new AtomicInteger(0)
+      val body    = """{"message":"hello world 1"}"""
       val server = TargetService(None, "/api", "application/json", { r =>
         // println(r.getHeaders())
         counter.incrementAndGet()
@@ -414,9 +427,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = PassThrough(verificationSettings = VerificationSettings(
-            arrayFields = Map("roles" -> "user")
-          ))
+          strategy = PassThrough(
+            verificationSettings = VerificationSettings(
+              arrayFields = Map("roles" -> "user")
+            )
+          )
         )
       )
 
@@ -436,7 +451,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "array-jwt.oto.tools",
+            "Host"        -> "array-jwt.oto.tools",
             "X-JWT-Token" -> signedTok
           )
           .get()
@@ -628,14 +643,19 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         clientName = "apikey1",
         authorizedGroup = "default"
       )
-      val (_, port1, counter1, call) = testServer("service-disabled-info.oto.tools", port, validate = r => {
-        val token = r.getHeader("Otoroshi-Claim").get().value()
-        val valid = Try(JWT.require(alg.asAlgorithm(OutputMode).get).build().verify(token)).map(_ => true).getOrElse(false)
-        val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(1)))).getOrElse(Json.obj())
-        val valid2 = (tokenBody \ "apikey" \ "clientId").as[String] == apikey1.clientId
-        println(Json.prettyPrint(tokenBody))
-        valid && valid2
-      })
+      val (_, port1, counter1, call) = testServer(
+        "service-disabled-info.oto.tools",
+        port,
+        validate = r => {
+          val token = r.getHeader("Otoroshi-Claim").get().value()
+          val valid =
+            Try(JWT.require(alg.asAlgorithm(OutputMode).get).build().verify(token)).map(_ => true).getOrElse(false)
+          val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(1)))).getOrElse(Json.obj())
+          val valid2    = (tokenBody \ "apikey" \ "clientId").as[String] == apikey1.clientId
+          println(Json.prettyPrint(tokenBody))
+          valid && valid2
+        }
+      )
       val service = ServiceDescriptor(
         id = "service-disabled-info",
         name = "service-disabled-info",
@@ -755,7 +775,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : callTimeout (#301)" in {
       val (_, port1, counter1, call1) = testServer("calltimeout.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, _) = testServer("calltimeout.oto.tools", port, 200.millis)
+      val (_, port2, counter2, _)     = testServer("calltimeout.oto.tools", port, 200.millis)
       val serviceweight = ServiceDescriptor(
         id = "callTimeout-test",
         name = "callTimeout-test",
@@ -794,7 +814,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : callTimeout with akka-http (#301)" in {
       val (_, port1, counter1, call1) = testServer("calltimeout.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, _) = testServer("calltimeout.oto.tools", port, 200.millis)
+      val (_, port2, counter2, _)     = testServer("calltimeout.oto.tools", port, 200.millis)
       val serviceweight = ServiceDescriptor(
         id = "callTimeout-test",
         name = "callTimeout-test",
@@ -833,7 +853,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : idleTimeout (#301)" in {
       val (_, port1, counter1, call1) = testServer("idletimeout.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, _) = testServer("idletimeout.oto.tools", port, 200.millis)
+      val (_, port2, counter2, _)     = testServer("idletimeout.oto.tools", port, 200.millis)
       val serviceweight = ServiceDescriptor(
         id = "idleTimeout-test",
         name = "idleTimeout-test",
@@ -872,7 +892,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : callAndStreamTimeout (#301)" in {
       val (_, port1, counter1, call1) = testServer("callandstreamtimeout.oto.tools", port, 0.millis, 2000.millis)
-      val (_, port2, counter2, _) = testServer("callandstreamtimeout.oto.tools", port, 0.millis)
+      val (_, port2, counter2, _)     = testServer("callandstreamtimeout.oto.tools", port, 0.millis)
       val serviceweight = ServiceDescriptor(
         id = "callAndStreamTimeout-test",
         name = "callAndStreamTimeout-test",
@@ -912,7 +932,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : callAndStreamTimeout with akka-http (#301)" in {
       val (_, port1, counter1, call1) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis, 2000.millis)
-      val (_, port2, counter2, _) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
+      val (_, port2, counter2, _)     = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
       val serviceweight = ServiceDescriptor(
         id = "callandstreamtimeout2-test",
         name = "callandstreamtimeout2-test",
@@ -985,7 +1005,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         await(100.millis)
       }
       // println(counter1.get(), counter2.get(), counter3.get())
-      (counter1.get() == 11 && counter2.get() == 11 &&counter3.get() == 11) mustBe false
+      (counter1.get() == 11 && counter2.get() == 11 && counter3.get() == 11) mustBe false
       deleteOtoroshiService(serviceweight).futureValue
       stopServers()
     }
@@ -1044,8 +1064,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       counter3.set(0)
 
       def findNiceTrackingId(expected: Int): String = {
-        var counter = 0
-        var index = -1
+        var counter    = 0
+        var index      = -1
         var trackingId = IdGenerator.uuid
         while (index != expected) {
           if (counter > 100) {
@@ -1231,7 +1251,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val computedRatio = BigDecimal(counter3.get() / 30.0).setScale(1, RoundingMode.HALF_EVEN).toDouble
       computedRatio >= 0.7 mustBe true
       computedRatio <= 0.9 mustBe true
-      val computedInvertRatio = BigDecimal((counter1.get() + counter2.get()) / 30.0).setScale(1, RoundingMode.HALF_EVEN).toDouble
+      val computedInvertRatio =
+        BigDecimal((counter1.get() + counter2.get()) / 30.0).setScale(1, RoundingMode.HALF_EVEN).toDouble
       computedInvertRatio >= 0.1 mustBe true
       computedInvertRatio <= 0.3 mustBe true
 
@@ -1410,13 +1431,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     "allow manual DNS resolution (#309, #310)" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(None, "/api", "application/json", { r =>
-        if (r.getHeader("Host").get().value().startsWith("www.google.fr:")) {
+      val server = TargetService(
+        None,
+        "/api",
+        "application/json", { r =>
+          if (r.getHeader("Host").get().value().startsWith("www.google.fr:")) {
+            counter.incrementAndGet()
+          }
           counter.incrementAndGet()
+          body
         }
-        counter.incrementAndGet()
-        body
-      }).await()
+      ).await()
 
       val service = ServiceDescriptor(
         id = "target-test",
@@ -1437,7 +1462,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         enforceSecureCommunication = false
       )
       createOtoroshiService(service).futureValue
-      val resp = ws.url(s"http://127.0.0.1:$port/api")
+      val resp = ws
+        .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> "target-test.oto.tools"
         )
@@ -1719,7 +1745,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       resp111.status mustBe 200
       counter1.get() mustBe 3
 
-      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+      val resp1111 = ws
+        .url(s"http://127.0.0.1:${port}/api/bar/foo")
         .withHttpHeaders("Host" -> "restrictionservicesome.oto.tools")
         .delete()
         .futureValue
@@ -1779,7 +1806,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       resp111.status mustBe 200
       counter1.get() mustBe 3
 
-      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+      val resp1111 = ws
+        .url(s"http://127.0.0.1:${port}/api/bar/foo")
         .withHttpHeaders("Host" -> "restrictionserviceallowsome.oto.tools")
         .delete()
         .futureValue
@@ -1838,58 +1866,81 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       createOtoroshiApiKey(apikey1).futureValue
       createOtoroshiApiKey(apikey2).futureValue
 
-      val resp1 = call1("/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp1 =
+        call1("/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
       resp1.status mustBe 200
       counter1.get() mustBe 1
 
-      val resp11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp11 = call1("/api/fooo")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp11.status mustBe 200
       counter1.get() mustBe 2
 
-      val resp111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp111 = call1("/api/bar/foo")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp111.status mustBe 200
       counter1.get() mustBe 3
 
-      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host" -> "restrictionservicesome.oto.tools", "Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      val resp1111 = ws
+        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host"                   -> "restrictionservicesome.oto.tools",
+                         "Otoroshi-Client-Id"     -> apikey2.clientId,
+                         "Otoroshi-Client-Secret" -> apikey2.clientSecret)
         .delete()
         .futureValue
       resp1111.status mustBe 404
       counter1.get() mustBe 3
 
-      val resp2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp2 = call1("/notfound/api")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp2.status mustBe 404
       counter1.get() mustBe 3
 
-      val resp3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp3 = call1("/forbidden/api")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp3.status mustBe 403
       counter1.get() mustBe 3
 
-
-      val resp1_1 = call1("/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_1 =
+        call1("/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
       resp1_1.status mustBe 200
       counter1.get() mustBe 4
 
-      val resp1_11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_11 = call1("/api/fooo")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_11.status mustBe 200
       counter1.get() mustBe 5
 
-      val resp1_111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_111 = call1("/api/bar/foo")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_111.status mustBe 200
       counter1.get() mustBe 6
 
-      val resp1_1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host" -> "restrictionservicesapikey.oto.tools", "Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      val resp1_1111 = ws
+        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host"                   -> "restrictionservicesapikey.oto.tools",
+                         "Otoroshi-Client-Id"     -> apikey1.clientId,
+                         "Otoroshi-Client-Secret" -> apikey1.clientSecret)
         .delete()
         .futureValue
       resp1_1111.status mustBe 200
       counter1.get() mustBe 7
 
-      val resp1_2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_2 = call1("/notfound/api")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_2.status mustBe 200
       counter1.get() mustBe 8
 
-      val resp1_3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_3 = call1("/forbidden/api")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_3.status mustBe 200
       counter1.get() mustBe 9
 
@@ -1937,58 +1988,81 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       createOtoroshiApiKey(apikey1).futureValue
       createOtoroshiApiKey(apikey2).futureValue
 
-      val resp1 = call1("/api/a")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp1 =
+        call1("/api/a")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
       resp1.status mustBe 200
       counter1.get() mustBe 1
 
-      val resp11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp11 = call1("/api/fooo")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp11.status mustBe 200
       counter1.get() mustBe 2
 
-      val resp111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp111 = call1("/api/bar/foo")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp111.status mustBe 200
       counter1.get() mustBe 3
 
-      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host" -> "restrictionservicesapikeyallow.oto.tools", "Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      val resp1111 = ws
+        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host"                   -> "restrictionservicesapikeyallow.oto.tools",
+                         "Otoroshi-Client-Id"     -> apikey2.clientId,
+                         "Otoroshi-Client-Secret" -> apikey2.clientSecret)
         .delete()
         .futureValue
       resp1111.status mustBe 403
       counter1.get() mustBe 3
 
-      val resp2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp2 = call1("/notfound/api")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp2.status mustBe 403
       counter1.get() mustBe 3
 
-      val resp3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      val resp3 = call1("/forbidden/api")(
+        Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+      )
       resp3.status mustBe 403
       counter1.get() mustBe 3
 
-
-      val resp1_1 = call1("/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_1 =
+        call1("/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
       resp1_1.status mustBe 200
       counter1.get() mustBe 4
 
-      val resp1_11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_11 = call1("/api/fooo")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_11.status mustBe 200
       counter1.get() mustBe 5
 
-      val resp1_111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_111 = call1("/api/bar/foo")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_111.status mustBe 200
       counter1.get() mustBe 6
 
-      val resp1_1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host" -> "restrictionservicesapikeyallow.oto.tools", "Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      val resp1_1111 = ws
+        .url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host"                   -> "restrictionservicesapikeyallow.oto.tools",
+                         "Otoroshi-Client-Id"     -> apikey1.clientId,
+                         "Otoroshi-Client-Secret" -> apikey1.clientSecret)
         .delete()
         .futureValue
       resp1_1111.status mustBe 200
       counter1.get() mustBe 7
 
-      val resp1_2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_2 = call1("/notfound/api")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_2.status mustBe 200
       counter1.get() mustBe 8
 
-      val resp1_3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      val resp1_3 = call1("/forbidden/api")(
+        Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+      )
       resp1_3.status mustBe 200
       counter1.get() mustBe 9
 
@@ -1999,4 +2073,3 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
   }
 }
-

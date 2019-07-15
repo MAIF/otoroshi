@@ -38,19 +38,18 @@ function shallowDiffers(a, b) {
 }
 
 class Target extends Component {
-
-  state = { showMore: false }
+  state = { showMore: false };
 
   changeTheValue = (key, value) => {
     const arrayValue = [...this.props.value];
     const item = arrayValue[this.props.idx];
     const newItem = deepSet(item, key, value);
-    arrayValue[this.props.idx] = newItem
+    arrayValue[this.props.idx] = newItem;
     // item[key] = value;
     this.props.onChange(arrayValue);
-  }
+  };
 
-  changeTheUrl = (t) => {
+  changeTheUrl = t => {
     if (t.indexOf('://') > -1) {
       const scheme = (t.split('://')[0] || '').replace('://', '');
       const host = (t.split('://')[1] || '').replace('://', '');
@@ -59,14 +58,14 @@ class Target extends Component {
     } else {
       this.changeTheValue('scheme', t);
     }
-  }
+  };
 
   render() {
     const value = this.props.itemValue;
     if (!this.state.showMore) {
       return (
         <div style={{ marginLeft: 0, marginRight: 0 }}>
-          <TextInput 
+          <TextInput
             label={`Target ${this.props.idx + 1}`}
             placeholder="https://changeme.foo.bar"
             value={value.scheme + '://' + value.host}
@@ -87,7 +86,7 @@ class Target extends Component {
     }
     return (
       <div style={{ marginLeft: 0, marginRight: 0 }}>
-        <TextInput 
+        <TextInput
           label={`Target ${this.props.idx + 1}`}
           placeholder="https://changeme.foo.bar"
           value={value.scheme + '://' + value.host}
@@ -103,21 +102,21 @@ class Target extends Component {
             </button>
           )}
         />
-        <TextInput 
+        <TextInput
           label="Host"
           placeholder="changeme.foo.bar"
           value={value.host}
           help="The host of the target"
           onChange={e => this.changeTheValue('host', e)}
         />
-        <TextInput 
+        <TextInput
           label="Scheme"
           placeholder="https"
           value={value.scheme}
           help="The Scheme of the target"
           onChange={e => this.changeTheValue('scheme', e)}
         />
-        <NumberInput 
+        <NumberInput
           label="Weight"
           placeholder="1"
           value={value.weight}
@@ -128,16 +127,20 @@ class Target extends Component {
           label="Protocol"
           placeholder="HTTP/1.1"
           value={value.protocol}
-          possibleValues={[{
-            value: 'HTTP/1.0',
-            label: 'HTTP/1.0'
-          }, {
-            value: 'HTTP/1.1',
-            label: 'HTTP/1.1'
-          }, {
-            value: 'HTTP/2.0',
-            label: 'HTTP/2.0'
-          }]}
+          possibleValues={[
+            {
+              value: 'HTTP/1.0',
+              label: 'HTTP/1.0',
+            },
+            {
+              value: 'HTTP/1.1',
+              label: 'HTTP/1.1',
+            },
+            {
+              value: 'HTTP/2.0',
+              label: 'HTTP/2.0',
+            },
+          ]}
           help="The protocol of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('protocol', e)}
         />
@@ -154,84 +157,82 @@ class Target extends Component {
           placeholder="AlwaysMatch"
           value={value.predicate.type}
           possibleValues={[
-            { value: 'AlwaysMatch', label: 'AlwaysMatch'},
+            { value: 'AlwaysMatch', label: 'AlwaysMatch' },
             // { value: 'RegionMatch', label: 'RegionMatch' },
             // { value: 'ZoneMatch',label: 'ZoneMatch' },
             // { label: 'DataCenterMatch', value: 'DataCenterMatch' },
             // { label: 'InfraMatch', value: 'InfraMatch' },
             // { label: 'RackMatch', value: 'RackMatch' },
-            { value: 'NetworkLocationMatch', label: 'NetworkLocationMatch' }
+            { value: 'NetworkLocationMatch', label: 'NetworkLocationMatch' },
           ]}
           help="The predicate of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('predicate', { type: e })}
         />
-        {(value.predicate.type === 'NetworkLocationMatch') && (
-          [
-            <TextInput
-              label="Provider"
-              placeholder="local"
-              value={value.predicate.provider}
-              help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
-              onChange={e => this.changeTheValue('predicate.provider', e)}
-            />,
-            <TextInput
-              label="Region"
-              placeholder="local"
-              value={value.predicate.region}
-              help="The region of this target (based on the region value in the otoroshi configuration) app.instance"
-              onChange={e => this.changeTheValue('predicate.region', e)}
-            />,
-            <TextInput
-              label="Zone"
-              placeholder="local"
-              value={value.predicate.zone}
-              help="The zone of this target (based on the zone value in the otoroshi configuration) app.instance"
-              onChange={e => this.changeTheValue('predicate.zone', e)}
-            />,
-            <TextInput
-              label="Data center"
-              placeholder="local"
-              value={value.predicate.dc}
-              help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-              onChange={e => this.changeTheValue('dc.dc', e)}
-            />,
-            <TextInput
-              label="Rack"
-              placeholder="local"
-              value={value.predicate.rack}
-              help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-              onChange={e => this.changeTheValue('dc.rack', e)}
-            />
-          ]
+        {value.predicate.type === 'NetworkLocationMatch' && [
+          <TextInput
+            label="Provider"
+            placeholder="local"
+            value={value.predicate.provider}
+            help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
+            onChange={e => this.changeTheValue('predicate.provider', e)}
+          />,
+          <TextInput
+            label="Region"
+            placeholder="local"
+            value={value.predicate.region}
+            help="The region of this target (based on the region value in the otoroshi configuration) app.instance"
+            onChange={e => this.changeTheValue('predicate.region', e)}
+          />,
+          <TextInput
+            label="Zone"
+            placeholder="local"
+            value={value.predicate.zone}
+            help="The zone of this target (based on the zone value in the otoroshi configuration) app.instance"
+            onChange={e => this.changeTheValue('predicate.zone', e)}
+          />,
+          <TextInput
+            label="Data center"
+            placeholder="local"
+            value={value.predicate.dc}
+            help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
+            onChange={e => this.changeTheValue('dc.dc', e)}
+          />,
+          <TextInput
+            label="Rack"
+            placeholder="local"
+            value={value.predicate.rack}
+            help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
+            onChange={e => this.changeTheValue('dc.rack', e)}
+          />,
+        ]}
+        {value.predicate.type === 'InfraMatch' && (
+          <TextInput
+            label="Provider"
+            placeholder="local"
+            value={value.predicate.provider}
+            help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
+            onChange={e => this.changeTheValue('predicate.provider', e)}
+          />
         )}
-        {(value.predicate.type === 'InfraMatch') && (
-        <TextInput
-          label="Provider"
-          placeholder="local"
-          value={value.predicate.provider}
-          help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
-          onChange={e => this.changeTheValue('predicate.provider', e)}
-        />
+        {value.predicate.type === 'DataCenterMatch' && (
+          <TextInput
+            label="Data center"
+            placeholder="local"
+            value={value.predicate.dc}
+            help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
+            onChange={e => this.changeTheValue('dc.dc', e)}
+          />
         )}
-        {(value.predicate.type === 'DataCenterMatch') && (
-        <TextInput
-          label="Data center"
-          placeholder="local"
-          value={value.predicate.dc}
-          help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-          onChange={e => this.changeTheValue('dc.dc', e)}
-        />
+        {value.predicate.type === 'RackMatch' && (
+          <TextInput
+            label="Rack"
+            placeholder="local"
+            value={value.predicate.rack}
+            help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
+            onChange={e => this.changeTheValue('dc.rack', e)}
+          />
         )}
-        {(value.predicate.type === 'RackMatch') && (
-        <TextInput
-          label="Rack"
-          placeholder="local"
-          value={value.predicate.rack}
-          help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-          onChange={e => this.changeTheValue('dc.rack', e)}
-        />
-        )}
-        {(value.predicate.type === 'RegionMatch') && (
+        {value.predicate.type === 'RegionMatch' && (
           <TextInput
             label="Region"
             placeholder="local"
@@ -240,8 +241,8 @@ class Target extends Component {
             onChange={e => this.changeTheValue('predicate.region', e)}
           />
         )}
-        {(value.predicate.type === 'ZoneMatch') && (
-          <TextInput 
+        {value.predicate.type === 'ZoneMatch' && (
+          <TextInput
             label="Zone"
             placeholder="local"
             value={value.predicate.zone}
@@ -261,19 +262,19 @@ class CustomTimeoutComponent extends Component {
     const item = arrayValue[this.props.idx];
     item[key] = value;
     this.props.onChange(arrayValue);
-  }
+  };
   render() {
     const value = this.props.itemValue;
     return (
       <div style={{ marginLeft: 5, marginRight: 5 }}>
-        <TextInput 
+        <TextInput
           label="Path"
           placeholder="/"
           value={value.path}
           help="The path on which the timeout will be active"
           onChange={e => this.changeTheValue('path', e)}
         />
-        <NumberInput 
+        <NumberInput
           suffix="ms."
           label="Client connection timeout"
           placeholder="10000"
@@ -281,7 +282,7 @@ class CustomTimeoutComponent extends Component {
           help="Specify how long each connection should last at most in milliseconds."
           onChange={e => this.changeTheValue('connectionTimeout', e)}
         />
-        <NumberInput 
+        <NumberInput
           suffix="ms."
           label="Client idle timeout"
           placeholder="10000"
@@ -289,7 +290,7 @@ class CustomTimeoutComponent extends Component {
           help="Specify how long each connection can stay in idle state at most in milliseconds."
           onChange={e => this.changeTheValue('idleTimeout', e)}
         />
-        <NumberInput 
+        <NumberInput
           suffix="ms."
           label="Client call and stream timeout"
           placeholder="10000"
@@ -297,7 +298,7 @@ class CustomTimeoutComponent extends Component {
           help="Specify how long each call should last at most in milliseconds for handling the request and streaming the response."
           onChange={e => this.changeTheValue('callAndStreamTimeout', e)}
         />
-        <NumberInput 
+        <NumberInput
           suffix="ms."
           label="Call timeout"
           placeholder="10000"
@@ -305,7 +306,7 @@ class CustomTimeoutComponent extends Component {
           help="Specify how long each call should last at most in milliseconds."
           onChange={e => this.changeTheValue('callTimeout', e)}
         />
-        <NumberInput 
+        <NumberInput
           suffix="ms."
           label="Client global timeout"
           placeholder="10000"
@@ -1105,25 +1106,32 @@ export class ServicePage extends Component {
                   label="Load balancing"
                   placeholder="RoundRobin"
                   value={this.state.service.targetsLoadBalancing.type}
-                  possibleValues={[{
-                    value: 'RoundRobin',
-                    label: 'RoundRobin'
-                  }, {
-                    value: 'Random',
-                    label: 'Random'
-                  }, {
-                    value: 'Sticky',
-                    label: 'Sticky'
-                  }, {
-                    value: 'IpAddressHash',
-                    label: 'IpAddressHash'
-                  }, {
-                    value: 'BestResponseTime',
-                    label: 'BestResponseTime'
-                  }, {
-                    value: 'WeightedBestResponseTime',
-                    label: 'WeightedBestResponseTime'
-                  }]}
+                  possibleValues={[
+                    {
+                      value: 'RoundRobin',
+                      label: 'RoundRobin',
+                    },
+                    {
+                      value: 'Random',
+                      label: 'Random',
+                    },
+                    {
+                      value: 'Sticky',
+                      label: 'Sticky',
+                    },
+                    {
+                      value: 'IpAddressHash',
+                      label: 'IpAddressHash',
+                    },
+                    {
+                      value: 'BestResponseTime',
+                      label: 'BestResponseTime',
+                    },
+                    {
+                      value: 'WeightedBestResponseTime',
+                      label: 'WeightedBestResponseTime',
+                    },
+                  ]}
                   help="The load balancing algorithm used"
                   onChange={e => this.changeTheValue('targetsLoadBalancing', { type: e })}
                 />
@@ -1144,12 +1152,12 @@ export class ServicePage extends Component {
                   help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
                   component={Target}
                   defaultValue={{
-                    host: 'changeme.foo.bar', 
-                    scheme: 'https', 
-                    weight: 1, 
-                    protocol: 'HTTP/1.1', 
-                    predicate: { type: 'AlwaysMatch' }, 
-                    ipAddress: null, 
+                    host: 'changeme.foo.bar',
+                    scheme: 'https',
+                    weight: 1,
+                    protocol: 'HTTP/1.1',
+                    predicate: { type: 'AlwaysMatch' },
+                    ipAddress: null,
                   }}
                   onChange={e => this.changeTheValue('targets', e)}
                 />
@@ -1226,8 +1234,8 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Restrictions">
-            <Restrictions 
-              rawValue={this.state.service.restrictions} 
+            <Restrictions
+              rawValue={this.state.service.restrictions}
               rawOnChange={arr => this.changeTheValue('restrictions', arr)}
             />
           </Collapse>
@@ -1270,11 +1278,14 @@ export class ServicePage extends Component {
               help="Version the otoroshi exchange protocol info token. This option will be set to Latest in a near future."
               onChange={arr => this.changeTheValue('secComInfoTokenVersion', arr)}
               possibleValues={[
-                { label: 'Legacy - legacy version of the info token with flattened values', value: "Legacy" },
-                { label: 'Latest - latest version of the info token json values', value: "Latest" },
+                {
+                  label: 'Legacy - legacy version of the info token with flattened values',
+                  value: 'Legacy',
+                },
+                { label: 'Latest - latest version of the info token json values', value: 'Latest' },
               ]}
             />
-            <NumberInput 
+            <NumberInput
               label="Tokens TTL"
               value={this.state.service.secComTtl}
               help="The number of seconds for tokens (state and info) lifes"
@@ -1282,21 +1293,21 @@ export class ServicePage extends Component {
               suffix="seconds"
               onChange={v => this.changeTheValue('secComTtl', v)}
             />
-            <TextInput 
+            <TextInput
               label="State token header name"
               value={this.state.service.secComHeaders.stateRequestName}
               help="The name of the header containing the state token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.state)"
               placeholder="Otoroshi-State"
               onChange={v => this.changeTheValue('secComHeaders.stateRequestName', v)}
             />
-            <TextInput 
+            <TextInput
               label="State token response header name"
               value={this.state.service.secComHeaders.stateResponseName}
               help="The name of the header containing the state response token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.stateresp)"
               placeholder="Otoroshi-State-Resp"
               onChange={v => this.changeTheValue('secComHeaders.stateResponseName', v)}
             />
-            <TextInput 
+            <TextInput
               label="Info token header name"
               value={this.state.service.secComHeaders.claimRequestName}
               help="The name of the header containing the info token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.claim)"
@@ -2010,12 +2021,12 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('clientConfig.sampleInterval', v)}
             />
             <Separator title="Custom timeout settings" />
-            <ArrayInput 
+            <ArrayInput
               label=""
               value={this.state.service.clientConfig.customTimeouts}
               help=""
               defaultValue={{
-                path: "/*",
+                path: '/*',
                 connectionTimeout: 10000,
                 idleTimeout: 60000,
                 callAndStreamTimeout: 120000,
@@ -2246,12 +2257,12 @@ export class ServicePage extends Component {
               help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
               component={Target}
               defaultValue={{
-                host: 'changeme.foo.bar', 
-                scheme: 'https', 
-                weight: 1, 
-                protocol: 'HTTP/1.1', 
-                predicate: { type: 'AlwaysMatch' }, 
-                ipAddress: null, 
+                host: 'changeme.foo.bar',
+                scheme: 'https',
+                weight: 1,
+                protocol: 'HTTP/1.1',
+                predicate: { type: 'AlwaysMatch' },
+                ipAddress: null,
               }}
               onChange={e => this.changeTheValue('canary.targets', e)}
             />
@@ -2378,7 +2389,12 @@ export class ServicePage extends Component {
               </div>
             </div>
             <div className="form-group">
-              <CodeInput label="Configuration" mode="json" value={JSON.stringify(this.state.service.transformerConfig, null, 2)} onChange={e => this.changeTheValue('transformerConfig', JSON.parse(e))} />
+              <CodeInput
+                label="Configuration"
+                mode="json"
+                value={JSON.stringify(this.state.service.transformerConfig, null, 2)}
+                onChange={e => this.changeTheValue('transformerConfig', JSON.parse(e))}
+              />
             </div>
           </Collapse>
         </form>

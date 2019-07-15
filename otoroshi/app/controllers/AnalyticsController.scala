@@ -112,25 +112,27 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
             avgduration <- favgduration
             avgoverhead <- favgoverhead
           } yield {
-            val resp: JsObject = JsObject(Seq(
-              "statusesPiechart"    -> statusesPiechart,
-              "statusesHistogram"   -> statusesHistogram,
-              "overheadPercentiles" -> overheadPercentiles,
-              "overheadStats"       -> overheadStats,
-              "durationPercentiles" -> durationPercentiles,
-              "durationStats"       -> durationStats,
-              "dataInStats"         -> dataInStats,
-              "dataOutStats"        -> dataOutStats,
-              "apiKeyPiechart"      -> apiKeyPiechart,
-              "userPiechart"        -> userPiechart,
-              "hits"                -> hits,
-              "dataIn"              -> datain,
-              "dataOut"             -> dataout,
-              "avgDuration"         -> avgduration,
-              "avgOverhead"         -> avgoverhead
-            ).collect {
-              case (key, Some(jsv)) => (key, jsv)
-            })
+            val resp: JsObject = JsObject(
+              Seq(
+                "statusesPiechart"    -> statusesPiechart,
+                "statusesHistogram"   -> statusesHistogram,
+                "overheadPercentiles" -> overheadPercentiles,
+                "overheadStats"       -> overheadStats,
+                "durationPercentiles" -> durationPercentiles,
+                "durationStats"       -> durationStats,
+                "dataInStats"         -> dataInStats,
+                "dataOutStats"        -> dataOutStats,
+                "apiKeyPiechart"      -> apiKeyPiechart,
+                "userPiechart"        -> userPiechart,
+                "hits"                -> hits,
+                "dataIn"              -> datain,
+                "dataOut"             -> dataout,
+                "avgDuration"         -> avgduration,
+                "avgOverhead"         -> avgoverhead
+              ).collect {
+                case (key, Some(jsv)) => (key, jsv)
+              }
+            )
             Ok(resp)
           }
         }
@@ -203,27 +205,29 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           avgduration <- favgduration
           avgoverhead <- favgoverhead
         } yield {
-          val resp: JsObject = JsObject(Seq(
-            "statusesPiechart"    -> statusesPiechart,
-            "statusesHistogram"   -> statusesHistogram,
-            "overheadPercentiles" -> overheadPercentiles,
-            "overheadStats"       -> overheadStats,
-            "durationPercentiles" -> durationPercentiles,
-            "durationStats"       -> durationStats,
-            "dataInStats"         -> dataInStats,
-            "dataOutStats"        -> dataOutStats,
-            "hits"                -> hits,
-            "dataIn"              -> datain,
-            "dataOut"             -> dataout,
-            "avgDuration"         -> avgduration,
-            "avgOverhead"         -> avgoverhead,
-            "productPiechart"     -> productPiechart,
-            "servicePiechart"     -> servicePiechart,
-            "apiKeyPiechart"      -> apiKeyPiechart,
-            "userPiechart"        -> userPiechart
-          ).collect {
-            case (key, Some(jsv)) => (key, jsv)
-          })
+          val resp: JsObject = JsObject(
+            Seq(
+              "statusesPiechart"    -> statusesPiechart,
+              "statusesHistogram"   -> statusesHistogram,
+              "overheadPercentiles" -> overheadPercentiles,
+              "overheadStats"       -> overheadStats,
+              "durationPercentiles" -> durationPercentiles,
+              "durationStats"       -> durationStats,
+              "dataInStats"         -> dataInStats,
+              "dataOutStats"        -> dataOutStats,
+              "hits"                -> hits,
+              "dataIn"              -> datain,
+              "dataOut"             -> dataout,
+              "avgDuration"         -> avgduration,
+              "avgOverhead"         -> avgoverhead,
+              "productPiechart"     -> productPiechart,
+              "servicePiechart"     -> servicePiechart,
+              "apiKeyPiechart"      -> apiKeyPiechart,
+              "userPiechart"        -> userPiechart
+            ).collect {
+              case (key, Some(jsv)) => (key, jsv)
+            }
+          )
           Ok(resp)
         }
       }

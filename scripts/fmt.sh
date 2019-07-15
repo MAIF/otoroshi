@@ -59,7 +59,7 @@ case "${1}" in
     fmt_server
     ;;
   *)
-    fmt_cli
+    # fmt_cli
     fmt_demo
     fmt_ui
     fmt_connectors

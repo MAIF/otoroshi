@@ -366,8 +366,8 @@ class Env(val configuration: Configuration,
     lazy val OtoroshiHealthCheckLogicTest = configuration.getOptional[String]("otoroshi.headers.healthcheck.test").get
     lazy val OtoroshiHealthCheckLogicTestResult =
       configuration.getOptional[String]("otoroshi.headers.healthcheck.testresult").get
-    lazy val OtoroshiIssuer    = configuration.getOptional[String]("otoroshi.headers.jwt.issuer").get
-    lazy val OtoroshiTrackerId = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
+    lazy val OtoroshiIssuer          = configuration.getOptional[String]("otoroshi.headers.jwt.issuer").get
+    lazy val OtoroshiTrackerId       = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
     lazy val OtoroshiClientCertChain = configuration.getOptional[String]("otoroshi.headers.client.cert.chain").get
   }
 
