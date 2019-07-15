@@ -625,7 +625,7 @@ object WSProxyServerJson {
     "password" -> p.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],// password: Option[String]
     "ntlmDomain" -> p.ntlmDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],// ntlmDomain: Option[String]
     "encoding" -> p.encoding.map(JsString.apply).getOrElse(JsNull).as[JsValue],// encoding: Option[String]
-    "nonProxyHosts" -> p.nonProxyHosts.map(nph => JsArray(nph.map(JsString.apply))).getOrElse(JsNull).as[JsValue],// nonProxyHosts: Option[Seq[String]]
+    "nonProxyHosts" -> p.nonProxyHosts.map(nph => JsArray(nph.map(JsString.apply))).getOrElse(JsNull).as[JsValue]// nonProxyHosts: Option[Seq[String]]
   )
   def proxyFromJson(json: JsValue): Option[WSProxyServer] = {
     val maybeHost = (json \ "host").asOpt[String].filterNot(_.trim.isEmpty)
