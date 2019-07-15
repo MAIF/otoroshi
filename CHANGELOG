@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.9] - 2019-07-15
+
+https://github.com/MAIF/otoroshi/milestone/21?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.8...v1.4.9
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.9
+
+### Added 
+
+- Http method and path validation per apikey (#315)
+- Add new new concepts on targets like matcher, manual DNS resolution, etc  (#309, #310)
+- Support new loadbalancing policies (#80, #79, #77) 
+- Add expression language to headers in/out values (#308)
+- Routing based on apikey roles and metadata (#307)
+- Live switching of the default http client (#300)
+
+### Changed 
+
+- Improve otoroshi exchange protocol settings exchange protocol (#320)
+- Support CIDR notation in ip address whitelists / blacklists (#318)
+- Add "items in arrays" validation in JWT verifiers (#290)
+- Transfer more tags and metadata in third party api key from OIDC tokens (#317)
+- Remove support for `ahc:` http client (#302)
+- Better timeout management with the akka http client (#301)
+
+
+### Fixed 
+
+- Enforce TTL on secured exchange protocol v2 bug (#316)
+- Remove default ssl context dump (#303)
+- APP_STORAGE is missing for AWS configuration (#304)
+- Cannot read property 'data.dataIn' of null in Analytics (#305)
+
 ## [1.4.8] - 2019-05-06
 
 https://github.com/MAIF/otoroshi/milestone/20?closed=1
@@ -13,7 +45,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.4.8
 ### Added
 - Support datastores other than redis for clusterings cluster
 - Support enterprise proxy to access outside world enterprise
-- Introduce secure exchange v2 enhancement
+- Introduce secure exchange v2
 - Provide a "serverless" trait for request transformer
 - Disable HTTP/1.0 per service
 - Provide a root CA to trust at startup through config.
