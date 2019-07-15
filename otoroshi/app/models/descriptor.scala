@@ -39,35 +39,47 @@ object HeadersExpressionLanguage {
 
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
-  def apply(value: String, service: ServiceDescriptor, apiKey: Option[ApiKey], user: Option[PrivateAppsUser]): String = {
+  def apply(value: String,
+            service: ServiceDescriptor,
+            apiKey: Option[ApiKey],
+            user: Option[PrivateAppsUser]): String = {
     value match {
       case v if v.contains("${") =>
         Try {
           expressionReplacer.replaceOn(value) {
-            case "service.domain"                                    => service._domain
-            case "service.subdomain"                                 => service.subdomain
-            case "service.tld"                                       => service.domain
-            case "service.env"                                       => service.env
-            case "service.group"                                     => service.groupId
-            case "service.id"                                        => service.id
-            case "service.name"                                      => service.name
-            case r"service.metadata.$field@(.*)"                     => service.metadata.get(field).getOrElse("bad-expr")
+            case "service.domain"                => service._domain
+            case "service.subdomain"             => service.subdomain
+            case "service.tld"                   => service.domain
+            case "service.env"                   => service.env
+            case "service.group"                 => service.groupId
+            case "service.id"                    => service.id
+            case "service.name"                  => service.name
+            case r"service.metadata.$field@(.*)" => service.metadata.get(field).getOrElse("bad-expr")
 
-            case "apikey.name" if apiKey.isDefined                   => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined                     => apiKey.get.clientId
-            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse("bad-expr")
-            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined => Option(apiKey.get.tags.apply(field.toInt)).getOrElse("bad-expr")
+            case "apikey.name" if apiKey.isDefined => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined   => apiKey.get.clientId
+            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined =>
+              apiKey.get.metadata.get(field).getOrElse("bad-expr")
+            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined =>
+              Option(apiKey.get.tags.apply(field.toInt)).getOrElse("bad-expr")
 
-            case "user.name" if user.isDefined                       => user.get.name
-            case "user.email" if user.isDefined                      => user.get.email
-            case r"user.metadata.$field@(.*)" if user.isDefined      => user.flatMap(_.otoroshiData).map(json => (json \ field).asOpt[JsValue] match {
-              case Some(JsNumber(number)) => number.toString()
-              case Some(JsString(str))    => str
-              case Some(JsBoolean(b))     => b.toString
-              case _                      => "bad-expr"
-            }).getOrElse("bad-expr")
+            case "user.name" if user.isDefined  => user.get.name
+            case "user.email" if user.isDefined => user.get.email
+            case r"user.metadata.$field@(.*)" if user.isDefined =>
+              user
+                .flatMap(_.otoroshiData)
+                .map(
+                  json =>
+                    (json \ field).asOpt[JsValue] match {
+                      case Some(JsNumber(number)) => number.toString()
+                      case Some(JsString(str))    => str
+                      case Some(JsBoolean(b))     => b.toString
+                      case _                      => "bad-expr"
+                  }
+                )
+                .getOrElse("bad-expr")
 
-            case expr                                                => "bad-expr" //s"$${$expr}"
+            case expr => "bad-expr" //s"$${$expr}"
           }
         } recover {
           case e =>
@@ -211,7 +223,11 @@ object BaseQuotas {
 trait LoadBalancing {
   def needTrackingCookie: Boolean
   def toJson: JsValue
-  def select(reqId: String, trackingId: String, requestHeader: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target
+  def select(reqId: String,
+             trackingId: String,
+             requestHeader: RequestHeader,
+             targets: Seq[Target],
+             desc: ServiceDescriptor): Target
 }
 
 object LoadBalancing {
@@ -223,17 +239,22 @@ object LoadBalancing {
       case "Sticky"           => JsSuccess(Sticky)
       case "IpAddressHash"    => JsSuccess(IpAddressHash)
       case "BestResponseTime" => JsSuccess(BestResponseTime)
-      case "WeightedBestResponseTime" => JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
-      case _                  => JsSuccess(RoundRobin)
+      case "WeightedBestResponseTime" =>
+        JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
+      case _ => JsSuccess(RoundRobin)
     }
   }
 }
 
 object RoundRobin extends LoadBalancing {
-  private val reqCounter = new AtomicInteger(0)
+  private val reqCounter                   = new AtomicInteger(0)
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "RoundRobin")
-  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
+  override def toJson: JsValue             = Json.obj("type" -> "RoundRobin")
+  override def select(reqId: String,
+                      trackingId: String,
+                      req: RequestHeader,
+                      targets: Seq[Target],
+                      desc: ServiceDescriptor): Target = {
     val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }
@@ -241,10 +262,14 @@ object RoundRobin extends LoadBalancing {
 }
 
 object Random extends LoadBalancing {
-  private val random = new scala.util.Random
+  private val random                       = new scala.util.Random
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "Random")
-  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
+  override def toJson: JsValue             = Json.obj("type" -> "Random")
+  override def select(reqId: String,
+                      trackingId: String,
+                      req: RequestHeader,
+                      targets: Seq[Target],
+                      desc: ServiceDescriptor): Target = {
     val index = random.nextInt(targets.length)
     targets.apply(index)
   }
@@ -252,9 +277,13 @@ object Random extends LoadBalancing {
 
 object Sticky extends LoadBalancing {
   override def needTrackingCookie: Boolean = true
-  override def toJson: JsValue = Json.obj("type" -> "Sticky")
-  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
-    val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+  override def toJson: JsValue             = Json.obj("type" -> "Sticky")
+  override def select(reqId: String,
+                      trackingId: String,
+                      req: RequestHeader,
+                      targets: Seq[Target],
+                      desc: ServiceDescriptor): Target = {
+    val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
     targets.apply(index)
   }
@@ -262,11 +291,15 @@ object Sticky extends LoadBalancing {
 
 object IpAddressHash extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "IpAddressHash")
-  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
+  override def toJson: JsValue             = Json.obj("type" -> "IpAddressHash")
+  override def select(reqId: String,
+                      trackingId: String,
+                      req: RequestHeader,
+                      targets: Seq[Target],
+                      desc: ServiceDescriptor): Target = {
     val remoteAddress = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
-    val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
-    val index: Int = Hashing.consistentHash(hash, targets.size)
+    val hash: Int     = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
+    val index: Int    = Hashing.consistentHash(hash, targets.size)
     targets.apply(index)
   }
 }
@@ -281,7 +314,7 @@ case class AtomicAverage(count: AtomicLong, sum: AtomicLong) {
 
 object BestResponseTime extends LoadBalancing {
 
-  private[models] val random = new scala.util.Random
+  private[models] val random        = new scala.util.Random
   private[models] val responseTimes = new TrieMap[String, AtomicAverage]()
 
   def incrementAverage(desc: ServiceDescriptor, target: Target, responseTime: Long): Unit = {
@@ -291,10 +324,14 @@ object BestResponseTime extends LoadBalancing {
   }
 
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "BestResponseTime")
-  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
-    val keys = targets.map(t => s"${desc.id}-${t.asKey}")
-    val existing = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
+  override def toJson: JsValue             = Json.obj("type" -> "BestResponseTime")
+  override def select(reqId: String,
+                      trackingId: String,
+                      req: RequestHeader,
+                      targets: Seq[Target],
+                      desc: ServiceDescriptor): Target = {
+    val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
+    val existing                 = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => responseTimes.contains(k))
     if (existing.size != targets.size) {
       nonExisting.headOption.flatMap(h => targets.find(t => s"${desc.id}-${t.asKey}" == h)).getOrElse {
@@ -303,7 +340,7 @@ object BestResponseTime extends LoadBalancing {
       }
     } else {
       val possibleTargets: Seq[(String, Long)] = existing.map(t => (t._1, t._2.average))
-      val (key, _) = possibleTargets.minBy(_._2)
+      val (key, _)                             = possibleTargets.minBy(_._2)
       targets.find(t => s"${desc.id}-${t.asKey}" == key).getOrElse {
         val index = random.nextInt(targets.length)
         targets.apply(index)
@@ -314,10 +351,14 @@ object BestResponseTime extends LoadBalancing {
 
 case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
-  override def toJson: JsValue = Json.obj("type" -> "WeightedBestResponseTime", "ratio" -> ratio)
-  override def select(reqId: String, trackingId: String, req: RequestHeader, targets: Seq[Target], desc: ServiceDescriptor): Target = {
-    val keys = targets.map(t => s"${desc.id}-${t.asKey}")
-    val existing = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
+  override def toJson: JsValue             = Json.obj("type" -> "WeightedBestResponseTime", "ratio" -> ratio)
+  override def select(reqId: String,
+                      trackingId: String,
+                      req: RequestHeader,
+                      targets: Seq[Target],
+                      desc: ServiceDescriptor): Target = {
+    val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
+    val existing                 = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => BestResponseTime.responseTimes.contains(k))
     if (existing.size != targets.size) {
       nonExisting.headOption.flatMap(h => targets.find(t => s"${desc.id}-${t.asKey}" == h)).getOrElse {
@@ -326,13 +367,13 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
       }
     } else {
       val possibleTargets: Seq[(String, Long)] = existing.map(t => (t._1, t._2.average))
-      val (key, _) = possibleTargets.minBy(_._2)
-      val cleanRatio: Double = if (ratio < 0.0) 0.0 else if (ratio > 0.99) 0.99 else ratio
-      val times: Int = Math.round(targets.size / (1 - cleanRatio)).toInt - targets.size
-      val bestTarget: Option[Target] = targets.find(t => s"${desc.id}-${t.asKey}" == key)
-      val fill: Seq[Target] = bestTarget.map(t => Seq.fill(times)(t)).getOrElse(Seq.empty[Target])
-      val newTargets: Seq[Target] = targets ++ fill
-      val index: Int = BestResponseTime.random.nextInt(newTargets.length)
+      val (key, _)                             = possibleTargets.minBy(_._2)
+      val cleanRatio: Double                   = if (ratio < 0.0) 0.0 else if (ratio > 0.99) 0.99 else ratio
+      val times: Int                           = Math.round(targets.size / (1 - cleanRatio)).toInt - targets.size
+      val bestTarget: Option[Target]           = targets.find(t => s"${desc.id}-${t.asKey}" == key)
+      val fill: Seq[Target]                    = bestTarget.map(t => Seq.fill(times)(t)).getOrElse(Seq.empty[Target])
+      val newTargets: Seq[Target]              = targets ++ fill
+      val index: Int                           = BestResponseTime.random.nextInt(newTargets.length)
       newTargets.apply(index)
     }
   }
@@ -364,13 +405,16 @@ object TargetPredicate {
         //   zone = (json \ "rack").asOpt[String].getOrElse("local")
         // ))
         case "AlwaysMatch" => JsSuccess(AlwaysMatch)
-        case "NetworkLocationMatch" => JsSuccess(NetworkLocationMatch(
-          provider = (json \ "provider").asOpt[String].getOrElse("*"),
-          region = (json \ "region").asOpt[String].getOrElse("*"),
-          zone = (json \ "zone").asOpt[String].getOrElse("*"),
-          dataCenter = (json \ "dc").asOpt[String].getOrElse("*"),
-          rack = (json \ "rack").asOpt[String].getOrElse("*")
-        ))
+        case "NetworkLocationMatch" =>
+          JsSuccess(
+            NetworkLocationMatch(
+              provider = (json \ "provider").asOpt[String].getOrElse("*"),
+              region = (json \ "region").asOpt[String].getOrElse("*"),
+              zone = (json \ "zone").asOpt[String].getOrElse("*"),
+              dataCenter = (json \ "dc").asOpt[String].getOrElse("*"),
+              rack = (json \ "rack").asOpt[String].getOrElse("*")
+            )
+          )
         case _ => JsSuccess(AlwaysMatch)
       }
     }
@@ -378,7 +422,7 @@ object TargetPredicate {
 }
 
 object AlwaysMatch extends TargetPredicate {
-  def toJson: JsValue = Json.obj("type" -> "AlwaysMatch")
+  def toJson: JsValue                                             = Json.obj("type" -> "AlwaysMatch")
   override def matches(reqId: String)(implicit env: Env): Boolean = true
 }
 
@@ -418,68 +462,70 @@ case class RackMatch(rack: String) extends TargetPredicate {
 }
 
 case class NetworkLocationMatch(
-  provider: String = "*",
-  region: String = "*",
-  zone: String = "*",
-  dataCenter: String = "*",
-  rack: String = "*",
+    provider: String = "*",
+    region: String = "*",
+    zone: String = "*",
+    dataCenter: String = "*",
+    rack: String = "*",
 ) extends TargetPredicate {
   def toJson: JsValue = Json.obj(
-    "type" -> "NetworkLocationMatch",
+    "type"     -> "NetworkLocationMatch",
     "provider" -> provider,
-    "region" -> region,
-    "zone" -> zone,
-    "dc" -> dataCenter,
-    "rack" -> rack,
+    "region"   -> region,
+    "zone"     -> zone,
+    "dc"       -> dataCenter,
+    "rack"     -> rack,
   )
   override def matches(reqId: String)(implicit env: Env): Boolean = {
     utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
-      utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
-      utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
-      utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.dataCenter.trim.toLowerCase) &&
-      utils.RegexPool(rack.trim.toLowerCase).matches(env.rack.trim.toLowerCase)
+    utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
+    utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
+    utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.dataCenter.trim.toLowerCase) &&
+    utils.RegexPool(rack.trim.toLowerCase).matches(env.rack.trim.toLowerCase)
   }
 }
 
 case class Target(
-  host: String,
-  scheme: String = "https",
-  weight: Int = 1,
-  protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
-  predicate: TargetPredicate = AlwaysMatch,
-  ipAddress: Option[String] = None
+    host: String,
+    scheme: String = "https",
+    weight: Int = 1,
+    protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
+    predicate: TargetPredicate = AlwaysMatch,
+    ipAddress: Option[String] = None
 ) {
   def toJson = Target.format.writes(this)
-  def asUrl = s"${scheme}://$host"
-  def asKey = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asUrl  = s"${scheme}://$host"
+  def asKey  = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
 }
 
 object Target {
   val format = new Format[Target] {
     override def writes(o: Target): JsValue = Json.obj(
-      "host" -> o.host,
-      "scheme" -> o.scheme,
-      "weight" -> o.weight,
-      "protocol" -> o.protocol.value,
+      "host"      -> o.host,
+      "scheme"    -> o.scheme,
+      "weight"    -> o.weight,
+      "protocol"  -> o.protocol.value,
       "predicate" -> o.predicate.toJson,
       "ipAddress" -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     )
-    override def reads(json: JsValue): JsResult[Target] = Try {
-      Target(
-        host = (json \ "host").as[String],
-        scheme = (json \ "scheme").asOpt[String].getOrElse("https"),
-        weight = (json \ "weight").asOpt[Int].getOrElse(1),
-        protocol = (json \ "protocol").asOpt[String].map(s => HttpProtocol.apply(s)).getOrElse(HttpProtocols.`HTTP/1.1`),
-        predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
-        ipAddress = (json \ "ipAddress").asOpt[String]
-      )
-    } map {
-      case sd => JsSuccess(sd)
-    } recover {
-      case t =>
-        t.printStackTrace()
-        JsError(t.getMessage)
-    } get
+    override def reads(json: JsValue): JsResult[Target] =
+      Try {
+        Target(
+          host = (json \ "host").as[String],
+          scheme = (json \ "scheme").asOpt[String].getOrElse("https"),
+          weight = (json \ "weight").asOpt[Int].getOrElse(1),
+          protocol =
+            (json \ "protocol").asOpt[String].map(s => HttpProtocol.apply(s)).getOrElse(HttpProtocols.`HTTP/1.1`),
+          predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
+          ipAddress = (json \ "ipAddress").asOpt[String]
+        )
+      } map {
+        case sd => JsSuccess(sd)
+      } recover {
+        case t =>
+          t.printStackTrace()
+          JsError(t.getMessage)
+      } get
   }
 }
 
@@ -527,7 +573,7 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
 }
 
 object IpFiltering {
-  implicit val format = Json.format[IpFiltering]
+  implicit val format      = Json.format[IpFiltering]
   private val networkCache = new TrieMap[String, IpNetwork]()
   def network(cidr: String): IpNetwork = {
     networkCache.getOrElseUpdate(cidr, IpNetwork(cidr))
@@ -543,12 +589,12 @@ object HealthCheck {
 }
 
 case class CustomTimeouts(
-  path: String = "/*",
-  connectionTimeout: Long = 10000,
-  idleTimeout: Long = 60000,
-  callAndStreamTimeout: Long = 120000,
-  callTimeout: Long = 30000,
-  globalTimeout: Long = 30000,
+    path: String = "/*",
+    connectionTimeout: Long = 10000,
+    idleTimeout: Long = 60000,
+    callAndStreamTimeout: Long = 120000,
+    callTimeout: Long = 30000,
+    globalTimeout: Long = 30000,
 ) {
   def toJson: JsValue = CustomTimeouts.format.writes(this)
 }
@@ -578,12 +624,12 @@ object CustomTimeouts {
       } get
 
     override def writes(o: CustomTimeouts): JsValue = Json.obj(
-      "path"              -> o.path,
-      "callTimeout"       -> o.callTimeout,
+      "path"                 -> o.path,
+      "callTimeout"          -> o.callTimeout,
       "callAndStreamTimeout" -> o.callAndStreamTimeout,
-      "connectionTimeout" -> o.connectionTimeout,
-      "idleTimeout"       -> o.idleTimeout,
-      "globalTimeout"     -> o.globalTimeout
+      "connectionTimeout"    -> o.connectionTimeout,
+      "idleTimeout"          -> o.idleTimeout,
+      "globalTimeout"        -> o.globalTimeout
     )
   }
 }
@@ -608,43 +654,54 @@ case class ClientConfig(
     if (customTimeouts.isEmpty) None
     else customTimeouts.find(c => utils.RegexPool(c.path).matches(path))
   }
-  def extractTimeout(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): FiniteDuration = timeouts(path).map(f).getOrElse(f2(this)).millis
-  def extractTimeoutLong(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): Long = timeouts(path).map(f).getOrElse(f2(this))
+  def extractTimeout(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): FiniteDuration =
+    timeouts(path).map(f).getOrElse(f2(this)).millis
+  def extractTimeoutLong(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): Long =
+    timeouts(path).map(f).getOrElse(f2(this))
 }
 
 object WSProxyServerJson {
   def maybeProxyToJson(p: Option[WSProxyServer]): JsValue = p match {
     case Some(proxy) => proxyToJson(proxy)
-    case None => JsNull
+    case None        => JsNull
   }
   def proxyToJson(p: WSProxyServer): JsValue = Json.obj(
-    "host" -> p.host,// host: String
-    "port" -> p.port,// port: Int
-    "protocol" -> p.protocol.map(JsString.apply).getOrElse(JsNull).as[JsValue],// protocol: Option[String]
-    "principal" -> p.principal.map(JsString.apply).getOrElse(JsNull).as[JsValue],// principal: Option[String]
-    "password" -> p.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],// password: Option[String]
-    "ntlmDomain" -> p.ntlmDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],// ntlmDomain: Option[String]
-    "encoding" -> p.encoding.map(JsString.apply).getOrElse(JsNull).as[JsValue],// encoding: Option[String]
-    "nonProxyHosts" -> p.nonProxyHosts.map(nph => JsArray(nph.map(JsString.apply))).getOrElse(JsNull).as[JsValue]// nonProxyHosts: Option[Seq[String]]
+    "host"       -> p.host, // host: String
+    "port"       -> p.port, // port: Int
+    "protocol"   -> p.protocol.map(JsString.apply).getOrElse(JsNull).as[JsValue], // protocol: Option[String]
+    "principal"  -> p.principal.map(JsString.apply).getOrElse(JsNull).as[JsValue], // principal: Option[String]
+    "password"   -> p.password.map(JsString.apply).getOrElse(JsNull).as[JsValue], // password: Option[String]
+    "ntlmDomain" -> p.ntlmDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue], // ntlmDomain: Option[String]
+    "encoding"   -> p.encoding.map(JsString.apply).getOrElse(JsNull).as[JsValue], // encoding: Option[String]
+    "nonProxyHosts" -> p.nonProxyHosts
+      .map(nph => JsArray(nph.map(JsString.apply)))
+      .getOrElse(JsNull)
+      .as[JsValue] // nonProxyHosts: Option[Seq[String]]
   )
   def proxyFromJson(json: JsValue): Option[WSProxyServer] = {
     val maybeHost = (json \ "host").asOpt[String].filterNot(_.trim.isEmpty)
     val maybePort = (json \ "port").asOpt[Int]
     (maybeHost, maybePort) match {
       case (Some(host), Some(port)) => {
-        Some(DefaultWSProxyServer(host, port)).map { proxy =>
-          (json \ "protocol").asOpt[String].map(v => proxy.copy(protocol = Some(v))).getOrElse(proxy)
-        }.map { proxy =>
-          (json \ "principal").asOpt[String].map(v => proxy.copy(principal = Some(v))).getOrElse(proxy)
-        }.map { proxy =>
-          (json \ "password").asOpt[String].map(v => proxy.copy(password = Some(v))).getOrElse(proxy)
-        }.map { proxy =>
-          (json \ "ntlmDomain").asOpt[String].map(v => proxy.copy(ntlmDomain = Some(v))).getOrElse(proxy)
-        }.map { proxy =>
-          (json \ "encoding").asOpt[String].map(v => proxy.copy(encoding = Some(v))).getOrElse(proxy)
-        }.map { proxy =>
-          (json \ "nonProxyHosts").asOpt[Seq[String]].map(v => proxy.copy(nonProxyHosts = Some(v))).getOrElse(proxy)
-        }
+        Some(DefaultWSProxyServer(host, port))
+          .map { proxy =>
+            (json \ "protocol").asOpt[String].map(v => proxy.copy(protocol = Some(v))).getOrElse(proxy)
+          }
+          .map { proxy =>
+            (json \ "principal").asOpt[String].map(v => proxy.copy(principal = Some(v))).getOrElse(proxy)
+          }
+          .map { proxy =>
+            (json \ "password").asOpt[String].map(v => proxy.copy(password = Some(v))).getOrElse(proxy)
+          }
+          .map { proxy =>
+            (json \ "ntlmDomain").asOpt[String].map(v => proxy.copy(ntlmDomain = Some(v))).getOrElse(proxy)
+          }
+          .map { proxy =>
+            (json \ "encoding").asOpt[String].map(v => proxy.copy(encoding = Some(v))).getOrElse(proxy)
+          }
+          .map { proxy =>
+            (json \ "nonProxyHosts").asOpt[Seq[String]].map(v => proxy.copy(nonProxyHosts = Some(v))).getOrElse(proxy)
+          }
       }
       case _ => None
     }
@@ -672,7 +729,8 @@ object ClientConfig {
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000),
           sampleInterval = (json \ "sampleInterval").asOpt[Long].getOrElse(2000),
           proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
-          customTimeouts = (json \ "customTimeouts").asOpt[JsArray]
+          customTimeouts = (json \ "customTimeouts")
+            .asOpt[JsArray]
             .map(_.value.map(e => CustomTimeouts.format.reads(e).get))
             .getOrElse(Seq.empty[CustomTimeouts])
         )
@@ -685,19 +743,19 @@ object ClientConfig {
       } get
 
     override def writes(o: ClientConfig): JsValue = Json.obj(
-      "useCircuitBreaker" -> o.useCircuitBreaker,
-      "retries"           -> o.retries,
-      "maxErrors"         -> o.maxErrors,
-      "retryInitialDelay" -> o.retryInitialDelay,
-      "backoffFactor"     -> o.backoffFactor,
-      "callTimeout"       -> o.callTimeout,
+      "useCircuitBreaker"    -> o.useCircuitBreaker,
+      "retries"              -> o.retries,
+      "maxErrors"            -> o.maxErrors,
+      "retryInitialDelay"    -> o.retryInitialDelay,
+      "backoffFactor"        -> o.backoffFactor,
+      "callTimeout"          -> o.callTimeout,
       "callAndStreamTimeout" -> o.callAndStreamTimeout,
-      "connectionTimeout" -> o.connectionTimeout,
-      "idleTimeout"       -> o.idleTimeout,
-      "globalTimeout"     -> o.globalTimeout,
-      "sampleInterval"    -> o.sampleInterval,
-      "proxy"             -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
-      "customTimeouts"    -> JsArray(o.customTimeouts.map(_.toJson))
+      "connectionTimeout"    -> o.connectionTimeout,
+      "idleTimeout"          -> o.idleTimeout,
+      "globalTimeout"        -> o.globalTimeout,
+      "sampleInterval"       -> o.sampleInterval,
+      "proxy"                -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
+      "customTimeouts"       -> JsArray(o.customTimeouts.map(_.toJson))
     )
   }
 }
@@ -830,8 +888,12 @@ sealed trait ThirdPartyApiKeyConfig {
   def enabled: Boolean
   def typ: ThirdPartyApiKeyConfigType
   def toJson: JsValue
-  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env):  Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+      f: Option[ApiKey] => Future[Result]
+  )(implicit ec: ExecutionContext, env: Env): Future[Result]
+  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+      f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
 }
 
 sealed trait OIDCThirdPartyApiKeyConfigMode {
@@ -850,33 +912,33 @@ object OIDCThirdPartyApiKeyConfigMode {
   }
   def apply(str: String): Option[OIDCThirdPartyApiKeyConfigMode] = {
     str match {
-      case "Tmp" => Some(Tmp)
-      case "tmp" => Some(Tmp)
-      case "Hybrid" => Some(Hybrid)
-      case "hybrid" => Some(Hybrid)
+      case "Tmp"        => Some(Tmp)
+      case "tmp"        => Some(Tmp)
+      case "Hybrid"     => Some(Hybrid)
+      case "hybrid"     => Some(Hybrid)
       case "Persistent" => Some(Persistent)
       case "persistent" => Some(Persistent)
-      case _ => None
+      case _            => None
     }
   }
 }
 
 case class OIDCThirdPartyApiKeyConfig(
-  enabled: Boolean = false,
-  oidcConfigRef: Option[String],
-  localVerificationOnly: Boolean = false,
-  ttl: Long = 0,
-  headerName: String = "Authorization",
-  quotasEnabled: Boolean = true,
-  uniqueApiKey: Boolean = false,
-  throttlingQuota: Long = 100L,
-  dailyQuota: Long = RemainingQuotas.MaxValue,
-  monthlyQuota: Long = RemainingQuotas.MaxValue,
-  excludedPatterns: Seq[String] = Seq.empty,
-  mode: OIDCThirdPartyApiKeyConfigMode = OIDCThirdPartyApiKeyConfigMode.Tmp,
-  scopes: Seq[String] = Seq.empty,
-  roles: Seq[String] = Seq.empty,
-  rolesPath: Seq[String] = Seq.empty,
+    enabled: Boolean = false,
+    oidcConfigRef: Option[String],
+    localVerificationOnly: Boolean = false,
+    ttl: Long = 0,
+    headerName: String = "Authorization",
+    quotasEnabled: Boolean = true,
+    uniqueApiKey: Boolean = false,
+    throttlingQuota: Long = 100L,
+    dailyQuota: Long = RemainingQuotas.MaxValue,
+    monthlyQuota: Long = RemainingQuotas.MaxValue,
+    excludedPatterns: Seq[String] = Seq.empty,
+    mode: OIDCThirdPartyApiKeyConfigMode = OIDCThirdPartyApiKeyConfigMode.Tmp,
+    scopes: Seq[String] = Seq.empty,
+    roles: Seq[String] = Seq.empty,
+    rolesPath: Seq[String] = Seq.empty,
 ) extends ThirdPartyApiKeyConfig {
 
   import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
@@ -886,14 +948,18 @@ case class OIDCThirdPartyApiKeyConfig(
 
   def toJson: JsValue = OIDCThirdPartyApiKeyConfig.format.writes(this)
 
-  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env):  Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+      f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     handleInternal(req, descriptor, config)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
   }
 
-  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+      f: Option[ApiKey] => Future[Result]
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     handleInternal(req, descriptor, config)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
@@ -901,14 +967,14 @@ case class OIDCThirdPartyApiKeyConfig(
   }
 
   private def findAt(json: JsValue, path: String): Option[JsValue] = {
-    val parts = path.split("\\.").toSeq
+    val parts                                = path.split("\\.").toSeq
     def tail(rest: Seq[String]): Seq[String] = if (rest.isEmpty) Seq.empty[String] else rest.tail
     def navTo(value: JsValue, field: Option[String], rest: Seq[String]): Option[JsValue] = {
       field match {
         case None => Some(value)
         case Some(f) => {
           (value \ f).asOpt[JsValue] match {
-            case None => None
+            case None      => None
             case Some(doc) => navTo(doc, rest.headOption, tail(rest))
           }
         }
@@ -917,178 +983,187 @@ case class OIDCThirdPartyApiKeyConfig(
     navTo(json, parts.headOption, tail(parts))
   }
 
-  private def shouldBeVerified(path: String): Boolean = !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
+  private def shouldBeVerified(path: String): Boolean =
+    !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
 
-  private def handleInternal[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(f: Option[ApiKey] => Future[A])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  private def handleInternal[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+      f: Option[ApiKey] => Future[A]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     shouldBeVerified(req.path) match {
       case false => f(None).asRight[Result]
       case true => {
         oidcConfigRef match {
-          case None => Errors.craftResponseResult(
-            message = "No OIDC configuration ref found",
-            status = Results.InternalServerError,
-            req = req,
-            maybeDescriptor = Some(descriptor),
-            maybeCauseId = Some("oidc.no.config.ref.found")
-          ).asLeft[A]
-          case Some(ref) => env.datastores.authConfigsDataStore.findById(ref).flatMap {
-            case None => Errors.craftResponseResult(
-              message = "No OIDC configuration found",
-              status = Results.InternalServerError,
-              req = req,
-              maybeDescriptor = Some(descriptor),
-              maybeCauseId = Some("oidc.no.config.found")
-            ).asLeft[A]
-            case Some(auth) => {
-              val oidcAuth = auth.asInstanceOf[GenericOauth2ModuleConfig]
-              oidcAuth.jwtVerifier match {
-                case None => Errors.craftResponseResult(
-                  message = "No JWT verifier found",
-                  status = Results.BadRequest,
-                  req = req,
-                  maybeDescriptor = Some(descriptor),
-                  maybeCauseId = Some("oidc.no.jwt.verifier.found")
-                ).asLeft[A]
-                case Some(jwtVerifier) => req.headers.get(headerName) match {
-                  case None => Errors.craftResponseResult(
-                    message = "No bearer header found",
-                    status = Results.BadRequest,
+          case None =>
+            Errors
+              .craftResponseResult(
+                message = "No OIDC configuration ref found",
+                status = Results.InternalServerError,
+                req = req,
+                maybeDescriptor = Some(descriptor),
+                maybeCauseId = Some("oidc.no.config.ref.found")
+              )
+              .asLeft[A]
+          case Some(ref) =>
+            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+              case None =>
+                Errors
+                  .craftResponseResult(
+                    message = "No OIDC configuration found",
+                    status = Results.InternalServerError,
                     req = req,
                     maybeDescriptor = Some(descriptor),
-                    maybeCauseId = Some("oidc.no.bearer.found")
-                  ).asLeft[A]
-                  case Some(rawHeader) => {
-                    val header = rawHeader.replace("Bearer ", "").replace("bearer ", "").trim()
-                    val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(0)))).getOrElse(Json.obj())
-                    val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(1)))).getOrElse(Json.obj())
-                    val kid         = (tokenHeader \ "kid").asOpt[String]
-                    val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
-                    jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {
-                      case None => Errors
-                        .craftResponseResult(
-                          "Bad input algorithm",
-                          Results.BadRequest,
-                          req,
-                          Some(descriptor),
-                          maybeCauseId = Some("oidc.bad.input.algorithm.name")
-                        ).asLeft[A]
-                      case Some(algorithm) => {
-                        val verifier = JWT.require(algorithm).acceptLeeway(10).build()
-                        Try(verifier.verify(header)) match {
-                          case Failure(e) => Errors
-                            .craftResponseResult(
-                              "Bad token",
-                              Results.Unauthorized,
-                              req,
-                              Some(descriptor),
-                              maybeCauseId = Some("oidc.bad.token")
-                            ).asLeft[A]
-                          case Success(_) => {
-                            val iss = (tokenBody \ "iss").as[String]
-                            val subject = (tokenBody \ "sub").as[String]
-                            val possibleMoreMeta: Seq[(String, String)] = (tokenBody \ oidcAuth.apiKeyMetaField).asOpt[JsObject].getOrElse(Json.obj()).value.toSeq.collect {
-                              case (key, JsString(str)) => (key, str)
-                              case (key, JsNumber(nbr)) => (key, nbr.toString())
-                              case (key, JsBoolean(b)) => (key, b.toString())
-                              case (key, arr@JsArray(_)) => (key, Json.stringify(arr))
-                              case (key, obj@JsObject(_)) => (key, Json.stringify(obj))
-                              case (key, JsNull) => (key, "null")
-                            }
-                            val possibleMoreTags: Seq[String] = (tokenBody \ oidcAuth.apiKeyTagsField).asOpt[JsArray].getOrElse(JsArray()).value.collect {
-                              case JsString(str) => str
-                              case JsNumber(nbr) => nbr.toString()
-                              case JsBoolean(b) => b.toString()
-                              case arr@JsArray(_) => Json.stringify(arr)
-                              case obj@JsObject(_) => Json.stringify(obj)
-                              case JsNull => "null"
-                            }
-                            val _apiKey = ApiKey(
-                              clientId = uniqueApiKey match {
-                                case true => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}"
-                                case false => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}-${subject}"
-                              },
-                              clientSecret = IdGenerator.token(128),
-                              clientName = s"Temporary apikey from ${oidcAuth.name} for $subject on ${descriptor.name}",
-                              authorizedGroup = descriptor.groupId,
-                              enabled = false,
-                              readOnly = false,
-                              allowClientIdOnly = true,
-                              throttlingQuota = throttlingQuota,
-                              dailyQuota = dailyQuota,
-                              monthlyQuota = monthlyQuota,
-                              tags = possibleMoreTags,
-                              metadata = Map(
-                                "type" -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
-                                "iss" -> iss,
-                                "sub" -> subject,
-                                "desc" -> descriptor.id,
-                                "descName" -> descriptor.name,
-                                "auth" -> oidcAuth.id,
-                                "authName" -> oidcAuth.name
-                              ) ++ possibleMoreMeta
-                            )
-                            val tokenScopes = (tokenBody \ "scope").asOpt[String].map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
-                            val tokenRoles: Seq[String] = rolesPath.flatMap(p => findAt(tokenBody, p)).collect {
-                              case JsString(str) => Seq(str)
-                              case JsArray(v) => v.flatMap(_.asOpt[String])
-                            }.flatten
-                            if (tokenScopes.intersect(scopes) == scopes && tokenRoles.intersect(roles) == roles) {
-                              (mode match {
-                                case OIDCThirdPartyApiKeyConfigMode.Tmp => FastFuture.successful(_apiKey)
-                                case OIDCThirdPartyApiKeyConfigMode.Hybrid => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).map {
-                                  case Some(apk) => apk
-                                  case None => _apiKey
-                                }
-                                case OIDCThirdPartyApiKeyConfigMode.Persistent => env.datastores.apiKeyDataStore.findById(_apiKey.clientId).flatMap {
-                                  case Some(apk) => FastFuture.successful(apk)
-                                  case None => _apiKey.save().map { _ => _apiKey }
-                                }
-                              }) flatMap { apiKey =>
-                                (quotasEnabled match {
-                                  case true => apiKey.withingQuotas()
-                                  case false => FastFuture.successful(true)
-                                }).flatMap {
-                                  case true => {
-                                    if (localVerificationOnly) {
-                                      f(Some(apiKey)).asRight[Result]
-                                    } else {
-                                      OIDCThirdPartyApiKeyConfig.cache.get(apiKey.clientId) match {
-                                        case Some((stop, active)) if stop > System.currentTimeMillis() => {
-                                          if (active) {
-                                            f(Some(apiKey)).asRight[Result]
-                                          } else {
-                                            Errors
-                                              .craftResponseResult(
-                                                "Invalid api key",
-                                                Results.Unauthorized,
-                                                req,
-                                                Some(descriptor),
-                                                maybeCauseId = Some("oidc.invalid.token")
-                                              ).asLeft[A]
+                    maybeCauseId = Some("oidc.no.config.found")
+                  )
+                  .asLeft[A]
+              case Some(auth) => {
+                val oidcAuth = auth.asInstanceOf[GenericOauth2ModuleConfig]
+                oidcAuth.jwtVerifier match {
+                  case None =>
+                    Errors
+                      .craftResponseResult(
+                        message = "No JWT verifier found",
+                        status = Results.BadRequest,
+                        req = req,
+                        maybeDescriptor = Some(descriptor),
+                        maybeCauseId = Some("oidc.no.jwt.verifier.found")
+                      )
+                      .asLeft[A]
+                  case Some(jwtVerifier) =>
+                    req.headers.get(headerName) match {
+                      case None =>
+                        Errors
+                          .craftResponseResult(
+                            message = "No bearer header found",
+                            status = Results.BadRequest,
+                            req = req,
+                            maybeDescriptor = Some(descriptor),
+                            maybeCauseId = Some("oidc.no.bearer.found")
+                          )
+                          .asLeft[A]
+                      case Some(rawHeader) => {
+                        val header = rawHeader.replace("Bearer ", "").replace("bearer ", "").trim()
+                        val tokenHeader =
+                          Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(0)))).getOrElse(Json.obj())
+                        val tokenBody =
+                          Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(1)))).getOrElse(Json.obj())
+                        val kid = (tokenHeader \ "kid").asOpt[String]
+                        val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+                        jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {
+                          case None =>
+                            Errors
+                              .craftResponseResult(
+                                "Bad input algorithm",
+                                Results.BadRequest,
+                                req,
+                                Some(descriptor),
+                                maybeCauseId = Some("oidc.bad.input.algorithm.name")
+                              )
+                              .asLeft[A]
+                          case Some(algorithm) => {
+                            val verifier = JWT.require(algorithm).acceptLeeway(10).build()
+                            Try(verifier.verify(header)) match {
+                              case Failure(e) =>
+                                Errors
+                                  .craftResponseResult(
+                                    "Bad token",
+                                    Results.Unauthorized,
+                                    req,
+                                    Some(descriptor),
+                                    maybeCauseId = Some("oidc.bad.token")
+                                  )
+                                  .asLeft[A]
+                              case Success(_) => {
+                                val iss     = (tokenBody \ "iss").as[String]
+                                val subject = (tokenBody \ "sub").as[String]
+                                val possibleMoreMeta: Seq[(String, String)] = (tokenBody \ oidcAuth.apiKeyMetaField)
+                                  .asOpt[JsObject]
+                                  .getOrElse(Json.obj())
+                                  .value
+                                  .toSeq
+                                  .collect {
+                                    case (key, JsString(str))     => (key, str)
+                                    case (key, JsNumber(nbr))     => (key, nbr.toString())
+                                    case (key, JsBoolean(b))      => (key, b.toString())
+                                    case (key, arr @ JsArray(_))  => (key, Json.stringify(arr))
+                                    case (key, obj @ JsObject(_)) => (key, Json.stringify(obj))
+                                    case (key, JsNull)            => (key, "null")
+                                  }
+                                val possibleMoreTags: Seq[String] = (tokenBody \ oidcAuth.apiKeyTagsField)
+                                  .asOpt[JsArray]
+                                  .getOrElse(JsArray())
+                                  .value
+                                  .collect {
+                                    case JsString(str)     => str
+                                    case JsNumber(nbr)     => nbr.toString()
+                                    case JsBoolean(b)      => b.toString()
+                                    case arr @ JsArray(_)  => Json.stringify(arr)
+                                    case obj @ JsObject(_) => Json.stringify(obj)
+                                    case JsNull            => "null"
+                                  }
+                                val _apiKey = ApiKey(
+                                  clientId = uniqueApiKey match {
+                                    case true  => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}"
+                                    case false => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}-${subject}"
+                                  },
+                                  clientSecret = IdGenerator.token(128),
+                                  clientName =
+                                    s"Temporary apikey from ${oidcAuth.name} for $subject on ${descriptor.name}",
+                                  authorizedGroup = descriptor.groupId,
+                                  enabled = false,
+                                  readOnly = false,
+                                  allowClientIdOnly = true,
+                                  throttlingQuota = throttlingQuota,
+                                  dailyQuota = dailyQuota,
+                                  monthlyQuota = monthlyQuota,
+                                  tags = possibleMoreTags,
+                                  metadata = Map(
+                                    "type"     -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
+                                    "iss"      -> iss,
+                                    "sub"      -> subject,
+                                    "desc"     -> descriptor.id,
+                                    "descName" -> descriptor.name,
+                                    "auth"     -> oidcAuth.id,
+                                    "authName" -> oidcAuth.name
+                                  ) ++ possibleMoreMeta
+                                )
+                                val tokenScopes = (tokenBody \ "scope")
+                                  .asOpt[String]
+                                  .map(_.split(" ").toSeq)
+                                  .getOrElse(Seq.empty[String])
+                                val tokenRoles: Seq[String] = rolesPath
+                                  .flatMap(p => findAt(tokenBody, p))
+                                  .collect {
+                                    case JsString(str) => Seq(str)
+                                    case JsArray(v)    => v.flatMap(_.asOpt[String])
+                                  }
+                                  .flatten
+                                if (tokenScopes.intersect(scopes) == scopes && tokenRoles.intersect(roles) == roles) {
+                                  (mode match {
+                                    case OIDCThirdPartyApiKeyConfigMode.Tmp => FastFuture.successful(_apiKey)
+                                    case OIDCThirdPartyApiKeyConfigMode.Hybrid =>
+                                      env.datastores.apiKeyDataStore.findById(_apiKey.clientId).map {
+                                        case Some(apk) => apk
+                                        case None      => _apiKey
+                                      }
+                                    case OIDCThirdPartyApiKeyConfigMode.Persistent =>
+                                      env.datastores.apiKeyDataStore.findById(_apiKey.clientId).flatMap {
+                                        case Some(apk) => FastFuture.successful(apk)
+                                        case None =>
+                                          _apiKey.save().map { _ =>
+                                            _apiKey
                                           }
-                                        }
-                                        case _ => {
-                                          val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
-                                          val builder = env.Ws.url(oidcAuth.introspectionUrl)
-                                          val future1 = if (oidcAuth.useJson) {
-                                            builder.post(
-                                              Json.obj(
-                                                "token" -> header,
-                                                "client_id" -> oidcAuth.clientId
-                                              ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
-                                            )
-                                          } else {
-                                            builder.post(
-                                              Map(
-                                                "token" -> header,
-                                                "client_id" -> oidcAuth.clientId
-                                              ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-                                            )(writeableOf_urlEncodedSimpleForm)
-                                          }
-                                          future1
-                                            .flatMap { resp =>
-                                              val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
-                                              OIDCThirdPartyApiKeyConfig.cache.put(apiKey.clientId, (System.currentTimeMillis() + ttl, active))
+                                      }
+                                  }) flatMap { apiKey =>
+                                    (quotasEnabled match {
+                                      case true  => apiKey.withingQuotas()
+                                      case false => FastFuture.successful(true)
+                                    }).flatMap {
+                                      case true => {
+                                        if (localVerificationOnly) {
+                                          f(Some(apiKey)).asRight[Result]
+                                        } else {
+                                          OIDCThirdPartyApiKeyConfig.cache.get(apiKey.clientId) match {
+                                            case Some((stop, active)) if stop > System.currentTimeMillis() => {
                                               if (active) {
                                                 f(Some(apiKey)).asRight[Result]
                                               } else {
@@ -1099,42 +1174,85 @@ case class OIDCThirdPartyApiKeyConfig(
                                                     req,
                                                     Some(descriptor),
                                                     maybeCauseId = Some("oidc.invalid.token")
-                                                  ).asLeft[A]
+                                                  )
+                                                  .asLeft[A]
                                               }
                                             }
+                                            case _ => {
+                                              val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
+                                              val builder      = env.Ws.url(oidcAuth.introspectionUrl)
+                                              val future1 = if (oidcAuth.useJson) {
+                                                builder.post(
+                                                  Json.obj(
+                                                    "token"     -> header,
+                                                    "client_id" -> oidcAuth.clientId
+                                                  ) ++ clientSecret
+                                                    .map(s => Json.obj("client_secret" -> s))
+                                                    .getOrElse(Json.obj())
+                                                )
+                                              } else {
+                                                builder.post(
+                                                  Map(
+                                                    "token"     -> header,
+                                                    "client_id" -> oidcAuth.clientId
+                                                  ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+                                                )(writeableOf_urlEncodedSimpleForm)
+                                              }
+                                              future1
+                                                .flatMap { resp =>
+                                                  val active = (resp.json \ "active").asOpt[Boolean].getOrElse(false)
+                                                  OIDCThirdPartyApiKeyConfig.cache
+                                                    .put(apiKey.clientId, (System.currentTimeMillis() + ttl, active))
+                                                  if (active) {
+                                                    f(Some(apiKey)).asRight[Result]
+                                                  } else {
+                                                    Errors
+                                                      .craftResponseResult(
+                                                        "Invalid api key",
+                                                        Results.Unauthorized,
+                                                        req,
+                                                        Some(descriptor),
+                                                        maybeCauseId = Some("oidc.invalid.token")
+                                                      )
+                                                      .asLeft[A]
+                                                  }
+                                                }
+                                            }
+                                          }
                                         }
                                       }
+                                      case false =>
+                                        Errors
+                                          .craftResponseResult(
+                                            "You performed too much requests",
+                                            TooManyRequests,
+                                            req,
+                                            Some(descriptor),
+                                            Some("errors.too.much.requests")
+                                          )
+                                          .asLeft[A]
                                     }
                                   }
-                                  case false =>
-                                    Errors.craftResponseResult(
-                                      "You performed too much requests",
-                                      TooManyRequests,
+                                } else {
+                                  Errors
+                                    .craftResponseResult(
+                                      "Invalid token",
+                                      Results.Unauthorized,
                                       req,
                                       Some(descriptor),
-                                      Some("errors.too.much.requests")
-                                    ).asLeft[A]
+                                      maybeCauseId = Some("oidc.invalid.token")
+                                    )
+                                    .asLeft[A]
                                 }
                               }
-                            } else {
-                              Errors
-                                .craftResponseResult(
-                                  "Invalid token",
-                                  Results.Unauthorized,
-                                  req,
-                                  Some(descriptor),
-                                  maybeCauseId = Some("oidc.invalid.token")
-                                ).asLeft[A]
                             }
                           }
                         }
                       }
                     }
-                  }
                 }
               }
             }
-          }
         }
       }
     }
@@ -1157,7 +1275,10 @@ object OIDCThirdPartyApiKeyConfig {
           uniqueApiKey = (json \ "uniqueApiKey").asOpt[Boolean].getOrElse(false),
           oidcConfigRef = (json \ "oidcConfigRef").asOpt[String].filterNot(_.isEmpty),
           localVerificationOnly = (json \ "localVerificationOnly").asOpt[Boolean].getOrElse(false),
-          mode = (json \ "mode").asOpt[String].flatMap(v => OIDCThirdPartyApiKeyConfigMode(v)).getOrElse(OIDCThirdPartyApiKeyConfigMode.Tmp),
+          mode = (json \ "mode")
+            .asOpt[String]
+            .flatMap(v => OIDCThirdPartyApiKeyConfigMode(v))
+            .getOrElse(OIDCThirdPartyApiKeyConfigMode.Tmp),
           ttl = (json \ "ttl").asOpt[Long].getOrElse(0L),
           headerName = (json \ "headerName").asOpt[String].getOrElse("Authorization"),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(100L),
@@ -1177,22 +1298,22 @@ object OIDCThirdPartyApiKeyConfig {
       } get
 
     override def writes(o: OIDCThirdPartyApiKeyConfig): JsValue = Json.obj(
-      "enabled" -> o.enabled,
-      "quotasEnabled" -> o.quotasEnabled,
-      "uniqueApiKey" -> o.uniqueApiKey,
-      "type" -> o.typ.name,
-      "oidcConfigRef" -> o.oidcConfigRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "enabled"               -> o.enabled,
+      "quotasEnabled"         -> o.quotasEnabled,
+      "uniqueApiKey"          -> o.uniqueApiKey,
+      "type"                  -> o.typ.name,
+      "oidcConfigRef"         -> o.oidcConfigRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "localVerificationOnly" -> o.localVerificationOnly,
-      "mode" -> o.mode.name,
-      "ttl" -> o.ttl,
-      "headerName" -> o.headerName,
-      "throttlingQuota" -> o.throttlingQuota,
-      "dailyQuota" -> o.dailyQuota,
-      "monthlyQuota" -> o.monthlyQuota,
-      "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
-      "scopes" -> JsArray(o.scopes.map(JsString.apply)),
-      "rolesPath" -> JsArray(o.rolesPath.map(JsString.apply)),
-      "roles" -> JsArray(o.roles.map(JsString.apply))
+      "mode"                  -> o.mode.name,
+      "ttl"                   -> o.ttl,
+      "headerName"            -> o.headerName,
+      "throttlingQuota"       -> o.throttlingQuota,
+      "dailyQuota"            -> o.dailyQuota,
+      "monthlyQuota"          -> o.monthlyQuota,
+      "excludedPatterns"      -> JsArray(o.excludedPatterns.map(JsString.apply)),
+      "scopes"                -> JsArray(o.scopes.map(JsString.apply)),
+      "rolesPath"             -> JsArray(o.rolesPath.map(JsString.apply)),
+      "roles"                 -> JsArray(o.roles.map(JsString.apply))
     )
   }
 }
@@ -1204,7 +1325,7 @@ object ThirdPartyApiKeyConfig {
     override def reads(json: JsValue): JsResult[ThirdPartyApiKeyConfig] =
       Try {
         (json \ "type").as[String] match {
-          case "OIDC"   => OIDCThirdPartyApiKeyConfig.format.reads(json)
+          case "OIDC" => OIDCThirdPartyApiKeyConfig.format.reads(json)
         }
       } recover {
         case e => JsError(e.getMessage)
@@ -1215,130 +1336,134 @@ object ThirdPartyApiKeyConfig {
 }
 
 case class BasicAuthConstraints(
-  enabled: Boolean = true,
-  headerName: Option[String] = None,
-  queryName: Option[String] = None
+    enabled: Boolean = true,
+    headerName: Option[String] = None,
+    queryName: Option[String] = None
 ) {
   def json: JsValue = Json.obj(
-    "enabled" -> enabled,
+    "enabled"    -> enabled,
     "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
   )
 }
 object BasicAuthConstraints {
   val format = new Format[BasicAuthConstraints] {
     override def writes(o: BasicAuthConstraints): JsValue = o.json
-    override def reads(json: JsValue): JsResult[BasicAuthConstraints] = Try {
-      JsSuccess(
-        BasicAuthConstraints(
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
-          headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
-          queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
+    override def reads(json: JsValue): JsResult[BasicAuthConstraints] =
+      Try {
+        JsSuccess(
+          BasicAuthConstraints(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+            headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
+            queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 case class ClientIdAuthConstraints(
-  enabled: Boolean = true,
-  headerName: Option[String] = None,
-  queryName: Option[String] = None
+    enabled: Boolean = true,
+    headerName: Option[String] = None,
+    queryName: Option[String] = None
 ) {
   def json: JsValue = Json.obj(
-    "enabled" -> enabled,
+    "enabled"    -> enabled,
     "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
   )
 }
 object ClientIdAuthConstraints {
   val format = new Format[ClientIdAuthConstraints] {
     override def writes(o: ClientIdAuthConstraints): JsValue = o.json
-    override def reads(json: JsValue): JsResult[ClientIdAuthConstraints] = Try {
-      JsSuccess(
-        ClientIdAuthConstraints(
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
-          headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
-          queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
+    override def reads(json: JsValue): JsResult[ClientIdAuthConstraints] =
+      Try {
+        JsSuccess(
+          ClientIdAuthConstraints(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+            headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
+            queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 case class CustomHeadersAuthConstraints(
-  enabled: Boolean = true,
-  clientIdHeaderName: Option[String] = None,
-  clientSecretHeaderName: Option[String] = None
+    enabled: Boolean = true,
+    clientIdHeaderName: Option[String] = None,
+    clientSecretHeaderName: Option[String] = None
 ) {
   def json: JsValue = Json.obj(
-    "enabled" -> enabled,
-    "clientIdHeaderName" -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "enabled"                -> enabled,
+    "clientIdHeaderName"     -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "clientSecretHeaderName" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
   )
 }
 object CustomHeadersAuthConstraints {
   val format = new Format[CustomHeadersAuthConstraints] {
     override def writes(o: CustomHeadersAuthConstraints): JsValue = o.json
-    override def reads(json: JsValue): JsResult[CustomHeadersAuthConstraints] = Try {
-      JsSuccess(
-        CustomHeadersAuthConstraints(
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
-          clientIdHeaderName = (json \ "clientIdHeaderName").asOpt[String].filterNot(_.trim.isEmpty),
-          clientSecretHeaderName = (json \ "clientSecretHeaderName").asOpt[String].filterNot(_.trim.isEmpty)
+    override def reads(json: JsValue): JsResult[CustomHeadersAuthConstraints] =
+      Try {
+        JsSuccess(
+          CustomHeadersAuthConstraints(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+            clientIdHeaderName = (json \ "clientIdHeaderName").asOpt[String].filterNot(_.trim.isEmpty),
+            clientSecretHeaderName = (json \ "clientSecretHeaderName").asOpt[String].filterNot(_.trim.isEmpty)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 case class JwtAuthConstraints(
-  enabled: Boolean = true,
-  includeRequestAttributes: Boolean  = false,
-  maxJwtLifespanSecs: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
-  headerName: Option[String] = None,
-  queryName: Option[String] = None,
-  cookieName: Option[String] = None
+    enabled: Boolean = true,
+    includeRequestAttributes: Boolean = false,
+    maxJwtLifespanSecs: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
+    headerName: Option[String] = None,
+    queryName: Option[String] = None,
+    cookieName: Option[String] = None
 ) {
   def json: JsValue = Json.obj(
-    "enabled" -> enabled,
+    "enabled"                  -> enabled,
     "includeRequestAttributes" -> includeRequestAttributes,
-    "maxJwtLifespanSecs" -> maxJwtLifespanSecs.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
-    "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "queryName" -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "cookieName" -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "maxJwtLifespanSecs"       -> maxJwtLifespanSecs.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
+    "headerName"               -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "queryName"                -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "cookieName"               -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
   )
 }
 object JwtAuthConstraints {
   val format = new Format[JwtAuthConstraints] {
     override def writes(o: JwtAuthConstraints): JsValue = o.json
-    override def reads(json: JsValue): JsResult[JwtAuthConstraints] = Try {
-      JsSuccess(
-        JwtAuthConstraints(
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
-          includeRequestAttributes = (json \ "includeRequestAttributes").asOpt[Boolean].getOrElse(false),
-          maxJwtLifespanSecs = (json \ "maxJwtLifespanSecs").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
-          headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
-          queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
-          cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
+    override def reads(json: JsValue): JsResult[JwtAuthConstraints] =
+      Try {
+        JsSuccess(
+          JwtAuthConstraints(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+            includeRequestAttributes = (json \ "includeRequestAttributes").asOpt[Boolean].getOrElse(false),
+            maxJwtLifespanSecs = (json \ "maxJwtLifespanSecs").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
+            headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
+            queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
+            cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 
 case class ApiKeyRouteMatcher(
-  noneTagIn: Seq[String] = Seq.empty,
-  oneTagIn: Seq[String] = Seq.empty,
-  allTagsIn: Seq[String] = Seq.empty,
-  noneMetaIn: Map[String, String] = Map.empty,
-  oneMetaIn: Map[String, String] = Map.empty,
-  allMetaIn: Map[String, String] = Map.empty
+    noneTagIn: Seq[String] = Seq.empty,
+    oneTagIn: Seq[String] = Seq.empty,
+    allTagsIn: Seq[String] = Seq.empty,
+    noneMetaIn: Map[String, String] = Map.empty,
+    oneMetaIn: Map[String, String] = Map.empty,
+    allMetaIn: Map[String, String] = Map.empty
 ) extends {
   def json: JsValue = ApiKeyRouteMatcher.format.writes(this)
 }
@@ -1346,61 +1471,63 @@ case class ApiKeyRouteMatcher(
 object ApiKeyRouteMatcher {
   val format = new Format[ApiKeyRouteMatcher] {
     override def writes(o: ApiKeyRouteMatcher): JsValue = Json.obj(
-      "noneTagIn" -> JsArray(o.noneTagIn.map(JsString.apply)),
-      "oneTagIn" -> JsArray(o.oneTagIn.map(JsString.apply)),
-      "allTagsIn" -> JsArray(o.allTagsIn.map(JsString.apply)),
+      "noneTagIn"  -> JsArray(o.noneTagIn.map(JsString.apply)),
+      "oneTagIn"   -> JsArray(o.oneTagIn.map(JsString.apply)),
+      "allTagsIn"  -> JsArray(o.allTagsIn.map(JsString.apply)),
       "noneMetaIn" -> JsObject(o.noneMetaIn.mapValues(JsString.apply)),
-      "oneMetaIn" -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
-      "allMetaIn" -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
+      "oneMetaIn"  -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
+      "allMetaIn"  -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
     )
-    override def reads(json: JsValue): JsResult[ApiKeyRouteMatcher] = Try {
-      JsSuccess(
-        ApiKeyRouteMatcher(
-          noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allTagsIn = (json \ "allTagsIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          noneMetaIn = (json \ "noneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-          oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-          allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+    override def reads(json: JsValue): JsResult[ApiKeyRouteMatcher] =
+      Try {
+        JsSuccess(
+          ApiKeyRouteMatcher(
+            noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            allTagsIn = (json \ "allTagsIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            noneMetaIn = (json \ "noneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+            oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+            allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 
 case class ApiKeyConstraints(
-  basicAuth: BasicAuthConstraints = BasicAuthConstraints(),
-  customHeadersAuth: CustomHeadersAuthConstraints = CustomHeadersAuthConstraints(),
-  clientIdAuth: ClientIdAuthConstraints = ClientIdAuthConstraints(),
-  jwtAuth: JwtAuthConstraints = JwtAuthConstraints(),
-  routing: ApiKeyRouteMatcher = ApiKeyRouteMatcher()
+    basicAuth: BasicAuthConstraints = BasicAuthConstraints(),
+    customHeadersAuth: CustomHeadersAuthConstraints = CustomHeadersAuthConstraints(),
+    clientIdAuth: ClientIdAuthConstraints = ClientIdAuthConstraints(),
+    jwtAuth: JwtAuthConstraints = JwtAuthConstraints(),
+    routing: ApiKeyRouteMatcher = ApiKeyRouteMatcher()
 ) {
   def json: JsValue = Json.obj(
-    "basicAuth" -> basicAuth.json,
+    "basicAuth"         -> basicAuth.json,
     "customHeadersAuth" -> customHeadersAuth.json,
-    "clientIdAuth" -> clientIdAuth.json,
-    "jwtAuth" -> jwtAuth.json,
-    "routing" -> routing.json
+    "clientIdAuth"      -> clientIdAuth.json,
+    "jwtAuth"           -> jwtAuth.json,
+    "routing"           -> routing.json
   )
 }
 object ApiKeyConstraints {
   val format = new Format[ApiKeyConstraints] {
     override def writes(o: ApiKeyConstraints): JsValue = o.json
-    override def reads(json: JsValue): JsResult[ApiKeyConstraints] = Try {
-      JsSuccess(
-        ApiKeyConstraints(
-          basicAuth = (json \ "basicAuth").as(BasicAuthConstraints.format),
-          customHeadersAuth = (json \ "customHeadersAuth").as(CustomHeadersAuthConstraints.format),
-          clientIdAuth = (json \ "clientIdAuth").as(ClientIdAuthConstraints.format),
-          jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format),
-          routing = (json \ "routing").as(ApiKeyRouteMatcher.format)
+    override def reads(json: JsValue): JsResult[ApiKeyConstraints] =
+      Try {
+        JsSuccess(
+          ApiKeyConstraints(
+            basicAuth = (json \ "basicAuth").as(BasicAuthConstraints.format),
+            customHeadersAuth = (json \ "customHeadersAuth").as(CustomHeadersAuthConstraints.format),
+            clientIdAuth = (json \ "clientIdAuth").as(ClientIdAuthConstraints.format),
+            jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format),
+            routing = (json \ "routing").as(ApiKeyRouteMatcher.format)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 
@@ -1410,11 +1537,11 @@ sealed trait SecComVersion {
 }
 object SecComVersion {
   object V1 extends SecComVersion {
-    def version: Int = 1
+    def version: Int  = 1
     def json: JsValue = JsNumber(1)
   }
   object V2 extends SecComVersion {
-    def version: Int = 2
+    def version: Int  = 2
     def json: JsValue = JsNumber(2)
   }
   def apply(version: Int): Option[SecComVersion] = version match {
@@ -1440,18 +1567,18 @@ object SecComInfoTokenVersion {
     case "legacy" => Some(Legacy)
     case "Latest" => Some(Latest)
     case "latest" => Some(Latest)
-    case _ => None
+    case _        => None
   }
 }
 
 case class SecComHeaders(
-  claimRequestName: Option[String] = None,
-  stateRequestName: Option[String] = None,
-  stateResponseName: Option[String] = None
+    claimRequestName: Option[String] = None,
+    stateRequestName: Option[String] = None,
+    stateResponseName: Option[String] = None
 ) {
   def json: JsValue = Json.obj(
-    "claimRequestName" -> claimRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "stateRequestName" -> stateRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "claimRequestName"  -> claimRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "stateRequestName"  -> stateRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "stateResponseName" -> stateResponseName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
 }
@@ -1459,17 +1586,18 @@ case class SecComHeaders(
 object SecComHeaders {
   val format = new Format[SecComHeaders] {
     override def writes(o: SecComHeaders): JsValue = o.json
-    override def reads(json: JsValue): JsResult[SecComHeaders] = Try {
-      JsSuccess(
-        SecComHeaders(
-          claimRequestName = (json \ "claimRequestName").asOpt[String],
-          stateRequestName = (json \ "stateRequestName").asOpt[String],
-          stateResponseName = (json \ "stateResponseName").asOpt[String]
+    override def reads(json: JsValue): JsResult[SecComHeaders] =
+      Try {
+        JsSuccess(
+          SecComHeaders(
+            claimRequestName = (json \ "claimRequestName").asOpt[String],
+            stateRequestName = (json \ "stateRequestName").asOpt[String],
+            stateResponseName = (json \ "stateResponseName").asOpt[String]
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 
@@ -1481,18 +1609,19 @@ object RestrictionPath {
   val format = new Format[RestrictionPath] {
     override def writes(o: RestrictionPath): JsValue = Json.obj(
       "method" -> o.method,
-      "path" -> o.path,
+      "path"   -> o.path,
     )
-    override def reads(json: JsValue): JsResult[RestrictionPath] = Try {
-      JsSuccess(
-        RestrictionPath(
-          method = (json \ "method").as[String],
-          path = (json \ "path").as[String]
+    override def reads(json: JsValue): JsResult[RestrictionPath] =
+      Try {
+        JsSuccess(
+          RestrictionPath(
+            method = (json \ "method").as[String],
+            path = (json \ "path").as[String]
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 
@@ -1554,81 +1683,91 @@ case class Restrictions(
 
   private val cache = new TrieMap[String, (Boolean, Future[Result])]() // Not that clean but perfs matters
 
-  def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader)(implicit ec: ExecutionContext, env: Env): (Boolean, Future[Result]) = {
+  def handleRestrictions(descriptor: ServiceDescriptor,
+                         apk: Option[ApiKey],
+                         req: RequestHeader)(implicit ec: ExecutionContext, env: Env): (Boolean, Future[Result]) = {
 
     import utils.RequestImplicits._
 
     if (enabled) {
       val method = req.method
       val domain = req.domain
-      val path = req.relativeUri
-      val key = s"${descriptor.id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
-      cache.getOrElseUpdate(key, {
-        if (allowLast) {
-          if (isNotFound(method, domain, path)) {
-            (true, Errors.craftResponseResult(
-              "Not Found",
-              Results.NotFound,
-              req,
-              Some(descriptor),
-              Some("errors.not.found"),
-              emptyBody = true
-            ))
-          } else if (isForbidden(method, domain, path)) {
-            (true, Errors.craftResponseResult(
-              "Forbidden",
-              Results.Forbidden,
-              req,
-              Some(descriptor),
-              Some("errors.forbidden"),
-              emptyBody = true
-            ))
-          } else if (isNotAllowed(method, domain, path)) {
-            (true, Errors.craftResponseResult(
-              "Not Found", // TODO: is it the right response ?
-              Results.NotFound,
-              req,
-              Some(descriptor),
-              Some("errors.not.found"),
-              emptyBody = true
-            ))
+      val path   = req.relativeUri
+      val key    = s"${descriptor.id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
+      cache.getOrElseUpdate(
+        key, {
+          if (allowLast) {
+            if (isNotFound(method, domain, path)) {
+              (true,
+               Errors.craftResponseResult(
+                 "Not Found",
+                 Results.NotFound,
+                 req,
+                 Some(descriptor),
+                 Some("errors.not.found"),
+                 emptyBody = true
+               ))
+            } else if (isForbidden(method, domain, path)) {
+              (true,
+               Errors.craftResponseResult(
+                 "Forbidden",
+                 Results.Forbidden,
+                 req,
+                 Some(descriptor),
+                 Some("errors.forbidden"),
+                 emptyBody = true
+               ))
+            } else if (isNotAllowed(method, domain, path)) {
+              (true,
+               Errors.craftResponseResult(
+                 "Not Found", // TODO: is it the right response ?
+                 Results.NotFound,
+                 req,
+                 Some(descriptor),
+                 Some("errors.not.found"),
+                 emptyBody = true
+               ))
+            } else {
+              Restrictions.failedFutureResp
+            }
           } else {
-            Restrictions.failedFutureResp
-          }
-        } else {
-          val allowed = isAllowed(method, domain, path)
-          if (!allowed && isNotFound(method, domain, path)) {
-            (true, Errors.craftResponseResult(
-              "Not Found",
-              Results.NotFound,
-              req,
-              Some(descriptor),
-              Some("errors.not.found"),
-              emptyBody = true
-            ))
-          } else if (!allowed && isForbidden(method, domain, path)) {
-            (true, Errors.craftResponseResult(
-              "Forbidden",
-              Results.Forbidden,
-              req,
-              Some(descriptor),
-              Some("errors.forbidden"),
-              emptyBody = true
-            ))
-          } else if (isNotAllowed(method, domain, path)) {
-            (true, Errors.craftResponseResult(
-              "Not Found", // TODO: is it the right response ?
-              Results.NotFound,
-              req,
-              Some(descriptor),
-              Some("errors.not.found"),
-              emptyBody = true
-            ))
-          } else {
-            Restrictions.failedFutureResp
+            val allowed = isAllowed(method, domain, path)
+            if (!allowed && isNotFound(method, domain, path)) {
+              (true,
+               Errors.craftResponseResult(
+                 "Not Found",
+                 Results.NotFound,
+                 req,
+                 Some(descriptor),
+                 Some("errors.not.found"),
+                 emptyBody = true
+               ))
+            } else if (!allowed && isForbidden(method, domain, path)) {
+              (true,
+               Errors.craftResponseResult(
+                 "Forbidden",
+                 Results.Forbidden,
+                 req,
+                 Some(descriptor),
+                 Some("errors.forbidden"),
+                 emptyBody = true
+               ))
+            } else if (isNotAllowed(method, domain, path)) {
+              (true,
+               Errors.craftResponseResult(
+                 "Not Found", // TODO: is it the right response ?
+                 Results.NotFound,
+                 req,
+                 Some(descriptor),
+                 Some("errors.not.found"),
+                 emptyBody = true
+               ))
+            } else {
+              Restrictions.failedFutureResp
+            }
           }
         }
-      })
+      )
     } else {
       Restrictions.failedFutureResp
     }
@@ -1641,31 +1780,41 @@ object Restrictions {
 
   val format = new Format[Restrictions] {
     override def writes(o: Restrictions): JsValue = Json.obj(
-      "enabled" -> o.enabled,
+      "enabled"   -> o.enabled,
       "allowLast" -> o.allowLast,
-      "allowed" -> JsArray(o.allowed.map(_.json)),
-      "forbidden" ->  JsArray(o.forbidden.map(_.json)),
-      "notFound" ->  JsArray(o.notFound.map(_.json)),
+      "allowed"   -> JsArray(o.allowed.map(_.json)),
+      "forbidden" -> JsArray(o.forbidden.map(_.json)),
+      "notFound"  -> JsArray(o.notFound.map(_.json)),
     )
-    override def reads(json: JsValue): JsResult[Restrictions] = Try {
-      JsSuccess(
-        Restrictions(
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          allowLast = (json \ "allowLast").asOpt[Boolean].getOrElse(true),
-          allowed = (json \ "allowed").asOpt[JsArray].map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
-            case JsSuccess(rp, _) => rp
-          }).getOrElse(Seq.empty),
-          forbidden = (json \ "forbidden").asOpt[JsArray].map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
-            case JsSuccess(rp, _) => rp
-          }).getOrElse(Seq.empty),
-          notFound = (json \ "notFound").asOpt[JsArray].map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
-            case JsSuccess(rp, _) => rp
-          }).getOrElse(Seq.empty)
+    override def reads(json: JsValue): JsResult[Restrictions] =
+      Try {
+        JsSuccess(
+          Restrictions(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+            allowLast = (json \ "allowLast").asOpt[Boolean].getOrElse(true),
+            allowed = (json \ "allowed")
+              .asOpt[JsArray]
+              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
+                case JsSuccess(rp, _) => rp
+              })
+              .getOrElse(Seq.empty),
+            forbidden = (json \ "forbidden")
+              .asOpt[JsArray]
+              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
+                case JsSuccess(rp, _) => rp
+              })
+              .getOrElse(Seq.empty),
+            notFound = (json \ "notFound")
+              .asOpt[JsArray]
+              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
+                case JsSuccess(rp, _) => rp
+              })
+              .getOrElse(Seq.empty)
+          )
         )
-      )
-    } recover {
-      case e => JsError(e.getMessage)
-    } get
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
   }
 }
 
@@ -1759,12 +1908,12 @@ case class ServiceDescriptor(
   // def isUriPublic(uri: String): Boolean = !privatePatterns.exists(p => uri.matches(p)) && publicPatterns.exists(p => uri.matches(p))
 
   lazy val hasNoRoutingConstraints: Boolean =
-    this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
-    this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
-    this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
-    this.apiKeyConstraints.routing.allTagsIn.isEmpty &&
-    this.apiKeyConstraints.routing.noneTagIn.isEmpty &&
-    this.apiKeyConstraints.routing.noneMetaIn.isEmpty
+  this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
+  this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
+  this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
+  this.apiKeyConstraints.routing.allTagsIn.isEmpty &&
+  this.apiKeyConstraints.routing.noneTagIn.isEmpty &&
+  this.apiKeyConstraints.routing.noneMetaIn.isEmpty
 
   def isUriPublic(uri: String): Boolean =
     !privatePatterns.exists(p => utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
@@ -1800,7 +1949,7 @@ case class ServiceDescriptor(
   def theLine: String       = if (env == "prod") "" else s".$env"
   def theDomain             = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
   def exposedDomain: String = s"$theScheme://$subdomain$theLine$theDomain"
-  lazy val _domain: String = s"$subdomain$theLine$theDomain"
+  lazy val _domain: String  = s"$subdomain$theLine$theDomain"
 
   def validateClientCertificates(
       req: RequestHeader,
@@ -1848,22 +1997,36 @@ case class ServiceDescriptor(
     } getOrElse f
   }
 
-  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader])(implicit env: Env): String = {
-    val clientCertChain = requestHeader.flatMap(_.clientCertificateChain).map(chain => JsArray(chain.map(c => Json.obj(
-      "subjectDN"    -> c.getSubjectDN.getName,
-      "issuerDN"     -> c.getIssuerDN.getName,
-      "notAfter"     -> c.getNotAfter.getTime,
-      "notBefore"    -> c.getNotBefore.getTime,
-      "serialNumber" -> c.getSerialNumber.toString(16),
-      "subjectCN"    ->  Option(c.getSubjectDN.getName)
-        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-        .map(_.replace("CN=", ""))
-        .getOrElse(c.getSubjectDN.getName).asInstanceOf[String],
-      "issuerCN"    ->  Option(c.getIssuerDN.getName)
-        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-        .map(_.replace("CN=", ""))
-        .getOrElse(c.getIssuerDN.getName).asInstanceOf[String]
-    ))))
+  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader])(
+      implicit env: Env
+  ): String = {
+    val clientCertChain = requestHeader
+      .flatMap(_.clientCertificateChain)
+      .map(
+        chain =>
+          JsArray(
+            chain.map(
+              c =>
+                Json.obj(
+                  "subjectDN"    -> c.getSubjectDN.getName,
+                  "issuerDN"     -> c.getIssuerDN.getName,
+                  "notAfter"     -> c.getNotAfter.getTime,
+                  "notBefore"    -> c.getNotBefore.getTime,
+                  "serialNumber" -> c.getSerialNumber.toString(16),
+                  "subjectCN" -> Option(c.getSubjectDN.getName)
+                    .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+                    .map(_.replace("CN=", ""))
+                    .getOrElse(c.getSubjectDN.getName)
+                    .asInstanceOf[String],
+                  "issuerCN" -> Option(c.getIssuerDN.getName)
+                    .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+                    .map(_.replace("CN=", ""))
+                    .getOrElse(c.getIssuerDN.getName)
+                    .asInstanceOf[String]
+              )
+            )
+        )
+      )
     secComInfoTokenVersion match {
       case SecComInfoTokenVersion.Legacy => {
         OtoroshiClaim(
@@ -1889,24 +2052,24 @@ case class ServiceDescriptor(
           .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
           .withJsArrayClaim("clientCertChain", clientCertChain)
           .withClaim("metadata",
-            paUsr
-              .flatMap(_.otoroshiData)
-              .orElse(apiKey.map(_.metadataJson))
-              .map(m => Json.stringify(Json.toJson(m))))
+                     paUsr
+                       .flatMap(_.otoroshiData)
+                       .orElse(apiKey.map(_.metadataJson))
+                       .map(m => Json.stringify(Json.toJson(m))))
           .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
           .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
           .withClaim("apikey",
-            apiKey.map(
-              ak =>
-                Json.stringify(
-                  Json.obj(
-                    "clientId"   -> ak.clientId,
-                    "clientName" -> ak.clientName,
-                    "metadata"   -> ak.metadata,
-                    "tags" -> ak.tags
-                  )
-                )
-            ))
+                     apiKey.map(
+                       ak =>
+                         Json.stringify(
+                           Json.obj(
+                             "clientId"   -> ak.clientId,
+                             "clientName" -> ak.clientName,
+                             "metadata"   -> ak.metadata,
+                             "tags"       -> ak.tags
+                           )
+                       )
+                     ))
           .serialize(this.secComSettings)(env)
       }
       case SecComInfoTokenVersion.Latest => {
@@ -1921,22 +2084,28 @@ case class ServiceDescriptor(
           exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
-        )
-        .withClaim("access_type", (apiKey, paUsr) match {
-          case (Some(_), Some(_)) => "both" // should never happen
-          case (None, Some(_)) => "user"
-          case (Some(_), None) => "apikey"
-          case (None, None) => "public"
-        })
-        .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
-        .withJsObjectClaim("apikey", apiKey.map(ak => Json.obj(
-          "clientId"   -> ak.clientId,
-          "clientName" -> ak.clientName,
-          "metadata"   -> ak.metadata,
-          "tags" -> ak.tags
-        )))
-        .withJsArrayClaim("clientCertChain", clientCertChain)
-        .serialize(this.secComSettings)(env)
+        ).withClaim(
+            "access_type",
+            (apiKey, paUsr) match {
+              case (Some(_), Some(_)) => "both" // should never happen
+              case (None, Some(_))    => "user"
+              case (Some(_), None)    => "apikey"
+              case (None, None)       => "public"
+            }
+          )
+          .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
+          .withJsObjectClaim("apikey",
+                             apiKey.map(
+                               ak =>
+                                 Json.obj(
+                                   "clientId"   -> ak.clientId,
+                                   "clientName" -> ak.clientName,
+                                   "metadata"   -> ak.metadata,
+                                   "tags"       -> ak.tags
+                               )
+                             ))
+          .withJsArrayClaim("clientCertChain", clientCertChain)
+          .serialize(this.secComSettings)(env)
       }
     }
   }
@@ -1985,9 +2154,13 @@ object ServiceDescriptor {
           overrideHost = (json \ "overrideHost").asOpt[Boolean].getOrElse(true),
           allowHttp10 = (json \ "allowHttp10").asOpt[Boolean].getOrElse(true),
           secComHeaders = (json \ "secComHeaders").asOpt(SecComHeaders.format).getOrElse(SecComHeaders()),
-          secComTtl = (json \ "secComTtl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(30.seconds),
+          secComTtl =
+            (json \ "secComTtl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(30.seconds),
           secComVersion = (json \ "secComVersion").asOpt[Int].flatMap(SecComVersion.apply).getOrElse(SecComVersion.V1),
-          secComInfoTokenVersion = (json \ "secComInfoTokenVersion").asOpt[String].flatMap(SecComInfoTokenVersion.apply).getOrElse(SecComInfoTokenVersion.Legacy),
+          secComInfoTokenVersion = (json \ "secComInfoTokenVersion")
+            .asOpt[String]
+            .flatMap(SecComInfoTokenVersion.apply)
+            .getOrElse(SecComInfoTokenVersion.Legacy),
           secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           securityExcludedPatterns = (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
@@ -2024,11 +2197,15 @@ object ServiceDescriptor {
           redirection = RedirectionSettings.format
             .reads((json \ "redirection").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(RedirectionSettings(false)),
-          thirdPartyApiKey = ThirdPartyApiKeyConfig.format.reads((json \ "thirdPartyApiKey").asOpt[JsValue].getOrElse(JsNull))
+          thirdPartyApiKey = ThirdPartyApiKeyConfig.format
+            .reads((json \ "thirdPartyApiKey").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(OIDCThirdPartyApiKeyConfig(false, None)),
-          apiKeyConstraints = ApiKeyConstraints.format.reads((json \ "apiKeyConstraints").asOpt[JsValue].getOrElse(JsNull))
+          apiKeyConstraints = ApiKeyConstraints.format
+            .reads((json \ "apiKeyConstraints").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(ApiKeyConstraints()),
-          restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions())
+          restrictions = Restrictions.format
+            .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(Restrictions())
         )
       } map {
         case sd => JsSuccess(sd)
@@ -2194,14 +2371,17 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(
+      implicit ec: ExecutionContext,
+      env: Env
+  ): Future[Seq[ServiceDescriptor]] = {
     services.exists(_.hasNoRoutingConstraints) match {
       case true => {
         val filtered1 = services.filter { sr =>
           val allHeadersMatched = matchAllHeaders(sr, query)
           val rootMatched = sr.matchingRoot match {
             case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-            case None => true
+            case None               => true
           }
           allHeadersMatched && rootMatched
         }
@@ -2216,7 +2396,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           val allHeadersMatched = matchAllHeaders(sr, query)
           val rootMatched = sr.matchingRoot match {
             case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-            case None => true
+            case None               => true
           }
           allHeadersMatched && rootMatched
         }
@@ -2225,17 +2405,19 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
         }
         val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
-        FastFuture.sequence(filtered.map { sr =>
-          matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
-        }).map { s =>
-          val allSers = s.filter(_._2).map(_._1)
-          if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
-            // let apikey check in handler produce an Unauthorized response instead of service not found
-            Seq(filtered.last)
-          } else {
-            allSers
+        FastFuture
+          .sequence(filtered.map { sr =>
+            matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
+          })
+          .map { s =>
+            val allSers = s.filter(_._2).map(_._1)
+            if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+              // let apikey check in handler produce an Unauthorized response instead of service not found
+              Seq(filtered.last)
+            } else {
+              allSers
+            }
           }
-        }
       }
     }
 
@@ -2243,7 +2425,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       val allHeadersMatched = matchAllHeaders(sr, query)
       val rootMatched = sr.matchingRoot match {
         case Some(matchingRoot) => query.root.startsWith(matchingRoot) //matchingRoot == query.root
-        case None => true
+        case None               => true
       }
       allHeadersMatched && rootMatched
     }
@@ -2252,35 +2434,39 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       case (a, b) => a.matchingRoot.get.size > b.matchingRoot.get.size
     }
     val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
-    FastFuture.sequence(filtered.map { sr =>
-      matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
-    }).map { s =>
-      val allSers = s.filter(_._2).map(_._1)
-      if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
-        // let apikey check in handler produce an Unauthorized response instead of service not found
-        Seq(filtered.last)
-      } else {
-        allSers
+    FastFuture
+      .sequence(filtered.map { sr =>
+        matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
+      })
+      .map { s =>
+        val allSers = s.filter(_._2).map(_._1)
+        if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+          // let apikey check in handler produce an Unauthorized response instead of service not found
+          Seq(filtered.last)
+        } else {
+          allSers
+        }
       }
-    }
   }
 
   @inline
-  def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
+                                                                              env: Env): Future[Boolean] = {
 
-    lazy val shouldSearchForAndApiKey = if (sr.isPrivate && sr.authConfigRef.isDefined && !sr.isExcludedFromSecurity(requestHeader.path)) {
-      if (sr.isUriPublic(requestHeader.path)) {
-        false
+    lazy val shouldSearchForAndApiKey =
+      if (sr.isPrivate && sr.authConfigRef.isDefined && !sr.isExcludedFromSecurity(requestHeader.path)) {
+        if (sr.isUriPublic(requestHeader.path)) {
+          false
+        } else {
+          true // false positive in 33% of the cases
+        }
       } else {
-        true // false positive in 33% of the cases
+        if (sr.isUriPublic(requestHeader.path)) {
+          false
+        } else {
+          true
+        }
       }
-    } else {
-      if (sr.isUriPublic(requestHeader.path)) {
-        false
-      } else {
-        true
-      }
-    }
 
     val shouldNotSearchForAnApiKey = sr.hasNoRoutingConstraints && !shouldSearchForAndApiKey
 
@@ -2288,7 +2474,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       FastFuture.successful(true)
     } else {
       ApiKeyHelper.extractApiKey(requestHeader, sr).map {
-        case None => true
+        case None         => true
         case Some(apiKey) => apiKey.matchRouting(sr)
       }
     }
@@ -2296,7 +2482,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
   def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
-                                                                                 env: Env): Future[Option[ServiceDescriptor]] = {
+                                                                        env: Env): Future[Option[ServiceDescriptor]] = {
     val start = System.currentTimeMillis()
     query.exists().flatMap {
       case true => {
@@ -2323,7 +2509,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     } map { filteredDescriptors =>
       filteredDescriptors.headOption
     } andThen {
-      case _ => ServiceDescriptorDataStore.logger.debug(s"Found microservice in ${System.currentTimeMillis() - start} ms.")
+      case _ =>
+        ServiceDescriptorDataStore.logger.debug(s"Found microservice in ${System.currentTimeMillis() - start} ms.")
     }
   }
 }
