@@ -1571,7 +1571,8 @@ case class Restrictions(
               Results.NotFound,
               req,
               Some(descriptor),
-              Some("errors.not.found")
+              Some("errors.not.found"),
+              emptyBody = true
             ))
           } else if (isForbidden(method, domain, path)) {
             (true, Errors.craftResponseResult(
@@ -1579,7 +1580,8 @@ case class Restrictions(
               Results.Forbidden,
               req,
               Some(descriptor),
-              Some("errors.forbidden")
+              Some("errors.forbidden"),
+              emptyBody = true
             ))
           } else if (isNotAllowed(method, domain, path)) {
             (true, Errors.craftResponseResult(
@@ -1587,7 +1589,8 @@ case class Restrictions(
               Results.NotFound,
               req,
               Some(descriptor),
-              Some("errors.not.found")
+              Some("errors.not.found"),
+              emptyBody = true
             ))
           } else {
             Restrictions.failedFutureResp
@@ -1600,7 +1603,8 @@ case class Restrictions(
               Results.NotFound,
               req,
               Some(descriptor),
-              Some("errors.not.found")
+              Some("errors.not.found"),
+              emptyBody = true
             ))
           } else if (!allowed && isForbidden(method, domain, path)) {
             (true, Errors.craftResponseResult(
@@ -1608,7 +1612,8 @@ case class Restrictions(
               Results.Forbidden,
               req,
               Some(descriptor),
-              Some("errors.forbidden")
+              Some("errors.forbidden"),
+              emptyBody = true
             ))
           } else if (isNotAllowed(method, domain, path)) {
             (true, Errors.craftResponseResult(
@@ -1616,7 +1621,8 @@ case class Restrictions(
               Results.NotFound,
               req,
               Some(descriptor),
-              Some("errors.not.found")
+              Some("errors.not.found"),
+              emptyBody = true
             ))
           } else {
             Restrictions.failedFutureResp

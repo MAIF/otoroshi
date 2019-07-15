@@ -27,7 +27,8 @@ object Errors {
                           duration: Long = 0L,
                           overhead: Long = 0L,
                           cbDuration: Long = 0L,
-                          callAttempts: Int = 0)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+                          callAttempts: Int = 0,
+                          emptyBody: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
 
@@ -175,14 +176,14 @@ object Errors {
               )
           )
         } else {
+          val body = if (emptyBody) status.apply("") else status.apply(
+            views.html.otoroshi.error(
+              message = message,
+              _env = env
+            )
+          )
           FastFuture.successful(
-            status
-              .apply(
-                views.html.otoroshi.error(
-                  message = message,
-                  _env = env
-                )
-              )
+            body
               .withHeaders(
                 env.Headers.OtoroshiGatewayError -> "true",
                 env.Headers.OtoroshiErrorMsg     -> message,
@@ -203,7 +204,7 @@ object Errors {
       }
     }
 
-    def customResult(descriptor: ServiceDescriptor): Future[Result] =
+    def customResult(descriptor: ServiceDescriptor): Future[Result] = {
       env.datastores.errorTemplateDataStore.findById(descriptor.id).flatMap {
         case None => standardResult()
         case Some(errorTemplate) => {
@@ -218,8 +219,8 @@ object Errors {
                 .as("text/html")
                 .withHeaders(
                   env.Headers.OtoroshiGatewayError -> "true",
-                  env.Headers.OtoroshiErrorMsg     -> message,
-                  env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+                  env.Headers.OtoroshiErrorMsg -> message,
+                  env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
                 )
             )
           } else {
@@ -231,12 +232,13 @@ object Errors {
                 )
                 .withHeaders(
                   env.Headers.OtoroshiGatewayError -> "true",
-                  env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+                  env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
                 )
             )
           }
         }
       }
+    }
 
     (maybeDescriptor match {
       case Some(desc) => customResult(desc)
