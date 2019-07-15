@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Configure the Danger zone · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.9
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="active page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.9
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="active page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../setup/index.html">Setup Otoroshi</a></li>
+  <li>Configure the Danger zone</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#configure-the-danger-zone" name="configure-the-danger-zone" class="anchor"><span class="anchor-link"></span></a>Configure the Danger zone</h1>
+<p>Now that you have an actual admin account, go to <code>setting (cog icon) / Danger Zone</code> in order to configure your Otoroshi instance.</p><div class="centered-img">
+<img src="../img/go-to-danger-zone.png" /></div>
+<h2><a href="#commons-settings" name="commons-settings" class="anchor"><span class="anchor-link"></span></a>Commons settings</h2>
+<p>This part allows you to configure various things :</p>
+<ul>
+  <li><code>No Auth0 login</code> =&gt; allow you to disabled Auth0 login to the Otoroshi admin dashboard</li>
+  <li><code>API read only</code> =&gt; disable <code>writes</code> on the Otoroshi admin api</li>
+  <li><code>Use HTTP streaming</code> =&gt; use http streaming for each response. It should always be true</li>
+  <li><code>Use circuit breakers</code> =&gt; allow usage of circuit breakers for each service</li>
+  <li><code>Digitus medius</code> =&gt; change the character of endless HTTP responses from <code>0</code> to <code>🖕</code></li>
+  <li><code>Limit concurrent requests</code> =&gt; allow you to specify a max number of concurrent requests on an Otoroshi instance to avoid overloading</li>
+  <li><code>Max concurrent requests</code> =&gt; max allowed number of concurrent requests on an Otoroshi instance to avoid overloading</li>
+  <li><code>Max HTTP/1.0 response size</code> =&gt; max size of an HTTP/1.0 responses, because they are memory mapped</li>
+  <li><code>Max local events</code> =&gt; number of events stored localy (alerts and audits)</li>
+  <li><code>lines</code> =&gt; at least one (<code>prod</code>). for other, it will allow you to declare urls like <code>service.line.domain.tld</code>. For prod it will be <code>service.domain.tld</code></li>
+</ul><div class="centered-img">
+<img src="../img/danger-zone-1-commons.png" /></div>
+<h2><a href="#whitelist-blacklist-settings" name="whitelist-blacklist-settings" class="anchor"><span class="anchor-link"></span></a>Whitelist / blacklist settings</h2>
+<p>Otoroshi is capable of filtering request by ip address, allowing or blocking requests.</p>
+<p>Otoroshi also provides a fun feature called <code>Endless HTTP responses</code>. If you put an ip address in that field, then, for any http request on Otoroshi, every response will be 128 GB of <code>0</code>.</p><div class="centered-img">
+<img src="../img/danger-zone-2-whitelist-blacklist.png" /></div><div class="callout note "><div class="callout-title">Note</div>
+<p>Note that you may provide ip address with wildcard like the following <code>42.42.*.42</code> or <code>42.42.42.*</code> or <code>42.42.*.*</code></p></div>
+<h2><a href="#global-throttling-settings" name="global-throttling-settings" class="anchor"><span class="anchor-link"></span></a>Global throttling settings</h2>
+<p>Otoroshi is capable of managing throttling at a global level. Here you can configure number of authorized requests per second on a single Otoroshi instance and the number of authorized request per second for a unique ip address.</p><div class="centered-img">
+<img src="../img/danger-zone-3-throttling.png" /></div>
+<h2><a href="#analytics-settings" name="analytics-settings" class="anchor"><span class="anchor-link"></span></a>Analytics settings</h2>
+<p>One on the major features of Otoroshi is being able of generating internal events. Those events are not stored in Otoroshi&rsquo;s datastore but can be sent using <code>WebHooks</code>. You can configure those <code>WebHooks</code> from the <code>Danger Zone</code>.</p>
+<p>Otoroshi is also capable of reading some analytics and displays it from another MAIF product called <code>Omoïkane</code>. As Omoikane is not publicly available yet, is capable of storing events in an <a href="https://www.elastic.co/">Elastic</a> cluster. For more information about analytics and what it does, just go to the <a href="../integrations/analytics.html">detailed chapter</a></p>
+<h2><a href="#kafka-settings" name="kafka-settings" class="anchor"><span class="anchor-link"></span></a>Kafka settings</h2>
+<p>One on the major features of Otoroshi is being able of generating internal events. These events are not stored in Otoroshi&rsquo;s datastore but can be sent using a <a href="https://kafka.apache.org/">Kafka message broker</a>. You can configure Kafka access from the <code>Danger Zone</code>.</p>
+<p>By default, Otoroshi&rsquo;s alert events will be sent on <code>otoroshi-alerts</code> topic, Otoroshi&rsquo;s audit events will be sent on <code>otoroshi-audits</code> topic and Otoroshi&rsquo;s traffic events will be sent on <code>otoroshi-analytics</code> topic.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Keystore and truststore paths are optional local path on the server hosting Otoroshi</p></div><div class="centered-img">
+<img src="../img/danger-zone-5-kafka.png" /></div>
+<p>For more information about Kafka integration and what it does, just go to the <a href="../integrations/analytics.html">detailed chapter</a></p>
+<h2><a href="#alerts-settings" name="alerts-settings" class="anchor"><span class="anchor-link"></span></a>Alerts settings</h2>
+<p>Each time a dangerous action or something unusual is performed on Otoroshi, it will create an alert and store it. You can be notified for each of these alerts using <code>WebHooks</code> or emails. To do so, just add the <code>WebHook</code> URL and optional headers in the <code>Danger Zone</code> or any email address you want (you can add more than one email address).</p><div class="centered-img">
+<img src="../img/danger-zone-6-alerts.png" /></div>
+<h2><a href="#statsd-settings" name="statsd-settings" class="anchor"><span class="anchor-link"></span></a>StatsD settings</h2>
+<p>Otoroshi is capable of sending internal metrics to a StatsD agent. Just put the host and port of you StatsD agent in the <code>Danger Zone</code> to collect these metrics. If you using <a href="https://www.datadoghq.com">Datadog</a>, don&rsquo;t forget to check the dedicated button :)</p><div class="centered-img">
+<img src="../img/danger-zone-7-statsd.png" /></div>
+<p>For more information about StatsD integration and what it does, just go to the <a href="../integrations/statsd.html">detailed chapter</a></p>
+<h2><a href="#auth0-settings" name="auth0-settings" class="anchor"><span class="anchor-link"></span></a>Auth0 settings</h2>
+<p>It is possible to configure Otoroshi to allow admin users to log in through Auth0. Otoroshi also provides a feature called <code>Private apps.</code> that allows you to force login to an Auth0 domain before accessing an app. You can create an Auth0 client (<a href="https://manage.auth0.com/#/clients">https://manage.auth0.com/#/clients</a>) for each of those features (admin users login and private apps login) and customize it with any rule you want (don&rsquo;t forget allowed callbacks, like <code>http://otoroshi.foo.bar:8080/backoffice/auth0/callback</code> and <code>http://privateapps.foo.bar:8080/backoffice/auth0/callback</code>).</p>
+<p>Once you&rsquo;re done, go to the settings of each client (<a href="https://manage.auth0.com/#/clients/xxxxxxxxxxxxxxxx/settings">https://manage.auth0.com/#/clients/xxxxxxxxxxxxxxxx/settings</a>) to get the information needed for the <code>Danger Zone</code>.</p><div class="centered-img">
+<img src="../img/auth0-settings.png" /></div><div class="centered-img">
+<img src="../img/danger-zone-8-auth0.png" /></div>
+<p>For more information about Auth0 integration and what it does, just go to the <a href="../integrations/auth0.html">detailed chapter</a></p>
+<h2><a href="#mailgun-settings" name="mailgun-settings" class="anchor"><span class="anchor-link"></span></a>Mailgun settings</h2>
+<p>If you want to send emails for every alert generated by Otoroshi, you need to configure your Mailgun credentials in the <code>Danger Zone</code>. These parameters are provided in you Mailgun domain dashboard (i.e. <a href="https://app.mailgun.com/app/domains/my.domain.foo.bar">https://app.mailgun.com/app/domains/my.domain.foo.bar</a>) in the information section.</p><div class="centered-img">
+<img src="../img/danger-zone-9-mailgun.png" /></div>
+<p>For more information about Mailgun integration and what it does, just go to the <a href="../integrations/mailgun.html">detailed chapter</a></p>
+<h2><a href="#clevercloud-settings" name="clevercloud-settings" class="anchor"><span class="anchor-link"></span></a>CleverCloud settings</h2>
+<p>As we built our products to run on Clever-Cloud, Otoroshi has a close integration with Clever-Cloud. In this section of <code>Danger Zone</code> you can configure how to access Clever-Cloud API.</p>
+<p>To generate the needed value, please refers to <a href="https://www.clever-cloud.com/doc/clever-cloud-apis/cc-api/">Clever-Cloud documentation</a></p><div class="centered-img">
+<img src="../img/danger-zone-10-clevercloud.png" /></div>
+<p>For more information about Clever-Cloud integration and what it does, just go to the <a href="../integrations/clevercloud.html">detailed chapter</a></p>
+<h2><a href="#import-exports-and-panic-mode" name="import-exports-and-panic-mode" class="anchor"><span class="anchor-link"></span></a>Import / exports and panic mode</h2>
+<p>For more details about imports and exports, please go to the <a href="../usage/8-importsexports.html">dedicated chapter</a></p>
+<p>About panic mode, it&rsquo;s an unusual feature that allows you to discard all current admin. sessions, allows only admin users with U2F devices to log back, and pass the API in read-only mode. Only a person who has access to Otoroshi&rsquo;s datastore will be able to turn it back on.</p><div class="centered-img">
+<img src="../img/danger-zone-11-bottom.png" /></div>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../usage/index.html">Using Otoroshi</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../setup/dangerzone.html#configure-the-danger-zone" class="header">Configure the Danger zone</a>
+  <ul>
+    <li><a href="../setup/dangerzone.html#commons-settings" class="header">Commons settings</a></li>
+    <li><a href="../setup/dangerzone.html#whitelist-blacklist-settings" class="header">Whitelist / blacklist settings</a></li>
+    <li><a href="../setup/dangerzone.html#global-throttling-settings" class="header">Global throttling settings</a></li>
+    <li><a href="../setup/dangerzone.html#analytics-settings" class="header">Analytics settings</a></li>
+    <li><a href="../setup/dangerzone.html#kafka-settings" class="header">Kafka settings</a></li>
+    <li><a href="../setup/dangerzone.html#alerts-settings" class="header">Alerts settings</a></li>
+    <li><a href="../setup/dangerzone.html#statsd-settings" class="header">StatsD settings</a></li>
+    <li><a href="../setup/dangerzone.html#auth0-settings" class="header">Auth0 settings</a></li>
+    <li><a href="../setup/dangerzone.html#mailgun-settings" class="header">Mailgun settings</a></li>
+    <li><a href="../setup/dangerzone.html#clevercloud-settings" class="header">CleverCloud settings</a></li>
+    <li><a href="../setup/dangerzone.html#import-exports-and-panic-mode" class="header">Import / exports and panic mode</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2019</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
