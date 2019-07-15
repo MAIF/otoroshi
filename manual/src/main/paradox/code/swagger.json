@@ -3876,7 +3876,7 @@
         },
         "mailerSettings" : {
           "description" : "Optional mailer configuration",
-          "$ref" : "#/definitions/mailerSettings"
+          "$ref" : "#/definitions/MailerSettings"
         },
         "backofficeAuth0Config" : {
           "description" : "Optional configuration for the backoffice Auth0 domain",
