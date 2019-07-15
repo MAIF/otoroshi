@@ -37,13 +37,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         s"""
            |{
            |  http.port=$port
-
            |  play.server.http.port=$port
-
-
-           stance.region=eu-west-1
-
-             app.instance.zone=dc1
+           |  app.instance.region=eu-west-1
+           |  app.instance.zone=dc1
            |}
        """.stripMargin)
       .resolve()
@@ -984,12 +980,12 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         targetsLoadBalancing = Random
       )
       createOtoroshiService(serviceweight).futureValue
-      (0 to 29).foreach { _ =>
+      (0 to 32).foreach { _ =>
         call1(Map.empty)
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
-      (counter1.get() == 10 && counter2.get() == 10 &&counter3.get() == 10) mustBe false
+      // println(counter1.get(), counter2.get(), counter3.get())
+      (counter1.get() == 11 && counter2.get() == 11 &&counter3.get() == 11) mustBe false
       deleteOtoroshiService(serviceweight).futureValue
       stopServers()
     }
@@ -1032,7 +1028,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val sessionId1Opt = resp1.cookie("otoroshi-tracking").map(_.value)
       val sessionId2Opt = resp2.cookie("otoroshi-tracking").map(_.value)
       val sessionId3Opt = resp3.cookie("otoroshi-tracking").map(_.value)
-      println(sessionId1Opt, sessionId2Opt, sessionId3Opt)
+      // println(sessionId1Opt, sessionId2Opt, sessionId3Opt)
 
       sessionId1Opt.isDefined mustBe true
       sessionId2Opt.isDefined mustBe true
@@ -1071,7 +1067,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId1"))
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1079,7 +1075,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId2"))
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 0
@@ -1087,7 +1083,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map("Cookie" -> s"otoroshi-tracking=$sessionId3"))
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 10
@@ -1130,7 +1126,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map("X-Forwarded-For" -> "1.1.1.1"))
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1138,7 +1134,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map("X-Forwarded-For" -> "2.2.2.2"))
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 0
@@ -1146,7 +1142,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map("X-Forwarded-For" -> "3.3.3.3"))
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 10
       counter3.get() mustBe 10
@@ -1244,30 +1240,30 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
 
     "support target predicates based on zones (#309)" in {
-      val (_, port1, counter1, call1) = testServer("zones.oto.tools", port)
-      val (_, port2, counter2, _)     = testServer("zones.oto.tools", port)
-      val (_, port3, counter3, _)     = testServer("zones.oto.tools", port)
+      val (_, port1, counter1, call1) = testServer("zones-test.oto.tools", port)
+      val (_, port2, counter2, _)     = testServer("zones-test.oto.tools", port)
+      val (_, port3, counter3, _)     = testServer("zones-test.oto.tools", port)
       val serviceweight = ServiceDescriptor(
         id = "zones-test",
         name = "zones-test",
         env = "prod",
-        subdomain = "zones",
+        subdomain = "zones-test",
         domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http",
-            predicate = ZoneMatch("dc1")
+            predicate = NetworkLocationMatch(zone = "dc1")
           ),
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http",
-            predicate = ZoneMatch("dc2")
+            predicate = NetworkLocationMatch(zone = "dc2")
           ),
           Target(
             host = s"127.0.0.1:${port3}",
             scheme = "http",
-            predicate = ZoneMatch("dc3")
+            predicate = NetworkLocationMatch(zone = "dc3")
           )
         ),
         publicPatterns = Seq("/.*"),
@@ -1283,7 +1279,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map.empty)
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1305,17 +1301,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http",
-            predicate = RegionMatch("eu-west-1")
+            predicate = NetworkLocationMatch(region = "eu-west-1")
           ),
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http",
-            predicate = RegionMatch("eu-west-2")
+            predicate = NetworkLocationMatch(region = "eu-west-2")
           ),
           Target(
             host = s"127.0.0.1:${port3}",
             scheme = "http",
-            predicate = RegionMatch("eu-west-3")
+            predicate = NetworkLocationMatch(region = "eu-west-3")
           )
         ),
         publicPatterns = Seq("/.*"),
@@ -1331,7 +1327,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map.empty)
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1400,7 +1396,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         call1(Map.empty)
         await(100.millis)
       }
-      println(counter1.get(), counter2.get(), counter3.get())
+      // println(counter1.get(), counter2.get(), counter3.get())
       counter1.get() mustBe 10
       counter2.get() mustBe 0
       counter3.get() mustBe 0
@@ -1652,7 +1648,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  s"[$name] Otoroshi Restriction" should {
+  s"[$name] Otoroshi Restrictions" should {
     "restrict service access when enabled (#315)" in {
       val (_, port1, counter1, call1) = testServer("restrictionserviceenabled.oto.tools", port)
       val service1 = ServiceDescriptor(

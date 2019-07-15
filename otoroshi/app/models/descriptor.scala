@@ -348,22 +348,22 @@ object TargetPredicate {
     override def writes(o: TargetPredicate): JsValue = o.toJson
     override def reads(json: JsValue): JsResult[TargetPredicate] = {
       (json \ "type").as[String] match {
+        // case "RegionMatch" => JsSuccess(RegionMatch(
+        //   region = (json \ "region").asOpt[String].getOrElse("local")
+        // ))
+        // case "ZoneMatch" => JsSuccess(ZoneMatch(
+        //   zone = (json \ "zone").asOpt[String].getOrElse("local")
+        // ))
+        // case "DataCenterMatch" => JsSuccess(ZoneMatch(
+        //   zone = (json \ "dc").asOpt[String].getOrElse("local")
+        // ))
+        // case "InfraMatch" => JsSuccess(ZoneMatch(
+        //   zone = (json \ "provider").asOpt[String].getOrElse("local")
+        // ))
+        // case "RackMatch" => JsSuccess(ZoneMatch(
+        //   zone = (json \ "rack").asOpt[String].getOrElse("local")
+        // ))
         case "AlwaysMatch" => JsSuccess(AlwaysMatch)
-        case "RegionMatch" => JsSuccess(RegionMatch(
-          region = (json \ "region").asOpt[String].getOrElse("local")
-        ))
-        case "ZoneMatch" => JsSuccess(ZoneMatch(
-          zone = (json \ "zone").asOpt[String].getOrElse("local")
-        ))
-        case "DataCenterMatch" => JsSuccess(ZoneMatch(
-          zone = (json \ "dc").asOpt[String].getOrElse("local")
-        ))
-        case "InfraMatch" => JsSuccess(ZoneMatch(
-          zone = (json \ "provider").asOpt[String].getOrElse("local")
-        ))
-        case "RackMatch" => JsSuccess(ZoneMatch(
-          zone = (json \ "rack").asOpt[String].getOrElse("local")
-        ))
         case "NetworkLocationMatch" => JsSuccess(NetworkLocationMatch(
           provider = (json \ "provider").asOpt[String].getOrElse("*"),
           region = (json \ "region").asOpt[String].getOrElse("*"),
