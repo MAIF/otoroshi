@@ -99,6 +99,34 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     })
   }
 
+  def testServerWithClientPath(host: String, port: Int, delay: FiniteDuration = 0.millis, streamDelay: FiniteDuration = 0.millis, validate: HttpRequest => Boolean = _ => true)(implicit ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
+    val counter           = new AtomicInteger(0)
+    val body = """{"message":"hello world"}"""
+    val server = TargetService.streamed(None, "/api", "application/json", { r =>
+      if (validate(r)) {
+        counter.incrementAndGet()
+      }
+      if (delay.toMillis > 0L) {
+        await(delay)
+      }
+      if (streamDelay.toMillis > 0L) {
+        val head = body.head.toString
+        val tail = body.tail
+        Source.single(ByteString(head)).concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
+      } else {
+        Source(List(ByteString(body)))
+      }
+    }).await()
+    _servers = _servers + server
+    (server, server.port, counter, (path: String) => (headers: Map[String, String]) => {
+      val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
+      ws.url(s"http://127.0.0.1:${port}$path")
+        .withHttpHeaders(finalHeaders: _*)
+        .get()
+        .futureValue
+    })
+  }
+
   def stopServers(): Unit = {
     _servers.foreach(_.stop())
     _servers = Set.empty
@@ -489,6 +517,20 @@ class TargetService(val port: Int,
         )
       }
       case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get => {
+        val (code, body, source, headers) = result(request)
+        val entity = source match {
+          case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))
+          case Some(s) => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), s)
+        }
+        FastFuture.successful(
+          HttpResponse(
+            code,
+            headers = headers,
+            entity = entity
+          )
+        )
+      }
+      case (HttpMethods.DELETE, p) => {
         val (code, body, source, headers) = result(request)
         val entity = source match {
           case None => HttpEntity(ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`), ByteString(body))

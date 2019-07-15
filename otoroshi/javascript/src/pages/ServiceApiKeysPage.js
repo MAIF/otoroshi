@@ -4,6 +4,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, SelectInput, SimpleBooleanInput } from '../components/inputs';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import faker from 'faker';
+import { Restrictions } from '../components/Restrictions';
 
 const Both = ({ label, rawValue }) => (
   <div className="form-group">
@@ -418,6 +419,7 @@ export class ServiceApiKeysPage extends Component {
       },
     },
     remainingMonthlyQuota: { type: 'label', props: { label: 'Monthly quota' } },
+    restrictions: { type: Restrictions, props: {   } },
   };
 
   columns = [
@@ -488,6 +490,8 @@ export class ServiceApiKeysPage extends Component {
     'metadata',
     '>>>Service Group settings',
     'authorizedGroup',
+    '>>>Restrictions',
+    'restrictions',
     '>>>Call examples',
     'curlCommand',
     'basicAuth',

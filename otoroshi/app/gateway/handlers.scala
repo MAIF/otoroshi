@@ -1858,6 +1858,20 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                               )
                                             }
+                                            case Some(key) if key.restrictions.enabled && key.restrictions.isNotFound(req.method, req.domain, req.relativeUri) => {
+                                              Errors.craftResponseResult(
+                                                "Not Found",
+                                                NotFound,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.not.found"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            }
+                                            case Some(key) if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                              key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                            }
                                             case Some(key) if key.allowClientIdOnly =>
                                               key.withingQuotas().flatMap {
                                                 case true => callDownstream(config, Some(key))
@@ -1918,6 +1932,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                               )
+                                            }
+                                            case Some(key) if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                              key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
                                             }
                                             case Some(key) if key.isValid(clientSecret) =>
                                               key.withingQuotas().flatMap {
@@ -2019,6 +2036,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           duration = System.currentTimeMillis - start,
                                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                                         )
+                                                      }
+                                                      case Success(_) if apiKey.restrictions.handleRestrictions(descriptor, Some(apiKey), req)._1 => {
+                                                        apiKey.restrictions.handleRestrictions(descriptor, Some(apiKey), req)._2
                                                       }
                                                       case Success(_) =>
                                                         apiKey.withingQuotas().flatMap {
@@ -2140,6 +2160,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                                 }
+                                                case Some(key) if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                                  key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                                }
                                                 case Some(key) if key.isValid(apiKeySecret) =>
                                                   key.withingQuotas().flatMap {
                                                     case true => callDownstream(config, Some(key))
@@ -2253,6 +2276,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   env.datastores.globalConfigDataStore.quotasValidationFor(from).flatMap { r =>
                                     val (within, secCalls, maybeQuota) = r
                                     val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+                                    val (restrictionsNotPassing, restrictionsResponse) = descriptor.restrictions.handleRestrictions(descriptor, None, req)
                                     if (secCalls > (quota * 10L)) {
                                       Errors.craftResponseResult(
                                         "[IP] You performed too much requests",
@@ -2394,6 +2418,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             Results.Ok(ByteString.empty).withHeaders(descriptor.cors.asHeaders(req): _*)
                                           )
                                         }
+                                      } else if (restrictionsNotPassing) {
+                                        restrictionsResponse
                                       } else if (isUp) {
                                         if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
                                               .isExcludedFromSecurity(req.path)) {

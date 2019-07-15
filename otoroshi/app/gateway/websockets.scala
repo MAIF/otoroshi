@@ -25,7 +25,7 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.Results.{BadGateway, MethodNotAllowed, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
+import play.api.mvc.Results.{BadGateway, Forbidden, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
 import play.api.mvc._
 import play.api.libs.json.{JsArray, JsString, Json}
 import security.{IdGenerator, OtoroshiClaim}
@@ -913,6 +913,9 @@ class WebSocketHandler()(implicit env: Env) {
                                         Some("errors.bad.api.key")
                                       ).asLeft[WSFlow]
                                     }
+                                    case Some(key) if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                      key.restrictions.handleRestrictions(descriptor, Some(key), req)._2.asLeft[WSFlow]
+                                    }
                                     case Some(key) if key.allowClientIdOnly =>
                                       key.withingQuotas().flatMap {
                                         case true => callDownstream(config, Some(key))
@@ -964,6 +967,9 @@ class WebSocketHandler()(implicit env: Env) {
                                         Some(descriptor),
                                         Some("errors.bad.api.key")
                                       ).asLeft[WSFlow]
+                                    }
+                                    case Some(key) if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                      key.restrictions.handleRestrictions(descriptor, Some(key), req)._2.asLeft[WSFlow]
                                     }
                                     case Some(key) if key.isValid(clientSecret) =>
                                       key.withingQuotas().flatMap {
@@ -1055,6 +1061,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                     Some(descriptor),
                                                     Some("errors.bad.api.key")
                                                   ).asLeft[WSFlow]
+                                                }
+                                                case Success(_) if apiKey.restrictions.handleRestrictions(descriptor, Some(apiKey), req)._1 => {
+                                                  apiKey.restrictions.handleRestrictions(descriptor, Some(apiKey), req)._2.asLeft[WSFlow]
                                                 }
                                                 case Success(_) =>
                                                   apiKey.withingQuotas().flatMap {
@@ -1155,6 +1164,9 @@ class WebSocketHandler()(implicit env: Env) {
                                               Some("errors.bad.api.key")
                                             ).asLeft[WSFlow]
                                           }
+                                          case Some(key) if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                            key.restrictions.handleRestrictions(descriptor, Some(key), req)._2.asLeft[WSFlow]
+                                          }
                                           case Some(key) if key.isValid(apiKeySecret) =>
                                             key.withingQuotas().flatMap {
                                               case true => callDownstream(config, Some(key))
@@ -1217,6 +1229,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 } flatMap { r =>
                                   val (secCalls, maybeQuota) = r
                                   val quota                  = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+                                  val (restrictionsNotPassing, restrictionsResponse) = descriptor.restrictions.handleRestrictions(descriptor, None, req)
                                   if (secCalls > (quota * 10L)) {
                                     Errors
                                       .craftResponseResult("[IP] You performed too much requests",
@@ -1330,7 +1343,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Some(descriptor),
                                                              Some("errors.service.under.construction"))
                                         .asLeft[WSFlow]
-                                    } else if (isUp) {
+                                    } else if (restrictionsNotPassing) {
+                                      restrictionsResponse.asLeft[WSFlow]
+                                    }  else if (isUp) {
                                       if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
                                             .isExcludedFromSecurity(req.path)) {
                                         if (descriptor.isUriPublic(req.path)) {

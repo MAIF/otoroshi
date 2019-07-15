@@ -1,7 +1,7 @@
 package models
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
@@ -20,7 +20,7 @@ import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
-import play.api.mvc.Results.TooManyRequests
+import play.api.mvc.Results.{NotFound, TooManyRequests}
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
@@ -1473,6 +1473,196 @@ object SecComHeaders {
   }
 }
 
+case class RestrictionPath(method: String, path: String) {
+  def json: JsValue = RestrictionPath.format.writes(this)
+}
+
+object RestrictionPath {
+  val format = new Format[RestrictionPath] {
+    override def writes(o: RestrictionPath): JsValue = Json.obj(
+      "method" -> o.method,
+      "path" -> o.path,
+    )
+    override def reads(json: JsValue): JsResult[RestrictionPath] = Try {
+      JsSuccess(
+        RestrictionPath(
+          method = (json \ "method").as[String],
+          path = (json \ "path").as[String]
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+
+case class Restrictions(
+    enabled: Boolean = false,
+    allowLast: Boolean = true,
+    allowed: Seq[RestrictionPath] = Seq.empty,
+    forbidden: Seq[RestrictionPath] = Seq.empty,
+    notFound: Seq[RestrictionPath] = Seq.empty,
+) {
+
+  def json: JsValue = Restrictions.format.writes(this)
+
+  def isAllowed(method: String, domain: String, path: String): Boolean = {
+    if (enabled) {
+      matches(method, domain, path, allowed)
+    } else {
+      false
+    }
+  }
+
+  def isNotAllowed(method: String, domain: String, path: String): Boolean = {
+    if (enabled) {
+      !matches(method, domain, path, allowed)
+    } else {
+      false
+    }
+  }
+
+  def isNotFound(method: String, domain: String, path: String): Boolean = {
+    if (enabled) {
+      matches(method, domain, path, notFound)
+    } else {
+      false
+    }
+  }
+
+  def isForbidden(method: String, domain: String, path: String): Boolean = {
+    if (enabled) {
+      matches(method, domain, path, forbidden)
+    } else {
+      false
+    }
+  }
+
+  private def matches(method: String, domain: String, path: String, paths: Seq[RestrictionPath]): Boolean = {
+    val cleanMethod = method.trim().toLowerCase()
+    paths
+      .map(p => p.copy(method = p.method.trim.toLowerCase()))
+      .filter(p => p.method == "*" || p.method == cleanMethod)
+      .exists { p =>
+        if (p.path.startsWith("/")) {
+          RegexPool.regex(p.path).matches(path)
+        } else {
+          RegexPool.regex(p.path).matches(domain + path)
+        }
+      }
+  }
+
+  private val cache = new TrieMap[String, (Boolean, Future[Result])]() // Not that clean but perfs matters
+
+  def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader)(implicit ec: ExecutionContext, env: Env): (Boolean, Future[Result]) = {
+
+    import utils.RequestImplicits._
+
+    if (enabled) {
+      val method = req.method
+      val domain = req.domain
+      val path = req.relativeUri
+      val key = s"${descriptor.id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
+      cache.getOrElseUpdate(key, {
+        if (allowLast) {
+          if (isNotFound(method, domain, path)) {
+            (true, Errors.craftResponseResult(
+              "Not Found",
+              Results.NotFound,
+              req,
+              Some(descriptor),
+              Some("errors.not.found")
+            ))
+          } else if (isForbidden(method, domain, path)) {
+            (true, Errors.craftResponseResult(
+              "Forbidden",
+              Results.Forbidden,
+              req,
+              Some(descriptor),
+              Some("errors.forbidden")
+            ))
+          } else if (isNotAllowed(method, domain, path)) {
+            (true, Errors.craftResponseResult(
+              "Not Found", // TODO: is it the right response ?
+              Results.NotFound,
+              req,
+              Some(descriptor),
+              Some("errors.not.found")
+            ))
+          } else {
+            Restrictions.failedFutureResp
+          }
+        } else {
+          val allowed = isAllowed(method, domain, path)
+          if (!allowed && isNotFound(method, domain, path)) {
+            (true, Errors.craftResponseResult(
+              "Not Found",
+              Results.NotFound,
+              req,
+              Some(descriptor),
+              Some("errors.not.found")
+            ))
+          } else if (!allowed && isForbidden(method, domain, path)) {
+            (true, Errors.craftResponseResult(
+              "Forbidden",
+              Results.Forbidden,
+              req,
+              Some(descriptor),
+              Some("errors.forbidden")
+            ))
+          } else if (isNotAllowed(method, domain, path)) {
+            (true, Errors.craftResponseResult(
+              "Not Found", // TODO: is it the right response ?
+              Results.NotFound,
+              req,
+              Some(descriptor),
+              Some("errors.not.found")
+            ))
+          } else {
+            Restrictions.failedFutureResp
+          }
+        }
+      })
+    } else {
+      Restrictions.failedFutureResp
+    }
+  }
+}
+
+object Restrictions {
+
+  private val failedFutureResp = (false, FastFuture.failed(new RuntimeException("Should never happen")))
+
+  val format = new Format[Restrictions] {
+    override def writes(o: Restrictions): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "allowLast" -> o.allowLast,
+      "allowed" -> JsArray(o.allowed.map(_.json)),
+      "forbidden" ->  JsArray(o.forbidden.map(_.json)),
+      "notFound" ->  JsArray(o.notFound.map(_.json)),
+    )
+    override def reads(json: JsValue): JsResult[Restrictions] = Try {
+      JsSuccess(
+        Restrictions(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          allowLast = (json \ "allowLast").asOpt[Boolean].getOrElse(true),
+          allowed = (json \ "allowed").asOpt[JsArray].map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
+            case JsSuccess(rp, _) => rp
+          }).getOrElse(Seq.empty),
+          forbidden = (json \ "forbidden").asOpt[JsArray].map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
+            case JsSuccess(rp, _) => rp
+          }).getOrElse(Seq.empty),
+          notFound = (json \ "notFound").asOpt[JsArray].map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
+            case JsSuccess(rp, _) => rp
+          }).getOrElse(Seq.empty)
+        )
+      )
+    } recover {
+      case e => JsError(e.getMessage)
+    } get
+  }
+}
+
 case class ServiceDescriptor(
     id: String,
     groupId: String = "default",
@@ -1539,6 +1729,7 @@ case class ServiceDescriptor(
     gzip: GzipConfig = GzipConfig(),
     thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
     apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
+    restrictions: Restrictions = Restrictions()
 ) {
 
   def toHost: String = subdomain match {
@@ -1830,7 +2021,8 @@ object ServiceDescriptor {
           thirdPartyApiKey = ThirdPartyApiKeyConfig.format.reads((json \ "thirdPartyApiKey").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(OIDCThirdPartyApiKeyConfig(false, None)),
           apiKeyConstraints = ApiKeyConstraints.format.reads((json \ "apiKeyConstraints").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(ApiKeyConstraints())
+            .getOrElse(ApiKeyConstraints()),
+          restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions())
         )
       } map {
         case sd => JsSuccess(sd)
@@ -1900,7 +2092,8 @@ object ServiceDescriptor {
       "transformerRef"             -> sd.transformerRef,
       "transformerConfig"          -> sd.transformerConfig,
       "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson,
-      "apiKeyConstraints"          -> sd.apiKeyConstraints.json
+      "apiKeyConstraints"          -> sd.apiKeyConstraints.json,
+      "restrictions"               -> sd.restrictions.json
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

@@ -53,6 +53,7 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   dailyQuota: Long = RemainingQuotas.MaxValue,
                   monthlyQuota: Long = RemainingQuotas.MaxValue,
                   constrainedServicesOnly: Boolean = false,
+                  restrictions: Restrictions = Restrictions(),
                   tags: Seq[String] = Seq.empty[String],
                   metadata: Map[String, String] = Map.empty[String, String]) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.set(this)
@@ -130,6 +131,7 @@ object ApiKey {
       "dailyQuota"        -> apk.dailyQuota,
       "monthlyQuota"      -> apk.monthlyQuota,
       "constrainedServicesOnly" -> apk.constrainedServicesOnly,
+      "restrictions"      -> apk.restrictions.json,
       "tags"              -> JsArray(apk.tags.map(JsString.apply)),
       "metadata"          -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
     )
@@ -147,6 +149,7 @@ object ApiKey {
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
+          restrictions = Restrictions.format.reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull)).getOrElse(Restrictions()),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]

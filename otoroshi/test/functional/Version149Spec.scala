@@ -25,21 +25,26 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  implicit lazy val ws          = otoroshiComponents.wsClient
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit lazy val ws = otoroshiComponents.wsClient
+  implicit val system = ActorSystem("otoroshi-test")
   implicit val env = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
-      .parseString(s"""
-                      |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
-                      |  app.instance.region=eu-west-1
-                      |  app.instance.zone=dc1
-                      |}
+      .parseString(
+        s"""
+           |{
+           |  http.port=$port
+
+           |  play.server.http.port=$port
+
+
+           stance.region=eu-west-1
+
+             app.instance.zone=dc1
+           |}
        """.stripMargin)
       .resolve()
   )
@@ -1643,6 +1648,357 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       resp3.status mustBe 403
       counter1.get() mustBe 2
       deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+  }
+
+  s"[$name] Otoroshi Restriction" should {
+    "restrict service access when enabled (#315)" in {
+      val (_, port1, counter1, call1) = testServer("restrictionserviceenabled.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "restrictionserviceenabled",
+        name = "restrictionserviceenabled",
+        env = "prod",
+        subdomain = "restrictionserviceenabled",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        restrictions = Restrictions(enabled = true)
+      )
+      createOtoroshiService(service1).futureValue
+      val resp1 = call1(Map.empty)
+      resp1.status mustBe 404
+      counter1.get() mustBe 0
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "restrict some routes and allow the rest on a service (#315)" in {
+      val (_, port1, counter1, call1) = testServerWithClientPath("restrictionservicesome.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "restrictionservicesome",
+        name = "restrictionservicesome",
+        env = "prod",
+        subdomain = "restrictionservicesome",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        restrictions = Restrictions(
+          enabled = true,
+          allowed = Seq(
+            RestrictionPath("GET", "/.*")
+          ),
+          forbidden = Seq(
+            RestrictionPath("*", "/forbidden/.*")
+          ),
+          notFound = Seq(
+            RestrictionPath("*", "/notfound/.*")
+          )
+        )
+      )
+      createOtoroshiService(service1).futureValue
+
+      val resp1 = call1("/api")(Map.empty)
+      resp1.status mustBe 200
+      counter1.get() mustBe 1
+
+      val resp11 = call1("/api/fooo")(Map.empty)
+      resp11.status mustBe 200
+      counter1.get() mustBe 2
+
+      val resp111 = call1("/apo/bar/foo")(Map.empty)
+      resp111.status mustBe 200
+      counter1.get() mustBe 3
+
+      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host" -> "restrictionservicesome.oto.tools")
+        .delete()
+        .futureValue
+      resp1111.status mustBe 404
+      counter1.get() mustBe 3
+
+      val resp2 = call1("/notfound/api")(Map.empty)
+      resp2.status mustBe 404
+      counter1.get() mustBe 3
+
+      val resp3 = call1("/forbidden/api")(Map.empty)
+      resp3.status mustBe 403
+      counter1.get() mustBe 3
+
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "allow some routes and restrict the rest on a service (#315)" in {
+      val (_, port1, counter1, call1) = testServerWithClientPath("restrictionserviceallowsome.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "restrictionserviceallowsome",
+        name = "restrictionserviceallowsome",
+        env = "prod",
+        subdomain = "restrictionserviceallowsome",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        restrictions = Restrictions(
+          enabled = true,
+          allowLast = false,
+          allowed = Seq(
+            RestrictionPath("GET", "/api/.*")
+          ),
+          forbidden = Seq(
+            RestrictionPath("*", "/.*")
+          )
+        )
+      )
+      createOtoroshiService(service1).futureValue
+
+      val resp1 = call1("/api/a")(Map.empty)
+      resp1.status mustBe 200
+      counter1.get() mustBe 1
+
+      val resp11 = call1("/api/fooo")(Map.empty)
+      resp11.status mustBe 200
+      counter1.get() mustBe 2
+
+      val resp111 = call1("/api/bar/foo")(Map.empty)
+      resp111.status mustBe 200
+      counter1.get() mustBe 3
+
+      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host" -> "restrictionserviceallowsome.oto.tools")
+        .delete()
+        .futureValue
+      resp1111.status mustBe 403
+      counter1.get() mustBe 3
+
+      val resp2 = call1("/notfound/api")(Map.empty)
+      resp2.status mustBe 403
+      counter1.get() mustBe 3
+
+      val resp3 = call1("/forbidden/api")(Map.empty)
+      resp3.status mustBe 403
+      counter1.get() mustBe 3
+
+      deleteOtoroshiService(service1).futureValue
+      stopServers()
+    }
+    "restrict some routes and allow the rest on an apikey (#315)" in {
+      val (_, port1, counter1, call1) = testServerWithClientPath("restrictionservicesapikey.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "restrictionservicesapikey",
+        name = "restrictionservicesapikey",
+        env = "prod",
+        subdomain = "restrictionservicesapikey",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false
+      )
+      val apikey1 = ApiKey(
+        clientName = "apikey1",
+        authorizedGroup = "default"
+      )
+      val apikey2 = ApiKey(
+        clientName = "apikey2",
+        authorizedGroup = "default",
+        restrictions = Restrictions(
+          enabled = true,
+          allowed = Seq(
+            RestrictionPath("GET", "/.*")
+          ),
+          forbidden = Seq(
+            RestrictionPath("*", "/forbidden/.*")
+          ),
+          notFound = Seq(
+            RestrictionPath("*", "/notfound/.*")
+          )
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      createOtoroshiApiKey(apikey1).futureValue
+      createOtoroshiApiKey(apikey2).futureValue
+
+      val resp1 = call1("/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp1.status mustBe 200
+      counter1.get() mustBe 1
+
+      val resp11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp11.status mustBe 200
+      counter1.get() mustBe 2
+
+      val resp111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp111.status mustBe 200
+      counter1.get() mustBe 3
+
+      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host" -> "restrictionservicesome.oto.tools", "Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+        .delete()
+        .futureValue
+      resp1111.status mustBe 404
+      counter1.get() mustBe 3
+
+      val resp2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp2.status mustBe 404
+      counter1.get() mustBe 3
+
+      val resp3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp3.status mustBe 403
+      counter1.get() mustBe 3
+
+
+      val resp1_1 = call1("/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_1.status mustBe 200
+      counter1.get() mustBe 4
+
+      val resp1_11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_11.status mustBe 200
+      counter1.get() mustBe 5
+
+      val resp1_111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_111.status mustBe 200
+      counter1.get() mustBe 6
+
+      val resp1_1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host" -> "restrictionservicesapikey.oto.tools", "Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+        .delete()
+        .futureValue
+      resp1_1111.status mustBe 200
+      counter1.get() mustBe 7
+
+      val resp1_2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_2.status mustBe 200
+      counter1.get() mustBe 8
+
+      val resp1_3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_3.status mustBe 200
+      counter1.get() mustBe 9
+
+      deleteOtoroshiService(service1).futureValue
+      deleteOtoroshiApiKey(apikey1).futureValue
+      deleteOtoroshiApiKey(apikey2).futureValue
+      stopServers()
+    }
+    "allow some routes and restrict the rest on an apikey (#315)" in {
+      val (_, port1, counter1, call1) = testServerWithClientPath("restrictionservicesapikeyallow.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "restrictionservicesapikeyallow",
+        name = "restrictionservicesapikeyallow",
+        env = "prod",
+        subdomain = "restrictionservicesapikeyallow",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false
+      )
+      val apikey1 = ApiKey(
+        clientName = "apikey1",
+        authorizedGroup = "default"
+      )
+      val apikey2 = ApiKey(
+        clientName = "apikey2",
+        authorizedGroup = "default",
+        restrictions = Restrictions(
+          enabled = true,
+          allowLast = false,
+          allowed = Seq(
+            RestrictionPath("GET", "/api/.*")
+          ),
+          forbidden = Seq(
+            RestrictionPath("*", "/.*")
+          )
+        )
+      )
+      createOtoroshiService(service1).futureValue
+      createOtoroshiApiKey(apikey1).futureValue
+      createOtoroshiApiKey(apikey2).futureValue
+
+      val resp1 = call1("/api/a")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp1.status mustBe 200
+      counter1.get() mustBe 1
+
+      val resp11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp11.status mustBe 200
+      counter1.get() mustBe 2
+
+      val resp111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp111.status mustBe 200
+      counter1.get() mustBe 3
+
+      val resp1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host" -> "restrictionservicesapikeyallow.oto.tools", "Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+        .delete()
+        .futureValue
+      resp1111.status mustBe 403
+      counter1.get() mustBe 3
+
+      val resp2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp2.status mustBe 403
+      counter1.get() mustBe 3
+
+      val resp3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret))
+      resp3.status mustBe 403
+      counter1.get() mustBe 3
+
+
+      val resp1_1 = call1("/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_1.status mustBe 200
+      counter1.get() mustBe 4
+
+      val resp1_11 = call1("/api/fooo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_11.status mustBe 200
+      counter1.get() mustBe 5
+
+      val resp1_111 = call1("/api/bar/foo")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_111.status mustBe 200
+      counter1.get() mustBe 6
+
+      val resp1_1111 = ws.url(s"http://127.0.0.1:${port}/api/bar/foo")
+        .withHttpHeaders("Host" -> "restrictionservicesapikeyallow.oto.tools", "Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+        .delete()
+        .futureValue
+      resp1_1111.status mustBe 200
+      counter1.get() mustBe 7
+
+      val resp1_2 = call1("/notfound/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_2.status mustBe 200
+      counter1.get() mustBe 8
+
+      val resp1_3 = call1("/forbidden/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
+      resp1_3.status mustBe 200
+      counter1.get() mustBe 9
+
+      deleteOtoroshiService(service1).futureValue
+      deleteOtoroshiApiKey(apikey1).futureValue
+      deleteOtoroshiApiKey(apikey2).futureValue
       stopServers()
     }
   }

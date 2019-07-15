@@ -29,6 +29,7 @@ import { AuthModuleConfig } from '../components/AuthModuleConfig';
 import { Proxy } from '../components/Proxy';
 import { Warning } from './ScriptsPage';
 import { Separator } from '../components/Separator';
+import { Restrictions } from '../components/Restrictions';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -1218,6 +1219,16 @@ export class ServicePage extends Component {
               value={this.state.service.privatePatterns}
               help="If you define a public pattern that is a little bit too much, you can make some of public URL private again"
               onChange={arr => this.changeTheValue('privatePatterns', arr)}
+            />
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Restrictions">
+            <Restrictions 
+              rawValue={this.state.service.restrictions} 
+              rawOnChange={arr => this.changeTheValue('restrictions', arr)}
             />
           </Collapse>
           <Collapse
