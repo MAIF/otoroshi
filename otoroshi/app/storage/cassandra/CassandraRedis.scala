@@ -3,15 +3,19 @@ package storage.cassandra
 import java.util.concurrent._
 import java.util.regex.Pattern
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.datastax.driver.core.exceptions.InvalidQueryException
 import play.api.Configuration
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
+import com.codahale.metrics._
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Try
+import scala.concurrent.duration._
+import scala.util.{Success, Try}
 
 class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration)  extends RedisLike with RawGetRedis {
 
@@ -21,27 +25,31 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
 
   import collection.JavaConverters._
 
+  private val metrics = new MetricRegistry()
+
+  private val reporter: ConsoleReporter = ConsoleReporter.forRegistry(metrics).convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build
+
   private val patterns = new ConcurrentHashMap[String, Pattern]()
 
-  val cassandraContactPoints: Seq[String] = configuration
+  private val cassandraContactPoints: Seq[String] = configuration
     .getOptional[String]("app.cassandra.hosts")
     .map(_.split(",").toSeq)
     .orElse(
       configuration.getOptional[String]("app.cassandra.host").map(e => Seq(e))
     )
     .getOrElse(Seq("127.0.0.1"))
-  val cassandraReplicationStrategy: String =
+  private val cassandraReplicationStrategy: String =
     configuration.getOptional[String]("app.cassandra.replicationStrategy").getOrElse("SimpleStrategy")
-  val cassandraReplicationOptions: String =
+  private val cassandraReplicationOptions: String =
     configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
-  val cassandraReplicationFactor: Int =
+  private val cassandraReplicationFactor: Int =
     configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
-  val cassandraPort: Int       = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
-  val maybeUsername: Option[String] = configuration.getOptional[String]("app.cassandra.username")
-  val maybePassword: Option[String] = configuration.getOptional[String]("app.cassandra.password")
+  private val cassandraPort: Int       = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
+  private val maybeUsername: Option[String] = configuration.getOptional[String]("app.cassandra.username")
+  private val maybePassword: Option[String] = configuration.getOptional[String]("app.cassandra.password")
 
-  val poolingExecutor: Executor = configuration.getOptional[Int]("app.cassandra.pooling.initializationExecutorThreads").map(n => Executors.newFixedThreadPool(n)).getOrElse(actorSystem.dispatcher)
-  val poolingOptions = new PoolingOptions()
+  private val poolingExecutor: Executor = configuration.getOptional[Int]("app.cassandra.pooling.initializationExecutorThreads").map(n => Executors.newFixedThreadPool(n)).getOrElse(actorSystem.dispatcher)
+  private val poolingOptions = new PoolingOptions()
     .setMaxQueueSize(configuration.getOptional[Int]("app.cassandra.pooling.maxQueueSize").getOrElse(2048))
     .setCoreConnectionsPerHost(HostDistance.LOCAL, configuration.getOptional[Int]("app.cassandra.pooling.coreConnectionsPerLocalHost").getOrElse(1))
     .setMaxConnectionsPerHost(HostDistance.LOCAL, configuration.getOptional[Int]("app.cassandra.pooling.coreConnectionsPerRemoteHost").getOrElse(1))
@@ -56,11 +64,12 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     .setHeartbeatIntervalSeconds(configuration.getOptional[Int]("app.cassandra.pooling.heartbeatIntervalSeconds").getOrElse(30))
     .setIdleTimeoutSeconds(configuration.getOptional[Int]("app.cassandra.pooling.idleTimeoutSeconds").getOrElse(120))
 
-  val clusterBuilder = Cluster
+  private val clusterBuilder = Cluster
     .builder()
     .withClusterName(configuration.getOptional[String]("app.cassandra.clusterName").getOrElse("otoroshi-cluster"))
     .addContactPoints(cassandraContactPoints: _*)
     .withPort(cassandraPort)
+    .withCondition(configuration.getOptional[Boolean]("app.cassandra.betaProtocolsEnabled").getOrElse(false))(_.allowBetaProtocolVersion())
     .withProtocolVersion(configuration.getOptional[String]("app.cassandra.protocol").map(v => ProtocolVersion.valueOf(v)).getOrElse(ProtocolVersion.V4))
     .withMaxSchemaAgreementWaitSeconds(configuration.getOptional[Int]("app.cassandra.maxSchemaAgreementWaitSeconds").getOrElse(10))
     .withCondition(!configuration.getOptional[Boolean]("app.cassandra.compactEnabled").getOrElse(false))(_.withNoCompact())
@@ -83,14 +92,16 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   // .withTimestampGenerator(TimestampGenerator timestampGenerator)
   // .withSpeculativeExecutionPolicy(SpeculativeExecutionPolicy policy)
 
-  val cluster: Cluster = (for {
+  private val cluster: Cluster = (for {
     username <- maybeUsername
     password <- maybePassword
   } yield {
     clusterBuilder.withCredentials(username, password)
   }).getOrElse(clusterBuilder).build()
 
-  val _session = cluster.connect()
+  private val _session = cluster.connect()
+
+  private val cancel = new AtomicReference[Cancellable]()
 
   override def start(): Unit = {
     CassandraRedis.logger.info("Creating database keyspace and tables if not exists ...")
@@ -106,34 +117,61 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     _session.execute("USE otoroshi")
     _session.execute("CREATE TABLE IF NOT EXISTS otoroshi.values ( key text, type text, ttlv text, value text, lvalue list<text>, svalue set<text>, mvalue map<text, text>, PRIMARY KEY (key) );")
     _session.execute("CREATE TABLE IF NOT EXISTS otoroshi.counters ( key text, cvalue counter, PRIMARY KEY (key) );")
+    _session.execute("CREATE TABLE IF NOT EXISTS otoroshi.expirations ( key text, value bigint, PRIMARY KEY (key) );")
+
+    cancel.set(actorSystem.scheduler.schedule(1.second, 2.seconds) {
+      val time = System.currentTimeMillis()
+      executeAsync("SELECT key, value from otoroshi.expirations;").map { rs =>
+        rs.asScala.foreach { row =>
+          val key   = row.getString("key")
+          val value = row.getLong("value")
+          if (value < time) {
+            executeAsync(s"DELETE FROM otoroshi.counters where key = '$key';")
+            executeAsync(s"DELETE FROM otoroshi.expirations where key = '$key';")
+          }
+        }
+      }
+    })
     CassandraRedis.logger.info("Keyspace and table creation done !")
+    // reporter.start(20, TimeUnit.SECONDS)
   }
 
   override def stop(): Unit = {
+    Option(cancel.get()).foreach(_.cancel())
+    reporter.stop()
     _session.close()
     cluster.close()
   }
 
   private val blockAsync = false
   private def executeAsync(query: String): Future[ResultSet] = {
+    val readQuery = query.toLowerCase().trim.startsWith("select ")
+    val timer = metrics.timer("cassandra.ops").time()
+    val timerOp = metrics.timer(if (readQuery) "cassandra.reads" else "cassandra.writes").time()
     val rsf = _session.executeAsync(query)
     val promise = Promise[ResultSet]
     if (blockAsync) {
       promise.trySuccess(rsf.get())
+      timer.close()
+      timerOp.close()
     } else {
       rsf.addListener(
         new Runnable {
           override def run(): Unit =
             try {
-              val rs = rsf.getUninterruptibly(10, TimeUnit.MILLISECONDS)
+              val rs = rsf.getUninterruptibly(1, TimeUnit.MILLISECONDS)
               promise.trySuccess(rs)
+              timer.close()
+              timerOp.close()
             } catch {
               case e: InvalidQueryException =>
-                CassandraRedis.logger.error(s"""Cassandra query error: ${e.getMessage}. Query was: "\n$query\n"""")
+                CassandraRedis.logger.error(s"""Cassandra query error: ${e.getMessage}. Query was: "$query"""")
                 promise.tryFailure(e)
+                metrics.counter("cassandra.errors").inc()
               case e: Throwable =>
-                CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "\n$query\n"""")
+                CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
                 promise.tryFailure(e)
+                metrics.counter("cassandra.errors").inc()
             }
         },
         actorSystem.dispatcher
@@ -185,6 +223,11 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     case -1L => -1L
     case ttl => System.currentTimeMillis() + ttl
   }
+
+  private def getExpirationFromExpirationsTableAt(key: String): Future[Long] =
+    executeAsync(s"SELECT value from otoroshi.expirations where key = '$key';").map { rs =>
+      Try(rs.one().getLong("value")).toOption.flatMap(o => Option(o)).getOrElse(-1L)
+    }
 
   private def getListAt(key: String): Future[Seq[ByteString]] =
     executeAsync(s"SELECT lvalue from otoroshi.values where key = '$key';").map { rs =>
@@ -238,8 +281,9 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
 
   override def flushall(): Future[Boolean] =
     for {
-      _ <- executeAsync("TRUNCATE otoroshi.values")
-      _ <- executeAsync("TRUNCATE otoroshi.counters")
+      _ <- executeAsync("TRUNCATE otoroshi.values;")
+      _ <- executeAsync("TRUNCATE otoroshi.counters;")
+      _ <- executeAsync("TRUNCATE otoroshi.expirations;")
     } yield true
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -267,15 +311,33 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
                      exSeconds: Option[Long] = None,
                      pxMilliseconds: Option[Long] = None): Future[Boolean] = {
     ((exSeconds, pxMilliseconds) match {
-      case (Some(seconds), Some(_)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') IF NOT EXISTS USING TTL $seconds;")
-      case (Some(seconds), None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') IF NOT EXISTS USING TTL $seconds;")
-      case (None, Some(millis)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') IF NOT EXISTS USING TTL ${millis / 1000};")
-      case (None, None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', '${value.utf8String}') IF NOT EXISTS;")
+      case (Some(seconds), Some(_)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
+      case (Some(seconds), None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
+      case (None, Some(millis)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL ${millis / 1000};")
+      case (None, None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', '${value.utf8String}');")
     }).map(r => r.wasApplied())
+    //exists(key) flatMap {
+    //  case false => {
+    //    ((exSeconds, pxMilliseconds) match {
+    //      case (Some(seconds), Some(_)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') IF NOT EXISTS USING TTL $seconds;")
+    //      case (Some(seconds), None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') IF NOT EXISTS USING TTL $seconds;")
+    //      case (None, Some(millis)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') IF NOT EXISTS USING TTL ${millis / 1000};")
+    //      case (None, None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', '${value.utf8String}') IF NOT EXISTS;")
+    //    }).map(r => r.wasApplied())
+    //  }
+    //  case true => {
+    //    ((exSeconds, pxMilliseconds) match {
+    //      case (Some(seconds), Some(_)) => executeAsync(s"UPDATE otoroshi.values SET value = '${value.utf8String}' WHERE key = '$key' IF EXISTS USING TTL $seconds;")
+    //      case (Some(seconds), None) => executeAsync(s"UPDATE otoroshi.values SET value = '${value.utf8String}' WHERE key = '$key' IF EXISTS USING TTL $seconds;")
+    //      case (None, Some(millis)) => executeAsync(s"UPDATE otoroshi.values SET value = '${value.utf8String}' WHERE key = '$key' IF EXISTS USING TTL ${millis / 1000};")
+    //      case (None, None) => executeAsync(s"UPDATE otoroshi.values SET value = '${value.utf8String}' WHERE key = '$key' IF EXISTS;")
+    //    }).map(r => r.wasApplied())
+    //  }
+    //}
   }
 
   override def del(keys: String*): Future[Long] =
-    Future
+    FastFuture
       .sequence(
         keys.map { k =>
           for {
@@ -290,20 +352,18 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
 
   override def incrby(key: String, increment: Long): Future[Long] =
     executeAsync(s"UPDATE otoroshi.counters SET cvalue = cvalue + $increment WHERE key = '$key';")
-      .flatMap { rs =>
-        getCounterAt(key)
-      }
+      .flatMap(_ => getCounterAt(key))
 
-  override def exists(key: String): Future[Boolean] =
-    for {
-      a <- executeAsync(s"SELECT key FROM otoroshi.values WHERE key = '$key' LIMIT 1")
+  override def exists(key: String): Future[Boolean] = {
+    executeAsync(s"SELECT key FROM otoroshi.values WHERE key = '$key' LIMIT 1").map(rs => rs.asScala.nonEmpty).flatMap {
+      case true => FastFuture.successful(true)
+      case false => executeAsync(s"SELECT key FROM otoroshi.counters WHERE key = '$key' LIMIT 1")
         .map(rs => rs.asScala.nonEmpty)
-      b <- executeAsync(s"SELECT key FROM otoroshi.counters WHERE key = '$key' LIMIT 1")
-        .map(rs => rs.asScala.nonEmpty)
-    } yield a || b
+    }
+  }
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] =
-    Future.sequence(keys.map(k => get(k)))
+    FastFuture.sequence(keys.map(k => get(k)))
 
   override def keys(pattern: String): Future[Seq[String]] = {
     val pat = patterns.computeIfAbsent(pattern, _ => Pattern.compile(pattern.replaceAll("\\*", ".*")))
@@ -314,16 +374,9 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def hdel(key: String, fields: String*): Future[Long] =
-    Future
-      .sequence(
-        fields.map(
-          field =>
-            executeAsync(s"DELETE mvalue ['$field'] FROM otoroshi.values WHERE key = '$key' IF EXISTS;")
-              .map(_ => 1L)
-        )
-      )
-      .map(_.foldLeft(0L)(_ + _))
+  override def hdel(key: String, fields: String*): Future[Long] = {
+    executeAsync(s"UPDATE otoroshi.values SET mvalue = mvalue - {${fields.map(v => s"'$v'").mkString(", ")}} WHERE key = '$key';").map(_ => fields.size)
+  }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = getMapAt(key)
 
@@ -376,8 +429,11 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     executeAsync(s"SELECT ttl(value) as ttl FROM otoroshi.values WHERE key = '$key' LIMIT 1").flatMap { r =>
       Try(r.one().getLong("ttl")).toOption.flatMap(o => Option(o)).map(_.toLong) match {
         case Some(ttl) => FastFuture.successful(Some(ttl))
-        case None => executeAsync(s"SELECT ttl(cvalue) as ttl FROM otoroshi.counters WHERE key = '$key' LIMIT 1").map { r =>
-          Try(r.one().getLong("ttl")).toOption.flatMap(o => Option(o)).map(_.toLong)
+        case None => getExpirationFromExpirationsTableAt(key).map {
+          case v =>
+            val ttlValue: Long = v - System.currentTimeMillis()
+            Some(if (ttlValue < 0) -1L else ttlValue)
+          case -1L => None
         }
       }
     }.map {
@@ -393,31 +449,25 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
     // TODO: improve null assignement here here !!!
-    // TODO: fix counters ttl
+    val time = System.currentTimeMillis() + milliseconds
     for {
       a <- executeAsync(s"UPDATE otoroshi.values USING TTL ${milliseconds / 1000} SET ttlv = null where key = '$key';")
-      // b <- executeAsync(s"UPDATE otoroshi.counters USING TTL ${milliseconds / 1000} SET cvalue = cvalue + 0 where key = '$key';")
-    } yield a.wasApplied()
+      b <- executeAsync(s"INSERT INTO otoroshi.expirations (key, value) values ('$key', $time);")
+    } yield a.wasApplied() || b.wasApplied()
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
 
-  override def saddBS(key: String, members: ByteString*): Future[Long] =
+  override def saddBS(key: String, members: ByteString*): Future[Long] = {
     executeAsync(s"INSERT INTO otoroshi.values (key, type, svalue) values ('$key', 'set', {}) IF NOT EXISTS;")
       .flatMap { _ =>
-        Future
-          .sequence(
-            members.map { member =>
-              executeAsync(
-                  s"UPDATE otoroshi.values SET svalue = svalue + { '${member.utf8String}' } where key = '$key';"
-                )
-                .map(_ => 1L)
-            }
-          )
-          .map(_.foldLeft(0L)(_ + _))
-      }
+        executeAsync(
+          s"UPDATE otoroshi.values SET svalue = svalue + { ${members.map(v => s"'${v.utf8String}'").mkString(", ")} } where key = '$key';"
+        ).map(_ => members.size)
+    }
+  }
 
   override def sismember(key: String, member: String): Future[Boolean] = sismemberBS(key, ByteString(member))
 
@@ -428,19 +478,15 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
 
-  override def sremBS(key: String, members: ByteString*): Future[Long] =
-    Future
-      .sequence(
-        members.map(
-          members =>
-            executeAsync(s"DELETE svalue ['$members'] FROM otoroshi.values WHERE key = '$key' IF EXISTS;")
-              .map(_ => 1L)
-        )
-      )
-      .map(_.foldLeft(0L)(_ + _))
+  override def sremBS(key: String, members: ByteString*): Future[Long] = {
+    executeAsync(s"UPDATE otoroshi.values SET svalue = svalue - { ${members.map(v => s"'${v.utf8String}'").mkString(", ")} } WHERE key = '$key' IF EXISTS;")
+      .map(_ => members.size)
+  }
 
-  override def scard(key: String): Future[Long] =
+  override def scard(key: String): Future[Long] = {
+    // executeAsync(s"SELECT size(svalue) as size FROM otoroshi.values WHERE key = '$key';").map(r => Try(r.one().getLong("size")).toOption.flatMap(o => Option(o)).getOrElse(0))
     smembers(key).map(_.size.toLong) // OUTCH !!!
+  }
 
   def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     executeAsync("SHOW VERSION").map(_ => Healthy).recover {

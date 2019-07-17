@@ -592,7 +592,7 @@ case class CustomTimeouts(
     path: String = "/*",
     connectionTimeout: Long = 10000,
     idleTimeout: Long = 60000,
-    callAndStreamTimeout: Long = 120000,
+    callAndStreamTimeout: Long = 300000,
     callTimeout: Long = 30000,
     globalTimeout: Long = 30000,
 ) {
@@ -611,7 +611,7 @@ object CustomTimeouts {
           path = (json \ "path").asOpt[String].getOrElse("*"),
           connectionTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(10000),
           idleTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(60000),
-          callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(120000),
+          callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(300000),
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000)
         )
