@@ -7,13 +7,13 @@ import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.datastax.driver.core.exceptions.InvalidQueryException
-import play.api.Configuration
+import play.api.{ConfigLoader, Configuration}
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
 import com.codahale.metrics._
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy
+import com.datastax.driver.core.policies._
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
@@ -84,20 +84,156 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     .withCompression(ProtocolOptions.Compression.valueOf(configuration.getOptional[String]("app.cassandra.compression").getOrElse("NONE")))
     .withThreadingOptions(new CassandraThreadingOptions(configuration))
     .withPoolingOptions(poolingOptions)
+    .withLoadBalancingPolicy(getLoadBalancingPolicy("app.cassandra.loadbalancing").getOrElse(Policies.defaultLoadBalancingPolicy()))
+    .withReconnectionPolicy(getReconnectionPolicy("app.cassandra.reconnection").getOrElse(Policies.defaultReconnectionPolicy()))
+    .withRetryPolicy(getRetryPolicy("app.cassandra.retry").getOrElse(Policies.defaultRetryPolicy()))
+    .withSpeculativeExecutionPolicy(getSpeculativeExecutionPolicy("app.cassandra.speculativeexecution").getOrElse(Policies.defaultSpeculativeExecutionPolicy()))
+    .withTimestampGenerator(getTimestampGenerator("app.cassandra.timestampgenerator").getOrElse(Policies.defaultTimestampGenerator()))
+    .withAddressTranslator(getAddressTranslator("app.cassandra.addresstranslator").getOrElse(Policies.defaultAddressTranslator()))
 
-  val a: DCAwareRoundRobinPolicy = ???
-  // .withLoadBalancingPolicy(LoadBalancingPolicy)
+
+  def conf[T](path: String)(implicit l: ConfigLoader[T]): T = configuration.getOptional[T](path).get
+
+  def getAddressTranslator(path: String): Option[AddressTranslator] = {
+    configuration.getOptional[String](s"$path.translator") match {
+      case Some("IdentityTranslator") => Some(new IdentityTranslator())
+      case Some("EC2MultiRegionAddressTranslator") => Some(new EC2MultiRegionAddressTranslator())
+      case _ => None
+    }
+  }
+
+  def getTimestampGenerator(path: String): Option[TimestampGenerator] = {
+    configuration.getOptional[String](s"$path.generator") match {
+      case Some("IdentityTranslator") => ???
+      case Some("EC2MultiRegionAddressTranslator") => ???
+      case _ => None
+    }
+  }
+
+  def getPercentileTracker(path: String): Option[PercentileTracker] = {
+    configuration.getOptional[String](s"$path.tracker") match {
+      case Some("ClusterWidePercentileTracker") => Some(
+        ClusterWidePercentileTracker.builder(
+          conf[Long](s"$path.ClusterWidePercentileTracker.highestTrackableLatencyMillis")
+        )
+        .withInterval(conf[Long](s"$path.ClusterWidePercentileTracker.interval"), TimeUnit.MILLISECONDS)
+        .withMinRecordedValues(conf[Int](s"$path.ClusterWidePercentileTracker.minRecordedValues"))
+        .withNumberOfSignificantValueDigits(conf[Int](s"$path.ClusterWidePercentileTracker.numberOfSignificantValueDigits"))
+        .build()
+      )
+      case Some("PerHostPercentileTracker") => Some(
+        PerHostPercentileTracker.builder(
+          conf[Long](s"$path.PerHostPercentileTracker.highestTrackableLatencyMillis")
+        )
+          .withInterval(conf[Long](s"$path.PerHostPercentileTracker.interval"), TimeUnit.MILLISECONDS)
+          .withMinRecordedValues(conf[Int](s"$path.PerHostPercentileTracker.minRecordedValues"))
+          .withNumberOfSignificantValueDigits(conf[Int](s"$path.PerHostPercentileTracker.numberOfSignificantValueDigits"))
+          .build()
+      )
+      case _ => None
+    }
+  }
+
+  def getSpeculativeExecutionPolicy(path: String): Option[SpeculativeExecutionPolicy] = {
+    configuration.getOptional[String](s"$path.policy") match {
+      case Some("ConstantSpeculativeExecutionPolicy") => Some(new ConstantSpeculativeExecutionPolicy(
+        conf[Long](s"$path.ConstantSpeculativeExecutionPolicy.constantDelayMillis"),
+        conf[Int](s"$path.ConstantSpeculativeExecutionPolicy.maxSpeculativeExecutions"),
+      ))
+      case Some("NoSpeculativeExecutionPolicy") => Some(NoSpeculativeExecutionPolicy.INSTANCE)
+      case Some("PercentileSpeculativeExecutionPolicy") => Some(new PercentileSpeculativeExecutionPolicy(
+        getPercentileTracker(s"$path.PercentileSpeculativeExecutionPolicy.percentileTracker").get,
+        conf[Double](s"$path.PercentileSpeculativeExecutionPolicy.percentile"),
+        conf[Int](s"$path.PercentileSpeculativeExecutionPolicy.maxSpeculativeExecutions"),
+      ))
+      case _ => None
+    }
+  }
+
+
+  def getReconnectionPolicy(path: String): Option[ReconnectionPolicy] = {
+    configuration.getOptional[String](s"$path.policy") match {
+      case Some("ConstantReconnectionPolicy") => Some(new ConstantReconnectionPolicy(conf[Long](s"$path.ConstantReconnectionPolicy.constantDelayMs")))
+      case Some("ExponentialReconnectionPolicy") => Some(new ExponentialReconnectionPolicy(
+        conf[Long](s"$path.ExponentialReconnectionPolicy.baseDelayMs"),
+        conf[Long](s"$path.ExponentialReconnectionPolicy.maxDelayMs")
+      ))
+      case _ => None
+    }
+  }
+
+  def getRetryPolicy(path: String): Option[RetryPolicy] = {
+    configuration.getOptional[String](s"$path.policy") match {
+      case Some("FallthroughRetryPolicy") => Some(FallthroughRetryPolicy.INSTANCE)
+      case Some("DefaultRetryPolicy") => Some(DefaultRetryPolicy.INSTANCE)
+      case Some("LoggingRetryPolicy") => Some(new LoggingRetryPolicy(getRetryPolicy(s"$path.LoggingRetryPolicy.child").get))
+      case _ => None
+    }
+  }
+
+  def getLoadBalancingPolicy(path: String): Option[LoadBalancingPolicy] = {
+    configuration.getOptional[String](s"$path.policy") match {
+      case Some("DCAwareRoundRobinPolicy") => {
+        Some(
+          DCAwareRoundRobinPolicy.builder()
+            .withLocalDc(conf[String](s"$path.DCAwareRoundRobinPolicy.localDc"))
+            .build()
+        )
+      }
+      case Some("WhiteListPolicy") => {
+        Some(WhiteListPolicy.ofHosts(
+          getLoadBalancingPolicy(s"$path.WhiteListPolicy.child").get,
+          conf[Seq[String]](s"$path.WhiteListPolicy.hostnames").asJava
+        ))
+      }
+      case Some("HostFilterDCBlackListPolicy") => {
+        Some(HostFilterPolicy.fromDCBlackList(
+          getLoadBalancingPolicy(s"$path.HostFilterDCBlackListPolicy.child").get,
+          conf[Seq[String]](s"$path.HostFilterDCBlackListPolicy.dcs").asJava
+        ))
+      }
+      case Some("HostFilterDCWhiteListPolicy") => {
+        Some(HostFilterPolicy.fromDCWhiteList(
+          getLoadBalancingPolicy(s"$path.HostFilterDCWhiteListPolicy.child").get,
+          conf[Seq[String]](s"$path.HostFilterDCWhiteListPolicy.dcs").asJava
+        ))
+      }
+      case Some("TokenAwarePolicy") => {
+        Some(new TokenAwarePolicy(getLoadBalancingPolicy(s"$path.TokenAwarePolicy.child").get))
+      }
+      case Some("RoundRobinPolicy") => {
+        Some(new RoundRobinPolicy())
+      }
+      case Some("LatencyAwarePolicy") => {
+        Some(
+          LatencyAwarePolicy.builder(getLoadBalancingPolicy(s"$path.LatencyAwarePolicy.child").get)
+            .withExclusionThreshold(conf[Double](s"$path.LatencyAwarePolicy."))
+            .withMininumMeasurements(conf[Int](s"$path.LatencyAwarePolicy.mininumMeasurements"))
+            .withRetryPeriod(conf[Long](s"$path.LatencyAwarePolicy.retryPeriod"), TimeUnit.MILLISECONDS)
+            .withScale(conf[Long](s"$path.LatencyAwarePolicy.scale"), TimeUnit.MILLISECONDS)
+            .withUpdateRate(conf[Long](s"$path.LatencyAwarePolicy.updateRate"), TimeUnit.MILLISECONDS)
+            .build()
+        )
+      }
+      case Some("ErrorAwarePolicy") => {
+        Some(ErrorAwarePolicy.builder(getLoadBalancingPolicy(s"$path.ErrorAwarePolicy.child").get)
+          .withMaxErrorsPerMinute(conf[Int](s"$path.ErrorAwarePolicy.maxErrorsPerMinute"))
+          .withRetryPeriod(
+            conf[Int](s"$path.ErrorAwarePolicy.retryPeriod"),
+            TimeUnit.MILLISECONDS
+          )
+          .build()
+        )
+      }
+      case _ => None
+    }
+  }
+
   // .withAuthProvider(AuthProvider authProvider)
   // .withCodecRegistry(CodecRegistry codecRegistry)
-  // .withLoadBalancingPolicy(LoadBalancingPolicy policy)
-  // .withReconnectionPolicy(ReconnectionPolicy policy)
-  // .withRetryPolicy(RetryPolicy policy)
   // .withSocketOptions(SocketOptions options)
   // .withQueryOptions(QueryOptions options)
   // .withNettyOptions(NettyOptions nettyOptions)
-  // .withAddressTranslator(AddressTranslator translator)
-  // .withTimestampGenerator(TimestampGenerator timestampGenerator)
-  // .withSpeculativeExecutionPolicy(SpeculativeExecutionPolicy policy)
 
   private val cluster: Cluster = (for {
     username <- maybeUsername
