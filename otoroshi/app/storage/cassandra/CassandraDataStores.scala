@@ -20,11 +20,11 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
 import storage.inmemory._
-import storage.{DataStoreHealth, DataStores, RawDataStore}
+import storage.{DataStoreHealth, DataStores, RawDataStore, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CassandraDataStores(configuration: Configuration,
+class CassandraDataStores(beta: Boolean, configuration: Configuration,
                           environment: Environment,
                           lifecycle: ApplicationLifecycle,
                           env: Env)
@@ -32,23 +32,7 @@ class CassandraDataStores(configuration: Configuration,
 
   lazy val logger = Logger("otoroshi-cassandra-datastores")
 
-  lazy val cassandraContactPoints: Seq[String] = configuration
-    .getOptional[String]("app.cassandra.hosts")
-    .map(_.split(",").toSeq)
-    .orElse(
-      configuration.getOptional[String]("app.cassandra.host").map(e => Seq(e))
-    )
-    .getOrElse(Seq("127.0.0.1"))
-  lazy val cassandraReplicationStrategy: String =
-    configuration.getOptional[String]("app.cassandra.replicationStrategy").getOrElse("SimpleStrategy")
-  lazy val cassandraReplicationOptions: String =
-    configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
-  lazy val cassandraReplicationFactor: Int =
-    configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
-  lazy val cassandraPort: Int       = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
-  lazy val redisStatsItems: Int     = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
-  lazy val username: Option[String] = configuration.getOptional[String]("app.cassandra.username")
-  lazy val password: Option[String] = configuration.getOptional[String]("app.cassandra.password")
+  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
 
   lazy val actorSystem =
     ActorSystem(
@@ -58,15 +42,13 @@ class CassandraDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis = new CassandraRedis(
+
+  lazy val redis: RedisLike with RawGetRedis = if (beta) new CassandraRedisNew(
     actorSystem,
-    cassandraReplicationStrategy,
-    cassandraReplicationFactor,
-    cassandraReplicationOptions,
-    cassandraContactPoints,
-    cassandraPort,
-    username,
-    password
+    configuration
+  ) else new CassandraRedisOld(
+    actorSystem,
+    configuration
   )
 
   override def before(configuration: Configuration,

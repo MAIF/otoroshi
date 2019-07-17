@@ -402,15 +402,18 @@ class Env(val configuration: Configuration,
       case "http" if clusterConfig.mode == ClusterMode.Leader =>
         new HttpDbDataStores(configuration, environment, lifecycle, this)
       case "cassandra" if clusterConfig.mode == ClusterMode.Leader =>
-        throw new RuntimeException("Cassandra datastore is not supported yet as Otoroshi leader datastore")
+        new CassandraDataStores(false, configuration, environment, lifecycle, this)
+      case "cassandra-new" if clusterConfig.mode == ClusterMode.Leader =>
+        new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "mongo" if clusterConfig.mode == ClusterMode.Leader =>
-        throw new RuntimeException("Mongo datastore is not supported yet as Otoroshi leader datastore")
+        new MongoDataStores(configuration, environment, lifecycle, this)
       case "redis"             => new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"           => new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "file"              => new FileDbDataStores(configuration, environment, lifecycle, this)
       case "http"              => new HttpDbDataStores(configuration, environment, lifecycle, this)
-      case "cassandra"         => new CassandraDataStores(configuration, environment, lifecycle, this)
+      case "cassandra"         => new CassandraDataStores(false, configuration, environment, lifecycle, this)
+      case "cassandra-new"     => new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "mongo"             => new MongoDataStores(configuration, environment, lifecycle, this)
       case "redis-pool"        => new RedisCPDataStores(configuration, environment, lifecycle, this)
       case "redis-mpool"       => new RedisMCPDataStores(configuration, environment, lifecycle, this)

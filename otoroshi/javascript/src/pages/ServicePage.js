@@ -1257,7 +1257,7 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('sendStateChallenge', v)}
             />
             <BooleanInput
-              label="Send challenge"
+              label="Send info. token"
               value={this.state.service.sendInfoToken}
               help="When enabled, Otoroshi add an additional header containing current call informations"
               onChange={v => this.changeTheValue('sendInfoToken', v)}

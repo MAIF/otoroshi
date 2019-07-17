@@ -36,12 +36,12 @@ libraryDependencies ++= Seq(
   "com.nimbusds"             % "nimbus-jose-jwt"           % "6.0",
   "com.risksense"            %% "ipaddr"                   % "1.0.2",
   // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
-  "javax.xml.bind"         % "jaxb-api"              % "2.3.0",
-  "com.sun.xml.bind"       % "jaxb-core"             % "2.3.0",
-  "com.sun.xml.bind"       % "jaxb-impl"             % "2.3.0",
-  "org.reactivemongo"      %% "reactivemongo"        % "0.13.0",
-  "org.scalatestplus.play" %% "scalatestplus-play"   % "3.1.2" % Test,
-  "com.datastax.cassandra" % "cassandra-driver-core" % "3.7.1" classifier "shaded" excludeAll (
+  "javax.xml.bind"           % "jaxb-api"                  % "2.3.0",
+  "com.sun.xml.bind"         % "jaxb-core"                 % "2.3.0",
+  "com.sun.xml.bind"         % "jaxb-impl"                 % "2.3.0",
+  "org.reactivemongo"        %% "reactivemongo"            % "0.13.0",
+  "org.scalatestplus.play"   %% "scalatestplus-play"       % "3.1.2" % Test,
+  "com.datastax.cassandra"   % "cassandra-driver-core"     % "3.7.2" classifier "shaded" excludeAll (
     ExclusionRule(organization = "io.netty"),
     ExclusionRule(organization = "com.typesafe.akka")
   )

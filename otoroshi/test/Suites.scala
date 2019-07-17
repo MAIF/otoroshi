@@ -51,6 +51,16 @@ object Configurations {
       .resolve()
   )
 
+  val CassandraNewConfiguration = Configuration(
+    ConfigFactory
+      .parseString("""
+                     |{
+                     |  app.storage = "cassandra-new"
+                     |}
+                   """.stripMargin)
+      .resolve()
+  )
+
   val MongoConfiguration = Configuration(
     ConfigFactory
       .parseString("""
@@ -71,6 +81,7 @@ object OtoroshiTests {
       case "inmemory"  => ("InMemory", Configurations.InMemoryConfiguration)
       case "leveldb"   => ("LevelDB", Configurations.LevelDBConfiguration)
       case "cassandra" => ("Cassandra", Configurations.CassandraConfiguration)
+      case "cassandra-new " => ("Cassandra-new", Configurations.CassandraNewConfiguration)
       case "mongo"     => ("Mongo", Configurations.MongoConfiguration)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
