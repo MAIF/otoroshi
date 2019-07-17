@@ -13,6 +13,8 @@ import com.codahale.metrics._
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
+import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy
+
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.util.{Success, Try}
@@ -82,6 +84,8 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     .withCompression(ProtocolOptions.Compression.valueOf(configuration.getOptional[String]("app.cassandra.compression").getOrElse("NONE")))
     .withThreadingOptions(new CassandraThreadingOptions(configuration))
     .withPoolingOptions(poolingOptions)
+
+  val a: DCAwareRoundRobinPolicy = ???
   // .withLoadBalancingPolicy(LoadBalancingPolicy)
   // .withAuthProvider(AuthProvider authProvider)
   // .withCodecRegistry(CodecRegistry codecRegistry)
