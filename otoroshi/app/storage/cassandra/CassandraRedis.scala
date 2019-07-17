@@ -48,7 +48,10 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   private val maybeUsername: Option[String] = configuration.getOptional[String]("app.cassandra.username")
   private val maybePassword: Option[String] = configuration.getOptional[String]("app.cassandra.password")
 
-  private val poolingExecutor: Executor = configuration.getOptional[Int]("app.cassandra.pooling.initializationExecutorThreads").map(n => Executors.newFixedThreadPool(n)).getOrElse(actorSystem.dispatcher)
+  private val poolingExecutor: Executor = configuration.getOptional[Int]("app.cassandra.pooling.initializationExecutorThreads")
+    .map(n => Executors.newFixedThreadPool(n))
+    .getOrElse(actorSystem.dispatcher)
+
   private val poolingOptions = new PoolingOptions()
     .setMaxQueueSize(configuration.getOptional[Int]("app.cassandra.pooling.maxQueueSize").getOrElse(2048))
     .setCoreConnectionsPerHost(HostDistance.LOCAL, configuration.getOptional[Int]("app.cassandra.pooling.coreConnectionsPerLocalHost").getOrElse(1))
@@ -430,10 +433,10 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
       Try(r.one().getLong("ttl")).toOption.flatMap(o => Option(o)).map(_.toLong) match {
         case Some(ttl) => FastFuture.successful(Some(ttl))
         case None => getExpirationFromExpirationsTableAt(key).map {
+          case -1L => None
           case v =>
             val ttlValue: Long = v - System.currentTimeMillis()
             Some(if (ttlValue < 0) -1L else ttlValue)
-          case -1L => None
         }
       }
     }.map {
