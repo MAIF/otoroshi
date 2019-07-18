@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import com.datastax.driver.core.exceptions.InvalidQueryException
+import com.datastax.driver.core.exceptions.{DriverInternalError, InvalidQueryException}
 import play.api.{ConfigLoader, Configuration}
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
 import com.codahale.metrics._
@@ -90,9 +90,42 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     .withSpeculativeExecutionPolicy(getSpeculativeExecutionPolicy("app.cassandra.speculativeexecution").getOrElse(Policies.defaultSpeculativeExecutionPolicy()))
     .withTimestampGenerator(getTimestampGenerator("app.cassandra.timestampgenerator").getOrElse(Policies.defaultTimestampGenerator()))
     .withAddressTranslator(getAddressTranslator("app.cassandra.addresstranslator").getOrElse(Policies.defaultAddressTranslator()))
-
+    .withSocketOptions({
+      val opts = new SocketOptions()
+      confOpt[Int]("app.cassandra.socketOptions.connectTimeoutMillis").foreach(v => opts.setConnectTimeoutMillis(v))
+      confOpt[Int]("app.cassandra.socketOptions.readTimeoutMillis").foreach(v => opts.setReadTimeoutMillis(v))
+      confOpt[Boolean]("app.cassandra.socketOptions.keepAlive").foreach(v => opts.setKeepAlive(v))
+      confOpt[Boolean]("app.cassandra.socketOptions.reuseAddress").foreach(v => opts.setReuseAddress(v))
+      confOpt[Int]("app.cassandra.socketOptions.soLinger").foreach(v => opts.setSoLinger(v))
+      confOpt[Boolean]("app.cassandra.socketOptions.tcpNoDelay").foreach(v => opts.setTcpNoDelay(v))
+      confOpt[Int]("app.cassandra.socketOptions.receiveBufferSize").foreach(v => opts.setReceiveBufferSize(v))
+      confOpt[Int]("app.cassandra.socketOptions.sendBufferSize").foreach(v => opts.setSendBufferSize(v))
+      opts
+    })
+    .withQueryOptions({
+      val opts = new QueryOptions()
+      confOpt[String]("app.cassandra.queryOptions.consistencyLevel").foreach(v => opts.setConsistencyLevel(ConsistencyLevel.valueOf(v)))
+      confOpt[String]("app.cassandra.queryOptions.serialConsistencyLevel").foreach(v => opts.setSerialConsistencyLevel(ConsistencyLevel.valueOf(v)))
+      confOpt[Int]("app.cassandra.queryOptions.fetchSize").foreach(v => opts.setFetchSize(v))
+      confOpt[Boolean]("app.cassandra.queryOptions.defaultIdempotence").foreach(v => opts.setDefaultIdempotence(v))
+      confOpt[Boolean]("app.cassandra.queryOptions.prepareOnAllHosts").foreach(v => opts.setPrepareOnAllHosts(v))
+      confOpt[Boolean]("app.cassandra.queryOptions.reprepareOnUp").foreach(v => opts.setReprepareOnUp(v))
+      confOpt[Boolean]("app.cassandra.queryOptions.enabled").foreach(v => opts.setMetadataEnabled(v))
+      confOpt[Int]("app.cassandra.queryOptions.refreshSchemaIntervalMillis").foreach(v => opts.setRefreshSchemaIntervalMillis(v))
+      confOpt[Int]("app.cassandra.queryOptions.maxPendingRefreshSchemaRequests").foreach(v => opts.setMaxPendingRefreshSchemaRequests(v))
+      confOpt[Int]("app.cassandra.queryOptions.refreshNodeListIntervalMillis").foreach(v => opts.setRefreshNodeListIntervalMillis(v))
+      confOpt[Int]("app.cassandra.queryOptions.maxPendingRefreshNodeListRequests").foreach(v => opts.setMaxPendingRefreshNodeListRequests(v))
+      confOpt[Int]("app.cassandra.queryOptions.refreshNodeIntervalMillis").foreach(v => opts.setRefreshNodeIntervalMillis(v))
+      confOpt[Int]("app.cassandra.queryOptions.maxPendingRefreshNodeRequests").foreach(v => opts.setMaxPendingRefreshNodeRequests(v))
+      opts
+    })
+    .withCondition(configuration.has("app.cassandra.plainTextAuthProvider"))(_.withAuthProvider({
+      new PlainTextAuthProvider(conf[String]("app.cassandra.plainTextAuthProvider.username"), conf[String]("app.cassandra.plainTextAuthProvider.password"))
+    }))
 
   def conf[T](path: String)(implicit l: ConfigLoader[T]): T = configuration.getOptional[T](path).get
+
+  def confOpt[T](path: String)(implicit l: ConfigLoader[T]): Option[T] = configuration.getOptional[T](path)
 
   def getAddressTranslator(path: String): Option[AddressTranslator] = {
     configuration.getOptional[String](s"$path.translator") match {
@@ -138,18 +171,17 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     configuration.getOptional[String](s"$path.policy") match {
       case Some("ConstantSpeculativeExecutionPolicy") => Some(new ConstantSpeculativeExecutionPolicy(
         conf[Long](s"$path.ConstantSpeculativeExecutionPolicy.constantDelayMillis"),
-        conf[Int](s"$path.ConstantSpeculativeExecutionPolicy.maxSpeculativeExecutions"),
+        conf[Int](s"$path.ConstantSpeculativeExecutionPolicy.maxSpeculativeExecutions")
       ))
       case Some("NoSpeculativeExecutionPolicy") => Some(NoSpeculativeExecutionPolicy.INSTANCE)
       case Some("PercentileSpeculativeExecutionPolicy") => Some(new PercentileSpeculativeExecutionPolicy(
         getPercentileTracker(s"$path.PercentileSpeculativeExecutionPolicy.percentileTracker").get,
         conf[Double](s"$path.PercentileSpeculativeExecutionPolicy.percentile"),
-        conf[Int](s"$path.PercentileSpeculativeExecutionPolicy.maxSpeculativeExecutions"),
+        conf[Int](s"$path.PercentileSpeculativeExecutionPolicy.maxSpeculativeExecutions")
       ))
       case _ => None
     }
   }
-
 
   def getReconnectionPolicy(path: String): Option[ReconnectionPolicy] = {
     configuration.getOptional[String](s"$path.policy") match {
@@ -229,12 +261,6 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     }
   }
 
-  // .withAuthProvider(AuthProvider authProvider)
-  // .withCodecRegistry(CodecRegistry codecRegistry)
-  // .withSocketOptions(SocketOptions options)
-  // .withQueryOptions(QueryOptions options)
-  // .withNettyOptions(NettyOptions nettyOptions)
-
   private val cluster: Cluster = (for {
     username <- maybeUsername
     password <- maybePassword
@@ -262,15 +288,14 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     _session.execute("CREATE TABLE IF NOT EXISTS otoroshi.counters ( key text, cvalue counter, PRIMARY KEY (key) );")
     _session.execute("CREATE TABLE IF NOT EXISTS otoroshi.expirations ( key text, value bigint, PRIMARY KEY (key) );")
 
-    cancel.set(actorSystem.scheduler.schedule(1.second, 2.seconds) {
+    cancel.set(actorSystem.scheduler.schedule(1.second, 5.seconds) {
       val time = System.currentTimeMillis()
       executeAsync("SELECT key, value from otoroshi.expirations;").map { rs =>
         rs.asScala.foreach { row =>
           val key   = row.getString("key")
           val value = row.getLong("value")
           if (value < time) {
-            executeAsync(s"DELETE FROM otoroshi.counters where key = '$key';")
-            executeAsync(s"DELETE FROM otoroshi.expirations where key = '$key';")
+            executeAsync(s"DELETE FROM otoroshi.counters where key = '$key'; DELETE FROM otoroshi.expirations where key = '$key';")
           }
         }
       }
@@ -307,12 +332,14 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
               timer.close()
               timerOp.close()
             } catch {
+              case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
+                promise.tryFailure(e)
               case e: InvalidQueryException =>
-                CassandraRedis.logger.error(s"""Cassandra query error: ${e.getMessage}. Query was: "$query"""")
+                CassandraRedis.logger.error(s"""Cassandra invalid query: ${e.getMessage}. Query was: "$query"""")
                 promise.tryFailure(e)
                 metrics.counter("cassandra.errors").inc()
               case e: Throwable =>
-                CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
+                CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}""")
                 promise.tryFailure(e)
                 metrics.counter("cassandra.errors").inc()
             }
@@ -569,19 +596,25 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def pttl(key: String): Future[Long] = {
-    executeAsync(s"SELECT ttl(value) as ttl FROM otoroshi.values WHERE key = '$key' LIMIT 1").flatMap { r =>
-      Try(r.one().getLong("ttl")).toOption.flatMap(o => Option(o)).map(_.toLong) match {
-        case Some(ttl) => FastFuture.successful(Some(ttl))
-        case None => getExpirationFromExpirationsTableAt(key).map {
-          case -1L => None
-          case v =>
-            val ttlValue: Long = v - System.currentTimeMillis()
-            Some(if (ttlValue < 0) -1L else ttlValue)
-        }
-      }
-    }.map {
-      case Some(o) => o
-      case None    => -1L
+    // executeAsync(s"SELECT ttl(value) as ttl FROM otoroshi.values WHERE key = '$key' LIMIT 1").flatMap { r =>
+    //   Try(r.one().getLong("ttl")).toOption.flatMap(o => Option(o)).map(_.toLong) match {
+    //     case Some(ttl) => FastFuture.successful(Some(ttl))
+    //     case None => getExpirationFromExpirationsTableAt(key).map {
+    //       case -1L => None
+    //       case v =>
+    //         val ttlValue: Long = v - System.currentTimeMillis()
+    //         Some(if (ttlValue < 0) -1L else ttlValue)
+    //     }
+    //   }
+    // } map {
+    //   case Some(o) => o
+    //   case None    => -1L
+    // }
+    getExpirationFromExpirationsTableAt(key).map {
+      case -1L => -1L
+      case v =>
+        val ttlValue: Long = v - System.currentTimeMillis()
+        if (ttlValue < 0) -1L else ttlValue
     }
   }
 
@@ -591,12 +624,11 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   override def expire(key: String, seconds: Int): Future[Boolean] = pexpire(key, seconds * 1000)
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
-    // TODO: improve null assignement here here !!!
     val time = System.currentTimeMillis() + milliseconds
     for {
-      a <- executeAsync(s"UPDATE otoroshi.values USING TTL ${milliseconds / 1000} SET ttlv = null where key = '$key';")
+      //a <- executeAsync(s"UPDATE otoroshi.values USING TTL ${milliseconds / 1000} SET ttlv = null where key = '$key';")
       b <- executeAsync(s"INSERT INTO otoroshi.expirations (key, value) values ('$key', $time);")
-    } yield a.wasApplied() || b.wasApplied()
+    } yield true // a.wasApplied() || b.wasApplied()
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -628,7 +660,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
 
   override def scard(key: String): Future[Long] = {
     // executeAsync(s"SELECT size(svalue) as size FROM otoroshi.values WHERE key = '$key';").map(r => Try(r.one().getLong("size")).toOption.flatMap(o => Option(o)).getOrElse(0))
-    smembers(key).map(_.size.toLong) // OUTCH !!!
+    smembers(key).map(_.size.toLong) // TODO: find something for that OUTCH !!!
   }
 
   def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
