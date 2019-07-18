@@ -480,12 +480,16 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
                      value: ByteString,
                      exSeconds: Option[Long] = None,
                      pxMilliseconds: Option[Long] = None): Future[Boolean] = {
-    ((exSeconds, pxMilliseconds) match {
-      case (Some(seconds), Some(_)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
-      case (Some(seconds), None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
-      case (None, Some(millis)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL ${millis / 1000};")
-      case (None, None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', '${value.utf8String}');")
-    }).map(r => r.wasApplied())
+    for {
+      a <- executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', '${value.utf8String}');")
+      b <- exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(ttl => pexpire(key, ttl)).getOrElse(FastFuture.successful(true))
+    } yield a.wasApplied() && b
+    //((exSeconds, pxMilliseconds) match {
+    //  case (Some(seconds), Some(_)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
+    //  case (Some(seconds), None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
+    //  case (None, Some(millis)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL ${millis / 1000};")
+    //  case (None, None) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', '${value.utf8String}');")
+    //}).map(r => r.wasApplied())
     //exists(key) flatMap {
     //  case false => {
     //    ((exSeconds, pxMilliseconds) match {
