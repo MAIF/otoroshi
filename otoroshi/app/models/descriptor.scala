@@ -523,7 +523,6 @@ object Target {
         case sd => JsSuccess(sd)
       } recover {
         case t =>
-          t.printStackTrace()
           JsError(t.getMessage)
       } get
   }
@@ -2334,7 +2333,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit]
-  def updateMetricsOnError()(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def updateMetricsOnError(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def updateIncrementableMetrics(id: String, calls: Long, dataIn: Long, dataOut: Long, config: models.GlobalConfig)(
       implicit ec: ExecutionContext,
       env: Env

@@ -59,7 +59,9 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
         .mkString(";")}"
     )
     env.metrics.counter("errors.client").inc()
-    env.datastores.serviceDescriptorDataStore.updateMetricsOnError()
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
+    }
     Errors.craftResponseResult(s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
                                Status(statusCode),
                                request,
@@ -76,7 +78,9 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
       exception
     )
     env.metrics.counter("errors.server").inc()
-    env.datastores.serviceDescriptorDataStore.updateMetricsOnError()
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
+    }
     Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
   }
 }
