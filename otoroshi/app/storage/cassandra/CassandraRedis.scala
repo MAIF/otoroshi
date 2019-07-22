@@ -53,12 +53,14 @@ class CassandraRedis(actorSystem: ActorSystem, configuration: Configuration)  ex
       configuration.getOptional[String]("app.cassandra.host").map(e => Seq(e))
     )
     .getOrElse(Seq("127.0.0.1"))
+  private val cassandraDurableWrites: String =
+    configuration.getOptional[Boolean]("app.cassandra.durableWrites").map(_.toString).getOrElse("true")
   private val cassandraReplicationStrategy: String =
-    configuration.getOptional[String]("app.cassandra.replicationStrategy").getOrElse("SimpleStrategy")
+    configuration.getOptional[String]("app.cassandra.replicationStrategy").getOrElse("none")
   private val cassandraReplicationOptions: String =
     configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
   private val cassandraReplicationFactor: Int =
-    configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
+    configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(0)
   private val cassandraPort: Int       = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
   private val maybeUsername: Option[String] = configuration.getOptional[String]("app.cassandra.username")
   private val maybePassword: Option[String] = configuration.getOptional[String]("app.cassandra.password")
@@ -289,11 +291,11 @@ class CassandraRedis(actorSystem: ActorSystem, configuration: Configuration)  ex
     CassandraRedis.logger.info("Creating database keyspace and tables if not exists ...")
     if (cassandraReplicationStrategy == "NetworkTopologyStrategy") {
       _session.execute(
-        s"CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'NetworkTopologyStrategy', $cassandraReplicationOptions};"
+        s"CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'NetworkTopologyStrategy', $cassandraReplicationOptions} AND DURABLE_WRITES = $cassandraDurableWrites;"
       )
     } else {
       _session.execute(
-        s"CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'SimpleStrategy', 'replication_factor':$cassandraReplicationFactor};"
+        s"CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'SimpleStrategy', 'replication_factor':$cassandraReplicationFactor} AND DURABLE_WRITES = $cassandraDurableWrites;"
       )
     }
     _session.execute("USE otoroshi")
