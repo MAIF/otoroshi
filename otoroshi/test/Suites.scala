@@ -81,7 +81,7 @@ object OtoroshiTests {
       case "inmemory"  => ("InMemory", Configurations.InMemoryConfiguration)
       case "leveldb"   => ("LevelDB", Configurations.LevelDBConfiguration)
       case "cassandra" => ("Cassandra", Configurations.CassandraConfiguration)
-      case "cassandra-new " => ("Cassandra-new", Configurations.CassandraNewConfiguration)
+      case "cassandra-new" => ("Cassandra-new", Configurations.CassandraNewConfiguration)
       case "mongo"     => ("Mongo", Configurations.MongoConfiguration)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
@@ -145,7 +145,7 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
-class DevOtoroshiTests
-     extends Suites(
-       new Version1410Spec("DEV", Configurations.InMemoryConfiguration),
-     )
+// class DevOtoroshiTests
+//      extends Suites(
+//        new Version1410Spec("DEV", Configurations.InMemoryConfiguration),
+//      )

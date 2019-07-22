@@ -295,7 +295,8 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
           val key   = row.getString("key")
           val value = row.getLong("value")
           if (value < time) {
-            executeAsync(s"DELETE FROM otoroshi.counters where key = '$key'; DELETE FROM otoroshi.expirations where key = '$key';")
+            executeAsync(s"DELETE FROM otoroshi.counters where key = '$key';")
+            executeAsync(s"DELETE FROM otoroshi.expirations where key = '$key';")
           }
         }
       }
@@ -316,38 +317,47 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     val readQuery = query.toLowerCase().trim.startsWith("select ")
     val timer = metrics.timer("cassandra.ops").time()
     val timerOp = metrics.timer(if (readQuery) "cassandra.reads" else "cassandra.writes").time()
-    val rsf = _session.executeAsync(query)
-    val promise = Promise[ResultSet]
-    if (blockAsync) {
-      promise.trySuccess(rsf.get())
-      timer.close()
-      timerOp.close()
-    } else {
-      rsf.addListener(
-        new Runnable {
-          override def run(): Unit =
-            try {
-              val rs = rsf.getUninterruptibly(1, TimeUnit.MILLISECONDS)
-              promise.trySuccess(rs)
-              timer.close()
-              timerOp.close()
-            } catch {
-              case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
-                promise.tryFailure(e)
-              case e: InvalidQueryException =>
-                CassandraRedis.logger.error(s"""Cassandra invalid query: ${e.getMessage}. Query was: "$query"""")
-                promise.tryFailure(e)
-                metrics.counter("cassandra.errors").inc()
-              case e: Throwable =>
-                CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}""")
-                promise.tryFailure(e)
-                metrics.counter("cassandra.errors").inc()
-            }
-        },
-        actorSystem.dispatcher
-      )
+    try {
+      val rsf = _session.executeAsync(query)
+      val promise = Promise[ResultSet]
+      if (blockAsync) {
+        promise.trySuccess(rsf.get())
+        timer.close()
+        timerOp.close()
+      } else {
+        rsf.addListener(
+          new Runnable {
+            override def run(): Unit =
+              try {
+                val rs = rsf.getUninterruptibly(1, TimeUnit.MILLISECONDS)
+                promise.trySuccess(rs)
+                timer.close()
+                timerOp.close()
+              } catch {
+                case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
+                  promise.tryFailure(e)
+                case e: InvalidQueryException =>
+                  CassandraRedis.logger.error(s"""Cassandra invalid query: ${e.getMessage}. Query was: "$query"""")
+                  promise.tryFailure(e)
+                  metrics.counter("cassandra.errors").inc()
+                case e: Throwable =>
+                  CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
+                  promise.tryFailure(e)
+                  metrics.counter("cassandra.errors").inc()
+              }
+          },
+          actorSystem.dispatcher
+        )
+      }
+      promise.future
+    } catch {
+      case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
+        FastFuture.failed(e)
+      case e: Throwable =>
+        CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
+        metrics.counter("cassandra.errors").inc()
+        FastFuture.failed(e)
     }
-    promise.future
   }
 
   private def getAllKeys(): Future[Seq[String]] =
@@ -643,7 +653,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     executeAsync(s"INSERT INTO otoroshi.values (key, type, svalue) values ('$key', 'set', {}) IF NOT EXISTS;")
       .flatMap { _ =>
         executeAsync(
-          s"UPDATE otoroshi.values SET svalue = svalue + { ${members.map(v => s"'${v.utf8String}'").mkString(", ")} } where key = '$key';"
+          s"UPDATE otoroshi.values SET svalue = svalue + {${members.map(v => s"'${v.utf8String}'").mkString(", ")}} where key = '$key';"
         ).map(_ => members.size)
     }
   }
@@ -658,7 +668,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
-    executeAsync(s"UPDATE otoroshi.values SET svalue = svalue - { ${members.map(v => s"'${v.utf8String}'").mkString(", ")} } WHERE key = '$key' IF EXISTS;")
+    executeAsync(s"UPDATE otoroshi.values SET svalue = svalue - {${members.map(v => s"'${v.utf8String}'").mkString(", ")}} WHERE key = '$key' IF EXISTS;")
       .map(_ => members.size)
   }
 

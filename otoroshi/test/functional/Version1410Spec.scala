@@ -110,7 +110,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
     createOtoroshiService(service1).futureValue
 
     val resp1 = call1(Map.empty)
-    
+
     resp1.status mustBe 200
     counter1.get() mustBe 1
 
