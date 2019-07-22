@@ -7,8 +7,8 @@ WORKDIR /otoroshi
 COPY . /otoroshi
 
 # RUN apt-get update -y \
-#   && apt-get install -y curl bash wget \
-#   && wget https://dl.bintray.com/maif/binaries/otoroshi.jar/snapshot/otoroshi.jar 
+#   && apt-get install -y curl bash \
+#   && curl -L -o otoroshi.jar https://github.com/MAIF/otoroshi/releases/download/v1.4.10/otoroshi.jar
 
 EXPOSE 8091
 
