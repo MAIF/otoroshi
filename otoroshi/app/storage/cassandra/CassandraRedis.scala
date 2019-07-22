@@ -15,13 +15,21 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.datastax.driver.core.policies._
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.util.{Success, Try}
 
+object CassImplicits {
+  implicit class BetterCassString(val s: String) extends AnyVal {
+    def escape: String = s.replace("'", "''")
+  }
+}
+
 class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration)  extends RedisLike with RawGetRedis {
 
   import Implicits._
+  import CassImplicits._
   import actorSystem.dispatcher
   import com.datastax.driver.core._
 
@@ -313,12 +321,30 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   }
 
   private val blockAsync = false
-  private def executeAsync(query: String): Future[ResultSet] = {
+  private val preparedStatements = new TrieMap[String, PreparedStatement]()
+  private def executeAsync(query: String, params: Map[String, Any] = Map.empty): Future[ResultSet] = {
     val readQuery = query.toLowerCase().trim.startsWith("select ")
     val timer = metrics.timer("cassandra.ops").time()
     val timerOp = metrics.timer(if (readQuery) "cassandra.reads" else "cassandra.writes").time()
     try {
-      val rsf = _session.executeAsync(query)
+      val rsf = if (params.isEmpty) {
+        _session.executeAsync(query)
+      } else {
+        val preparedStatement = preparedStatements.getOrElseUpdate(query, _session.prepare(query))
+        val bound = preparedStatement.bind()
+        params.foreach { tuple =>
+          val key = tuple._1
+          tuple._2 match {
+            case value: String => bound.setString(key, value)
+            case value: Int => bound.setInt(key, value)
+            case value: Boolean => bound.setBool(key, value)
+            case value: Long => bound.setLong(key, value)
+            case value: Double => bound.setDouble(key, value)
+            case value => CassandraRedis.logger.warn(s"Unknown type for parameter '${key}' of type ${value.getClass.getName}")
+          }
+        }
+        _session.executeAsync(bound)
+      }
       val promise = Promise[ResultSet]
       if (blockAsync) {
         promise.trySuccess(rsf.get())
@@ -491,7 +517,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
                      exSeconds: Option[Long] = None,
                      pxMilliseconds: Option[Long] = None): Future[Boolean] = {
     for {
-      a <- executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', '${value.utf8String}');")
+      a <- executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', :value);", Map("value" -> value.utf8String))
       b <- exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(ttl => pexpire(key, ttl)).getOrElse(FastFuture.successful(true))
     } yield a.wasApplied() && b
     //((exSeconds, pxMilliseconds) match {
@@ -570,7 +596,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     executeAsync(s"INSERT INTO otoroshi.values (key, type, mvalue) values ('$key', 'hash', {}) IF NOT EXISTS")
       .flatMap { _ =>
         executeAsync(
-            s"UPDATE otoroshi.values SET mvalue = mvalue + {'$field' : '${value.utf8String}'} WHERE key = '$key';"
+            s"UPDATE otoroshi.values SET mvalue = mvalue + {'$field' : '${value.utf8String.escape}' } WHERE key = '$key';"
           )
           .map(_ => true)
       }
@@ -588,7 +614,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   override def lpushBS(key: String, values: ByteString*): Future[Long] =
     executeAsync(s"INSERT INTO otoroshi.values (key, type, lvalue) values ('$key', 'list', [ ]) IF NOT EXISTS;")
       .flatMap { _ =>
-        val list = values.map(_.utf8String).map(v => s"'$v'").mkString(",")
+        val list = values.map(_.utf8String.escape).map(v => s"'$v'").mkString(",")
         executeAsync(s"UPDATE otoroshi.values SET lvalue = [ $list ] + lvalue  where key = '$key';")
           .map(_ => values.size)
       }
@@ -599,7 +625,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] =
     getListAt(key).flatMap { list =>
       if (list.nonEmpty) {
-        val listStr = list.slice(start.toInt, stop.toInt - start.toInt).map(a => s"'${a.utf8String}'").mkString(",")
+        val listStr = list.slice(start.toInt, stop.toInt - start.toInt).map(a => s"'${a.utf8String.escape}'").mkString(",")
         executeAsync(s"UPDATE otoroshi.values SET lvalue = [ $listStr ] where key = '$key';")
           .map(_ => true)
       } else {
@@ -653,7 +679,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     executeAsync(s"INSERT INTO otoroshi.values (key, type, svalue) values ('$key', 'set', {}) IF NOT EXISTS;")
       .flatMap { _ =>
         executeAsync(
-          s"UPDATE otoroshi.values SET svalue = svalue + {${members.map(v => s"'${v.utf8String}'").mkString(", ")}} where key = '$key';"
+          s"UPDATE otoroshi.values SET svalue = svalue + {${members.map(v => s"'${v.utf8String.escape}'").mkString(", ")}} where key = '$key';"
         ).map(_ => members.size)
     }
   }
@@ -668,7 +694,7 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
-    executeAsync(s"UPDATE otoroshi.values SET svalue = svalue - {${members.map(v => s"'${v.utf8String}'").mkString(", ")}} WHERE key = '$key' IF EXISTS;")
+    executeAsync(s"UPDATE otoroshi.values SET svalue = svalue - {${members.map(v => s"'${v.utf8String.escape}'").mkString(", ")}} WHERE key = '$key' IF EXISTS;")
       .map(_ => members.size)
   }
 

@@ -368,7 +368,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       basicTestServer1.stop()
     }
 
-    "transform JWT token" in {
+    "Transform JWT token" in {
 
       import Implicit._
 
@@ -516,6 +516,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       val (status1, body1) = callServerWithJWT()
       val (status2, body2) = callServerWithBadJWT1()
       val (status3, body3) = callServerWithBadJWT2()
+
       // println(body0)
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
