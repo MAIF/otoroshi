@@ -7,7 +7,7 @@ import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.datastax.driver.core.exceptions.{DriverInternalError, InvalidQueryException}
-import play.api.{ConfigLoader, Configuration}
+import play.api.{ConfigLoader, Configuration, Logger}
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
 import com.codahale.metrics._
 import java.util.concurrent.TimeUnit
@@ -18,6 +18,7 @@ import com.datastax.driver.core.policies._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
+import scala.util.control.NoStackTrace
 import scala.util.{Success, Try}
 
 object CassImplicits {
@@ -26,7 +27,11 @@ object CassImplicits {
   }
 }
 
-class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration)  extends RedisLike with RawGetRedis {
+object CassandraRedis {
+  val logger = Logger("otoroshi-cassandra-datastores")
+}
+
+class CassandraRedis(actorSystem: ActorSystem, configuration: Configuration)  extends RedisLike with RawGetRedis {
 
   import Implicits._
   import CassImplicits._
@@ -320,69 +325,75 @@ class CassandraRedisNew(actorSystem: ActorSystem, configuration: Configuration) 
     cluster.close()
   }
 
+  private case object CassandraSessionClosed extends RuntimeException("Casssandra session closed") with NoStackTrace
+
   private val blockAsync = false
   private val preparedStatements = new TrieMap[String, PreparedStatement]()
   private def executeAsync(query: String, params: Map[String, Any] = Map.empty): Future[ResultSet] = {
-    val readQuery = query.toLowerCase().trim.startsWith("select ")
-    val timer = metrics.timer("cassandra.ops").time()
-    val timerOp = metrics.timer(if (readQuery) "cassandra.reads" else "cassandra.writes").time()
-    try {
-      val rsf = if (params.isEmpty) {
-        _session.executeAsync(query)
-      } else {
-        val preparedStatement = preparedStatements.getOrElseUpdate(query, _session.prepare(query))
-        val bound = preparedStatement.bind()
-        params.foreach { tuple =>
-          val key = tuple._1
-          tuple._2 match {
-            case value: String => bound.setString(key, value)
-            case value: Int => bound.setInt(key, value)
-            case value: Boolean => bound.setBool(key, value)
-            case value: Long => bound.setLong(key, value)
-            case value: Double => bound.setDouble(key, value)
-            case value => CassandraRedis.logger.warn(s"Unknown type for parameter '${key}' of type ${value.getClass.getName}")
+    if (_session.isClosed) {
+      FastFuture.failed(CassandraSessionClosed)
+    } else {
+      val readQuery = query.toLowerCase().trim.startsWith("select ")
+      val timer = metrics.timer("cassandra.ops").time()
+      val timerOp = metrics.timer(if (readQuery) "cassandra.reads" else "cassandra.writes").time()
+      try {
+        val rsf = if (params.isEmpty) {
+          _session.executeAsync(query)
+        } else {
+          val preparedStatement = preparedStatements.getOrElseUpdate(query, _session.prepare(query))
+          val bound = preparedStatement.bind()
+          params.foreach { tuple =>
+            val key = tuple._1
+            tuple._2 match {
+              case value: String => bound.setString(key, value)
+              case value: Int => bound.setInt(key, value)
+              case value: Boolean => bound.setBool(key, value)
+              case value: Long => bound.setLong(key, value)
+              case value: Double => bound.setDouble(key, value)
+              case value => CassandraRedis.logger.warn(s"Unknown type for parameter '${key}' of type ${value.getClass.getName}")
+            }
           }
+          _session.executeAsync(bound)
         }
-        _session.executeAsync(bound)
+        val promise = Promise[ResultSet]
+        if (blockAsync) {
+          promise.trySuccess(rsf.get())
+          timer.close()
+          timerOp.close()
+        } else {
+          rsf.addListener(
+            new Runnable {
+              override def run(): Unit =
+                try {
+                  val rs = rsf.getUninterruptibly(1, TimeUnit.MILLISECONDS)
+                  promise.trySuccess(rs)
+                  timer.close()
+                  timerOp.close()
+                } catch {
+                  case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
+                    promise.tryFailure(e)
+                  case e: InvalidQueryException =>
+                    CassandraRedis.logger.error(s"""Cassandra invalid query: ${e.getMessage}. Query was: "$query"""")
+                    promise.tryFailure(e)
+                    metrics.counter("cassandra.errors").inc()
+                  case e: Throwable =>
+                    CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
+                    promise.tryFailure(e)
+                    metrics.counter("cassandra.errors").inc()
+                }
+            },
+            actorSystem.dispatcher
+          )
+        }
+        promise.future
+      } catch {
+        case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
+          FastFuture.failed(e)
+        case e: Throwable =>
+          CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
+          metrics.counter("cassandra.errors").inc()
+          FastFuture.failed(e)
       }
-      val promise = Promise[ResultSet]
-      if (blockAsync) {
-        promise.trySuccess(rsf.get())
-        timer.close()
-        timerOp.close()
-      } else {
-        rsf.addListener(
-          new Runnable {
-            override def run(): Unit =
-              try {
-                val rs = rsf.getUninterruptibly(1, TimeUnit.MILLISECONDS)
-                promise.trySuccess(rs)
-                timer.close()
-                timerOp.close()
-              } catch {
-                case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
-                  promise.tryFailure(e)
-                case e: InvalidQueryException =>
-                  CassandraRedis.logger.error(s"""Cassandra invalid query: ${e.getMessage}. Query was: "$query"""")
-                  promise.tryFailure(e)
-                  metrics.counter("cassandra.errors").inc()
-                case e: Throwable =>
-                  CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
-                  promise.tryFailure(e)
-                  metrics.counter("cassandra.errors").inc()
-              }
-          },
-          actorSystem.dispatcher
-        )
-      }
-      promise.future
-    } catch {
-      case e: DriverInternalError if e.getCause != null && e.getCause.getMessage.toLowerCase().contains("Could not send request, session is closed".toLowerCase()) =>
-        FastFuture.failed(e)
-      case e: Throwable =>
-        CassandraRedis.logger.error(s"""Cassandra error: ${e.getMessage}. Query was: "$query"""")
-        metrics.counter("cassandra.errors").inc()
-        FastFuture.failed(e)
     }
   }
 

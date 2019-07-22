@@ -372,9 +372,17 @@ export class DangerZonePage extends Component {
     useAkkaHttpClient: {
       type: 'bool',
       props: {
-        label: 'Use Akka Http as the default Http client (experimental)',
+        label: 'Use new http client as the default Http client',
         placeholder: '--',
-        help: 'All http calls will use Akka Http client by default',
+        help: 'All http calls will use the new http client client by default',
+      },
+    },
+    enableEmbeddedMetrics: {
+      type: 'bool',
+      props: {
+        label: 'Enable live metrics',
+        placeholder: '--',
+        help: 'Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore',
       },
     },
     autoLinkToDefaultGroup: {
@@ -603,6 +611,7 @@ export class DangerZonePage extends Component {
     'useCircuitBreakers',
     'logAnalyticsOnServer',
     'useAkkaHttpClient',
+    'enableEmbeddedMetrics',
     'middleFingers',
     'limitConcurrentRequests',
     'maxConcurrentRequests',

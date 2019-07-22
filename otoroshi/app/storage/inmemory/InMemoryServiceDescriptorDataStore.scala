@@ -134,107 +134,111 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
-    val time        = System.currentTimeMillis()
-    val slugDataIn  = s"$dataIn:$time"
-    val slugDataOut = s"$dataOut:$time"
-    // Call everything in parallel
-    // incrementCalls
-    val callsShiftGlobalTime = redisCli.lpushLong(serviceCallStatsKey("global"), time).flatMap { _ =>
-      redisCli.ltrim(serviceCallStatsKey("global"), 0, maxQueueSize)
-      redisCli.expire(serviceCallStatsKey("global"), 10)
-    }
-    val callsShiftServiceTime = redisCli.lpushLong(serviceCallStatsKey(id), time).flatMap { _ =>
-      redisCli.ltrim(serviceCallStatsKey(id), 0, maxQueueSize)
-      redisCli.expire(serviceCallStatsKey(id), 10)
-    }
-    val callsIncrementGlobalCalls  = redisCli.incr(serviceCallKey("global"))
-    val callsIncrementServiceCalls = redisCli.incr(serviceCallKey(id))
-    // incrementCallsDuration
-    val callDurationShiftGlobalDuration =
-      redisCli.lpushLong(serviceCallDurationStatsKey("global"), callDuration).flatMap { _ =>
-        redisCli.ltrim(serviceCallDurationStatsKey("global"), 0, maxQueueSize)
-      }
-    val callDurationShiftServiceDuration = redisCli.lpushLong(serviceCallDurationStatsKey(id), callDuration).flatMap {
-      _ =>
-        redisCli.ltrim(serviceCallDurationStatsKey(id), 0, maxQueueSize)
-    }
-    // incrementCallsOverhead
-    val callOverheadShiftGlobalDuration =
-      redisCli.lpushLong(serviceCallOverheadStatsKey("global"), callOverhead).flatMap { _ =>
-        redisCli.ltrim(serviceCallOverheadStatsKey("global"), 0, maxQueueSize)
-      }
-    val callOverheadShiftServiceDuration = redisCli.lpushLong(serviceCallOverheadStatsKey(id), callOverhead).flatMap {
-      _ =>
-        redisCli.ltrim(serviceCallOverheadStatsKey(id), 0, maxQueueSize)
-    }
-    // incrementDataIn
-    val dataInIncrementGlobal  = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
-    val dataInIncrementService = redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ())
-    val dataInShiftService = redisCli.lpush(dataInForServiceStatsKey(id), slugDataIn).flatMap { _ =>
-      redisCli.ltrim(dataInForServiceStatsKey(id), 0, maxQueueSize)
-      redisCli.expire(dataInForServiceStatsKey(id), 10)
-    }
-    val dataInShiftGlobal = redisCli.lpush(dataInForServiceStatsKey("global"), slugDataIn).flatMap { _ =>
-      redisCli.ltrim(dataInForServiceStatsKey("global"), 0, maxQueueSize)
-      redisCli.expire(dataInForServiceStatsKey("global"), 10)
-    }
-    // incrementDataOut
-    val dataOutIncrementGlobal  = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
-    val dataOutIncrementService = redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ())
-    val dataOutShiftService = redisCli.lpush(dataOutForServiceStatsKey(id), slugDataOut).flatMap { _ =>
-      redisCli.ltrim(dataOutForServiceStatsKey(id), 0, maxQueueSize)
-      redisCli.expire(dataOutForServiceStatsKey(id), 10)
-    }
-    val dataOutShiftGlobal = redisCli.lpush(dataOutForServiceStatsKey("global"), slugDataOut).flatMap { _ =>
-      redisCli.ltrim(dataOutForServiceStatsKey("global"), 0, maxQueueSize)
-      redisCli.expire(dataOutForServiceStatsKey("global"), 10)
-    }
-    env.clusterAgent.incrementService(id, dataIn, dataOut)
-    // now wait for all
-    for {
+    if (config.enableEmbeddedMetrics) {
+      val time        = System.currentTimeMillis()
+      val slugDataIn  = s"$dataIn:$time"
+      val slugDataOut = s"$dataOut:$time"
+      // Call everything in parallel
       // incrementCalls
-      _            <- callsShiftGlobalTime
-      _            <- callsShiftServiceTime
-      globalCalls  <- callsIncrementGlobalCalls
-      serviceCalls <- callsIncrementServiceCalls
+      val callsShiftGlobalTime = redisCli.lpushLong(serviceCallStatsKey("global"), time).flatMap { _ =>
+        redisCli.ltrim(serviceCallStatsKey("global"), 0, maxQueueSize)
+        redisCli.expire(serviceCallStatsKey("global"), 10)
+      }
+      val callsShiftServiceTime = redisCli.lpushLong(serviceCallStatsKey(id), time).flatMap { _ =>
+        redisCli.ltrim(serviceCallStatsKey(id), 0, maxQueueSize)
+        redisCli.expire(serviceCallStatsKey(id), 10)
+      }
+      val callsIncrementGlobalCalls  = redisCli.incr(serviceCallKey("global"))
+      val callsIncrementServiceCalls = redisCli.incr(serviceCallKey(id))
       // incrementCallsDuration
-      _ <- callDurationShiftGlobalDuration
-      _ <- callDurationShiftServiceDuration
+      val callDurationShiftGlobalDuration =
+        redisCli.lpushLong(serviceCallDurationStatsKey("global"), callDuration).flatMap { _ =>
+          redisCli.ltrim(serviceCallDurationStatsKey("global"), 0, maxQueueSize)
+        }
+      val callDurationShiftServiceDuration = redisCli.lpushLong(serviceCallDurationStatsKey(id), callDuration).flatMap {
+        _ =>
+          redisCli.ltrim(serviceCallDurationStatsKey(id), 0, maxQueueSize)
+      }
       // incrementCallsOverhead
-      _ <- callOverheadShiftGlobalDuration
-      _ <- callOverheadShiftServiceDuration
+      val callOverheadShiftGlobalDuration =
+        redisCli.lpushLong(serviceCallOverheadStatsKey("global"), callOverhead).flatMap { _ =>
+          redisCli.ltrim(serviceCallOverheadStatsKey("global"), 0, maxQueueSize)
+        }
+      val callOverheadShiftServiceDuration = redisCli.lpushLong(serviceCallOverheadStatsKey(id), callOverhead).flatMap {
+        _ =>
+          redisCli.ltrim(serviceCallOverheadStatsKey(id), 0, maxQueueSize)
+      }
       // incrementDataIn
-      _ <- dataInIncrementGlobal
-      _ <- dataInIncrementService
-      _ <- dataInShiftService
-      _ <- dataInShiftGlobal
+      val dataInIncrementGlobal  = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
+      val dataInIncrementService = redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ())
+      val dataInShiftService = redisCli.lpush(dataInForServiceStatsKey(id), slugDataIn).flatMap { _ =>
+        redisCli.ltrim(dataInForServiceStatsKey(id), 0, maxQueueSize)
+        redisCli.expire(dataInForServiceStatsKey(id), 10)
+      }
+      val dataInShiftGlobal = redisCli.lpush(dataInForServiceStatsKey("global"), slugDataIn).flatMap { _ =>
+        redisCli.ltrim(dataInForServiceStatsKey("global"), 0, maxQueueSize)
+        redisCli.expire(dataInForServiceStatsKey("global"), 10)
+      }
       // incrementDataOut
-      _ <- dataOutIncrementGlobal
-      _ <- dataOutIncrementService
-      _ <- dataOutShiftService
-      _ <- dataOutShiftGlobal
-      _ <- config.statsdConfig
-            .map(
-              _ =>
-                FastFuture.successful(
-                  (
-                    env.metrics.markLong(s"global.calls", globalCalls),
-                    env.metrics.markLong(s"services.${id}.calls", serviceCalls),
-                    env.metrics.markLong(s"global.duration", callDuration),
-                    env.metrics.markLong(s"global.overhead", callOverhead),
-                    env.metrics.markLong(s"global.data-in", dataIn),
-                    env.metrics.markLong(s"global.data-out", dataOut),
-                    env.metrics.markLong(s"global.upstream-latency", upstreamLatency),
-                    env.metrics.markLong(s"services.${id}.duration", callDuration),
-                    env.metrics.markLong(s"services.${id}.overhead", callOverhead),
-                    env.metrics.markLong(s"services.${id}.data-in", dataIn),
-                    env.metrics.markLong(s"services.${id}.data-out", dataOut),
-                    env.metrics.markLong(s"services.${id}.upstream-latency", upstreamLatency)
-                  )
+      val dataOutIncrementGlobal  = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
+      val dataOutIncrementService = redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ())
+      val dataOutShiftService = redisCli.lpush(dataOutForServiceStatsKey(id), slugDataOut).flatMap { _ =>
+        redisCli.ltrim(dataOutForServiceStatsKey(id), 0, maxQueueSize)
+        redisCli.expire(dataOutForServiceStatsKey(id), 10)
+      }
+      val dataOutShiftGlobal = redisCli.lpush(dataOutForServiceStatsKey("global"), slugDataOut).flatMap { _ =>
+        redisCli.ltrim(dataOutForServiceStatsKey("global"), 0, maxQueueSize)
+        redisCli.expire(dataOutForServiceStatsKey("global"), 10)
+      }
+      env.clusterAgent.incrementService(id, dataIn, dataOut)
+      // now wait for all
+      for {
+        // incrementCalls
+        _            <- callsShiftGlobalTime
+        _            <- callsShiftServiceTime
+        globalCalls  <- callsIncrementGlobalCalls
+        serviceCalls <- callsIncrementServiceCalls
+        // incrementCallsDuration
+        _ <- callDurationShiftGlobalDuration
+        _ <- callDurationShiftServiceDuration
+        // incrementCallsOverhead
+        _ <- callOverheadShiftGlobalDuration
+        _ <- callOverheadShiftServiceDuration
+        // incrementDataIn
+        _ <- dataInIncrementGlobal
+        _ <- dataInIncrementService
+        _ <- dataInShiftService
+        _ <- dataInShiftGlobal
+        // incrementDataOut
+        _ <- dataOutIncrementGlobal
+        _ <- dataOutIncrementService
+        _ <- dataOutShiftService
+        _ <- dataOutShiftGlobal
+        _ <- config.statsdConfig
+              .map(
+                _ =>
+                  FastFuture.successful(
+                    (
+                      env.metrics.markLong(s"global.calls", globalCalls),
+                      env.metrics.markLong(s"services.${id}.calls", serviceCalls),
+                      env.metrics.markLong(s"global.duration", callDuration),
+                      env.metrics.markLong(s"global.overhead", callOverhead),
+                      env.metrics.markLong(s"global.data-in", dataIn),
+                      env.metrics.markLong(s"global.data-out", dataOut),
+                      env.metrics.markLong(s"global.upstream-latency", upstreamLatency),
+                      env.metrics.markLong(s"services.${id}.duration", callDuration),
+                      env.metrics.markLong(s"services.${id}.overhead", callOverhead),
+                      env.metrics.markLong(s"services.${id}.data-in", dataIn),
+                      env.metrics.markLong(s"services.${id}.data-out", dataOut),
+                      env.metrics.markLong(s"services.${id}.upstream-latency", upstreamLatency)
+                    )
+                )
               )
-            )
-            .getOrElse(FastFuture.successful(()))
-    } yield ()
+              .getOrElse(FastFuture.successful(()))
+      } yield ()
+    } else {
+      FastFuture.successful(())
+    }
   }
 
   override def updateIncrementableMetrics(id: String,
@@ -245,45 +249,49 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
-    val time = System.currentTimeMillis()
-    // Call everything in parallel
-    // incrementCalls
-    val callsIncrementGlobalCalls  = redisCli.incrby(serviceCallKey("global"), calls)
-    val callsIncrementServiceCalls = redisCli.incrby(serviceCallKey(id), calls)
-    // incrementCallsDuration
-    // incrementDataIn
-    val dataInIncrementGlobal  = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
-    val dataInIncrementService = redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ())
-    // incrementDataOut
-    val dataOutIncrementGlobal  = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
-    val dataOutIncrementService = redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ())
-    // now wait for all
-    for {
+    if (config.enableEmbeddedMetrics) {
+      val time = System.currentTimeMillis()
+      // Call everything in parallel
       // incrementCalls
-      globalCalls  <- callsIncrementGlobalCalls
-      serviceCalls <- callsIncrementServiceCalls
+      val callsIncrementGlobalCalls = redisCli.incrby(serviceCallKey("global"), calls)
+      val callsIncrementServiceCalls = redisCli.incrby(serviceCallKey(id), calls)
+      // incrementCallsDuration
       // incrementDataIn
-      _ <- dataInIncrementGlobal
-      _ <- dataInIncrementService
+      val dataInIncrementGlobal = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
+      val dataInIncrementService = redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ())
       // incrementDataOut
-      _ <- dataOutIncrementGlobal
-      _ <- dataOutIncrementService
-      _ <- config.statsdConfig
-            .map(
-              _ =>
-                FastFuture.successful(
-                  (
-                    env.metrics.markLong(s"global.calls", globalCalls),
-                    env.metrics.markLong(s"services.${id}.calls", serviceCalls),
-                    env.metrics.markLong(s"global.data-in", dataIn),
-                    env.metrics.markLong(s"global.data-out", dataOut),
-                    env.metrics.markLong(s"services.${id}.data-in", dataIn),
-                    env.metrics.markLong(s"services.${id}.data-out", dataOut),
-                  )
+      val dataOutIncrementGlobal = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
+      val dataOutIncrementService = redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ())
+      // now wait for all
+      for {
+        // incrementCalls
+        globalCalls <- callsIncrementGlobalCalls
+        serviceCalls <- callsIncrementServiceCalls
+        // incrementDataIn
+        _ <- dataInIncrementGlobal
+        _ <- dataInIncrementService
+        // incrementDataOut
+        _ <- dataOutIncrementGlobal
+        _ <- dataOutIncrementService
+        _ <- config.statsdConfig
+          .map(
+            _ =>
+              FastFuture.successful(
+                (
+                  env.metrics.markLong(s"global.calls", globalCalls),
+                  env.metrics.markLong(s"services.${id}.calls", serviceCalls),
+                  env.metrics.markLong(s"global.data-in", dataIn),
+                  env.metrics.markLong(s"global.data-out", dataOut),
+                  env.metrics.markLong(s"services.${id}.data-in", dataIn),
+                  env.metrics.markLong(s"services.${id}.data-out", dataOut),
+                )
               )
-            )
-            .getOrElse(FastFuture.successful(()))
-    } yield ()
+          )
+          .getOrElse(FastFuture.successful(()))
+      } yield ()
+    } else {
+      FastFuture.successful(())
+    }
   }
 
   override def dataInPerSecFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Double] =

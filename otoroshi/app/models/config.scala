@@ -122,6 +122,7 @@ object Proxies {
 
 case class GlobalConfig(
     lines: Seq[String] = Seq("prod"),
+    enableEmbeddedMetrics: Boolean = true,
     streamEntityOnly: Boolean = true,
     autoLinkToDefaultGroup: Boolean = true,
     limitConcurrentRequests: Boolean = false, // TODO : true by default
@@ -237,6 +238,7 @@ object GlobalConfig {
       Json.obj(
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
         "maintenanceMode"         -> o.maintenanceMode,
+        "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
         "streamEntityOnly"        -> o.streamEntityOnly,
         "autoLinkToDefaultGroup"  -> o.autoLinkToDefaultGroup,
         "limitConcurrentRequests" -> o.limitConcurrentRequests,
@@ -272,6 +274,7 @@ object GlobalConfig {
       Try {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
+          enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),

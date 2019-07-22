@@ -41,21 +41,21 @@ object Configurations {
       .resolve()
   )
 
-  val CassandraConfiguration = Configuration(
+  val CassandraNaiveConfiguration = Configuration(
     ConfigFactory
       .parseString("""
          |{
-         |  app.storage = "cassandra"
+         |  app.storage = "cassandra-naive"
          |}
        """.stripMargin)
       .resolve()
   )
 
-  val CassandraNewConfiguration = Configuration(
+  val CassandraConfiguration = Configuration(
     ConfigFactory
       .parseString("""
                      |{
-                     |  app.storage = "cassandra-new"
+                     |  app.storage = "cassandra"
                      |}
                    """.stripMargin)
       .resolve()
@@ -80,8 +80,8 @@ object OtoroshiTests {
       case "redis"     => ("Redis", Configurations.RedisConfiguration)
       case "inmemory"  => ("InMemory", Configurations.InMemoryConfiguration)
       case "leveldb"   => ("LevelDB", Configurations.LevelDBConfiguration)
+      case "cassandra-naive" => ("Cassandra Naive", Configurations.CassandraNaiveConfiguration)
       case "cassandra" => ("Cassandra", Configurations.CassandraConfiguration)
-      case "cassandra-new" => ("Cassandra-new", Configurations.CassandraNewConfiguration)
       case "mongo"     => ("Mongo", Configurations.MongoConfiguration)
       case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
@@ -145,7 +145,7 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
-class DevOtoroshiTests
-     extends Suites(
-       new JWTVerificationSpec("DEV", Configurations.CassandraNewConfiguration),
-     )
+// class DevOtoroshiTests
+//      extends Suites(
+//        new Version1410Spec("DEV", Configurations.InMemoryConfiguration),
+//      )

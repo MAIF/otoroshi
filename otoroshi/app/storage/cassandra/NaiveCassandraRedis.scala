@@ -114,10 +114,6 @@ trait RawGetRedis {
   def rawGet(key: String): Future[Option[(String, Long, Any)]]
 }
 
-object CassandraRedis {
-  val logger = Logger("otoroshi-cassandra-datastores")
-}
-
 /**
   * Really dumb and naive support for cassandra, not production ready I guess
   *
@@ -132,7 +128,7 @@ object CassandraRedis {
   *   cassandra:3.11.4
   * docker run -it cassandra:3.11.4 cqlsh 172.21.198.38 9042 -k otoroshi
   */
-class CassandraRedisOld(actorSystem: ActorSystem, configuration: Configuration)  extends RedisLike with RawGetRedis {
+class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration)  extends RedisLike with RawGetRedis {
 
   import Implicits._
   import actorSystem.dispatcher
