@@ -2074,8 +2074,22 @@ export class ServicePage extends Component {
               placeholderKey="Header name (ie. Content-Security-Policy)"
               placeholderValue="Header value (ie. default-src 'src')"
               value={this.state.service.additionalHeadersOut}
-              help="Specify headers that will be added to each client responsse (from Otoroshi to client)."
+              help="Specify headers that will be added to each client response (from Otoroshi to client)."
               onChange={v => this.changeTheValue('additionalHeadersOut', v)}
+            />
+            <ArrayInput
+              label="Remove incoming headers"
+              placeholder="Header name (ie. X-Api-Key)"
+              value={this.state.service.removeHeadersIn}
+              help="Remove headers in the client request (from client to Otoroshi)."
+              onChange={v => this.changeTheValue('removeHeadersIn', v)}
+            />
+            <ArrayInput
+              label="Remove outgoing headers"
+              placeholder="Header name (ie. X-Api-Key)"
+              value={this.state.service.removeHeadersOut}
+              help="Remove headers in the client response (from Otoroshi to client)."
+              onChange={v => this.changeTheValue('removeHeadersOut', v)}
             />
             <div className="form-group">
               <label

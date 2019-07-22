@@ -76,7 +76,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       port: Int,
       delay: FiniteDuration = 0.millis,
       streamDelay: FiniteDuration = 0.millis,
-      validate: HttpRequest => Boolean = _ => true
+      validate: HttpRequest => Boolean = _ => true,
+      additionalHeadersOut: List[HttpHeader] = List.empty
   )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
@@ -100,7 +101,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
           } else {
             Source(List(ByteString(body)))
           }
-        }
+        },
+        additionalHeadersOut
       )
       .await()
     _servers = _servers + server
@@ -774,12 +776,14 @@ object TargetService {
   def streamed(host: Option[String],
                path: String,
                contentType: String,
-               result: HttpRequest => Source[ByteString, NotUsed]): TargetService = {
+               result: HttpRequest => Source[ByteString, NotUsed],
+               headers: List[HttpHeader] = List.empty[HttpHeader]
+              ): TargetService = {
     new TargetService(TargetService.freePort,
                       host,
                       path,
                       contentType,
-                      r => (200, "", Some(result(r)), List.empty[HttpHeader]))
+                      r => (200, "", Some(result(r)), headers))
   }
 
   def full(host: Option[String],

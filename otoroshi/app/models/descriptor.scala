@@ -592,7 +592,7 @@ case class CustomTimeouts(
     path: String = "/*",
     connectionTimeout: Long = 10000,
     idleTimeout: Long = 60000,
-    callAndStreamTimeout: Long = 300000,
+    callAndStreamTimeout: Long = 1.hour.toMillis,
     callTimeout: Long = 30000,
     globalTimeout: Long = 30000,
 ) {
@@ -611,7 +611,7 @@ object CustomTimeouts {
           path = (json \ "path").asOpt[String].getOrElse("*"),
           connectionTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(10000),
           idleTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(60000),
-          callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(300000),
+          callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(1.hour.toMillis),
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000)
         )
@@ -1865,6 +1865,8 @@ case class ServiceDescriptor(
     privatePatterns: Seq[String] = Seq.empty[String],
     additionalHeaders: Map[String, String] = Map.empty[String, String],
     additionalHeadersOut: Map[String, String] = Map.empty[String, String],
+    removeHeadersIn: Seq[String] = Seq.empty[String],
+    removeHeadersOut: Seq[String] = Seq.empty[String],
     headersVerification: Map[String, String] = Map.empty[String, String],
     matchingHeaders: Map[String, String] = Map.empty[String, String],
     ipFiltering: IpFiltering = IpFiltering(),
@@ -2172,6 +2174,8 @@ object ServiceDescriptor {
           headersVerification =
             (json \ "headersVerification").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           matchingHeaders = (json \ "matchingHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          removeHeadersIn = (json \ "removeHeadersIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          removeHeadersOut = (json \ "removeHeadersOut").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           ipFiltering = (json \ "ipFiltering").asOpt(IpFiltering.format).getOrElse(IpFiltering()),
           api = (json \ "api").asOpt(ApiDescriptor.format).getOrElse(ApiDescriptor(false, None)),
           healthCheck = (json \ "healthCheck").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
@@ -2256,6 +2260,8 @@ object ServiceDescriptor {
       "privatePatterns"            -> JsArray(sd.privatePatterns.map(JsString.apply)),
       "additionalHeaders"          -> JsObject(sd.additionalHeaders.mapValues(JsString.apply)),
       "additionalHeadersOut"       -> JsObject(sd.additionalHeadersOut.mapValues(JsString.apply)),
+      "removeHeadersIn"            -> JsArray(sd.removeHeadersIn.map(JsString.apply)),
+      "removeHeadersOut"           -> JsArray(sd.removeHeadersOut.map(JsString.apply)),
       "headersVerification"        -> JsObject(sd.headersVerification.mapValues(JsString.apply)),
       "matchingHeaders"            -> JsObject(sd.matchingHeaders.mapValues(JsString.apply)),
       "ipFiltering"                -> sd.ipFiltering.toJson,
@@ -2314,7 +2320,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       sendOtoroshiHeadersBack = false, // try to hide otoroshi as much as possible
       enforceSecureCommunication = false, // try to hide otoroshi as much as possible
       forceHttps = if (env.exposedRootSchemeIsHttps) true else false,
-      allowHttp10 = true
+      allowHttp10 = true,
+      removeHeadersIn = Seq.empty,
+      removeHeadersOut = Seq.empty,
     )
   def updateMetrics(id: String,
                     callDuration: Long,

@@ -1042,7 +1042,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
                                           else if (t._1.toLowerCase == "content-length") true
                                           else false
-                                      )
+                                      ).filterNot(t => descriptor.removeHeadersIn.contains(t._1))
                                       .filterNot(
                                         t =>
                                           (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))
@@ -1280,6 +1280,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       case Left(badResult) => {
                                         quotas.fast.map { remainingQuotas =>
                                           val _headersOut: Seq[(String, String)] = badResult.header.headers.toSeq
+                                            .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
                                             .filterNot(
                                               t =>
                                                 (headersOutFiltered :+ stateResponseHeaderName)
@@ -1473,6 +1474,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             } else {
                                               val upstreamLatency = System.currentTimeMillis() - upstreamStart
                                               val _headersOut: Seq[(String, String)] = _headersForOut
+                                                .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
                                                 .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
                                                 if (descriptor.sendOtoroshiHeadersBack) {
                                                   Seq(

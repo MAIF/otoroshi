@@ -594,6 +594,7 @@ class WebSocketHandler()(implicit env: Env) {
                               val headersIn: Seq[(String, String)] =
                               (req.headers.toMap.toSeq
                                 .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
+                                .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
                                 .filterNot(
                                   t =>
                                     (headersInFiltered ++ Seq(claimRequestHeaderName, stateRequestHeaderName))
@@ -777,6 +778,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     quotas
                                       .map { remainingQuotas =>
                                         val _headersOut: Seq[(String, String)] = badResult.header.headers.toSeq
+                                          .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
                                           .filterNot(
                                             t =>
                                               (headersOutFiltered :+ stateResponseHeaderName).contains(t._1.toLowerCase)
