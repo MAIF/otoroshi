@@ -49,14 +49,35 @@ class Target extends Component {
     this.props.onChange(arrayValue);
   };
 
-  changeTheUrl = t => {
+  changeTheUrl_old = t => {
     if (t.indexOf('://') > -1) {
       const scheme = (t.split('://')[0] || '').replace('://', '');
       const host = (t.split('://')[1] || '').replace('://', '');
       this.changeTheValue('scheme', scheme);
       this.changeTheValue('host', host);
     } else {
-      this.changeTheValue('scheme', t);
+      this.changeTheValue('scheme', 
+        t
+          .replace('://', '')
+          .replace(':/', '')
+          .replace('http:', 'http')
+          .replace('https:', 'http')
+          .replace('http2:', 'http2')
+          .replace('http2s:', 'http2s')
+      );
+    }
+  };
+
+  changeTheUrl = t => {
+    if (t.indexOf('://') > -1) {
+      const scheme = (t.split('://')[0] || '').replace('://', '');
+      const host = (t.split('://')[1] || '').replace('://', '');
+      this.setState({ dirtyTarget: null }, () => {
+        this.changeTheValue('scheme', scheme);
+        this.changeTheValue('host', host);
+      });
+    } else {
+      this.setState({ dirtyTarget: t })
     }
   };
 
@@ -68,7 +89,7 @@ class Target extends Component {
           <TextInput
             label={`Target ${this.props.idx + 1}`}
             placeholder="https://changeme.foo.bar"
-            value={value.scheme + '://' + value.host}
+            value={this.state.dirtyTarget ? this.state.dirtyTarget : (value.scheme + '://' + value.host)}
             help="The URL of the target"
             onChange={e => this.changeTheUrl(e)}
             after={() => (
@@ -89,7 +110,7 @@ class Target extends Component {
         <TextInput
           label={`Target ${this.props.idx + 1}`}
           placeholder="https://changeme.foo.bar"
-          value={value.scheme + '://' + value.host}
+          value={this.state.dirtyTarget ? this.state.dirtyTarget : (value.scheme + '://' + value.host)}
           help="The URL of the target"
           onChange={e => this.changeTheUrl(e)}
           after={() => (
