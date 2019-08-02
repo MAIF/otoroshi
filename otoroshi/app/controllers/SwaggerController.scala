@@ -2376,7 +2376,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "url"         -> "https://maif.github.io/otoroshi/"
       ),
       "host"     -> env.adminApiExposedHost,
-      "basePath" -> "/api",
+      "basePath" -> "/",
       "schemes"  -> Json.arr(env.exposedRootScheme),
       "paths" -> Json.obj(
         "/new/apikey"                                         -> NewApiKey,
