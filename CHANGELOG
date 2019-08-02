@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.10] - 2019-08-02
+
+https://github.com/MAIF/otoroshi/milestone/22?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.9...v1.4.10
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.10
+
+### Added 
+
+- Removing incoming and outgoing headers (#326)
+
+### Changed 
+
+- Improve cassandra support (#325)
+
+### Fixed 
+
+- Api Keys could have a ttl (#328)
+- Fix empty String and Option[String] JSON parsing (#330) 
+- Navigating on a group cause a 'Page not found' page (#329)
+- Some apiKeys disappears after apiKey creation (#322)
+- Problem to empty the Url field of Service Targets (#327)
+- Remove bintray links (#324)
+
 ## [1.4.9] - 2019-07-15
 
 https://github.com/MAIF/otoroshi/milestone/21?closed=1
