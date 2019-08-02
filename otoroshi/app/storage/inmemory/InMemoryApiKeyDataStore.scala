@@ -172,21 +172,29 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
 
   // optimized
   override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+    // env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+    //   case Some(descriptor) => {
+    //     val key = s"${env.storageRoot}:apikey:byservice:$serviceId"
+    //     redisCli.smembers(key).fast.flatMap {
+    //       case list if list.isEmpty =>
+    //         env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+    //           keys.filter(_.authorizedGroup == descriptor.groupId)
+    //         } andThen {
+    //           case Success(keys) =>
+    //             for {
+    //               r <- redisCli.sadd(key, keys.map(_.clientId): _*)
+    //               _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
+    //             } yield ()
+    //         }
+    //       case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String), true)
+    //     }
+    //   }
+    //   case None => FastFuture.failed(new ServiceNotFoundException(serviceId))
+    // }
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case Some(descriptor) => {
-        val key = s"${env.storageRoot}:apikey:byservice:$serviceId"
-        redisCli.smembers(key).fast.flatMap {
-          case list if list.isEmpty =>
-            env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-              keys.filter(_.authorizedGroup == descriptor.groupId)
-            } andThen {
-              case Success(keys) =>
-                for {
-                  r <- redisCli.sadd(key, keys.map(_.clientId): _*)
-                  _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
-                } yield ()
-            }
-          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String), true)
+        env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+          keys.filter(_.authorizedGroup == descriptor.groupId)
         }
       }
       case None => FastFuture.failed(new ServiceNotFoundException(serviceId))
@@ -195,21 +203,29 @@ class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyData
 
   // optimized
   override def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+    // env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
+    //   case Some(group) => {
+    //     val key = s"${env.storageRoot}:apikey:bygroup:$groupId"
+    //     redisCli.smembers(key).fast.flatMap {
+    //       case list if list.isEmpty =>
+    //         env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+    //           keys.filter(_.authorizedGroup == group.id)
+    //         } andThen {
+    //           case Success(keys) =>
+    //             for {
+    //               r <- redisCli.sadd(key, keys.map(_.clientId): _*)
+    //               _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
+    //             } yield ()
+    //         }
+    //       case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String), true)
+    //     }
+    //   }
+    //   case None => FastFuture.failed(new GroupNotFoundException(groupId))
+    // }
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case Some(group) => {
-        val key = s"${env.storageRoot}:apikey:bygroup:$groupId"
-        redisCli.smembers(key).fast.flatMap {
-          case list if list.isEmpty =>
-            env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-              keys.filter(_.authorizedGroup == group.id)
-            } andThen {
-              case Success(keys) =>
-                for {
-                  r <- redisCli.sadd(key, keys.map(_.clientId): _*)
-                  _ <- redisCli.pttl(key).filter(_ > -1).recoverWith { case _ => redisCli.pexpire(key, 60000) }
-                } yield ()
-            }
-          case list => env.datastores.apiKeyDataStore.findAllById(list.map(_.utf8String), true)
+        env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+          keys.filter(_.authorizedGroup == group.id)
         }
       }
       case None => FastFuture.failed(new GroupNotFoundException(groupId))
