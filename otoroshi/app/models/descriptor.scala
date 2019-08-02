@@ -408,11 +408,11 @@ object TargetPredicate {
         case "NetworkLocationMatch" =>
           JsSuccess(
             NetworkLocationMatch(
-              provider = (json \ "provider").asOpt[String].getOrElse("*"),
-              region = (json \ "region").asOpt[String].getOrElse("*"),
-              zone = (json \ "zone").asOpt[String].getOrElse("*"),
-              dataCenter = (json \ "dc").asOpt[String].getOrElse("*"),
-              rack = (json \ "rack").asOpt[String].getOrElse("*")
+              provider = (json \ "provider").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
+              region = (json \ "region").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
+              zone = (json \ "zone").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
+              dataCenter = (json \ "dc").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
+              rack = (json \ "rack").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*")
             )
           )
         case _ => JsSuccess(AlwaysMatch)
@@ -512,12 +512,12 @@ object Target {
       Try {
         Target(
           host = (json \ "host").as[String],
-          scheme = (json \ "scheme").asOpt[String].getOrElse("https"),
+          scheme = (json \ "scheme").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("https"),
           weight = (json \ "weight").asOpt[Int].getOrElse(1),
           protocol =
-            (json \ "protocol").asOpt[String].map(s => HttpProtocol.apply(s)).getOrElse(HttpProtocols.`HTTP/1.1`),
+            (json \ "protocol").asOpt[String].filterNot(_.trim.isEmpty).map(s => HttpProtocol.apply(s)).getOrElse(HttpProtocols.`HTTP/1.1`),
           predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
-          ipAddress = (json \ "ipAddress").asOpt[String]
+          ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty)
         )
       } map {
         case sd => JsSuccess(sd)
@@ -607,7 +607,7 @@ object CustomTimeouts {
     override def reads(json: JsValue): JsResult[CustomTimeouts] =
       Try {
         CustomTimeouts(
-          path = (json \ "path").asOpt[String].getOrElse("*"),
+          path = (json \ "path").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
           connectionTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(10000),
           idleTimeout = (json \ "connectionTimeout").asOpt[Long].getOrElse(60000),
           callAndStreamTimeout = (json \ "callAndStreamTimeout").asOpt[Long].getOrElse(1.hour.toMillis),
@@ -684,19 +684,19 @@ object WSProxyServerJson {
       case (Some(host), Some(port)) => {
         Some(DefaultWSProxyServer(host, port))
           .map { proxy =>
-            (json \ "protocol").asOpt[String].map(v => proxy.copy(protocol = Some(v))).getOrElse(proxy)
+            (json \ "protocol").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(protocol = Some(v))).getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "principal").asOpt[String].map(v => proxy.copy(principal = Some(v))).getOrElse(proxy)
+            (json \ "principal").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(principal = Some(v))).getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "password").asOpt[String].map(v => proxy.copy(password = Some(v))).getOrElse(proxy)
+            (json \ "password").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(password = Some(v))).getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "ntlmDomain").asOpt[String].map(v => proxy.copy(ntlmDomain = Some(v))).getOrElse(proxy)
+            (json \ "ntlmDomain").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(ntlmDomain = Some(v))).getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "encoding").asOpt[String].map(v => proxy.copy(encoding = Some(v))).getOrElse(proxy)
+            (json \ "encoding").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(encoding = Some(v))).getOrElse(proxy)
           }
           .map { proxy =>
             (json \ "nonProxyHosts").asOpt[Seq[String]].map(v => proxy.copy(nonProxyHosts = Some(v))).getOrElse(proxy)
@@ -855,7 +855,7 @@ object RedirectionSettings {
         RedirectionSettings(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           code = (json \ "code").asOpt[Int].getOrElse(303),
-          to = (json \ "to").asOpt[String].getOrElse("https://www.otoroshi.io")
+          to = (json \ "to").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("https://www.otoroshi.io")
         )
       } map {
         case sd => JsSuccess(sd)
@@ -1045,8 +1045,8 @@ case class OIDCThirdPartyApiKeyConfig(
                           Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(0)))).getOrElse(Json.obj())
                         val tokenBody =
                           Try(Json.parse(ApacheBase64.decodeBase64(header.split("\\.")(1)))).getOrElse(Json.obj())
-                        val kid = (tokenHeader \ "kid").asOpt[String]
-                        val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+                        val kid = (tokenHeader \ "kid").asOpt[String].filterNot(_.trim.isEmpty)
+                        val alg = (tokenHeader \ "alg").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("RS256")
                         jwtVerifier.asAlgorithmF(InputMode(alg, kid)) flatMap {
                           case None =>
                             Errors
@@ -1126,14 +1126,14 @@ case class OIDCThirdPartyApiKeyConfig(
                                   ) ++ possibleMoreMeta
                                 )
                                 val tokenScopes = (tokenBody \ "scope")
-                                  .asOpt[String]
+                                  .asOpt[String].filterNot(_.trim.isEmpty)
                                   .map(_.split(" ").toSeq)
                                   .getOrElse(Seq.empty[String])
                                 val tokenRoles: Seq[String] = rolesPath
                                   .flatMap(p => findAt(tokenBody, p))
                                   .collect {
                                     case JsString(str) => Seq(str)
-                                    case JsArray(v)    => v.flatMap(_.asOpt[String])
+                                    case JsArray(v)    => v.flatMap(_.asOpt[String].filterNot(_.trim.isEmpty))
                                   }
                                   .flatten
                                 if (tokenScopes.intersect(scopes) == scopes && tokenRoles.intersect(roles) == roles) {
@@ -1279,7 +1279,7 @@ object OIDCThirdPartyApiKeyConfig {
             .flatMap(v => OIDCThirdPartyApiKeyConfigMode(v))
             .getOrElse(OIDCThirdPartyApiKeyConfigMode.Tmp),
           ttl = (json \ "ttl").asOpt[Long].getOrElse(0L),
-          headerName = (json \ "headerName").asOpt[String].getOrElse("Authorization"),
+          headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("Authorization"),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(100L),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
@@ -1589,9 +1589,9 @@ object SecComHeaders {
       Try {
         JsSuccess(
           SecComHeaders(
-            claimRequestName = (json \ "claimRequestName").asOpt[String],
-            stateRequestName = (json \ "stateRequestName").asOpt[String],
-            stateResponseName = (json \ "stateResponseName").asOpt[String]
+            claimRequestName = (json \ "claimRequestName").asOpt[String].filterNot(_.trim.isEmpty),
+            stateRequestName = (json \ "stateRequestName").asOpt[String].filterNot(_.trim.isEmpty),
+            stateResponseName = (json \ "stateResponseName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
       } recover {
