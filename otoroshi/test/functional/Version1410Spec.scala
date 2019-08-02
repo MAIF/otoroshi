@@ -170,7 +170,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
     resp1.status mustBe 200
     counter1.get() mustBe 1
 
-    resp1.status mustBe 400
+    resp2.status mustBe 400
     counter1.get() mustBe 1
 
 
