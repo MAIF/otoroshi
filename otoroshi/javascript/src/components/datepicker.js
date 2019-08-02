@@ -38,3 +38,31 @@ export class OtoDatePicker extends Component {
     );
   }
 }
+
+export class OtoDateTimePicker extends Component {
+
+  onChange = (date, dateString) => {
+    if (date) {
+      this.props.onChange(date.valueOf());
+    } else {
+      this.props.onChange(null);
+    }
+  };
+
+  render() {
+    const { date } = this.props;
+    const dateFormat = 'YYYY-MM-DD HH:mm:ss';
+    return (
+      <LocaleProvider locale={enUS}>
+        <DatePicker
+          defaultValue={date}
+          showTime={{ format: 'HH:mm:ss' }}
+          format={dateFormat}
+          placeholder="Date and time"
+          onChange={this.onChange}
+          onOk={value => value}
+        />
+      </LocaleProvider>
+    );
+  }
+}

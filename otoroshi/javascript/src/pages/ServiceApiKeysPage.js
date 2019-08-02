@@ -347,6 +347,13 @@ export class ServiceApiKeysPage extends Component {
         help: 'If the API key is disabled, then any call using this API key will fail',
       },
     },
+    validUntil: {
+      type: 'datetime',
+      props: {
+        label: 'Valid until',
+        help: 'Auto disable apikey after this date',
+      },
+    },
     readOnly: {
       type: 'bool',
       props: {
@@ -482,6 +489,7 @@ export class ServiceApiKeysPage extends Component {
     'clientId',
     'clientSecret',
     'clientName',
+    'validUntil',
     'copyCredentials',
     'resetSecret',
     '---',

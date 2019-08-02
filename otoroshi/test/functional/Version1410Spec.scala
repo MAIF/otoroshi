@@ -120,4 +120,64 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
 
     stopServers()
   }
+
+  "allow apikeys to have ttl (#328)" in {
+    val (_, port1, counter1, call1) = testServer("apikeyswithttl.oto.tools", port)
+    val service1 = ServiceDescriptor(
+      id = "apikeyswithttl",
+      name = "apikeyswithttl",
+      env = "prod",
+      subdomain = "apikeyswithttl",
+      domain = "oto.tools",
+      targets = Seq(
+        Target(
+          host = s"127.0.0.1:${port1}",
+          scheme = "http"
+        )
+      ),
+      forceHttps = false,
+      enforceSecureCommunication = false,
+    )
+    val validApiKey = ApiKey(
+      clientName = "apikey1",
+      authorizedGroup = "default",
+      validUntil = Some(DateTime.now().plusDays(1))
+    )
+    val invalidApiKey = ApiKey(
+      clientName = "apikey2",
+      authorizedGroup = "default",
+      validUntil = Some(DateTime.now().minusDays(1))
+    )
+
+    createOtoroshiService(service1).futureValue
+    createOtoroshiApiKey(validApiKey).futureValue
+    createOtoroshiApiKey(invalidApiKey).futureValue
+
+    val resp1 = call1(
+      Map(
+        "Otoroshi-Client-Id"     -> validApiKey.clientId,
+        "Otoroshi-Client-Secret" -> validApiKey.clientSecret
+      )
+    )
+
+    val resp2 = call1(
+      Map(
+        "Otoroshi-Client-Id"     -> invalidApiKey.clientId,
+        "Otoroshi-Client-Secret" -> invalidApiKey.clientSecret
+      )
+    )
+
+    resp1.status mustBe 200
+    counter1.get() mustBe 1
+
+    resp1.status mustBe 400
+    counter1.get() mustBe 1
+
+
+    deleteOtoroshiService(service1).futureValue
+    deleteOtoroshiApiKey(validApiKey).futureValue
+    deleteOtoroshiApiKey(invalidApiKey).futureValue
+
+    stopServers()
+  }
 }

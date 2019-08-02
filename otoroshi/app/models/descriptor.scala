@@ -1114,6 +1114,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                   throttlingQuota = throttlingQuota,
                                   dailyQuota = dailyQuota,
                                   monthlyQuota = monthlyQuota,
+                                  validUntil = None,
                                   tags = possibleMoreTags,
                                   metadata = Map(
                                     "type"     -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",

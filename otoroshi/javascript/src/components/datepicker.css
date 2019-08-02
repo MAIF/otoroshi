@@ -113,3 +113,22 @@ li.ant-calendar-time-picker-select-option-selected {
 .ant-calendar-picker-clear {
   background: none;
 }
+
+.ant-calendar-picker-input {
+  background-color: rgba(0, 0, 0, 0);
+  border-color: rgba(0, 0, 0, 0);
+  border: none;
+}
+
+.ant-calendar-time-picker-select {
+  background-color: #626260;
+}
+
+.ant-calendar-time-picker-select-option-selected {
+  background-color: #4d4d4b !important;
+}
+
+.ant-calendar-input {
+  background-color: rgb(73, 73, 72);
+  color: rgb(181, 179, 179);
+}

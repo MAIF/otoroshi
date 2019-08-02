@@ -9,6 +9,7 @@ import {
   TextInput,
   NumberInput,
   LabelInput,
+  DateTimeInput
 } from '.';
 
 import _ from 'lodash';
@@ -198,6 +199,16 @@ export class Form extends Component {
         } else if (type === 'text') {
           return (
             <TextareaInput
+              disabled={disabled}
+              key={name}
+              value={this.getValue(name, '')}
+              {...props}
+              onChange={v => this.changeValue(name, v)}
+            />
+          );
+        } else if (type === 'datetime') {
+          return (
+            <DateTimeInput
               disabled={disabled}
               key={name}
               value={this.getValue(name, '')}

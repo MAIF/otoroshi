@@ -54,6 +54,7 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   monthlyQuota: Long = RemainingQuotas.MaxValue,
                   constrainedServicesOnly: Boolean = false,
                   restrictions: Restrictions = Restrictions(),
+                  validUntil: Option[DateTime] = None,
                   tags: Seq[String] = Seq.empty[String],
                   metadata: Map[String, String] = Map.empty[String, String]) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.set(this)
@@ -137,30 +138,43 @@ object ApiKey {
   lazy val logger = Logger("otoroshi-apkikey")
 
   val _fmt: Format[ApiKey] = new Format[ApiKey] {
-    override def writes(apk: ApiKey): JsValue = Json.obj(
-      "clientId"                -> apk.clientId,
-      "clientSecret"            -> apk.clientSecret,
-      "clientName"              -> apk.clientName,
-      "authorizedGroup"         -> apk.authorizedGroup,
-      "enabled"                 -> apk.enabled,
-      "readOnly"                -> apk.readOnly,
-      "allowClientIdOnly"       -> apk.allowClientIdOnly,
-      "throttlingQuota"         -> apk.throttlingQuota,
-      "dailyQuota"              -> apk.dailyQuota,
-      "monthlyQuota"            -> apk.monthlyQuota,
-      "constrainedServicesOnly" -> apk.constrainedServicesOnly,
-      "restrictions"            -> apk.restrictions.json,
-      "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
-      "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
-    )
+    override def writes(apk: ApiKey): JsValue = {
+      val enabled = apk.validUntil match {
+        case Some(date) if date.isBeforeNow => false
+        case _ => apk.enabled
+      }
+      Json.obj(
+        "clientId" -> apk.clientId,
+        "clientSecret" -> apk.clientSecret,
+        "clientName" -> apk.clientName,
+        "authorizedGroup" -> apk.authorizedGroup,
+        "enabled" -> enabled, //apk.enabled,
+        "readOnly" -> apk.readOnly,
+        "allowClientIdOnly" -> apk.allowClientIdOnly,
+        "throttlingQuota" -> apk.throttlingQuota,
+        "dailyQuota" -> apk.dailyQuota,
+        "monthlyQuota" -> apk.monthlyQuota,
+        "constrainedServicesOnly" -> apk.constrainedServicesOnly,
+        "restrictions" -> apk.restrictions.json,
+        "validUntil" -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
+        "tags" -> JsArray(apk.tags.map(JsString.apply)),
+        "metadata" -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+      )
+    }
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
+        val rawEnabled = (json \ "enabled").asOpt[Boolean].getOrElse(true)
+        val rawValidUntil =  (json \ "validUntil").asOpt[Long].map(l => new DateTime(l))
+        val enabled = rawValidUntil match {
+          case Some(date) if date.isBeforeNow => false
+          case _ => rawEnabled
+        }
         ApiKey(
           clientId = (json \ "clientId").as[String],
           clientSecret = (json \ "clientSecret").as[String],
           clientName = (json \ "clientName").as[String],
           authorizedGroup = (json \ "authorizedGroup").as[String],
-          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+          enabled = enabled,
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
           allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
@@ -170,6 +184,7 @@ object ApiKey {
           restrictions = Restrictions.format
             .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Restrictions()),
+          validUntil = rawValidUntil,
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
@@ -203,7 +218,8 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       clientId = IdGenerator.token(16),
       clientSecret = IdGenerator.token(64),
       clientName = "client-name-apikey",
-      authorizedGroup = groupId
+      authorizedGroup = groupId,
+      validUntil = None
     )
   def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
   def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
