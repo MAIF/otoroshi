@@ -40,7 +40,6 @@ export class OtoDatePicker extends Component {
 }
 
 export class OtoDateTimePicker extends Component {
-
   onChange = (date, dateString) => {
     if (date) {
       this.props.onChange(date.valueOf());

@@ -135,20 +135,22 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
       val callsIncrementGlobalCalls  = redisCli.incr(serviceCallKey("global"))
       val callsIncrementServiceCalls = redisCli.incr(serviceCallKey(id))
       // incrementCallsDuration
-      val callDurationShiftGlobalDuration = redisCli.lpush(serviceCallDurationStatsKey("global"), callDuration).flatMap {
-        _ =>
+      val callDurationShiftGlobalDuration =
+        redisCli.lpush(serviceCallDurationStatsKey("global"), callDuration).flatMap { _ =>
           redisCli.ltrim(serviceCallDurationStatsKey("global"), 0, maxQueueSize)
-      }
-      val callDurationShiftServiceDuration = redisCli.lpush(serviceCallDurationStatsKey(id), callDuration).flatMap { _ =>
-        redisCli.ltrim(serviceCallDurationStatsKey(id), 0, maxQueueSize)
+        }
+      val callDurationShiftServiceDuration = redisCli.lpush(serviceCallDurationStatsKey(id), callDuration).flatMap {
+        _ =>
+          redisCli.ltrim(serviceCallDurationStatsKey(id), 0, maxQueueSize)
       }
       // incrementCallsOverhead
-      val callOverheadShiftGlobalDuration = redisCli.lpush(serviceCallOverheadStatsKey("global"), callOverhead).flatMap {
-        _ =>
+      val callOverheadShiftGlobalDuration =
+        redisCli.lpush(serviceCallOverheadStatsKey("global"), callOverhead).flatMap { _ =>
           redisCli.ltrim(serviceCallOverheadStatsKey("global"), 0, maxQueueSize)
-      }
-      val callOverheadShiftServiceDuration = redisCli.lpush(serviceCallOverheadStatsKey(id), callOverhead).flatMap { _ =>
-        redisCli.ltrim(serviceCallOverheadStatsKey(id), 0, maxQueueSize)
+        }
+      val callOverheadShiftServiceDuration = redisCli.lpush(serviceCallOverheadStatsKey(id), callOverhead).flatMap {
+        _ =>
+          redisCli.ltrim(serviceCallOverheadStatsKey(id), 0, maxQueueSize)
       }
       // incrementDataIn
       val dataInIncrementGlobal  = redisCli.incrby(dataInGlobalKey(), dataIn).fast.map(_ => ())
@@ -223,7 +225,8 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
     }
   }
 
-  override def updateMetricsOnError(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def updateMetricsOnError(config: models.GlobalConfig)(implicit ec: ExecutionContext,
+                                                                 env: Env): Future[Unit] = {
     if (config.enableEmbeddedMetrics) {
       val time = System.currentTimeMillis()
       val callsShiftGlobalTime = redisCli.lpush(serviceCallStatsKey("global"), time).flatMap { _ =>

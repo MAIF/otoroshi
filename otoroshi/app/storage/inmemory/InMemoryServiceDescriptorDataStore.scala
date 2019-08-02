@@ -108,7 +108,8 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       r <- redisCli.srem(query.asKey, services.map(_.id): _*)
     } yield r > 0L
 
-  override def updateMetricsOnError(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  override def updateMetricsOnError(config: models.GlobalConfig)(implicit ec: ExecutionContext,
+                                                                 env: Env): Future[Unit] = {
     if (config.enableEmbeddedMetrics) {
       val time = System.currentTimeMillis()
       val callsShiftGlobalTime = redisCli.lpushLong(serviceCallStatsKey("global"), time).flatMap { _ =>
@@ -257,19 +258,19 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       val time = System.currentTimeMillis()
       // Call everything in parallel
       // incrementCalls
-      val callsIncrementGlobalCalls = redisCli.incrby(serviceCallKey("global"), calls)
+      val callsIncrementGlobalCalls  = redisCli.incrby(serviceCallKey("global"), calls)
       val callsIncrementServiceCalls = redisCli.incrby(serviceCallKey(id), calls)
       // incrementCallsDuration
       // incrementDataIn
-      val dataInIncrementGlobal = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
+      val dataInIncrementGlobal  = redisCli.incrby(dataInGlobalKey(), dataIn).map(_ => ())
       val dataInIncrementService = redisCli.incrby(dataInForServiceKey(id), dataIn).map(_ => ())
       // incrementDataOut
-      val dataOutIncrementGlobal = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
+      val dataOutIncrementGlobal  = redisCli.incrby(dataOutGlobalKey(), dataOut).map(_ => ())
       val dataOutIncrementService = redisCli.incrby(dataOutForServiceKey(id), dataOut).map(_ => ())
       // now wait for all
       for {
         // incrementCalls
-        globalCalls <- callsIncrementGlobalCalls
+        globalCalls  <- callsIncrementGlobalCalls
         serviceCalls <- callsIncrementServiceCalls
         // incrementDataIn
         _ <- dataInIncrementGlobal
@@ -278,20 +279,20 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
         _ <- dataOutIncrementGlobal
         _ <- dataOutIncrementService
         _ <- config.statsdConfig
-          .map(
-            _ =>
-              FastFuture.successful(
-                (
-                  env.metrics.markLong(s"global.calls", globalCalls),
-                  env.metrics.markLong(s"services.${id}.calls", serviceCalls),
-                  env.metrics.markLong(s"global.data-in", dataIn),
-                  env.metrics.markLong(s"global.data-out", dataOut),
-                  env.metrics.markLong(s"services.${id}.data-in", dataIn),
-                  env.metrics.markLong(s"services.${id}.data-out", dataOut),
+              .map(
+                _ =>
+                  FastFuture.successful(
+                    (
+                      env.metrics.markLong(s"global.calls", globalCalls),
+                      env.metrics.markLong(s"services.${id}.calls", serviceCalls),
+                      env.metrics.markLong(s"global.data-in", dataIn),
+                      env.metrics.markLong(s"global.data-out", dataOut),
+                      env.metrics.markLong(s"services.${id}.data-in", dataIn),
+                      env.metrics.markLong(s"services.${id}.data-out", dataOut),
+                    )
                 )
               )
-          )
-          .getOrElse(FastFuture.successful(()))
+              .getOrElse(FastFuture.successful(()))
       } yield ()
     } else {
       FastFuture.successful(())

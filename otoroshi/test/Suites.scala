@@ -77,13 +77,13 @@ object OtoroshiTests {
 
   def getNameAndConfig(): (String, Configuration) = {
     Try(Option(System.getenv("TEST_STORE"))).toOption.flatten.getOrElse("inmemory") match {
-      case "redis"     => ("Redis", Configurations.RedisConfiguration)
-      case "inmemory"  => ("InMemory", Configurations.InMemoryConfiguration)
-      case "leveldb"   => ("LevelDB", Configurations.LevelDBConfiguration)
+      case "redis"           => ("Redis", Configurations.RedisConfiguration)
+      case "inmemory"        => ("InMemory", Configurations.InMemoryConfiguration)
+      case "leveldb"         => ("LevelDB", Configurations.LevelDBConfiguration)
       case "cassandra-naive" => ("Cassandra Naive", Configurations.CassandraNaiveConfiguration)
-      case "cassandra" => ("Cassandra", Configurations.CassandraConfiguration)
-      case "mongo"     => ("Mongo", Configurations.MongoConfiguration)
-      case e           => throw new RuntimeException(s"Bad storage value from conf: $e")
+      case "cassandra"       => ("Cassandra", Configurations.CassandraConfiguration)
+      case "mongo"           => ("Mongo", Configurations.MongoConfiguration)
+      case e                 => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
 

@@ -595,7 +595,8 @@ class Env(val configuration: Configuration,
                   val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
                                                   "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
                                                   "default-apikey",
-                                                  "default", validUntil = None)
+                                                  "default",
+                                                  validUntil = None)
                   logger.info(
                     s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
                   )

@@ -24,7 +24,8 @@ import storage.{DataStoreHealth, DataStores, RawDataStore, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CassandraDataStores(naive: Boolean, configuration: Configuration,
+class CassandraDataStores(naive: Boolean,
+                          configuration: Configuration,
                           environment: Environment,
                           lifecycle: ApplicationLifecycle,
                           env: Env)
@@ -43,13 +44,17 @@ class CassandraDataStores(naive: Boolean, configuration: Configuration,
         .getOrElse(ConfigFactory.empty)
     )
 
-  lazy val redis: RedisLike with RawGetRedis = if (naive) new CassandraRedisNaive(
-    actorSystem,
-    configuration
-  ) else new CassandraRedis(
-    actorSystem,
-    configuration
-  )
+  lazy val redis: RedisLike with RawGetRedis =
+    if (naive)
+      new CassandraRedisNaive(
+        actorSystem,
+        configuration
+      )
+    else
+      new CassandraRedis(
+        actorSystem,
+        configuration
+      )
 
   override def before(configuration: Configuration,
                       environment: Environment,

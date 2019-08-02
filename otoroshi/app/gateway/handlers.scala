@@ -1046,7 +1046,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
                                           else if (t._1.toLowerCase == "content-length") true
                                           else false
-                                      ).filterNot(t => descriptor.removeHeadersIn.contains(t._1))
+                                      )
+                                      .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
                                       .filterNot(
                                         t =>
                                           (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))

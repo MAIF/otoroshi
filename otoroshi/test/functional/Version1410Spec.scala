@@ -20,7 +20,7 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
 class Version1410Spec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
@@ -88,7 +88,8 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
 
   "allow to remove headers from outgoing response (#326)" in {
     val additionalHeadersOut = List(RawHeader("X-Foo", "Bar"))
-    val (_, port1, counter1, call1) = testServer("removeoutgoingheaders.oto.tools", port, additionalHeadersOut = additionalHeadersOut)
+    val (_, port1, counter1, call1) =
+      testServer("removeoutgoingheaders.oto.tools", port, additionalHeadersOut = additionalHeadersOut)
     val service1 = ServiceDescriptor(
       id = "removeoutgoingheaders",
       name = "removeoutgoingheaders",
@@ -172,7 +173,6 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
 
     resp2.status mustBe 400
     counter1.get() mustBe 1
-
 
     deleteOtoroshiService(service1).futureValue
     deleteOtoroshiApiKey(validApiKey).futureValue

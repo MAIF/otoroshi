@@ -56,7 +56,8 @@ class Target extends Component {
       this.changeTheValue('scheme', scheme);
       this.changeTheValue('host', host);
     } else {
-      this.changeTheValue('scheme', 
+      this.changeTheValue(
+        'scheme',
         t
           .replace('://', '')
           .replace(':/', '')
@@ -77,7 +78,7 @@ class Target extends Component {
         this.changeTheValue('host', host);
       });
     } else {
-      this.setState({ dirtyTarget: t })
+      this.setState({ dirtyTarget: t });
     }
   };
 
@@ -89,7 +90,9 @@ class Target extends Component {
           <TextInput
             label={`Target ${this.props.idx + 1}`}
             placeholder="https://changeme.foo.bar"
-            value={this.state.dirtyTarget ? this.state.dirtyTarget : (value.scheme + '://' + value.host)}
+            value={
+              this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
+            }
             help="The URL of the target"
             onChange={e => this.changeTheUrl(e)}
             after={() => (
@@ -110,7 +113,9 @@ class Target extends Component {
         <TextInput
           label={`Target ${this.props.idx + 1}`}
           placeholder="https://changeme.foo.bar"
-          value={this.state.dirtyTarget ? this.state.dirtyTarget : (value.scheme + '://' + value.host)}
+          value={
+            this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
+          }
           help="The URL of the target"
           onChange={e => this.changeTheUrl(e)}
           after={() => (

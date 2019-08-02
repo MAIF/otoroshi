@@ -9,7 +9,7 @@ import {
   TextInput,
   NumberInput,
   LabelInput,
-  DateTimeInput
+  DateTimeInput,
 } from '.';
 
 import _ from 'lodash';

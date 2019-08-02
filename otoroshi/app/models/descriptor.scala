@@ -514,8 +514,11 @@ object Target {
           host = (json \ "host").as[String],
           scheme = (json \ "scheme").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("https"),
           weight = (json \ "weight").asOpt[Int].getOrElse(1),
-          protocol =
-            (json \ "protocol").asOpt[String].filterNot(_.trim.isEmpty).map(s => HttpProtocol.apply(s)).getOrElse(HttpProtocols.`HTTP/1.1`),
+          protocol = (json \ "protocol")
+            .asOpt[String]
+            .filterNot(_.trim.isEmpty)
+            .map(s => HttpProtocol.apply(s))
+            .getOrElse(HttpProtocols.`HTTP/1.1`),
           predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
           ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty)
         )
@@ -684,19 +687,39 @@ object WSProxyServerJson {
       case (Some(host), Some(port)) => {
         Some(DefaultWSProxyServer(host, port))
           .map { proxy =>
-            (json \ "protocol").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(protocol = Some(v))).getOrElse(proxy)
+            (json \ "protocol")
+              .asOpt[String]
+              .filterNot(_.trim.isEmpty)
+              .map(v => proxy.copy(protocol = Some(v)))
+              .getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "principal").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(principal = Some(v))).getOrElse(proxy)
+            (json \ "principal")
+              .asOpt[String]
+              .filterNot(_.trim.isEmpty)
+              .map(v => proxy.copy(principal = Some(v)))
+              .getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "password").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(password = Some(v))).getOrElse(proxy)
+            (json \ "password")
+              .asOpt[String]
+              .filterNot(_.trim.isEmpty)
+              .map(v => proxy.copy(password = Some(v)))
+              .getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "ntlmDomain").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(ntlmDomain = Some(v))).getOrElse(proxy)
+            (json \ "ntlmDomain")
+              .asOpt[String]
+              .filterNot(_.trim.isEmpty)
+              .map(v => proxy.copy(ntlmDomain = Some(v)))
+              .getOrElse(proxy)
           }
           .map { proxy =>
-            (json \ "encoding").asOpt[String].filterNot(_.trim.isEmpty).map(v => proxy.copy(encoding = Some(v))).getOrElse(proxy)
+            (json \ "encoding")
+              .asOpt[String]
+              .filterNot(_.trim.isEmpty)
+              .map(v => proxy.copy(encoding = Some(v)))
+              .getOrElse(proxy)
           }
           .map { proxy =>
             (json \ "nonProxyHosts").asOpt[Seq[String]].map(v => proxy.copy(nonProxyHosts = Some(v))).getOrElse(proxy)
@@ -1127,7 +1150,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                   ) ++ possibleMoreMeta
                                 )
                                 val tokenScopes = (tokenBody \ "scope")
-                                  .asOpt[String].filterNot(_.trim.isEmpty)
+                                  .asOpt[String]
+                                  .filterNot(_.trim.isEmpty)
                                   .map(_.split(" ").toSeq)
                                   .getOrElse(Seq.empty[String])
                                 val tokenRoles: Seq[String] = rolesPath

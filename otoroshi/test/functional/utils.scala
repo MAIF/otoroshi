@@ -777,13 +777,8 @@ object TargetService {
                path: String,
                contentType: String,
                result: HttpRequest => Source[ByteString, NotUsed],
-               headers: List[HttpHeader] = List.empty[HttpHeader]
-              ): TargetService = {
-    new TargetService(TargetService.freePort,
-                      host,
-                      path,
-                      contentType,
-                      r => (200, "", Some(result(r)), headers))
+               headers: List[HttpHeader] = List.empty[HttpHeader]): TargetService = {
+    new TargetService(TargetService.freePort, host, path, contentType, r => (200, "", Some(result(r)), headers))
   }
 
   def full(host: Option[String],

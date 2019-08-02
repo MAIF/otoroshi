@@ -141,33 +141,33 @@ object ApiKey {
     override def writes(apk: ApiKey): JsValue = {
       val enabled = apk.validUntil match {
         case Some(date) if date.isBeforeNow => false
-        case _ => apk.enabled
+        case _                              => apk.enabled
       }
       Json.obj(
-        "clientId" -> apk.clientId,
-        "clientSecret" -> apk.clientSecret,
-        "clientName" -> apk.clientName,
-        "authorizedGroup" -> apk.authorizedGroup,
-        "enabled" -> enabled, //apk.enabled,
-        "readOnly" -> apk.readOnly,
-        "allowClientIdOnly" -> apk.allowClientIdOnly,
-        "throttlingQuota" -> apk.throttlingQuota,
-        "dailyQuota" -> apk.dailyQuota,
-        "monthlyQuota" -> apk.monthlyQuota,
+        "clientId"                -> apk.clientId,
+        "clientSecret"            -> apk.clientSecret,
+        "clientName"              -> apk.clientName,
+        "authorizedGroup"         -> apk.authorizedGroup,
+        "enabled"                 -> enabled, //apk.enabled,
+        "readOnly"                -> apk.readOnly,
+        "allowClientIdOnly"       -> apk.allowClientIdOnly,
+        "throttlingQuota"         -> apk.throttlingQuota,
+        "dailyQuota"              -> apk.dailyQuota,
+        "monthlyQuota"            -> apk.monthlyQuota,
         "constrainedServicesOnly" -> apk.constrainedServicesOnly,
-        "restrictions" -> apk.restrictions.json,
-        "validUntil" -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
-        "tags" -> JsArray(apk.tags.map(JsString.apply)),
-        "metadata" -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+        "restrictions"            -> apk.restrictions.json,
+        "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
+        "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
+        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
       )
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
       Try {
-        val rawEnabled = (json \ "enabled").asOpt[Boolean].getOrElse(true)
-        val rawValidUntil =  (json \ "validUntil").asOpt[Long].map(l => new DateTime(l))
+        val rawEnabled    = (json \ "enabled").asOpt[Boolean].getOrElse(true)
+        val rawValidUntil = (json \ "validUntil").asOpt[Long].map(l => new DateTime(l))
         val enabled = rawValidUntil match {
           case Some(date) if date.isBeforeNow => false
-          case _ => rawEnabled
+          case _                              => rawEnabled
         }
         ApiKey(
           clientId = (json \ "clientId").as[String],

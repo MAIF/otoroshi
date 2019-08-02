@@ -56,19 +56,32 @@ object Implicits {
 class CassandraThreadingOptions(configuration: Configuration) extends ThreadingOptions {
 
   val reaperExecutorSize = configuration.getOptional[Int]("app.cassandra.threading.reaperExecutorSize").getOrElse(1)
-  val scheduledTasksExecutorSize = configuration.getOptional[Int]("app.cassandra.threading.scheduledTasksExecutorSize").getOrElse(1)
-  val reconnectionExecutorSize = configuration.getOptional[Int]("app.cassandra.threading.reconnectionExecutorSize").getOrElse(2)
+  val scheduledTasksExecutorSize =
+    configuration.getOptional[Int]("app.cassandra.threading.scheduledTasksExecutorSize").getOrElse(1)
+  val reconnectionExecutorSize =
+    configuration.getOptional[Int]("app.cassandra.threading.reconnectionExecutorSize").getOrElse(2)
   val blockingExecutorSize = configuration.getOptional[Int]("app.cassandra.threading.blockingExecutorSize").getOrElse(2)
-  val nonBlockingExecutorSize = configuration.getOptional[Int]("app.cassandra.threading.nonBlockingExecutorSize").getOrElse(Runtime.getRuntime.availableProcessors * 2 + 1)
-  val threadKeepAliveSeconds = configuration.getOptional[Int]("app.cassandra.threading.threadKeepAliveSeconds").getOrElse(30)
+  val nonBlockingExecutorSize = configuration
+    .getOptional[Int]("app.cassandra.threading.nonBlockingExecutorSize")
+    .getOrElse(Runtime.getRuntime.availableProcessors * 2 + 1)
+  val threadKeepAliveSeconds =
+    configuration.getOptional[Int]("app.cassandra.threading.threadKeepAliveSeconds").getOrElse(30)
   val executorName = configuration.getOptional[String]("app.cassandra.threading.executorName").getOrElse("worker")
-  val blockingExecutorName = configuration.getOptional[String]("app.cassandra.threading.blockingExecutorName").getOrElse("blocking-task-worker")
-  val reconnectionExecutorName = configuration.getOptional[String]("app.cassandra.threading.blockingExecutorName").getOrElse("reconnection")
-  val scheduledTasksExecutorName = configuration.getOptional[String]("app.cassandra.threading.scheduledTasksExecutorName").getOrElse("scheduled-task-worker")
-  val reaperExecutorName = configuration.getOptional[String]("app.cassandra.threading.reaperExecutorName").getOrElse("connection-reaper")
+  val blockingExecutorName =
+    configuration.getOptional[String]("app.cassandra.threading.blockingExecutorName").getOrElse("blocking-task-worker")
+  val reconnectionExecutorName =
+    configuration.getOptional[String]("app.cassandra.threading.blockingExecutorName").getOrElse("reconnection")
+  val scheduledTasksExecutorName = configuration
+    .getOptional[String]("app.cassandra.threading.scheduledTasksExecutorName")
+    .getOrElse("scheduled-task-worker")
+  val reaperExecutorName =
+    configuration.getOptional[String]("app.cassandra.threading.reaperExecutorName").getOrElse("connection-reaper")
 
   override def createThreadFactory(clusterName: String, executorName: String): ThreadFactory = {
-    (new ThreadFactoryBuilder).setNameFormat(clusterName + "-" + executorName + "-%d").setThreadFactory(new DefaultThreadFactory("ignored name")).build
+    (new ThreadFactoryBuilder)
+      .setNameFormat(clusterName + "-" + executorName + "-%d")
+      .setThreadFactory(new DefaultThreadFactory("ignored name"))
+      .build
   }
 
   override def createExecutor(clusterName: String): ExecutorService = {
@@ -98,11 +111,13 @@ class CassandraThreadingOptions(configuration: Configuration) extends ThreadingO
   }
 
   override def createReconnectionExecutor(clusterName: String): ScheduledExecutorService = {
-    new ScheduledThreadPoolExecutor(reconnectionExecutorSize, this.createThreadFactory(clusterName, reconnectionExecutorName))
+    new ScheduledThreadPoolExecutor(reconnectionExecutorSize,
+                                    this.createThreadFactory(clusterName, reconnectionExecutorName))
   }
 
   override def createScheduledTasksExecutor(clusterName: String): ScheduledExecutorService = {
-    new ScheduledThreadPoolExecutor(scheduledTasksExecutorSize, this.createThreadFactory(clusterName, scheduledTasksExecutorName))
+    new ScheduledThreadPoolExecutor(scheduledTasksExecutorSize,
+                                    this.createThreadFactory(clusterName, scheduledTasksExecutorName))
   }
 
   override def createReaperExecutor(clusterName: String): ScheduledExecutorService = {
@@ -115,20 +130,20 @@ trait RawGetRedis {
 }
 
 /**
-  * Really dumb and naive support for cassandra, not production ready I guess
-  *
-  * docker run \
-  *   -p 7000:7000 \
-  *   -p 7001:7001 \
-  *   -p 7199:7199 \
-  *   -p 9042:9042 \
-  *   -p 9160:9160 \
-  *   -p 9142:9142 \
-  *   -e CASSANDRA_BROADCAST_ADDRESS=127.0.0.1 \
-  *   cassandra:3.11.4
-  * docker run -it cassandra:3.11.4 cqlsh 172.21.198.38 9042 -k otoroshi
-  */
-class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration)  extends RedisLike with RawGetRedis {
+ * Really dumb and naive support for cassandra, not production ready I guess
+ *
+ * docker run \
+ *   -p 7000:7000 \
+ *   -p 7001:7001 \
+ *   -p 7199:7199 \
+ *   -p 9042:9042 \
+ *   -p 9160:9160 \
+ *   -p 9142:9142 \
+ *   -e CASSANDRA_BROADCAST_ADDRESS=127.0.0.1 \
+ *   cassandra:3.11.4
+ * docker run -it cassandra:3.11.4 cqlsh 172.21.198.38 9042 -k otoroshi
+ */
+class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration) extends RedisLike with RawGetRedis {
 
   import Implicits._
   import actorSystem.dispatcher
@@ -152,24 +167,53 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
     configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
   val cassandraReplicationFactor: Int =
     configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
-  val cassandraPort: Int       = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
+  val cassandraPort: Int            = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
   val maybeUsername: Option[String] = configuration.getOptional[String]("app.cassandra.username")
   val maybePassword: Option[String] = configuration.getOptional[String]("app.cassandra.password")
 
-  val poolingExecutor: Executor = configuration.getOptional[Int]("app.cassandra.pooling.initializationExecutorThreads").map(n => Executors.newFixedThreadPool(n)).getOrElse(actorSystem.dispatcher)
+  val poolingExecutor: Executor = configuration
+    .getOptional[Int]("app.cassandra.pooling.initializationExecutorThreads")
+    .map(n => Executors.newFixedThreadPool(n))
+    .getOrElse(actorSystem.dispatcher)
   val poolingOptions = new PoolingOptions()
     .setMaxQueueSize(configuration.getOptional[Int]("app.cassandra.pooling.maxQueueSize").getOrElse(2048))
-    .setCoreConnectionsPerHost(HostDistance.LOCAL, configuration.getOptional[Int]("app.cassandra.pooling.coreConnectionsPerLocalHost").getOrElse(1))
-    .setMaxConnectionsPerHost(HostDistance.LOCAL, configuration.getOptional[Int]("app.cassandra.pooling.coreConnectionsPerRemoteHost").getOrElse(1))
-    .setCoreConnectionsPerHost(HostDistance.REMOTE, configuration.getOptional[Int]("app.cassandra.pooling.maxConnectionsPerLocalHost").getOrElse(1))
-    .setMaxConnectionsPerHost(HostDistance.REMOTE, configuration.getOptional[Int]("app.cassandra.pooling.maxConnectionsPerRemoteHost").getOrElse(1))
-    .setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getOptional[Int]("app.cassandra.pooling.maxRequestsPerLocalConnection").getOrElse(32768))
-    .setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getOptional[Int]("app.cassandra.pooling.maxRequestsPerRemoteConnection").getOrElse(2048))
-    .setNewConnectionThreshold(HostDistance.LOCAL, configuration.getOptional[Int]("app.cassandra.pooling.newLocalConnectionThreshold").getOrElse(30000))
-    .setNewConnectionThreshold(HostDistance.REMOTE, configuration.getOptional[Int]("app.cassandra.pooling.newRemoteConnectionThreshold").getOrElse(400))
+    .setCoreConnectionsPerHost(
+      HostDistance.LOCAL,
+      configuration.getOptional[Int]("app.cassandra.pooling.coreConnectionsPerLocalHost").getOrElse(1)
+    )
+    .setMaxConnectionsPerHost(
+      HostDistance.LOCAL,
+      configuration.getOptional[Int]("app.cassandra.pooling.coreConnectionsPerRemoteHost").getOrElse(1)
+    )
+    .setCoreConnectionsPerHost(
+      HostDistance.REMOTE,
+      configuration.getOptional[Int]("app.cassandra.pooling.maxConnectionsPerLocalHost").getOrElse(1)
+    )
+    .setMaxConnectionsPerHost(
+      HostDistance.REMOTE,
+      configuration.getOptional[Int]("app.cassandra.pooling.maxConnectionsPerRemoteHost").getOrElse(1)
+    )
+    .setMaxRequestsPerConnection(
+      HostDistance.LOCAL,
+      configuration.getOptional[Int]("app.cassandra.pooling.maxRequestsPerLocalConnection").getOrElse(32768)
+    )
+    .setMaxRequestsPerConnection(
+      HostDistance.REMOTE,
+      configuration.getOptional[Int]("app.cassandra.pooling.maxRequestsPerRemoteConnection").getOrElse(2048)
+    )
+    .setNewConnectionThreshold(
+      HostDistance.LOCAL,
+      configuration.getOptional[Int]("app.cassandra.pooling.newLocalConnectionThreshold").getOrElse(30000)
+    )
+    .setNewConnectionThreshold(
+      HostDistance.REMOTE,
+      configuration.getOptional[Int]("app.cassandra.pooling.newRemoteConnectionThreshold").getOrElse(400)
+    )
     .setPoolTimeoutMillis(configuration.getOptional[Int]("app.cassandra.pooling.poolTimeoutMillis").getOrElse(0))
     .setInitializationExecutor(poolingExecutor)
-    .setHeartbeatIntervalSeconds(configuration.getOptional[Int]("app.cassandra.pooling.heartbeatIntervalSeconds").getOrElse(30))
+    .setHeartbeatIntervalSeconds(
+      configuration.getOptional[Int]("app.cassandra.pooling.heartbeatIntervalSeconds").getOrElse(30)
+    )
     .setIdleTimeoutSeconds(configuration.getOptional[Int]("app.cassandra.pooling.idleTimeoutSeconds").getOrElse(120))
 
   val clusterBuilder = Cluster
@@ -177,13 +221,29 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
     .withClusterName(configuration.getOptional[String]("app.cassandra.clusterName").getOrElse("otoroshi-cluster"))
     .addContactPoints(cassandraContactPoints: _*)
     .withPort(cassandraPort)
-    .withProtocolVersion(configuration.getOptional[String]("app.cassandra.protocol").map(v => ProtocolVersion.valueOf(v)).getOrElse(ProtocolVersion.V4))
-    .withMaxSchemaAgreementWaitSeconds(configuration.getOptional[Int]("app.cassandra.maxSchemaAgreementWaitSeconds").getOrElse(10))
-    .withCondition(!configuration.getOptional[Boolean]("app.cassandra.compactEnabled").getOrElse(false))(_.withNoCompact())
-    .withCondition(!configuration.getOptional[Boolean]("app.cassandra.metricsEnabled").getOrElse(false))(_.withoutMetrics())
-    .withCondition(!configuration.getOptional[Boolean]("app.cassandra.jmxReportingEnabled").getOrElse(false))(_.withoutJMXReporting())
+    .withProtocolVersion(
+      configuration
+        .getOptional[String]("app.cassandra.protocol")
+        .map(v => ProtocolVersion.valueOf(v))
+        .getOrElse(ProtocolVersion.V4)
+    )
+    .withMaxSchemaAgreementWaitSeconds(
+      configuration.getOptional[Int]("app.cassandra.maxSchemaAgreementWaitSeconds").getOrElse(10)
+    )
+    .withCondition(!configuration.getOptional[Boolean]("app.cassandra.compactEnabled").getOrElse(false))(
+      _.withNoCompact()
+    )
+    .withCondition(!configuration.getOptional[Boolean]("app.cassandra.metricsEnabled").getOrElse(false))(
+      _.withoutMetrics()
+    )
+    .withCondition(!configuration.getOptional[Boolean]("app.cassandra.jmxReportingEnabled").getOrElse(false))(
+      _.withoutJMXReporting()
+    )
     .withCondition(configuration.getOptional[Boolean]("app.cassandra.sslEnabled").getOrElse(false))(_.withSSL())
-    .withCompression(ProtocolOptions.Compression.valueOf(configuration.getOptional[String]("app.cassandra.compression").getOrElse("NONE")))
+    .withCompression(
+      ProtocolOptions.Compression
+        .valueOf(configuration.getOptional[String]("app.cassandra.compression").getOrElse("NONE"))
+    )
     .withThreadingOptions(new CassandraThreadingOptions(configuration))
     .withPoolingOptions(poolingOptions)
   // .withLoadBalancingPolicy(LoadBalancingPolicy)
@@ -257,25 +317,25 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
   private def getAllKeys(): Future[Seq[String]] =
     for {
       values <- session
-        .executeAsync("SELECT key from otoroshi.values;")
-        .asFuture
-        .map(_.asScala.map(_.getString("key")).toSeq)
+                 .executeAsync("SELECT key from otoroshi.values;")
+                 .asFuture
+                 .map(_.asScala.map(_.getString("key")).toSeq)
       lists <- session
-        .executeAsync("SELECT key from otoroshi.lists;")
-        .asFuture
-        .map(_.asScala.map(_.getString("key")).toSeq)
+                .executeAsync("SELECT key from otoroshi.lists;")
+                .asFuture
+                .map(_.asScala.map(_.getString("key")).toSeq)
       sets <- session
-        .executeAsync("SELECT key from otoroshi.sets;")
-        .asFuture
-        .map(_.asScala.map(_.getString("key")).toSeq)
+               .executeAsync("SELECT key from otoroshi.sets;")
+               .asFuture
+               .map(_.asScala.map(_.getString("key")).toSeq)
       hashs <- session
-        .executeAsync("SELECT key from otoroshi.hashs;")
-        .asFuture
-        .map(_.asScala.map(_.getString("key")).toSeq)
+                .executeAsync("SELECT key from otoroshi.hashs;")
+                .asFuture
+                .map(_.asScala.map(_.getString("key")).toSeq)
       counters <- session
-        .executeAsync("SELECT key from otoroshi.counters;")
-        .asFuture
-        .map(_.asScala.map(_.getString("key")).toSeq)
+                   .executeAsync("SELECT key from otoroshi.counters;")
+                   .asFuture
+                   .map(_.asScala.map(_.getString("key")).toSeq)
     } yield values ++ lists ++ sets ++ hashs ++ counters
 
   private def getValueAt(key: String): Future[Option[String]] =
@@ -400,13 +460,13 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
                      pxMilliseconds: Option[Long] = None): Future[Boolean] =
     (for {
       _ <- session
-        .executeAsync(
-          s"INSERT INTO otoroshi.values (key, value) values ('$key', '${value.utf8String}') IF NOT EXISTS;"
-        )
-        .asFuture
+            .executeAsync(
+              s"INSERT INTO otoroshi.values (key, value) values ('$key', '${value.utf8String}') IF NOT EXISTS;"
+            )
+            .asFuture
       _ <- session
-        .executeAsync(s"UPDATE otoroshi.values SET value = '${value.utf8String}' where key = '$key' IF EXISTS;")
-        .asFuture
+            .executeAsync(s"UPDATE otoroshi.values SET value = '${value.utf8String}' where key = '$key' IF EXISTS;")
+            .asFuture
     } yield ()) flatMap { _ =>
       if (exSeconds.isDefined) {
         expire(key, exSeconds.get.toInt)
@@ -445,25 +505,25 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
   override def exists(key: String): Future[Boolean] =
     for {
       a <- session
-        .executeAsync(s"SELECT key FROM otoroshi.values WHERE key = '$key' LIMIT 1")
-        .asFuture
-        .map(rs => rs.asScala.nonEmpty)
+            .executeAsync(s"SELECT key FROM otoroshi.values WHERE key = '$key' LIMIT 1")
+            .asFuture
+            .map(rs => rs.asScala.nonEmpty)
       b <- session
-        .executeAsync(s"SELECT key FROM otoroshi.lists WHERE key = '$key' LIMIT 1")
-        .asFuture
-        .map(rs => rs.asScala.nonEmpty)
+            .executeAsync(s"SELECT key FROM otoroshi.lists WHERE key = '$key' LIMIT 1")
+            .asFuture
+            .map(rs => rs.asScala.nonEmpty)
       c <- session
-        .executeAsync(s"SELECT key FROM otoroshi.sets WHERE key = '$key' LIMIT 1")
-        .asFuture
-        .map(rs => rs.asScala.nonEmpty)
+            .executeAsync(s"SELECT key FROM otoroshi.sets WHERE key = '$key' LIMIT 1")
+            .asFuture
+            .map(rs => rs.asScala.nonEmpty)
       d <- session
-        .executeAsync(s"SELECT key FROM otoroshi.counters WHERE key = '$key' LIMIT 1")
-        .asFuture
-        .map(rs => rs.asScala.nonEmpty)
+            .executeAsync(s"SELECT key FROM otoroshi.counters WHERE key = '$key' LIMIT 1")
+            .asFuture
+            .map(rs => rs.asScala.nonEmpty)
       e <- session
-        .executeAsync(s"SELECT key FROM otoroshi.hashs WHERE key = '$key' LIMIT 1")
-        .asFuture
-        .map(rs => rs.asScala.nonEmpty)
+            .executeAsync(s"SELECT key FROM otoroshi.hashs WHERE key = '$key' LIMIT 1")
+            .asFuture
+            .map(rs => rs.asScala.nonEmpty)
     } yield a && b && c && d && e
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] =
@@ -565,13 +625,13 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
     val time = System.currentTimeMillis() + milliseconds
     for {
       a <- session
-        .executeAsync(s"INSERT INTO otoroshi.expirations (key, value) values ('$key', $time) IF NOT EXISTS;")
-        .asFuture
-        .map(_ => true)
+            .executeAsync(s"INSERT INTO otoroshi.expirations (key, value) values ('$key', $time) IF NOT EXISTS;")
+            .asFuture
+            .map(_ => true)
       b <- session
-        .executeAsync(s"UPDATE otoroshi.expirations SET value = $time where key = '$key';")
-        .asFuture
-        .map(_ => true)
+            .executeAsync(s"UPDATE otoroshi.expirations SET value = $time where key = '$key';")
+            .asFuture
+            .map(_ => true)
     } yield a && b
   }
 

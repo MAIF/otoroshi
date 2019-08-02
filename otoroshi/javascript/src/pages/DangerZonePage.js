@@ -382,7 +382,8 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Enable live metrics',
         placeholder: '--',
-        help: 'Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore',
+        help:
+          'Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore',
       },
     },
     autoLinkToDefaultGroup: {
