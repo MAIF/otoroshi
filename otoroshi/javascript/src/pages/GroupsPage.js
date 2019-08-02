@@ -58,11 +58,11 @@ export class GroupsPage extends Component {
         deleteItem={BackOfficeServices.deleteGroup}
         createItem={BackOfficeServices.createGroup}
         navigateTo={item => {
-          // window.location = `/bo/dashboard/services?group=${item.id}&groupName=${item.name}`;
-          this.props.history.push({
-            pathname: `/services?group=${item.id}&groupName=${item.name}`,
-            // query: { group: item.id, groupName: item.name },
-          });
+          window.location = `/bo/dashboard/services?group=${item.id}&groupName=${item.name}`;
+          // this.props.history.push({
+          //   pathname: `/services?group=${item.id}&groupName=${item.name}`,
+          //   // query: { group: item.id, groupName: item.name },
+          // });
         }}
         itemUrl={i => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
         showActions={true}
