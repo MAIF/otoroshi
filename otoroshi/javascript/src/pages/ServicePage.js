@@ -427,7 +427,7 @@ class CleverSelector extends Component {
             <i className="glyphicon glyphicon-remove-sign" />
           </button>
           <Select
-            style={{ width: 300, zIndex: 9999, border: '1px solid #ccc' }}
+            style={{ width: 300, border: '1px solid #ccc' }}
             placeholder="Select a target from CleverCloud"
             value={this.state.value}
             options={this.state.services.map(s => ({ label: s.name, value: s.url }))}
