@@ -5,11 +5,13 @@ const https = require('https');
 const faker = require('faker');
 const HttpsProxyAgent = require('https-proxy-agent');
 const WebSocket = require('ws');
+const open = require('open');
 
 const options = require('minimist')(process.argv.slice(2));
 const proxy = process.env.http_proxy || options.proxy;
 const debug = options.debug || false;
-const remoteUrl = (options.remote || 'http://foo.oto.tools:9999').replace('http://', 'ws://').replace('https://', 'wss://');
+const remoteWsUrl = (options.remote || 'http://foo.oto.tools:9999').replace('http://', 'ws://').replace('https://', 'wss://');
+const remoteUrl = (options.remote || 'http://foo.oto.tools:9999');
 const localProcessAddress = options.address || '127.0.0.1';
 const localProcessPort = options.port || 2222;
 const public = options.public;
@@ -39,7 +41,7 @@ function debugLog(...args) {
 }
 
 const headers = {};
-let finalUrl = remoteUrl + '/.well-known/otoroshi/tunnel';
+let finalUrl = remoteWsUrl + '/.well-known/otoroshi/tunnel';
 
 function startLocalServer() {
   const server = net.createServer((socket) => {
@@ -115,27 +117,49 @@ function startLocalServer() {
   });
 
   server.listen(localProcessPort, localProcessAddress, () => {
-    console.log(`Local tunnel client listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteUrl}`);
+    console.log(`Local tunnel client listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}`);
   });
 }
 
-if (apikey) {
+if (!!apikey) {
   if (apikey.indexOf(":") > -1) {
     headers['Authorization'] = `Basic ${Buffer.from(apikey).toString('base64')}`;
   } else {
     headers[simpleApikeyHeaderName] = apikey;
   }
-  // TODO: if apikey, check if it works, or crash the process then
-  startLocalServer();
+  fetch(`${remoteUrl}/.well-known/otoroshi/me`, {
+    method: 'GET',
+    headers: { ...headers, 'Accept': 'application/json' }
+  }).then(r => {
+    if (r.status === 200) {
+      r.json().then(json => {
+        console.log('Will use apikey authentication to access the service. Apikey access was successful !');
+        startLocalServer();
+      });
+    } else {
+      r.text().then(text => {
+        console.log('Cannot access service. An error occurred', text);
+      });
+    }
+  });
 }
 
-if (session == "true") {
-  // TODO: open in browser and wait for user input
-  finalUrl = finalUrl + 'pappsToken=' + 'TODO: token from input'
-  // TODO: run periodic process to kill connections and trigger reconnection
-  startLocalServer();
+if (!!session || session == "true") {
+  open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
+    const readline = require('readline').createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    readline.question(`Session token value:`, (token) => {
+      readline.close();
+      finalUrl = finalUrl + '/?pappsToken=' + token;
+      console.log(finalUrl)
+      startLocalServer();
+      // TODO: periodic check
+    });
+  });
 }
 
-if (public == "true") {
+if (!!public || public == "true") {
   startLocalServer();
 }

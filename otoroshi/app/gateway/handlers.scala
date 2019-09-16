@@ -474,11 +474,29 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def passWithTcpTunneling(req: RequestHeader, desc: ServiceDescriptor)(f: => Future[Result]): Future[Result] = {
-    if (desc.tcpTunneling) {
-      Errors
-        .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+    if (desc.isPrivate) {
+      isPrivateAppsSessionValid(req, desc).flatMap {
+        case None => f
+        case Some(user) => {
+          if (desc.tcpTunneling) {
+            req.getQueryString("redirect") match {
+              case Some("urn:ietf:wg:oauth:2.0:oob") =>
+                FastFuture.successful(Ok(views.html.otoroshi.token(env.signPrivateSessionId(user.randomId), env)))
+              case None => Errors
+                .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+            }
+          } else {
+            f
+          }
+        }
+      }
     } else {
-      f
+      if (desc.tcpTunneling) {
+        Errors
+          .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+      } else {
+        f
+      }
     }
   }
 
