@@ -939,7 +939,6 @@ export class ServicePage extends Component {
                   help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a tunnel client and otoroshi to proxy tcp connction with all otoroshi security features enabled. See https://github.com/MAIF/otoroshi/tree/master/clients/tcp-tunnel-client for more informations."
                   onChange={v => this.changeTheValue('tcpTunneling', v)}
                 />
-                tcpTunneling
               </div>
             </div>
           </Collapse>
