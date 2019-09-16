@@ -936,9 +936,10 @@ export class ServicePage extends Component {
                 <BiColumnBooleanInput
                   label="Enable TCP tunneling"
                   value={this.state.service.tcpTunneling}
-                  help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a tunnel client and otoroshi to proxy tcp connction with all otoroshi security features enabled. See https://github.com/MAIF/otoroshi/tree/master/clients/tcp-tunnel-client for more informations."
+                  help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a tunnel client and otoroshi to proxy tcp connction with all otoroshi security features enabled"
                   onChange={v => this.changeTheValue('tcpTunneling', v)}
                 />
+                <a href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-tunnel-client" target="_blank">Learn more about TCP tunneling</a>
               </div>
             </div>
           </Collapse>
