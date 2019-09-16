@@ -150,16 +150,18 @@ if (!!session || session == "true") {
   open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
     const readline = require('readline').createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
+      prompt: 'Session token value > ',
+      crlfDelay: Infinity
     });
-    // TODO: fix weird behavior
-    readline.question(`Session token value:`, (token) => {
+    readline.on('line', (line) => {
+      const token = line.trim();
       readline.close();
       finalUrl = finalUrl + '/?pappsToken=' + token;
-      console.log(finalUrl)
       startLocalServer();
       // TODO: periodic check
     });
+    readline.prompt();
   });
 }
 
