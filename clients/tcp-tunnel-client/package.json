@@ -1,0 +1,21 @@
+{
+  "name": "tcp-tunnel-client",
+  "version": "1.0.0",
+  "main": "client.js",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon client.js",
+    "start": "nodemon client.js"
+  },
+  "dependencies": {
+    "faker": "4.1.0",
+    "https-proxy-agent": "2.2.2",
+    "minimist": "1.2.0",
+    "node-fetch": "2.6.0",
+    "ws": "7.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "1.19.2"
+  }
+}

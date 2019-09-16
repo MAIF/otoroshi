@@ -25,7 +25,7 @@ import utils.{MaxLengthLimiter, RegexPool, UrlSanitizer}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.{Status => _, _}
-import play.api.libs.json.{JsArray, JsString, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody, StandaloneWSRequest}
 import play.api.mvc.Results._
@@ -254,6 +254,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
     val maOpt: Option[Int]            = req.queryString.get("ma").map(_.last).map(_.toInt)
     (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt) match {
+      case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma) =>
+        FastFuture.successful(
+         Ok(views.html.otoroshi.token(env.signPrivateSessionId(sessionId), env)).withCookies(
+            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400)): _*
+          )
+        )
       case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma) =>
         FastFuture.successful(
           Redirect(redirectTo).withCookies(
@@ -312,35 +318,30 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               case Some(desc) if !desc.enabled => {
                 Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
               }
-              case Some(descriptor) if !descriptor.privateApp => {
-                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+              // case Some(descriptor) if !descriptor.privateApp => {
+              //   Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+              // }
+              case Some(descriptor) if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && descriptor.isUriPublic(req.path) => {
+                // Public service, no profile but no error either ???
+                FastFuture.successful(Ok(Json.obj("access_type" -> "public")))
+              }
+              case Some(descriptor) if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && !descriptor.isUriPublic(req.path) => {
+                // ApiKey
+                ApiKeyHelper.extractApiKey(req, descriptor).flatMap {
+                  case None => Errors.craftResponseResult(s"Invalid API key", Unauthorized, req, None, Some("errors.invalid.api.key"))
+                  case Some(apiKey) => FastFuture.successful(Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")))
+                }
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
                 withAuthConfig(descriptor, req) { auth =>
-                  val expected = "oto-papps-" + auth.cookieSuffix(descriptor)
-                  req.cookies
-                    .get(expected)
-                    .flatMap { cookie =>
-                      env.extractPrivateSessionId(cookie)
-                    }
-                    .map { id =>
-                      env.datastores.privateAppsUserDataStore.findById(id).flatMap {
-                        case Some(session) => FastFuture.successful(Ok(session.profile))
-                        case None =>
-                          Errors.craftResponseResult(s"Session not found",
-                                                     NotFound,
-                                                     req,
-                                                     None,
-                                                     Some("errors.session.not.found"))
-                      }
-                    } getOrElse {
-                    Errors
-                      .craftResponseResult(s"Session not found", NotFound, req, None, Some("errors.session.not.found"))
+                  isPrivateAppsSessionValid(req, descriptor).flatMap {
+                    case None => Errors.craftResponseResult(s"Invalid session", Unauthorized, req, None, Some("errors.invalid.session"))
+                    case Some(session) => FastFuture.successful(Ok(session.profile.as[JsObject] ++ Json.obj("access_type" -> "user")))
                   }
                 }
               }
               case _ => {
-                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+                Errors.craftResponseResult(s"Unauthorized", Unauthorized, req, None, Some("errors.unauthorized"))
               }
             }
         }
@@ -447,8 +448,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     )
   }
 
-  def isPrivateAppsSessionValid(req: Request[Source[ByteString, _]],
-                                desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
     env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
       case None => FastFuture.successful(None)
       case Some(auth) => {
@@ -458,12 +458,27 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           .flatMap { cookie =>
             env.extractPrivateSessionId(cookie)
           }
+          .orElse(
+            req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
+          )
+          .orElse(
+            req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
+          )
           .map { id =>
             env.datastores.privateAppsUserDataStore.findById(id)
           } getOrElse {
           FastFuture.successful(None)
         }
       }
+    }
+  }
+
+  def passWithTcpTunneling(req: RequestHeader, desc: ServiceDescriptor)(f: => Future[Result]): Future[Result] = {
+    if (desc.tcpTunneling) {
+      Errors
+        .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+    } else {
+      f
     }
   }
 
@@ -780,6 +795,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       Some("errors.service.in.maintenance")
                     )
                   } else {
+                    passWithTcpTunneling(req, rawDesc) {
                     passWithHeadersVerification(rawDesc, req, None, None) {
                       passWithReadOnly(rawDesc.readOnly, req) {
                         applyJwtVerifier(rawDesc, req) { jwtInjection =>
@@ -2288,11 +2304,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     isPrivateAppsSessionValid(req, descriptor).flatMap {
                                       case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                                       case None => {
+                                        val redirect = req.getQueryString("redirect").getOrElse(s"${protocol}://${req.host}${req.relativeUri}")
                                         val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                                           .map(a => s":$a")
                                           .getOrElse("") + controllers.routes.AuthController
                                           .confidentialAppLoginPage()
-                                          .url + s"?desc=${descriptor.id}&redirect=${protocol}://${req.host}${req.relativeUri}"
+                                          .url + s"?desc=${descriptor.id}&redirect=${redirect}"
                                         logger.trace("should redirect to " + redirectTo)
                                         descriptor.authConfigRef match {
                                           case None =>
@@ -2539,6 +2556,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                           }
                         }
                       }
+                    }
                     }
                   }
                 }

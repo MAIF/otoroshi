@@ -1870,6 +1870,7 @@ case class ServiceDescriptor(
     allowHttp10: Boolean = true,
     logAnalyticsOnServer: Boolean = false,
     useAkkaHttpClient: Boolean = false,
+    tcpTunneling: Boolean = false,
     // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
     enforceSecureCommunication: Boolean = true,
     sendInfoToken: Boolean = true,
@@ -2084,18 +2085,16 @@ case class ServiceDescriptor(
                        .map(m => Json.stringify(Json.toJson(m))))
           .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
           .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
-          .withClaim("apikey",
-                     apiKey.map(
-                       ak =>
-                         Json.stringify(
-                           Json.obj(
-                             "clientId"   -> ak.clientId,
-                             "clientName" -> ak.clientName,
-                             "metadata"   -> ak.metadata,
-                             "tags"       -> ak.tags
-                           )
-                       )
-                     ))
+          .withClaim("apikey", apiKey.map(ak => Json.stringify(ak.lightJson)))
+                      //    Json.stringify(
+                      //      Json.obj(
+                      //        "clientId"   -> ak.clientId,
+                      //        "clientName" -> ak.clientName,
+                      //        "metadata"   -> ak.metadata,
+                      //        "tags"       -> ak.tags
+                      //      )
+                      //  )
+                      // ))
           .serialize(this.secComSettings)(env)
       }
       case SecComInfoTokenVersion.Latest => {
@@ -2120,16 +2119,14 @@ case class ServiceDescriptor(
             }
           )
           .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
-          .withJsObjectClaim("apikey",
-                             apiKey.map(
-                               ak =>
-                                 Json.obj(
-                                   "clientId"   -> ak.clientId,
-                                   "clientName" -> ak.clientName,
-                                   "metadata"   -> ak.metadata,
-                                   "tags"       -> ak.tags
-                               )
-                             ))
+          .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
+                                //Json.obj(
+                                //   "clientId"   -> ak.clientId,
+                                //   "clientName" -> ak.clientName,
+                                //   "metadata"   -> ak.metadata,
+                                //   "tags"       -> ak.tags
+                                //)
+                                //))
           .withJsArrayClaim("clientCertChain", clientCertChain)
           .serialize(this.secComSettings)(env)
       }
@@ -2168,6 +2165,7 @@ object ServiceDescriptor {
           forceHttps = (json \ "forceHttps").asOpt[Boolean].getOrElse(true),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
+          tcpTunneling = (json \ "tcpTunneling").asOpt[Boolean].getOrElse(false),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           buildMode = (json \ "buildMode").asOpt[Boolean].getOrElse(false),
           strictlyPrivate = (json \ "strictlyPrivate").asOpt[Boolean].getOrElse(false),
@@ -2263,6 +2261,7 @@ object ServiceDescriptor {
       "forceHttps"                 -> sd.forceHttps,
       "logAnalyticsOnServer"       -> sd.logAnalyticsOnServer,
       "useAkkaHttpClient"          -> sd.useAkkaHttpClient,
+      "tcpTunneling"               -> sd.tcpTunneling,
       "maintenanceMode"            -> sd.maintenanceMode,
       "buildMode"                  -> sd.buildMode,
       "strictlyPrivate"            -> sd.strictlyPrivate,

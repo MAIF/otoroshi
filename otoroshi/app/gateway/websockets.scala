@@ -1,6 +1,6 @@
 package gateway
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 
@@ -11,7 +11,7 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete}
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import akka.util.ByteString
 import com.auth0.jwt.JWT
@@ -23,23 +23,9 @@ import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.Results.{
-  BadGateway,
-  Forbidden,
-  MethodNotAllowed,
-  NotFound,
-  ServiceUnavailable,
-  Status,
-  TooManyRequests,
-  Unauthorized
-}
+import play.api.mvc.Results.{BadGateway, Forbidden, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
 import play.api.mvc._
 import play.api.libs.json.{JsArray, JsString, Json}
 import security.{IdGenerator, OtoroshiClaim}
@@ -138,6 +124,12 @@ class WebSocketHandler()(implicit env: Env) {
           .flatMap { cookie =>
             env.extractPrivateSessionId(cookie)
           }
+          .orElse(
+            req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
+          )
+          .orElse(
+            req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
+          )
           .map { id =>
             env.datastores.privateAppsUserDataStore.findById(id)
           } getOrElse {
@@ -248,6 +240,18 @@ class WebSocketHandler()(implicit env: Env) {
         f(service.copy(targets = Seq(config.target)))
       case _ =>
         f(service)
+    }
+  }
+
+  def passWithTcpTunneling(req: RequestHeader, desc: ServiceDescriptor)(f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]):  Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    import utils.RequestImplicits._
+
+    if (desc.tcpTunneling && req.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
+      f
+    } else {
+      Errors
+        .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+        .asLeft[WSFlow]
     }
   }
 
@@ -376,6 +380,7 @@ class WebSocketHandler()(implicit env: Env) {
                   .asLeft[WSFlow]
               }
               case Some(rawDesc) =>
+                passWithTcpTunneling(req, rawDesc) {
                 passWithHeadersVerification(rawDesc, req) {
                   passWithReadOnly(rawDesc.readOnly, req) {
                     applyJwtVerifier(rawDesc, req) { jwtInjection =>
@@ -819,7 +824,33 @@ class WebSocketHandler()(implicit env: Env) {
                                       }
                                       .asLeft[WSFlow]
                                   }
-                                  case Right(httpRequest) => {
+                                  case Right(_) if descriptor.tcpTunneling && !req.relativeUri.startsWith("/.well-known/otoroshi/tunnel") => {
+                                    Errors
+                                      .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+                                      .asLeft[WSFlow]
+                                  }
+                                  case Right(_) if descriptor.tcpTunneling && req.relativeUri.startsWith("/.well-known/otoroshi/tunnel") => {
+                                    val (theHost: String, thePort: Int) = (target.scheme, target.host) match {
+                                      case (_     , host) if host.contains(":") => (host.split(":").apply(0), host.split(":").apply(1).toInt)
+                                      case (scheme, host) if scheme.contains("https") => (host, 443)
+                                      case (_     , host) => (host, 80)
+                                    }
+                                    val remoteAddress = target.ipAddress match {
+                                      case Some(ip) => new InetSocketAddress(InetAddress.getByAddress(theHost, InetAddress.getByName(ip).getAddress), thePort)
+                                      case None => new InetSocketAddress(theHost, thePort)
+                                    }
+                                    val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
+                                      Flow[PlayWSMessage].collect {
+                                        case PlayWSBinaryMessage(data) =>
+                                          data
+                                        case _ =>
+                                          ByteString.empty
+                                      }.via(
+                                        Tcp().outgoingConnection(remoteAddress).map(bs => PlayWSBinaryMessage(bs))
+                                      )
+                                    FastFuture.successful(Right(flow))
+                                  }
+                                  case Right(httpRequest) if !descriptor.tcpTunneling => {
                                     FastFuture.successful(
                                       Right(
                                         ActorFlow.actorRef(
@@ -1265,11 +1296,12 @@ class WebSocketHandler()(implicit env: Env) {
                               isPrivateAppsSessionValid(req, descriptor).flatMap {
                                 case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
                                 case None => {
+                                  val redirect = req.getQueryString("redirect").getOrElse(s"${protocol}://${req.host}${req.relativeUri}")
                                   val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                                     .map(a => s":$a")
                                     .getOrElse("") + controllers.routes.AuthController
                                     .confidentialAppLoginPage()
-                                    .url + s"?desc=${descriptor.id}&redirect=${protocol}://${req.host}${req.relativeUri}"
+                                    .url + s"?desc=${descriptor.id}&redirect=${redirect}"
                                   logger.trace("should redirect to " + redirectTo)
                                   FastFuture.successful(Left(Results.Redirect(redirectTo)))
                                 }
@@ -1439,6 +1471,7 @@ class WebSocketHandler()(implicit env: Env) {
                       }
                     }
                   }
+                }
                 }
             }
         }

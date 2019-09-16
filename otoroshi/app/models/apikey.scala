@@ -83,6 +83,12 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
   def withingQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.apiKeyDataStore.withingQuotas(this)
   def metadataJson: JsValue = JsObject(metadata.mapValues(JsString.apply))
+  def lightJson: JsObject = Json.obj(
+    "clientId"   -> clientId,
+    "clientName" -> clientName,
+    "metadata"   -> metadata,
+    "tags"       -> tags
+  )
 
   def matchRouting(sr: ServiceDescriptor): Boolean = {
 

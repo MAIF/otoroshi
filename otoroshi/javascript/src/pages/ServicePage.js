@@ -933,6 +933,13 @@ export class ServicePage extends Component {
                   help="Will return an error on HTTP/1.0 request"
                   onChange={v => this.changeTheValue('allowHttp10', v)}
                 />
+                <BiColumnBooleanInput
+                  label="Enable TCP tunneling"
+                  value={this.state.service.tcpTunneling}
+                  help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a tunnel client and otoroshi to proxy tcp connction with all otoroshi security features enabled"
+                  onChange={v => this.changeTheValue('tcpTunneling', v)}
+                />
+                tcpTunneling
               </div>
             </div>
           </Collapse>

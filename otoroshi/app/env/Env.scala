@@ -732,11 +732,19 @@ class Env(val configuration: Configuration,
       }
     }
 
-  def extractPrivateSessionId(cookie: play.api.mvc.Cookie): Option[String] =
+  def extractPrivateSessionId(cookie: play.api.mvc.Cookie): Option[String] = {
     cookie.value.split("::").toList match {
       case signature :: value :: Nil if sign(value) == signature => Some(value)
       case _                                                     => None
     }
+  }
+
+  def extractPrivateSessionIdFromString(value: String): Option[String] = {
+    value.split("::").toList match {
+      case signature :: value :: Nil if sign(value) == signature => Some(value)
+      case _                                                     => None
+    }
+  }
 
   def signPrivateSessionId(id: String): String = {
     val signature = sign(id)
