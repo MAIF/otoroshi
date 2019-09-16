@@ -152,6 +152,7 @@ if (!!session || session == "true") {
       input: process.stdin,
       output: process.stdout
     });
+    // TODO: fix weird behavior
     readline.question(`Session token value:`, (token) => {
       readline.close();
       finalUrl = finalUrl + '/?pappsToken=' + token;
