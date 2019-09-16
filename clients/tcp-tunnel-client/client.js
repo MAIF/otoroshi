@@ -23,6 +23,8 @@ const clientCaPath = options.caPath;
 const clientCertPath = options.certPath;
 const clientKeyPath = options.keyPath;
 
+// TODO: handle multiple targets and ports
+
 const AgentClass = !!proxy ? HttpsProxyAgent : https.Agent;
 
 const proxyUrl = !!proxy ? url.parse(proxy): {};
