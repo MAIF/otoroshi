@@ -2320,7 +2320,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                                   def passWithAuth0(config: GlobalConfig): Future[Result] = {
                                     isPrivateAppsSessionValid(req, descriptor).flatMap {
-                                      case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
+                                      case Some(paUsr) =>
+                                        callDownstream(config, paUsr = Some(paUsr))
                                       case None => {
                                         val redirect = req.getQueryString("redirect").getOrElse(s"${protocol}://${req.host}${req.relativeUri}")
                                         val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort

@@ -6,12 +6,11 @@ const faker = require('faker');
 const HttpsProxyAgent = require('https-proxy-agent');
 const WebSocket = require('ws');
 const open = require('open');
-const readlineSync = require('readline-sync');
 
 const cliOptions = require('minimist')(process.argv.slice(2));
 const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
 const debug = cliOptions.debug || false;
-const newPrompt = cliOptions.newPrompt || false;
+const prompt = cliOptions.prompt || 'inquirer';
 const clientCaPath = cliOptions.caPath;
 const clientCertPath = cliOptions.certPath;
 const clientKeyPath = cliOptions.keyPath;
@@ -28,6 +27,37 @@ const agent = (clientCaPath || clientCertPath || clientKeyPath) ? new AgentClass
 function debugLog(...args) {
   if (debug) {
     console.log(...args);
+  }
+}
+
+function askForToken(sessionId, cb) {
+  if (prompt === 'readlinesync') {
+    const token = require('readline-sync').question(`[${sessionId}] Session token value > `, {
+      //hideEchoBack: true // The typed text on screen is hidden by `*` (default).
+    });
+    cb(token);
+  } else if (prompt === 'readlinesync') {
+    const readline = require('readline').createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      prompt: `[${sessionId}] Session token value > `,
+      crlfDelay: Infinity
+    });
+    readline.on('line', (line) => {
+      const token = line.trim();
+      readline.close();
+      cb(token);
+    });
+    readline.prompt();
+  } else if (prompt === 'inquirer') {
+    const questions = [{
+      type: 'input',
+      name: 'token',
+      message: `[${sessionId}] Session token value > `,
+    }];
+    require('inquirer').prompt(questions).then(answers => {
+      cb(answers['token']);
+    });
   }
 }
 
@@ -233,7 +263,23 @@ function ProxyServer(options) {
     if (access_type === 'session') {
       return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
         return new Promise(success => {
-          console.log('\n');
+          askForToken(sessionId, token => {
+            const checker = SessionAuthChecker(remoteUrl, token);
+            finalUrl = finalUrl + '/?pappsToken=' + token;
+            checker.check().then(() => {
+              console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
+              const server = startLocalServer();
+              success(server);
+              checker.every(checkEvery, () => {
+                console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
+                server.close();
+                ProxyServer(options).start();
+              });
+            }, text => {
+              console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
+            });
+          });
+          /*
           if (!!newPrompt) {
             const token = readlineSync.question(`[${sessionId}] Session token value > `, {
               //hideEchoBack: true // The typed text on screen is hidden by `*` (default).
@@ -241,7 +287,6 @@ function ProxyServer(options) {
             const checker = SessionAuthChecker(remoteUrl, token);
             finalUrl = finalUrl + '/?pappsToken=' + token;
             checker.check().then(() => {
-              console.log('\n');
               console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
               const server = startLocalServer();
               success(server);
@@ -263,7 +308,6 @@ function ProxyServer(options) {
             readline.on('line', (line) => {
               const token = line.trim();
               readline.close();
-              console.log('\n\n');
               const checker = SessionAuthChecker(remoteUrl, token);
               finalUrl = finalUrl + '/?pappsToken=' + token;
               checker.check().then(() => {
@@ -281,6 +325,7 @@ function ProxyServer(options) {
             });
             readline.prompt();
           }
+          */
         });
       });
     }
