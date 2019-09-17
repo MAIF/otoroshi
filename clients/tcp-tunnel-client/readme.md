@@ -11,7 +11,7 @@ Run the local tunnel client with :
 yarn start -- --access_type=public --remote=http://http://foo.oto.tools:8080 --port=2222
 
 # test apikey access
-yarn start -- --access_type=apikey apikey=cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648 --remote=http://http://foo.oto.tools:8080 --port=2222
+yarn start -- --access_type=apikey apikey=clientId:clientSecret --remote=http://http://foo.oto.tools:8080 --port=2222
 
 # test session access
 yarn start -- --access_type=session --remote=http://http://foo.oto.tools:8080 --port=2222
