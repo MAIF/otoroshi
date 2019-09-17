@@ -10,7 +10,7 @@ const open = require('open');
 const cliOptions = require('minimist')(process.argv.slice(2));
 const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
 const debug = cliOptions.debug || false;
-const prompt = cliOptions.prompt || 'inquirer';
+const prompt = cliOptions.prompt || 'readlinesync';
 const clientCaPath = cliOptions.caPath;
 const clientCertPath = cliOptions.certPath;
 const clientKeyPath = cliOptions.keyPath;
@@ -30,17 +30,19 @@ function debugLog(...args) {
   }
 }
 
+require('readline').emitKeypressEvents(process.stdin);
+
 function askForToken(sessionId, cb) {
   if (prompt === 'readlinesync') {
-    const token = require('readline-sync').question(`[${sessionId}] Session token value > `, {
+    const token = require('readline-sync').question(`[${sessionId}] Session token > `, {
       //hideEchoBack: true // The typed text on screen is hidden by `*` (default).
     });
     cb(token);
-  } else if (prompt === 'readlinesync') {
+  } else if (prompt === 'readline') {
     const readline = require('readline').createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: `[${sessionId}] Session token value > `,
+      prompt: `[${sessionId}] Session token > `,
       crlfDelay: Infinity
     });
     readline.on('line', (line) => {
@@ -53,7 +55,7 @@ function askForToken(sessionId, cb) {
     const questions = [{
       type: 'input',
       name: 'token',
-      message: `[${sessionId}] Session token value > `,
+      message: `[${sessionId}] Session token > `,
     }];
     require('inquirer').prompt(questions).then(answers => {
       cb(answers['token']);
@@ -279,53 +281,6 @@ function ProxyServer(options) {
               console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
             });
           });
-          /*
-          if (!!newPrompt) {
-            const token = readlineSync.question(`[${sessionId}] Session token value > `, {
-              //hideEchoBack: true // The typed text on screen is hidden by `*` (default).
-            });
-            const checker = SessionAuthChecker(remoteUrl, token);
-            finalUrl = finalUrl + '/?pappsToken=' + token;
-            checker.check().then(() => {
-              console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
-              const server = startLocalServer();
-              success(server);
-              checker.every(checkEvery, () => {
-                console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
-                server.close();
-                ProxyServer(options).start();
-              });
-            }, text => {
-              console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
-            });
-          } else {
-            const readline = require('readline').createInterface({
-              input: process.stdin,
-              output: process.stdout,
-              prompt: `[${sessionId}] Session token value > `,
-              crlfDelay: Infinity
-            });
-            readline.on('line', (line) => {
-              const token = line.trim();
-              readline.close();
-              const checker = SessionAuthChecker(remoteUrl, token);
-              finalUrl = finalUrl + '/?pappsToken=' + token;
-              checker.check().then(() => {
-                console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
-                const server = startLocalServer();
-                success(server);
-                checker.every(checkEvery, () => {
-                  console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
-                  server.close();
-                  ProxyServer(options).start();
-                });
-              }, text => {
-                console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
-              });
-            });
-            readline.prompt();
-          }
-          */
         });
       });
     }
