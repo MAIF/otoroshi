@@ -7,28 +7,15 @@ const HttpsProxyAgent = require('https-proxy-agent');
 const WebSocket = require('ws');
 const open = require('open');
 
-const options = require('minimist')(process.argv.slice(2));
-const proxy = process.env.http_proxy || options.proxy;
-const debug = options.debug || false;
-const remoteWsUrl = (options.remote || 'http://foo.oto.tools:9999').replace('http://', 'ws://').replace('https://', 'wss://');
-const remoteUrl = (options.remote || 'http://foo.oto.tools:9999');
-const localProcessAddress = options.address || '127.0.0.1';
-const localProcessPort = options.port || 2222;
-const public = options.public;
-const session = options.session;
-const apikey = options.apikey;
-const simpleApikeyHeaderName = options.sahn || 'x-api-key';
-
-const clientCaPath = options.caPath;
-const clientCertPath = options.certPath;
-const clientKeyPath = options.keyPath;
-
-// TODO: handle multiple targets and ports
+const cliOptions = require('minimist')(process.argv.slice(2));
+const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
+const debug = cliOptions.debug || false;
+const clientCaPath = cliOptions.caPath;
+const clientCertPath = cliOptions.certPath;
+const clientKeyPath = cliOptions.keyPath;
 
 const AgentClass = !!proxy ? HttpsProxyAgent : https.Agent;
-
 const proxyUrl = !!proxy ? url.parse(proxy): {};
-
 const agent = (clientCaPath || clientCertPath || clientKeyPath) ? new AgentClass({
   ...proxyUrl,
   key: clientKeyPath ? fs.readFileSync(clientKeyPath) : undefined,
@@ -42,129 +29,282 @@ function debugLog(...args) {
   }
 }
 
-const headers = {};
-let finalUrl = remoteWsUrl + '/.well-known/otoroshi/tunnel';
+function ApiKeyAuthChecker(remoteUrl, headers) {
 
-function startLocalServer() {
-  const server = net.createServer((socket) => {
+  function check() {
+    return new Promise((success, failure) => {
+      fetch(`${remoteUrl}/.well-known/otoroshi/me`, {
+        method: 'GET',
+        headers: { ...headers, 'Accept': 'application/json' }
+      }).then(r => {
+        if (r.status === 200) {
+          r.json().then(json => {
+            success(json);
+          });
+        } else {
+          r.text().then(text => {
+            failure(text);
+          });
+        }
+      }).catch(e => {
+        failure(e);
+      });
+    });
+  }
 
-    socket.setKeepAlive(true, 60000);
+  function every(value, onFailure) {
+    const interval = setInterval(() => check().catch(e => {
+      onFailure(e);
+      clearInterval(interval);
+    }), value);
+    return () => {
+      clearInterval(interval);
+    };
+  }
 
-    const sessionId = faker.random.alphaNumeric(64);
-    debugLog(`New client connected with session id: ${sessionId} on ${finalUrl}`);
-    let clientConnected = false;
-    const clientBuffer = [];
-    const client = new WebSocket(finalUrl, {
-      agent, 
-      headers
+  return {
+    check,
+    every
+  };
+}
+
+function SessionAuthChecker(remoteUrl, token) {
+  
+  function check() {
+    return new Promise((success, failure) => {
+      fetch(`${remoteUrl}/.well-known/otoroshi/me?pappsToken=${token}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      }).then(r => {
+        if (r.status === 200) {
+          r.json().then(json => {
+            success(json);
+          });
+        } else {
+          r.text().then(text => {
+            failure(text);
+          });
+        }
+      }).catch(e => {
+        failure(e);
+      });
     });
-    // tcp socket callbacks
-    socket.on('end', () => {
-      debugLog(`Client deconnected (end) from session ${sessionId}`);
-      client.close();
-    });
-    socket.on('close', () => {
-      debugLog(`Client deconnected (close) from session ${sessionId}`);
-      client.close();
-    });
-    socket.on('error', (err) => {
-      debugLog(`Client deconnected (error) from session ${sessionId}`, err);
-      client.close();
-    });
-    socket.on('data', (data) => {
-      if (clientConnected) {
-        debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes`);
-        client.send(data);
-      } else {
-        debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes stored in buffer`);
-        clientBuffer.push(data);
-      }
-    });
-    // client callbacks
-    client.on('open', () => {
-      debugLog(`WS Client connected from session ${sessionId}`);
-      if (clientBuffer.length > 0) {
-        while (clientBuffer.length > 0) {
-          const bytes = clientBuffer.shift();
-          if (bytes) {
-            client.send(bytes);
+  }
+
+  function every(value, onFailure) {
+    const interval = setInterval(() => check().catch(e => {
+      onFailure(e);
+      clearInterval(interval);
+    }), value);
+    return () => {
+      clearInterval(interval);
+    };
+  }
+
+  return {
+    check,
+    every
+  };
+}
+
+function ProxyServer(options) {
+
+  if (!options.remote) {
+    throw new Error('No remote service location specified !');
+  }
+
+  const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
+  const remoteUrl = options.remote;
+  const localProcessAddress = options.address || '127.0.0.1';
+  const localProcessPort = options.port || 2222;
+  const checkEvery = options.every || 10000;
+  const access_type = options.access_type;
+  const apikey = options.apikey;
+  const simpleApikeyHeaderName = options.sahn || 'x-api-key';
+  const sessionId = options.name || faker.random.alphaNumeric(6);
+
+  const headers = {};
+  let finalUrl = remoteWsUrl + '/.well-known/otoroshi/tunnel';
+
+  function startLocalServer() {
+
+    const server = net.createServer((socket) => {
+
+      socket.setKeepAlive(true, 60000);
+
+      debugLog(`New client connected with session id: ${sessionId} on ${finalUrl}`);
+      let clientConnected = false;
+      const clientBuffer = [];
+      const client = new WebSocket(finalUrl, {
+        agent, 
+        headers
+      });
+      // tcp socket callbacks
+      socket.on('end', () => {
+        debugLog(`Client deconnected (end) from session ${sessionId}`);
+        client.close();
+      });
+      socket.on('close', () => {
+        debugLog(`Client deconnected (close) from session ${sessionId}`);
+        client.close();
+      });
+      socket.on('error', (err) => {
+        debugLog(`Client deconnected (error) from session ${sessionId}`, err);
+        client.close();
+      });
+      socket.on('data', (data) => {
+        if (clientConnected) {
+          debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes`);
+          client.send(data);
+        } else {
+          debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes stored in buffer`);
+          clientBuffer.push(data);
+        }
+      });
+      // client callbacks
+      client.on('open', () => {
+        debugLog(`WS Client connected from session ${sessionId}`);
+        if (clientBuffer.length > 0) {
+          while (clientBuffer.length > 0) {
+            const bytes = clientBuffer.shift();
+            if (bytes) {
+              client.send(bytes);
+            }
+          }
+          debugLog(`WS Client buffer emptied for ${sessionId}`);
+        } 
+        clientConnected = true;
+      });
+      client.on('message', (payload) => {
+        debugLog(`Data received from server from session ${sessionId}: ${payload.length} bytes`);
+        if (payload) {
+          if (payload.length > 0) {
+            socket.write(payload);
           }
         }
-        debugLog(`WS Client buffer emptied for ${sessionId}`);
-      } 
-      clientConnected = true;
-    });
-    client.on('message', (payload) => {
-      debugLog(`Data received from server from session ${sessionId}: ${payload.length} bytes`);
-      if (payload) {
-        if (payload.length > 0) {
-          socket.write(payload);
-        }
-      }
-    });
-    client.on('error', (error) => {
-      debugLog(`WS Client error from session ${sessionId}`, error);
-      socket.destroy();
-      clientConnected = false;
-    });
-    client.on('close', () => {
-      debugLog(`WS Client closed from session ${sessionId}`);
-      socket.destroy();
-      clientConnected = false;
-    });
-  });
-
-  server.on('error', (err) => {
-    console.log(`tcp tunnel client error`, err);
-  });
-
-  server.listen(localProcessPort, localProcessAddress, () => {
-    console.log(`Local tunnel client listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}`);
-  });
-}
-
-if (!!apikey) {
-  if (apikey.indexOf(":") > -1) {
-    headers['Authorization'] = `Basic ${Buffer.from(apikey).toString('base64')}`;
-  } else {
-    headers[simpleApikeyHeaderName] = apikey;
-  }
-  fetch(`${remoteUrl}/.well-known/otoroshi/me`, {
-    method: 'GET',
-    headers: { ...headers, 'Accept': 'application/json' }
-  }).then(r => {
-    if (r.status === 200) {
-      r.json().then(json => {
-        console.log('Will use apikey authentication to access the service. Apikey access was successful !');
-        startLocalServer();
       });
-    } else {
-      r.text().then(text => {
-        console.log('Cannot access service. An error occurred', text);
+      client.on('error', (error) => {
+        debugLog(`WS Client error from session ${sessionId}`, error);
+        socket.destroy();
+        clientConnected = false;
+      });
+      client.on('close', () => {
+        debugLog(`WS Client closed from session ${sessionId}`);
+        socket.destroy();
+        clientConnected = false;
+      });
+    });
+
+    server.on('error', (err) => {
+      console.log(`tcp tunnel client error`, err);
+    });
+
+    server.listen(localProcessPort, localProcessAddress, () => {
+      console.log(`[${sessionId}] Local tunnel listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}\n`);
+    });
+
+    return server;
+  }
+
+  function start() {
+
+    if (access_type === 'apikey') {
+      if (apikey.indexOf(":") > -1) {
+        headers['Authorization'] = `Basic ${Buffer.from(apikey).toString('base64')}`;
+      } else {
+        headers[simpleApikeyHeaderName] = apikey;
+      }
+      const checker = ApiKeyAuthChecker(remoteUrl, headers);
+      return checker.check().then(() => {
+        console.log(`[${sessionId}] Will use apikey authentication to access the service. Apikey access was successful !`);
+        const server = startLocalServer();
+        checker.every(checkEvery, () => {
+          console.log(`[${sessionId}] Cannot access service with apikey anymore. Stopping the tunnel !`);
+          server.close();
+        });
+        return server;
+      }, text => {
+        console.log(`[${sessionId}] Cannot access service with apikey. An error occurred`, text);
       });
     }
+
+    if (access_type === 'session') {
+      return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
+        return new Promise(success => {
+          console.log('\n');
+          const readline = require('readline').createInterface({
+            input: process.stdin,
+            output: process.stdout,
+            prompt: 'Session token value > ',
+            crlfDelay: Infinity
+          });
+          readline.on('line', (line) => {
+            const token = line.trim();
+            readline.close();
+            console.log('\n\n');
+            const checker = SessionAuthChecker(remoteUrl, token);
+            finalUrl = finalUrl + '/?pappsToken=' + token;
+            checker.check().then(() => {
+              console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
+              const server = startLocalServer();
+              success(server);
+              checker.every(checkEvery, () => {
+                console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
+                server.close();
+                ProxyServer(options).start();
+              });
+            }, text => {
+              console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
+            });
+          });
+          readline.prompt();
+        });
+      });
+    }
+
+    if (access_type === 'public') {
+      return new Promise(s => {
+        const server = startLocalServer();
+        s(server);
+      });
+    }
+
+    return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'));
+  }
+
+  return {
+    start
+  };
+}
+
+function asyncForEach(_arr, f) {
+  return new Promise((success, failure) => {
+    const arr = [ ..._arr ];
+    function next() {
+      const item = arr.shift();
+      if (item) {
+        const res = f(item);
+        if (res && res.then) {
+          res.then(() => {
+            next();
+          })
+        } else {
+          setTimeout(() => next(), 10);
+        }
+      } else {
+        success();
+      }
+    }
+    next();
   });
 }
 
-if (!!session || session == "true") {
-  open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
-    const readline = require('readline').createInterface({
-      input: process.stdin,
-      output: process.stdout,
-      prompt: 'Session token value > ',
-      crlfDelay: Infinity
-    });
-    readline.on('line', (line) => {
-      const token = line.trim();
-      readline.close();
-      finalUrl = finalUrl + '/?pappsToken=' + token;
-      startLocalServer();
-      // TODO: periodic check
-    });
-    readline.prompt();
+if (cliOptions.config && fs.existsSync(cliOptions.config)) {
+  const configContent = fs.readFileSync(cliOptions.config).toString('utf8');
+  const configJson = JSON.parse(configContent);
+  asyncForEach(configJson, item => {
+    return ProxyServer(item).start();
   });
-}
-
-if (!!public || public == "true") {
-  startLocalServer();
+} else {
+  ProxyServer(cliOptions).start();
 }
