@@ -14,8 +14,8 @@
     "https-proxy-agent": "2.2.2",
     "minimist": "1.2.0",
     "node-fetch": "2.6.0",
-    "open": "^6.4.0",
-    "readline-sync": "^1.4.10",
+    "open": "6.4.0",
+    "readline-sync": "1.4.10",
     "ws": "7.1.2"
   },
   "devDependencies": {
