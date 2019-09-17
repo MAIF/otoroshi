@@ -38,14 +38,14 @@ or you can specify multiple tunnels at the same time using a config file like
     },
     {
       "enabled": false,
-      "name": "Service foo 2",
+      "name": "Service 2",
       "access_type": "session",
       "remote": "http://foo.oto.tools:9999",
       "port": 2223
     },
     {
       "enabled": true,
-      "name": "Service foo 3",
+      "name": "Service 3",
       "access_type": "apikey",
       "remote": "http://foo2.oto.tools:9999",
       "port": 2224,
@@ -53,7 +53,7 @@ or you can specify multiple tunnels at the same time using a config file like
     },
     {
       "enabled": true,
-      "name": "Service foo 4",
+      "name": "Service 4",
       "access_type": "public",
       "remote": "http://foo3.oto.tools:9999",
       "port": 2225
