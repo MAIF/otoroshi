@@ -143,8 +143,14 @@ function SessionAuthChecker(remoteUrl, token) {
 
 function ProxyServer(options) {
 
+  const sessionId = options.name || faker.random.alphaNumeric(6);
+
   if (!options.remote) {
-    throw new Error('No remote service location specified !');
+    throw new Error(`[${sessionId}] No remote service location specified !`);
+  }
+
+  if (options.remote.indexOf('http://') === 0) {
+    console.warn(`[${sessionId}] You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`)
   }
 
   const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
@@ -155,7 +161,6 @@ function ProxyServer(options) {
   const access_type = options.access_type || "public";
   const apikey = options.apikey;
   const simpleApikeyHeaderName = options.sahn || 'x-api-key';
-  const sessionId = options.name || faker.random.alphaNumeric(6);
 
   const headers = {};
   let finalUrl = remoteWsUrl + '/.well-known/otoroshi/tunnel';
