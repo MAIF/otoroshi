@@ -120,7 +120,7 @@ function ProxyServer(options) {
   const localProcessAddress = options.address || '127.0.0.1';
   const localProcessPort = options.port || 2222;
   const checkEvery = options.every || 10000;
-  const access_type = options.access_type;
+  const access_type = options.access_type || "public";
   const apikey = options.apikey;
   const simpleApikeyHeaderName = options.sahn || 'x-api-key';
   const sessionId = options.name || faker.random.alphaNumeric(6);
