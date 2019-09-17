@@ -2,7 +2,13 @@
 
 ## Test it
 
-Define an otoroshi service on `http://foo.oto.tools:8080` that target your local ssh server at `http://127.0.0.1:22` (here http is irrelevant, it's just a UI issue) and enable the `Enable TCP tunneling` flag. Then either activate public access, apikey access or authenticated access. 
+Define an otoroshi service on `http://foo.oto.tools:8080` that target your local ssh server at `http://127.0.0.1:22` (here `http://` is irrelevant, it's just a UI issue) and enable the `Enable TCP tunneling` flag. 
+
+ Then either activate 
+
+* public access by defining a `/.*` public pattern for the service
+* apikey access by not defining public patterns or by defining private patterns
+* authenticated access by enforcing user authentication in the `authentication` section
 
 Run the local tunnel client with :
 
