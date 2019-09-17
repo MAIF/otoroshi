@@ -235,7 +235,7 @@ function ProxyServer(options) {
         return new Promise(success => {
           console.log('\n');
           if (!!newPrompt) {
-            const token = readlineSync.question('Session token value > ', {
+            const token = readlineSync.question(`[${sessionId}] Session token value > `, {
               //hideEchoBack: true // The typed text on screen is hidden by `*` (default).
             });
             const checker = SessionAuthChecker(remoteUrl, token);
@@ -257,7 +257,7 @@ function ProxyServer(options) {
             const readline = require('readline').createInterface({
               input: process.stdin,
               output: process.stdout,
-              prompt: 'Session token value > ',
+              prompt: `[${sessionId}] Session token value > `,
               crlfDelay: Infinity
             });
             readline.on('line', (line) => {
@@ -325,7 +325,11 @@ function asyncForEach(_arr, f) {
 if (cliOptions.config && fs.existsSync(cliOptions.config)) {
   const configContent = fs.readFileSync(cliOptions.config).toString('utf8');
   const configJson = JSON.parse(configContent);
-  asyncForEach(configJson.filter(item => item.enabled), item => {
+  const items = (configJson.tunnels || configJson).filter(item => item.enabled);
+  if (configJson.name) {
+    console.log(`Launching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`)
+  }
+  asyncForEach(items, item => {
     return ProxyServer(item).start();
   });
 } else {
