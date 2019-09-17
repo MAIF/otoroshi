@@ -1,17 +1,20 @@
 [
   {
+    "enabled": true,
     "name": "Service foo",
     "access_type": "session",
     "remote": "http://foo.oto.tools:9999",
     "port": 2222
   },
   {
+    "enabled": false,
     "name": "Service foo 2",
     "access_type": "session",
     "remote": "http://foo.oto.tools:9999",
     "port": 2223
   },
   {
+    "enabled": true,
     "name": "Service foo 3",
     "access_type": "apikey",
     "remote": "http://foo2.oto.tools:9999",
@@ -19,6 +22,7 @@
     "apikey": "cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648"
   },
   {
+    "enabled": true,
     "name": "Service foo 4",
     "access_type": "public",
     "remote": "http://foo3.oto.tools:9999",

@@ -325,7 +325,7 @@ function asyncForEach(_arr, f) {
 if (cliOptions.config && fs.existsSync(cliOptions.config)) {
   const configContent = fs.readFileSync(cliOptions.config).toString('utf8');
   const configJson = JSON.parse(configContent);
-  asyncForEach(configJson, item => {
+  asyncForEach(configJson.filter(item => item.enabled), item => {
     return ProxyServer(item).start();
   });
 } else {
