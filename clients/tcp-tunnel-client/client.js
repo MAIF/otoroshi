@@ -6,10 +6,12 @@ const faker = require('faker');
 const HttpsProxyAgent = require('https-proxy-agent');
 const WebSocket = require('ws');
 const open = require('open');
+const readlineSync = require('readline-sync');
 
 const cliOptions = require('minimist')(process.argv.slice(2));
 const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
 const debug = cliOptions.debug || false;
+const newPrompt = cliOptions.newPrompt || false;
 const clientCaPath = cliOptions.caPath;
 const clientCertPath = cliOptions.certPath;
 const clientKeyPath = cliOptions.keyPath;
@@ -232,19 +234,14 @@ function ProxyServer(options) {
       return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
         return new Promise(success => {
           console.log('\n');
-          const readline = require('readline').createInterface({
-            input: process.stdin,
-            output: process.stdout,
-            prompt: 'Session token value > ',
-            crlfDelay: Infinity
-          });
-          readline.on('line', (line) => {
-            const token = line.trim();
-            readline.close();
-            console.log('\n\n');
+          if (!!newPrompt) {
+            const token = readlineSync.question('Session token value > ', {
+              //hideEchoBack: true // The typed text on screen is hidden by `*` (default).
+            });
             const checker = SessionAuthChecker(remoteUrl, token);
             finalUrl = finalUrl + '/?pappsToken=' + token;
             checker.check().then(() => {
+              console.log('\n');
               console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
               const server = startLocalServer();
               success(server);
@@ -256,8 +253,34 @@ function ProxyServer(options) {
             }, text => {
               console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
             });
-          });
-          readline.prompt();
+          } else {
+            const readline = require('readline').createInterface({
+              input: process.stdin,
+              output: process.stdout,
+              prompt: 'Session token value > ',
+              crlfDelay: Infinity
+            });
+            readline.on('line', (line) => {
+              const token = line.trim();
+              readline.close();
+              console.log('\n\n');
+              const checker = SessionAuthChecker(remoteUrl, token);
+              finalUrl = finalUrl + '/?pappsToken=' + token;
+              checker.check().then(() => {
+                console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
+                const server = startLocalServer();
+                success(server);
+                checker.every(checkEvery, () => {
+                  console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
+                  server.close();
+                  ProxyServer(options).start();
+                });
+              }, text => {
+                console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
+              });
+            });
+            readline.prompt();
+          }
         });
       });
     }
