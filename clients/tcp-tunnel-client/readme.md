@@ -1,6 +1,20 @@
 # TCP tunnel client
 
-## Test it
+The idea here is to provide a secure way to access any TCP resource proxied by Otoroshi through a secured, authenticated, audited TLS tunnel. 
+To do that, you'll need a local client to create the tunnel from your machine to Otoroshi. Encrypted underlying connections will pass through Otoroshi whitout being decrypted. The underlying connections will be untouched by Otoroshi.
+
+The client can use enterprise proxies and client certificates. This client can use Otoroshi apikeys or authentication modules (like OAuth2, with browser login) to access services.
+
+## Install dependencies
+
+```sh
+# with node 12.x
+yarn install
+```
+
+## Try it
+
+![Schema](./schema.jpg)
 
 Define an otoroshi service on `http://foo.oto.tools:8080` that target your local ssh server at `http://127.0.0.1:22` (here `http://` is irrelevant, it's just a UI issue) and enable the `Enable TCP tunneling` flag. 
 
