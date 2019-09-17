@@ -1,6 +1,6 @@
 # TCP tunnel client
 
-## test it
+## Test it
 
 Define an otoroshi service on `http://foo.oto.tools:8080` that target `http://127.0.0.1:22` and enable the `Enable TCP tunneling` flag. Then either activate public access, apikey access or authenticated access. 
 
