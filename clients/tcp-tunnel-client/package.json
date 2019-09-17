@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "dev": "nodemon client.js",
-    "start": "nodemon client.js"
+    "start": "node client.js",
+    "start-and-watch": "nodemon client.js"
   },
   "dependencies": {
     "faker": "4.1.0",
