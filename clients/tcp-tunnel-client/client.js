@@ -230,7 +230,7 @@ function ProxyServer(options) {
   }
 
   if (options.remote.indexOf('http://') === 0) {
-    console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`)
+    console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`.red.italic)
   }
 
   const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
