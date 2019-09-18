@@ -1,5 +1,5 @@
 {
-  "name": "tcp-tunnel-client",
+  "name": "otoroshi-tcp-tunnel-client",
   "version": "1.0.0",
   "main": "client.js",
   "license": "MIT",

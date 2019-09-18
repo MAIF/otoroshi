@@ -30,7 +30,21 @@ function debugLog(...args) {
   }
 }
 
+// TODO: store token to reuse them before asking to log in
+// TODO: when diconnected, queue reconnections and reuse tokens
+
 require('readline').emitKeypressEvents(process.stdin);
+
+let runningInDocker = false;
+if (fs.existsSync('/proc/self/cgroup')) {
+  const content = fs.readFileSync('/proc/self/cgroup').toString('utf8');
+  runningInDocker = !!(content.split("\n").filter(line => {
+    return !!(line.split('/').filter(part => part === 'docker')[0]);
+  })[0]);
+  if (runningInDocker) {
+    console.log(`When running inside docker, browser integration will not work, you'll have to copy/paste URL in your browser when asked.`)
+  }
+}
 
 function askForToken(sessionId, cb) {
   if (prompt === 'readlinesync') {
@@ -268,7 +282,8 @@ function ProxyServer(options) {
     }
 
     if (access_type === 'session') {
-      return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
+      if (runningInDocker) {
+        console.log(`Please open the following URL in your browser and log in if needed\n\n${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob\n\n`);
         return new Promise(success => {
           askForToken(sessionId, token => {
             const checker = SessionAuthChecker(remoteUrl, token);
@@ -287,7 +302,28 @@ function ProxyServer(options) {
             });
           });
         });
-      });
+      } else {
+        return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
+          return new Promise(success => {
+            askForToken(sessionId, token => {
+              const checker = SessionAuthChecker(remoteUrl, token);
+              finalUrl = finalUrl + '/?pappsToken=' + token;
+              checker.check().then(() => {
+                console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
+                const server = startLocalServer();
+                success(server);
+                checker.every(checkEvery, () => {
+                  console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
+                  server.close();
+                  ProxyServer(options).start();
+                });
+              }, text => {
+                console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
+              });
+            });
+          });
+        });
+      }
     }
 
     if (access_type === 'public') {

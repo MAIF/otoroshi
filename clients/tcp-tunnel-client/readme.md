@@ -89,3 +89,10 @@ Then try to access the service from your ssh client
 ```sh
 ssh localuser@127.0.0.1 -p 2222
 ```
+
+## Docker
+
+```sh
+docker build -t otoroshi-tcp-tunnel-cli .
+docker run -it -p 2222:2222 -v $(pwd)/foo.json:/config.json otoroshi-tcp-tunnel-cli --config=/config.json
+```
