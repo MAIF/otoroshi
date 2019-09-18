@@ -1,7 +1,7 @@
-# TCP tunnel client
+# Otoroshi TCP tunnel cli
 
 The idea here is to provide a secure way to access any TCP resource proxied by Otoroshi through a secured, authenticated, audited TLS tunnel. 
-To do that, you'll need a local client to create the tunnel from your machine to Otoroshi. Encrypted underlying connections will pass through Otoroshi whitout being decrypted. The underlying connections will be untouched by Otoroshi.
+To do that, you'll need a local client to create the tunnel from your machine to Otoroshi. The underlying connections and protocols will remain untouched, undecrypted, unchanged by Otoroshi, they will only pass through.
 
 The client can use enterprise proxies and client certificates. This client can use Otoroshi apikeys or authentication modules (like OAuth2, with browser login) to access services.
 
