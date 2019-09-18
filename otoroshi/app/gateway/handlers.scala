@@ -482,7 +482,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
             req.getQueryString("redirect") match {
               case Some("urn:ietf:wg:oauth:2.0:oob") =>
                 FastFuture.successful(Ok(views.html.otoroshi.token(env.signPrivateSessionId(user.randomId), env)))
-              case None => Errors
+              case _ => Errors
                 .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
             }
           } else {

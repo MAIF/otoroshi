@@ -1914,7 +1914,7 @@ case class ServiceDescriptor(
     restrictions: Restrictions = Restrictions()
 ) {
 
-  def toHost: String = subdomain match {
+  lazy val toHost: String = subdomain match {
     case s if s.isEmpty                  => s"$env.$domain"
     case s if s.isEmpty && env == "prod" => s"$domain"
     case s if env == "prod"              => s"$subdomain.$domain"
@@ -2406,7 +2406,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Seq[ServiceDescriptor]] = {
-    services.exists(_.hasNoRoutingConstraints) match {
+
+    /*services.exists(_.hasNoRoutingConstraints) match {
       case true => {
         val filtered1 = services.filter { sr =>
           val allHeadersMatched = matchAllHeaders(sr, query)
@@ -2450,7 +2451,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
             }
           }
       }
-    }
+    }*/
 
     val filtered1 = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
@@ -2471,12 +2472,21 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       })
       .map { s =>
         val allSers = s.filter(_._2).map(_._1)
-        if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+        val res1 = if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
           // let apikey check in handler produce an Unauthorized response instead of service not found
           Seq(filtered.last)
         } else {
           allSers
         }
+        val res = res1.sortWith {
+          case (a, b) => b.toHost.contains("*") && !a.toHost.contains("*")
+        }
+        // println("--------------")
+        // println(s"for query on ${query.toHost}")
+        // println("--------------")
+        // println(res.map(s => s"${s.name} - ${s.toHost}").mkString("\n"))
+        // println("==============")
+        res
       }
   }
 
