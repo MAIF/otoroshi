@@ -6,11 +6,13 @@ const faker = require('faker');
 const HttpsProxyAgent = require('https-proxy-agent');
 const WebSocket = require('ws');
 const open = require('open');
+const moment = require('moment');
+const colors = require('colors');
 
 const cliOptions = require('minimist')(process.argv.slice(2));
 const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
 const debug = cliOptions.debug || false;
-const prompt = cliOptions.prompt || 'inquirer';
+const prompt = cliOptions.prompt || 'readline';
 const clientCaPath = cliOptions.caPath;
 const clientCertPath = cliOptions.certPath;
 const clientKeyPath = cliOptions.keyPath;
@@ -24,17 +26,73 @@ const agent = (clientCaPath || clientCertPath || clientKeyPath) ? new AgentClass
   ca: clientCaPath ? fs.readFileSync(clientCaPath) : undefined,
 }) : undefined;
 
+const possibleColors = [
+  'green',
+  'yellow',
+  'blue',
+  'red',
+  'magenta',
+  'cyan',
+  'white',
+  'grey',
+];
+
+/*****************************************************/
+function asyncForEach(_arr, f) {
+  return new Promise((success, failure) => {
+    const arr = [ ..._arr ];
+    function next() {
+      const item = arr.shift();
+      if (item) {
+        const res = f(item);
+        if (res && res.then) {
+          res.then(() => {
+            next();
+          })
+        } else {
+          setTimeout(() => next(), 10);
+        }
+      } else {
+        success();
+      }
+    }
+    next();
+  });
+}
+/*****************************************************/
+const awaitingReconnections = [];
+function reconnectAwaitingReconnections() {
+  if (awaitingReconnections.length > 0) {
+    const reconnect = awaitingReconnections.shift();
+    if (reconnect) {
+      try {
+        console.log('reconnect')
+        reconnect().then(() => {
+          console.log('in ze then')
+          setTimeout(reconnectAwaitingReconnections, 2000);
+        }).catch(e => {
+          setTimeout(reconnectAwaitingReconnections, 2000);
+        });
+      } catch (e) {
+        setTimeout(reconnectAwaitingReconnections, 2000);
+      }
+    } else {
+      setTimeout(reconnectAwaitingReconnections, 2000);
+    }
+  } else {
+    setTimeout(reconnectAwaitingReconnections, 2000);
+  }
+}
+setTimeout(reconnectAwaitingReconnections, 2000);
+/*****************************************************/
+const existingSessionTokens = {};
+/*****************************************************/
 function debugLog(...args) {
   if (debug) {
     console.log(...args);
   }
 }
-
-// TODO: store token to reuse them before asking to log in
-// TODO: when diconnected, queue reconnections and reuse tokens
-
-require('readline').emitKeypressEvents(process.stdin);
-
+/*****************************************************/
 let runningInDocker = false;
 if (fs.existsSync('/proc/self/cgroup')) {
   const content = fs.readFileSync('/proc/self/cgroup').toString('utf8');
@@ -45,10 +103,13 @@ if (fs.existsSync('/proc/self/cgroup')) {
     console.log(`When running inside docker, browser integration will not work, you'll have to copy/paste URL in your browser when asked.`)
   }
 }
+/*****************************************************/
+require('readline').emitKeypressEvents(process.stdin);
+/*****************************************************/
 
-function askForToken(sessionId, cb) {
+function askForToken(sessionId, color, cb) {
   if (prompt === 'readlinesync') {
-    const token = require('readline-sync').question(`[${sessionId}] Session token > `, {
+    const token = require('readline-sync').question(color(`[${sessionId}]`) + ` Session token > `.white.bold, {
       //hideEchoBack: true // The typed text on screen is hidden by `*` (default).
     });
     cb(token);
@@ -56,20 +117,24 @@ function askForToken(sessionId, cb) {
     const readline = require('readline').createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: `[${sessionId}] Session token > `,
+      prompt: color(`[${sessionId}]`) + ` Session token > `.white.bold,
       crlfDelay: Infinity
     });
     readline.on('line', (line) => {
-      const token = line.trim();
-      readline.close();
-      cb(token);
+      if (line.trim() === '') {
+        readline.prompt();
+      } else {
+        const token = line.trim();
+        readline.close();
+        cb(token);
+      }
     });
     readline.prompt();
   } else if (prompt === 'inquirer') {
     const questions = [{
       type: 'input',
       name: 'token',
-      message: `[${sessionId}] Session token > `,
+      message: color(`[${sessionId}]`) + ` Session token > `.white.bold,
     }];
     require('inquirer').prompt(questions).then(answers => {
       cb(answers['token']);
@@ -157,14 +222,15 @@ function SessionAuthChecker(remoteUrl, token) {
 
 function ProxyServer(options) {
 
+  const color = colors[possibleColors[Math.floor(Math.random() * possibleColors.length)]].bold;
   const sessionId = options.name || faker.random.alphaNumeric(6);
 
   if (!options.remote) {
-    throw new Error(`[${sessionId}] No remote service location specified !`);
+    throw new Error(color(`[${sessionId}]`) + ` No remote service location specified !`);
   }
 
   if (options.remote.indexOf('http://') === 0) {
-    console.warn(`[${sessionId}] You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`)
+    console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`)
   }
 
   const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
@@ -178,6 +244,23 @@ function ProxyServer(options) {
 
   const headers = {};
   let finalUrl = remoteWsUrl + '/.well-known/otoroshi/tunnel';
+
+  function tryExistingTokenBeforeRelogin(sessionId, remoteUrl) {
+    let done = false;
+    return new Promise((success, failure) => {
+      asyncForEach(Object.keys(existingSessionTokens), token => {
+        return SessionAuthChecker(remoteUrl, token).check().then(r => {
+          if (!done) {
+            success(token);
+          }
+        });
+      }).then(() => {
+        if (!done) {
+          success(null);
+        }
+      });
+    });
+  }
 
   function startLocalServer() {
 
@@ -253,7 +336,7 @@ function ProxyServer(options) {
     });
 
     server.listen(localProcessPort, localProcessAddress, () => {
-      console.log(`[${sessionId}] Local tunnel listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}\n`);
+      console.log(color(`[${sessionId}]`) + ` Local tunnel listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}`);
     });
 
     return server;
@@ -269,61 +352,65 @@ function ProxyServer(options) {
       }
       const checker = ApiKeyAuthChecker(remoteUrl, headers);
       return checker.check().then(() => {
-        console.log(`[${sessionId}] Will use apikey authentication to access the service. Apikey access was successful !`);
+        console.log(color(`[${sessionId}]`) + ` Will use apikey authentication to access the service. Apikey access was successful !`);
         const server = startLocalServer();
         checker.every(checkEvery, () => {
-          console.log(`[${sessionId}] Cannot access service with apikey anymore. Stopping the tunnel !`);
+          console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey anymore. Stopping the tunnel !`);
           server.close();
         });
         return server;
       }, text => {
-        console.log(`[${sessionId}] Cannot access service with apikey. An error occurred`, text);
+        console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey. An error occurred`, text);
       });
     }
 
     if (access_type === 'session') {
-      if (runningInDocker) {
-        console.log(`Please open the following URL in your browser and log in if needed\n\n${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob\n\n`);
-        return new Promise(success => {
-          askForToken(sessionId, token => {
-            const checker = SessionAuthChecker(remoteUrl, token);
-            finalUrl = finalUrl + '/?pappsToken=' + token;
-            checker.check().then(() => {
-              console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
-              const server = startLocalServer();
-              success(server);
-              checker.every(checkEvery, () => {
-                console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
-                server.close();
-                ProxyServer(options).start();
-              });
-            }, text => {
-              console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
+
+      function startLocalServerAndCheckSession(sessionId, remoteUrl, token, success) {
+        existingSessionTokens[token] = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
+        const checker = SessionAuthChecker(remoteUrl, token);
+        finalUrl = finalUrl + '/?pappsToken=' + token;
+        checker.check().then(() => {
+          console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`);
+          const server = startLocalServer();
+          success(server);
+          checker.every(checkEvery, () => {
+            console.log(color(`[${sessionId}]`) + ` Cannot access service with session anymore. Stopping the tunnel !`);
+            delete existingSessionTokens[token];
+            server.close();
+            awaitingReconnections.push(() => {
+              return ProxyServer(options).start();
             });
           });
-        });
-      } else {
-        return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
-          return new Promise(success => {
-            askForToken(sessionId, token => {
-              const checker = SessionAuthChecker(remoteUrl, token);
-              finalUrl = finalUrl + '/?pappsToken=' + token;
-              checker.check().then(() => {
-                console.log(`[${sessionId}] Will use session authentication to access the service. Session access was successful !`);
-                const server = startLocalServer();
-                success(server);
-                checker.every(checkEvery, () => {
-                  console.log(`[${sessionId}] Cannot access service with session anymore. Stopping the tunnel !`);
-                  server.close();
-                  ProxyServer(options).start();
-                });
-              }, text => {
-                console.log(`[${sessionId}] Cannot access service with session. An error occurred`, text);
-              });
-            });
-          });
+        }, text => {
+          // console.log(color(`[${sessionId}]`) + ` Cannot access service with session. An error occurred`, text);
         });
       }
+
+      return tryExistingTokenBeforeRelogin(sessionId, remoteUrl).then(existingToken => {
+        if (existingToken) {
+          return new Promise(success => {
+            startLocalServerAndCheckSession(sessionId, remoteUrl, existingToken, success);
+          });
+        } else {
+          if (runningInDocker) {
+            console.log(color(`[${sessionId}]`) + ` Please open the following URL in your browser and log in if needed\n\n${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob\n\n`);
+            return new Promise(success => {
+              askForToken(sessionId, color, token => {
+                startLocalServerAndCheckSession(sessionId, remoteUrl, token, success)
+              });
+            });
+          } else {
+            return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
+              return new Promise(success => {
+                askForToken(sessionId, color, token => {
+                  startLocalServerAndCheckSession(sessionId, remoteUrl, token, success)
+                });
+              });
+            });
+          }
+        }
+      });
     }
 
     if (access_type === 'public') {
@@ -333,7 +420,7 @@ function ProxyServer(options) {
       });
     }
 
-    return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'));
+    return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'.bold.red));
   }
 
   return {
@@ -341,34 +428,12 @@ function ProxyServer(options) {
   };
 }
 
-function asyncForEach(_arr, f) {
-  return new Promise((success, failure) => {
-    const arr = [ ..._arr ];
-    function next() {
-      const item = arr.shift();
-      if (item) {
-        const res = f(item);
-        if (res && res.then) {
-          res.then(() => {
-            next();
-          })
-        } else {
-          setTimeout(() => next(), 10);
-        }
-      } else {
-        success();
-      }
-    }
-    next();
-  });
-}
-
 if (cliOptions.config && fs.existsSync(cliOptions.config)) {
   const configContent = fs.readFileSync(cliOptions.config).toString('utf8');
   const configJson = JSON.parse(configContent);
   const items = (configJson.tunnels || configJson).filter(item => item.enabled);
   if (configJson.name) {
-    console.log(`Launching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`)
+    console.log(`Launching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`.white.bold)
   }
   asyncForEach(items, item => {
     return ProxyServer(item).start();

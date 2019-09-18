@@ -10,10 +10,12 @@
     "start-and-watch": "nodemon client.js"
   },
   "dependencies": {
+    "colors": "^1.3.3",
     "faker": "4.1.0",
     "https-proxy-agent": "2.2.2",
     "inquirer": "7.0.0",
     "minimist": "1.2.0",
+    "moment": "2.24.0",
     "node-fetch": "2.6.0",
     "open": "6.4.0",
     "readline-sync": "1.4.10",
