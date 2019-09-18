@@ -48,11 +48,6 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.{Failure, Success, Try}
 
 /**
- * # TODO:
- *
- * [ ] support cassandra
- * [ ] support mongo
- *
  * # Test
  *
  * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
@@ -568,7 +563,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   def getClusterMembers() = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
       case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
-      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available"))) // TODO: ???
       case Leader => {
         val time = Json.obj("time" -> DateTime.now().getMillis)
         env.datastores.clusterStateDataStore.getMembers().map { members =>
@@ -581,7 +576,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   def clearClusterMembers() = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
       case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
-      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available"))) // TODO: ???
       case Leader => {
         val time = Json.obj("time" -> DateTime.now().getMillis)
         env.datastores.clusterStateDataStore.clearMembers().map { members =>
@@ -593,8 +588,13 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def isSessionValid(sessionId: String) = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
-      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
-      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Worker => {
+        env.clusterAgent.isSessionValid(sessionId).map {
+          case Some(user) => Ok(user.toJson)
+          case None => NotFound(Json.obj("error" -> "Session not found"))
+        }
+      }
       case Leader => {
         Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
         env.datastores.privateAppsUserDataStore.findById(sessionId).map {
@@ -608,7 +608,17 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   def createSession() = ApiAction.async(parse.json) { ctx =>
     env.clusterConfig.mode match {
       case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
-      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Worker => {
+        PrivateAppsUser.fmt.reads(ctx.request.body) match {
+          case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad session format")))
+          case JsSuccess(user, _) => {
+            env.clusterAgent.createSession(user).map {
+              case Some(session) => Created(session.toJson)
+              case _ => InternalServerError(Json.obj("error" -> "Failed to create session on master"))
+            }
+          }
+        }
+      }
       case Leader => {
         Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] creating session")
         PrivateAppsUser.fmt.reads(ctx.request.body) match {
@@ -626,7 +636,47 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   def updateQuotas() = ApiAction.async(sourceBodyParser) { ctx =>
     env.clusterConfig.mode match {
       case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
-      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Worker => {
+        ctx.request.body
+          .via(env.clusterConfig.gunzip())
+          .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
+          .mapAsync(4) { item =>
+            val jsItem = Json.parse(item.utf8String)
+            (jsItem \ "typ").asOpt[String] match {
+              case Some("globstats") => {
+                // TODO: membership + global stats ?
+                FastFuture.successful(())
+              }
+              case Some("srvincr") => {
+                val id      = (jsItem \ "srv").asOpt[String].getOrElse("--")
+                val calls   = (jsItem \ "c").asOpt[Long].getOrElse(0L)
+                val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
+                val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
+                env.clusterAgent.incrementService(id, dataIn, dataOut)
+                if (calls - 1 >  0) {
+                  (0L to (calls - 1L)).foreach { _ =>
+                    env.clusterAgent.incrementService(id, 0L, 0L)
+                  }
+                }
+                FastFuture.successful(())
+              }
+              case Some("apkincr") => {
+                val id        = (jsItem \ "apk").asOpt[String].getOrElse("--")
+                val increment = (jsItem \ "i").asOpt[Long].getOrElse(0L)
+                env.clusterAgent.incrementApi(id, increment)
+                FastFuture.successful(())
+              }
+              case _ => FastFuture.successful(())
+            }
+          }
+          .runWith(Sink.ignore)
+          .map(_ => Ok(Json.obj("done" -> true)))
+          .recover {
+            case e =>
+              Cluster.logger.error("Error while updating quotas", e)
+              InternalServerError(Json.obj("error" -> e.getMessage))
+          }
+      }
       case Leader => {
         // Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
         val bytesCounter = new AtomicLong(0L)
@@ -708,7 +758,21 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   def internalState() = ApiAction { ctx =>
     env.clusterConfig.mode match {
       case Off    => NotFound(Json.obj("error" -> "Cluster API not available"))
-      case Worker => NotFound(Json.obj("error" -> "Cluster API not available"))
+      case Worker => {
+        // TODO: cluster membership
+        Ok.sendEntity(
+          HttpEntity.Streamed(
+            env.datastores
+              .rawExport(env.clusterConfig.leader.groupingBy)
+              .map { item =>
+                ByteString(Json.stringify(item) + "\n")
+              }
+              .via(env.clusterConfig.gzip()),
+            None,
+            Some("application/x-ndjson")
+          )
+        )
+      }
       case Leader => {
 
         val cachedValue = cachedRef.get()
@@ -969,8 +1033,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .get()
             .filter { resp =>
-              resp.ignoreIf(resp.status != 201)
-              resp.status == 201
+              resp.ignoreIf(resp.status != 200)
+              resp.status == 200
             }
             .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
         }
@@ -986,7 +1050,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def createSession(user: PrivateAppsUser): Future[Unit] = {
+  def createSession(user: PrivateAppsUser): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
@@ -1003,13 +1067,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .post(user.toJson)
             .filter { resp =>
-              resp.ignore()
+              resp.ignoreIf(resp.status != 201)
               resp.status == 201
             }
+            .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
         }
-        .map(_ => ())
     } else {
-      FastFuture.successful(())
+      FastFuture.successful(None)
     }
   }
 
