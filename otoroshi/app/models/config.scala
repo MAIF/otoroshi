@@ -39,11 +39,11 @@ object ElasticAnalyticsConfig {
       Try {
         JsSuccess(
           ElasticAnalyticsConfig(
-            clusterUri = (json \ "clusterUri").asOpt[String].map(_.trim).get,
-            index = (json \ "index").asOpt[String].map(_.trim),
-            `type` = (json \ "type").asOpt[String].map(_.trim),
-            user = (json \ "user").asOpt[String].map(_.trim),
-            password = (json \ "password").asOpt[String].map(_.trim),
+            clusterUri = (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).get,
+            index = (json \ "index").asOpt[String].map(_.trim).filter(_.nonEmpty),
+            `type` = (json \ "type").asOpt[String].map(_.trim).filter(_.nonEmpty),
+            user = (json \ "user").asOpt[String].map(_.trim).filter(_.nonEmpty),
+            password = (json \ "password").asOpt[String].map(_.trim).filter(_.nonEmpty),
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
           )
         )
