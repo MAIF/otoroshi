@@ -45,7 +45,7 @@ or you can specify multiple tunnels at the same time using a config file like
   "tunnels": [
     {
       "enabled": true,
-      "name": "Service foo",
+      "name": "Service 1",
       "access_type": "session",
       "remote": "http://foo.oto.tools:9999",
       "port": 2222
