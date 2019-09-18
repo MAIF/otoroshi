@@ -352,15 +352,15 @@ function ProxyServer(options) {
       }
       const checker = ApiKeyAuthChecker(remoteUrl, headers);
       return checker.check().then(() => {
-        console.log(color(`[${sessionId}]`) + ` Will use apikey authentication to access the service. Apikey access was successful !`);
+        console.log(color(`[${sessionId}]`) + ` Will use apikey authentication to access the service. Apikey access was successful !`.green.italic);
         const server = startLocalServer();
         checker.every(checkEvery, () => {
-          console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey anymore. Stopping the tunnel !`);
+          console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey anymore. Stopping the tunnel !`.red.italic);
           server.close();
         });
         return server;
       }, text => {
-        console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey. An error occurred`, text);
+        console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey. An error occurred`.red.italic, text);
       });
     }
 
@@ -371,11 +371,11 @@ function ProxyServer(options) {
         const checker = SessionAuthChecker(remoteUrl, token);
         finalUrl = finalUrl + '/?pappsToken=' + token;
         checker.check().then(() => {
-          console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`);
+          console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`.green.italic);
           const server = startLocalServer();
           success(server);
           checker.every(checkEvery, () => {
-            console.log(color(`[${sessionId}]`) + ` Cannot access service with session anymore. Stopping the tunnel !`);
+            console.log(color(`[${sessionId}]`) + ` Cannot access service with session anymore. Stopping the tunnel !`.red.italic);
             delete existingSessionTokens[token];
             server.close();
             awaitingReconnections.push(() => {
@@ -383,7 +383,7 @@ function ProxyServer(options) {
             });
           });
         }, text => {
-          // console.log(color(`[${sessionId}]`) + ` Cannot access service with session. An error occurred`, text);
+          console.log(color(`[${sessionId}]`) + ` Cannot access service with session. An error occurred`.red.italic, text);
         });
       }
 
@@ -433,7 +433,7 @@ if (cliOptions.config && fs.existsSync(cliOptions.config)) {
   const configJson = JSON.parse(configContent);
   const items = (configJson.tunnels || configJson).filter(item => item.enabled);
   if (configJson.name) {
-    console.log(`Launching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`.white.bold)
+    console.log(`\nOtoroshi TCP tunnel CLI\n\nLaunching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`.white.bold)
   }
   asyncForEach(items, item => {
     return ProxyServer(item).start();
