@@ -433,7 +433,7 @@ if (cliOptions.config && fs.existsSync(cliOptions.config)) {
   const configJson = JSON.parse(configContent);
   const items = (configJson.tunnels || configJson).filter(item => item.enabled);
   if (configJson.name) {
-    console.log(`\nOtoroshi TCP tunnel CLI\n\nLaunching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`.white.bold)
+    console.log(`\nOtoroshi TCP tunnel CLI\n\n`.yellow.bold + `Launching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`.white.bold)
   }
   asyncForEach(items, item => {
     return ProxyServer(item).start();

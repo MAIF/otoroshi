@@ -16,7 +16,7 @@ yarn install
 
 ![Schema](./schema.jpg)
 
-Define an otoroshi service on `http://foo.oto.tools:8080` that target your local ssh server at `http://127.0.0.1:22` (here `http://` is irrelevant, it's just a UI issue) and enable the `Enable TCP tunneling` flag. 
+Define an otoroshi service on `http://foo.oto.tools:8080` that target your local ssh server at `http://127.0.0.1:22` (here `http://` is irrelevant, it's just a UI issue) and enable the `TCP tunnel` flag. 
 
  Then either activate 
 
