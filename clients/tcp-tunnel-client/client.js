@@ -230,7 +230,7 @@ function ProxyServer(options) {
   }
 
   if (options.remote.indexOf('http://') === 0) {
-    console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`.red.italic)
+    console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`.red)
   }
 
   const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
@@ -357,15 +357,15 @@ function ProxyServer(options) {
       }
       const checker = ApiKeyAuthChecker(remoteUrl, headers);
       return checker.check().then(() => {
-        console.log(color(`[${sessionId}]`) + ` Will use apikey authentication to access the service. Apikey access was successful !`.green.italic);
+        console.log(color(`[${sessionId}]`) + ` Will use apikey authentication to access the service. Apikey access was successful !`.green);
         const server = startLocalServer();
         checker.every(checkEvery, () => {
-          console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey anymore. Stopping the tunnel !`.red.italic);
+          console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey anymore. Stopping the tunnel !`.red);
           server.close();
         });
         return server;
       }, text => {
-        console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey. An error occurred`.red.italic, text);
+        console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey. An error occurred`.red, text);
       });
     }
 
@@ -376,11 +376,11 @@ function ProxyServer(options) {
         const checker = SessionAuthChecker(remoteUrl, token, headers);
         finalUrl = finalUrl + '/?pappsToken=' + token;
         checker.check().then(() => {
-          console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`.green.italic);
+          console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`.green);
           const server = startLocalServer();
           success(server);
           checker.every(checkEvery, () => {
-            console.log(color(`[${sessionId}]`) + ` Cannot access service with session anymore. Stopping the tunnel !`.red.italic);
+            console.log(color(`[${sessionId}]`) + ` Cannot access service with session anymore. Stopping the tunnel !`.red);
             delete existingSessionTokens[token];
             server.close();
             awaitingReconnections.push(() => {
@@ -388,7 +388,7 @@ function ProxyServer(options) {
             });
           });
         }, text => {
-          console.log(color(`[${sessionId}]`) + ` Cannot access service with session. An error occurred`.red.italic, text);
+          console.log(color(`[${sessionId}]`) + ` Cannot access service with session. An error occurred`.red, text);
         });
       }
 
