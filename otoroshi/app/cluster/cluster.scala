@@ -563,7 +563,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   def getClusterMembers() = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
       case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
-      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available"))) // TODO: ???
+      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         val time = Json.obj("time" -> DateTime.now().getMillis)
         env.datastores.clusterStateDataStore.getMembers().map { members =>
@@ -576,7 +576,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   def clearClusterMembers() = ApiAction.async { ctx =>
     env.clusterConfig.mode match {
       case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
-      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available"))) // TODO: ???
+      case Worker => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Leader => {
         val time = Json.obj("time" -> DateTime.now().getMillis)
         env.datastores.clusterStateDataStore.clearMembers().map { members =>

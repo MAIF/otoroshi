@@ -1,0 +1,14 @@
+{
+  "name": "Dev config. to test tcp tunnels in otoroshi from docker",
+  "tunnels": [
+    {
+      "enabled": true,
+      "name": "Service 3",
+      "access_type": "apikey",
+      "remote": "http://host.docker.internal:9999",
+      "host": "foo2.oto.tools",
+      "port": 2224,
+      "apikey": "cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648"
+    }
+  ]
+}

@@ -29,6 +29,15 @@
       "access_type": "public",
       "remote": "http://foo3.oto.tools:9999",
       "port": 2225
+    },
+    {
+      "enabled": true,
+      "name": "Service 5",
+      "access_type": "apikey",
+      "remote": "http://127.0.0.1:9999",
+      "host": "foo2.oto.tools",
+      "port": 2226,
+      "apikey": "cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648"
     }
   ]
 }

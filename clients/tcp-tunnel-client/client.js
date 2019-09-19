@@ -181,13 +181,13 @@ function ApiKeyAuthChecker(remoteUrl, headers) {
   };
 }
 
-function SessionAuthChecker(remoteUrl, token) {
+function SessionAuthChecker(remoteUrl, token, headers) {
   
   function check() {
     return new Promise((success, failure) => {
       fetch(`${remoteUrl}/.well-known/otoroshi/me?pappsToken=${token}`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' }
+        headers: { ...headers, 'Accept': 'application/json' }
       }).then(r => {
         if (r.status === 200) {
           r.json().then(json => {
@@ -344,6 +344,11 @@ function ProxyServer(options) {
 
   function start() {
 
+    const host = options.host;
+    if (host) {
+      headers['Host'] = host;
+    }
+
     if (access_type === 'apikey') {
       if (apikey.indexOf(":") > -1) {
         headers['Authorization'] = `Basic ${Buffer.from(apikey).toString('base64')}`;
@@ -368,7 +373,7 @@ function ProxyServer(options) {
 
       function startLocalServerAndCheckSession(sessionId, remoteUrl, token, success) {
         existingSessionTokens[token] = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
-        const checker = SessionAuthChecker(remoteUrl, token);
+        const checker = SessionAuthChecker(remoteUrl, token, headers);
         finalUrl = finalUrl + '/?pappsToken=' + token;
         checker.check().then(() => {
           console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`.green.italic);
