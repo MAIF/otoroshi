@@ -94,5 +94,24 @@ ssh localuser@127.0.0.1 -p 2222
 
 ```sh
 docker build -t otoroshi-tcp-tunnel-cli .
-docker run -it -p 2222:2222 -v $(pwd)/foo.json:/config.json otoroshi-tcp-tunnel-cli --config=/config.json
+docker run -it -p 2222:2222 -v $(pwd)/foo.json:/docker-env.json otoroshi-tcp-tunnel-cli --config=/config.json
+```
+
+If you want to access a local otoroshi (on your machine, maybe in another docker container), you can use a configuration like
+
+```json
+{
+  "name": "Dev config. to test tcp tunnels in otoroshi from docker",
+  "tunnels": [
+    {
+      "enabled": true,
+      "name": "Service 3",
+      "access_type": "apikey",
+      "remote": "http://host.docker.internal:9999",
+      "host": "foo2.oto.tools",
+      "port": 2224,
+      "apikey": "cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648"
+    }
+  ]
+}
 ```
