@@ -52,11 +52,12 @@ class RestrictionPath extends Component {
 
 export class Restrictions extends Component {
   changeTheValue = (name, value) => {
-    const newValue = deepSet({ ...this.props.rawValue }, name, value);
-    this.props.rawOnChange(newValue);
+    const newValue = deepSet({ ...this.props.value }, name, value);
+    this.props.onChange(newValue);
   };
   render() {
-    const value = this.props.rawValue;
+    const value = this.props.value;
+    console.log(value);
     return (
       <div>
         <BooleanInput

@@ -425,7 +425,7 @@ export class ServiceApiKeysPage extends Component {
       },
     },
     remainingMonthlyQuota: { type: 'label', props: { label: 'Monthly quota' } },
-    restrictions: { type: Restrictions, props: {} },
+    restrictions: { type: Restrictions, props: { path: 'restrictions' } },
   };
 
   columns = [
@@ -546,6 +546,7 @@ export class ServiceApiKeysPage extends Component {
   };
 
   updateItem = ak => {
+    console.log(ak);
     return BackOfficeServices.updateApiKey(this.props.params.serviceId, ak);
   };
 

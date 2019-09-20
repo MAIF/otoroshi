@@ -934,7 +934,7 @@ export class ServicePage extends Component {
                   onChange={v => this.changeTheValue('allowHttp10', v)}
                 />
                 <BiColumnBooleanInput
-                  label="TCP tunnel"
+                  label="TCP tunneling"
                   value={this.state.service.tcpTunneling}
                   help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled"
                   onChange={v => this.changeTheValue('tcpTunneling', v)}
@@ -1268,8 +1268,8 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Restrictions">
             <Restrictions
-              rawValue={this.state.service.restrictions}
-              rawOnChange={arr => this.changeTheValue('restrictions', arr)}
+              value={this.state.service.restrictions}
+              onChange={arr => this.changeTheValue('restrictions', arr)}
             />
           </Collapse>
           <Collapse
