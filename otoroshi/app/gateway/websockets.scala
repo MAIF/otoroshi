@@ -32,6 +32,7 @@ import security.{IdGenerator, OtoroshiClaim}
 import utils.{Metrics, UrlSanitizer}
 import utils.future.Implicits._
 
+import scala.concurrent.duration._
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
@@ -846,8 +847,21 @@ class WebSocketHandler()(implicit env: Env) {
                                         case _ =>
                                           ByteString.empty
                                       }.via(
-                                        Tcp().outgoingConnection(remoteAddress).map(bs => PlayWSBinaryMessage(bs))
-                                      )
+                                        Tcp().outgoingConnection(
+                                          remoteAddress = remoteAddress,
+                                          connectTimeout = descriptor.clientConfig.connectionTimeout.millis,
+                                          idleTimeout = descriptor.clientConfig.idleTimeout.millis
+                                        ).map(bs => PlayWSBinaryMessage(bs))
+                                      ).alsoTo(Sink.onComplete {
+                                        case _ => promise.trySuccess(
+                                          ProxyDone(
+                                            200,
+                                            false,
+                                            0,
+                                            Seq.empty[Header]
+                                          )
+                                        )
+                                      })
                                     FastFuture.successful(Right(flow))
                                   }
                                   case Right(httpRequest) if !descriptor.tcpTunneling => {
@@ -861,7 +875,16 @@ class WebSocketHandler()(implicit env: Env) {
                                                                         .filterNot(_._1 == "Cookie"),
                                                                       descriptor,
                                                                       env)
-                                        )
+                                        ).alsoTo(Sink.onComplete {
+                                          case _ => promise.trySuccess(
+                                            ProxyDone(
+                                              200,
+                                              false,
+                                              0,
+                                              Seq.empty[Header]
+                                            )
+                                          )
+                                        })
                                       )
                                     )
                                   }

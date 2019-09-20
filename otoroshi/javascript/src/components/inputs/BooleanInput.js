@@ -71,6 +71,9 @@ export class BiColumnBooleanInput extends Component {
 
   render() {
     const value = !!this.props.value;
+    if (this.props.hide) {
+      return null;
+    }
 
     return (
       <div>

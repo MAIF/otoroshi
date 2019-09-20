@@ -65,6 +65,8 @@ class Target extends Component {
           .replace('https:', 'http')
           .replace('http2:', 'http2')
           .replace('http2s:', 'http2s')
+          .replace('tcp:', 'tcp')
+          .replace('tcps:', 'tcps')
       );
     }
   };
@@ -89,7 +91,7 @@ class Target extends Component {
         <div style={{ marginLeft: 0, marginRight: 0 }}>
           <TextInput
             label={`Target ${this.props.idx + 1}`}
-            placeholder="https://changeme.foo.bar"
+            placeholder={this.props.tunnelingEnabled ? "tcp://192.168.42.42:22" : "https://changeme.foo.bar"}
             value={
               this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
             }
@@ -112,7 +114,7 @@ class Target extends Component {
       <div style={{ marginLeft: 0, marginRight: 0 }}>
         <TextInput
           label={`Target ${this.props.idx + 1}`}
-          placeholder="https://changeme.foo.bar"
+          placeholder={this.props.tunnelingEnabled ? "tcp://192.168.42.42:22" : "https://changeme.foo.bar"}
           value={
             this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
           }
@@ -137,7 +139,7 @@ class Target extends Component {
         />
         <TextInput
           label="Scheme"
-          placeholder="https"
+          placeholder={this.props.tunnelingEnabled ? "ttcp" : "http or https"}
           value={value.scheme}
           help="The Scheme of the target"
           onChange={e => this.changeTheValue('scheme', e)}
@@ -149,7 +151,7 @@ class Target extends Component {
           help="The weight of the target in the sequence of targets. Only used with experimental client"
           onChange={e => this.changeTheValue('weight', e)}
         />
-        <SelectInput
+        {!this.props.tunnelingEnabled && <SelectInput
           label="Protocol"
           placeholder="HTTP/1.1"
           value={value.protocol}
@@ -169,7 +171,7 @@ class Target extends Component {
           ]}
           help="The protocol of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('protocol', e)}
-        />
+        />}
         <TextInput
           label="IP Address"
           placeholder="127.0.0.1"
@@ -876,6 +878,7 @@ export class ServicePage extends Component {
                   value={this.state.service.readOnly}
                   help="Authorize only GET, HEAD, OPTIONS calls on this service "
                   onChange={v => this.changeTheValue('readOnly', v)}
+                  hide={this.state.service.tcpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Maintenance mode"
@@ -900,6 +903,7 @@ export class ServicePage extends Component {
                   value={this.state.service.useAkkaHttpClient}
                   help="Will use Akka Http Client for every request"
                   onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
+                  hide={this.state.service.tcpTunneling}
                 />
               </div>
               <div className="col-md-6">
@@ -914,12 +918,14 @@ export class ServicePage extends Component {
                   value={this.state.service.overrideHost}
                   help="When enabled, Otoroshi will automatically set the Host header to corresponding target host"
                   onChange={v => this.changeTheValue('overrideHost', v)}
+                  hide={this.state.service.tcpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Send X-Forwarded-* headers"
                   value={this.state.service.xForwardedHeaders}
                   help="When enabled, Otoroshi will send X-Forwarded-* headers to target"
                   onChange={v => this.changeTheValue('xForwardedHeaders', v)}
+                  hide={this.state.service.tcpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Force HTTPS"
@@ -932,6 +938,7 @@ export class ServicePage extends Component {
                   value={this.state.service.allowHttp10}
                   help="Will return an error on HTTP/1.0 request"
                   onChange={v => this.changeTheValue('allowHttp10', v)}
+                  hide={this.state.service.tcpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="TCP tunneling"
@@ -1192,6 +1199,7 @@ export class ServicePage extends Component {
                     predicate: { type: 'AlwaysMatch' },
                     ipAddress: null,
                   }}
+                  tunnelingEnabled={this.state.service.tcpTunneling}
                   onChange={e => this.changeTheValue('targets', e)}
                 />
               </div>
@@ -1263,7 +1271,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Restrictions">
@@ -1273,7 +1281,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Otoroshi exchange protocol">
@@ -1914,7 +1922,7 @@ export class ServicePage extends Component {
             </div>
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Gzip support">
@@ -2090,7 +2098,7 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="HTTP Headers">
@@ -2337,7 +2345,7 @@ export class ServicePage extends Component {
             </div>
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="HealthCheck settings">
@@ -2355,7 +2363,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Faults injection">
@@ -2400,7 +2408,7 @@ export class ServicePage extends Component {
           <Collapse
             notVisible={
               this.props.env
-                ? !this.props.env.scriptingEnabled || this.state.service.redirection.enabled
+                ? !this.props.env.scriptingEnabled || this.state.service.redirection.enabled || this.state.service.tcpTunneling
                 : false
             }
             collapsed={this.state.allCollapsed}
