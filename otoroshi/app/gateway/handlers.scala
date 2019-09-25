@@ -1691,12 +1691,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             .sendEntity(
                                                               HttpEntity.Streamed(
                                                                 finalStream,
-                                                                httpResponse.headers
-                                                                  .get("Content-Length")
-                                                                  //.flatMap(_.lastOption)
-                                                                  .map(
-                                                                    _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                                  ),
+                                                                httpResponse.headers.get("Content-Length").orElse(
+                                                                  resp.headers.get("Content-Length")
+                                                                    .flatMap(_.lastOption)
+                                                                ).map(
+                                                                  _.toLong + snowMonkeyContext.trailingResponseBodySize
+                                                                ),
                                                                 httpResponse.headers.get("Content-Type")
                                                               )
                                                             )
@@ -1727,10 +1727,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       //   } else {
                                                       //     HttpEntity.Streamed(
                                                       //       finalStream,
-                                                      //       httpResponse.headers
-                                                      //         .get("Content-Length")
-                                                      //         //.flatMap(_.lastOption)
-                                                      //         .map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
+                                                      //       httpResponse.headers.get("Content-Length").orElse(
+                                                      //         resp.headers.get("Content-Length")
+                                                      //           .flatMap(_.lastOption)
+                                                      //       ).map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
                                                       //       Some(contentType) // contentTypeOpt
                                                       //     )
                                                       //   }
@@ -1768,10 +1768,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             .sendEntity(
                                                               HttpEntity.Streamed(
                                                                 finalStream,
-                                                                httpResponse.headers
-                                                                  .get("Content-Length")
-                                                                  //.flatMap(_.lastOption)
-                                                                  .map(
+                                                                httpResponse.headers.get("Content-Length").orElse(
+                                                                  resp.headers.get("Content-Length")
+                                                                    .flatMap(_.lastOption)
+                                                                ).map(
                                                                     _.toLong + snowMonkeyContext.trailingResponseBodySize
                                                                   ),
                                                                 httpResponse.headers.get("Content-Type")
@@ -1809,12 +1809,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       //     .sendEntity(
                                                       //       HttpEntity.Streamed(
                                                       //         finalStream,
-                                                      //         httpResponse.headers
-                                                      //           .get("Content-Length")
-                                                      //           //.flatMap(_.lastOption)
-                                                      //           .map(
-                                                      //             _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                      //           ),
+                                                      //         httpResponse.headers.get("Content-Length").orElse(
+                                                      //           resp.headers.get("Content-Length")
+                                                      //             .flatMap(_.lastOption)
+                                                      //         ).map(
+                                                      //           _.toLong + snowMonkeyContext.trailingResponseBodySize
+                                                      //         ),
                                                       //         httpResponse.headers.get("Content-Type")
                                                       //       )
                                                       //     )
