@@ -153,7 +153,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "redirectToDev"      -> false,
             "clientIdHeader"     -> env.Headers.OtoroshiClientId,
             "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
-            "version"            -> env.latestVersionHolder.get()
+            "version"            -> env.latestVersionHolder.get(),
+            "currentVersion"     -> commitVersion
           )
         )
       }
@@ -175,14 +176,14 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def dashboard = BackOfficeActionAuth.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env))
+      Ok(views.html.backoffice.dashboard(ctx.user, config, env, commitVersion))
     }
   }
 
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
     import scala.concurrent.duration._
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env))
+      Ok(views.html.backoffice.dashboard(ctx.user, config, env, commitVersion))
     }
   }
 

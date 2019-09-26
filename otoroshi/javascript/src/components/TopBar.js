@@ -478,6 +478,11 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/users"><span className="glyphicon glyphicon-user" /> All users</a>
                   </li>*/}
                   <li>
+                    <a href="#">
+                      <img src="/assets/images/otoroshi-logo-bw.png" width="16" /> version {window.__currentVersion}
+                    </a>
+                  </li>
+                  <li>
                     <a href="/docs/index.html" target="_blank">
                       <span className="glyphicon glyphicon-book" /> User manual
                     </a>

@@ -82,7 +82,10 @@ class BackOfficeAppContainer extends Component {
         .setAttribute('class', 'navbar-toggle menu collapsed');
       // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
-    BackOfficeServices.env().then(env => this.setState({ env }));
+    BackOfficeServices.env().then(env => {
+      console.log(env);
+      this.setState({ env });
+    });
     BackOfficeServices.fetchLines().then(lines => {
       BackOfficeServices.findAllGroups().then(groups => {
         this.setState({ lines, groups });

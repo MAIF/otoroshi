@@ -1,7 +1,7 @@
 @import models.BackOfficeUser
 @import models.GlobalConfig
 
-@(user: BackOfficeUser, config: GlobalConfig, _env: env.Env)
+@(user: BackOfficeUser, config: GlobalConfig, _env: env.Env, version: String)
 
 @moreScripts = {
     <script src="@routes.Assets.versioned("javascripts/u2f-api.js")"></script>
@@ -12,6 +12,7 @@
         window.__userid = '@user.email';
         window.__apiReadOnly = @config.apiReadOnly;
         window.__u2fLoginOnly = @config.u2fLoginOnly;
+        window.__currentVersion = '@version';
         Otoroshi.init(document.getElementById("app"));
     </script>
 }
