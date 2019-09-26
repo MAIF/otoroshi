@@ -189,7 +189,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val tcpServices        = (export \ "tcpServices").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
-      _ <- redisCli.flushall()
+      _ <- redisCli.keys(s"${env.storageRoot}:*").flatMap(keys => redisCli.del(keys: _*))
       _ <- config.save()
       _ <- Future.sequence(
             admins.value.map(
