@@ -388,7 +388,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                         env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                       }
-                      val finalRedirect = req.getQueryString("redirect").getOrElse(req.host)
+                      val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.host}")
                       val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                         .map(a => s":$a")
                         .getOrElse("") + controllers.routes.AuthController
