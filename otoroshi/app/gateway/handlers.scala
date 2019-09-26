@@ -1566,13 +1566,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   }
                                                   case Right(httpResponse) => {
                                                     val headersOut = httpResponse.headers.toSeq
-                                                    val contentType =
-                                                      httpResponse.headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                                                    val contentType = httpResponse.headers.getOrElse("Content-Type", MimeTypes.TEXT)
                                                     // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                                     // meterOut.mark(responseHeader.length)
                                                     // counterOut.addAndGet(responseHeader.length)
-                                                    val isChunked =
-                                                      resp.header("Transfer-Encoding").contains("chunked")
+                                                    val hasNoContentLength = if (!env.emptyContentLengthIsChunked) false else resp.header("Content-Length").isEmpty
+                                                    val isChunked = resp.header("Transfer-Encoding")
+                                                      .exists(h => h.toLowerCase().contains("chunked")) || hasNoContentLength
                                                     val theStream: Source[ByteString, _] = resp.bodyAsSource
                                                       .concat(snowMonkeyContext.trailingResponseBodyStream)
                                                       .alsoTo(Sink.onComplete {
@@ -1667,7 +1667,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           callAttempts = callAttempts
                                                         )
                                                       }
-                                                    } else if (globalConfig.streamEntityOnly) { // only temporary
+                                                    }/*
+                                                    else if (globalConfig.streamEntityOnly) { // only temporary
                                                       // stream out
                                                       val response: Result = isChunked match {
                                                         case true => {
@@ -1678,9 +1679,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               headersOut.filterNot(
                                                                 h => h._1 == "Set-Cookie" || h._1 == "Content-Type"
                                                               ): _*
-                                                              /* ++ (if (isChunked)
-                                                                    Seq(("Transfer-Encoding" -> "chunked"))
-                                                                  else Seq.empty): _* */
                                                             )
                                                             .withCookies((withTrackingCookies ++ cookies): _*)
                                                             .as(contentType)
@@ -1711,41 +1709,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         }
                                                       }
                                                       desc.gzip.handleResult(req, response)
-                                                      // val entity =
-                                                      //   if (isChunked) {
-                                                      //     HttpEntity.Chunked(
-                                                      //       finalStream
-                                                      //         .map(i => play.api.http.HttpChunk.Chunk(i))
-                                                      //         .concat(
-                                                      //           Source.single(
-                                                      //             play.api.http.HttpChunk
-                                                      //               .LastChunk(play.api.mvc.Headers())
-                                                      //           )
-                                                      //         ),
-                                                      //       Some(contentType) // contentTypeOpt
-                                                      //     )
-                                                      //   } else {
-                                                      //     HttpEntity.Streamed(
-                                                      //       finalStream,
-                                                      //       httpResponse.headers.get("Content-Length").orElse(
-                                                      //         resp.headers.get("Content-Length")
-                                                      //           .flatMap(_.lastOption)
-                                                      //       ).map(_.toLong + snowMonkeyContext.trailingResponseBodySize),
-                                                      //       Some(contentType) // contentTypeOpt
-                                                      //     )
-                                                      //   }
-                                                      // val response: Result = Status(httpResponse.status)
-                                                      //   .sendEntity(entity)
-                                                      //   .withHeaders(
-                                                      //     headersOut.filterNot(
-                                                      //       h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                      //     ) ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
-                                                      //   )
-                                                      //   .as(contentType)
-                                                      //   .withCookies((withTrackingCookies ++ cookies): _*)
-                                                      // desc.gzip.handleResult(req, response)
-                                                      // FastFuture.successful(response)
-                                                    } else {
+                                                    }
+                                                    */
+                                                    else {
                                                       val response: Result = isChunked match {
                                                         case true => {
                                                           // stream out
@@ -1753,11 +1719,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             .chunked(finalStream)
                                                             .withHeaders(
                                                               headersOut.filterNot(
-                                                                h => h._1 == "Set-Cookie" || h._1 == "Content-Type"
+                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                               ): _*
-                                                              /* ++ (if (isChunked)
-                                                                    Seq(("Transfer-Encoding" -> "chunked"))
-                                                                  else Seq.empty): _* */
                                                             )
                                                             .withCookies((withTrackingCookies ++ cookies): _*)
                                                             .as(contentType)
@@ -1779,8 +1742,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             )
                                                             .withHeaders(
                                                               headersOut.filterNot(
-                                                                h =>
-                                                                  h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
+                                                                h => h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                               ): _*
                                                             )
                                                             .withCookies((withTrackingCookies ++ cookies): _*)
@@ -1788,51 +1750,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         }
                                                       }
                                                       desc.gzip.handleResult(req, response)
-                                                      // val response: Result = httpResponse.headers
-                                                      //   .get("Transfer-Encoding")
-                                                      //   //.flatMap(_.lastOption)
-                                                      //   .filter(_ == "chunked")
-                                                      //   .map { _ =>
-                                                      //     // stream out
-                                                      //     logger.warn(s"2: Chunking response for ${desc.name} ${req.relativeUri}")
-                                                      //     Status(httpResponse.status)
-                                                      //       .chunked(finalStream)
-                                                      //       .withHeaders(
-                                                      //         headersOut.filterNot(h => h._1 == "Set-Cookie")
-                                                      //           ++ (if (isChunked) Seq(("Transfer-Encoding" -> "chunked")) else Seq.empty) : _*
-                                                      //       )
-                                                      //       .withCookies((withTrackingCookies ++ cookies): _*)
-                                                      //       .as(contentType)
-                                                      //   } getOrElse {
-                                                      //   // stream out
-                                                      //   Status(httpResponse.status)
-                                                      //     .sendEntity(
-                                                      //       HttpEntity.Streamed(
-                                                      //         finalStream,
-                                                      //         httpResponse.headers.get("Content-Length").orElse(
-                                                      //           resp.headers.get("Content-Length")
-                                                      //             .flatMap(_.lastOption)
-                                                      //         ).map(
-                                                      //           _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                      //         ),
-                                                      //         httpResponse.headers.get("Content-Type")
-                                                      //       )
-                                                      //     )
-                                                      //     .withHeaders(
-                                                      //       headersOut.filterNot(
-                                                      //         h => h._1 == "Content-Type" || h._1 == "Set-Cookie"
-                                                      //       ): _*
-                                                      //     )
-                                                      //     .withCookies((withTrackingCookies ++ cookies): _*)
-                                                      //     .as(contentType)
-                                                      // }
-                                                      // desc.gzip.handleResult(req, response)
-                                                      //FastFuture.successful(response)
                                                     }
                                                   }
                                                 }
                                             }
-
                                           }
                                       }
                                     }
@@ -2413,7 +2334,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
                                         FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
                                       } else if (!within) {
-                                        // TODO : count as served req here !!!
                                         Errors.craftResponseResult(
                                           "[GLOBAL] You performed too much requests",
                                           TooManyRequests,

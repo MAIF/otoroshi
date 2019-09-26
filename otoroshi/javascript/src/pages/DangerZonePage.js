@@ -607,7 +607,7 @@ export class DangerZonePage extends Component {
     'maintenanceMode',
     'u2fLoginOnly',
     'apiReadOnly',
-    'streamEntityOnly',
+    // 'streamEntityOnly',
     'autoLinkToDefaultGroup',
     'useCircuitBreakers',
     'logAnalyticsOnServer',
