@@ -91,7 +91,9 @@ class Target extends Component {
         <div style={{ marginLeft: 0, marginRight: 0 }}>
           <TextInput
             label={`Target ${this.props.idx + 1}`}
-            placeholder={this.props.tunnelingEnabled ? "tcp://192.168.42.42:22" : "https://changeme.foo.bar"}
+            placeholder={
+              this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.foo.bar'
+            }
             value={
               this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
             }
@@ -114,7 +116,9 @@ class Target extends Component {
       <div style={{ marginLeft: 0, marginRight: 0 }}>
         <TextInput
           label={`Target ${this.props.idx + 1}`}
-          placeholder={this.props.tunnelingEnabled ? "tcp://192.168.42.42:22" : "https://changeme.foo.bar"}
+          placeholder={
+            this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.foo.bar'
+          }
           value={
             this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
           }
@@ -139,7 +143,7 @@ class Target extends Component {
         />
         <TextInput
           label="Scheme"
-          placeholder={this.props.tunnelingEnabled ? "ttcp" : "http or https"}
+          placeholder={this.props.tunnelingEnabled ? 'ttcp' : 'http or https'}
           value={value.scheme}
           help="The Scheme of the target"
           onChange={e => this.changeTheValue('scheme', e)}
@@ -151,27 +155,29 @@ class Target extends Component {
           help="The weight of the target in the sequence of targets. Only used with experimental client"
           onChange={e => this.changeTheValue('weight', e)}
         />
-        {!this.props.tunnelingEnabled && <SelectInput
-          label="Protocol"
-          placeholder="HTTP/1.1"
-          value={value.protocol}
-          possibleValues={[
-            {
-              value: 'HTTP/1.0',
-              label: 'HTTP/1.0',
-            },
-            {
-              value: 'HTTP/1.1',
-              label: 'HTTP/1.1',
-            },
-            {
-              value: 'HTTP/2.0',
-              label: 'HTTP/2.0',
-            },
-          ]}
-          help="The protocol of the target. Only used with experimental client"
-          onChange={e => this.changeTheValue('protocol', e)}
-        />}
+        {!this.props.tunnelingEnabled && (
+          <SelectInput
+            label="Protocol"
+            placeholder="HTTP/1.1"
+            value={value.protocol}
+            possibleValues={[
+              {
+                value: 'HTTP/1.0',
+                label: 'HTTP/1.0',
+              },
+              {
+                value: 'HTTP/1.1',
+                label: 'HTTP/1.1',
+              },
+              {
+                value: 'HTTP/2.0',
+                label: 'HTTP/2.0',
+              },
+            ]}
+            help="The protocol of the target. Only used with experimental client"
+            onChange={e => this.changeTheValue('protocol', e)}
+          />
+        )}
         <TextInput
           label="IP Address"
           placeholder="127.0.0.1"
@@ -946,7 +952,11 @@ export class ServicePage extends Component {
                   help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled"
                   onChange={v => this.changeTheValue('tcpTunneling', v)}
                 />
-                <a href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-tunnel-client" target="_blank">Learn more about TCP tunneling</a>
+                <a
+                  href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-tunnel-client"
+                  target="_blank">
+                  Learn more about TCP tunneling
+                </a>
               </div>
             </div>
           </Collapse>
@@ -2408,7 +2418,9 @@ export class ServicePage extends Component {
           <Collapse
             notVisible={
               this.props.env
-                ? !this.props.env.scriptingEnabled || this.state.service.redirection.enabled || this.state.service.tcpTunneling
+                ? !this.props.env.scriptingEnabled ||
+                  this.state.service.redirection.enabled ||
+                  this.state.service.tcpTunneling
                 : false
             }
             collapsed={this.state.allCollapsed}

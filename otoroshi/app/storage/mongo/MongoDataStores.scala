@@ -64,7 +64,8 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
     redis.start()
     if (configuration.getOptional[Boolean]("app.mongo.testMode").getOrElse(false)) {
       logger.warn("Flushing DB as in test mode")
-      Await.result(redis.keys(s"${env.storageRoot}:*").flatMap(keys => redis.del(keys: _*))(actorSystem.dispatcher), 5.second)
+      Await.result(redis.keys(s"${env.storageRoot}:*").flatMap(keys => redis.del(keys: _*))(actorSystem.dispatcher),
+                   5.second)
     }
     Await.result(redis.initIndexes(), 5.second)
     _serviceDescriptorDataStore.startCleanup(env)

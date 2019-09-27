@@ -104,21 +104,25 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                         case None =>
                           auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
                         case Some(user) =>
-                          ctx.request.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.host}${req.relativeUri}") match {
+                          ctx.request
+                            .getQueryString("redirect")
+                            .getOrElse(s"${req.theProtocol}://${req.host}${req.relativeUri}") match {
                             case "urn:ietf:wg:oauth:2.0:oob" => {
                               FastFuture.successful(
                                 Redirect(
                                   s"${req.theProtocol}://${req.host}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.host}&cp=${auth
-                                      .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
-                                )
-                                .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                                .withCookies(env.createPrivateSessionCookies(req.host, user.randomId, descriptor, auth): _*)
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
+                                ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
+                                                       "desc")
+                                  .withCookies(
+                                    env.createPrivateSessionCookies(req.host, user.randomId, descriptor, auth): _*
+                                  )
                               )
                             }
                             case redirectTo => {
-                              val url        = new java.net.URL(redirectTo)
-                              val host       = url.getHost
-                              val scheme     = url.getProtocol
+                              val url    = new java.net.URL(redirectTo)
+                              val host   = url.getHost
+                              val scheme = url.getProtocol
                               val setCookiesRedirect = url.getPort match {
                                 case -1 =>
                                   s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
@@ -129,8 +133,11 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                               }
                               FastFuture.successful(
                                 Redirect(setCookiesRedirect)
-                                  .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                                  .withCookies(env.createPrivateSessionCookies(host, user.randomId, descriptor, auth): _*)
+                                  .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
+                                                       "desc")
+                                  .withCookies(
+                                    env.createPrivateSessionCookies(host, user.randomId, descriptor, auth): _*
+                                  )
                               )
                             }
                           }
@@ -206,9 +213,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                           Redirect(
                             s"${req.theProtocol}://${req.host}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.host}&cp=${auth
                               .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
-                          )
-                          .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                          .withCookies(env.createPrivateSessionCookies(req.host, user.randomId, descriptor, auth): _*)
+                          ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                            .withCookies(env.createPrivateSessionCookies(req.host, user.randomId, descriptor, auth): _*)
                         }
                         case redirectTo => {
                           val url    = new java.net.URL(redirectTo)
@@ -345,8 +351,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                             BadRequest(
                               views.html.otoroshi
                                 .error(message = s"You're not authorized here: ${error}",
-                                  _env = env,
-                                  title = "Authorization error")
+                                       _env = env,
+                                       title = "Authorization error")
                             )
                           )
                         }

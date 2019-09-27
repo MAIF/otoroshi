@@ -479,7 +479,8 @@ export class TopBar extends Component {
                   </li>*/}
                   <li>
                     <a href="#">
-                      <img src="/assets/images/otoroshi-logo-bw.png" width="16" /> version {window.__currentVersion}
+                      <img src="/assets/images/otoroshi-logo-bw.png" width="16" /> version{' '}
+                      {window.__currentVersion}
                     </a>
                   </li>
                   <li>

@@ -27,7 +27,7 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{Logger, libs}
+import play.api.{libs, Logger}
 import play.shaded.ahc.io.netty.handler.codec.http.HttpHeaders
 import play.shaded.ahc.org.asynchttpclient.util.{Assertions, MiscUtils}
 import ssl.DynamicSSLEngineProvider
@@ -300,7 +300,7 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
-    )/* ++ (if (httpResponse.entity.isChunked()) {
+    ) /* ++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))
     } else {
       Seq.empty
@@ -726,13 +726,13 @@ object Implicits {
     def contentLength: Option[Long] = {
       resp.underlying[Any] match {
         case httpResponse: HttpResponse => httpResponse.entity.contentLengthOption
-        case _ => resp.header("Content-Length").map(_.toLong)
+        case _                          => resp.header("Content-Length").map(_.toLong)
       }
     }
     def contentLengthStr: Option[String] = {
       resp.underlying[Any] match {
         case httpResponse: HttpResponse => httpResponse.entity.contentLengthOption.map(_.toString)
-        case _ => resp.header("Content-Length")
+        case _                          => resp.header("Content-Length")
       }
     }
     def isChunked(): Option[Boolean] = {

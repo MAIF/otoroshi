@@ -592,7 +592,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Worker => {
         env.clusterAgent.isSessionValid(sessionId).map {
           case Some(user) => Ok(user.toJson)
-          case None => NotFound(Json.obj("error" -> "Session not found"))
+          case None       => NotFound(Json.obj("error" -> "Session not found"))
         }
       }
       case Leader => {
@@ -607,14 +607,14 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def createSession() = ApiAction.async(parse.json) { ctx =>
     env.clusterConfig.mode match {
-      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => {
         PrivateAppsUser.fmt.reads(ctx.request.body) match {
           case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad session format")))
           case JsSuccess(user, _) => {
             env.clusterAgent.createSession(user).map {
               case Some(session) => Created(session.toJson)
-              case _ => InternalServerError(Json.obj("error" -> "Failed to create session on master"))
+              case _             => InternalServerError(Json.obj("error" -> "Failed to create session on master"))
             }
           }
         }
@@ -635,7 +635,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def updateQuotas() = ApiAction.async(sourceBodyParser) { ctx =>
     env.clusterConfig.mode match {
-      case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+      case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
       case Worker => {
         ctx.request.body
           .via(env.clusterConfig.gunzip())
@@ -653,7 +653,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 val dataIn  = (jsItem \ "di").asOpt[Long].getOrElse(0L)
                 val dataOut = (jsItem \ "do").asOpt[Long].getOrElse(0L)
                 env.clusterAgent.incrementService(id, dataIn, dataOut)
-                if (calls - 1 >  0) {
+                if (calls - 1 > 0) {
                   (0L to (calls - 1L)).foreach { _ =>
                     env.clusterAgent.incrementService(id, 0L, 0L)
                   }
@@ -757,7 +757,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def internalState() = ApiAction { ctx =>
     env.clusterConfig.mode match {
-      case Off    => NotFound(Json.obj("error" -> "Cluster API not available"))
+      case Off => NotFound(Json.obj("error" -> "Cluster API not available"))
       case Worker => {
         // TODO: cluster membership
         Ok.sendEntity(

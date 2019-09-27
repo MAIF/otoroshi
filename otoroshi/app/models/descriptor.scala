@@ -2086,15 +2086,15 @@ case class ServiceDescriptor(
           .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
           .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
           .withClaim("apikey", apiKey.map(ak => Json.stringify(ak.lightJson)))
-                      //    Json.stringify(
-                      //      Json.obj(
-                      //        "clientId"   -> ak.clientId,
-                      //        "clientName" -> ak.clientName,
-                      //        "metadata"   -> ak.metadata,
-                      //        "tags"       -> ak.tags
-                      //      )
-                      //  )
-                      // ))
+          //    Json.stringify(
+          //      Json.obj(
+          //        "clientId"   -> ak.clientId,
+          //        "clientName" -> ak.clientName,
+          //        "metadata"   -> ak.metadata,
+          //        "tags"       -> ak.tags
+          //      )
+          //  )
+          // ))
           .serialize(this.secComSettings)(env)
       }
       case SecComInfoTokenVersion.Latest => {
@@ -2120,13 +2120,13 @@ case class ServiceDescriptor(
           )
           .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
           .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
-                                //Json.obj(
-                                //   "clientId"   -> ak.clientId,
-                                //   "clientName" -> ak.clientName,
-                                //   "metadata"   -> ak.metadata,
-                                //   "tags"       -> ak.tags
-                                //)
-                                //))
+          //Json.obj(
+          //   "clientId"   -> ak.clientId,
+          //   "clientName" -> ak.clientName,
+          //   "metadata"   -> ak.metadata,
+          //   "tags"       -> ak.tags
+          //)
+          //))
           .withJsArrayClaim("clientCertChain", clientCertChain)
           .serialize(this.secComSettings)(env)
       }
