@@ -127,7 +127,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def version = BackOfficeActionAuth {
-    Ok(Json.obj("version" -> commitVersion))
+    Ok(Json.obj("version" -> commitVersion, "currentVersion" -> env.otoroshiVersion, "nextVersion" -> env.latestVersionHolder.get()))
   }
 
   def getEnv() = BackOfficeActionAuth.async { ctx =>
@@ -154,7 +154,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "clientIdHeader"     -> env.Headers.OtoroshiClientId,
             "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
             "version"            -> env.latestVersionHolder.get(),
-            "currentVersion"     -> commitVersion
+            "currentVersion"     -> env.otoroshiVersion,
+            "commitVersion"      -> commitVersion
           )
         )
       }
@@ -176,14 +177,14 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def dashboard = BackOfficeActionAuth.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, commitVersion))
+      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
     }
   }
 
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
     import scala.concurrent.duration._
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, commitVersion))
+      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
     }
   }
 
