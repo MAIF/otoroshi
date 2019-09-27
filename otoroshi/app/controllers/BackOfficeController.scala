@@ -127,7 +127,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def version = BackOfficeActionAuth {
-    Ok(Json.obj("version" -> commitVersion, "currentVersion" -> env.otoroshiVersion, "nextVersion" -> env.latestVersionHolder.get()))
+    Ok(
+      Json.obj("version"        -> commitVersion,
+               "currentVersion" -> env.otoroshiVersion,
+               "nextVersion"    -> env.latestVersionHolder.get())
+    )
   }
 
   def getEnv() = BackOfficeActionAuth.async { ctx =>
