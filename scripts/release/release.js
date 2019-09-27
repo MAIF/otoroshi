@@ -214,6 +214,29 @@ async function buildLinuxCLI(location, version) {
   );
 }
 
+async function buildTcpTunnelingCli(location, version) {
+  await runScript(`
+    source $NVM_TOOL
+    nvm install 12.7.0
+    nvm use 12.7.0
+    cd ${location}/clients/tcp-tunnel-client
+    yarn install
+    yarn pkg
+    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-*" "$LOCATION/release-$VERSION"
+    #otoroshi-tcp-tunnel-cli-linux
+    #otoroshi-tcp-tunnel-cli-macos
+    #otoroshi-tcp-tunnel-cli-win.exe
+    `, 
+    location, 
+    {
+      LOCATION: location,
+      VERSION: version,
+      BINTRAY_API_KEY,
+      GITHUB_TOKEN
+    }
+  );
+}
+
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `Prepare the release of Otoroshi version ${version}`], location);
   await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, 'v' + version], location);
@@ -347,6 +370,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   });
   await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir));
   // await ensureStep('BUILD_LINUX_CLI', releaseFile, () => buildLinuxCLI(location, to));
+  await ensureStep('BUILD_TC_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
   if (!dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));

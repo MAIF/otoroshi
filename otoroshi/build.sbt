@@ -35,8 +35,8 @@ libraryDependencies ++= Seq(
   "com.auth0"                % "jwks-rsa"                  % "0.7.0", // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"             % "nimbus-jose-jwt"           % "6.0",
   "com.risksense"            %% "ipaddr"                   % "1.0.2",
-  "com.maxmind.geoip2"       % "geoip2"                    % "2.12.0",
-  "com.blueconic"            % "browscap-java"             % "1.2.11",
+  // "com.maxmind.geoip2"       % "geoip2"                    % "2.12.0",
+  // "com.blueconic"            % "browscap-java"             % "1.2.11",
   // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "javax.xml.bind"         % "jaxb-api"              % "2.3.0",
   "com.sun.xml.bind"       % "jaxb-core"             % "2.3.0",

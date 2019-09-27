@@ -33,7 +33,7 @@ import storage.leveldb.LevelDbDataStores
 import storage.mongo.MongoDataStores
 import storage.redis.RedisDataStores
 import storage.redis.next._
-import utils.{GeoLite2GeolocationHelper, GeolocationHelper, Metrics, UserAgentHelper}
+import utils.Metrics
 import utils.http._
 import otoroshi.tcp.{TcpProxy, TcpService}
 import storage.file.FileDbDataStores
@@ -314,8 +314,8 @@ class Env(val configuration: Configuration,
     )
   }
 
-  lazy val geoloc = new GeoLite2GeolocationHelper(this)
-  lazy val ua = new UserAgentHelper(this)
+  // lazy val geoloc = new GeoLite2GeolocationHelper(this)
+  // lazy val ua = new UserAgentHelper(this)
 
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
   lazy val metrics = new Metrics(this, lifecycle)
@@ -442,12 +442,12 @@ class Env(val configuration: Configuration,
   val servers = TcpService.runServers(this)
 
   datastores.before(configuration, environment, lifecycle)
-  geoloc.start()
-  ua.start()
+  // geoloc.start()
+  // ua.start()
   lifecycle.addStopHook(() => {
     implicit val ec = otoroshiExecutionContext
-    geoloc.stop()
-    ua.stop()
+    // geoloc.stop()
+    // ua.stop()
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
