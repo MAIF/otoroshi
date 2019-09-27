@@ -222,10 +222,9 @@ async function buildTcpTunnelingCli(location, version) {
     cd ${location}/clients/tcp-tunnel-client
     yarn install
     yarn pkg
-    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-*" "$LOCATION/release-$VERSION"
-    #otoroshi-tcp-tunnel-cli-linux
-    #otoroshi-tcp-tunnel-cli-macos
-    #otoroshi-tcp-tunnel-cli-win.exe
+    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-linux" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-macos" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-win.exe" "$LOCATION/release-$VERSION/"
     `, 
     location, 
     {
@@ -340,6 +339,7 @@ async function ensureStep(step, file, f) {
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
   console.log(`Don't forget to set JAVA_HOME to JDK8_HOME and to docker login`);
+  console.log(`Don't forget to update the CHANGELOG file before starting`);
   console.log(`Press a key to continue ...`)
   await keypress();
   const releaseDir = path.resolve(location, `./release-${to}`);

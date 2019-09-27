@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.11] - 2019-09-27
+
+https://github.com/MAIF/otoroshi/milestone/23?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.10...v1.4.11
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.11
+
+### Added 
+
+- Experimental: Identity aware TCP tunneling over HTTPS (#349)
+- Otoroshi version available on the dashboard (#346)
+- Support something like `urn:ietf:wg:oauth:2.0:oob` in private apps. (#297)
+
+### Changed 
+
+### Fixed 
+
+- Weird behavior with chunked transfer encoding (#350)
+- Logout does not work properly when using a In Memory Basic Auth config (#348)
+- Use 'storageRoot' when deleting all keys from Redis Storage (#347)
+- Cannot set Api Keys Restrictions (#345)
+- Allow multiple master nodes (ip address) in cluster config with client loadbalancing to avoid DNS setup (#342)
+- Delete Elastic config (#341)
+
 ## [1.4.10] - 2019-08-02
 
 https://github.com/MAIF/otoroshi/milestone/22?closed=1
