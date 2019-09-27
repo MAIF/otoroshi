@@ -16,8 +16,6 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.4.11
 - Otoroshi version available on the dashboard (#346)
 - Support something like `urn:ietf:wg:oauth:2.0:oob` in private apps. (#297)
 
-### Changed 
-
 ### Fixed 
 
 - Weird behavior with chunked transfer encoding (#350)
