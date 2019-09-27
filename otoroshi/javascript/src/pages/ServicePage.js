@@ -1069,6 +1069,7 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
+            notVisible={this.state.service.tcpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={
               !this.state.service.redirection ? this.state.service.redirection.enabled : false
