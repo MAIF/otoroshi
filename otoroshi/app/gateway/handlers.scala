@@ -1567,12 +1567,23 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   case Right(httpResponse) => {
                                                     val headersOut = httpResponse.headers.toSeq
                                                     val contentType = httpResponse.headers.getOrElse("Content-Type", MimeTypes.TEXT)
+
                                                     // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                                     // meterOut.mark(responseHeader.length)
                                                     // counterOut.addAndGet(responseHeader.length)
-                                                    val hasNoContentLength = if (!env.emptyContentLengthIsChunked) false else resp.header("Content-Length").isEmpty
-                                                    val isChunked = resp.header("Transfer-Encoding")
-                                                      .exists(h => h.toLowerCase().contains("chunked")) || hasNoContentLength
+
+                                                    val noContentLengthHeader: Boolean = resp.contentLength.isEmpty
+                                                    val hasChunkedHeader: Boolean = resp.header("Transfer-Encoding").exists(h => h.toLowerCase().contains("chunked"))
+                                                    val isChunked: Boolean = resp.isChunked() match {
+                                                      case Some(chunked) => chunked
+                                                      case None if !env.emptyContentLengthIsChunked => hasChunkedHeader // false
+                                                      case None if env.emptyContentLengthIsChunked && hasChunkedHeader => true
+                                                      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
+                                                      case _ => false
+                                                    }
+                                                    //val hasNoContentLength: Boolean = if (!env.emptyContentLengthIsChunked) false else noContentLengthHeader
+                                                    //val isChunked = resp.header("Transfer-Encoding")
+                                                    //  .exists(h => h.toLowerCase().contains("chunked")) || hasNoContentLength
                                                     val theStream: Source[ByteString, _] = resp.bodyAsSource
                                                       .concat(snowMonkeyContext.trailingResponseBodyStream)
                                                       .alsoTo(Sink.onComplete {
@@ -1667,51 +1678,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           callAttempts = callAttempts
                                                         )
                                                       }
-                                                    }/*
-                                                    else if (globalConfig.streamEntityOnly) { // only temporary
-                                                      // stream out
-                                                      val response: Result = isChunked match {
-                                                        case true => {
-                                                          // stream out
-                                                          Status(httpResponse.status)
-                                                            .chunked(finalStream)
-                                                            .withHeaders(
-                                                              headersOut.filterNot(
-                                                                h => h._1 == "Set-Cookie" || h._1 == "Content-Type"
-                                                              ): _*
-                                                            )
-                                                            .withCookies((withTrackingCookies ++ cookies): _*)
-                                                            .as(contentType)
-                                                        }
-                                                        case false => {
-                                                          // stream out
-                                                          Status(httpResponse.status)
-                                                            .sendEntity(
-                                                              HttpEntity.Streamed(
-                                                                finalStream,
-                                                                httpResponse.headers.get("Content-Length").orElse(
-                                                                  resp.headers.get("Content-Length")
-                                                                    .flatMap(_.lastOption)
-                                                                ).map(
-                                                                  _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                                ),
-                                                                httpResponse.headers.get("Content-Type")
-                                                              )
-                                                            )
-                                                            .withHeaders(
-                                                              headersOut.filterNot(
-                                                                h =>
-                                                                  h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
-                                                              ): _*
-                                                            )
-                                                            .withCookies((withTrackingCookies ++ cookies): _*)
-                                                            .as(contentType)
-                                                        }
-                                                      }
-                                                      desc.gzip.handleResult(req, response)
-                                                    }
-                                                    */
-                                                    else {
+                                                    } else {
                                                       val response: Result = isChunked match {
                                                         case true => {
                                                           // stream out
@@ -1732,11 +1699,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               HttpEntity.Streamed(
                                                                 finalStream,
                                                                 httpResponse.headers.get("Content-Length").orElse(
-                                                                  resp.headers.get("Content-Length")
-                                                                    .flatMap(_.lastOption)
+                                                                  resp.contentLengthStr
                                                                 ).map(
-                                                                    _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                                  ),
+                                                                  _.toLong + snowMonkeyContext.trailingResponseBodySize
+                                                                ),
                                                                 httpResponse.headers.get("Content-Type")
                                                               )
                                                             )

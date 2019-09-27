@@ -27,7 +27,8 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{libs, Logger}
+import play.api.{Logger, libs}
+import play.shaded.ahc.io.netty.handler.codec.http.HttpHeaders
 import play.shaded.ahc.org.asynchttpclient.util.{Assertions, MiscUtils}
 import ssl.DynamicSSLEngineProvider
 
@@ -299,7 +300,11 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
-    )
+    )/* ++ (if (httpResponse.entity.isChunked()) {
+      Seq(("Transfer-Encoding" -> Seq("chunked")))
+    } else {
+      Seq.empty
+    })*/
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
@@ -323,7 +328,7 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
   override def contentType: String                     = _contentType
 
   override def body[T: BodyReadable]: T =
-    throw new RuntimeException("Not supported on this WSClient !!! (StreameResponse.body)")
+    throw new RuntimeException("Not supported on this WSClient !!! (StreamedResponse.body)")
   def body: String                           = _bodyAsString
   def bodyAsBytes: ByteString                = _bodyAsBytes
   def cookies: Seq[WSCookie]                 = _cookies
@@ -338,7 +343,11 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
-    )
+    ) /*++ (if (httpResponse.entity.isChunked()) {
+      Seq(("Transfer-Encoding" -> Seq("chunked")))
+    } else {
+      Seq.empty
+    })*/
     TreeMap(headers: _*)(CaseInsensitiveOrdered)
   }
 
@@ -713,31 +722,63 @@ object Implicits {
       }
     }
   }
-  implicit class BetterStandaloneWSResponse[T <: StandaloneWSResponse](val req: T) extends AnyVal {
+  implicit class BetterStandaloneWSResponse[T <: StandaloneWSResponse](val resp: T) extends AnyVal {
+    def contentLength: Option[Long] = {
+      resp.underlying[Any] match {
+        case httpResponse: HttpResponse => httpResponse.entity.contentLengthOption
+        case _ => resp.header("Content-Length").map(_.toLong)
+      }
+    }
+    def contentLengthStr: Option[String] = {
+      resp.underlying[Any] match {
+        case httpResponse: HttpResponse => httpResponse.entity.contentLengthOption.map(_.toString)
+        case _ => resp.header("Content-Length")
+      }
+    }
+    def isChunked(): Option[Boolean] = {
+      resp.underlying[Any] match {
+        case httpResponse: HttpResponse => Some(httpResponse.entity.isChunked())
+        //case responsePublisher: play.shaded.ahc.org.asynchttpclient.netty.handler.StreamedResponsePublisher => {
+        //  val ahc = req.asInstanceOf[play.api.libs.ws.ahc.AhcWSResponse]
+        //  val field = ahc.getClass.getDeclaredField("underlying")
+        //  field.setAccessible(true)
+        //  val sawsr = field.get(ahc).asInstanceOf[play.api.libs.ws.ahc.StreamedResponse]//.asInstanceOf[play.api.libs.ws.ahc.StandaloneAhcWSResponse]
+        //  println(sawsr.headers)
+        //  // val field2 = sawsr.getClass.getField("ahcResponse")
+        //  // field2.setAccessible(true)
+        //  // val response = field2.get(sawsr).asInstanceOf[play.shaded.ahc.org.asynchttpclient.Response]
+        //  // println(response.getHeaders.names())
+        //  //play.shaded.ahc.org.asynchttpclient.netty.handler.
+        //  //HttpHeaders.isTransferEncodingChunked(responsePublisher)
+        //  None
+        //}
+        case _ => None
+      }
+    }
     def ignore()(implicit mat: Materializer): StandaloneWSResponse = {
-      req.underlying[Any] match {
+      resp.underlying[Any] match {
         case httpResponse: HttpResponse =>
           Try(httpResponse.discardEntityBytes()) match {
             case Failure(e) => logger.error("Error while discarding entity bytes ...", e)
             case _          => ()
           }
-          req
-        case _ => req
+          resp
+        case _ => resp
       }
     }
     def ignoreIf(predicate: => Boolean)(implicit mat: Materializer): StandaloneWSResponse = {
       if (predicate) {
-        req.underlying[Any] match {
+        resp.underlying[Any] match {
           case httpResponse: HttpResponse =>
             Try(httpResponse.discardEntityBytes()) match {
               case Failure(e) => logger.error("Error while discarding entity bytes ...", e)
               case _          => ()
             }
-            req
-          case _ => req
+            resp
+          case _ => resp
         }
       } else {
-        req
+        resp
       }
     }
   }
