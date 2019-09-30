@@ -67,9 +67,7 @@ function reconnectAwaitingReconnections() {
     const reconnect = awaitingReconnections.shift();
     if (reconnect) {
       try {
-        console.log('reconnect')
         reconnect().then(() => {
-          console.log('in ze then')
           setTimeout(reconnectAwaitingReconnections, 2000);
         }).catch(e => {
           setTimeout(reconnectAwaitingReconnections, 2000);
@@ -514,8 +512,9 @@ if (cliOptions.config && fs.existsSync(cliOptions.config)) {
     console.log(`\nOtoroshi TCP tunnel CLI\n\n`.yellow.bold + `Launching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`.white.bold)
   }
   asyncForEach(items, item => {
-    return ProxyServer(item).start();
+    return ProxyServer(item).start().catch(e => console.log(`Error while starting proxy for ${item.name}`, e));
   });
 } else {
+  process.on('unhandledRejection', up => { throw up })
   ProxyServer(cliOptions).start();
 }
