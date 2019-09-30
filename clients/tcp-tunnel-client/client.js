@@ -226,6 +226,8 @@ function ProxyServer(options) {
 
   if (!options.remote) {
     console.warn(color(`[${sessionId}]`) + ` No remote service location specified with the --remote flag !`);
+    console.log('');
+    displayHelpText();
     process.exit(-1);
   }
 
@@ -425,6 +427,7 @@ function ProxyServer(options) {
         }
       });
     } else if (access_type === 'public') {
+      console.log(color(`[${sessionId}]`) + ` Will use no authentication. Public access was successful !`.green);
       return new Promise(s => {
         const server = startLocalServer();
         s(server);
@@ -436,17 +439,17 @@ function ProxyServer(options) {
       }).then(r => {
         if (r.status === 200) {
           // access_type = public
-          console.log(color(`Automatically found "access_type" is 'public'`))
+          // console.log(color(`Automatically found "access_type" is 'public'`))
           return ProxyServer({ ...options, access_type: 'public' }).start();
         } else if (r.status === 401) {
           return r.text().then(text => {
             if (text.toLowerCase().indexOf('session') > -1) {
               // access_type = session
-              console.log(color(`Automatically found "access_type" is 'session'`))
+              // console.log(color(`Automatically found "access_type" is 'session'`))
               return ProxyServer({ ...options, access_type: 'session' }).start();
             } else if (text.toLowerCase().indexOf('api key') > -1) {
               // access_type = apikey
-              console.log(color(`Automatically found "access_type" is 'apikey'`))
+              // console.log(color(`Automatically found "access_type" is 'apikey'`))
               return ProxyServer({ ...options, access_type: 'apikey' }).start();
             } else {
               return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'.bold.red));
@@ -472,9 +475,9 @@ function displayHeader() {
   console.log('')
 }
 
-displayHeader();
-
-if (!!cliOptions.h || !!cliOptions.help) {
+function displayHelpText() {
+  console.log('Usage:');
+  console.log('');
   console.log('  --config: the path of a config file containing a list of proxy settings, like a workspace or a profile. ');
   console.log('            In that case, other flag will not work except global flags.')
   console.log('')
@@ -485,14 +488,14 @@ if (!!cliOptions.h || !!cliOptions.help) {
   console.log('  --apikey: if access type is apikey, then the value of the api.');
   console.log('            The format is \'clientId:clientSecret\' or just \'clientId\'');
   console.log('')
-  console.log('Optionnal flags with default value');
+  console.log('Optional flags with default value');
   console.log('')
   console.log('  --address: the local address on which TCP proxy is exposed. Default is 127.0.0.1');
   console.log('  --port: the local port on which TCP proxy is exposed. Default is 222');
   console.log('  --remoteHost: if you want to use dynamic targets, this will pass a remoteHost query param to Otoroshi');
   console.log('  --remotePort: if you want to use dynamic targets, this will pass a remotePort query param to Otoroshi');
   console.log('')
-  console.log('Optionnal global flags, valable for all proxy instances also with the --config flag');
+  console.log('Optional global flags, valable for all proxy instances also with the --config flag');
   console.log('')
   console.log('  --https_proxy: the address of your http proxy, if one');
   console.log('  --http_proxy: the address of your http proxy, if one');
@@ -500,7 +503,12 @@ if (!!cliOptions.h || !!cliOptions.help) {
   console.log('  --certPath: the path of your client certificate file, if one');
   console.log('  --keyPath: the path of your client certificate private key file, if one');
   console.log('')
+}
 
+displayHeader();
+
+if (!!cliOptions.h || !!cliOptions.help) {
+  displayHelpText();
   process.exit(0);
 }
 
