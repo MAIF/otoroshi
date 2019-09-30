@@ -15,6 +15,7 @@ import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
+import otoroshi.el.JwtExpressionLanguage
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -36,74 +37,6 @@ trait AsJson {
 
 trait FromJson[A] {
   def fromJson(json: JsValue): Either[Throwable, A]
-}
-
-object JwtExpressionLanguage {
-
-  import kaleidoscope._
-
-  lazy val logger = Logger("otoroshi-jwt-el")
-
-  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
-
-  def apply(value: String, context: Map[String, String]): String = {
-    value match {
-      case v if v.contains("${") =>
-        Try {
-          expressionReplacer.replaceOn(value) { expression =>
-            expression match {
-              case "date"                           => DateTime.now().toString()
-              case r"date.format\('$format@(.*)'\)" => DateTime.now().toString(format)
-              case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
-                context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-              case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" =>
-                context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-              case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
-                context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-              case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
-                context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-              case r"token.$field@(.*)" => context.getOrElse(field, value)
-              case _                    => "bad-expr"
-            }
-          }
-        } recover {
-          case e =>
-            logger.error(s"Error while parsing expression, returning raw value: $value", e)
-            value
-        } get
-      case _ => value
-    }
-  }
-
-  def apply(value: JsValue, context: Map[String, String]): JsValue = {
-    value match {
-      case JsObject(map) =>
-        new JsObject(map.toSeq.map {
-          case (key, JsString(str))     => (key, JsString(apply(str, context)))
-          case (key, obj @ JsObject(_)) => (key, apply(obj, context))
-          case (key, arr @ JsArray(_))  => (key, apply(arr, context))
-          case (key, v)                 => (key, v)
-        }.toMap)
-      case JsArray(values) =>
-        new JsArray(values.map {
-          case JsString(str) => JsString(apply(str, context))
-          case obj: JsObject => apply(obj, context)
-          case arr: JsArray  => apply(arr, context)
-          case v             => v
-        })
-      case JsString(str) => {
-        apply(str, context) match {
-          case "true"               => JsBoolean(true)
-          case "false"              => JsBoolean(false)
-          case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)
-          case r"$nbr@([0-9]+)"     => JsNumber(nbr.toInt)
-          case s                    => JsString(s)
-
-        }
-      }
-      case _ => value
-    }
-  }
 }
 
 case class JwtInjection(

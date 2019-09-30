@@ -15,6 +15,7 @@ import com.risksense.ipaddr.IpNetwork
 import env.Env
 import gateway.Errors
 import org.joda.time.DateTime
+import otoroshi.el.RedirectionExpressionLanguage
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -31,65 +32,6 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-object HeadersExpressionLanguage {
-
-  import kaleidoscope._
-
-  lazy val logger = Logger("otoroshi-headers-el")
-
-  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
-
-  def apply(value: String,
-            service: ServiceDescriptor,
-            apiKey: Option[ApiKey],
-            user: Option[PrivateAppsUser]): String = {
-    value match {
-      case v if v.contains("${") =>
-        Try {
-          expressionReplacer.replaceOn(value) {
-            case "service.domain"                => service._domain
-            case "service.subdomain"             => service.subdomain
-            case "service.tld"                   => service.domain
-            case "service.env"                   => service.env
-            case "service.group"                 => service.groupId
-            case "service.id"                    => service.id
-            case "service.name"                  => service.name
-            case r"service.metadata.$field@(.*)" => service.metadata.get(field).getOrElse("bad-expr")
-
-            case "apikey.name" if apiKey.isDefined => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined   => apiKey.get.clientId
-            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined =>
-              apiKey.get.metadata.get(field).getOrElse("bad-expr")
-            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined =>
-              Option(apiKey.get.tags.apply(field.toInt)).getOrElse("bad-expr")
-
-            case "user.name" if user.isDefined  => user.get.name
-            case "user.email" if user.isDefined => user.get.email
-            case r"user.metadata.$field@(.*)" if user.isDefined =>
-              user
-                .flatMap(_.otoroshiData)
-                .map(
-                  json =>
-                    (json \ field).asOpt[JsValue] match {
-                      case Some(JsNumber(number)) => number.toString()
-                      case Some(JsString(str))    => str
-                      case Some(JsBoolean(b))     => b.toString
-                      case _                      => "bad-expr"
-                  }
-                )
-                .getOrElse("bad-expr")
-
-            case expr => "bad-expr" //s"$${$expr}"
-          }
-        } recover {
-          case e =>
-            logger.error(s"Error while parsing expression, returning raw value: $value", e)
-            value
-        } get
-      case _ => value
-    }
-  }
-}
 
 case class ServiceDescriptorQuery(subdomain: String,
                                   line: String = "prod",
@@ -821,42 +763,6 @@ object Canary {
       "targets" -> JsArray(o.targets.map(_.toJson)),
       "root"    -> o.root
     )
-  }
-}
-
-object RedirectionExpressionLanguage {
-
-  import kaleidoscope._
-  import utils.RequestImplicits._
-
-  lazy val logger = Logger("otoroshi-redirection-el")
-
-  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
-
-  def apply(value: String, req: RequestHeader): String = {
-    value match {
-      case v if v.contains("${") =>
-        Try {
-          expressionReplacer.replaceOn(value) { expression =>
-            expression match {
-              case "req.path"                 => req.path
-              case "req.uri"                  => req.relativeUri
-              case "req.host"                 => req.host
-              case "req.domain"               => req.domain
-              case "req.method"               => req.method
-              case "req.protocol"             => req.theProtocol
-              case r"req.headers.$field@(.*)" => req.headers.get(field).getOrElse(s"no-header-$field")
-              case r"req.query.$field@(.*)"   => req.getQueryString(field).getOrElse(s"no-query-$field")
-              case _                          => "bad-expr"
-            }
-          }
-        } recover {
-          case e =>
-            logger.error(s"Error while parsing expression, returning raw value: $value", e)
-            value
-        } get
-      case _ => value
-    }
   }
 }
 

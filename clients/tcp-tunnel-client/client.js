@@ -8,6 +8,7 @@ const WebSocket = require('ws');
 const open = require('open');
 const moment = require('moment');
 const colors = require('colors');
+const _ = require('lodash');
 
 const cliOptions = require('minimist')(process.argv.slice(2));
 const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
@@ -226,7 +227,8 @@ function ProxyServer(options) {
   const sessionId = options.name || faker.random.alphaNumeric(6);
 
   if (!options.remote) {
-    throw new Error(color(`[${sessionId}]`) + ` No remote service location specified !`);
+    console.warn(color(`[${sessionId}]`) + ` No remote service location specified with the --remote flag !`);
+    process.exit(-1);
   }
 
   if (options.remote.indexOf('http://') === 0) {
@@ -241,6 +243,8 @@ function ProxyServer(options) {
   const access_type = options.access_type || "public";
   const apikey = options.apikey;
   const simpleApikeyHeaderName = options.sahn || 'x-api-key';
+  const remoteHost = options.remoteHost;
+  const remotePort = options.remotePort;
 
   const headers = {};
   let finalUrl = remoteWsUrl + '/.well-known/otoroshi/tunnel';
@@ -271,7 +275,12 @@ function ProxyServer(options) {
       debugLog(`New client connected with session id: ${sessionId} on ${finalUrl}`);
       let clientConnected = false;
       const clientBuffer = [];
-      const client = new WebSocket(finalUrl, {
+      const remoteArgs = _.entries({
+        remoteHost,
+        remotePort
+      }).filter(e => !!e[1]).map(e => `${e[0]}=${e[1]}`).join('&');
+      const wsUrl = finalUrl.indexOf('?') > -1 ? finalUrl + '&' + remoteArgs: finalUrl + '?' + remoteArgs;
+      const client = new WebSocket(wsUrl, {
         agent, 
         headers
       });
@@ -431,6 +440,38 @@ function ProxyServer(options) {
   return {
     start
   };
+}
+
+if (!!cliOptions.h || !!cliOptions.help) {
+  console.log('Otoroshi TCP tunnel CLI, version 1.4.13-dev')
+  console.log('')
+  console.log('  --config: the path of a config file containing a list of proxy settings, like a workspace or a profile. ');
+  console.log('            In that case, other flag will not work except global flags.')
+  console.log('')
+  console.log('or')
+  console.log('')
+  console.log('  --remote: the remote address of your service, like https://ssh.oto.tools:443');
+  console.log('  --access_type: the type of access. Could be public, apikey, session');
+  console.log('  --apikey: if access type is apikey, then the value of the api.');
+  console.log('            The format is \'clientId:clientSecret\' or just \'clientId\'');
+  console.log('')
+  console.log('Optionnal flags with default value');
+  console.log('')
+  console.log('  --address: the local address on which TCP proxy is exposed. Default is 127.0.0.1');
+  console.log('  --port: the local port on which TCP proxy is exposed. Default is 222');
+  console.log('  --remoteHost: if you want to use dynamic targets, this will pass a remoteHost query param to Otoroshi');
+  console.log('  --remotePort: if you want to use dynamic targets, this will pass a remotePort query param to Otoroshi');
+  console.log('')
+  console.log('Optionnal global flags, valable for all proxy instances also with the --config flag');
+  console.log('')
+  console.log('  --https_proxy: the address of your http proxy, if one');
+  console.log('  --http_proxy: the address of your http proxy, if one');
+  console.log('  --caPath: the path of your client certificate ca file, if one');
+  console.log('  --certPath: the path of your client certificate file, if one');
+  console.log('  --keyPath: the path of your client certificate private key file, if one');
+  console.log('')
+
+  process.exit(0);
 }
 
 if (cliOptions.config && fs.existsSync(cliOptions.config)) {

@@ -23,6 +23,7 @@ import events._
 import models._
 import utils.{MaxLengthLimiter, RegexPool, UrlSanitizer}
 import org.joda.time.DateTime
+import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import play.api.Logger
 import play.api.http.{Status => _, _}
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
@@ -1070,9 +1071,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .getOrElse(rawUri)
                                       val scheme =
                                         if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                                      val host                   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
+                                      val host                   = TargetExpressionLanguage(if (descriptor.redirectToLocal) descriptor.localHost else target.host, req)
                                       val root                   = descriptor.root
-                                      val url                    = s"$scheme://$host$root$uri"
+                                      val url                    = TargetExpressionLanguage(s"$scheme://$host$root$uri", req)
                                       lazy val currentReqHasBody = hasBody(req)
                                       // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                       val fromOtoroshi = req.headers

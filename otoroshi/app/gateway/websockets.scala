@@ -21,25 +21,12 @@ import env.{Env, SidecarConfig}
 import events._
 import models._
 import org.joda.time.DateTime
+import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  Message => PlayWSMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.Results.{
-  BadGateway,
-  Forbidden,
-  MethodNotAllowed,
-  NotFound,
-  ServiceUnavailable,
-  Status,
-  TooManyRequests,
-  Unauthorized
-}
+import play.api.mvc.Results.{BadGateway, Forbidden, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
 import play.api.mvc._
 import play.api.libs.json.{JsArray, JsString, Json}
 import security.{IdGenerator, OtoroshiClaim}
@@ -598,7 +585,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
                                 val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
                                 val root   = descriptor.root
-                                val url    = s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri"
+                                val url    = TargetExpressionLanguage(s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri", req)
                                 // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                 val fromOtoroshi = req.headers
                                   .get(env.Headers.OtoroshiRequestId)
@@ -859,7 +846,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     case Right(_)
                                         if descriptor.tcpTunneling && req.relativeUri
                                           .startsWith("/.well-known/otoroshi/tunnel") => {
-                                      val (theHost: String, thePort: Int) = (target.scheme, target.host) match {
+                                      val (theHost: String, thePort: Int) = (target.scheme, TargetExpressionLanguage(target.host, req)) match {
                                         case (_, host) if host.contains(":") =>
                                           (host.split(":").apply(0), host.split(":").apply(1).toInt)
                                         case (scheme, host) if scheme.contains("https") => (host, 443)
