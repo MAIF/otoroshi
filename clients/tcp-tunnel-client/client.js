@@ -231,16 +231,12 @@ function ProxyServer(options) {
     process.exit(-1);
   }
 
-  if (options.remote.indexOf('http://') === 0) {
-    console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`.red)
-  }
-
   const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
   const remoteUrl = options.remote;
   const localProcessAddress = options.address || '127.0.0.1';
   const localProcessPort = options.port || 2222;
   const checkEvery = options.every || 10000;
-  const access_type = options.access_type || "public";
+  const access_type = options.access_type;
   const apikey = options.apikey;
   const simpleApikeyHeaderName = options.sahn || 'x-api-key';
   const remoteHost = options.remoteHost;
@@ -267,6 +263,10 @@ function ProxyServer(options) {
   }
 
   function startLocalServer() {
+
+    if (options.remote.indexOf('http://') === 0) {
+      console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`.red)
+    }
 
     const server = net.createServer((socket) => {
 
@@ -359,6 +359,9 @@ function ProxyServer(options) {
     }
 
     if (access_type === 'apikey') {
+      if (!apikey) {
+        throw new Error(color(`[${sessionId}]`) + ` No apikey specified !`);
+      }
       if (apikey.indexOf(":") > -1) {
         headers['Authorization'] = `Basic ${Buffer.from(apikey).toString('base64')}`;
       } else {
@@ -376,9 +379,7 @@ function ProxyServer(options) {
       }, text => {
         console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey. An error occurred`.red, text);
       });
-    }
-
-    if (access_type === 'session') {
+    } else if (access_type === 'session') {
 
       function startLocalServerAndCheckSession(sessionId, remoteUrl, token, success) {
         existingSessionTokens[token] = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
@@ -425,16 +426,41 @@ function ProxyServer(options) {
           }
         }
       });
-    }
-
-    if (access_type === 'public') {
+    } else if (access_type === 'public') {
       return new Promise(s => {
         const server = startLocalServer();
         s(server);
       });
+    } else {
+      return fetch(`${remoteUrl}/.well-known/otoroshi/me`, {
+        method: 'GET',
+        headers: { ...headers, 'Accept': 'application/json' }
+      }).then(r => {
+        if (r.status === 200) {
+          // access_type = public
+          console.log(color(`Automatically found "access_type" is 'public'`))
+          return ProxyServer({ ...options, access_type: 'public' }).start();
+        } else if (r.status === 401) {
+          return r.text().then(text => {
+            if (text.toLowerCase().indexOf('session') > -1) {
+              // access_type = session
+              console.log(color(`Automatically found "access_type" is 'session'`))
+              return ProxyServer({ ...options, access_type: 'session' }).start();
+            } else if (text.toLowerCase().indexOf('api key') > -1) {
+              // access_type = apikey
+              console.log(color(`Automatically found "access_type" is 'apikey'`))
+              return ProxyServer({ ...options, access_type: 'apikey' }).start();
+            } else {
+              return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'.bold.red));
+            }
+          })
+        } else {
+          return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'.bold.red));
+        }
+      }).catch(e => {
+        return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'.bold.red));
+      });
     }
-
-    return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'.bold.red));
   }
 
   return {
@@ -442,9 +468,15 @@ function ProxyServer(options) {
   };
 }
 
-if (!!cliOptions.h || !!cliOptions.help) {
-  console.log('Otoroshi TCP tunnel CLI, version 1.4.13-dev')
+function displayHeader() {
   console.log('')
+  console.log('Otoroshi TCP tunnel CLI, version 1.4.13-dev'.yellow)
+  console.log('')
+}
+
+displayHeader();
+
+if (!!cliOptions.h || !!cliOptions.help) {
   console.log('  --config: the path of a config file containing a list of proxy settings, like a workspace or a profile. ');
   console.log('            In that case, other flag will not work except global flags.')
   console.log('')

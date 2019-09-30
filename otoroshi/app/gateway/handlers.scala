@@ -350,7 +350,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                  None,
                                                  Some("errors.invalid.session"))
                     case Some(session) =>
-                      FastFuture.successful(Ok(session.profile.as[JsObject] ++ Json.obj("access_type" -> "user")))
+                      FastFuture.successful(Ok(session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")))
                   }
                 }
               }
