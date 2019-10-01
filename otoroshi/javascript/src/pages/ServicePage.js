@@ -38,7 +38,11 @@ function shallowDiffers(a, b) {
 }
 
 class Target extends Component {
-  state = { showMore: false };
+  state = { 
+    showMore: false, 
+    dirtyTarget: null,
+    url: this.props.itemValue.scheme + '://' + this.props.itemValue.host 
+  };
 
   changeTheValue = (key, value) => {
     const arrayValue = [...this.props.value];
@@ -49,105 +53,99 @@ class Target extends Component {
     this.props.onChange(arrayValue);
   };
 
-  changeTheUrl_old = t => {
+  // changeTheUrl_old = t => {
+  //   if (t.indexOf('://') > -1) {
+  //     const scheme = (t.split('://')[0] || '').replace('://', '');
+  //     const host = (t.split('://')[1] || '').replace('://', '');
+  //     this.changeTheValue('scheme', scheme);
+  //     this.changeTheValue('host', host);
+  //   } else {
+  //     this.changeTheValue(
+  //       'scheme',
+  //       t
+  //         .replace('://', '')
+  //         .replace(':/', '')
+  //         .replace('http:', 'http')
+  //         .replace('https:', 'http')
+  //         .replace('http2:', 'http2')
+  //         .replace('http2s:', 'http2s')
+  //         .replace('tcp:', 'tcp')
+  //         .replace('tcps:', 'tcps')
+  //     );
+  //   }
+  // };
+
+  changeTheUrl = t => {
+    this.setState({ url: t });
     if (t.indexOf('://') > -1) {
       const scheme = (t.split('://')[0] || '').replace('://', '');
       const host = (t.split('://')[1] || '').replace('://', '');
-      this.changeTheValue('scheme', scheme);
-      this.changeTheValue('host', host);
+      //this.setState({ dirtyTarget: null }, () => {
+        this.changeTheValue('scheme', scheme);
+        this.changeTheValue('host', host);
+      //});
     } else {
-      this.changeTheValue(
-        'scheme',
-        t
-          .replace('://', '')
-          .replace(':/', '')
-          .replace('http:', 'http')
-          .replace('https:', 'http')
-          .replace('http2:', 'http2')
-          .replace('http2s:', 'http2s')
-          .replace('tcp:', 'tcp')
-          .replace('tcps:', 'tcps')
-      );
+      // this.setState({ dirtyTarget: t });
     }
   };
 
-  changeTheUrl = t => {
-    if (t.indexOf('://') > -1) {
-      const scheme = (t.split('://')[0] || '').replace('://', '');
-      const host = (t.split('://')[1] || '').replace('://', '');
-      this.setState({ dirtyTarget: null }, () => {
-        this.changeTheValue('scheme', scheme);
-        this.changeTheValue('host', host);
-      });
-    } else {
-      this.setState({ dirtyTarget: t });
-    }
-  };
+  renderFirstLine = (value) => {
+    return (
+      <TextInput
+        label={`Target ${this.props.idx + 1}`}
+        placeholder={
+          this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.foo.bar'
+        }
+        value={
+          this.state.url
+          //this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
+        }
+        help="The URL of the target"
+        onChange={e => this.changeTheUrl(e)}
+        after={() => (
+          <button
+            type="button"
+            className="btn btn-primary btn-xs"
+            style={{ marginLeft: 5, height: 32, marginTop: 1 }}
+            onClick={e => this.setState({ showMore: !this.state.showMore })}>
+            <i className="glyphicon glyphicon-eye-open" /> Show more
+          </button>
+        )}
+      />
+    );
+  }
 
   render() {
     const value = this.props.itemValue;
     if (!this.state.showMore) {
-      console.log('rendering ', this.state.dirtyTarget, value )
       return (
         <div style={{ marginLeft: 0, marginRight: 0 }}>
-          <TextInput
-            label={`Target ${this.props.idx + 1}`}
-            placeholder={
-              this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.foo.bar'
-            }
-            value={
-              this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
-            }
-            help="The URL of the target"
-            onChange={e => this.changeTheUrl(e)}
-            aafter={() => (
-              <button
-                type="button"
-                className="btn btn-primary btn-xs"
-                style={{ marginLeft: 5, height: 32, marginTop: 1 }}
-                onClick={e => this.setState({ showMore: !this.state.showMore })}>
-                <i className="glyphicon glyphicon-eye-open" /> Show more
-              </button>
-            )}
-          />
+          {this.renderFirstLine(value)}
         </div>
       );
     }
     return (
       <div style={{ marginLeft: 0, marginRight: 0 }}>
-        <TextInput
-          label={`Target ${this.props.idx + 1}`}
-          placeholder={
-            this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.foo.bar'
-          }
-          value={
-            this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
-          }
-          help="The URL of the target"
-          onChange={e => this.changeTheUrl(e)}
-          after={() => (
-            <button
-              type="button"
-              className="btn btn-primary btn-xs"
-              style={{ marginLeft: 5 }}
-              onClick={e => this.setState({ showMore: !this.state.showMore })}>
-              <i className="glyphicon glyphicon-eye-close" /> Show less
-            </button>
-          )}
-        />
+        {this.renderFirstLine(value)}
         <TextInput
           label="Host"
           placeholder="changeme.foo.bar"
           value={value.host}
           help="The host of the target"
-          onChange={e => this.changeTheValue('host', e)}
+          onChange={e => {
+            this.setState({ url: value.scheme + '://' + e })
+            this.changeTheValue('host', e)
+          }}
         />
         <TextInput
           label="Scheme"
-          placeholder={this.props.tunnelingEnabled ? 'ttcp' : 'http or https'}
+          placeholder={this.props.tunnelingEnabled ? 'tcp' : 'http or https'}
           value={value.scheme}
           help="The Scheme of the target"
-          onChange={e => this.changeTheValue('scheme', e)}
+          onChange={e => {
+            this.setState({ url: e + '://' + value.host })
+            this.changeTheValue('scheme', e)
+          }}
         />
         <NumberInput
           label="Weight"
@@ -1240,18 +1238,18 @@ export class ServicePage extends Component {
                 />
               </div>
             )}
-            <TextInput
+            {!this.state.service.tcpTunneling && <TextInput
               label="Targets root"
               placeholder="The root URL of the target service"
               value={this.state.service.root}
               help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
               onChange={e => this.changeTheValue('root', e)}
-            />
-            <LinkDisplay
+            />}
+            {!this.state.service.tcpTunneling && <LinkDisplay
               link={`${this.state.service.targets[0].scheme}://${
                 this.state.service.targets[0].host
               }${this.state.service.root}`}
-            />
+            />}
           </Collapse>
           <Collapse
             notVisible={this.state.service.redirection.enabled}
