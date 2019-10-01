@@ -913,11 +913,10 @@ export class ServicePage extends Component {
                   hide={this.state.service.tcpTunneling}
                 />
                 <BiColumnBooleanInput
-                  label="Detect apikey sooner"
+                  label="Detect apikey asap"
                   value={this.state.service.detectApiKeySooner}
                   help="If the service is public and you provide an apikey, otoroshi will detect it and validate it. Of course this setting may impact performances because of useless apikey lookups."
                   onChange={v => this.changeTheValue('detectApiKeySooner', v)}
-                  hide={this.state.service.tcpTunneling}
                 />
               </div>
               <div className="col-md-6">

@@ -1777,7 +1777,7 @@ case class ServiceDescriptor(
     logAnalyticsOnServer: Boolean = false,
     useAkkaHttpClient: Boolean = false,
     tcpTunneling: Boolean = false,
-    detectApiKeySooner: Boolean,
+    detectApiKeySooner: Boolean = false,
     // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
     enforceSecureCommunication: Boolean = true,
     sendInfoToken: Boolean = true,
