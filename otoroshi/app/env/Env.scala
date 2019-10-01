@@ -151,6 +151,9 @@ class Env(val configuration: Configuration,
   lazy val emptyContentLengthIsChunked: Boolean =
     configuration.getOptional[Boolean]("otoroshi.options.emptyContentLengthIsChunked").getOrElse(false)
 
+  lazy val detectApiKeySooner: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.options.detectApiKeySooner").getOrElse(false)
+
   lazy val metricsAccessKey: Option[String] =
     configuration.getOptional[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
 
@@ -505,6 +508,7 @@ class Env(val configuration: Configuration,
         scheme = if (adminApiProxyHttps) "https" else "http"
       )
     ),
+    detectApiKeySooner = false,
     redirectToLocal = false,
     localHost = s"127.0.0.1:$port",
     forceHttps = false,

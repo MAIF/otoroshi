@@ -87,6 +87,7 @@ class Target extends Component {
   render() {
     const value = this.props.itemValue;
     if (!this.state.showMore) {
+      console.log('rendering ', this.state.dirtyTarget, value )
       return (
         <div style={{ marginLeft: 0, marginRight: 0 }}>
           <TextInput
@@ -99,7 +100,7 @@ class Target extends Component {
             }
             help="The URL of the target"
             onChange={e => this.changeTheUrl(e)}
-            after={() => (
+            aafter={() => (
               <button
                 type="button"
                 className="btn btn-primary btn-xs"
@@ -909,6 +910,13 @@ export class ServicePage extends Component {
                   value={this.state.service.useAkkaHttpClient}
                   help="Will use Akka Http Client for every request"
                   onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
+                  hide={this.state.service.tcpTunneling}
+                />
+                <BiColumnBooleanInput
+                  label="Detect apikey sooner"
+                  value={this.state.service.detectApiKeySooner}
+                  help="If the service is public and you provide an apikey, otoroshi will detect it and validate it. Of course this setting may impact performances because of useless apikey lookups."
+                  onChange={v => this.changeTheValue('detectApiKeySooner', v)}
                   hide={this.state.service.tcpTunneling}
                 />
               </div>

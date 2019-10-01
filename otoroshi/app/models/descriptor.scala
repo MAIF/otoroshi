@@ -1777,6 +1777,7 @@ case class ServiceDescriptor(
     logAnalyticsOnServer: Boolean = false,
     useAkkaHttpClient: Boolean = false,
     tcpTunneling: Boolean = false,
+    detectApiKeySooner: Boolean,
     // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
     enforceSecureCommunication: Boolean = true,
     sendInfoToken: Boolean = true,
@@ -2072,6 +2073,7 @@ object ServiceDescriptor {
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
           tcpTunneling = (json \ "tcpTunneling").asOpt[Boolean].getOrElse(false),
+          detectApiKeySooner = (json \ "detectApiKeySooner").asOpt[Boolean].getOrElse(false),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           buildMode = (json \ "buildMode").asOpt[Boolean].getOrElse(false),
           strictlyPrivate = (json \ "strictlyPrivate").asOpt[Boolean].getOrElse(false),
@@ -2168,6 +2170,7 @@ object ServiceDescriptor {
       "logAnalyticsOnServer"       -> sd.logAnalyticsOnServer,
       "useAkkaHttpClient"          -> sd.useAkkaHttpClient,
       "tcpTunneling"               -> sd.tcpTunneling,
+      "detectApiKeySooner"         -> sd.detectApiKeySooner,
       "maintenanceMode"            -> sd.maintenanceMode,
       "buildMode"                  -> sd.buildMode,
       "strictlyPrivate"            -> sd.strictlyPrivate,
@@ -2245,6 +2248,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           scheme = "https"
         )
       ),
+      detectApiKeySooner = false,
       privateApp = false,
       sendOtoroshiHeadersBack = false, // try to hide otoroshi as much as possible
       enforceSecureCommunication = false, // try to hide otoroshi as much as possible

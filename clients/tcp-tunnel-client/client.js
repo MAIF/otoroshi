@@ -476,12 +476,12 @@ function displayHeader() {
 }
 
 function displayHelpText() {
-  console.log('Usage:');
+  console.log('Workspace usage, with a file describing the workspace');
   console.log('');
   console.log('  --config: the path of a config file containing a list of proxy settings, like a workspace or a profile. ');
   console.log('            In that case, other flag will not work except global flags.')
   console.log('')
-  console.log('or')
+  console.log('or one shot usage, with command line flags')
   console.log('')
   console.log('  --remote: the remote address of your service, like https://ssh.oto.tools:443');
   console.log('  --access_type: the type of access. Could be public, apikey, session');
@@ -495,7 +495,7 @@ function displayHelpText() {
   console.log('  --remoteHost: if you want to use dynamic targets, this will pass a remoteHost query param to Otoroshi');
   console.log('  --remotePort: if you want to use dynamic targets, this will pass a remotePort query param to Otoroshi');
   console.log('')
-  console.log('Optional global flags, valable for all proxy instances also with the --config flag');
+  console.log('Optional global flags, usable with workspace mode or one shot mode');
   console.log('')
   console.log('  --https_proxy: the address of your http proxy, if one');
   console.log('  --http_proxy: the address of your http proxy, if one');

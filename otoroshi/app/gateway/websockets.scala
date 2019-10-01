@@ -1517,7 +1517,11 @@ class WebSocketHandler()(implicit env: Env) {
                                           }
                                         } else {
                                           if (descriptor.isUriPublic(req.path)) {
-                                            callDownstream(globalConfig)
+                                            if (env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper.detectApiKey(req, descriptor)) {
+                                              passWithApiKey(globalConfig)
+                                            } else {
+                                              callDownstream(globalConfig)
+                                            }
                                           } else {
                                             passWithApiKey(globalConfig)
                                           }
