@@ -9,11 +9,25 @@ GET     /metrics                                              controllers.ApiCon
 # U2F URLs
 POST    /bo/u2f/register/start                                controllers.U2FController.u2fRegisterStart()
 POST    /bo/u2f/register/finish                               controllers.U2FController.u2fRegisterFinish()
-
 POST    /bo/u2f/login/start                                   controllers.U2FController.u2fAuthenticationStart()
 POST    /bo/u2f/login/finish                                  controllers.U2FController.u2fAuthenticationFinish()
 GET     /bo/u2f/admins                                        controllers.U2FController.u2fAdmins()
 DELETE  /bo/u2f/admins/:username/:id                          controllers.U2FController.deleteU2FAdmin(username, id)
+
+# WebAuthn URLs
+
+POST    /bo/webauthn/jws/challenge                            controllers.U2FController.jwswebAuthnChallenge()
+POST    /bo/webauthn/jws/register                             controllers.U2FController.jwswebAuthnRegister()
+POST    /bo/webauthn/jws/login/challenge                      controllers.U2FController.jwswebAuthnChallengeLogin()
+POST    /bo/webauthn/jws/login                                controllers.U2FController.jwswebAuthnLogin()
+
+GET     /bo/webauthn/challenge                                controllers.U2FController.wa4jwebAuthnChallenge()
+POST    /bo/webauthn/register                                 controllers.U2FController.wa4jwebAuthnRegister()
+POST    /bo/webauthn/login/challenge                          controllers.U2FController.wa4jwebAuthnChallengeLogin()
+POST    /bo/webauthn/login                                    controllers.U2FController.wa4jwebAuthnLogin()
+
+GET     /bo/webauthn/admins                                   controllers.U2FController.webAuthnAdmins()
+DELETE  /bo/webauthn/admins/:username/:id                     controllers.U2FController.webAuthnDeleteAdmin(username, id)
 
 # Simple Login URLs
 

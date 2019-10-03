@@ -21,7 +21,7 @@ import redis.{RedisClientMasterSlaves, RedisServer}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
 import storage._
 import otoroshi.tcp.{RedisTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import storage.inmemory.InMemoryRawDataStore
+import storage.inmemory.{InMemoryRawDataStore, WebAuthnAdminDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -118,6 +118,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
 
   private lazy val _rawDataStore          = new RedisRawDataStore(redis)
   override def rawDataStore: RawDataStore = _rawDataStore
+
+  private lazy val _webAuthnAdminDataStore = new WebAuthnAdminDataStore()
+  override def webAuthnAdminDataStore: WebAuthnAdminDataStore = _webAuthnAdminDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

@@ -111,6 +111,9 @@ class CassandraDataStores(naive: Boolean,
   private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
   override def rawDataStore: RawDataStore = _rawDataStore
 
+  private lazy val _webAuthnAdminDataStore = new WebAuthnAdminDataStore()
+  override def webAuthnAdminDataStore: WebAuthnAdminDataStore = _webAuthnAdminDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
