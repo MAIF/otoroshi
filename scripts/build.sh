@@ -48,6 +48,12 @@ test_server () {
   # rc=$?; if [ $rc != 0 ]; then exit $rc; fi
 }
 
+test_mtls () {
+  cd $LOCATION/scripts/mtls-test
+  sh ./tests.sh
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+}
+
 case "${1}" in
   all)
     clean
@@ -55,6 +61,7 @@ case "${1}" in
     build_manual
     build_server
     test_server
+    test_mtls
     # build_cli
     ;;
   cli)
