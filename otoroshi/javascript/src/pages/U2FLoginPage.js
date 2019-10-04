@@ -60,26 +60,6 @@ function Base64Url() {
   };
 }
 
-function publicKeyCredentialToJSON(pubKeyCred) {
-  if (pubKeyCred instanceof Array) {
-    let arr = [];
-    for (let i of pubKeyCred)
-      arr.push(publicKeyCredentialToJSON(i));
-    return arr;
-  }
-  if (pubKeyCred instanceof ArrayBuffer) {
-    return base64url.encode(pubKeyCred);
-  }
-  if (pubKeyCred instanceof Object) {
-    let obj = {};
-    for (let key in pubKeyCred) {
-      obj[key] = publicKeyCredentialToJSON(pubKeyCred[key]);
-    }
-    return obj;
-  }
-  return pubKeyCred;
-}
-
 const base64url = Base64Url();
 
 function responseToObject(response) {
@@ -237,89 +217,7 @@ export class U2FLoginPage extends Component {
     }, this.handleError('Login and/or password error, sorry ...'));
   };
 
-  webAuthnLogin_wa4j = e => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    const username = this.state.email;
-    const password = this.state.password;
-    this.setState({ message: null });
-    fetch(`/bo/webauthn/login/challenge`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-        password
-      })
-    }).then(r => {
-      if (r.status === 200) {
-        return r.json();
-      } else {
-        throw new Error('Login error, sorry ...');
-      }
-    }, this.handleError('Login error, sorry ...'))
-      .then(payload => {
-
-        const credentialId = payload.credentialId;
-        const challengeId = payload.challengeId;
-        const challenge = payload.challenge;
-        let hostnameParts = window.location.hostname.split(".");
-        hostnameParts.reverse();
-        const hostname = hostnameParts[1] + '.' + hostnameParts[0];
-
-        const options = {
-          publicKey: {
-            challenge: base64url.decode(challenge),
-            allowCredentials: [
-              {
-                id: base64url.decode(credentialId),
-                type: "public-key"
-              }
-            ],
-            timeout: 15000,
-            authenticatorSelection: { 
-              userVerification: "preferred" 
-            }
-          }
-        };
-        console.log(options)
-        navigator.credentials.get(options).then(credentials => {
-          const json = publicKeyCredentialToJSON(credentials);
-          return fetch(`/bo/webauthn/login`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...json,
-              otoroshi: { 
-                origin: window.location.origin,
-                username,
-                password,
-                challengeId,
-              }
-            }),
-          }).then(r => r.json(), this.handleError('Authentication error, sorry ...'))
-            .then(data => {
-              console.log(data);
-              this.setState(
-                { error: null, email: '', password: '', message: `Login successfully` },
-                () => {
-                  window.location.href = '/bo/dashboard';
-                }
-              );
-            }, this.handleError('Login error, sorry ...'));
-        });
-      }, this.handleError('Login error, sorry ...'));
-  };
-
-  webAuthnLogin_jws = e => {
+  webAuthnLogin = e => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -327,7 +225,7 @@ export class U2FLoginPage extends Component {
     const password = this.state.password;
     const label = this.state.label;
     this.setState({ message: null });
-    fetch(`/bo/webauthn/jws/login/challenge`, {
+    fetch(`/bo/webauthn/login/start`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -348,31 +246,6 @@ export class U2FLoginPage extends Component {
       }
     }, this.handleError('Login error, sorry ...'))
       .then(payload => {
-
-        //const credentialId = payload.credentialId;
-        //const challengeId = payload.challengeId;
-        //const challenge = payload.challenge;
-
-
-        // let hostnameParts = window.location.hostname.split(".");
-        // hostnameParts.reverse();
-        // const hostname = hostnameParts[1] + '.' + hostnameParts[0];
-
-        // const options = {
-        //   publicKey: {
-        //     challenge: base64url.decode(challenge),
-        //     allowCredentials: [
-        //       {
-        //         id: base64url.decode(credentialId),
-        //         type: "public-key"
-        //       }
-        //     ],
-        //     timeout: 15000,
-        //     authenticatorSelection: { 
-        //       userVerification: "preferred" 
-        //     }
-        //   }
-        // };
         const requestId = payload.requestId;
         const options = payload.request.publicKeyCredentialRequestOptions
         options.challenge = base64url.decode(options.challenge);
@@ -381,11 +254,11 @@ export class U2FLoginPage extends Component {
           return c;
         });
         console.log(options)
-        navigator.credentials.get({
+        return navigator.credentials.get({
           publicKey: options
-        }).then(credentials => {
+        }, this.handleError('Webauthn error, sorry ...')).then(credentials => {
           const json = responseToObject(credentials);
-          return fetch(`/bo/webauthn/jws/login`, {
+          return fetch(`/bo/webauthn/login/finish`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -454,14 +327,11 @@ export class U2FLoginPage extends Component {
                 onClick={this.simpleLogin}>
                 Login
               </button>
-              <button type="button" className="btn" style={{ marginLeft: 10 }} onClick={this.login}>
+              <button type="button" className="btn hide" style={{ marginLeft: 10 }} onClick={this.login}>
                 Login with FIDO U2F
               </button>
-              <button type="button" className="btn" style={{ marginLeft: 10 }} onClick={this.webAuthnLogin_wa4j}>
-                Login with WebAuthn WA4J
-              </button>
-              <button type="button" className="btn" style={{ marginLeft: 10 }} onClick={this.webAuthnLogin_jws}>
-                Login with WebAuthn JWS
+              <button type="button" className="btn" style={{ marginLeft: 10 }} onClick={this.webAuthnLogin}>
+                Login with WebAuthn
               </button>
             </div>
           </div>          

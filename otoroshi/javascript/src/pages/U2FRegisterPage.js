@@ -65,26 +65,6 @@ function Base64Url() {
   };
 }
 
-function publicKeyCredentialToJSON(pubKeyCred) {
-  if (pubKeyCred instanceof Array) {
-    let arr = [];
-    for (let i of pubKeyCred)
-      arr.push(publicKeyCredentialToJSON(i));
-    return arr;
-  }
-  if (pubKeyCred instanceof ArrayBuffer) {
-    return base64url.encode(pubKeyCred);
-  }
-  if (pubKeyCred instanceof Object) {
-    let obj = {};
-    for (let key in pubKeyCred) {
-      obj[key] = publicKeyCredentialToJSON(pubKeyCred[key]);
-    }
-    return obj;
-  }
-  return pubKeyCred;
-}
-
 const base64url = Base64Url();
 
 
@@ -207,6 +187,10 @@ export class U2FRegisterPage extends Component {
     this.setState({ error: err.message });
   };
 
+  handleErrorWithMessage = message => () => {
+    this.setState({ error: message });
+  };
+
   register = e => {
     if (e && e.preventDefault) {
       e.preventDefault();
@@ -312,7 +296,7 @@ export class U2FRegisterPage extends Component {
       }, this.handleError);
   };
 
-  registerWebAuthn_wa4j = (e) => {
+  registerWebAuthn = (e) => {
 
     if (e && e.preventDefault) {
       e.preventDefault();
@@ -327,86 +311,7 @@ export class U2FRegisterPage extends Component {
       return window.newAlert('Password does not match !!!');
     }
 
-    return fetch('/bo/webauthn/challenge', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      }
-    }).then(r => r.json()).then(resp => {
-      const challenge = resp.challenge;
-      const challengeId = resp.challengeId;
-
-      let hostnameParts = window.location.hostname.split(".");
-      hostnameParts.reverse();
-      const hostname = hostnameParts[1] + '.' + hostnameParts[0];
-
-      const publicKeyCredentialCreationOptions = {
-        challenge: base64url.decode(challenge),
-        rp: {
-          name: "Otoroshi",
-          id:  hostname
-        },
-        user: {
-          id: base64url.decode(faker.random.alphaNumeric(32)),
-          name: username || "user1@otoroshi.io", // TODO: remove
-          displayName: label || "John Doe", // TODO: remove
-        },
-        pubKeyCredParams: [{
-          alg: -7, 
-          type: "public-key"
-        }],
-        authenticatorSelection: {
-          //authenticatorAttachment: "cross-platform",
-          userVerification: "preferred"
-        },
-        timeout: 60000,
-        attestation: "direct"
-      };
-      navigator.credentials.create({
-        publicKey: publicKeyCredentialCreationOptions
-      }).then(credentials => {
-        const json = publicKeyCredentialToJSON(credentials);
-        return fetch('/bo/webauthn/register', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...json, otoroshi: { 
-            origin: window.location.origin,
-            username,
-            password,
-            challengeId,
-            label
-          } }),
-        }).then(r => r.json()).then(resp => {
-          // TODO: do something here like refresh stuff
-          return console.log('ok', resp);
-        });
-      }).catch(e => {
-        console.log('error', e);
-      });
-    });
-  };
-
-  registerWebAuthn_jws = (e) => {
-
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-
-    const username = this.state.email;
-    const password = this.state.password;
-    const passwordcheck = this.state.passwordcheck;
-    const label = this.state.label;
-
-    if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!');
-    }
-
-    return fetch('/bo/webauthn/jws/challenge', {
+    return fetch('/bo/webauthn/register/start', {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -420,44 +325,16 @@ export class U2FRegisterPage extends Component {
         origin: window.location.origin
       })
     }).then(r => r.json()).then(resp => {
-      console.log(resp)
       const requestId = resp.requestId;
       const publicKeyCredentialCreationOptions = resp.request;
-
-      //const challengeId = resp.challengeId;
-      //let hostnameParts = window.location.hostname.split(".");
-      //hostnameParts.reverse();
-      //const hostname = hostnameParts[1] + '.' + hostnameParts[0];
-      // const publicKeyCredentialCreationOptions = {
-      //   challenge: base64url.decode(challenge),
-      //   rp: {
-      //     name: "Otoroshi",
-      //     id:  hostname
-      //   },
-      //   user: {
-      //     id: base64url.decode(faker.random.alphaNumeric(32)),
-      //     name: username || "user1@otoroshi.io", // TODO: remove
-      //     displayName: label || "John Doe", // TODO: remove
-      //   },
-      //   pubKeyCredParams: [{
-      //     alg: -7, 
-      //     type: "public-key"
-      //   }],
-      //   authenticatorSelection: {
-      //     //authenticatorAttachment: "cross-platform",
-      //     userVerification: "preferred"
-      //   },
-      //   timeout: 60000,
-      //   attestation: "direct"
-      // };
       const handle = publicKeyCredentialCreationOptions.user.id + '';
       publicKeyCredentialCreationOptions.challenge = base64url.decode(publicKeyCredentialCreationOptions.challenge);
       publicKeyCredentialCreationOptions.user.id = base64url.decode(publicKeyCredentialCreationOptions.user.id);
-      navigator.credentials.create({
+      return navigator.credentials.create({
         publicKey: publicKeyCredentialCreationOptions
-      }).then(credentials => {
+      }, this.handleErrorWithMessage('Webauthn error')).then(credentials => {
         const json = responseToObject(credentials);
-        return fetch('/bo/webauthn/jws/register', {
+        return fetch('/bo/webauthn/register/finish', {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -476,12 +353,17 @@ export class U2FRegisterPage extends Component {
             } 
           }),
         }).then(r => r.json()).then(resp => {
-          // TODO: do something here like refresh stuff
-          return console.log('ok', resp);
+          if (this.table) this.table.update();
+          this.setState({
+            error: null,
+            email: '',
+            label: '',
+            password: '',
+            passwordcheck: '',
+            message: `Registration done for '${username}'`,
+          });
         });
-      }).catch(e => {
-        console.log('error', e);
-      });
+      }, this.handleErrorWithMessage('Webauthn error')).catch(this.handleError);
     });
   };
  
@@ -568,7 +450,7 @@ export class U2FRegisterPage extends Component {
               </button>
               <button
                 type="button"
-                className="btn btn-success"
+                className="btn btn-success hide"
                 style={{ marginLeft: 10 }}
                 onClick={this.register}>
                 Register FIDO U2F Admin
@@ -577,15 +459,8 @@ export class U2FRegisterPage extends Component {
                 type="button"
                 className="btn btn-success"
                 style={{ marginLeft: 10 }}
-                onClick={this.registerWebAuthn_wa4j}>
-                Register WebAuthn Admin WA4J
-              </button>
-              <button
-                type="button"
-                className="btn btn-success"
-                style={{ marginLeft: 10 }}
-                onClick={this.registerWebAuthn_jws}>
-                Register WebAuthn Admin JWS
+                onClick={this.registerWebAuthn}>
+                Register Admin with WebAuthn
               </button>
             </div>
           </div>
