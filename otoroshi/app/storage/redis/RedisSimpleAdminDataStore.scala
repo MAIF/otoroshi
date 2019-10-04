@@ -55,7 +55,8 @@ class RedisSimpleAdminDataStore(redisCli: RedisClientMasterSlaves) extends Simpl
             "password"        -> password,
             "label"           -> label,
             "authorizedGroup" -> group,
-            "createdAt"       -> DateTime.now()
+            "createdAt"       -> DateTime.now(),
+            "type"            -> "SIMPLE"
           )
         )
       )

@@ -64,7 +64,8 @@ class WebAuthnAdminDataStore() {
           "authorizedGroup" -> group,
           "createdAt"       -> DateTime.now(),
           "credential"      -> credential,
-          "handle"          -> handle
+          "handle"          -> handle,
+          "type"            -> "WEBAUTHN"
         )
       )), None)
   }
