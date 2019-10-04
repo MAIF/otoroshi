@@ -567,15 +567,27 @@ export function fetchAdmins() {
       })
         .then(r => r.json())
         .then(_admins => {
-          const admins = _admins.map(admin => ({ ...admin, type: 'SIMPLE' }));
-          const u2fAdmins = _u2fAdmins.map(admin => ({ ...admin, type: 'U2F' }));
-          return [...u2fAdmins, ...admins];
+          return fetch(`/bo/webauthn/admins`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+            },
+          })
+            .then(r => r.json())
+            .then(_webauthnadmins => {
+              const admins = _admins.map(admin => ({ ...admin, type: 'SIMPLE' }));
+              const u2fAdmins = _u2fAdmins.map(admin => ({ ...admin, type: 'U2F' }));
+              const webauthnadmins = _webauthnadmins.map(admin => ({ ...admin, type: 'WEBAUTHN' }));
+              return [...u2fAdmins, ...webauthnadmins, ...admins];
+            });
         });
     });
 }
 
-export function discardAdmin(username, id) {
-  if (!id) {
+export function discardAdmin(username, id, type) {
+
+  if (type === 'SIMPLE') {
     return fetch(`/bo/simple/admins/${username}`, {
       method: 'DELETE',
       credentials: 'include',
@@ -583,7 +595,7 @@ export function discardAdmin(username, id) {
         Accept: 'application/json',
       },
     }).then(r => r.json());
-  } else {
+  } else if (type === 'U2F') {
     return fetch(`/bo/u2f/admins/${username}/${id}`, {
       method: 'DELETE',
       credentials: 'include',
@@ -591,7 +603,18 @@ export function discardAdmin(username, id) {
         Accept: 'application/json',
       },
     }).then(r => r.json());
-  }
+  } else if (type === 'WEBAUTHN') {
+    return fetch(`/bo/webauthn/admins/${username}/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    }).then(r => r.json());
+  } else {
+    // nothing
+    return;
+  } 
 }
 
 export function fetchOtoroshi() {

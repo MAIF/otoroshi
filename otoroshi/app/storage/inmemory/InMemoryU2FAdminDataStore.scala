@@ -51,7 +51,8 @@ class InMemoryU2FAdminDataStore(redisCli: RedisLike) extends U2FAdminDataStore {
           "label"        -> label,
           "password"     -> password,
           "createdAt"    -> DateTime.now(),
-          "registration" -> Json.parse(reg.toJson)
+          "registration" -> Json.parse(reg.toJson),
+          "type"         -> "U2F"
         )
       )
     )

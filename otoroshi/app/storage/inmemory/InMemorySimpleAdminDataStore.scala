@@ -51,7 +51,8 @@ class InMemorySimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends Simpl
                      "password"        -> password,
                      "label"           -> label,
                      "authorizedGroup" -> group,
-                     "createdAt"       -> DateTime.now()
+                     "createdAt"       -> DateTime.now(),
+                     "type"            -> "SIMPLE"
                    )
                  ))
   }

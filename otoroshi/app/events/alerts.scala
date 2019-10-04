@@ -425,6 +425,30 @@ case class U2FAdminDeletedAlert(`@id`: String,
   )
 }
 
+case class WebAuthnAdminDeletedAlert(`@id`: String,
+                                `@env`: String,
+                                user: BackOfficeUser,
+                                event: BackOfficeEvent,
+                                `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "alert"      -> "WebAuthnAdminDeletedAlert",
+    "event"      -> event.toJson,
+    "user"       -> user.profile
+  )
+}
+
 case class BlackListedBackOfficeUserAlert(`@id`: String,
                                           `@env`: String,
                                           user: BackOfficeUser,

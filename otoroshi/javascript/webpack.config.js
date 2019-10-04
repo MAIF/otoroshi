@@ -62,6 +62,7 @@ const config = {
   },
   devServer: {
     hot: true,
+    https: process.env.DEV_SERVER_HTTPS ? true : false,
     port: process.env.DEV_SERVER_PORT || 3000,
     contentBase: resolve(__dirname)
   },
