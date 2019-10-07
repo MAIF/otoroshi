@@ -40,6 +40,4 @@ cache:
     - $HOME/.nvm
     - $HOME/.yarn
     - $HOME/.yarn-cache
-    - $HOME/.rustup
-    - $HOME/.cargo
 
