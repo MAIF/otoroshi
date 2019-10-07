@@ -2,3 +2,4 @@
 *.pem
 *.jar
 node_modules
+logs

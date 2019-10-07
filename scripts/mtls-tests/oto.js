@@ -20,7 +20,7 @@ const service = {
   },
   "targets": [
     {
-      "host": "localhost:8444",
+      "host": "localhost:8445",
       "scheme": "https",
       "weight": 1,
       "protocol": "HTTP/1.1",
@@ -269,14 +269,16 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
   }
 }).then(r => r.json()).then(certs => {
   return Promise.all(certs.map(cert => {
-    console.log(cert)
+    //console.log(cert)
     return fetch(`http://otoroshi-api.oto.tools:8080/api/certificates/${cert.id}`, {
       method: 'DELETE',
       headers: {
         'Accept': 'application/json',
         'Authorization': `Basic ${authToken}`
       }
-    }).then(r => r.json());
+    }).then(r => {
+      console.log('delete ', cert.domain, ':', r.status)
+    });
   })).then(() => {
     return fetch(`http://otoroshi-api.oto.tools:8080/api/certificates`, {
       method: 'POST',

@@ -17,7 +17,7 @@ func main() {
 	}
 
 	// Create a CA certificate pool and add cert.pem to it
-	caCert, err := ioutil.ReadFile("cert-frontend-key.pem")
+	caCert, err := ioutil.ReadFile("cert-frontend.pem")
 	if err != nil {
 		log.Fatal(err)
 	}

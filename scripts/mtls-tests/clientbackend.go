@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// Request /hello via the created HTTPS client over port 8443 via GET
-	r, err := client.Get("https://localhost:8444/hello")
+	r, err := client.Get("https://localhost:8445/hello")
 	if err != nil {
 		log.Fatal(err)
 	}
