@@ -306,7 +306,17 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
             'Authorization': `Basic ${authToken}`
           },
           body: JSON.stringify(service)
-        }).then(r => r.json())
+        }).then(r => r.json()).then(() => {
+          return fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Basic ${authToken}`
+            }
+          }).then(r => r.json()).then(finalCerts => {
+            console.log(finalCerts.map(c => c.domain).join(", "))
+          });
+        });
       });
     });
   });
