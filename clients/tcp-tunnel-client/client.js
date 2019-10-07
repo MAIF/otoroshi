@@ -284,6 +284,8 @@ function ProxyServer(options, optionalConfigFile) {
 
       socket.setKeepAlive(true, 60000);
       activeConnections = activeConnections + 1;
+      const connectionId = faker.random.alphaNumeric(6);
+      console.log(color(`[${sessionId}]`) + ` New connection (${connectionId}). ${activeConnections} active connections.`);
       debugLog(`New client connected with session id: ${sessionId} on ${finalUrl}`);
       let closed = false;
       let clientConnected = false;
@@ -302,7 +304,7 @@ function ProxyServer(options, optionalConfigFile) {
         if (!closed) {
           closed = true;
           activeConnections = activeConnections - 1;
-          console.log(color(`[${sessionId}]`) + ` active connection just closed. ${activeConnections} active connections remaining.`);
+          console.log(color(`[${sessionId}]`) + ` One connection closed (${connectionId}). ${activeConnections} active connections remaining.`);
         }
       }
       // tcp socket callbacks
