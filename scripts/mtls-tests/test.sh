@@ -8,7 +8,7 @@ sleep 5
 go run clientbackend.go > clientbackend.out
 cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
 java -Dapp.domain=oto.tools -jar otoroshi.jar &
-sleep 10
+sleep 20
 yarn install
 node oto.js
 sleep 10
