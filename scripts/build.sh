@@ -52,7 +52,7 @@ test_mtls () {
   cd $LOCATION/scripts/mtls-test
   sh ./test.sh
   killall go >> /dev/null
-  killall java >> /dev/null
+  kill $(ps aux | grep 'otoroshi' | awk '{print $2}')
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
 }
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 sh ./certs.sh
 go run backend.go &
 go run clientbackend.go > clientbackend.out
