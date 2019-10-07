@@ -82,6 +82,7 @@ assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
+  case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value

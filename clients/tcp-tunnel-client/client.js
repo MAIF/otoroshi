@@ -219,7 +219,7 @@ function SessionAuthChecker(remoteUrl, token, headers) {
   };
 }
 
-function ProxyServer(options) {
+function ProxyServer(options, optionalConfigFile) {
 
   const color = colors[possibleColors[Math.floor(Math.random() * possibleColors.length)]].bold;
   const sessionId = options.name || faker.random.alphaNumeric(6);
@@ -237,10 +237,12 @@ function ProxyServer(options) {
   const localProcessPort = options.port || 2222;
   const checkEvery = options.every || 10000;
   const access_type = options.access_type;
-  const apikey = options.apikey;
   const simpleApikeyHeaderName = options.sahn || 'x-api-key';
   const remoteHost = options.remoteHost;
   const remotePort = options.remotePort;
+  const transport = options.transport || 'tcp';
+
+  let apikey = options.apikey;
 
   const headers = {};
   let finalUrl = remoteWsUrl + '/.well-known/otoroshi/tunnel';
@@ -262,17 +264,28 @@ function ProxyServer(options) {
     });
   }
 
-  function startLocalServer() {
+  function startLocalProxy() {
+    if (transport === 'tcp') {
+      return startLocalTcpProxy();
+    } else {
+      return startLocalUdpProxy();
+    }
+  }
+
+  function startLocalTcpProxy() {
 
     if (options.remote.indexOf('http://') === 0) {
       console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`.red)
     }
 
+    let activeConnections = 0;
+
     const server = net.createServer((socket) => {
 
       socket.setKeepAlive(true, 60000);
-
+      activeConnections = activeConnections + 1;
       debugLog(`New client connected with session id: ${sessionId} on ${finalUrl}`);
+      let closed = false;
       let clientConnected = false;
       const clientBuffer = [];
       const remoteArgs = _.entries({
@@ -284,17 +297,28 @@ function ProxyServer(options) {
         agent, 
         headers
       });
+
+      function displayEndOfSession() {
+        if (!closed) {
+          closed = true;
+          activeConnections = activeConnections - 1;
+          console.log(color(`[${sessionId}]`) + ` active connection just closed. ${activeConnections} active connections remaining.`);
+        }
+      }
       // tcp socket callbacks
       socket.on('end', () => {
         debugLog(`Client deconnected (end) from session ${sessionId}`);
+        displayEndOfSession();
         client.close();
       });
       socket.on('close', () => {
         debugLog(`Client deconnected (close) from session ${sessionId}`);
+        displayEndOfSession();
         client.close();
       });
       socket.on('error', (err) => {
         debugLog(`Client deconnected (error) from session ${sessionId}`, err);
+        displayEndOfSession();
         client.close();
       });
       socket.on('data', (data) => {
@@ -332,11 +356,13 @@ function ProxyServer(options) {
         debugLog(`WS Client error from session ${sessionId}`, error);
         socket.destroy();
         clientConnected = false;
+        displayEndOfSession();
       });
       client.on('close', () => {
         debugLog(`WS Client closed from session ${sessionId}`);
         socket.destroy();
         clientConnected = false;
+        displayEndOfSession();
       });
     });
 
@@ -351,6 +377,10 @@ function ProxyServer(options) {
     return server;
   }
 
+  function startLocalUdpProxy() {
+    return Promise.failed('No UDP support yet !!!');
+  }
+
   function start() {
 
     const host = options.host;
@@ -360,7 +390,11 @@ function ProxyServer(options) {
 
     if (access_type === 'apikey') {
       if (!apikey) {
-        throw new Error(color(`[${sessionId}]`) + ` No apikey specified !`);
+        if (optionalConfigFile.apikeys && options.apikeyRef && optionalConfigFile.apikeys[options.apikeyRef]) {
+          apikey = optionalConfigFile.apikeys[options.apikeyRef];
+        } else {
+          throw new Error(color(`[${sessionId}]`) + ` No apikey specified !`);
+        }
       }
       if (apikey.indexOf(":") > -1) {
         headers['Authorization'] = `Basic ${Buffer.from(apikey).toString('base64')}`;
@@ -370,7 +404,7 @@ function ProxyServer(options) {
       const checker = ApiKeyAuthChecker(remoteUrl, headers);
       return checker.check().then(() => {
         console.log(color(`[${sessionId}]`) + ` Will use apikey authentication to access the service. Apikey access was successful !`.green);
-        const server = startLocalServer();
+        const server = startLocalProxy();
         checker.every(checkEvery, () => {
           console.log(color(`[${sessionId}]`) + ` Cannot access service with apikey anymore. Stopping the tunnel !`.red);
           server.close();
@@ -381,13 +415,13 @@ function ProxyServer(options) {
       });
     } else if (access_type === 'session') {
 
-      function startLocalServerAndCheckSession(sessionId, remoteUrl, token, success) {
+      function startLocalProxyAndCheckSession(sessionId, remoteUrl, token, success) {
         existingSessionTokens[token] = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
         const checker = SessionAuthChecker(remoteUrl, token, headers);
         finalUrl = finalUrl + '/?pappsToken=' + token;
         checker.check().then(() => {
           console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`.green);
-          const server = startLocalServer();
+          const server = startLocalProxy();
           success(server);
           checker.every(checkEvery, () => {
             console.log(color(`[${sessionId}]`) + ` Cannot access service with session anymore. Stopping the tunnel !`.red);
@@ -405,21 +439,21 @@ function ProxyServer(options) {
       return tryExistingTokenBeforeRelogin(sessionId, remoteUrl).then(existingToken => {
         if (existingToken) {
           return new Promise(success => {
-            startLocalServerAndCheckSession(sessionId, remoteUrl, existingToken, success);
+            startLocalProxyAndCheckSession(sessionId, remoteUrl, existingToken, success);
           });
         } else {
           if (runningInDocker) {
             console.log(color(`[${sessionId}]`) + ` Please open the following URL in your browser and log in if needed\n\n${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob\n\n`);
             return new Promise(success => {
               askForToken(sessionId, color, token => {
-                startLocalServerAndCheckSession(sessionId, remoteUrl, token, success)
+                startLocalProxyAndCheckSession(sessionId, remoteUrl, token, success)
               });
             });
           } else {
             return open(`${remoteUrl}/?redirect=urn:ietf:wg:oauth:2.0:oob`).then(ok => {
               return new Promise(success => {
                 askForToken(sessionId, color, token => {
-                  startLocalServerAndCheckSession(sessionId, remoteUrl, token, success)
+                  startLocalProxyAndCheckSession(sessionId, remoteUrl, token, success)
                 });
               });
             });
@@ -429,7 +463,7 @@ function ProxyServer(options) {
     } else if (access_type === 'public') {
       console.log(color(`[${sessionId}]`) + ` Will use no authentication. Public access was successful !`.green);
       return new Promise(s => {
-        const server = startLocalServer();
+        const server = startLocalProxy();
         s(server);
       });
     } else {
@@ -520,7 +554,7 @@ if (cliOptions.config && fs.existsSync(cliOptions.config)) {
     console.log(`\nOtoroshi TCP tunnel CLI\n\n`.yellow.bold + `Launching tunnels for "${configJson.name}" configuration file located at "${cliOptions.config}"\n`.white.bold)
   }
   asyncForEach(items, item => {
-    return ProxyServer(item).start().catch(e => console.log(`Error while starting proxy for ${item.name}`, e));
+    return ProxyServer(item, configJson).start().catch(e => console.log(`Error while starting proxy for ${item.name}`, e));
   });
 } else {
   process.on('unhandledRejection', up => { throw up })

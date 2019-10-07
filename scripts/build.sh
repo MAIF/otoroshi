@@ -81,6 +81,9 @@ case "${1}" in
   server)
     build_server
     ;;
+  test_mtls)
+    test_mtls
+    ;;
   *)
     clean
     build_ui
