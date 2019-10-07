@@ -27,7 +27,7 @@ before_install:
   #- export PATH=$PATH:$HOME/.cargo/bin
   #- rustup update
   #- rustup default stable 
-  #- docker-compose -f scripts/docker-compose-test.yml up -d
+  - docker-compose -f scripts/docker-compose-test.yml up -d
   
 script:
   - sh ./scripts/build.sh all
