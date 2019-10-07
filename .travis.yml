@@ -9,7 +9,7 @@ scala:
   - "2.12.4"
 
 jdk:
-  - oraclejdk11
+  - openjdk11
 
 services:
   - docker
