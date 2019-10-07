@@ -14,7 +14,7 @@ node oto.js
 sleep 10
 go run clientfrontend.go > clientfrontend.out
 sleep 5
-curl -k -H "Host: mtls.oto.tools" https://mtls.oto.tools:8443/
+curl -k -H "Host: mtls.oto.tools" https://mtls.oto.tools:8443/ --include
 node check.js
 
 kill $(ps aux | grep 'backendmtls.go' | awk '{print $2}')
