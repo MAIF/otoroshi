@@ -4,7 +4,6 @@ LOCATION=`pwd`
 
 clean () {
   cd $LOCATION/clients/cli
-  cargo clean
   cd $LOCATION
   rm -rf $LOCATION/otoroshi/target/universal
   rm -rf $LOCATION/manual/target/universal
@@ -13,6 +12,7 @@ clean () {
 
 build_cli () {
   cd $LOCATION/clients/cli
+  cargo clean
   cargo build --release
 }
 
@@ -85,12 +85,13 @@ case "${1}" in
     test_mtls
     ;;
   *)
-    clean
+     clean
     build_ui
     build_manual
     build_server
     test_server
-    build_cli
+    test_mtls
+    # build_cli
 esac
 
 exit ${?}
