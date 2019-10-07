@@ -49,7 +49,7 @@ test_server () {
 }
 
 test_mtls () {
-  cd $LOCATION/scripts/mtls-test
+  cd $LOCATION/scripts/mtls-tests
   sh ./test.sh
   killall go >> /dev/null
   kill $(ps aux | grep 'otoroshi' | awk '{print $2}')
