@@ -8,6 +8,30 @@ const certFrontKey = fs.readFileSync('./cert-frontend-key.pem').toString('utf8')
 const certBack = fs.readFileSync('./cert-backend.pem').toString('utf8');
 const certBackKey = fs.readFileSync('./cert-backend-key.pem').toString('utf8');
 
+const apikey = {
+  "clientId": "clientId",
+  "clientSecret": "clientSecret",
+  "clientName": "apikey",
+  "authorizedGroup": "default",
+  "enabled": true,
+  "readOnly": false,
+  "allowClientIdOnly": false,
+  "throttlingQuota": 100,
+  "dailyQuota": 1000000,
+  "monthlyQuota": 1000000000000000000,
+  "constrainedServicesOnly": false,
+  "restrictions": {
+    "enabled": false,
+    "allowLast": true,
+    "allowed": [],
+    "forbidden": [],
+    "notFound": []
+  },
+  "validUntil": null,
+  "tags": [],
+  "metadata": {}
+};
+
 const service = {
   "id": "service",
   "groupId": "default",
@@ -64,9 +88,7 @@ const service = {
   "secComInfoTokenVersion": "Legacy",
   "secComExcludedPatterns": [],
   "securityExcludedPatterns": [],
-  "publicPatterns": [
-    "/.*"
-  ],
+  "publicPatterns": [],
   "privatePatterns": [],
   "additionalHeaders": {},
   "additionalHeadersOut": {},
@@ -260,7 +282,6 @@ const otoCertBack = {
   "to": 1885301242000
 };
 
-
 fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
   method: 'GET',
   headers: {
@@ -307,15 +328,25 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
           },
           body: JSON.stringify(service)
         }).then(r => r.json()).then(() => {
-          return fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
-            method: 'GET',
+          return fetch(`http://otoroshi-api.oto.tools:8080/api/groups/default/apikeys`, {
+            method: 'POST',
             headers: {
               'Accept': 'application/json',
+              'Content-Type': 'application/json',
               'Authorization': `Basic ${authToken}`
-            }
-          }).then(r => r.json()).then(finalCerts => {
-            console.log(finalCerts.map(c => c.domain).join(", "))
-          });
+            },
+            body: JSON.stringify(apikey)
+          }).then(r => r.json()).then(() => {
+            return fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Basic ${authToken}`
+              }
+            }).then(r => r.json()).then(finalCerts => {
+              console.log(finalCerts.map(c => c.domain).join(", "))
+            });
+          });          
         });
       });
     });
