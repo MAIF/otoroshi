@@ -11,6 +11,8 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.alpakka.udp.Datagram
+import akka.stream.alpakka.udp.scaladsl.Udp
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import akka.util.ByteString
@@ -245,12 +247,12 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def passWithTcpTunneling(req: RequestHeader, desc: ServiceDescriptor)(
+  def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     import utils.RequestImplicits._
 
-    if (desc.tcpTunneling && req.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
+    if (desc.tcpUdpTunneling && req.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
       f
     } else {
       Errors
@@ -384,7 +386,7 @@ class WebSocketHandler()(implicit env: Env) {
                   .asLeft[WSFlow]
               }
               case Some(rawDesc) =>
-                passWithTcpTunneling(req, rawDesc) {
+                passWithTcpUdpTunneling(req, rawDesc) {
                   passWithHeadersVerification(rawDesc, req) {
                     passWithReadOnly(rawDesc.readOnly, req) {
                       applyJwtVerifier(rawDesc, req) { jwtInjection =>
@@ -833,7 +835,7 @@ class WebSocketHandler()(implicit env: Env) {
                                         .asLeft[WSFlow]
                                     }
                                     case Right(_)
-                                        if descriptor.tcpTunneling && !req.relativeUri
+                                        if descriptor.tcpUdpTunneling && !req.relativeUri
                                           .startsWith("/.well-known/otoroshi/tunnel") => {
                                       Errors
                                         .craftResponseResult(s"Resource not found",
@@ -844,7 +846,7 @@ class WebSocketHandler()(implicit env: Env) {
                                         .asLeft[WSFlow]
                                     }
                                     case Right(_)
-                                        if descriptor.tcpTunneling && req.relativeUri
+                                        if descriptor.tcpUdpTunneling && req.relativeUri
                                           .startsWith("/.well-known/otoroshi/tunnel") => {
                                       val (theHost: String, thePort: Int) = (target.scheme, TargetExpressionLanguage(target.host, req)) match {
                                         case (_, host) if host.contains(":") =>
@@ -860,37 +862,66 @@ class WebSocketHandler()(implicit env: Env) {
                                           )
                                         case None => new InetSocketAddress(theHost, thePort)
                                       }
-                                      val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
-                                        Flow[PlayWSMessage]
-                                          .collect {
-                                            case PlayWSBinaryMessage(data) =>
-                                              data
-                                            case _ =>
-                                              ByteString.empty
-                                          }
-                                          .via(
-                                            Tcp()
-                                              .outgoingConnection(
-                                                remoteAddress = remoteAddress,
-                                                connectTimeout = descriptor.clientConfig.connectionTimeout.millis,
-                                                idleTimeout = descriptor.clientConfig.idleTimeout.millis
+                                      req.getQueryString("transport").map(_.toLowerCase()).getOrElse("tcp") match {
+                                        case "tcp" => {
+                                          val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
+                                            Flow[PlayWSMessage]
+                                              .collect {
+                                                case PlayWSBinaryMessage(data) =>
+                                                  data
+                                                case _ =>
+                                                  ByteString.empty
+                                              }
+                                              .via(
+                                                Tcp()
+                                                  .outgoingConnection(
+                                                    remoteAddress = remoteAddress,
+                                                    connectTimeout = descriptor.clientConfig.connectionTimeout.millis,
+                                                    idleTimeout = descriptor.clientConfig.idleTimeout.millis
+                                                  )
+                                                  .map(bs => PlayWSBinaryMessage(bs))
                                               )
-                                              .map(bs => PlayWSBinaryMessage(bs))
-                                          )
-                                          .alsoTo(Sink.onComplete {
-                                            case _ =>
-                                              promise.trySuccess(
-                                                ProxyDone(
-                                                  200,
-                                                  false,
-                                                  0,
-                                                  Seq.empty[Header]
-                                                )
+                                              .alsoTo(Sink.onComplete {
+                                                case _ =>
+                                                  promise.trySuccess(
+                                                    ProxyDone(
+                                                      200,
+                                                      false,
+                                                      0,
+                                                      Seq.empty[Header]
+                                                    )
+                                                  )
+                                              })
+                                          FastFuture.successful(Right(flow))
+                                        }
+                                        case "udp" => {
+                                          val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
+                                            Flow[PlayWSMessage]
+                                              .collect {
+                                                case PlayWSBinaryMessage(data) =>
+                                                  Datagram.create(data, remoteAddress)
+                                                case _ =>
+                                                  Datagram.create(ByteString.empty, remoteAddress)
+                                              }
+                                              .via(
+                                                Udp.bindFlow(new InetSocketAddress("0.0.0.0", 0)).map(dg => PlayWSBinaryMessage(dg.data))
                                               )
-                                          })
-                                      FastFuture.successful(Right(flow))
+                                              .alsoTo(Sink.onComplete {
+                                                case _ =>
+                                                  promise.trySuccess(
+                                                    ProxyDone(
+                                                      200,
+                                                      false,
+                                                      0,
+                                                      Seq.empty[Header]
+                                                    )
+                                                  )
+                                              })
+                                          FastFuture.successful(Right(flow))
+                                        }
+                                      }
                                     }
-                                    case Right(httpRequest) if !descriptor.tcpTunneling => {
+                                    case Right(httpRequest) if !descriptor.tcpUdpTunneling => {
                                       FastFuture.successful(
                                         Right(
                                           ActorFlow

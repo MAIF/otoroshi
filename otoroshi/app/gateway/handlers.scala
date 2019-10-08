@@ -487,12 +487,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def passWithTcpTunneling(req: RequestHeader, desc: ServiceDescriptor)(f: => Future[Result]): Future[Result] = {
+  def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor)(f: => Future[Result]): Future[Result] = {
     if (desc.isPrivate) {
       isPrivateAppsSessionValid(req, desc).flatMap {
         case None => f
         case Some(user) => {
-          if (desc.tcpTunneling) {
+          if (desc.tcpUdpTunneling) {
             req.getQueryString("redirect") match {
               case Some("urn:ietf:wg:oauth:2.0:oob") =>
                 FastFuture.successful(Ok(views.html.otoroshi.token(env.signPrivateSessionId(user.randomId), env)))
@@ -506,7 +506,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
       }
     } else {
-      if (desc.tcpTunneling) {
+      if (desc.tcpUdpTunneling) {
         Errors
           .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
       } else {
@@ -828,7 +828,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       Some("errors.service.in.maintenance")
                     )
                   } else {
-                    passWithTcpTunneling(req, rawDesc) {
+                    passWithTcpUdpTunneling(req, rawDesc) {
                       passWithHeadersVerification(rawDesc, req, None, None) {
                         passWithReadOnly(rawDesc.readOnly, req) {
                           applyJwtVerifier(rawDesc, req) { jwtInjection =>

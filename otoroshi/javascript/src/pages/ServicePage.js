@@ -139,7 +139,7 @@ class Target extends Component {
         />
         <TextInput
           label="Scheme"
-          placeholder={this.props.tunnelingEnabled ? 'tcp' : 'http or https'}
+          placeholder={this.props.tunnelingEnabled ? 'tcp or udp' : 'http or https'}
           value={value.scheme}
           help="The Scheme of the target"
           onChange={e => {
@@ -883,7 +883,7 @@ export class ServicePage extends Component {
                   value={this.state.service.readOnly}
                   help="Authorize only GET, HEAD, OPTIONS calls on this service "
                   onChange={v => this.changeTheValue('readOnly', v)}
-                  hide={this.state.service.tcpTunneling}
+                  hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Maintenance mode"
@@ -908,7 +908,7 @@ export class ServicePage extends Component {
                   value={this.state.service.useAkkaHttpClient}
                   help="Will use Akka Http Client for every request"
                   onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
-                  hide={this.state.service.tcpTunneling}
+                  hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Detect apikey asap"
@@ -929,14 +929,14 @@ export class ServicePage extends Component {
                   value={this.state.service.overrideHost}
                   help="When enabled, Otoroshi will automatically set the Host header to corresponding target host"
                   onChange={v => this.changeTheValue('overrideHost', v)}
-                  hide={this.state.service.tcpTunneling}
+                  hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Send X-Forwarded-* headers"
                   value={this.state.service.xForwardedHeaders}
                   help="When enabled, Otoroshi will send X-Forwarded-* headers to target"
                   onChange={v => this.changeTheValue('xForwardedHeaders', v)}
-                  hide={this.state.service.tcpTunneling}
+                  hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Force HTTPS"
@@ -949,18 +949,18 @@ export class ServicePage extends Component {
                   value={this.state.service.allowHttp10}
                   help="Will return an error on HTTP/1.0 request"
                   onChange={v => this.changeTheValue('allowHttp10', v)}
-                  hide={this.state.service.tcpTunneling}
+                  hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
-                  label="TCP tunneling"
-                  value={this.state.service.tcpTunneling}
+                  label="TCP/UDP tunneling"
+                  value={this.state.service.tcpUdpTunneling}
                   help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled"
-                  onChange={v => this.changeTheValue('tcpTunneling', v)}
+                  onChange={v => this.changeTheValue('tcpUdpTunneling', v)}
                 />
                 <a
-                  href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-tunnel-client"
+                  href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-udp-tunnel-client"
                   target="_blank">
-                  Learn more about TCP tunneling
+                  Learn more about TCP/UDP tunneling
                 </a>
               </div>
             </div>
@@ -1074,7 +1074,7 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
-            notVisible={this.state.service.tcpTunneling}
+            notVisible={this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={
               !this.state.service.redirection ? this.state.service.redirection.enabled : false
@@ -1215,7 +1215,7 @@ export class ServicePage extends Component {
                     predicate: { type: 'AlwaysMatch' },
                     ipAddress: null,
                   }}
-                  tunnelingEnabled={this.state.service.tcpTunneling}
+                  tunnelingEnabled={this.state.service.tcpUdpTunneling}
                   onChange={e => this.changeTheValue('targets', e)}
                 />
               </div>
@@ -1238,14 +1238,14 @@ export class ServicePage extends Component {
                 />
               </div>
             )}
-            {!this.state.service.tcpTunneling && <TextInput
+            {!this.state.service.tcpUdpTunneling && <TextInput
               label="Targets root"
               placeholder="The root URL of the target service"
               value={this.state.service.root}
               help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
               onChange={e => this.changeTheValue('root', e)}
             />}
-            {!this.state.service.tcpTunneling && <LinkDisplay
+            {!this.state.service.tcpUdpTunneling && <LinkDisplay
               link={`${this.state.service.targets[0].scheme}://${
                 this.state.service.targets[0].host
               }${this.state.service.root}`}
@@ -1287,7 +1287,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Restrictions">
@@ -1297,7 +1297,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Otoroshi exchange protocol">
@@ -1938,7 +1938,7 @@ export class ServicePage extends Component {
             </div>
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Gzip support">
@@ -2114,7 +2114,7 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="HTTP Headers">
@@ -2361,7 +2361,7 @@ export class ServicePage extends Component {
             </div>
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="HealthCheck settings">
@@ -2379,7 +2379,7 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpTunneling}
+            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Faults injection">
@@ -2426,7 +2426,7 @@ export class ServicePage extends Component {
               this.props.env
                 ? !this.props.env.scriptingEnabled ||
                   this.state.service.redirection.enabled ||
-                  this.state.service.tcpTunneling
+                  this.state.service.tcpUdpTunneling
                 : false
             }
             collapsed={this.state.allCollapsed}

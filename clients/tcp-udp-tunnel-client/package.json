@@ -1,5 +1,5 @@
 {
-  "name": "otoroshi-tcp-tunnel-cli",
+  "name": "otoroshi-tcp-udp-tunnel-cli",
   "version": "1.0.0",
   "main": "client.js",
   "bin": "client.js",

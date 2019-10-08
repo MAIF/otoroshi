@@ -1,5 +1,6 @@
 const fs = require('fs'); 
 const net = require('net');
+const dgram = require('dgram');
 const fetch = require('node-fetch');
 const https = require('https');
 const faker = require('faker');
@@ -233,14 +234,25 @@ function ProxyServer(options, optionalConfigFile) {
 
   const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
   const remoteUrl = options.remote;
-  const localProcessAddress = options.address || '127.0.0.1';
+  let localProcessAddress = options.address || '127.0.0.1';
   const localProcessPort = options.port || 2222;
   const checkEvery = options.every || 10000;
   const access_type = options.access_type;
   const simpleApikeyHeaderName = options.sahn || 'x-api-key';
   const remoteHost = options.remoteHost;
   const remotePort = options.remotePort;
-  const transport = options.transport || 'tcp';
+  let transport = options.transport || 'tcp';
+  let dgramType = transport;
+  if (transport === 'udp6') {
+    transport = 'udp';
+    dgramType = 'udp6';
+    localProcessAddress = net.isIPv6(localProcessAddress) ? localProcessAddress : '::0';
+  } else if (transport === 'udp4') {
+    transport = 'udp';
+    dgramType = 'udp4';
+  } else if (transport === 'udp') {
+    dgramType = 'udp4';
+  }
 
   let apikey = options.apikey;
 
@@ -292,7 +304,8 @@ function ProxyServer(options, optionalConfigFile) {
       const clientBuffer = [];
       const remoteArgs = _.entries({
         remoteHost,
-        remotePort
+        remotePort,
+        transport: 'tcp'
       }).filter(e => !!e[1]).map(e => `${e[0]}=${e[1]}`).join('&');
       const wsUrl = finalUrl.indexOf('?') > -1 ? finalUrl + '&' + remoteArgs: finalUrl + '?' + remoteArgs;
       const client = new WebSocket(wsUrl, {
@@ -361,6 +374,7 @@ function ProxyServer(options, optionalConfigFile) {
         displayEndOfSession();
       });
       client.on('close', () => {
+        // TODO: handle reconnect ???
         debugLog(`WS Client closed from session ${sessionId}`);
         socket.destroy();
         clientConnected = false;
@@ -373,14 +387,101 @@ function ProxyServer(options, optionalConfigFile) {
     });
 
     server.listen(localProcessPort, localProcessAddress, () => {
-      console.log(color(`[${sessionId}]`) + ` Local tunnel listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}`);
+      console.log(color(`[${sessionId}]`) + ` Local TCP tunnel listening on tcp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}`);
     });
 
     return server;
   }
 
   function startLocalUdpProxy() {
-    return Promise.failed('No UDP support yet !!!');
+
+    if (options.remote.indexOf('http://') === 0) {
+      console.warn(color(`[${sessionId}]`) + ` You are using an insecure connection to '${options.remote}'. Please consider using '${options.remote.replace('http://', 'https://')}' to increase tunnel security.`.red)
+    }
+
+    const server = dgram.createSocket(dgramType);
+    server.on('listening', () => {
+      // const address = server.address();
+      let lastRemote = null;
+      let clientConnected = false;
+      const clientBuffer = [];
+      const remoteArgs = _.entries({
+        remoteHost,
+        remotePort,
+        transport: 'udp'
+      }).filter(e => !!e[1]).map(e => `${e[0]}=${e[1]}`).join('&');
+      const wsUrl = finalUrl.indexOf('?') > -1 ? finalUrl + '&' + remoteArgs: finalUrl + '?' + remoteArgs;
+      const client = new WebSocket(wsUrl, {
+        agent, 
+        headers
+      });
+      // udp socket callbacks
+      server.on('end', () => {
+        debugLog(`Client deconnected (end) from session ${sessionId}`);
+        client.close();
+      });
+      server.on('close', () => {
+        debugLog(`Client deconnected (close) from session ${sessionId}`);
+        client.close();
+      });
+      server.on('error', (err) => {
+        debugLog(`Client deconnected (error) from session ${sessionId}`, err);
+        client.close();
+      });
+      server.on('message', (data, remote) => {
+        lastRemote = remote; // TODO: find a better way ...
+        if (clientConnected) {
+          debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes`);
+          client.send(data);
+        } else {
+          debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes stored in buffer`);
+          clientBuffer.push(data);
+        }
+      });
+      // client callbacks
+      client.on('open', () => {
+        debugLog(`WS Client connected from session ${sessionId}`);
+        if (clientBuffer.length > 0) {
+          while (clientBuffer.length > 0) {
+            const bytes = clientBuffer.shift();
+            if (bytes) {
+              client.send(bytes);
+            }
+          }
+          debugLog(`WS Client buffer emptied for ${sessionId}`);
+        } 
+        clientConnected = true;
+      });
+      client.on('message', (payload) => {
+        debugLog(`Data received from server from session ${sessionId}: ${payload.length} bytes`);
+        if (payload) {
+          if (payload.length > 0) {
+            server.send(payload, 0, payload.length, lastRemote.port, lastRemote.address, (err) => {
+              if (err) console.log('send error', err);
+            });
+          }
+        }
+      });
+      client.on('error', (error) => {
+        debugLog(`WS Client error from session ${sessionId}`, error);
+        clientConnected = false;
+      });
+      client.on('close', () => {
+        // TODO: handle reconnect ???
+        debugLog(`WS Client closed from session ${sessionId}`);
+        clientConnected = false;
+      });
+    });
+
+    server.on('error', (err) => {
+      console.log(`udp tunnel client error`, err);
+    });
+
+    server.bind(localProcessPort, localProcessAddress, () => {
+      console.log(color(`[${sessionId}]`) + ` Local UDP tunnel listening on udp://${localProcessAddress}:${localProcessPort} and targeting ${remoteWsUrl}`);
+    });
+
+    return server;
   }
 
   function start() {

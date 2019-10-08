@@ -1,6 +1,6 @@
-# Otoroshi TCP tunnel cli
+# Otoroshi TCP/UDP tunnel cli
 
-The idea here is to provide a secure way to access any TCP resource proxied by Otoroshi through a secured, authenticated, audited TLS tunnel. 
+The idea here is to provide a secure way to access any TCP/UDP resource proxied by Otoroshi through a secured, authenticated, audited TLS tunnel. 
 To do that, you'll need a local client to create the tunnel from your machine to Otoroshi. The underlying connections and protocols will remain untouched, undecrypted, unchanged by Otoroshi, they will only pass through.
 
 The client can use enterprise proxies and client certificates. This client can use Otoroshi apikeys or authentication modules (like OAuth2, with browser login) to access services.
@@ -16,7 +16,7 @@ yarn install
 
 ![Schema](./schema.jpg)
 
-Define an otoroshi service on `http://foo.oto.tools:8080` that target your local ssh server at `http://127.0.0.1:22` (here `http://` is irrelevant, it's just a UI issue) and enable the `TCP tunnel` flag. 
+Define an otoroshi service on `http://foo.oto.tools:8080` that target your local ssh server at `http://127.0.0.1:22` (here `http://` is irrelevant, it's just a UI issue) and enable the `TCP/UDP tunneling` flag. 
 
  Then either activate 
 
@@ -47,6 +47,7 @@ or you can specify multiple tunnels at the same time using a config file like
       "enabled": true,
       "name": "Service 1",
       "access_type": "session",
+      "transport": "tcp",
       "remote": "http://foo.oto.tools:9999",
       "port": 2222
     },
@@ -54,6 +55,7 @@ or you can specify multiple tunnels at the same time using a config file like
       "enabled": false,
       "name": "Service 2",
       "access_type": "session",
+      "transport": "tcp",
       "remote": "http://foo.oto.tools:9999",
       "port": 2223
     },
@@ -61,6 +63,7 @@ or you can specify multiple tunnels at the same time using a config file like
       "enabled": true,
       "name": "Service 3",
       "access_type": "apikey",
+      "transport": "tcp",
       "remote": "http://foo2.oto.tools:9999",
       "port": 2224,
       "apikey": "clientId:clientSecret"
@@ -68,8 +71,17 @@ or you can specify multiple tunnels at the same time using a config file like
     {
       "enabled": true,
       "name": "Service 4",
+      "transport": "tcp",
       "access_type": "public",
       "remote": "http://foo3.oto.tools:9999",
+      "port": 2225
+    },
+    {
+      "enabled": true,
+      "name": "DNS",
+      "transport": "udp",
+      "access_type": "public",
+      "remote": "http://dns.oto.tools:9999",
       "port": 2225
     }
   ]
@@ -93,20 +105,21 @@ ssh localuser@127.0.0.1 -p 2222
 ## Docker
 
 ```sh
-docker build -t otoroshi-tcp-tunnel-cli .
-docker run -it -p 2222:2222 -v $(pwd)/foo.json:/docker-env.json otoroshi-tcp-tunnel-cli --config=/config.json
+docker build -t otoroshi-tcp-udp-tunnel-cli .
+docker run -it -p 2222:2222 -v $(pwd)/foo.json:/docker-env.json otoroshi-tcp-udp-tunnel-cli --config=/config.json
 ```
 
 If you want to access a local otoroshi (on your machine, maybe in another docker container), you can use a configuration like
 
 ```json
 {
-  "name": "Dev config. to test tcp tunnels in otoroshi from docker",
+  "name": "Dev config. to test tcp/udp tunnels in otoroshi from docker",
   "tunnels": [
     {
       "enabled": true,
       "name": "Service 3",
       "access_type": "apikey",
+      "transport": "tcp",
       "remote": "http://host.docker.internal:9999",
       "host": "foo2.oto.tools",
       "port": 2224,

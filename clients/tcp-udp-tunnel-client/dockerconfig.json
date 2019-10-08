@@ -1,5 +1,5 @@
 {
-  "name": "Dev config. to test tcp tunnels in otoroshi from docker",
+  "name": "Dev config. to test tcp/udp tunnels in otoroshi from docker",
   "tunnels": [
     {
       "enabled": true,

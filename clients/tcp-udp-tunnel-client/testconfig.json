@@ -1,5 +1,8 @@
 {
-  "name": "Dev config. to test tcp tunnels in otoroshi",
+  "name": "Dev config. to test tcp/udp tunnels in otoroshi",
+  "apikeys": {
+    "key1": "cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648"
+  },
   "tunnels": [
     {
       "enabled": true,
@@ -21,7 +24,7 @@
       "access_type": "apikey",
       "remote": "http://foo2.oto.tools:9999",
       "port": 2224,
-      "apikey": "cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648"
+      "apikeyRef": "key1"
     },
     {
       "enabled": true,
@@ -38,6 +41,14 @@
       "host": "foo2.oto.tools",
       "port": 2226,
       "apikey": "cw2xpzeuqgzo3e58:ebsx37iupdjybmh1qz5hyq8hn2hbeicd4ou62csyjhc4h8755621i5okx5316648"
+    },
+    {
+      "enabled": true,
+      "name": "DNS",
+      "transport": "udp",
+      "remote": "http://127.0.0.1:9999",
+      "host": "dns.oto.tools",
+      "port": 2226
     }
   ]
 }
