@@ -61,7 +61,9 @@ case "${1}" in
     # build_manual
     build_server
     test_server
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_mtls
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_cli
     ;;
   cli)
