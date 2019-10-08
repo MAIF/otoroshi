@@ -397,6 +397,21 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       }
   }
 
+  def createOtoroshiVerifier(verifier: GlobalJwtVerifier,
+                            customPort: Option[Int] = None,
+                            ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/verifiers")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.foo.bar",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(verifier.asJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+  }
+
   def createOtoroshiApiKey(apiKey: ApiKey,
                            customPort: Option[Int] = None,
                            ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {

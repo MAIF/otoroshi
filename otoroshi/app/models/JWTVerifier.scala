@@ -5,7 +5,7 @@ import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPu
 import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException
@@ -685,7 +685,7 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
-  private def internalVerify[A](request: RequestHeader, desc: ServiceDescriptor)(
+  private[models] def internalVerify[A](request: RequestHeader, desc: ServiceDescriptor)(
       f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
@@ -831,7 +831,7 @@ case class LocalJwtVerifier(
 }
 
 case class RefJwtVerifier(
-    id: Option[String] = None,
+    ids: Seq[String] = Seq.empty,
     enabled: Boolean = false,
     excludedPatterns: Seq[String] = Seq.empty[String]
 ) extends JwtVerifier
@@ -839,7 +839,8 @@ case class RefJwtVerifier(
 
   def asJson: JsValue = Json.obj(
     "type"             -> "ref",
-    "id"               -> this.id.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "ids"              -> JsArray(this.ids.map(JsString.apply)),
+    "id"               -> this.ids.headOption.map(JsString.apply).getOrElse(JsNull).as[JsValue], // for compat only
     "enabled"          -> this.enabled,
     "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply))
   )
@@ -850,52 +851,118 @@ case class RefJwtVerifier(
   override def algoSettings = throw new RuntimeException("Should never be called ...")
   override def strategy     = throw new RuntimeException("Should never be called ...")
 
+  private def id: Option[String] = ids.headOption
+
   override def verify(request: RequestHeader, desc: ServiceDescriptor)(
       f: JwtInjection => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env) = {
-    id match {
-      case None => f(JwtInjection())
-      case Some(ref) =>
-        env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-          case Some(verifier) => verifier.verify(request, desc)(f)
-          case None =>
-            Errors.craftResponseResult(
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    implicit val mat = env.otoroshiMaterializer
+    ids match {
+      case s if s.isEmpty => f(JwtInjection())
+      case _ => {
+        Source(ids.toList)
+          .mapAsync(1) { ref =>
+            env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+              case Some(verifier) =>
+                println(s"verifying with ${verifier.id}")
+                verifier.internalVerify(request, desc)(f)
+              case None => Errors.craftResponseResult(
+                "error.bad.globaljwtverifier.id",
+                Results.InternalServerError,
+                request,
+                Some(desc),
+                None
+              ).map(r => Left[Result, Result](r))
+            }
+          }.takeWhile(_.isLeft, true).toMat(Sink.seq)(Keep.right).run().flatMap { results =>
+          results.collectFirst {
+            case Right(res) => res
+          }.orElse(results.headOption.map(_.left.get)) match {
+            case Some(r) => FastFuture.successful(r)
+            case None => Errors.craftResponseResult(
               "error.bad.globaljwtverifier.id",
               Results.InternalServerError,
               request,
               Some(desc),
               None
             )
+          }
         }
+        // env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+        //   case Some(verifier) => verifier.verify(request, desc)(f)
+        //   case None =>
+        //     Errors.craftResponseResult(
+        //       "error.bad.globaljwtverifier.id",
+        //       Results.InternalServerError,
+        //       request,
+        //       Some(desc),
+        //       None
+        //     )
+        // }
+      }
     }
   }
 
   override def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env) = {
-    id match {
-      case None => f(JwtInjection())
-      case Some(ref) =>
-        env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-          case Some(verifier) => verifier.verifyWs(request, desc)(f)
-          case None =>
-            Errors
-              .craftResponseResult(
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    implicit val mat = env.otoroshiMaterializer
+    ids match {
+      case s if s.isEmpty => f(JwtInjection())
+      case _ => {
+        Source(ids.toList)
+          .mapAsync(1) { ref =>
+            env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+              case Some(verifier) => verifier.verifyWs(request, desc)(f)
+              case None => Errors.craftResponseResult(
                 "error.bad.globaljwtverifier.id",
                 Results.InternalServerError,
                 request,
                 Some(desc),
                 None
-              )
-              .map(a => Left(a))
+              ).map(r => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](r))
+            }
+          }.takeWhile(_.isLeft, true).toMat(Sink.seq)(Keep.right).run().flatMap { results =>
+          val h: Option[Result] = results.headOption.map(_.left.get)
+          results.find(_.isRight)match {
+            case Some(res) =>  FastFuture.successful(res)
+            case None => results.headOption match {
+              case Some(res) => FastFuture.successful(res)
+              case None => Errors.craftResponseResult(
+                "error.bad.globaljwtverifier.id",
+                Results.InternalServerError,
+                request,
+                Some(desc),
+                None
+              ).map(a => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](a))
+            }
+          }
         }
+      }
     }
+    // id match {
+    //   case None => f(JwtInjection())
+    //   case Some(ref) =>
+    //     env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
+    //       case Some(verifier) => verifier.verifyWs(request, desc)(f)
+    //       case None =>
+    //         Errors
+    //           .craftResponseResult(
+    //             "error.bad.globaljwtverifier.id",
+    //             Results.InternalServerError,
+    //             request,
+    //             Some(desc),
+    //             None
+    //           )
+    //           .map(a => Left(a))
+    //     }
+    // }
   }
 
   override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    id match {
-      case None    => FastFuture.successful(false)
-      case Some(_) => FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
+    ids match {
+      case s if s.isEmpty => FastFuture.successful(false)
+      case _ => FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
     }
   }
 }
@@ -903,9 +970,12 @@ case class RefJwtVerifier(
 object RefJwtVerifier extends FromJson[RefJwtVerifier] {
   override def fromJson(json: JsValue): Either[Throwable, RefJwtVerifier] =
     Try {
+      val refs: Seq[String] = (json \ "ids").asOpt[JsArray].map(_.value.map(_.as[String]))
+        .orElse((json \ "id").asOpt[String].map(v => Seq(v)))
+        .getOrElse(Seq.empty)
       Right[Throwable, RefJwtVerifier](
         RefJwtVerifier(
-          id = (json \ "id").asOpt[String],
+          ids = refs,
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
