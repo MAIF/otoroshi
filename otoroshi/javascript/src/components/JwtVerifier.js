@@ -291,7 +291,7 @@ export class JwtVerifier extends Component {
     strict: true,
     source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
     algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
-    strategy: { type: 'PassThrough', verificationSettings: { fields: { iss: 'The Issuer' } } },
+    strategy: { type: 'PassThrough', verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} } },
   };
 
   changeTheValue = (name, value) => {
