@@ -400,8 +400,8 @@ function ProxyServer(options, optionalConfigFile) {
     }
 
     const server = dgram.createSocket(dgramType);
-    server.on('listening', () => {
-      // const address = server.address();
+    server.on('listening', function() {
+      // const address = server.address();      
       let lastRemote = null;
       let clientConnected = false;
       const clientBuffer = [];

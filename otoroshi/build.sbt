@@ -36,7 +36,6 @@ libraryDependencies ++= Seq(
   "com.nimbusds"             % "nimbus-jose-jwt"           % "6.0",
   "com.risksense"            %% "ipaddr"                   % "1.0.2",
   "com.yubico"               % "webauthn-server-core"      % "1.4.0",
-  "com.lightbend.akka"       %% "akka-stream-alpakka-udp"  % "0.20", //"1.1.1",
   // "com.maxmind.geoip2"       % "geoip2"                    % "2.12.0",
   // "com.blueconic"            % "browscap-java"             % "1.2.11",
   // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154

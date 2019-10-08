@@ -11,8 +11,6 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.udp.Datagram
-import akka.stream.alpakka.udp.scaladsl.Udp
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import akka.util.ByteString
@@ -32,7 +30,7 @@ import play.api.mvc.Results.{BadGateway, Forbidden, MethodNotAllowed, NotFound, 
 import play.api.mvc._
 import play.api.libs.json.{JsArray, JsString, Json}
 import security.{IdGenerator, OtoroshiClaim}
-import utils.{Metrics, UrlSanitizer}
+import utils.{Metrics, UdpClient, UrlSanitizer}
 import utils.future.Implicits._
 
 import scala.concurrent.duration._
@@ -899,12 +897,12 @@ class WebSocketHandler()(implicit env: Env) {
                                             Flow[PlayWSMessage]
                                               .collect {
                                                 case PlayWSBinaryMessage(data) =>
-                                                  Datagram.create(data, remoteAddress)
+                                                  utils.Datagram(data, remoteAddress)
                                                 case _ =>
-                                                  Datagram.create(ByteString.empty, remoteAddress)
+                                                  utils.Datagram(ByteString.empty, remoteAddress)
                                               }
                                               .via(
-                                                Udp.bindFlow(new InetSocketAddress("0.0.0.0", 0)).map(dg => PlayWSBinaryMessage(dg.data))
+                                                UdpClient.flow(new InetSocketAddress("0.0.0.0", 0)).map(dg => PlayWSBinaryMessage(dg.data))
                                               )
                                               .alsoTo(Sink.onComplete {
                                                 case _ =>
