@@ -58,8 +58,10 @@ case "${1}" in
   all)
     clean
     build_ui
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_manual
     build_server
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_server
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_mtls

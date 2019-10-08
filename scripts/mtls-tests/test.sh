@@ -21,15 +21,16 @@ rc=$?; if [ $rc != 0 ];
 then 
   kill $(ps aux | grep 'backendmtls.go' | awk '{print $2}')
   kill $(ps aux | grep 'backendmtls' | awk '{print $2}')
-  kill $(ps aux | grep 'clientbackend.go' | awk '{print $2}')
-  kill $(ps aux | grep 'clientfrontend.go' | awk '{print $2}')
+  kill $(ps aux | grep 'clientbackend' | awk '{print $2}')
+  kill $(ps aux | grep 'clientfrontend' | awk '{print $2}')
   kill $(ps aux | grep 'otoroshi.jar' | awk '{print $2}')
   exit $rc
 else 
   kill $(ps aux | grep 'backendmtls.go' | awk '{print $2}')
   kill $(ps aux | grep 'backendmtls' | awk '{print $2}')
-  kill $(ps aux | grep 'clientbackend.go' | awk '{print $2}')
-  kill $(ps aux | grep 'clientfrontend.go' | awk '{print $2}')
+  kill $(ps aux | grep 'clientbackend' | awk '{print $2}')
+  kill $(ps aux | grep 'clientfrontend' | awk '{print $2}')
   kill $(ps aux | grep 'otoroshi.jar' | awk '{print $2}')
+  exit 0
 fi
 

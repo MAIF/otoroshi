@@ -298,7 +298,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
         'Authorization': `Basic ${authToken}`
       }
     }).then(r => {
-      console.log('delete ', cert.domain, ':', r.status)
+      // console.log('delete ', cert.domain, ':', r.status)
     });
   })).then(() => {
     return fetch(`http://otoroshi-api.oto.tools:8080/api/certificates`, {
@@ -344,7 +344,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
                 'Authorization': `Basic ${authToken}`
               }
             }).then(r => r.json()).then(finalCerts => {
-              console.log(finalCerts.map(c => c.domain).join(", "))
+              // console.log(finalCerts.map(c => c.domain).join(", "))
             });
           });          
         });
