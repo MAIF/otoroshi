@@ -1,5 +1,5 @@
 *.out
-*.pem
+# *.pem
 *.jar
 node_modules
 logs
