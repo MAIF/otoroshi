@@ -57,10 +57,10 @@ test_mtls () {
 case "${1}" in
   all)
     clean
-    # build_ui
+    build_ui
     # build_manual
     build_server
-    # test_server
+    test_server
     test_mtls
     # build_cli
     ;;
