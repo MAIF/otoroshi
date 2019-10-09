@@ -2005,7 +2005,8 @@ export class ServicePage extends Component {
                   }}>
                   <p style={{ textAlign: 'justify' }}>
                     <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities will be deprecated in a near future. 
-                    
+                    <br/>
+                    <br/>
                     Please use <b>Access validator</b> instead (see above).
                   </p>
                 </div>
