@@ -6,7 +6,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 import actions.ApiAction
-import akka.NotUsed
 import akka.actor.Cancellable
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
@@ -15,7 +14,6 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
-import gateway.Errors
 import javax.script._
 import models._
 import play.api.Logger
@@ -195,7 +193,7 @@ class ScriptCompiler(env: Env) {
   private val logger     = Logger("otoroshi-script-compiler")
   private val scriptExec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
-  def compile(script: String): Future[Either[JsValue, RequestTransformer]] = {
+  def compile(script: String): Future[Either[JsValue, AnyRef]] = {
     val start = System.currentTimeMillis()
     Future
       .apply {
@@ -216,7 +214,7 @@ class ScriptCompiler(env: Env) {
             )
           } else {
             val ctx = new SimpleScriptContext
-            val res = engine.eval(script, ctx).asInstanceOf[RequestTransformer]
+            val res = engine.eval(script, ctx)// .asInstanceOf[RequestTransformer]
             ctx.getErrorWriter.flush()
             ctx.getWriter.flush()
             Right(res)
@@ -260,8 +258,8 @@ class ScriptManager(env: Env) {
   private val logger     = Logger("otoroshi-script-manager")
   private val updateRef  = new AtomicReference[Cancellable]()
   private val compiling  = new TrieMap[String, Unit]()
-  private val cache      = new TrieMap[String, (String, RequestTransformer)]()
-  private val cpCache    = new TrieMap[String, RequestTransformer]()
+  private val cache      = new TrieMap[String, (String, ScriptType, Any)]()
+  private val cpCache    = new TrieMap[String, (ScriptType, Any)]()
   private val cpTryCache = new TrieMap[String, Unit]()
 
   def start(): ScriptManager = {
@@ -287,7 +285,7 @@ class ScriptManager(env: Env) {
             logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
             compiling.remove(script.id)
           case Right(trans) => {
-            cache.put(script.id, (script.hash, trans))
+            cache.put(script.id, (script.hash, script.`type`, trans))
             compiling.remove(script.id)
           }
         }
@@ -315,18 +313,65 @@ class ScriptManager(env: Env) {
   }
 
   def getScript(ref: String)(implicit ec: ExecutionContext): RequestTransformer = {
+    getAnyScript[RequestTransformer](ref) match {
+      case Left("compiling")    => CompilingRequestTransformer
+      case Left(_)              => DefaultRequestTransformer
+      case Right(any)           => any.asInstanceOf[RequestTransformer]
+    }
+    // ref match {
+    //   case r if r.startsWith("cp:") => {
+    //     if (!cpTryCache.contains(ref)) {
+    //       Try(env.environment.classLoader.loadClass(r.replace("cp:", "")).asSubclass(classOf[RequestTransformer]))
+    //         .map(clazz => clazz.newInstance()) match {
+    //         case Success(tr) =>
+    //           cpTryCache.put(ref, ())
+    //           cpCache.put(ref, (TransformerType, tr))
+    //         case Failure(e) => logger.error(s"Classpath transformer `$ref` does not exists ...")
+    //       }
+    //     }
+    //     cpCache.get(ref).flatMap(a => Option(a)).getOrElse(DefaultRequestTransformer)
+    //   }
+    //   case r => {
+    //     env.datastores.scriptDataStore.findById(ref).map {
+    //       case Some(script) => compileAndUpdateIfNeeded(script)
+    //       case None =>
+    //         logger.error(s"Script with id `$ref` does not exists ...")
+    //       // do nothing as the script does not exists
+    //     }
+    //     cache.get(ref).flatMap(a => Option(a._2)).getOrElse {
+    //       if (compiling.contains(ref)) {
+    //         CompilingRequestTransformer
+    //       } else {
+    //         DefaultRequestTransformer
+    //       }
+    //     }
+    //   }
+    // }
+  }
+
+  def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
     ref match {
       case r if r.startsWith("cp:") => {
         if (!cpTryCache.contains(ref)) {
-          Try(env.environment.classLoader.loadClass(r.replace("cp:", "")).asSubclass(classOf[RequestTransformer]))
+          Try(env.environment.classLoader.loadClass(r.replace("cp:", "")))// .asSubclass(classOf[A]))
             .map(clazz => clazz.newInstance()) match {
             case Success(tr) =>
               cpTryCache.put(ref, ())
-              cpCache.put(ref, tr)
-            case Failure(e) => logger.error(s"Classpath transformer `$ref` does not exists ...")
+              val typ: ScriptType = tr match {
+                case _: NanoApp => AppType
+                case _: RequestTransformer => TransformerType
+                case _: AccessValidator => AccessValidatorType
+                case _ => TransformerType
+              }
+              cpCache.put(ref, (typ, tr))
+            case Failure(e) =>
+              logger.error(s"Classpath script `$ref` does not exists ...")
           }
         }
-        cpCache.get(ref).flatMap(a => Option(a)).getOrElse(DefaultRequestTransformer)
+        cpCache.get(ref).flatMap(a => Option(a._2)) match {
+          case Some(script) => Right(script.asInstanceOf[A])
+          case None => Left("not-in-cache")
+        }
       }
       case r => {
         env.datastores.scriptDataStore.findById(ref).map {
@@ -335,11 +380,11 @@ class ScriptManager(env: Env) {
             logger.error(s"Script with id `$ref` does not exists ...")
           // do nothing as the script does not exists
         }
-        cache.get(ref).flatMap(a => Option(a._2)).getOrElse {
+        cache.get(ref).flatMap(a => Option(Right(a._3.asInstanceOf[A]))).getOrElse {
           if (compiling.contains(ref)) {
-            CompilingRequestTransformer
+            Left("compiling")
           } else {
-            DefaultRequestTransformer
+            Left("not-in-cache")
           }
         }
       }
@@ -448,7 +493,24 @@ object Implicits {
   }
 }
 
-case class Script(id: String, name: String, desc: String, code: String) {
+sealed trait ScriptType {
+  def name: String
+}
+
+object AppType extends ScriptType {
+  def name: String = "app"
+}
+
+
+object TransformerType extends ScriptType {
+  def name: String = "transformer"
+}
+
+object AccessValidatorType extends ScriptType {
+  def name: String = "validator"
+}
+
+case class Script(id: String, name: String, desc: String, code: String, `type`: ScriptType) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
@@ -467,15 +529,23 @@ object Script {
       "id"   -> apk.id,
       "name" -> apk.name,
       "desc" -> apk.desc,
-      "code" -> apk.code
+      "code" -> apk.code,
+      "type" -> apk.`type`.name
     )
     override def reads(json: JsValue): JsResult[Script] =
       Try {
+        val scriptType = (json \ "type").asOpt[String].getOrElse("transformer") match {
+          case "app" =>         AppType
+          case "transformer" => TransformerType
+          case "validator" =>   AccessValidatorType
+          case _ =>             TransformerType
+        }
         Script(
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").as[String],
-          code = (json \ "code").as[String]
+          code = (json \ "code").as[String],
+          `type` = scriptType
         )
       } map {
         case sd => JsSuccess(sd)
@@ -557,10 +627,50 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     try {
       val controlClasses1: ClassInfoList = scanResult.getSubclasses(classOf[RequestTransformer].getName)
       val controlClasses2: ClassInfoList = scanResult.getClassesImplementing(classOf[RequestTransformer].getName)
+
       val classes                        = controlClasses1.asScala ++ controlClasses2.asScala
       classes
         .filterNot(
-          c => c.getName == "otoroshi.script.DefaultRequestTransformer$" || c.getName == "otoroshi.script.CompilingRequestTransformer$"
+          c => c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingValidator$" ||
+            c.getName == "otoroshi.script.DefaultValidator$" ||
+            c.getName == "otoroshi.script.NanoApp" ||
+            c.getName == "otoroshi.script.NanoApp$"
+
+        )
+        .map(c => c.getName)
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        Seq.empty[String]
+    } finally if (scanResult != null) scanResult.close()
+  } getOrElse Seq.empty[String]
+
+  private lazy val validatorsNames: Seq[String] = Try {
+    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
+
+    import collection.JavaConverters._
+    val scanResult: ScanResult = new ClassGraph()
+      .addClassLoader(env.environment.classLoader)
+      .enableAllInfo
+      .blacklistPackages("java.*", "javax.*")
+      .scan
+    try {
+
+      val controlClasses3: ClassInfoList = scanResult.getSubclasses(classOf[AccessValidator].getName)
+      val controlClasses4: ClassInfoList = scanResult.getClassesImplementing(classOf[AccessValidator].getName)
+
+      val classes                        = controlClasses3.asScala ++ controlClasses4.asScala
+      classes
+        .filterNot(
+          c => c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingValidator$" ||
+            c.getName == "otoroshi.script.DefaultValidator$" ||
+            c.getName == "otoroshi.script.NanoApp" ||
+            c.getName == "otoroshi.script.NanoApp$"
+
         )
         .map(c => c.getName)
     } catch {
@@ -572,9 +682,31 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def findAllScriptsList() = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
+      val typ = ctx.request.getQueryString("type")
+      val cpTransformers = typ match {
+        case None => transformersNames
+        case Some("transformer") => transformersNames
+        case Some("app") => transformersNames
+        case _ => Seq.empty
+      }
+      val cpValidators = typ match {
+        case None => validatorsNames
+        case Some("validator") => validatorsNames
+        case _ => Seq.empty
+      }
       env.datastores.scriptDataStore.findAll().map { all =>
-        val allClasses = all.map(c => Json.obj("id" -> c.id, "name" -> c.name)) ++ transformersNames
-          .map(c => Json.obj("id" -> s"cp:$c", "name" -> c))
+        val allClasses = all.filter { script =>
+          typ match {
+            case None => true
+            case Some("transformer") if script.`type` == TransformerType => true
+            case Some("transformer") if script.`type` == AppType => true
+            case Some("app") if script.`type` == AppType => true
+            case Some("validator") if script.`type` == AccessValidatorType => true
+            case _ => false
+          }
+        }.map(c => Json.obj("id" -> c.id, "name" -> c.name)) ++
+          cpTransformers.map(c => Json.obj("id" -> s"cp:$c", "name" -> c)) ++
+          cpValidators.map(c => Json.obj("id" -> s"cp:$c", "name" -> c))
         Ok(JsArray(allClasses))
       }
     }

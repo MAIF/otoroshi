@@ -1911,7 +1911,106 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
+            label="Access validation">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.accessValidator.enabled}
+              help="Is access validation enabled for this service"
+              onChange={v => this.changeTheValue('accessValidator.enabled', v)}
+            />
+            <SelectInput
+              label="Access validator"
+              value={this.state.service.accessValidator.ref}
+              onChange={e => {
+                this.changeTheValue('accessValidator.ref', e)
+                setTimeout(() => {
+                  if (e === 'cp:otoroshi.script.ExternalHttpValidator') {
+                    this.changeTheValue('accessValidator.config', {
+                      url: 'https://validator.oto.tools',
+                      host: 'validator.oto.tools',
+                      goodTtl: 600000,
+                      badTtl: 60000,
+                      method: 'POST',
+                      path: '/certificates/_validate',
+                      timeout: 10000,
+                      noCache: false,
+                      allowNoClientCert: false,
+                      headers: {},
+                      proxy: null
+                    })
+                  }
+                  if (e === 'cp:otoroshi.script.HasClientCertMatchingValidator') {
+                    this.changeTheValue('accessValidator.config', {
+                      subjectDN: 'CN=localhost',
+                      issuerDN: 'CN=remotehost'
+                    });
+                  }
+                }, 300);
+              }}
+              valuesFrom="/bo/api/proxy/api/scripts/_list?type=validator"
+              transformer={a => ({ value: a.id, label: a.name })}
+              help="..."
+            />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                {!this.state.service.accessValidator.ref && (
+                  <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
+                    <i className="glyphicon glyphicon-plus" /> Create a new script.
+                  </a>
+                )}
+                {this.state.service.accessValidator.ref && (
+                  <a
+                    href={`/bo/dashboard/scripts/edit/${this.state.service.transformerRef}`}
+                    className="btn btn-sm btn-success">
+                    <i className="glyphicon glyphicon-edit" /> Edit the script.
+                  </a>
+                )}
+                <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
+                  <i className="glyphicon glyphicon-link" /> all scripts.
+                </a>
+              </div>
+            </div>
+            <ArrayInput
+              label="Excluded patterns"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.accessValidator.excludedPatterns}
+              help="By default, when access validation is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
+              onChange={v => this.changeTheValue('accessValidator.excludedPatterns', v)}
+            />
+            <div className="form-group">
+              <CodeInput
+                label="Configuration"
+                mode="json"
+                value={JSON.stringify(this.state.service.accessValidator.config, null, 2)}
+                onChange={e => this.changeTheValue('accessValidator.config', JSON.parse(e))}
+              />
+            </div>
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="Validation authority">
+            <div class="form-group">
+              <label class="col-xs-12 col-sm-2 control-label"></label>
+              <div class="col-sm-10">
+                <div
+                  style={{
+                    padding: 10,
+                    borderRadius: 5,
+                    backgroundColor: '#494948',
+                    width: '100%',
+                  }}>
+                  <p style={{ textAlign: 'justify' }}>
+                    <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities will be deprecated in a near future. 
+                    
+                    Please use <b>Access validator</b> instead (see above).
+                  </p>
+                </div>
+              </div>
+            </div>
             <SelectInput
               label="Validation authority"
               value={this.state.service.clientValidatorRef}
@@ -2445,7 +2544,7 @@ export class ServicePage extends Component {
               label="Request transformer"
               value={this.state.service.transformerRef}
               onChange={e => this.changeTheValue('transformerRef', e)}
-              valuesFrom="/bo/api/proxy/api/scripts/_list"
+              valuesFrom="/bo/api/proxy/api/scripts/_list?type=transformer"
               transformer={a => ({ value: a.id, label: a.name })}
               help="..."
             />

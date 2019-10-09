@@ -1,0 +1,245 @@
+package otoroshi.script
+
+import java.security.MessageDigest
+import java.security.cert.X509Certificate
+import java.util.Base64
+import java.util.concurrent.TimeUnit
+
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import env.Env
+import models._
+import org.apache.commons.codec.binary.Hex
+import play.api.libs.json._
+import play.api.libs.ws.WSProxyServer
+import play.api.mvc.RequestHeader
+import ssl.{ClientCertificateValidator, PemHeaders}
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
+
+case class AccessValidatorRef(enabled: Boolean = false, excludedPatterns: Seq[String] = Seq.empty[String], ref: Option[String] = None, config: JsObject = Json.obj()) {
+  def json: JsValue = AccessValidatorRef.format.writes(this)
+}
+
+object AccessValidatorRef {
+  val format = new Format[AccessValidatorRef] {
+    override def writes(o: AccessValidatorRef): JsValue = Json.obj(
+      "enabled"          -> o.enabled,
+      "ref"          -> o.ref.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "config"          -> o.config,
+      "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
+    )
+    override def reads(json: JsValue): JsResult[AccessValidatorRef] =
+      Try {
+        JsSuccess(
+          AccessValidatorRef(
+            ref = (json \ "ref").asOpt[String],
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+            config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
+            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          )
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
+trait AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean]
+}
+
+case class AccessContext(
+  request: RequestHeader,
+  descriptor: ServiceDescriptor,
+  user: Option[PrivateAppsUser],
+  apikey: Option[ApiKey],
+  config: JsObject
+  // TODO: add user-agent infos
+  // TODO: add client geoloc infos
+)
+
+object DefaultValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    FastFuture.successful(true)
+  }
+}
+
+object CompilingValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    FastFuture.successful(false)
+  }
+}
+
+class HasClientCertValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.request.clientCertificateChain match {
+      case Some(_) => FastFuture.successful(true)
+      case _ => FastFuture.successful(false)
+    }
+  }
+}
+
+class HasClientCertMatchingValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.request.clientCertificateChain match {
+      case Some(certs) => {
+        val subjectDnMatching = (context.config \ "subjectDN").asOpt[String]
+        val issuerDnMatching = (context.config \ "issuerDN").asOpt[String]
+        (subjectDnMatching, issuerDnMatching) match {
+          case (None, None)                  => FastFuture.successful(true)
+          case (Some(subject), None)         => FastFuture.successful(certs.exists(_.getSubjectDN.getName.matches(subject)))
+          case (None, Some(issuer))          => FastFuture.successful(certs.exists(_.getIssuerDN.getName.matches(issuer)))
+          case (Some(subject), Some(issuer)) => FastFuture.successful(
+            certs.exists(_.getSubjectDN.getName.matches(subject)) && certs.exists(_.getIssuerDN.getName.matches(issuer))
+          )
+        }
+      }
+      case _ => FastFuture.successful(false)
+    }
+  }
+}
+
+case class ExternalHttpValidatorConfig(config: JsObject) {
+  lazy val url: String = (config \ "url").as[String]
+  lazy val host: String = (config \ "host").asOpt[String].getOrElse(Uri(url).authority.host.toString())
+  lazy val goodTtl: Long = (config \ "goodTtl").asOpt[Long].getOrElse(10L * 60000L)
+  lazy val badTtl: Long = (config \ "badTtl").asOpt[Long].getOrElse(1L * 60000L)
+  lazy val method: String = (config \ "method").asOpt[String].getOrElse("POST")
+  lazy val path: String = (config \ "path").asOpt[String].getOrElse("/certificates/_validate")
+  lazy val timeout: Long = (config \ "timeout").asOpt[Long].getOrElse(10000L)
+  lazy val noCache: Boolean = (config \ "noCache").asOpt[Boolean].getOrElse(false)
+  lazy val allowNoClientCert: Boolean = (config \ "allowNoClientCert").asOpt[Boolean].getOrElse(false)
+  lazy val headers: Map[String, String] = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+  lazy val proxy: Option[WSProxyServer] = (config \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
+}
+
+class ExternalHttpValidator extends AccessValidator {
+
+  import utils.http.Implicits._
+
+  private val digester = MessageDigest.getInstance("SHA-1")
+
+  private def computeFingerPrint(cert: X509Certificate): String = {
+    Hex.encodeHexString(digester.digest(cert.getEncoded())).toLowerCase()
+  }
+
+  private def computeKeyFromChain(chain: Seq[X509Certificate]): String = {
+    chain.map(computeFingerPrint).mkString("-")
+  }
+
+  private def getLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    env.datastores.clientCertificateValidationDataStore.getValidation(key)
+  }
+
+  private def setGoodLocalValidation(key: String, goodTtl: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    env.datastores.clientCertificateValidationDataStore.setValidation(key, true, goodTtl).map(_ => ())
+  }
+
+  private def setBadLocalValidation(key: String, badTtl: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    env.datastores.clientCertificateValidationDataStore.setValidation(key, false, badTtl).map(_ => ())
+  }
+
+  private def validateCertificateChain(
+    chain: Seq[X509Certificate],
+    desc: ServiceDescriptor,
+    apikey: Option[ApiKey] = None,
+    user: Option[PrivateAppsUser] = None,
+    cfg: ExternalHttpValidatorConfig
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    val globalConfig= env.datastores.globalConfigDataStore.latest()
+    val certPayload = chain
+      .map { cert =>
+        s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+      }
+      .mkString("\n")
+    val payload = Json.obj(
+      "apikey" -> apikey.map(_.toJson.as[JsObject] - "clientSecret").getOrElse(JsNull).as[JsValue],
+      "user"   -> user.map(_.toJson).getOrElse(JsNull).as[JsValue],
+      "service" -> Json.obj(
+        "id"        -> desc.id,
+        "name"      -> desc.name,
+        "groupId"   -> desc.groupId,
+        "domain"    -> desc.domain,
+        "env"       -> desc.env,
+        "subdomain" -> desc.subdomain,
+        "root"      -> desc.root,
+        "metadata"  -> desc.metadata
+      ),
+      "chain"        -> certPayload,
+      "fingerprints" -> JsArray(chain.map(computeFingerPrint).map(JsString.apply))
+    )
+    val finalHeaders: Seq[(String, String)] = cfg.headers.toSeq ++ Seq("Host" -> cfg.host,
+      "Content-Type" -> "application/json",
+      "Accept"       -> "application/json")
+    env.Ws
+      .url(cfg.url + cfg.path)
+      .withHttpHeaders(finalHeaders: _*)
+      .withMethod(cfg.method)
+      .withBody(payload)
+      .withRequestTimeout(Duration(cfg.timeout, TimeUnit.MILLISECONDS))
+      .withMaybeProxyServer(cfg.proxy.orElse(globalConfig.proxies.authority))
+      .execute()
+      .map { resp =>
+        resp.status match { // TODO: can be good | revoked | unknown
+          case 200 =>
+            (resp.json.as[JsObject] \ "status")
+              .asOpt[String]
+              .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
+          case _ =>
+            resp.ignore()(env.otoroshiMaterializer)
+            None
+        }
+      }
+      .recover {
+        case e =>
+          ClientCertificateValidator.logger.error("Error while validating client certificate chain", e)
+          None
+      }
+  }
+
+  def canAccessWithClientCertChain(chain: Seq[X509Certificate], context: AccessContext, valCfg: ExternalHttpValidatorConfig)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    val apikey = context.apikey
+    val user = context.user
+    val desc = context.descriptor
+    val key = computeKeyFromChain(chain) + "-" + apikey
+      .map(_.clientId)
+      .orElse(user.map(_.randomId))
+      .getOrElse("none") + "-" + desc.id
+    if (valCfg.noCache) {
+      validateCertificateChain(chain, desc, apikey, user, valCfg).map {
+        case Some(bool) => bool
+        case None       => false
+      }
+    } else {
+      getLocalValidation(key).flatMap {
+        case Some(true)  => FastFuture.successful(true)
+        case Some(false) => FastFuture.successful(false)
+        case None => {
+          validateCertificateChain(chain, desc, apikey, user, valCfg).flatMap {
+            case Some(false) => setBadLocalValidation(key, valCfg.badTtl).map(_ => false)
+            case Some(true)  => setGoodLocalValidation(key, valCfg.goodTtl).map(_ => true)
+            case None        => setBadLocalValidation(key, valCfg.badTtl).map(_ => false)
+          }
+        }
+      }
+    }
+  }
+
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    val valCfg = ExternalHttpValidatorConfig(context.config)
+    context.request.clientCertificateChain match {
+      case None if !valCfg.allowNoClientCert => FastFuture.successful(false)
+      case None if valCfg.allowNoClientCert => {
+        val chain: Seq[X509Certificate] = Seq.empty
+        canAccessWithClientCertChain(chain, context, valCfg)
+      }
+      case Some(chain) => {
+        canAccessWithClientCertChain(chain, context, valCfg)
+      }
+    }
+  }
+}

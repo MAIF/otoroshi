@@ -23,6 +23,7 @@ import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.{NotFound, TooManyRequests}
 import play.api.mvc.{RequestHeader, Result, Results}
+import otoroshi.script._
 import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
 import utils.{GzipConfig, RegexPool, ReplaceAllWith}
@@ -1818,7 +1819,8 @@ case class ServiceDescriptor(
     gzip: GzipConfig = GzipConfig(),
     thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
     apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
-    restrictions: Restrictions = Restrictions()
+    restrictions: Restrictions = Restrictions(),
+    accessValidator: AccessValidatorRef = AccessValidatorRef()
 ) {
 
   lazy val toHost: String = subdomain match {
@@ -1891,19 +1893,47 @@ case class ServiceDescriptor(
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    clientValidatorRef.map { ref =>
-      env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
-        case Some(validator) => validator.validateClientCertificates(req, this, apikey, user, config)(f)
-        case None =>
-          Errors.craftResponseResult(
-            "Validator not found",
-            Results.InternalServerError,
+    if (accessValidator.enabled
+        && accessValidator.ref.isDefined
+        && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+      accessValidator.ref.map { ref =>
+        val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+          case Left("compiling") => CompilingValidator
+          case Left(_)           => DefaultValidator
+          case Right(validator)  => validator
+        }
+        validator.canAccess(AccessContext(
+          request = req,
+          descriptor = this,
+          user = user,
+          apikey = apikey,
+          config = accessValidator.config
+        )).flatMap {
+          case true => f
+          case false => Errors.craftResponseResult(
+            "Access denied",
+            Results.Forbidden,
             req,
             None,
             None
           )
-      }
-    } getOrElse f
+        }
+      } getOrElse f
+    } else {
+      clientValidatorRef.map { ref =>
+        env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
+          case Some(validator) => validator.validateClientCertificates(req, this, apikey, user, config)(f)
+          case None =>
+            Errors.craftResponseResult(
+              "Validator not found",
+              Results.InternalServerError,
+              req,
+              None,
+              None
+            )
+        }
+      } getOrElse f
+    }
   }
 
   import play.api.http.websocket.{Message => PlayWSMessage}
@@ -1914,21 +1944,49 @@ case class ServiceDescriptor(
                                    config: GlobalConfig)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    clientValidatorRef.map { ref =>
-      env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
-        case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user, config)(f)
-        case None =>
-          Errors
-            .craftResponseResult(
-              "Validator not found",
-              Results.InternalServerError,
-              req,
-              None,
-              None
-            )
-            .map(Left.apply)
-      }
-    } getOrElse f
+    if (accessValidator.enabled
+      && accessValidator.ref.isDefined
+      && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+      accessValidator.ref.map { ref =>
+        val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+          case Left("compiling") => CompilingValidator
+          case Left(_)           => DefaultValidator
+          case Right(validator)  => validator
+        }
+        validator.canAccess(AccessContext(
+          request = req,
+          descriptor = this,
+          user = user,
+          apikey = apikey,
+          config = accessValidator.config
+        )).flatMap {
+          case true => f
+          case false => Errors.craftResponseResult(
+            "Access denied",
+            Results.Forbidden,
+            req,
+            None,
+            None
+          ).map(Left.apply)
+        }
+      } getOrElse f
+    } else {
+      clientValidatorRef.map { ref =>
+        env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
+          case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user, config)(f)
+          case None =>
+            Errors
+              .craftResponseResult(
+                "Validator not found",
+                Results.InternalServerError,
+                req,
+                None,
+                None
+              )
+              .map(Left.apply)
+        }
+      } getOrElse f
+    }
   }
 
   def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader])(
@@ -2139,7 +2197,10 @@ object ServiceDescriptor {
             .getOrElse(ApiKeyConstraints()),
           restrictions = Restrictions.format
             .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(Restrictions())
+            .getOrElse(Restrictions()),
+          accessValidator = AccessValidatorRef.format
+            .reads((json \ "accessValidator").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(AccessValidatorRef())
         )
       } map {
         case sd => JsSuccess(sd)
@@ -2214,7 +2275,8 @@ object ServiceDescriptor {
       "transformerConfig"          -> sd.transformerConfig,
       "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson,
       "apiKeyConstraints"          -> sd.apiKeyConstraints.json,
-      "restrictions"               -> sd.restrictions.json
+      "restrictions"               -> sd.restrictions.json,
+      "accessValidator"            -> sd.accessValidator.json
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)
@@ -2256,6 +2318,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       allowHttp10 = true,
       removeHeadersIn = Seq.empty,
       removeHeadersOut = Seq.empty,
+      accessValidator = AccessValidatorRef()
     )
   def updateMetrics(id: String,
                     callDuration: Long,

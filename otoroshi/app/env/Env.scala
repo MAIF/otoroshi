@@ -36,6 +36,7 @@ import storage.redis.next._
 import utils.Metrics
 import utils.http._
 import otoroshi.tcp.{TcpProxy, TcpService}
+import otoroshi.script.AccessValidatorRef
 import storage.file.FileDbDataStores
 import storage.http.HttpDbDataStores
 
@@ -519,6 +520,7 @@ class Env(val configuration: Configuration,
     allowHttp10 = true,
     removeHeadersIn = Seq.empty,
     removeHeadersOut = Seq.empty,
+    accessValidator = AccessValidatorRef()
   )
 
   lazy val otoroshiVersion     = "1.4.13-dev"

@@ -87,6 +87,25 @@ class MyApp extends NanoApp {
 new MyApp()
 `;
 
+const basicValidator = `
+import akka.stream.scaladsl._
+import env.Env
+import otoroshi.script._
+import utils.future.Implicits._
+import play.api.libs.json._
+import scala.concurrent.{ExecutionContext, Future}
+
+class CustomValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.request.clientCertificateChain match {
+      case Some(_) => FastFuture.successful(true)
+      case _ => FastFuture.successful(false)
+    }
+  }
+}
+new CustomValidator()
+`;
+
 class CompilationTools extends Component {
   state = {
     compiling: false,
@@ -194,16 +213,21 @@ class ScriptTypeSelector extends Component {
         onChange={t => {
           if (t === 'app') {
             this.setState({ type: 'app' });
-            this.props.rawOnChange({ ...this.props.rawValue, code: basicNanoApp });
+            this.props.rawOnChange({ ...this.props.rawValue, type: 'app', code: basicNanoApp });
           }
           if (t === 'transformer') {
             this.setState({ type: 'transformer' });
-            this.props.rawOnChange({ ...this.props.rawValue, code: basicTransformer });
+            this.props.rawOnChange({ ...this.props.rawValue, type: 'transformer', code: basicTransformer });
+          }
+          if (t === 'validator') {
+            this.setState({ type: 'validator' });
+            this.props.rawOnChange({ ...this.props.rawValue, type: 'validator', code: basicValidator});
           }
         }}
         possibleValues={[
           { label: 'Request transformer', value: 'transformer' },
           { label: 'Nano app', value: 'app' },
+          { label: 'Access Validator', value: 'validator' },
         ]}
       />
     );
