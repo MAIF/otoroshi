@@ -2004,10 +2004,11 @@ export class ServicePage extends Component {
                     width: '100%',
                   }}>
                   <p style={{ textAlign: 'justify' }}>
-                    <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities will be deprecated in a near future. 
-                    <br/>
+                    <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities are deprecated and will be removed in a near future. 
                     <br/>
                     Please use <b>Access validator</b> instead (see above).
+                    <br/>
+                    If you defined a validation authority and an <b>access validator</b> at the same time, then the validation authority will be bypasse
                   </p>
                 </div>
               </div>
