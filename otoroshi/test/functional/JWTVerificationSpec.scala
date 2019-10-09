@@ -700,6 +700,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service).futureValue
 
       basicTestServer1.stop()
+      
     }
   }
 }

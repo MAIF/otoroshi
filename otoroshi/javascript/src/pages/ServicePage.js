@@ -1848,13 +1848,21 @@ export class ServicePage extends Component {
             />
             {this.state.service.jwtVerifier.type === 'ref' && (
               <div>
-                <SelectInput
+                {/*<SelectInput
                   label="Verifier"
                   value={this.state.service.jwtVerifier.id}
                   onChange={e => this.changeTheValue('jwtVerifier.id', e)}
                   valuesFrom="/bo/api/proxy/api/verifiers"
                   transformer={a => ({ value: a.id, label: a.name })}
                   help="..."
+                />*/}
+                <ArrayInput 
+                  label="Verifiers"
+                  value={this.state.service.jwtVerifier.ids}
+                  onChange={e => this.changeTheValue('jwtVerifier.ids', e)}
+                  help="..."
+                  valuesFrom="/bo/api/proxy/api/verifiers"
+                  transformer={a => ({ value: a.id, label: a.name })}
                 />
                 <BooleanInput
                   label="Enabled"
@@ -1865,19 +1873,19 @@ export class ServicePage extends Component {
                 <div className="form-group">
                   <label className="col-xs-12 col-sm-2 control-label" />
                   <div className="col-sm-10">
-                    {!this.state.service.jwtVerifier.id && (
+                    {!this.state.service.jwtVerifier.ids.length === 0 && (
                       <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
                         <i className="glyphicon glyphicon-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}
-                    {this.state.service.jwtVerifier.id && (
-                      <a
-                        href={`/bo/dashboard/jwt-verifiers/edit/${
-                          this.state.service.jwtVerifier.id
-                        }`}
-                        className="btn btn-success">
-                        <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
-                      </a>
+                    {this.state.service.jwtVerifier.ids.length > 0 && (
+                      this.state.service.jwtVerifier.ids.map(id => {
+                        return <a
+                          href={`/bo/dashboard/jwt-verifiers/edit/${id}`}
+                          className="btn btn-success">
+                          <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
+                        </a>
+                      })
                     )}
                   </div>
                 </div>
