@@ -75,7 +75,7 @@ export class ServicesPage extends Component {
         !item.privateApp &&
         item.privatePatterns.length === 0 &&
         item.publicPatterns.indexOf('/.*') > -1 ? (
-          <i className="glyphicon glyphicon-remove-sign alert" />
+          <i className="glyphicon glyphicon-remove-sign alertorange" />
         ) : (
           <i className="fas fa-globe-americas fa-lg" aria-hidden="true" />
         ),
