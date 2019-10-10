@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import auth._
 import com.auth0.jwt.JWT
 import com.google.common.hash.Hashing
@@ -30,7 +30,7 @@ import utils.{GzipConfig, RegexPool, ReplaceAllWith}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{FiniteDuration, _}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 
@@ -1894,31 +1894,50 @@ case class ServiceDescriptor(
       config: GlobalConfig
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     if (accessValidator.enabled
-        && accessValidator.ref.isDefined
         && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
-      accessValidator.ref.map { ref =>
-        val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-          case Left("compiling") => CompilingValidator
-          case Left(_)           => DefaultValidator
-          case Right(validator)  => validator
+      if (accessValidator.refs.nonEmpty) {
+        Source(accessValidator.refs.zipWithIndex.toList).mapAsync(1) {
+          case (ref, index) =>
+            // println(s"Evaluation validator ${index}")
+            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+              case Left("compiling") => CompilingValidator
+              case Left(_)           => DefaultValidator
+              case Right(validator)  => validator
+            }
+            validator.access(AccessContext(
+              request = req,
+              descriptor = this,
+              user = user,
+              apikey = apikey,
+              config = accessValidator.config
+            ))
+        }.takeWhile(a => a match {
+          case Allowed => true
+          case Denied(_) => false
+        }, false).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
+          case Allowed => f
+          case Denied(result) => FastFuture.successful(result)
         }
-        validator.canAccess(AccessContext(
-          request = req,
-          descriptor = this,
-          user = user,
-          apikey = apikey,
-          config = accessValidator.config
-        )).flatMap {
-          case true => f
-          case false => Errors.craftResponseResult(
-            "Access denied",
-            Results.Forbidden,
-            req,
-            None,
-            None
-          )
-        }
-      } getOrElse f
+      } else {
+        f
+      }
+      // accessValidator.ref.map { ref =>
+      //   val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+      //     case Left("compiling") => CompilingValidator
+      //     case Left(_)           => DefaultValidator
+      //     case Right(validator)  => validator
+      //   }
+      //   validator.access(AccessContext(
+      //     request = req,
+      //     descriptor = this,
+      //     user = user,
+      //     apikey = apikey,
+      //     config = accessValidator.config
+      //   )).flatMap {
+      //     case Allowed => f
+      //     case Denied(result) => FastFuture.successful(result)
+      //   }
+      // } getOrElse f
     } else {
       clientValidatorRef.map { ref =>
         env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
@@ -1945,31 +1964,51 @@ case class ServiceDescriptor(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     if (accessValidator.enabled
-      && accessValidator.ref.isDefined
       && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
-      accessValidator.ref.map { ref =>
-        val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-          case Left("compiling") => CompilingValidator
-          case Left(_)           => DefaultValidator
-          case Right(validator)  => validator
+      f
+      // accessValidator.ref.map { ref =>
+      //   val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+      //     case Left("compiling") => CompilingValidator
+      //     case Left(_)           => DefaultValidator
+      //     case Right(validator)  => validator
+      //   }
+      //   validator.access(AccessContext(
+      //     request = req,
+      //     descriptor = this,
+      //     user = user,
+      //     apikey = apikey,
+      //     config = accessValidator.config
+      //   )).flatMap {
+      //     case Allowed => f
+      //     case Denied(result) => FastFuture.successful(Left(result))
+      //   }
+      // } getOrElse f
+      if (accessValidator.refs.nonEmpty) {
+        Source(accessValidator.refs.zipWithIndex.toList).mapAsync(1) {
+          case (ref, index) =>
+            // println(s"Evaluation validator ${index}")
+            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+              case Left("compiling") => CompilingValidator
+              case Left(_)           => DefaultValidator
+              case Right(validator)  => validator
+            }
+            validator.access(AccessContext(
+              request = req,
+              descriptor = this,
+              user = user,
+              apikey = apikey,
+              config = accessValidator.config
+            ))
+        }.takeWhile(a => a match {
+          case Allowed => true
+          case Denied(_) => false
+        }, false).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
+          case Allowed => f
+          case Denied(result) => FastFuture.successful(Left(result))
         }
-        validator.canAccess(AccessContext(
-          request = req,
-          descriptor = this,
-          user = user,
-          apikey = apikey,
-          config = accessValidator.config
-        )).flatMap {
-          case true => f
-          case false => Errors.craftResponseResult(
-            "Access denied",
-            Results.Forbidden,
-            req,
-            None,
-            None
-          ).map(Left.apply)
-        }
-      } getOrElse f
+      } else {
+        f
+      }
     } else {
       clientValidatorRef.map { ref =>
         env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {

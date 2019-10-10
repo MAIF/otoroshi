@@ -1918,11 +1918,12 @@ export class ServicePage extends Component {
               help="Is access validation enabled for this service"
               onChange={v => this.changeTheValue('accessValidator.enabled', v)}
             />
-            <SelectInput
+            {/*<SelectInput*/}
+            <ArrayInput
               label="Access validator"
-              value={this.state.service.accessValidator.ref}
+              value={this.state.service.accessValidator.refs}
               onChange={e => {
-                this.changeTheValue('accessValidator.ref', e)
+                this.changeTheValue('accessValidator.refs', e)
                 setTimeout(() => {
                   if (e === 'cp:otoroshi.script.ExternalHttpValidator') {
                     this.changeTheValue('accessValidator.config', {
@@ -1954,18 +1955,18 @@ export class ServicePage extends Component {
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
-                {!this.state.service.accessValidator.ref && (
+                {!this.state.service.accessValidator.refs && (
                   <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
                     <i className="glyphicon glyphicon-plus" /> Create a new script.
                   </a>
                 )}
-                {this.state.service.accessValidator.ref && (
+                {/*this.state.service.accessValidator.refs && (
                   <a
                     href={`/bo/dashboard/scripts/edit/${this.state.service.transformerRef}`}
                     className="btn btn-sm btn-success">
                     <i className="glyphicon glyphicon-edit" /> Edit the script.
                   </a>
-                )}
+                )*/}
                 <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
                   <i className="glyphicon glyphicon-link" /> all scripts.
                 </a>

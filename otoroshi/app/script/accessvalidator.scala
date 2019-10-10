@@ -9,18 +9,19 @@ import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
+import gateway.Errors
 import models._
 import org.apache.commons.codec.binary.Hex
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
-import play.api.mvc.RequestHeader
+import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.{ClientCertificateValidator, PemHeaders}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class AccessValidatorRef(enabled: Boolean = false, excludedPatterns: Seq[String] = Seq.empty[String], ref: Option[String] = None, config: JsObject = Json.obj()) {
+case class AccessValidatorRef(enabled: Boolean = false, excludedPatterns: Seq[String] = Seq.empty[String], refs: Seq[String] = Seq.empty, config: JsObject = Json.obj()) {
   def json: JsValue = AccessValidatorRef.format.writes(this)
 }
 
@@ -28,15 +29,15 @@ object AccessValidatorRef {
   val format = new Format[AccessValidatorRef] {
     override def writes(o: AccessValidatorRef): JsValue = Json.obj(
       "enabled"          -> o.enabled,
-      "ref"          -> o.ref.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "config"          -> o.config,
+      "refs"             -> JsArray(o.refs.map(JsString.apply)),
+      "config"           -> o.config,
       "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
     )
     override def reads(json: JsValue): JsResult[AccessValidatorRef] =
       Try {
         JsSuccess(
           AccessValidatorRef(
-            ref = (json \ "ref").asOpt[String],
+            refs = (json \ "refs").asOpt[Seq[String]].orElse((json \ "ref").asOpt[String].map(r => Seq(r))).getOrElse(Seq.empty) ,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
             excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
@@ -48,7 +49,23 @@ object AccessValidatorRef {
   }
 }
 
+sealed trait Access
+case object Allowed extends Access
+case class Denied(result: Result) extends Access
+
 trait AccessValidator {
+  def access(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Access] = {
+    canAccess(context)(env, ec).flatMap {
+      case true => FastFuture.successful(Allowed)
+      case false => Errors.craftResponseResult(
+        "bad request",
+        Results.BadRequest,
+        context.request,
+        None,
+        None
+      ).map(Denied.apply)
+    }
+  }
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean]
 }
 
@@ -83,6 +100,18 @@ class HasClientCertValidator extends AccessValidator {
   }
 }
 
+class DenyValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    FastFuture.successful(false)
+  }
+}
+
+class AllowValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    FastFuture.successful(true)
+  }
+}
+
 class HasClientCertMatchingValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
@@ -96,6 +125,24 @@ class HasClientCertMatchingValidator extends AccessValidator {
           case (Some(subject), Some(issuer)) => FastFuture.successful(
             certs.exists(_.getSubjectDN.getName.matches(subject)) && certs.exists(_.getIssuerDN.getName.matches(issuer))
           )
+        }
+      }
+      case _ => FastFuture.successful(false)
+    }
+  }
+}
+
+class HasAllowedUsersValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.user match {
+      case Some(user) => {
+        val allowedUsernames = (context.config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedEmails = (context.config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedEmailDomains = (context.config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        if (allowedUsernames.contains(user.name) || allowedEmails.contains(user.email) || allowedEmailDomains.exists(domain => user.email.endsWith(domain))) {
+          FastFuture.successful(true)
+        } else {
+          FastFuture.successful(false)
         }
       }
       case _ => FastFuture.successful(false)
