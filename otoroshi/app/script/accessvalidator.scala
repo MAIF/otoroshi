@@ -100,13 +100,13 @@ class HasClientCertValidator extends AccessValidator {
   }
 }
 
-class DenyValidator extends AccessValidator {
+class AlwaysDenyValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     FastFuture.successful(false)
   }
 }
 
-class AllowValidator extends AccessValidator {
+class AlwaysAllowValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     FastFuture.successful(true)
   }
@@ -140,6 +140,24 @@ class HasAllowedUsersValidator extends AccessValidator {
         val allowedEmails = (context.config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedEmailDomains = (context.config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (allowedUsernames.contains(user.name) || allowedEmails.contains(user.email) || allowedEmailDomains.exists(domain => user.email.endsWith(domain))) {
+          FastFuture.successful(true)
+        } else {
+          FastFuture.successful(false)
+        }
+      }
+      case _ => FastFuture.successful(false)
+    }
+  }
+}
+
+class HasAllowedApiKeyValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.apikey match {
+      case Some(apiKey) => {
+        val allowedClientIds = (context.config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedTags = (context.config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedMetadatas = (context.config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+        if (allowedClientIds.contains(apiKey.clientId) || allowedTags.exists(tag => apiKey.tags.contains(tag)) || allowedMetadatas.exists(meta => apiKey.metadata.get(meta._1) == Some(meta._2))) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)

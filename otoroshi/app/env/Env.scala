@@ -520,7 +520,9 @@ class Env(val configuration: Configuration,
     allowHttp10 = true,
     removeHeadersIn = Seq.empty,
     removeHeadersOut = Seq.empty,
-    accessValidator = AccessValidatorRef()
+    accessValidator = AccessValidatorRef(),
+    missingOnlyHeadersIn = Map.empty,
+    missingOnlyHeadersOut = Map.empty
   )
 
   lazy val otoroshiVersion     = "1.4.13-dev"

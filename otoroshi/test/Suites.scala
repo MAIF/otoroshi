@@ -105,7 +105,8 @@ object OtoroshiTests {
         new JWTVerificationRefSpec(name, Configurations.LevelDBConfiguration),
         new SnowMonkeySpec(name, Configurations.LevelDBConfiguration),
         new Version149Spec(name, Configurations.LevelDBConfiguration),
-        new Version1410Spec(name, Configurations.LevelDBConfiguration)
+        new Version1410Spec(name, Configurations.LevelDBConfiguration),
+        new Version1413Spec(name, Configurations.LevelDBConfiguration)
         // new WebsocketSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
@@ -124,7 +125,8 @@ object OtoroshiTests {
         new JWTVerificationRefSpec(name, config),
         new SnowMonkeySpec(name, config),
         new Version149Spec(name, config),
-        new Version1410Spec(name, config)
+        new Version1410Spec(name, config),
+        new Version1413Spec(name, config)
         // new WebsocketSpec(name, config)
       )
     }
@@ -147,7 +149,7 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
-// class DevOtoroshiTests
-//      extends Suites(
-//        new JWTVerificationRefSpec("DEV", Configurations.InMemoryConfiguration),
-//      )
+class DevOtoroshiTests
+     extends Suites(
+       new Version1413Spec("DEV", Configurations.InMemoryConfiguration),
+     )

@@ -2244,6 +2244,22 @@ export class ServicePage extends Component {
               help="Specify headers that will be added to each client response (from Otoroshi to client)."
               onChange={v => this.changeTheValue('additionalHeadersOut', v)}
             />
+            <ObjectInput
+              label="Missing only Headers In"
+              placeholderKey="Header name (ie.Access-Control-Allow-Origin)"
+              placeholderValue="Header value (ie. *)"
+              value={this.state.service.missingOnlyHeadersIn}
+              help="Specify headers that will be added to each client request (from Otoroshi to target) if not in the original request."
+              onChange={v => this.changeTheValue('missingOnlyHeadersIn', v)}
+            />
+            <ObjectInput
+              label="Missing only Headers Out"
+              placeholderKey="Header name (ie. Content-Security-Policy)"
+              placeholderValue="Header value (ie. default-src 'src')"
+              value={this.state.service.missingOnlyHeadersOut}
+              help="Specify headers that will be added to each client response (from Otoroshi to client) if not in the original response."
+              onChange={v => this.changeTheValue('missingOnlyHeadersOut', v)}
+            />
             <ArrayInput
               label="Remove incoming headers"
               placeholder="Header name (ie. X-Api-Key)"

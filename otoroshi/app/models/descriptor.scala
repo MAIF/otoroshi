@@ -1798,6 +1798,8 @@ case class ServiceDescriptor(
     privatePatterns: Seq[String] = Seq.empty[String],
     additionalHeaders: Map[String, String] = Map.empty[String, String],
     additionalHeadersOut: Map[String, String] = Map.empty[String, String],
+    missingOnlyHeadersIn: Map[String, String] = Map.empty[String, String],
+    missingOnlyHeadersOut: Map[String, String] = Map.empty[String, String],
     removeHeadersIn: Seq[String] = Seq.empty[String],
     removeHeadersOut: Seq[String] = Seq.empty[String],
     headersVerification: Map[String, String] = Map.empty[String, String],
@@ -1914,9 +1916,13 @@ case class ServiceDescriptor(
         }.takeWhile(a => a match {
           case Allowed => true
           case Denied(_) => false
-        }, false).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
+        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
           case Allowed => f
           case Denied(result) => FastFuture.successful(result)
+        }.recover {
+          case e =>
+            e.printStackTrace()
+            Results.InternalServerError(Json.obj("error" -> e.getMessage))
         }
       } else {
         f
@@ -2002,7 +2008,7 @@ case class ServiceDescriptor(
         }.takeWhile(a => a match {
           case Allowed => true
           case Denied(_) => false
-        }, false).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
+        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
           case Allowed => f
           case Denied(result) => FastFuture.successful(Left(result))
         }
@@ -2198,6 +2204,8 @@ object ServiceDescriptor {
             (json \ "additionalHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           additionalHeadersOut =
             (json \ "additionalHeadersOut").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          missingOnlyHeadersIn = (json \ "missingOnlyHeadersIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          missingOnlyHeadersOut = (json \ "missingOnlyHeadersOut").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           headersVerification =
             (json \ "headersVerification").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           matchingHeaders = (json \ "matchingHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
@@ -2292,6 +2300,8 @@ object ServiceDescriptor {
       "privatePatterns"            -> JsArray(sd.privatePatterns.map(JsString.apply)),
       "additionalHeaders"          -> JsObject(sd.additionalHeaders.mapValues(JsString.apply)),
       "additionalHeadersOut"       -> JsObject(sd.additionalHeadersOut.mapValues(JsString.apply)),
+      "missingOnlyHeadersIn"       -> JsObject(sd.missingOnlyHeadersIn.mapValues(JsString.apply)),
+      "missingOnlyHeadersOut"      -> JsObject(sd.missingOnlyHeadersOut.mapValues(JsString.apply)),
       "removeHeadersIn"            -> JsArray(sd.removeHeadersIn.map(JsString.apply)),
       "removeHeadersOut"           -> JsArray(sd.removeHeadersOut.map(JsString.apply)),
       "headersVerification"        -> JsObject(sd.headersVerification.mapValues(JsString.apply)),
@@ -2357,7 +2367,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       allowHttp10 = true,
       removeHeadersIn = Seq.empty,
       removeHeadersOut = Seq.empty,
-      accessValidator = AccessValidatorRef()
+      accessValidator = AccessValidatorRef(),
+      missingOnlyHeadersIn = Map.empty,
+      missingOnlyHeadersOut = Map.empty
     )
   def updateMetrics(id: String,
                     callDuration: Long,
