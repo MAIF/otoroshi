@@ -1925,6 +1925,7 @@ export class ServicePage extends Component {
               onChange={e => {
                 this.changeTheValue('accessValidator.refs', e)
                 setTimeout(() => {
+                  console.log(e);
                   if (e === 'cp:otoroshi.script.ExternalHttpValidator') {
                     this.changeTheValue('accessValidator.config', {
                       url: 'https://validator.oto.tools',
@@ -1955,7 +1956,7 @@ export class ServicePage extends Component {
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
-                {!this.state.service.accessValidator.refs && (
+                {this.state.service.accessValidator.refs.length === 0 && (
                   <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
                     <i className="glyphicon glyphicon-plus" /> Create a new script.
                   </a>
@@ -2559,10 +2560,10 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Request transformation">
             <Warning />
-            <SelectInput
-              label="Request transformer"
-              value={this.state.service.transformerRef}
-              onChange={e => this.changeTheValue('transformerRef', e)}
+            <ArrayInput
+              label="Request transformers"
+              value={this.state.service.transformerRefs}
+              onChange={e => this.changeTheValue('transformerRefs', e)}
               valuesFrom="/bo/api/proxy/api/scripts/_list?type=transformer"
               transformer={a => ({ value: a.id, label: a.name })}
               help="..."
@@ -2570,18 +2571,18 @@ export class ServicePage extends Component {
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
-                {!this.state.service.transformerRef && (
+                {this.state.service.transformerRefs.length === 0 && (
                   <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
                     <i className="glyphicon glyphicon-plus" /> Create a new script.
                   </a>
                 )}
-                {this.state.service.transformerRef && (
+                {/*this.state.service.transformerRefs.length > 0 && (
                   <a
                     href={`/bo/dashboard/scripts/edit/${this.state.service.transformerRef}`}
                     className="btn btn-sm btn-success">
                     <i className="glyphicon glyphicon-edit" /> Edit the script.
                   </a>
-                )}
+                )*/}
                 <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
                   <i className="glyphicon glyphicon-link" /> all scripts.
                 </a>

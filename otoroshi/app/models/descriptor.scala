@@ -1816,7 +1816,7 @@ case class ServiceDescriptor(
     cors: CorsSettings = CorsSettings(false),
     redirection: RedirectionSettings = RedirectionSettings(false),
     clientValidatorRef: Option[String] = None,
-    transformerRef: Option[String] = None,
+    transformerRefs: Seq[String] = Seq.empty,
     transformerConfig: JsValue = Json.obj(),
     gzip: GzipConfig = GzipConfig(),
     thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
@@ -1898,31 +1898,25 @@ case class ServiceDescriptor(
     if (accessValidator.enabled
         && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
       if (accessValidator.refs.nonEmpty) {
-        Source(accessValidator.refs.zipWithIndex.toList).mapAsync(1) {
-          case (ref, index) =>
-            // println(s"Evaluation validator ${index}")
-            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-              case Left("compiling") => CompilingValidator
-              case Left(_)           => DefaultValidator
-              case Right(validator)  => validator
-            }
-            validator.access(AccessContext(
-              request = req,
-              descriptor = this,
-              user = user,
-              apikey = apikey,
-              config = accessValidator.config
-            ))
+        Source(accessValidator.refs.toList).mapAsync(1) { ref =>
+          val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+            case Left("compiling") => CompilingValidator
+            case Left(_)           => DefaultValidator
+            case Right(validator)  => validator
+          }
+          validator.access(AccessContext(
+            request = req,
+            descriptor = this,
+            user = user,
+            apikey = apikey,
+            config = accessValidator.config
+          ))
         }.takeWhile(a => a match {
           case Allowed => true
           case Denied(_) => false
         }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
           case Allowed => f
           case Denied(result) => FastFuture.successful(result)
-        }.recover {
-          case e =>
-            e.printStackTrace()
-            Results.InternalServerError(Json.obj("error" -> e.getMessage))
         }
       } else {
         f
@@ -2230,7 +2224,10 @@ object ServiceDescriptor {
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
-          transformerRef = (json \ "transformerRef").asOpt[String].filterNot(_.trim.isEmpty),
+          transformerRefs = (json \ "transformerRefs").asOpt[Seq[String]]
+            .orElse((json \ "transformerRef").asOpt[String].map(r => Seq(r)))
+            .map(_.filterNot(_.trim.isEmpty))
+            .getOrElse(Seq.empty),
           transformerConfig = (json \ "transformerConfig").asOpt[JsObject].getOrElse(Json.obj()),
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
           redirection = RedirectionSettings.format
@@ -2320,7 +2317,8 @@ object ServiceDescriptor {
       "redirection"                -> sd.redirection.toJson,
       "authConfigRef"              -> sd.authConfigRef,
       "clientValidatorRef"         -> sd.clientValidatorRef,
-      "transformerRef"             -> sd.transformerRef,
+      "transformerRef"             -> sd.transformerRefs.headOption.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "transformerRefs"            -> sd.transformerRefs,
       "transformerConfig"          -> sd.transformerConfig,
       "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson,
       "apiKeyConstraints"          -> sd.apiKeyConstraints.json,

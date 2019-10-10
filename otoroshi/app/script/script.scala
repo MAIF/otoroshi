@@ -10,7 +10,7 @@ import akka.actor.Cancellable
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
@@ -414,15 +414,24 @@ object Implicits {
         user: Option[PrivateAppsUser] = None,
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
-        case true =>
-          desc.transformerRef match {
-            case Some(ref) =>
+        case true if desc.transformerRefs.nonEmpty =>
+          val refs = desc.transformerRefs
+          val either: Either[Result, HttpRequest] = Right(otoroshiRequest)
+          Source(refs.toList).runFoldAsync(either) {
+            case (Left(badResult), _) => FastFuture.successful(Left(badResult))
+            case (Right(lastHttpRequest), ref) =>
               env.scriptManager
                 .getScript(ref)
-                .transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
-            case None => FastFuture.successful(Right(otoroshiRequest))
+                .transformRequest(snowflake, rawRequest, lastHttpRequest, desc, apiKey, user)(env, ec, mat)
           }
-        case false => FastFuture.successful(Right(otoroshiRequest))
+          // desc.transformerRef match {
+          //   case Some(ref) =>
+          //     env.scriptManager
+          //       .getScript(ref)
+          //       .transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
+          //   case None => FastFuture.successful(Right(otoroshiRequest))
+          // }
+        case _ => FastFuture.successful(Right(otoroshiRequest))
       }
     }
 
@@ -435,59 +444,83 @@ object Implicits {
         user: Option[PrivateAppsUser] = None
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
       env.scriptingEnabled match {
-        case true =>
-          desc.transformerRef match {
-            case Some(ref) =>
+        case true if desc.transformerRefs.nonEmpty =>
+          val refs = desc.transformerRefs
+          val either: Either[Result, HttpResponse] = Right(otoroshiResponse)
+          Source(refs.toList).runFoldAsync(either) {
+            case (Left(badResult), _) => FastFuture.successful(Left(badResult))
+            case (Right(lastHttpResponse), ref) =>
               env.scriptManager
                 .getScript(ref)
-                .transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
-            case None => FastFuture.successful(Right(otoroshiResponse))
+                .transformResponse(snowflake, rawResponse, lastHttpResponse, desc, apiKey, user)(env, ec, mat)
           }
-        case false => FastFuture.successful(Right(otoroshiResponse))
+          // desc.transformerRef match {
+          //   case Some(ref) =>
+          //     env.scriptManager
+          //       .getScript(ref)
+          //       .transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
+          //   case None => FastFuture.successful(Right(otoroshiResponse))
+          // }
+        case _ => FastFuture.successful(Right(otoroshiResponse))
       }
     }
 
     def transformRequestBody(
         snowflake: String,
-        body: Source[ByteString, _],
+        body: Source[ByteString, Any],
         rawRequest: HttpRequest,
         otoroshiRequest: HttpRequest,
         desc: ServiceDescriptor,
         apiKey: Option[ApiKey] = None,
         user: Option[PrivateAppsUser] = None
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
-        case true =>
-          desc.transformerRef match {
-            case Some(ref) =>
+        case true if desc.transformerRefs.nonEmpty =>
+          val refs = desc.transformerRefs
+          Source.fromFutureSource(Source(refs.toList).runFold(body) {
+            case (body, ref) =>
               env.scriptManager
                 .getScript(ref)
                 .transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
-            case None => body
-          }
-        case false => body
+          })
+
+          // desc.transformerRef match {
+          //   case Some(ref) =>
+          //     env.scriptManager
+          //       .getScript(ref)
+          //       .transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
+          //   case None => body
+          // }
+        case _ => body
       }
     }
 
     def transformResponseBody(
         snowflake: String,
-        body: Source[ByteString, _],
+        body: Source[ByteString, Any],
         rawResponse: HttpResponse,
         otoroshiResponse: HttpResponse,
         desc: ServiceDescriptor,
         apiKey: Option[ApiKey] = None,
         user: Option[PrivateAppsUser] = None
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
-        case true =>
-          desc.transformerRef match {
-            case Some(ref) =>
+        case true if desc.transformerRefs.nonEmpty =>
+          val refs = desc.transformerRefs
+          Source.fromFutureSource(Source(refs.toList).runFold(body) {
+            case (body, ref) =>
               env.scriptManager
                 .getScript(ref)
                 .transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
-            case None => body
-          }
-        case false => body
+          })
+          // desc.transformerRef match {
+          //   case Some(ref) =>
+          //     env.scriptManager
+          //       .getScript(ref)
+          //       .transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
+          //   case None => body
+          // }
+        case _ => body
       }
     }
   }
