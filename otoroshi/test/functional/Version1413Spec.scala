@@ -19,7 +19,7 @@ import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import otoroshi.script
-import otoroshi.script.{AccessValidatorRef, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
+import otoroshi.script._
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
@@ -133,7 +133,8 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         accessValidator = AccessValidatorRef(
           enabled = true,
           refs = Seq(
-            "cp:otoroshi.script.HasAllowedApiKeyValidator"
+            "cp:otoroshi.script.HasAllowedApiKeyValidator",
+            "cp:cp:functional.Validator1"
           ),
           config = Json.obj(
             "tags" -> Json.arr("foo")
@@ -155,6 +156,8 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       createOtoroshiApiKey(validApiKey).futureValue
       createOtoroshiApiKey(invalidApiKey).futureValue
 
+      TransformersCounters.counterValidator.get() mustBe 0
+
       val resp1 = call1(
         Map(
           "Otoroshi-Client-Id" -> validApiKey.clientId,
@@ -162,12 +165,16 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         )
       )
 
+      TransformersCounters.counterValidator.get() mustBe 1
+
       val resp2 = call1(
         Map(
           "Otoroshi-Client-Id" -> invalidApiKey.clientId,
           "Otoroshi-Client-Secret" -> invalidApiKey.clientSecret
         )
       )
+
+      TransformersCounters.counterValidator.get() mustBe 1
 
       resp1.status mustBe 200
       counter1.get() mustBe 1
@@ -237,6 +244,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 }
 
 object TransformersCounters {
+  val counterValidator = new AtomicInteger(0)
   val counter = new AtomicInteger(0)
   val counter3 = new AtomicInteger(0)
 }
@@ -269,5 +277,12 @@ class Transformer3 extends RequestTransformer {
   override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     TransformersCounters.counter3.incrementAndGet()
     FastFuture.successful(Right(context.otoroshiRequest))
+  }
+}
+
+class Validator1 extends AccessValidator {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    TransformersCounters.counterValidator.incrementAndGet()
+    FastFuture.successful(true)
   }
 }
