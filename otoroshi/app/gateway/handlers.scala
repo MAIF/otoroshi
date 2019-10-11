@@ -40,6 +40,7 @@ import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
+import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import utils.http.Implicits._
 import play.libs.ws.WSCookie
 import ssl.PemHeaders
@@ -1320,21 +1321,31 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       val upstreamStart = System.currentTimeMillis()
                                       val finalRequest = descriptor
                                         .transformRequest(
+                                          TransformerRequestContext(
+                                            index = -1,
+                                            snowflake = snowflake,
+                                            rawRequest = rawRequest,
+                                            otoroshiRequest = otoroshiRequest,
+                                            descriptor = descriptor,
+                                            apikey = apiKey,
+                                            user = paUsr,
+                                            request = req,
+                                            config = descriptor.transformerConfig
+                                          )
+                                        )
+                                      val finalBody = descriptor.transformRequestBody(
+                                        TransformerRequestBodyContext(
+                                          index = -1,
                                           snowflake = snowflake,
                                           rawRequest = rawRequest,
                                           otoroshiRequest = otoroshiRequest,
-                                          desc = descriptor,
-                                          apiKey = apiKey,
-                                          user = paUsr
+                                          descriptor = descriptor,
+                                          apikey = apiKey,
+                                          user = paUsr,
+                                          request = req,
+                                          config = descriptor.transformerConfig,
+                                          body = lazySource
                                         )
-                                      val finalBody = descriptor.transformRequestBody(
-                                        body = lazySource,
-                                        snowflake = snowflake,
-                                        rawRequest = rawRequest,
-                                        otoroshiRequest = otoroshiRequest,
-                                        desc = descriptor,
-                                        apiKey = apiKey,
-                                        user = paUsr
                                       )
                                       finalRequest.flatMap {
                                         case Left(badResult) => {
@@ -1583,12 +1594,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 )
                                                 descriptor
                                                   .transformResponse(
-                                                    snowflake = snowflake,
-                                                    rawResponse = rawResponse,
-                                                    otoroshiResponse = otoroshiResponse,
-                                                    desc = descriptor,
-                                                    apiKey = apiKey,
-                                                    user = paUsr
+                                                    TransformerResponseContext(
+                                                      index = -1,
+                                                      snowflake = snowflake,
+                                                      rawResponse = rawResponse,
+                                                      otoroshiResponse = otoroshiResponse,
+                                                      descriptor = descriptor,
+                                                      apikey = apiKey,
+                                                      user = paUsr,
+                                                      request = req,
+                                                      config = descriptor.transformerConfig
+                                                    )
                                                   )
                                                   .flatMap {
                                                     case Left(badResult) => {
@@ -1655,13 +1671,18 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         }
 
                                                       val finalStream = descriptor.transformResponseBody(
-                                                        snowflake = snowflake,
-                                                        rawResponse = rawResponse,
-                                                        otoroshiResponse = otoroshiResponse,
-                                                        desc = descriptor,
-                                                        apiKey = apiKey,
-                                                        user = paUsr,
-                                                        body = theStream
+                                                        TransformerResponseBodyContext(
+                                                          index = -1,
+                                                          snowflake = snowflake,
+                                                          rawResponse = rawResponse,
+                                                          otoroshiResponse = otoroshiResponse,
+                                                          descriptor = descriptor,
+                                                          apikey = apiKey,
+                                                          user = paUsr,
+                                                          request = req,
+                                                          config = descriptor.transformerConfig,
+                                                          body = theStream
+                                                        )
                                                       )
 
                                                       val cookies = httpResponse.cookies.map(

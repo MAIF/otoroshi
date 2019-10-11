@@ -1898,19 +1898,25 @@ case class ServiceDescriptor(
     if (accessValidator.enabled
         && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
       if (accessValidator.refs.nonEmpty) {
-        Source(accessValidator.refs.toList).mapAsync(1) { ref =>
-          val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-            case Left("compiling") => CompilingValidator
-            case Left(_)           => DefaultValidator
-            case Right(validator)  => validator
-          }
-          validator.access(AccessContext(
-            request = req,
-            descriptor = this,
-            user = user,
-            apikey = apikey,
-            config = accessValidator.config
-          ))
+        Source(accessValidator.refs.toList.zipWithIndex).mapAsync(1) {
+          case (ref, index) =>
+            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+              case Left("compiling") => CompilingValidator
+              case Left(_)           => DefaultValidator
+              case Right(validator)  => validator
+            }
+            validator.access(AccessContext(
+              index = index,
+              request = req,
+              descriptor = this,
+              user = user,
+              apikey = apikey,
+              config = accessValidator.config match {
+                case json: JsArray => Option(json.value(index)).getOrElse(accessValidator.config)
+                case json: JsObject => json
+                case _ => Json.obj()
+              }
+            ))
         }.takeWhile(a => a match {
           case Allowed => true
           case Denied(_) => false
@@ -1986,18 +1992,22 @@ case class ServiceDescriptor(
       if (accessValidator.refs.nonEmpty) {
         Source(accessValidator.refs.zipWithIndex.toList).mapAsync(1) {
           case (ref, index) =>
-            // println(s"Evaluation validator ${index}")
             val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
               case Left("compiling") => CompilingValidator
               case Left(_)           => DefaultValidator
               case Right(validator)  => validator
             }
             validator.access(AccessContext(
+              index = index,
               request = req,
               descriptor = this,
               user = user,
               apikey = apikey,
-              config = accessValidator.config
+              config = accessValidator.config match {
+                case json: JsArray => Option(json.value(index)).getOrElse(accessValidator.config)
+                case json: JsObject => json
+                case _ => Json.obj()
+              }
             ))
         }.takeWhile(a => a match {
           case Allowed => true

@@ -47,7 +47,87 @@ case class HttpRequest(url: String,
 
 case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
 
+sealed trait TransformerContext {
+  def index: Int
+  def snowflake: String
+  def descriptor: ServiceDescriptor
+  def apikey: Option[ApiKey]
+  def user: Option[PrivateAppsUser]
+  def request: RequestHeader
+  def config: JsValue
+  // TODO: add user-agent infos
+  // TODO: add client geoloc infos
+}
+
+case class TransformerRequestContext(
+  rawRequest: HttpRequest,
+  otoroshiRequest: HttpRequest,
+  index: Int,
+  snowflake: String,
+  descriptor: ServiceDescriptor,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  request: RequestHeader,
+  config: JsValue
+) extends TransformerContext {}
+
+case class TransformerResponseContext(
+  rawResponse: HttpResponse,
+  otoroshiResponse: HttpResponse,
+  index: Int,
+  snowflake: String,
+  descriptor: ServiceDescriptor,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  request: RequestHeader,
+  config: JsValue
+) extends TransformerContext {}
+
+case class TransformerRequestBodyContext(
+  rawRequest: HttpRequest,
+  otoroshiRequest: HttpRequest,
+  body: Source[ByteString, Any],
+  index: Int,
+  snowflake: String,
+  descriptor: ServiceDescriptor,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  request: RequestHeader,
+  config: JsValue
+) extends TransformerContext {}
+
+case class TransformerResponseBodyContext(
+  rawResponse: HttpResponse,
+  otoroshiResponse: HttpResponse,
+  body: Source[ByteString, Any],
+  index: Int,
+  snowflake: String,
+  descriptor: ServiceDescriptor,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  request: RequestHeader,
+  config: JsValue
+) extends TransformerContext {}
+
 trait RequestTransformer {
+
+  def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    transformRequest(context.snowflake, context.rawRequest, context.otoroshiRequest, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  }
+
+  def transformResponseWithCtx(context: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+    transformResponse(context.snowflake, context.rawResponse, context.otoroshiResponse, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  }
+
+  def transformRequestBodyWithCtx(context: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    transformRequestBody(context.snowflake, context.body, context.rawRequest, context.otoroshiRequest, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  }
+
+  def transformResponseBodyWithCtx(context: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    transformResponseBody(context.snowflake, context.body, context.rawResponse, context.otoroshiResponse, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def transformRequestSync(
       snowflake: String,
@@ -123,6 +203,7 @@ trait RequestTransformer {
 }
 
 object DefaultRequestTransformer extends RequestTransformer
+
 object CompilingRequestTransformer extends RequestTransformer {
   override def transformRequestSync(
       snowflake: String,
@@ -405,24 +486,29 @@ object Implicits {
 
   implicit class ServiceDescriptorWithTransformer(val desc: ServiceDescriptor) extends AnyVal {
 
-    def transformRequest(
-        snowflake: String,
-        rawRequest: HttpRequest,
-        otoroshiRequest: HttpRequest,
-        desc: ServiceDescriptor,
-        apiKey: Option[ApiKey] = None,
-        user: Option[PrivateAppsUser] = None,
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    //def transformRequest(
+    //    snowflake: String,
+    //    rawRequest: HttpRequest,
+    //    otoroshiRequest: HttpRequest,
+    //    desc: ServiceDescriptor,
+    //    apiKey: Option[ApiKey] = None,
+    //    user: Option[PrivateAppsUser] = None,
+    //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    def transformRequest(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
         case true if desc.transformerRefs.nonEmpty =>
           val refs = desc.transformerRefs
-          val either: Either[Result, HttpRequest] = Right(otoroshiRequest)
-          Source(refs.toList).runFoldAsync(either) {
-            case (Left(badResult), _) => FastFuture.successful(Left(badResult))
-            case (Right(lastHttpRequest), ref) =>
+          val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
+          Source(refs.toList.zipWithIndex).runFoldAsync(either) {
+            case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
+            case (Right(lastHttpRequest), (ref, index)) =>
               env.scriptManager
                 .getScript(ref)
-                .transformRequest(snowflake, rawRequest, lastHttpRequest, desc, apiKey, user)(env, ec, mat)
+                .transformRequestWithCtx(context.copy(otoroshiRequest = lastHttpRequest, index = index, config = context.config match {
+                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
+                  case json: JsObject => json
+                  case _ => Json.obj()
+                }))(env, ec, mat)
           }
           // desc.transformerRef match {
           //   case Some(ref) =>
@@ -431,28 +517,33 @@ object Implicits {
           //       .transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
           //   case None => FastFuture.successful(Right(otoroshiRequest))
           // }
-        case _ => FastFuture.successful(Right(otoroshiRequest))
+        case _ => FastFuture.successful(Right(context.otoroshiRequest))
       }
     }
 
-    def transformResponse(
-        snowflake: String,
-        rawResponse: HttpResponse,
-        otoroshiResponse: HttpResponse,
-        desc: ServiceDescriptor,
-        apiKey: Option[ApiKey] = None,
-        user: Option[PrivateAppsUser] = None
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+    // def transformResponse(
+    //     snowflake: String,
+    //     rawResponse: HttpResponse,
+    //     otoroshiResponse: HttpResponse,
+    //     desc: ServiceDescriptor,
+    //     apiKey: Option[ApiKey] = None,
+    //     user: Option[PrivateAppsUser] = None
+    // )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+    def transformResponse(context: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
       env.scriptingEnabled match {
         case true if desc.transformerRefs.nonEmpty =>
           val refs = desc.transformerRefs
-          val either: Either[Result, HttpResponse] = Right(otoroshiResponse)
-          Source(refs.toList).runFoldAsync(either) {
+          val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
+          Source(refs.toList.zipWithIndex).runFoldAsync(either) {
             case (Left(badResult), _) => FastFuture.successful(Left(badResult))
-            case (Right(lastHttpResponse), ref) =>
+            case (Right(lastHttpResponse), (ref, index)) =>
               env.scriptManager
                 .getScript(ref)
-                .transformResponse(snowflake, rawResponse, lastHttpResponse, desc, apiKey, user)(env, ec, mat)
+                .transformResponseWithCtx(context.copy(otoroshiResponse = lastHttpResponse, index = index, config = context.config match {
+                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
+                  case json: JsObject => json
+                  case _ => Json.obj()
+                }))(env, ec, mat)
           }
           // desc.transformerRef match {
           //   case Some(ref) =>
@@ -461,29 +552,33 @@ object Implicits {
           //       .transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
           //   case None => FastFuture.successful(Right(otoroshiResponse))
           // }
-        case _ => FastFuture.successful(Right(otoroshiResponse))
+        case _ => FastFuture.successful(Right(context.otoroshiResponse))
       }
     }
 
-    def transformRequestBody(
-        snowflake: String,
-        body: Source[ByteString, Any],
-        rawRequest: HttpRequest,
-        otoroshiRequest: HttpRequest,
-        desc: ServiceDescriptor,
-        apiKey: Option[ApiKey] = None,
-        user: Option[PrivateAppsUser] = None
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    //def transformRequestBody(
+    //    snowflake: String,
+    //    body: Source[ByteString, Any],
+    //    rawRequest: HttpRequest,
+    //    otoroshiRequest: HttpRequest,
+    //    desc: ServiceDescriptor,
+    //    apiKey: Option[ApiKey] = None,
+    //    user: Option[PrivateAppsUser] = None
+    //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    def transformRequestBody(context: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
         case true if desc.transformerRefs.nonEmpty =>
           val refs = desc.transformerRefs
-          Source.fromFutureSource(Source(refs.toList).runFold(body) {
-            case (body, ref) =>
+          Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+            case (body, (ref, index)) =>
               env.scriptManager
                 .getScript(ref)
-                .transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
+                .transformRequestBodyWithCtx(context.copy(body = body, index = index, config = context.config match {
+                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
+                  case json: JsObject => json
+                  case _ => Json.obj()
+                }))(env, ec, mat)
           })
-
           // desc.transformerRef match {
           //   case Some(ref) =>
           //     env.scriptManager
@@ -491,27 +586,32 @@ object Implicits {
           //       .transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
           //   case None => body
           // }
-        case _ => body
+        case _ => context.body
       }
     }
 
-    def transformResponseBody(
-        snowflake: String,
-        body: Source[ByteString, Any],
-        rawResponse: HttpResponse,
-        otoroshiResponse: HttpResponse,
-        desc: ServiceDescriptor,
-        apiKey: Option[ApiKey] = None,
-        user: Option[PrivateAppsUser] = None
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    //def transformResponseBody(
+    //    snowflake: String,
+    //    body: Source[ByteString, Any],
+    //    rawResponse: HttpResponse,
+    //    otoroshiResponse: HttpResponse,
+    //    desc: ServiceDescriptor,
+    //    apiKey: Option[ApiKey] = None,
+    //    user: Option[PrivateAppsUser] = None
+    //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    def transformResponseBody(context: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
         case true if desc.transformerRefs.nonEmpty =>
           val refs = desc.transformerRefs
-          Source.fromFutureSource(Source(refs.toList).runFold(body) {
-            case (body, ref) =>
+          Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+            case (body, (ref, index)) =>
               env.scriptManager
                 .getScript(ref)
-                .transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
+                .transformResponseBodyWithCtx(context.copy(body = body, index = index, config = context.config match {
+                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
+                  case json: JsObject => json
+                  case _ => Json.obj()
+                }))(env, ec, mat)
           })
           // desc.transformerRef match {
           //   case Some(ref) =>
@@ -520,7 +620,7 @@ object Implicits {
           //       .transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
           //   case None => body
           // }
-        case _ => body
+        case _ => context.body
       }
     }
   }

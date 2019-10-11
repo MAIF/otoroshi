@@ -21,7 +21,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class AccessValidatorRef(enabled: Boolean = false, excludedPatterns: Seq[String] = Seq.empty[String], refs: Seq[String] = Seq.empty, config: JsObject = Json.obj()) {
+case class AccessValidatorRef(enabled: Boolean = false, excludedPatterns: Seq[String] = Seq.empty[String], refs: Seq[String] = Seq.empty, config: JsValue = Json.obj()) {
   def json: JsValue = AccessValidatorRef.format.writes(this)
 }
 
@@ -39,7 +39,7 @@ object AccessValidatorRef {
           AccessValidatorRef(
             refs = (json \ "refs").asOpt[Seq[String]].orElse((json \ "ref").asOpt[String].map(r => Seq(r))).getOrElse(Seq.empty) ,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-            config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
+            config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
             excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           )
         )
@@ -70,11 +70,12 @@ trait AccessValidator {
 }
 
 case class AccessContext(
+  index: Int,
   request: RequestHeader,
   descriptor: ServiceDescriptor,
   user: Option[PrivateAppsUser],
   apikey: Option[ApiKey],
-  config: JsObject
+  config: JsValue
   // TODO: add user-agent infos
   // TODO: add client geoloc infos
 )
@@ -168,7 +169,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
   }
 }
 
-case class ExternalHttpValidatorConfig(config: JsObject) {
+case class ExternalHttpValidatorConfig(config: JsValue) {
   lazy val url: String = (config \ "url").as[String]
   lazy val host: String = (config \ "host").asOpt[String].getOrElse(Uri(url).authority.host.toString())
   lazy val goodTtl: Long = (config \ "goodTtl").asOpt[Long].getOrElse(10L * 60000L)

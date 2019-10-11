@@ -747,6 +747,79 @@ export class ServicePage extends Component {
     });
   };
 
+  mergeConfig = (item, index, oldConfig, cb) => {
+
+    function copyConfig() {
+      if (Array.isArray(oldConfig)) {
+        return [ ...oldConfig ];
+      } else {
+        return { ...oldConfig };
+      }
+    }
+
+    function appendToConfig(conf, what) {
+      if (Array.isArray(conf)) {
+        const newConf = [ ...conf ];
+        newConf[index] = { ...what };
+        return newConf;
+      } else {
+        delete newConf['_cfgFor'];
+        return { ...conf, ...what };
+      }
+    }
+
+    let newConfig = copyConfig();
+    if (item) {
+      console.log('item')
+      if (item === 'cp:otoroshi.script.ExternalHttpValidator') {
+        newConfig = appendToConfig(newConfig, {
+          _cfgFor: 'otoroshi.script.ExternalHttpValidator',
+          url: 'https://validator.oto.tools',
+          host: 'validator.oto.tools',
+          goodTtl: 600000,
+          badTtl: 60000,
+          method: 'POST',
+          path: '/certificates/_validate',
+          timeout: 10000,
+          noCache: false,
+          allowNoClientCert: false,
+          headers: {},
+          proxy: null
+        });
+      } else if (item === 'cp:otoroshi.script.HasClientCertMatchingValidator') {
+        newConfig = appendToConfig(newConfig, {
+          _cfgFor: 'otoroshi.script.HasClientCertMatchingValidator',
+          subjectDN: 'CN=localhost',
+          issuerDN: 'CN=remotehost'
+        });
+      } else if (item === 'cp:otoroshi.script.HasAllowedUsersValidator') {
+        newConfig = appendToConfig(newConfig, {
+          _cfgFor: 'otoroshi.script.HasAllowedUsersValidator',
+          usernames: [],
+          emails: [],
+          emailDomains: []
+        });
+      } else if (item === 'cp:otoroshi.script.HasAllowedApiKeyValidator') {
+        newConfig = appendToConfig(newConfig, {
+          _cfgFor: 'otoroshi.script.HasAllowedApiKeyValidator',
+          clientIds: [],
+          tags: [],
+          metadata: {}
+        });
+      } else {
+        newConfig = appendToConfig(newConfig, {
+          _cfgFor: item.replace('cp:', ''),
+        });
+      }
+      cb(newConfig);
+    } else {
+      if (item === null && Array.isArray(newConfig)) {
+        newConfig.splice(index, 1);
+      }
+      cb(newConfig);
+    }
+  }
+
   render() {
     if (!this.state.service) return null;
     const propsDisabled = { disabled: true };
@@ -1922,32 +1995,13 @@ export class ServicePage extends Component {
             <ArrayInput
               label="Access validator"
               value={this.state.service.accessValidator.refs}
-              onChange={e => {
+              onChange={(e, item, index) => {
                 this.changeTheValue('accessValidator.refs', e)
-                setTimeout(() => {
-                  console.log(e);
-                  if (e === 'cp:otoroshi.script.ExternalHttpValidator') {
-                    this.changeTheValue('accessValidator.config', {
-                      url: 'https://validator.oto.tools',
-                      host: 'validator.oto.tools',
-                      goodTtl: 600000,
-                      badTtl: 60000,
-                      method: 'POST',
-                      path: '/certificates/_validate',
-                      timeout: 10000,
-                      noCache: false,
-                      allowNoClientCert: false,
-                      headers: {},
-                      proxy: null
-                    })
-                  }
-                  if (e === 'cp:otoroshi.script.HasClientCertMatchingValidator') {
-                    this.changeTheValue('accessValidator.config', {
-                      subjectDN: 'CN=localhost',
-                      issuerDN: 'CN=remotehost'
-                    });
-                  }
-                }, 300);
+                this.mergeConfig(item, index, this.state.service.accessValidator.config, newConfig => {
+                  setTimeout(() => {
+                    this.changeTheValue('accessValidator.config', newConfig);
+                  }, 300);
+                });
               }}
               valuesFrom="/bo/api/proxy/api/scripts/_list?type=validator"
               transformer={a => ({ value: a.id, label: a.name })}

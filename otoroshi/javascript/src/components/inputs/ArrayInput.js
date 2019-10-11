@@ -28,27 +28,28 @@ export class ArrayInput extends Component {
     if (e && e.preventDefault) e.preventDefault();
     const newValues = [...this.props.value];
     newValues[idx] = e.target.value;
-    this.props.onChange(newValues);
+    this.props.onChange(newValues, e.target.value, idx);
   };
 
   addFirst = e => {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.props.value || this.props.value.length === 0) {
-      this.props.onChange([this.props.defaultValue || '']);
+      const newValue = this.props.defaultValue || '';
+      this.props.onChange([newValue], newValue, 0);
     }
   };
 
   addNext = e => {
     if (e && e.preventDefault) e.preventDefault();
     const newValues = [...this.props.value, this.props.defaultValue || ''];
-    this.props.onChange(newValues);
+    this.props.onChange(newValues, this.props.defaultValue || '', newValues.length - 1);
   };
 
   remove = (e, idx) => {
     if (e && e.preventDefault) e.preventDefault();
     const newValues = [...this.props.value];
     newValues.splice(idx, 1);
-    this.props.onChange(newValues);
+    this.props.onChange(newValues, null, idx);
   };
 
   render() {

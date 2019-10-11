@@ -5,19 +5,27 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.hash.Hashing
 import com.typesafe.config.ConfigFactory
+import env.Env
 import models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
-import otoroshi.script.AccessValidatorRef
+import otoroshi.script
+import otoroshi.script.{AccessValidatorRef, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
 import play.api.Configuration
 import play.api.libs.json.Json
+import play.api.mvc.{Result, Results}
 import security.IdGenerator
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
@@ -172,6 +180,82 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiApiKey(invalidApiKey).futureValue
 
       stopServers()
+    }
+
+    "be able to chain transformers (#366)" in {
+      val (_, port1, counter1, call1) = testServer("reqtrans.oto.tools", port)
+      val service1 = ServiceDescriptor(
+        id = "reqtrans",
+        name = "reqtrans",
+        env = "prod",
+        subdomain = "reqtrans",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        transformerRefs = Seq(
+          "cp:functional.Transformer1",
+          "cp:functional.Transformer2"
+        )
+      )
+      createOtoroshiService(service1).futureValue
+
+      TransformersCounters.counter.get() mustBe 0
+      counter1 mustBe 0
+
+      val resp1 = call1(Map.empty)
+
+      TransformersCounters.counter.get() mustBe 3
+      counter1 mustBe 1
+      resp1.status mustBe 200
+
+
+      val resp2 = ws.url(s"http://127.0.0.1:${port}/hello")
+        .withHttpHeaders("Host" -> "reqtrans.oto.tools")
+        .get()
+        .futureValue
+
+      TransformersCounters.counter.get() mustBe 7
+      counter1 mustBe 1
+      resp2.status mustBe 201
+
+      deleteOtoroshiService(service1).futureValue
+
+      stopServers()
+    }
+  }
+}
+
+object TransformersCounters {
+  val counter = new AtomicInteger(0)
+}
+
+class Transformer1 extends RequestTransformer {
+  override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
+    TransformersCounters.counter.incrementAndGet()
+    FastFuture.successful(Right(context.otoroshiRequest.copy(headers = context.otoroshiRequest.headers ++ Map(
+      "foo" -> "bar"
+    ))))
+  }
+}
+
+class Transformer2 extends RequestTransformer {
+  override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
+    TransformersCounters.counter.incrementAndGet()
+    if (context.otoroshiRequest.headers.get("foo").contains("bar")) {
+      TransformersCounters.counter.incrementAndGet()
+    }
+    if (context.otoroshiRequest.path == "/hello") {
+      TransformersCounters.counter.incrementAndGet()
+      FastFuture.successful(Left(Results.Created(Json.obj("message" -> "hello world!"))))
+    } else {
+      FastFuture.successful(Right(context.otoroshiRequest))
     }
   }
 }

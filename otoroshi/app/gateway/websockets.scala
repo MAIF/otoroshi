@@ -38,6 +38,7 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
+import otoroshi.script.TransformerRequestContext
 import play.api.libs.ws.DefaultWSCookie
 import ssl.PemHeaders
 import utils.http.WSProxyServerUtils
@@ -776,12 +777,17 @@ class WebSocketHandler()(implicit env: Env) {
                                 val upstreamStart = System.currentTimeMillis()
                                 descriptor
                                   .transformRequest(
-                                    snowflake = snowflake,
-                                    rawRequest = rawRequest,
-                                    otoroshiRequest = otoroshiRequest,
-                                    desc = descriptor,
-                                    apiKey = apiKey,
-                                    user = paUsr
+                                    TransformerRequestContext(
+                                      index = -1,
+                                      snowflake = snowflake,
+                                      rawRequest = rawRequest,
+                                      otoroshiRequest = otoroshiRequest,
+                                      descriptor = descriptor,
+                                      apikey = apiKey,
+                                      user = paUsr,
+                                      request = req,
+                                      config = descriptor.transformerConfig
+                                    )
                                   )
                                   .flatMap {
                                     case Left(badResult) => {
