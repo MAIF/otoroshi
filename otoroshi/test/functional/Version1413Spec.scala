@@ -201,18 +201,21 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         publicPatterns = Seq("/.*"),
         transformerRefs = Seq(
           "cp:functional.Transformer1",
-          "cp:functional.Transformer2"
+          "cp:functional.Transformer2",
+          "cp:functional.Transformer3",
         )
       )
       createOtoroshiService(service1).futureValue
 
       TransformersCounters.counter.get() mustBe 0
-      counter1 mustBe 0
+      TransformersCounters.counter3.get() mustBe 0
+      counter1.get() mustBe 0
 
       val resp1 = call1(Map.empty)
 
       TransformersCounters.counter.get() mustBe 3
-      counter1 mustBe 1
+      TransformersCounters.counter3.get() mustBe 1
+      counter1.get() mustBe 1
       resp1.status mustBe 200
 
 
@@ -222,7 +225,8 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         .futureValue
 
       TransformersCounters.counter.get() mustBe 7
-      counter1 mustBe 1
+      TransformersCounters.counter3.get() mustBe 1
+      counter1.get() mustBe 1
       resp2.status mustBe 201
 
       deleteOtoroshiService(service1).futureValue
@@ -234,6 +238,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
 object TransformersCounters {
   val counter = new AtomicInteger(0)
+  val counter3 = new AtomicInteger(0)
 }
 
 class Transformer1 extends RequestTransformer {
@@ -257,5 +262,12 @@ class Transformer2 extends RequestTransformer {
     } else {
       FastFuture.successful(Right(context.otoroshiRequest))
     }
+  }
+}
+
+class Transformer3 extends RequestTransformer {
+  override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
+    TransformersCounters.counter3.incrementAndGet()
+    FastFuture.successful(Right(context.otoroshiRequest))
   }
 }
