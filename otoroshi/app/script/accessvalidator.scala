@@ -16,6 +16,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.{ClientCertificateValidator, PemHeaders}
+import utils.TypedMap
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -70,15 +71,33 @@ trait AccessValidator {
 }
 
 case class AccessContext(
+  snowflake: String,
   index: Int,
   request: RequestHeader,
   descriptor: ServiceDescriptor,
   user: Option[PrivateAppsUser],
   apikey: Option[ApiKey],
-  config: JsValue
+  config: JsValue,
+  attrs: TypedMap
   // TODO: add user-agent infos
   // TODO: add client geoloc infos
-)
+) {
+  def conf[A](prefix: String = "config-"): Option[JsValue] = {
+    config match {
+      case json: JsArray => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
+      case json: JsObject => (json \ s"$prefix$index").asOpt[JsValue]
+      case _ => None
+    }
+  }
+  def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+    val conf = config match {
+      case json: JsArray => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
+      case json: JsObject => (json \ s"$prefix$index").as[JsValue]
+      case _ => Json.obj()
+    }
+    (conf \ key).asOpt[A]
+  }
+}
 
 object DefaultValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {

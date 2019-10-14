@@ -332,6 +332,7 @@ class WebSocketHandler()(implicit env: Env) {
     logger.trace("[WEBSOCKET] proxy ws call !!!")
 
     // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
+    val snowflake         = env.snowflakeGenerator.nextIdStr()
     val calledAt         = DateTime.now()
     val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber        = reqCounter.incrementAndGet()
@@ -461,7 +462,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   apiKey: Option[ApiKey] = None,
                                   paUsr: Option[PrivateAppsUser] = None
                               ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-                                desc.wsValidateClientCertificates(req, apiKey, paUsr, config) {
+                                desc.wsValidateClientCertificates(snowflake, req, apiKey, paUsr, config) {
                                   passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
                                     if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                       val cbStart = System.currentTimeMillis()
@@ -562,7 +563,6 @@ class WebSocketHandler()(implicit env: Env) {
                                   callAttempts: Int
                               ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                                 logger.trace("[WEBSOCKET] Call downstream !!!")
-                                val snowflake  = env.snowflakeGenerator.nextIdStr()
                                 val stateValue = IdGenerator.extendedToken(128)
                                 val stateToken: String = descriptor.secComVersion match {
                                   case SecComVersion.V1 => stateValue
@@ -786,7 +786,8 @@ class WebSocketHandler()(implicit env: Env) {
                                       apikey = apiKey,
                                       user = paUsr,
                                       request = req,
-                                      config = descriptor.transformerConfig
+                                      config = descriptor.transformerConfig,
+                                      attrs = utils.TypedMap.empty
                                     )
                                   )
                                   .flatMap {

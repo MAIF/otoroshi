@@ -749,6 +749,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     //   chain.foreach(c => logger.info(s"incoming cert chain: $c"))
     // }
     // req.clientCertificateChain.getOrElse(logger.info("no cert chain"))
+    val snowflake           = env.snowflakeGenerator.nextIdStr()
     val callDate            = DateTime.now()
     val reqNumber           = reqCounter.incrementAndGet()
     val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
@@ -909,7 +910,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     def callDownstream(config: GlobalConfig,
                                                        apiKey: Option[ApiKey] = None,
                                                        paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                                      desc.validateClientCertificates(req, apiKey, paUsr, config) {
+                                      desc.validateClientCertificates(snowflake, req, apiKey, paUsr, config) {
                                         passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
                                           if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                             val cbStart = System.currentTimeMillis()
@@ -1048,7 +1049,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                paUsr: Option[PrivateAppsUser] = None,
                                                                cbDuration: Long,
                                                                callAttempts: Int): Future[Result] = {
-                                      val snowflake        = env.snowflakeGenerator.nextIdStr()
+                                      //val snowflake        = env.snowflakeGenerator.nextIdStr()
                                       val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
                                       val jti              = IdGenerator.uuid
                                       val stateValue       = IdGenerator.extendedToken(128)
@@ -1330,7 +1331,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             apikey = apiKey,
                                             user = paUsr,
                                             request = req,
-                                            config = descriptor.transformerConfig
+                                            config = descriptor.transformerConfig,
+                                            attrs = utils.TypedMap.empty
                                           )
                                         )
                                       val finalBody = descriptor.transformRequestBody(
@@ -1344,7 +1346,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           user = paUsr,
                                           request = req,
                                           config = descriptor.transformerConfig,
-                                          body = lazySource
+                                          body = lazySource,
+                                          attrs = utils.TypedMap.empty
                                         )
                                       )
                                       finalRequest.flatMap {
@@ -1603,7 +1606,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       apikey = apiKey,
                                                       user = paUsr,
                                                       request = req,
-                                                      config = descriptor.transformerConfig
+                                                      config = descriptor.transformerConfig,
+                                                      attrs = utils.TypedMap.empty
                                                     )
                                                   )
                                                   .flatMap {
@@ -1681,7 +1685,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           user = paUsr,
                                                           request = req,
                                                           config = descriptor.transformerConfig,
-                                                          body = theStream
+                                                          body = theStream,
+                                                          attrs = utils.TypedMap.empty
                                                         )
                                                       )
 

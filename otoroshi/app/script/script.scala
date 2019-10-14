@@ -24,6 +24,7 @@ import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
+import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -55,8 +56,24 @@ sealed trait TransformerContext {
   def user: Option[PrivateAppsUser]
   def request: RequestHeader
   def config: JsValue
+  def attrs: TypedMap
   // TODO: add user-agent infos
   // TODO: add client geoloc infos
+  def conf[A](prefix: String = "config-"): Option[JsValue] = {
+    config match {
+      case json: JsArray => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
+      case json: JsObject => (json \ s"$prefix$index").asOpt[JsValue]
+      case _ => None
+    }
+  }
+  def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+    val conf = config match {
+      case json: JsArray => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
+      case json: JsObject => (json \ s"$prefix$index").as[JsValue]
+      case _ => Json.obj()
+    }
+    (conf \ key).asOpt[A]
+  }
 }
 
 case class TransformerRequestContext(
@@ -68,7 +85,8 @@ case class TransformerRequestContext(
   apikey: Option[ApiKey],
   user: Option[PrivateAppsUser],
   request: RequestHeader,
-  config: JsValue
+  config: JsValue,
+  attrs: TypedMap
 ) extends TransformerContext {}
 
 case class TransformerResponseContext(
@@ -80,7 +98,8 @@ case class TransformerResponseContext(
   apikey: Option[ApiKey],
   user: Option[PrivateAppsUser],
   request: RequestHeader,
-  config: JsValue
+  config: JsValue,
+  attrs: TypedMap
 ) extends TransformerContext {}
 
 case class TransformerRequestBodyContext(
@@ -93,7 +112,8 @@ case class TransformerRequestBodyContext(
   apikey: Option[ApiKey],
   user: Option[PrivateAppsUser],
   request: RequestHeader,
-  config: JsValue
+  config: JsValue,
+  attrs: TypedMap
 ) extends TransformerContext {}
 
 case class TransformerResponseBodyContext(
@@ -106,7 +126,8 @@ case class TransformerResponseBodyContext(
   apikey: Option[ApiKey],
   user: Option[PrivateAppsUser],
   request: RequestHeader,
-  config: JsValue
+  config: JsValue,
+  attrs: TypedMap
 ) extends TransformerContext {}
 
 trait RequestTransformer {

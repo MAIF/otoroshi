@@ -1890,6 +1890,7 @@ case class ServiceDescriptor(
   lazy val _domain: String  = s"$subdomain$theLine$theDomain"
 
   def validateClientCertificates(
+      snowflake: String,
       req: RequestHeader,
       apikey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None,
@@ -1906,11 +1907,13 @@ case class ServiceDescriptor(
               case Right(validator)  => validator
             }
             validator.access(AccessContext(
+              snowflake = snowflake,
               index = index,
               request = req,
               descriptor = this,
               user = user,
               apikey = apikey,
+              attrs = utils.TypedMap.empty,
               config = accessValidator.config match {
                 case json: JsArray => Option(json.value(index)).getOrElse(accessValidator.config)
                 case json: JsObject => json
@@ -1963,7 +1966,8 @@ case class ServiceDescriptor(
 
   import play.api.http.websocket.{Message => PlayWSMessage}
 
-  def wsValidateClientCertificates(req: RequestHeader,
+  def wsValidateClientCertificates(snowflake: String,
+                                   req: RequestHeader,
                                    apikey: Option[ApiKey] = None,
                                    user: Option[PrivateAppsUser] = None,
                                    config: GlobalConfig)(
@@ -1998,11 +2002,13 @@ case class ServiceDescriptor(
               case Right(validator)  => validator
             }
             validator.access(AccessContext(
+              snowflake = snowflake,
               index = index,
               request = req,
               descriptor = this,
               user = user,
               apikey = apikey,
+              attrs = utils.TypedMap.empty,
               config = accessValidator.config match {
                 case json: JsArray => Option(json.value(index)).getOrElse(accessValidator.config)
                 case json: JsObject => json
