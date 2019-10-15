@@ -22,6 +22,7 @@ import otoroshi.script
 import otoroshi.script._
 import play.api.Configuration
 import play.api.libs.json.Json
+import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Result, Results}
 import security.IdGenerator
 
@@ -209,19 +210,21 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         transformerRefs = Seq(
           "cp:functional.Transformer1",
           "cp:functional.Transformer2",
-          "cp:functional.Transformer3",
+          "cp:functional.Transformer3"
         )
       )
       createOtoroshiService(service1).futureValue
 
       TransformersCounters.counter.get() mustBe 0
       TransformersCounters.counter3.get() mustBe 0
+      TransformersCounters.attrsCounter.get() mustBe 0
       counter1.get() mustBe 0
 
       val resp1 = call1(Map.empty)
 
       TransformersCounters.counter.get() mustBe 3
       TransformersCounters.counter3.get() mustBe 1
+      TransformersCounters.attrsCounter.get() mustBe 2
       counter1.get() mustBe 1
       resp1.status mustBe 200
 
@@ -233,6 +236,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
       TransformersCounters.counter.get() mustBe 7
       TransformersCounters.counter3.get() mustBe 1
+      TransformersCounters.attrsCounter.get() mustBe 3
       counter1.get() mustBe 1
       resp2.status mustBe 201
 
@@ -244,14 +248,22 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 }
 
 object TransformersCounters {
+  val attrsCounter = new AtomicInteger(0)
   val counterValidator = new AtomicInteger(0)
   val counter = new AtomicInteger(0)
   val counter3 = new AtomicInteger(0)
 }
 
+case class FakeUser(username: String)
+
+object Attrs {
+  val CurrentUserKey = TypedKey[FakeUser]("current-user")
+}
+
 class Transformer1 extends RequestTransformer {
   override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     TransformersCounters.counter.incrementAndGet()
+    context.attrs.put(Attrs.CurrentUserKey -> FakeUser("bobby"))
     FastFuture.successful(Right(context.otoroshiRequest.copy(headers = context.otoroshiRequest.headers ++ Map(
       "foo" -> "bar"
     ))))
@@ -261,6 +273,10 @@ class Transformer1 extends RequestTransformer {
 class Transformer2 extends RequestTransformer {
   override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     TransformersCounters.counter.incrementAndGet()
+    context.attrs.get(Attrs.CurrentUserKey) match {
+      case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
+      case None =>
+    }
     if (context.otoroshiRequest.headers.get("foo").contains("bar")) {
       TransformersCounters.counter.incrementAndGet()
     }
@@ -276,6 +292,10 @@ class Transformer2 extends RequestTransformer {
 class Transformer3 extends RequestTransformer {
   override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     TransformersCounters.counter3.incrementAndGet()
+    context.attrs.get(Attrs.CurrentUserKey) match {
+      case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
+      case _ =>
+    }
     FastFuture.successful(Right(context.otoroshiRequest))
   }
 }

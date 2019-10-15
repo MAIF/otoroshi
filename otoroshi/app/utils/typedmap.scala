@@ -27,6 +27,10 @@ object TypedMap {
 
 final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends TypedMap {
 
+  override def toString: String = m.mkString("{", ", ", "}")
+
+  override def toMap: Map[TypedKey[_], Any] = m.toMap
+
   override def get[A](key: TypedKey[A]): Option[A] = m.get(key).asInstanceOf[Option[A]]
 
   override def contains(key: TypedKey[_]): Boolean = m.contains(key)
@@ -45,16 +49,12 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
     this
   }
 
-  override def toString: String = m.mkString("{", ", ", "}")
-
   override def remove(entries: TypedEntry[_]*): TypedMap = {
     entries.foreach { e =>
       m.remove(e.key)
     }
     this
   }
-
-  override def toMap: Map[TypedKey[_], Any] = m.toMap
 
   override def replace(entries: TypedEntry[_]*): TypedMap = {
     entries.foreach { e =>
