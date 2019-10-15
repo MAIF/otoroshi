@@ -24,7 +24,7 @@ import org.joda.time.DateTime
 import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.{BadGateway, Forbidden, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
 import play.api.mvc._
@@ -1694,6 +1694,14 @@ class WebSocketProxyActor(url: String,
     case msg: PlayWSTextMessage => {
       logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
+    }
+    case msg: PingMessage => {
+      logger.debug(s"[WEBSOCKET] Ping message from client: ${msg.data}")
+      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
+    }
+    case msg: PongMessage => {
+      logger.debug(s"[WEBSOCKET] Pong message from client: ${msg.data}")
+      Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case CloseMessage(status, reason) => {
       logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
