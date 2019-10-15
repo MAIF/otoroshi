@@ -11,7 +11,7 @@ import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
+import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthUser, GenericOauth2ModuleConfig}
 import cluster.{ClusterMode, MemberView, StatsView}
 import env.Env
 import events._
@@ -2321,6 +2321,42 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def deleteGlobalAuthModule(id: String) = ApiAction.async { ctx =>
     env.datastores.authConfigsDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+  }
+
+  def startRegistration(id: String) = ApiAction.async { ctx =>
+    env.datastores.authConfigsDataStore.findById(id).flatMap {
+      case Some(auth) => {
+        auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
+          case bam: BasicAuthModule if bam.authConfig.webauthn => bam.webAuthnRegistrationStart(ctx.request.body.asJson.get).map {
+            case Left(err) => BadRequest(err)
+            case Right(reg) => Ok(reg)
+          }
+          case _ => BadRequest(Json.obj("error" -> s"Not supported")).future
+        }
+      }
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"GlobalAuthModule with id $id not found")
+        ).future
+    }
+  }
+
+  def finishRegistration(id: String) = ApiAction.async { ctx =>
+    env.datastores.authConfigsDataStore.findById(id).flatMap {
+      case Some(auth) => {
+        auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
+          case bam: BasicAuthModule if bam.authConfig.webauthn => bam.webAuthnRegistrationFinish(ctx.request.body.asJson.get).map {
+            case Left(err) => BadRequest(err)
+            case Right(reg) => Ok(reg)
+          }
+          case _ => BadRequest(Json.obj("error" -> s"Not supported")).future
+        }
+      }
+      case None =>
+        NotFound(
+          Json.obj("error" -> s"GlobalAuthModule with id $id not found")
+        ).future
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -310,7 +310,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         }
       } else {
         Results
-          .Ok(views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, env))
+          .Ok(views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, false, env))
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
@@ -398,7 +398,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         }
       } else {
         Results
-          .Ok(views.html.otoroshi.login(s"/backoffice/auth0/callback", "POST", token, env))
+          .Ok(views.html.otoroshi.login(s"/backoffice/auth0/callback", "POST", token, false, env))
           .addingToSession(
             "bo-redirect-after-login" -> redirect.getOrElse(
               routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)

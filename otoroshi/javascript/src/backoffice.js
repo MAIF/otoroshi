@@ -15,7 +15,8 @@ import ReactDOM from 'react-dom';
 import browserUpdate from 'browser-update';
 import { BackOfficeApp } from './apps/BackOfficeApp';
 import { U2FLoginPage } from './pages/U2FLoginPage';
-import { GenericLoginPage } from './pages/GenericLoginPage';
+import { GenericLoginPage, GenericLoginPageWithWebAuthn } from './pages/GenericLoginPage';
+import { SelfUpdatePage } from './pages/SelfUpdatePage';
 import * as BackOfficeServices from './services/BackOfficeServices';
 
 import { registerAlert, registerConfirm, registerPrompt } from './components/window';
@@ -128,5 +129,15 @@ export function login(node, otoroshiLogo) {
 export function genericLogin(opts, node) {
   setupOutdatedBrowser();
   setupWindowUtils();
-  ReactDOM.render(<GenericLoginPage {...opts} />, node);
+  if (opts.webauthn) {
+    ReactDOM.render(<GenericLoginPageWithWebAuthn {...opts} />, node);
+  } else {
+    ReactDOM.render(<GenericLoginPage {...opts} />, node);
+  }
+}
+
+export function selfUpdate(opts, node) {
+  setupOutdatedBrowser();
+  setupWindowUtils();
+  ReactDOM.render(<SelfUpdatePage {...opts} />, node);
 }

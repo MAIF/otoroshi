@@ -12,10 +12,112 @@ import { Proxy } from './Proxy';
 import { Separator } from './Separator';
 import { AlgoSettings } from './JwtVerifier';
 
+import * as BackOfficeServices from '../services/BackOfficeServices';
+
 import deepSet from 'set-value';
 import _ from 'lodash';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
+
+function Base64Url() {
+
+  let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+  // Use a lookup table to find the index.
+  let lookup = new Uint8Array(256);
+  for (let i = 0; i < chars.length; i++) {
+      lookup[chars.charCodeAt(i)] = i;
+  }
+
+  let encode = function(arraybuffer) {
+      let bytes = new Uint8Array(arraybuffer),
+      i, len = bytes.length, base64url = '';
+
+      for (i = 0; i < len; i+=3) {
+          base64url += chars[bytes[i] >> 2];
+          base64url += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
+          base64url += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
+          base64url += chars[bytes[i + 2] & 63];
+      }
+
+      if ((len % 3) === 2) {
+          base64url = base64url.substring(0, base64url.length - 1);
+      } else if (len % 3 === 1) {
+          base64url = base64url.substring(0, base64url.length - 2);
+      }
+
+      return base64url;
+  };
+
+  let decode = function(base64string) {
+      let bufferLength = base64string.length * 0.75,
+      len = base64string.length, i, p = 0,
+      encoded1, encoded2, encoded3, encoded4;
+
+      let bytes = new Uint8Array(bufferLength);
+
+      for (i = 0; i < len; i+=4) {
+          encoded1 = lookup[base64string.charCodeAt(i)];
+          encoded2 = lookup[base64string.charCodeAt(i+1)];
+          encoded3 = lookup[base64string.charCodeAt(i+2)];
+          encoded4 = lookup[base64string.charCodeAt(i+3)];
+
+          bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+          bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+          bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+      }
+
+      return bytes.buffer
+  };
+
+  return {
+    'decode': decode,
+    'encode': encode,
+    'fromByteArray': encode,
+    'toByteArray': decode
+  };
+}
+
+const base64url = Base64Url();
+
+
+function responseToObject(response) {
+  if (response.u2fResponse) {
+    return response;
+  } else {
+    let clientExtensionResults = {};
+
+    try {
+      clientExtensionResults = response.getClientExtensionResults();
+    } catch (e) {
+      console.error('getClientExtensionResults failed', e);
+    }
+
+    if (response.response.attestationObject) {
+      return {
+        type: response.type,
+        id: response.id,
+        response: {
+          attestationObject: base64url.fromByteArray(response.response.attestationObject),
+          clientDataJSON: base64url.fromByteArray(response.response.clientDataJSON),
+        },
+        clientExtensionResults,
+      };
+    } else {
+      return {
+        type: response.type,
+        id: response.id,
+        response: {
+          authenticatorData: base64url.fromByteArray(response.response.authenticatorData),
+          clientDataJSON: base64url.fromByteArray(response.response.clientDataJSON),
+          signature: base64url.fromByteArray(response.response.signature),
+          userHandle: response.response.userHandle && base64url.fromByteArray(response.response.userHandle),
+        },
+        clientExtensionResults,
+      };
+    }
+  }
+}
 
 export class Oauth2ModuleConfig extends Component {
   state = {
@@ -330,6 +432,75 @@ export class User extends Component {
     rawUser: JSON.stringify(this.props.user.metadata),
   };
 
+  handleErrorWithMessage = message => () => {
+    console.log('error', message)
+    this.setState({ error: message });
+  };
+
+  registerWebAuthn = (e) => {
+
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+
+    const username = this.props.user.email;
+    const label = this.props.user.name;
+
+    return this.props.save().then(() => {
+      return fetch(`/bo/api/proxy/api/auths/${this.props.authModuleId}/register/start`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password: '',
+          label,
+          origin: window.location.origin
+        })
+      }).then(r => r.json()).then(resp => {
+        const requestId = resp.requestId;
+        const publicKeyCredentialCreationOptions = resp.request;
+        const handle = publicKeyCredentialCreationOptions.user.id + '';
+        publicKeyCredentialCreationOptions.challenge = base64url.decode(publicKeyCredentialCreationOptions.challenge);
+        publicKeyCredentialCreationOptions.user.id = base64url.decode(publicKeyCredentialCreationOptions.user.id);
+        return navigator.credentials.create({
+          publicKey: publicKeyCredentialCreationOptions
+        }, this.handleErrorWithMessage('Webauthn error')).then(credentials => {
+          const json = responseToObject(credentials);
+          return fetch(`/bo/api/proxy/api/auths/${this.props.authModuleId}/register/finish`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              requestId,
+              webauthn: json, 
+              otoroshi: { 
+                origin: window.location.origin,
+                username,
+                password: '',
+                label,
+                handle
+              } 
+            }),
+          }).then(r => r.json()).then(resp => {
+            this.props.updateAll();
+            console.log('done');
+            this.setState({
+              error: null,
+              message: `Registration done for '${username}'`,
+            });
+          });
+        }, this.handleErrorWithMessage('Webauthn error')).catch(this.handleError);
+      });
+    });
+  };
+
   render() {
     return (
       <div
@@ -397,6 +568,39 @@ export class User extends Component {
           style={{ marginLeft: 5 }}>
           Generate password
         </button>
+        {this.props.webauthn && (
+          <button
+            type="button"s
+            className="btn btn-sm btn-info"
+            onClick={e => {
+              return fetch(`/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${this.props.user.email}`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  Accept: 'application/json',
+                },
+              }).then(r => r.json()).then(r => {
+                console.log(r);
+                const sessionId = r.sessionId;
+                window.newAlert(<div>
+                  <p>The link is :</p>
+                  <a target="_blank" href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
+                </div>);
+              });
+            }}
+            style={{ marginLeft: 5 }}>
+            Setup link
+          </button>
+        )}
+        {this.props.webauthn && (
+          <button
+            type="button"s
+            className="btn btn-sm btn-info"
+            onClick={this.registerWebAuthn}
+            style={{ marginLeft: 5 }}>
+            Register device
+          </button>
+        )}
         <button
           type="button"
           className="btn btn-sm btn-danger"
@@ -471,6 +675,16 @@ export class BasicModuleConfig extends Component {
     this.props.onChange(newValue);
   };
 
+  updateAll = () => {
+    const settings = this.props.value || this.props.settings;
+    return BackOfficeServices.findAuthConfigById(settings.id).then(auth => this.props.onChange(auth));
+  }
+
+  save = () => {
+    const settings = this.props.value || this.props.settings;
+    return BackOfficeServices.updateAuthConfig(settings).then(auth => this.props.onChange(auth));
+  }
+
   render() {
     const settings = this.props.value || this.props.settings;
     const path = this.props.path || '';
@@ -502,6 +716,7 @@ export class BasicModuleConfig extends Component {
         <NumberInput
           label="Session max. age"
           value={settings.sessionMaxAge}
+          placeholder="86400"
           help="..."
           suffix="seconds"
           onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
@@ -512,6 +727,12 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.basicAuth', v)}
         />
+        <BooleanInput
+          label="Login with WebAuthn"
+          value={settings.webauthn}
+          help="..."
+          onChange={v => changeTheValue(path + '.webauthn', v)}
+        />
         <div className="form-group">
           <label htmlFor={`input-users`} className="col-sm-2 control-label">
             Users
@@ -520,9 +741,13 @@ export class BasicModuleConfig extends Component {
             {this.props.value.users.map(user => (
               <User
                 user={user}
+                authModuleId={settings.id}
                 removeUser={this.removeUser}
                 hashPassword={this.hashPassword}
+                webauthn={settings.webauthn}
                 onChange={this.changeField}
+                updateAll={this.updateAll}
+                save={this.save}
               />
             ))}
             <button

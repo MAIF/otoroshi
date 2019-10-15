@@ -1,6 +1,8 @@
 @import env.Env
 
-@(action: String, method: String, token: String, webauthn: Boolean, _env: Env)
+@import play.api.libs.json._
+
+@(user: JsValue, session: String, webauthn: Boolean, _env: Env)
 
 @authScript = {
 @if(_env.liveJs) {
@@ -9,16 +11,14 @@
     <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/backoffice.js?v=${_env.hash}")"></script>
 }
     <script>
-        Otoroshi.genericLogin({
-            method: '@method',
-            action: '@action',
-            token: '@token',
-            webauthn: @webauthn,
-            otoroshiLogo: '@(_env.otoroshiLogo)'
+        Otoroshi.selfUpdate({
+          webauthn: @webauthn,
+          session: '@session',
+          user: @Html(Json.stringify(user))
         }, document.getElementById("app"));
     </script>
 }
 
-@main("Login", _env, moreScripts = authScript) {
+@main("Update your profile", _env, moreScripts = authScript) {
     <div id="app"></div>
 }

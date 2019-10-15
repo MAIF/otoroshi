@@ -81,6 +81,12 @@ GET     /privateapps/error                                    controllers.Privat
 GET     /privateapps/home                                     controllers.PrivateAppsController.home
 GET     /privateapps/redirect                                 controllers.PrivateAppsController.redirect
 
+POST    /privateapps/register/start                           controllers.PrivateAppsController.selfRegistrationStart()
+POST    /privateapps/register/finish                          controllers.PrivateAppsController.selfRegistrationFinish()
+GET     /privateapps/profile                                  controllers.PrivateAppsController.selfUpdateProfilePage()
+POST    /privateapps/profile                                  controllers.PrivateAppsController.selfUpdateProfile()
+POST    /api/privateapps/sessions/:id/:username               controllers.PrivateAppsController.registerSession(id, username)
+
 OPTIONS /privateapps/generic/login                            controllers.AuthController.confidentialAppLoginPageOptions()
 GET     /privateapps/generic/login                            controllers.AuthController.confidentialAppLoginPage()
 GET     /privateapps/generic/logout                           controllers.AuthController.confidentialAppLogout()
@@ -199,6 +205,8 @@ PATCH   /api/client-validators/:id                            ssl.ClientValidato
 GET     /api/client-validators                                ssl.ClientValidatorsController.findAllClientValidators()
 POST    /api/client-validators                                ssl.ClientValidatorsController.createClientValidator()
 
+POST    /api/auths/:id/register/start                         controllers.ApiController.startRegistration(id)
+POST    /api/auths/:id/register/finish                        controllers.ApiController.finishRegistration(id)
 GET     /api/auths/:id                                        controllers.ApiController.findGlobalAuthModuleById(id)
 DELETE  /api/auths/:id                                        controllers.ApiController.deleteGlobalAuthModule(id)
 PUT     /api/auths/:id                                        controllers.ApiController.updateGlobalAuthModule(id)
