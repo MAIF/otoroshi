@@ -789,8 +789,8 @@ export class ServicePage extends Component {
       } else if (item === 'cp:otoroshi.script.HasClientCertMatchingValidator') {
         newConfig = appendToConfig(newConfig, {
           _cfgFor: 'otoroshi.script.HasClientCertMatchingValidator',
-          subjectDN: 'CN=localhost',
-          issuerDN: 'CN=remotehost'
+          subjectDNs: ['CN=localhost'],
+          issuerDNs: ['CN=remotehost']
         });
       } else if (item === 'cp:otoroshi.script.HasAllowedUsersValidator') {
         newConfig = appendToConfig(newConfig, {

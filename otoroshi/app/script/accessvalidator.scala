@@ -16,7 +16,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.{ClientCertificateValidator, PemHeaders}
-import utils.TypedMap
+import utils.{RegexPool, TypedMap}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -136,16 +136,28 @@ class HasClientCertMatchingValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
-        val subjectDnMatching = (context.config \ "subjectDN").asOpt[String]
-        val issuerDnMatching = (context.config \ "issuerDN").asOpt[String]
-        (subjectDnMatching, issuerDnMatching) match {
-          case (None, None)                  => FastFuture.successful(true)
-          case (Some(subject), None)         => FastFuture.successful(certs.exists(_.getSubjectDN.getName.matches(subject)))
-          case (None, Some(issuer))          => FastFuture.successful(certs.exists(_.getIssuerDN.getName.matches(issuer)))
-          case (Some(subject), Some(issuer)) => FastFuture.successful(
-            certs.exists(_.getSubjectDN.getName.matches(subject)) && certs.exists(_.getIssuerDN.getName.matches(issuer))
-          )
+        val allowedSubjectDNs = (context.config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedIssuertDNs = (context.config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val rallowedSubjectDNs = (context.config \ "rSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val rallowedIssuertDNs = (context.config \ "rIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        if (certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
+            certs.exists(cert => allowedIssuertDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
+            certs.exists(cert => rallowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
+            certs.exists(cert => rallowedIssuertDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
+          FastFuture.successful(true)
+        } else {
+          FastFuture.successful(false)
         }
+        // val subjectDnMatching = (context.config \ "subjectDN").asOpt[String]
+        // val issuerDnMatching = (context.config \ "issuerDN").asOpt[String]
+        // (subjectDnMatching, issuerDnMatching) match {
+        //   case (None, None)                  => FastFuture.successful(true)
+        //   case (Some(subject), None)         => FastFuture.successful(certs.exists(_.getSubjectDN.getName.matches(subject)))
+        //   case (None, Some(issuer))          => FastFuture.successful(certs.exists(_.getIssuerDN.getName.matches(issuer)))
+        //   case (Some(subject), Some(issuer)) => FastFuture.successful(
+        //     certs.exists(_.getSubjectDN.getName.matches(subject)) && certs.exists(_.getIssuerDN.getName.matches(issuer))
+        //   )
+        // }
       }
       case _ => FastFuture.successful(false)
     }
