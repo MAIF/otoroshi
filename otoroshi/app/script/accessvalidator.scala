@@ -137,13 +137,13 @@ class HasClientCertMatchingValidator extends AccessValidator {
     context.request.clientCertificateChain match {
       case Some(certs) => {
         val allowedSubjectDNs = (context.config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedIssuertDNs = (context.config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val rallowedSubjectDNs = (context.config \ "rSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val rallowedIssuertDNs = (context.config \ "rIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedIssuerDNs = (context.config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val regexAllowedSubjectDNs = (context.config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val regexAllowedIssuerDNs = (context.config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
-            certs.exists(cert => allowedIssuertDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
-            certs.exists(cert => rallowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
-            certs.exists(cert => rallowedIssuertDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
+            certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
+            certs.exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
+            certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)
