@@ -10,13 +10,15 @@ import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig}
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
 import gateway.Errors
-import models.{CorsSettings, PrivateAppsUser, ServiceDescriptor}
+import models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import cluster.ClusterMode
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 import security.IdGenerator
+
+import utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -362,6 +364,33 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
     BackOfficeAction.async { ctx =>
       implicit val request = ctx.request
 
+      def saveUser(user: BackOfficeUser, auth: AuthModuleConfig, webauthn: Boolean)(implicit req: RequestHeader) = {
+        user
+          .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
+          .map { boUser =>
+            env.datastores.backOfficeUserDataStore.hasAlreadyLoggedIn(user.email).map {
+              case false => {
+                env.datastores.backOfficeUserDataStore.alreadyLoggedIn(user.email)
+                Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+              }
+              case true => {
+                Alerts
+                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+              }
+            }
+            Redirect(
+              request.session
+                .get("bo-redirect-after-login")
+                .getOrElse(
+                  routes.BackOfficeController
+                    .index()
+                    .absoluteURL(env.exposedRootSchemeIsHttps)
+                )
+            ).removingFromSession("bo-redirect-after-login")
+              .addingToSession("bousr" -> boUser.randomId)
+          }
+      }
+
       error match {
         case Some(e) => FastFuture.successful(BadRequest(views.html.backoffice.unauthorized(env)))
         case None => {
@@ -377,46 +406,51 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                   env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
                     case None =>
                       FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not found", env)))
-                    case Some(oauth) =>
-                      oauth.authModule(config).boCallback(ctx.request, config).flatMap {
-                        case Left(err) => {
-                          FastFuture.successful(
-                            BadRequest(
-                              views.html.otoroshi
-                                .error(message = s"You're not authorized here: ${error}",
-                                       _env = env,
-                                       title = "Authorization error")
-                            )
-                          )
-                        }
-                        case Right(user) => {
-                          logger.debug(s"Login successful for user '${user.email}'")
-                          user
-                            .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
-                            .map { boUser =>
-                              env.datastores.backOfficeUserDataStore.hasAlreadyLoggedIn(user.email).map {
-                                case false => {
-                                  env.datastores.backOfficeUserDataStore.alreadyLoggedIn(user.email)
-                                  Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
-                                }
-                                case true => {
-                                  Alerts
-                                    .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
-                                }
-                              }
-                              Redirect(
-                                request.session
-                                  .get("bo-redirect-after-login")
-                                  .getOrElse(
-                                    routes.BackOfficeController
-                                      .index()
-                                      .absoluteURL(env.exposedRootSchemeIsHttps)
-                                  )
-                              ).removingFromSession("bo-redirect-after-login")
-                                .addingToSession("bousr" -> boUser.randomId)
+                    case Some(oauth) => oauth match {
+
+
+                      case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
+                        val authModule = auth.authModule(config).asInstanceOf[BasicAuthModule]
+                        request.headers.get("WebAuthn-Login-Step") match {
+                          case Some("start") => {
+                            authModule.webAuthnAdminLoginStart(ctx.request.body.asJson.get).map {
+                              case Left(error) => BadRequest(Json.obj("error" -> error))
+                              case Right(reg) => Ok(reg)
                             }
+                          }
+                          case Some("finish") => {
+                            authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get).flatMap {
+                              case Left(error) => BadRequest(Json.obj("error" -> error)).future
+                              case Right(user) => saveUser(user, auth, true)(ctx.request)
+                            }
+                          }
+                          case _ => BadRequest(
+                            views.html.otoroshi
+                              .error(message = s"Missing step",
+                                _env = env,
+                                title = "Authorization error")
+                          ).asFuture
                         }
                       }
+                      case auth => {
+                        oauth.authModule(config).boCallback(ctx.request, config).flatMap {
+                          case Left(err) => {
+                            FastFuture.successful(
+                              BadRequest(
+                                views.html.otoroshi
+                                  .error(message = s"You're not authorized here: ${error}",
+                                    _env = env,
+                                    title = "Authorization error")
+                              )
+                            )
+                          }
+                          case Right(user) => {
+                            logger.debug(s"Login successful for user '${user.email}'")
+                            saveUser(user, auth, false)(ctx.request)
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }

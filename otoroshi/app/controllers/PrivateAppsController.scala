@@ -105,6 +105,16 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     }
   }
 
+  def selfRegistrationDelete() = Action.async { req =>
+    withShortSession(req) {
+      case (bam, user) =>
+        bam.webAuthnRegistrationDelete(user).map {
+          case Left(err) => BadRequest(err)
+          case Right(reg) => Ok(reg)
+        }
+    }
+  }
+
   def selfUpdateProfilePage() = Action.async { req =>
     withShortSession(req) {
       case (bam, user) =>
@@ -139,10 +149,22 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
                     "mustRegWebauthnDevice" -> bam.authConfig.webauthn
                   ))
                 }
-              case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password")))
+              case (None, None) =>
+                val password = user.password
+                newUser = newUser.copy(name = name, password = password)
+                val conf = bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
+                conf.save().map { _ =>
+                  Ok(Json.obj(
+                    "name" -> newUser.name,
+                    "email" -> newUser.email,
+                    "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
+                    "mustRegWebauthnDevice" -> bam.authConfig.webauthn
+                  ))
+                }
+              case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 1")))
             }
           }
-          case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password")))
+          case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 2")))
         }
     }
   }

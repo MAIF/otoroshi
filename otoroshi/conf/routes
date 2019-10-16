@@ -81,6 +81,7 @@ GET     /privateapps/error                                    controllers.Privat
 GET     /privateapps/home                                     controllers.PrivateAppsController.home
 GET     /privateapps/redirect                                 controllers.PrivateAppsController.redirect
 
+DELETE  /privateapps/registration                             controllers.PrivateAppsController.selfRegistrationDelete()
 POST    /privateapps/register/start                           controllers.PrivateAppsController.selfRegistrationStart()
 POST    /privateapps/register/finish                          controllers.PrivateAppsController.selfRegistrationFinish()
 GET     /privateapps/profile                                  controllers.PrivateAppsController.selfUpdateProfilePage()

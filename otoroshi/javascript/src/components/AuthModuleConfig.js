@@ -582,9 +582,10 @@ export class User extends Component {
               }).then(r => r.json()).then(r => {
                 console.log(r);
                 const sessionId = r.sessionId;
-                window.newAlert(<div>
+                window.newAlert(<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                   <p>The link is :</p>
                   <a target="_blank" href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
+                  <a target="_blank" href={`https://privateapps.oto.tools:9998/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
                 </div>);
               });
             }}

@@ -61,7 +61,6 @@ function Base64Url() {
 
 const base64url = Base64Url();
 
-
 function responseToObject(response) {
   if (response.u2fResponse) {
     return response;
@@ -106,7 +105,10 @@ export class SelfUpdatePage extends Component {
     name: this.props.user.name,
     password: '',
     newPassword: '',
-    reNewPassword: ''
+    reNewPassword: '',
+    webauthn: this.props.webauthn,
+    mustRegWebauthnDevice: this.props.user.mustRegWebauthnDevice,
+    hasWebauthnDeviceReg: this.props.user.hasWebauthnDeviceReg
   };
 
   onChange = e => {
@@ -121,8 +123,146 @@ export class SelfUpdatePage extends Component {
     };
   };
 
+  save = () => {
+    const username = this.state.email;
+    const password = this.state.password.trim();
+    const newPassword = this.state.newPassword.trim();
+    const reNewPassword = this.state.reNewPassword.trim();
+    const label = this.state.name.trim();
+    if (!password || password.length === 0) {
+      window.newAlert('You have to provide your current password', 'Password error');
+      return Promise.reject('You have to provide your current password');
+    }
+    if (!!newPassword && !reNewPassword) {
+      window.newAlert('Passwords does not match', 'Password error');
+      return Promise.reject('Passwords does not match');
+    }
+    if (!!newPassword && !!reNewPassword && newPassword !== reNewPassword) {
+      window.newAlert('Passwords does not match', 'Password error');
+      return Promise.reject('Passwords does not match');
+    }
+    return fetch(`/privateapps/profile?session=${this.props.session}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username,
+        password: password.length > 0 ? password : null,
+        label: label.length > 0 ? label : username,
+        newPassword: newPassword.length > 0 ? newPassword : null,
+        reNewPassword: reNewPassword.length > 0 ? reNewPassword : null,
+        origin: window.location.origin
+      })
+    }).then(r => r.json()).then(r => {
+      this.setState({
+        error: null,
+        password: '',
+        newPassword: '',
+        reNewPassword: '',
+        webauthn: this.state.webauthn,
+        mustRegWebauthnDevice: this.state.webauthn,
+      });
+      return {
+        username: r.email,
+        password: newPassword.length > 0 ? newPassword : (password.length > 0 ? password : null),
+        label: r.name
+      };
+    })
+  }
+
+  handleErrorWithMessage = message => (e) => {
+    console.log('error', message, e)
+    this.setState({ error: message });
+  };
+
+  delete = () => {
+    return fetch(`/privateapps/registration?session=${this.props.session}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      }
+    }).then(r => r.json())
+  }
+
+  registerWebAuthn = (e) => {
+
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+
+    this.setState({ message: null })
+
+    return this.save().then(user => {
+      this.delete().then(() => this.setState({ message: null , mustRegWebauthnDevice: true }));
+      return user;
+    }).then(user => {
+      const username = user.username;
+      const password = user.password;
+      const label = user.label;
+      const payload = {
+        username,
+        password,
+        label,
+        origin: window.location.origin
+      };
+      return fetch(`/privateapps/register/start?session=${this.props.session}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      }).then(r => r.json()).then(resp => {
+        const requestId = resp.requestId;
+        const publicKeyCredentialCreationOptions = resp.request;
+        const handle = publicKeyCredentialCreationOptions.user.id + '';
+        publicKeyCredentialCreationOptions.challenge = base64url.decode(publicKeyCredentialCreationOptions.challenge);
+        publicKeyCredentialCreationOptions.user.id = base64url.decode(publicKeyCredentialCreationOptions.user.id);
+        return navigator.credentials.create({
+          publicKey: publicKeyCredentialCreationOptions
+        }, this.handleErrorWithMessage('Webauthn error 1')).then(credentials => {
+          const json = responseToObject(credentials);
+          return fetch(`/privateapps/register/finish?session=${this.props.session}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              requestId,
+              webauthn: json, 
+              otoroshi: { 
+                origin: window.location.origin,
+                username,
+                password,
+                label,
+                handle
+              } 
+            }),
+          }).then(r => r.json()).then(resp => {
+            this.setState({
+              error: null,
+              password: '',
+              newPassword: '',
+              reNewPassword: '',
+              webauthn: this.state.webauthn,
+              mustRegWebauthnDevice: this.state.webauthn,
+              hasWebauthnDeviceReg: true,
+              message: `Registration done for '${username}'`,
+            });
+          });
+        }, this.handleErrorWithMessage('Webauthn error 2')).catch(this.handleError);
+      });
+    });
+  };
+
   render() {
-    console.log(this.props.user)
     return (
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Update your profile</h3>
@@ -189,36 +329,36 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          {this.props.webauthn && this.props.user.mustRegWebauthnDevice && <div className="form-group">
+          {this.state.webauthn && this.state.mustRegWebauthnDevice && <div className="form-group">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
-              {this.props.user.hasWebauthnDeviceReg && <p style={{ width: '100%', textAlign: 'left' }}>The auth. module requires strong authentication with Webauthn compatible device</p>}
-              {!this.props.user.hasWebauthnDeviceReg && <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>The auth. module requires strong authentication with Webauthn compatible device. You have to register a Webauthn compatible device or you won't be able to log in.</p>}
+              {this.state.hasWebauthnDeviceReg && <p style={{ width: '100%', textAlign: 'left' }}>The auth. module requires strong authentication with Webauthn compatible device. You have one device already registered</p>}
+              {!this.state.hasWebauthnDeviceReg && <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>The auth. module requires strong authentication with Webauthn compatible device. You have to register a Webauthn compatible device or you won't be able to log in.</p>}
             </div>
           </div>}
           <div className="form-group">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button
-                type="submit"
+                type="button"
                 className="btn"
                 style={{ marginLeft: 0 }}
-                onClick={this.update}>
+                onClick={this.save}>
                 Update name and/or password
               </button>
-              {this.props.webauthn && <button
-                type="submit"
+              {this.state.webauthn && <button
+                type="button"
                 className="btn"
                 style={{ marginLeft: 0 }}
-                onClick={this.register}>
-                Register webauthn device
+                onClick={this.registerWebAuthn}>
+                {this.state.hasWebauthnDeviceReg ? 'Register another webauthn device' : 'Register a new webauthn device'}
               </button>}
             </div>
           </div>
           <div className="form-group">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
-              <p>{!this.state.error && this.state.message}</p>
+              <p style={{ color: 'green', width: '100%', textAlign: 'left' }}>{!this.state.error && this.state.message}</p>
               <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
                 {!!this.state.error && this.state.error}
               </p>
