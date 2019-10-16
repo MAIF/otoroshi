@@ -309,17 +309,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def readCertOrKey(conf: Configuration, path: String, env: Env): Option[String] = {
     conf.getOptional[String](path).flatMap { cacert =>
-      if (cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) {
+      if ((cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) ||
+        (cacert.contains(PemHeaders.BeginPrivateKey) && cacert.contains(PemHeaders.EndPrivateKey)) ||
+        (cacert.contains(PemHeaders.BeginPrivateRSAKey) && cacert.contains(PemHeaders.EndPrivateRSAKey))) {
         Some(cacert)
       } else {
         val file = new File(cacert)
         if (file.exists()) {
           val content = new String(java.nio.file.Files.readAllBytes(file.toPath))
-          if (content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) {
-            Some(content)
-          } else if (content.contains(PemHeaders.BeginPrivateKey) && content.contains(PemHeaders.EndPrivateKey)) {
-            Some(content)
-          } else if (content.contains(PemHeaders.BeginPrivateRSAKey) && content.contains(PemHeaders.EndPrivateRSAKey)) {
+          if ((content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) ||
+            (content.contains(PemHeaders.BeginPrivateKey) && content.contains(PemHeaders.EndPrivateKey)) ||
+            (content.contains(PemHeaders.BeginPrivateRSAKey) && content.contains(PemHeaders.EndPrivateRSAKey))) {
             Some(content)
           } else {
             None
