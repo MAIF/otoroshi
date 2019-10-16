@@ -35,77 +35,10 @@ class RedisCertificateDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   val cancelRef      = new AtomicReference[Cancellable](null)
   val cancelRenewRef = new AtomicReference[Cancellable](null)
 
-  private def readCertOrKey(path: String, env: Env): Option[String] = {
-    env.configuration.getOptional[String](path).flatMap { cacert =>
-      if (cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) {
-        Some(cacert)
-      } else {
-        val file = new File(cacert)
-        if (file.exists()) {
-          val content = new String(java.nio.file.Files.readAllBytes(file.toPath))
-          if (content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) {
-            Some(content)
-          } else {
-            None
-          }
-        } else {
-          None
-        }
-      }
-    }
-  }
-
   def startSync(): Unit = {
     implicit val ec  = _env.otoroshiExecutionContext
     implicit val env = _env
-    readCertOrKey("otoroshi.ssl.initialCacert", env).foreach { cacert =>
-      val cert = Cert(
-        id = IdGenerator.uuid,
-        chain = cacert,
-        privateKey = "",
-        caRef = None,
-        ca = true
-      ).enrich()
-      findAll().map { certs =>
-        val found = certs
-          .map(_.enrich())
-          .exists(
-            c =>
-              (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
-          )
-        if (!found) {
-          cert.save()(ec, env).andThen {
-            case Success(e) => logger.info("Successful import of initial cacert !")
-            case Failure(e) => logger.error("Error while storing initial cacert ...", e)
-          }
-        }
-      }
-    }
-    for {
-      certContent <- readCertOrKey("otoroshi.ssl.initialCert", env)
-      keyContent  <- readCertOrKey("otoroshi.ssl.initialCertKey", env)
-    } yield {
-      val cert = Cert(
-        id = IdGenerator.uuid,
-        chain = certContent,
-        privateKey = keyContent,
-        caRef = None
-      ).enrich()
-      findAll().map { certs =>
-        val found = certs
-          .map(_.enrich())
-          .exists(
-            c =>
-              (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
-          )
-        if (!found) {
-          cert.save()(ec, env).andThen {
-            case Success(e) => logger.info("Successful import of initial cert !")
-            case Failure(e) => logger.error("Error while storing initial cert ...", e)
-          }
-        }
-      }
-    }
+    importInitialCerts(logger)
     cancelRenewRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour) {
       _env.datastores.certificatesDataStore.renewCertificates()
     })

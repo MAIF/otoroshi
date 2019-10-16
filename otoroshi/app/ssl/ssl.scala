@@ -31,7 +31,7 @@ import models._
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.joda.time.{DateTime, Interval}
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc._
@@ -49,7 +49,7 @@ import sun.security.x509._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 /**
  * git over http works with otoroshi
@@ -306,6 +306,88 @@ trait CertificateDataStore extends BasicStore[Cert] {
       Future.sequence(certs.map(_.save())).map(_ => ())
     }
   }
+
+  def readCertOrKey(conf: Configuration, path: String, env: Env): Option[String] = {
+    conf.getOptional[String](path).flatMap { cacert =>
+      if (cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) {
+        Some(cacert)
+      } else {
+        val file = new File(cacert)
+        if (file.exists()) {
+          val content = new String(java.nio.file.Files.readAllBytes(file.toPath))
+          if (content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) {
+            Some(content)
+          } else if (content.contains(PemHeaders.BeginPrivateKey) && content.contains(PemHeaders.EndPrivateKey)) {
+            Some(content)
+          } else if (content.contains(PemHeaders.BeginPrivateRSAKey) && content.contains(PemHeaders.EndPrivateRSAKey)) {
+            Some(content)
+          } else {
+            None
+          }
+        } else {
+          None
+        }
+      }
+    }
+  }
+
+  def importOneCert(conf: Configuration, caPath: String, certPath: String, keyPath: String, logger: Logger)(implicit env: Env, ec: ExecutionContext): Unit = {
+    readCertOrKey(conf, caPath, env).foreach { cacert =>
+      val cert = Cert(
+        id = IdGenerator.uuid,
+        chain = cacert,
+        privateKey = "",
+        caRef = None,
+        ca = true
+      ).enrich()
+      findAll().map { certs =>
+        val found = certs
+          .map(_.enrich())
+          .exists(
+            c =>
+              (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
+          )
+        if (!found) {
+          cert.save()(ec, env).andThen {
+            case Success(e) => logger.info("Successful import of initial cacert !")
+            case Failure(e) => logger.error("Error while storing initial cacert ...", e)
+          }
+        }
+      }
+    }
+    for {
+      certContent <- readCertOrKey(conf, certPath, env)
+      keyContent  <- readCertOrKey(conf, keyPath, env)
+    } yield {
+      val cert = Cert(
+        id = IdGenerator.uuid,
+        chain = certContent,
+        privateKey = keyContent,
+        caRef = None
+      ).enrich()
+      findAll().map { certs =>
+        val found = certs
+          .map(_.enrich())
+          .exists(
+            c =>
+              (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
+          )
+        if (!found) {
+          cert.save()(ec, env).andThen {
+            case Success(e) => logger.info("Successful import of initial cert !")
+            case Failure(e) => logger.error("Error while storing initial cert ...", e)
+          }
+        }
+      }
+    }
+  }
+
+  def importInitialCerts(logger: Logger)(implicit env: Env, ec: ExecutionContext) = {
+    importOneCert(env.configuration, "otoroshi.ssl.initialCacert", "otoroshi.ssl.initialCert", "otoroshi.ssl.initialCertKey", logger)(env, ec)
+    env.configuration.getOptional[Seq[Configuration]]("otoroshi.ssl.initialCerts").getOrElse(Seq.empty[Configuration]).foreach { conf =>
+      importOneCert(conf,"ca", "cert", "key", logger)(env, ec)
+    }
+  }
 }
 
 object DynamicSSLEngineProvider {
@@ -555,7 +637,7 @@ object DynamicSSLEngineProvider {
     if (log) logger.debug(s"Reading private key for $id")
     val matcher: Matcher = KEY_PATTERN.matcher(content)
     if (!matcher.find) {
-      logger.error(s"[$id] Found no private key :(")
+      logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")
     } else {
       val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
@@ -729,6 +811,8 @@ object PemHeaders {
   val EndPublicKey     = "-----END PUBLIC KEY-----"
   val BeginPrivateKey  = "-----BEGIN PRIVATE KEY-----"
   val EndPrivateKey    = "-----END PRIVATE KEY-----"
+  val BeginPrivateRSAKey  = "-----BEGIN RSA PRIVATE KEY-----"
+  val EndPrivateRSAKey    = "-----END RSA PRIVATE KEY-----"
 }
 
 object FakeKeyStore {
