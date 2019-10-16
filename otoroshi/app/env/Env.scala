@@ -88,7 +88,7 @@ class Env(val configuration: Configuration,
     if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {
       "/__otoroshi_assets/images/otoroshi-logo-xmas.png"
     } else if (now.isAfter(halloweenStart) && now.isBefore(halloweenStop)) {
-      "/__otoroshi_assets/images/otoroshi-logo-halloween2.png"
+      "/__otoroshi_assets/images/otoroshi-logo-halloween3.png"
     } else {
       "/__otoroshi_assets/images/otoroshi-logo-color.png"
     }

@@ -126,19 +126,20 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
             val name = (req.body \ "name").asOpt[String].getOrElse(user.name)
             val newPassword = (req.body \ "newPassword").asOpt[String]
             val reNewPassword = (req.body \ "reNewPassword").asOpt[String]
-            val password = (newPassword, reNewPassword) match {
-              case (Some(p1), Some(p2)) if p1 == p2 => BCrypt.hashpw(p1, BCrypt.gensalt(10))
-              case _ => pass
-            }
-            newUser = newUser.copy(name = name, password = password)
-            val conf = bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
-            conf.save().map { _ =>
-              Ok(Json.obj(
-                "name" -> newUser.name,
-                "email" -> newUser.email,
-                "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
-                "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-              ))
+            (newPassword, reNewPassword) match {
+              case (Some(p1), Some(p2)) if p1 == p2 =>
+                val password = BCrypt.hashpw(p1, BCrypt.gensalt(10))
+                newUser = newUser.copy(name = name, password = password)
+                val conf = bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
+                conf.save().map { _ =>
+                  Ok(Json.obj(
+                    "name" -> newUser.name,
+                    "email" -> newUser.email,
+                    "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
+                    "mustRegWebauthnDevice" -> bam.authConfig.webauthn
+                  ))
+                }
+              case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password")))
             }
           }
           case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password")))
