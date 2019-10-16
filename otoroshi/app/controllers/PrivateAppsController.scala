@@ -1,6 +1,7 @@
 package controllers
 
 import actions.{ApiAction, PrivateAppsAction}
+import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.{BasicAuthModule, BasicAuthUser}
 import env.Env
@@ -120,16 +121,27 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     withShortSession(req) {
       case (bam, user) =>
         var newUser = user
-        (req.body \ "name").asOpt[String].foreach(name => newUser = newUser.copy(name = name))
-        (req.body \ "password").asOpt[String].foreach(password => newUser = newUser.copy(password = BCrypt.hashpw(password, BCrypt.gensalt(10))))
-        val conf = bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
-        conf.save().map { _ =>
-          Ok(Json.obj(
-            "name" -> newUser.name,
-            "email" -> newUser.email,
-            "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
-            "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-          ))
+        (req.body \ "password").asOpt[String] match {
+          case Some(pass) if BCrypt.checkpw(pass, user.password) => {
+            val name = (req.body \ "name").asOpt[String].getOrElse(user.name)
+            val newPassword = (req.body \ "newPassword").asOpt[String]
+            val reNewPassword = (req.body \ "reNewPassword").asOpt[String]
+            val password = (newPassword, reNewPassword) match {
+              case (Some(p1), Some(p2)) if p1 == p2 => BCrypt.hashpw(p1, BCrypt.gensalt(10))
+              case _ => pass
+            }
+            newUser = newUser.copy(name = name, password = password)
+            val conf = bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
+            conf.save().map { _ =>
+              Ok(Json.obj(
+                "name" -> newUser.name,
+                "email" -> newUser.email,
+                "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
+                "mustRegWebauthnDevice" -> bam.authConfig.webauthn
+              ))
+            }
+          }
+          case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password")))
         }
     }
   }

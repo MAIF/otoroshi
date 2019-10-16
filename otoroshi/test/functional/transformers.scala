@@ -44,4 +44,4 @@ class JwtTokenTransformer extends RequestTransformer {
   }
 }
 
-new JwtTokenTransformer
+// new JwtTokenTransformer

@@ -79,7 +79,7 @@ class Env(val configuration: Configuration,
     DateTime.now().withMonthOfYear(12).dayOfMonth().withMaximumValue().plusDays(1).withMillisOfDay(1)
 
   private lazy val halloweenStart = 
-    DateTime.now().withMonthOfYear(10).withDayOfMonth(13).withMillisOfDay(0)
+    DateTime.now().withMonthOfYear(10).withDayOfMonth(31).withMillisOfDay(0)
   private lazy val halloweenStop =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
