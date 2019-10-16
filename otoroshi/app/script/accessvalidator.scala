@@ -12,15 +12,17 @@ import env.Env
 import gateway.Errors
 import models._
 import org.apache.commons.codec.binary.Hex
+import org.apache.commons.codec.digest.DigestUtils
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.{ClientCertificateValidator, PemHeaders}
 import utils.{RegexPool, TypedMap}
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Success, Try}
 
 case class AccessValidatorRef(enabled: Boolean = false, excludedPatterns: Seq[String] = Seq.empty[String], refs: Seq[String] = Seq.empty, config: JsValue = Json.obj()) {
   def json: JsValue = AccessValidatorRef.format.writes(this)
@@ -136,11 +138,13 @@ class HasClientCertMatchingValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
+        val allowedSerialNumbers = (context.config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedSubjectDNs = (context.config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedIssuerDNs = (context.config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val regexAllowedSubjectDNs = (context.config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val regexAllowedIssuerDNs = (context.config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        if (certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
+        if (certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
+            certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
             certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
             certs.exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
             certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
@@ -158,6 +162,66 @@ class HasClientCertMatchingValidator extends AccessValidator {
         //     certs.exists(_.getSubjectDN.getName.matches(subject)) && certs.exists(_.getIssuerDN.getName.matches(issuer))
         //   )
         // }
+      }
+      case _ => FastFuture.successful(false)
+    }
+  }
+}
+
+class HasClientCertMatchingHttpValidator extends AccessValidator {
+
+  private val cache = new TrieMap[String, (Long, JsValue)]
+
+  private def validate(certs: Seq[X509Certificate], values: JsValue): Boolean = {
+    val allowedSerialNumbers = (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val allowedSubjectDNs = (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val allowedIssuerDNs = (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val regexAllowedSubjectDNs = (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val regexAllowedIssuerDNs = (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    if (certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
+      certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
+      certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
+      certs.exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
+      certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
+      true
+    } else {
+      false
+    }
+  }
+
+  private def fetch(url: String, headers: Map[String, String], ttl: Long)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    env.Ws.url(url).withHttpHeaders(headers.toSeq: _*).get().map {
+      case r if r.status == 200 =>
+        cache.put(url, (System.currentTimeMillis(), r.json))
+        r.json
+      case _ =>
+        cache.put(url, (System.currentTimeMillis(), Json.obj()))
+        Json.obj()
+    }.recover {
+      case e =>
+        e.printStackTrace()
+        cache.put(url, (System.currentTimeMillis(), Json.obj()))
+        Json.obj()
+    }
+  }
+
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.request.clientCertificateChain match {
+      case Some(certs) => {
+        val config =  (context.config \ "HasClientCertMatchingHttpValidator").asOpt[JsValue].getOrElse(context.config)
+        val url =     (config \ "url").as[String]
+        val headers = (config \ "headers").as[Map[String, String]]
+        val ttl =     (config \ "ttl").as[Long]
+        val start =   System.currentTimeMillis()
+        cache.get(url) match {
+          case None                                        =>
+            fetch(url, headers, ttl).map(b => validate(certs, b))
+          case Some((time, values)) if start - time <= ttl =>
+            FastFuture.successful(validate(certs, values))
+          case Some((time, values)) if start - time > ttl  =>
+            fetch(url, headers, ttl)
+            FastFuture.successful(validate(certs, values))
+        }
       }
       case _ => FastFuture.successful(false)
     }

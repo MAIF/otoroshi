@@ -73,14 +73,22 @@ class Env(val configuration: Configuration,
     Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
   }) getOrElse configuration
 
-  private lazy val xmasStart = DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
+  private lazy val xmasStart = 
+    DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
   private lazy val xmasStop =
     DateTime.now().withMonthOfYear(12).dayOfMonth().withMaximumValue().plusDays(1).withMillisOfDay(1)
+
+  private lazy val halloweenStart = 
+    DateTime.now().withMonthOfYear(10).withDayOfMonth(13).withMillisOfDay(0)
+  private lazy val halloweenStop =
+    DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
   def otoroshiLogo: String = {
     val now = DateTime.now()
     if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {
       "/__otoroshi_assets/images/otoroshi-logo-xmas.png"
+    } else if (now.isAfter(halloweenStart) && now.isBefore(halloweenStop)) {
+      "/__otoroshi_assets/images/otoroshi-logo-halloween2.png"
     } else {
       "/__otoroshi_assets/images/otoroshi-logo-color.png"
     }

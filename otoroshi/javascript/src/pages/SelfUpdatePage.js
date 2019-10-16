@@ -2,10 +2,11 @@ import React, { Component } from 'react';
 
 export class SelfUpdatePage extends Component {
   state = {
-    user: this.props.user,
-    name: this.props.user.names,
+    email: this.props.user.email,
+    name: this.props.user.name,
     password: '',
-    password2: ''
+    newPassword: '',
+    reNewPassword: ''
   };
 
   onChange = e => {
@@ -21,6 +22,7 @@ export class SelfUpdatePage extends Component {
   };
 
   render() {
+    console.log(this.props.user)
     return (
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Update your profile</h3>
@@ -35,7 +37,7 @@ export class SelfUpdatePage extends Component {
                 name="username"
                 className="form-control"
                 disabled
-                value={this.state.user.email}
+                value={this.state.email}
               />
             </div>
           </div>
@@ -52,7 +54,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           <div className="form-group">
-            <label className="col-sm-2 control-label">Password</label>
+            <label className="col-sm-2 control-label">Password <small style={{ color: 'rgb(181, 179, 179)' }}>(required)</small></label>
             <div className="col-sm-10">
               <input
                 type="password"
@@ -64,17 +66,36 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           <div className="form-group">
-            <label className="col-sm-2 control-label">Password (again)</label>
+            <label className="col-sm-2 control-label">New password</label>
             <div className="col-sm-10">
               <input
                 type="password"
-                name="password"
+                name="newPassword"
                 className="form-control"
-                value={this.state.password2}
+                value={this.state.newPassword}
                 onChange={this.onChange}
               />
             </div>
           </div>
+          <div className="form-group">
+            <label className="col-sm-2 control-label">New password <small style={{ color: 'rgb(181, 179, 179)' }}>(again)</small></label>
+            <div className="col-sm-10">
+              <input
+                type="password"
+                name="reNewPassword"
+                className="form-control"
+                value={this.state.reNewPassword}
+                onChange={this.onChange}
+              />
+            </div>
+          </div>
+          {this.props.webauthn && this.props.user.mustRegWebauthnDevice && <div className="form-group">
+            <label className="col-sm-2 control-label" />
+            <div className="col-sm-10">
+              {this.props.user.hasWebauthnDeviceReg && <p style={{ width: '100%', textAlign: 'left' }}>The auth. module requires strong authentication with Webauthn compatible device</p>}
+              {!this.props.user.hasWebauthnDeviceReg && <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>The auth. module requires strong authentication with Webauthn compatible device. You have to register a Webauthn compatible device or you won't be able to log in.</p>}
+            </div>
+          </div>}
           <div className="form-group">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">

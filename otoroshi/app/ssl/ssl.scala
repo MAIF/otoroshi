@@ -20,13 +20,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{
-  KeyManagerConfig,
-  KeyStoreConfig,
-  SSLConfigSettings,
-  TrustManagerConfig,
-  TrustStoreConfig
-}
+import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -35,6 +29,7 @@ import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactor
 import javax.net.ssl._
 import models._
 import org.apache.commons.codec.binary.Hex
+import org.apache.commons.codec.digest.DigestUtils
 import org.joda.time.{DateTime, Interval}
 import play.api.Logger
 import play.api.libs.json._
@@ -691,7 +686,8 @@ object CertificateData {
       "serialNumber" -> cert.getSerialNumber.toString(16),
       "sigAlgName"   -> cert.getSigAlgName,
       "sigAlgOID"    -> cert.getSigAlgOID,
-      "signature"    -> new String(encoder.encode(cert.getSignature)),
+      "_signature"    -> new String(encoder.encode(cert.getSignature)),
+      "signature"    -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
       "subjectDN"    -> cert.getSubjectDN.getName,
       "domain"       -> domain,
       "rawDomain"    -> rawDomain,

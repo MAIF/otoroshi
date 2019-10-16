@@ -109,7 +109,9 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       case (bam, user) =>
         Ok(views.html.otoroshi.selfUpdate(Json.obj(
           "name" -> user.name,
-          "email" -> user.email
+          "email" -> user.email,
+          "hasWebauthnDeviceReg" -> user.webauthn.isDefined,
+          "mustRegWebauthnDevice" -> bam.authConfig.webauthn
         ), req.getQueryString("session").get, bam.authConfig.webauthn, env)).future
     }
   }
@@ -124,7 +126,9 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
         conf.save().map { _ =>
           Ok(Json.obj(
             "name" -> newUser.name,
-            "email" -> newUser.email
+            "email" -> newUser.email,
+            "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
+            "mustRegWebauthnDevice" -> bam.authConfig.webauthn
           ))
         }
     }
