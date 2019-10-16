@@ -506,129 +506,137 @@ export class User extends Component {
       <div
         style={{
           display: 'flex',
+          marginTop: 10
         }}>
-        <input
-          type="text"
-          placeholder="User name"
-          className="form-control"
-          value={this.props.user.name}
-          onChange={e => this.props.onChange(this.props.user.email, 'name', e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="User email"
-          className="form-control"
-          value={this.props.user.email}
-          onChange={e => this.props.onChange(this.props.user.email, 'email', e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="User metadata"
-          className="form-control"
-          value={
-            this.state.rawUser !== JSON.stringify(this.props.user.metadata)
-              ? this.state.rawUser
-              : JSON.stringify(this.props.user.metadata)
-          }
-          onChange={e => {
-            try {
-              const finalValue = JSON.parse(e.target.value);
-              this.setState({ rawUser: JSON.stringify(finalValue) });
-              this.props.onChange(this.props.user.email, 'metadata', finalValue);
-            } catch (err) {
-              this.setState({ rawUser: e.target.value });
+        <div className="csol-sm-10 row" style={{ width: "80%", paddingLeft: 15, paddingRight: 20 }}>
+          <input
+            type="text"
+            placeholder="User name"
+            className="form-control"
+            value={this.props.user.name}
+            onChange={e => this.props.onChange(this.props.user.email, 'name', e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="User email"
+            className="form-control"
+            value={this.props.user.email}
+            onChange={e => this.props.onChange(this.props.user.email, 'email', e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="User metadata"
+            className="form-control"
+            value={
+              this.state.rawUser !== JSON.stringify(this.props.user.metadata)
+                ? this.state.rawUser
+                : JSON.stringify(this.props.user.metadata)
             }
-          }}
-        />
-        <button
-          type="button"
-          className="btn btn-sm btn-success"
-          onClick={e => {
-            window.newPrompt('Type password', { type: 'password' }).then(value1 => {
-              window.newPrompt('Re-type password', { type: 'password' }).then(value2 => {
-                if (value1 && value2 && value1 === value2) {
-                  this.props.hashPassword(this.props.user.email, value1);
-                } else {
-                  window.newAlert('Passwords does not match !');
-                }
-              });
-            });
-          }}
-          style={{ marginLeft: 5 }}>
-          Set password
-        </button>
-        <button
-          type="button"
-          className="btn btn-sm btn-success"
-          onClick={e => {
-            const password = faker.random.alphaNumeric(16);
-            this.props.hashPassword(this.props.user.email, password);
-            window.newAlert(`The generated password is: ${password}`);
-          }}
-          style={{ marginLeft: 5 }}>
-          Generate password
-        </button>
-        {this.props.webauthn && (
+            onChange={e => {
+              try {
+                const finalValue = JSON.parse(e.target.value);
+                this.setState({ rawUser: JSON.stringify(finalValue) });
+                this.props.onChange(this.props.user.email, 'metadata', finalValue);
+              } catch (err) {
+                this.setState({ rawUser: e.target.value });
+              }
+            }}
+          />
+        </div>
+        <div className="btn-group" style={{ marginLeft: 0 }}>
           <button
-            type="button"s
-            className="btn btn-sm btn-info"
+            type="button"
+            className="btn btn-sm btn-success"
+            title="Set password"
             onClick={e => {
-              return fetch(`/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${this.props.user.email}`, {
+              window.newPrompt('Type password', { type: 'password' }).then(value1 => {
+                window.newPrompt('Re-type password', { type: 'password' }).then(value2 => {
+                  if (value1 && value2 && value1 === value2) {
+                    this.props.hashPassword(this.props.user.email, value1);
+                  } else {
+                    window.newAlert('Passwords does not match !');
+                  }
+                });
+              });
+            }}
+            style={{ marginRight: 0 }}>
+            <i className="glyphicon glyphicon-edit" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-success"
+            title="Generate password"
+            onClick={e => {
+              const password = faker.random.alphaNumeric(16);
+              this.props.hashPassword(this.props.user.email, password);
+              window.newAlert(`The generated password is: ${password}`);
+            }}
+            style={{ marginRight: 0 }}>
+            <i className="glyphicon glyphicon-repeat" />
+          </button>
+          {this.props.webauthn && (
+            <button
+              type="button"
+              className="btn btn-sm btn-info"
+              title="Update profile link"
+              onClick={e => {
+                return fetch(`/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${this.props.user.email}`, {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: {
+                    Accept: 'application/json',
+                  },
+                }).then(r => r.json()).then(r => {
+                  console.log(r);
+                  const sessionId = r.sessionId;
+                  window.newAlert(<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                    <p>The link to update user profile is usable for the next 10 minutes</p>
+                    <a target="_blank" href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
+                  </div>);
+                });
+              }}
+              style={{ marginRight: 0 }}>
+              <i className="glyphicon glyphicon-link" />
+            </button>
+          )}
+          {this.props.webauthn && (
+            <button
+            type="button"
+            className="btn btn-sm btn-info"
+            title="Send update profile link to user"
+            onClick={e => {
+              return fetch(`/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${this.props.user.email}`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
                   Accept: 'application/json',
                 },
               }).then(r => r.json()).then(r => {
-                console.log(r);
-                const sessionId = r.sessionId;
-                window.newAlert(<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                  <p>The link is :</p>
-                  <a target="_blank" href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
-                  <a target="_blank" href={`https://privateapps.oto.tools:9998/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
-                </div>);
+                window.newAlert("Email sent", "Email sent");
               });
             }}
-            style={{ marginLeft: 5 }}>
-            Setup link
-          </button>
-
-
-        )}
-        {this.props.webauthn && (
+            style={{ marginRight: 0 }}>
+            <i className="glyphicon glyphicon-envelope" />
+            </button>
+          )}
+          {this.props.webauthn && (
+            <button
+              type="button"
+              className="btn btn-sm btn-info"
+              onClick={this.registerWebAuthn}
+              title="Register webauthn device"
+              style={{ marginRight: 0 }}>
+            <i className="glyphicon glyphicon-lock" />
+            </button>
+          )}
           <button
-          type="button"s
-          className="btn btn-sm btn-info"
-          onClick={e => {
-            return fetch(`/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${this.props.user.email}`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-              },
-            }).then(r => r.json()).then(r => {
-              window.newAlert("Email sent", "Email sent");
-            });
-          }}
-          style={{ marginLeft: 5 }}>
-            Send link
+            type="button"
+            className="btn btn-sm btn-danger"
+            title="Remove user"
+            onClick={e => this.props.removeUser(this.props.user.email)}>
+            <i className="glyphicon glyphicon-trash" />
           </button>
-        )}
-        {this.props.webauthn && (
-          <button
-            type="button"s
-            className="btn btn-sm btn-info"
-            onClick={this.registerWebAuthn}
-            style={{ marginLeft: 5 }}>
-            Register device
-          </button>
-        )}
-        <button
-          type="button"
-          className="btn btn-sm btn-danger"
-          onClick={e => this.props.removeUser(this.props.user.email)}>
-          <i className="glyphicon glyphicon-trash" />
-        </button>
+        </div>
       </div>
     );
   }
