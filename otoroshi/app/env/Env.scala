@@ -185,6 +185,7 @@ class Env(val configuration: Configuration,
   lazy val cacheTtl: Int                   = configuration.getOptional[Int]("otoroshi.cache.ttl").filter(_ >= 2000).getOrElse(2000)
   lazy val useRedisScan: Boolean           = configuration.getOptional[Boolean]("app.redis.useScan").getOrElse(false)
   lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
+  lazy val secretSession: String           = configuration.getOptional[String]("otoroshi.sessions.secret").map(_.padTo(16, "0").mkString("").take(16)).get
   lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
   lazy val name: String                    = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")

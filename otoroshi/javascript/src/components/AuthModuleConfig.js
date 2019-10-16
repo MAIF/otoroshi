@@ -592,6 +592,27 @@ export class User extends Component {
             style={{ marginLeft: 5 }}>
             Setup link
           </button>
+
+
+        )}
+        {this.props.webauthn && (
+          <button
+          type="button"s
+          className="btn btn-sm btn-info"
+          onClick={e => {
+            return fetch(`/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${this.props.user.email}`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                Accept: 'application/json',
+              },
+            }).then(r => r.json()).then(r => {
+              window.newAlert("Email sent", "Email sent");
+            });
+          }}
+          style={{ marginLeft: 5 }}>
+            Send link
+          </button>
         )}
         {this.props.webauthn && (
           <button

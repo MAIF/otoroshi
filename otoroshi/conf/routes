@@ -86,6 +86,7 @@ POST    /privateapps/register/start                           controllers.Privat
 POST    /privateapps/register/finish                          controllers.PrivateAppsController.selfRegistrationFinish()
 GET     /privateapps/profile                                  controllers.PrivateAppsController.selfUpdateProfilePage()
 POST    /privateapps/profile                                  controllers.PrivateAppsController.selfUpdateProfile()
+POST    /api/privateapps/sessions/send/:id/:username          controllers.PrivateAppsController.sendSelfUpdateLink(id, username)
 POST    /api/privateapps/sessions/:id/:username               controllers.PrivateAppsController.registerSession(id, username)
 
 OPTIONS /privateapps/generic/login                            controllers.AuthController.confidentialAppLoginPageOptions()

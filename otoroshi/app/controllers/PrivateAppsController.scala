@@ -5,16 +5,21 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.{BasicAuthModule, BasicAuthUser}
 import env.Env
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
 import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.json.Json
 import play.api.mvc._
 import security.IdGenerator
+import utils.EmailLocation
+import utils.future.Implicits._
 
 import scala.concurrent.Future
-import utils.future.Implicits._
 
 class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
+
+  private lazy val secret = new SecretKeySpec(env.secretSession.getBytes, "AES")
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -41,7 +46,11 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   def withShortSession(req: RequestHeader)(f: (BasicAuthModule, BasicAuthUser) => Future[Result]): Future[Result] = {
     req.getQueryString("session") match {
       case None => NotFound( Json.obj("error" -> s"session not found")).future
-      case Some(sessionId) => {
+      case Some(cipheredSessionId) => {
+        val sessionIdBytes = java.util.Base64.getUrlDecoder.decode(cipheredSessionId)
+        val cipher: Cipher = Cipher.getInstance("AES")
+        cipher.init(Cipher.DECRYPT_MODE, secret)
+        val sessionId = new String(cipher.doFinal(sessionIdBytes))
         env.datastores.rawDataStore.get(s"${env.rootScheme}:self-service:sessions:$sessionId").flatMap {
           case None => NotFound( Json.obj("error" -> s"session not found")).future
           case Some(sessionRaw) => {
@@ -73,7 +82,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     }
   }
 
-  def registerSession(authModuleId: String, username: String) = ApiAction.async { ctx =>
+  def registerSessionForUser(authModuleId: String, username: String): Future[(String, String)] = {
     import scala.concurrent.duration._
     val sessionId = IdGenerator.token(32)
     env.datastores.rawDataStore.set(s"${env.rootScheme}:self-service:sessions:$sessionId", ByteString(Json.stringify(Json.obj(
@@ -81,7 +90,17 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       "auth" -> authModuleId
     ))), Some(10.minutes.toMillis)).map { _ =>
       val host = "http://" + env.privateAppsHost + env.privateAppsPort.map(p => ":" + p).getOrElse("")
-      Ok(Json.obj("sessionId" -> sessionId, "host" -> host))
+      val cipher: Cipher = Cipher.getInstance("AES")
+      cipher.init(Cipher.ENCRYPT_MODE, secret)
+      val bytes = cipher.doFinal(sessionId.getBytes)
+      val cipheredSessionId = java.util.Base64.getUrlEncoder.encodeToString(bytes)
+      (cipheredSessionId, host)
+    }
+  }
+
+  def registerSession(authModuleId: String, username: String) = ApiAction.async { ctx =>
+    registerSessionForUser(authModuleId, username).map {
+      case (cipheredSessionId, host) => Ok(Json.obj("sessionId" -> cipheredSessionId, "host" -> host))
     }
   }
 
@@ -165,6 +184,48 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
             }
           }
           case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 2")))
+        }
+    }
+  }
+
+  def sendSelfUpdateLink(authModuleId: String, username: String) = ApiAction.async { ctx =>
+    registerSessionForUser(authModuleId, username).flatMap {
+      case (sessionId, host) =>
+        env.datastores.authConfigsDataStore.findById(authModuleId).flatMap {
+          case Some(auth) => {
+            auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
+              case bam: BasicAuthModule if bam.authConfig.webauthn => {
+                bam.authConfig.users.find(_.email == username) match {
+                  case None => NotFound( Json.obj("error" -> s"user not found")).future
+                  case Some(user) => {
+                    env.datastores.globalConfigDataStore
+                      .singleton()
+                      .flatMap { config =>
+                        config.mailerSettings
+                          .map(
+                            _.asMailer(config, env).send(
+                              from = EmailLocation("Otoroshi", s"otoroshi@${env.domain}"),
+                              to = Seq(EmailLocation(user.name, user.email)),
+                              subject = s"Otoroshi - update your profile",
+                              html = s"""
+                                        |You can update your user profile at the following <a href="${host}/privateapps/profile?session=${sessionId}">link</a>
+                                      """.stripMargin
+                            )
+                          )
+                          .getOrElse(FastFuture.successful(()))
+                      }.map { _ =>
+                      Ok(Json.obj("done" -> true))
+                    }
+                  }
+                }
+              }
+              case _ => BadRequest(Json.obj("error" -> s"Not supported")).future
+            }
+          }
+          case None =>
+            NotFound(
+              Json.obj("error" -> s"GlobalAuthModule with id $authModuleId not found")
+            ).future
         }
     }
   }
