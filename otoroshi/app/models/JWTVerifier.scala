@@ -668,25 +668,25 @@ sealed trait JwtVerifier extends AsJson {
     s"$content.$signature"
   }
 
-  def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(
+  def verifyWs(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser])(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    internalVerify(request, desc)(f).map {
+    internalVerify(request, desc, apikey, user)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
   }
 
-  def verify(request: RequestHeader, desc: ServiceDescriptor)(
+  def verify(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser])(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    internalVerify(request, desc)(f).map {
+    internalVerify(request, desc, apikey, user)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
   }
 
-  private[models] def internalVerify[A](request: RequestHeader, desc: ServiceDescriptor)(
+  private[models] def internalVerify[A](request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser])(
       f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
@@ -777,12 +777,12 @@ sealed trait JwtVerifier extends AsJson {
                           case (key, JsNull)            => (key, "null")
                         } toMap
                         val evaluatedValues: JsObject =
-                          JwtExpressionLanguage(tSettings.mappingSettings.values, context).as[JsObject]
+                          JwtExpressionLanguage.fromJson(tSettings.mappingSettings.values, Some(request), Some(desc), apikey, user, context).as[JsObject]
                         val newJsonToken: JsObject = JsObject(
                           (tSettings.mappingSettings.map
                             .filter(a => (jsonToken \ a._1).isDefined)
                             .foldLeft(jsonToken)(
-                              (a, b) => a.+(b._2, JwtExpressionLanguage((a \ b._1).as[JsValue], context)).-(b._1)
+                              (a, b) => a.+(b._2, JwtExpressionLanguage.fromJson((a \ b._1).as[JsValue], Some(request), Some(desc), apikey, user, context)).-(b._1)
                             ) ++ evaluatedValues).fields
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
@@ -854,7 +854,7 @@ case class RefJwtVerifier(
 
   private def id: Option[String] = ids.headOption
 
-  override def verify(request: RequestHeader, desc: ServiceDescriptor)(
+  override def verify(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser])(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
@@ -876,7 +876,7 @@ case class RefJwtVerifier(
             }
             case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
               case Some(verifier) =>
-                verifier.internalVerify(request, desc)(f).map {
+                verifier.internalVerify(request, desc, apikey, user)(f).map {
                   case Left(result) =>
                     last.set(result)
                     dequeueNext()
@@ -916,7 +916,7 @@ case class RefJwtVerifier(
     }
   }
 
-  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor)(
+  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser])(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val mat = env.otoroshiMaterializer
@@ -938,7 +938,7 @@ case class RefJwtVerifier(
             }
             case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
               case Some(verifier) =>
-                verifier.internalVerify(request, desc)(f).map {
+                verifier.internalVerify(request, desc, apikey, user)(f).map {
                   case Left(result) =>
                     last.set(Left(result))
                     dequeueNext()

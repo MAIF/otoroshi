@@ -8,15 +8,145 @@ import play.api.mvc.RequestHeader
 import utils.ReplaceAllWith
 
 import scala.util.Try
+import utils.RequestImplicits._
+import kaleidoscope._
 
-object HeadersExpressionLanguage {
 
-  import kaleidoscope._
+object GlobalExpressionLanguage {
 
-  lazy val logger = Logger("otoroshi-headers-el")
+  lazy val logger = Logger("otoroshi-global-el")
 
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
+  def apply(
+    value: String,
+    req:     Option[RequestHeader],
+    service: Option[ServiceDescriptor],
+    apiKey:  Option[ApiKey],
+    user:    Option[PrivateAppsUser],
+    context: Map[String, String] = Map.empty,
+  ): String = {
+    // println(s"${req}:${service}:${apiKey}:${user}:${context}")
+    value match {
+      case v if v.contains("${") =>
+        Try {
+          expressionReplacer.replaceOn(value) {
+            case "date"                                                             => DateTime.now().toString()
+            case r"date.format\('$format@(.*)'\)"                                   => DateTime.now().toString(format)
+            case "service.domain"                              if service.isDefined => service.get._domain
+            case "service.subdomain"                           if service.isDefined => service.get.subdomain
+            case "service.tld"                                 if service.isDefined => service.get.domain
+            case "service.env"                                 if service.isDefined => service.get.env
+            case "service.group"                               if service.isDefined => service.get.groupId
+            case "service.id"                                  if service.isDefined => service.get.id
+            case "service.name"                                if service.isDefined => service.get.name
+            case r"service.metadata.$field@(.*):$dv@(.*)"      if service.isDefined => service.get.metadata.get(field).getOrElse(dv)
+            case r"service.metadata.$field@(.*)"               if service.isDefined => service.get.metadata.get(field).getOrElse(s"no-meta-$field")
+
+            case "req.path"                                    if req.isDefined     => req.get.path
+            case "req.uri"                                     if req.isDefined     => req.get.relativeUri
+            case "req.host"                                    if req.isDefined     => req.get.host
+            case "req.domain"                                  if req.isDefined     => req.get.domain
+            case "req.method"                                  if req.isDefined     => req.get.method
+            case "req.protocol"                                if req.isDefined     => req.get.theProtocol
+            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined     => req.get.headers.get(field).getOrElse(defaultValue)
+            case r"req.headers.$field@(.*)"                    if req.isDefined     => req.get.headers.get(field).getOrElse(s"no-header-$field")
+            case r"req.query.$field@(.*):$defaultValue@(.*)"   if req.isDefined     => req.get.getQueryString(field).getOrElse(defaultValue)
+            case r"req.query.$field@(.*)"                      if req.isDefined     => req.get.getQueryString(field).getOrElse(s"no-query-$field")
+
+            case "apikey.name"                                 if apiKey.isDefined  => apiKey.get.clientName
+            case "apikey.id"                                   if apiKey.isDefined  => apiKey.get.clientId
+            case r"apikey.metadata.$field@(.*):$dv@(.*)"       if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse(dv)
+            case r"apikey.metadata.$field@(.*)"                if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
+            case r"apikey.tags\\[$field@(.*):$dv@(.*)\\]"      if apiKey.isDefined  => Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
+            case r"apikey.tags\\[$field@(.*)\\]"               if apiKey.isDefined  => Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
+
+            // for jwt comptab only
+            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*)" => context.getOrElse(field, value)
+
+            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"ctx.$field@(.*)" => context.getOrElse(field, value)
+
+            case "user.name"                                   if user.isDefined    => user.get.name
+            case "user.email"                                  if user.isDefined    => user.get.email
+            case r"user.metadata.$field@(.*):$dv@(.*)"         if user.isDefined    =>
+              user
+                .flatMap(_.otoroshiData)
+                .map(
+                  json =>
+                    (json \ field).asOpt[JsValue] match {
+                      case Some(JsNumber(number)) => number.toString()
+                      case Some(JsString(str))    => str
+                      case Some(JsBoolean(b))     => b.toString
+                      case _                      => dv
+                    }
+                )
+                .getOrElse(dv)
+            case r"user.metadata.$field@(.*)"                  if user.isDefined =>
+              user
+                .flatMap(_.otoroshiData)
+                .map(
+                  json =>
+                    (json \ field).asOpt[JsValue] match {
+                      case Some(JsNumber(number)) => number.toString()
+                      case Some(JsString(str))    => str
+                      case Some(JsBoolean(b))     => b.toString
+                      case _                      => s"no-meta-$field"
+                    }
+                )
+                .getOrElse(s"no-meta-$field")
+
+            case expr => "bad-expr" //s"$${$expr}"
+          }
+        } recover {
+          case e =>
+            logger.error(s"Error while parsing expression, returning raw value: $value", e)
+            value
+        } get
+      case _ => value
+    }
+  }
+}
+
+object HeadersExpressionLanguage {
+
+  // lazy val logger = Logger("otoroshi-headers-el")
+  // val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
+
+  def apply(
+     value: String,
+     req:     Option[RequestHeader],
+     service: Option[ServiceDescriptor],
+     apiKey:  Option[ApiKey],
+     user:    Option[PrivateAppsUser],
+     context: Map[String, String] = Map.empty,
+   ): String = {
+    GlobalExpressionLanguage.apply(
+      value = value,
+      req = req,
+      service = service,
+      apiKey = apiKey,
+      user = user,
+      context = context
+    )
+  }
+
+  /*
   def apply(value: String,
             service: ServiceDescriptor,
             apiKey: Option[ApiKey],
@@ -67,17 +197,33 @@ object HeadersExpressionLanguage {
       case _ => value
     }
   }
+  */
 }
 
 object RedirectionExpressionLanguage {
 
-  import kaleidoscope._
-  import utils.RequestImplicits._
+  // lazy val logger = Logger("otoroshi-redirection-el")
+  // val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
-  lazy val logger = Logger("otoroshi-redirection-el")
+  def apply(
+    value: String,
+    req:     Option[RequestHeader],
+    service: Option[ServiceDescriptor],
+    apiKey:  Option[ApiKey],
+    user:    Option[PrivateAppsUser],
+    context: Map[String, String] = Map.empty,
+  ): String = {
+    GlobalExpressionLanguage.apply(
+      value = value,
+      req = req,
+      service = service,
+      apiKey = apiKey,
+      user = user,
+      context = context
+    )
+  }
 
-  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
-
+  /*
   def apply(value: String, req: RequestHeader): String = {
     value match {
       case v if v.contains("${") =>
@@ -105,17 +251,33 @@ object RedirectionExpressionLanguage {
       case _ => value
     }
   }
+  */
 }
 
 object TargetExpressionLanguage {
 
-  import kaleidoscope._
-  import utils.RequestImplicits._
+  // lazy val logger = Logger("otoroshi-target-el")
+  // val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
-  lazy val logger = Logger("otoroshi-target-el")
+  def apply(
+   value: String,
+   req:     Option[RequestHeader],
+   service: Option[ServiceDescriptor],
+   apiKey:  Option[ApiKey],
+   user:    Option[PrivateAppsUser],
+   context: Map[String, String] = Map.empty,
+  ): String = {
+    GlobalExpressionLanguage.apply(
+      value = value,
+      req = req,
+      service = service,
+      apiKey = apiKey,
+      user = user,
+      context = context
+    )
+  }
 
-  val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
-
+  /*
   def apply(value: String, req: RequestHeader): String = {
     value match {
       case v if v.contains("${") =>
@@ -143,12 +305,30 @@ object TargetExpressionLanguage {
       case _ => value
     }
   }
+  */
 }
 
 object JwtExpressionLanguage {
 
-  import kaleidoscope._
+  def apply(
+    value: String,
+    req:     Option[RequestHeader],
+    service: Option[ServiceDescriptor],
+    apiKey:  Option[ApiKey],
+    user:    Option[PrivateAppsUser],
+    context: Map[String, String] = Map.empty
+  ): String = {
+    GlobalExpressionLanguage.apply(
+      value = value,
+      req = req,
+      service = service,
+      apiKey = apiKey,
+      user = user,
+      context = context
+    )
+  }
 
+  /*
   lazy val logger = Logger("otoroshi-jwt-el")
 
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
@@ -181,7 +361,46 @@ object JwtExpressionLanguage {
       case _ => value
     }
   }
+  */
 
+  def fromJson(
+    value:   JsValue,
+    req:     Option[RequestHeader],
+    service: Option[ServiceDescriptor],
+    apiKey:  Option[ApiKey],
+    user:    Option[PrivateAppsUser],
+    context: Map[String, String] = Map.empty
+  ): JsValue = {
+    value match {
+      case JsObject(map) =>
+        new JsObject(map.toSeq.map {
+          case (key, JsString(str))     => (key, JsString(apply(str, req, service, apiKey, user, context)))
+          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, apiKey, user, context))
+          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, apiKey, user, context))
+          case (key, v)                 => (key, v)
+        }.toMap)
+      case JsArray(values) =>
+        new JsArray(values.map {
+          case JsString(str) => JsString(apply(str, req, service, apiKey, user, context))
+          case obj: JsObject => fromJson(obj, req, service, apiKey, user, context)
+          case arr: JsArray  => fromJson(arr, req, service, apiKey, user, context)
+          case v             => v
+        })
+      case JsString(str) => {
+        apply(str, req, service, apiKey, user, context) match {
+          case "true"               => JsBoolean(true)
+          case "false"              => JsBoolean(false)
+          case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)
+          case r"$nbr@([0-9]+)"     => JsNumber(nbr.toInt)
+          case s                    => JsString(s)
+
+        }
+      }
+      case _ => value
+    }
+  }
+
+  /*
   def apply(value: JsValue, context: Map[String, String]): JsValue = {
     value match {
       case JsObject(map) =>
@@ -211,4 +430,5 @@ object JwtExpressionLanguage {
       case _ => value
     }
   }
+  */
 }

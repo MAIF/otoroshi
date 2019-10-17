@@ -399,11 +399,13 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
               .withIssuer("foo")
               .withClaim("x-bar", "yo")
               .withClaim("x-yo", "foo")
+              .withClaim("the-host", "jwt.foo.bar")
               .build()
             val verified = Try {
               val dec = v.verify(a)
+              //println(dec.getClaim("the-host").asString())
               //println(dec.getClaims.asScala.mapValues(v => v.asString()))
-              dec
+
             }.map(_ => true).getOrElse(false)
             verified mustEqual true
           }
@@ -449,7 +451,8 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
                   "the-date-2"  -> "the-${date.format('dd-MM-yyyy')}",
                   "the-var-1"   -> "the-${token.var1}",
                   "the-var-2"   -> "the-${token.var2}",
-                  "the-var-1-2" -> "the-${token.var1}-${token.var2}"
+                  "the-var-1-2" -> "the-${token.var1}-${token.var2}",
+                  "the-host"    -> "${req.host}"
                 ),
                 remove = Seq("foo")
               )

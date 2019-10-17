@@ -554,7 +554,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         case false => f(JwtInjection())
         case true => {
           logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-          service.jwtVerifier.verify(req, service)(f)
+          service.jwtVerifier.verify(req, service, None, None)(f)
         }
       }
     } else {
@@ -640,7 +640,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     if (desc.headersVerification.isEmpty) {
       f
     } else {
-      val inputHeaders = req.headers.toSimpleMap.mapValues(v => HeadersExpressionLanguage.apply(v, desc, apiKey, paUsr))
+      val inputHeaders = req.headers.toSimpleMap.mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr))
       desc.headersVerification.map(tuple => inputHeaders.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>
           Errors.craftResponseResult(
@@ -817,7 +817,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   FastFuture.successful(
                     Results
                       .Status(rawDesc.redirection.code)
-                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req))
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc))
                   )
                 }
                 case Some(rawDesc) => {
@@ -1073,9 +1073,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .getOrElse(rawUri)
                                       val scheme =
                                         if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                                      val host                   = TargetExpressionLanguage(if (descriptor.redirectToLocal) descriptor.localHost else target.host, req)
+                                      val host                   = TargetExpressionLanguage(if (descriptor.redirectToLocal) descriptor.localHost else target.host, Some(req), Some(descriptor), apiKey, paUsr)
                                       val root                   = descriptor.root
-                                      val url                    = TargetExpressionLanguage(s"$scheme://$host$root$uri", req)
+                                      val url                    = TargetExpressionLanguage(s"$scheme://$host$root$uri", Some(req), Some(descriptor), apiKey, paUsr)
                                       lazy val currentReqHasBody = hasBody(req)
                                       // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                       val fromOtoroshi = req.headers
@@ -1093,7 +1093,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
                                       val headersIn: Seq[(String, String)] = {
                                         (desc.missingOnlyHeadersIn.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                          .mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)) ++
+                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)) ++
                                           req.headers.toMap.toSeq
                                           .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
                                           .filterNot(
@@ -1140,7 +1140,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .getOrElse(Map.empty[String, String]) ++
                                         descriptor.additionalHeaders
                                           .filter(t => t._1.trim.nonEmpty)
-                                          .mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)) ++ fromOtoroshi
+                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)) ++ fromOtoroshi
                                           .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                           .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
                                           .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(
@@ -1355,7 +1355,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           quotas.fast.map { remainingQuotas =>
                                             val _headersOut: Seq[(String, String)] = {
                                               descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                                .mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)).toSeq ++
+                                                .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)).toSeq ++
                                               badResult.header.headers.toSeq
                                                 .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
                                                 .filterNot(
@@ -1388,7 +1388,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut
                                                 .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
                                                 .mapValues(
-                                                  v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)
+                                                  v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)
                                                 ).toSeq
                                             }
                                             promise.trySuccess(
@@ -1556,7 +1556,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 val upstreamLatency = System.currentTimeMillis() - upstreamStart
                                                 val _headersOut: Seq[(String, String)] = {
                                                   descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                                    .mapValues(v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)).toSeq ++
+                                                    .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)).toSeq ++
                                                   _headersForOut
                                                     .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
                                                     .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
@@ -1585,7 +1585,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   }) ++ descriptor.cors
                                                     .asHeaders(req) ++ desc.additionalHeadersOut
                                                     .mapValues(
-                                                      v => HeadersExpressionLanguage.apply(v, descriptor, apiKey, paUsr)
+                                                      v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)
                                                     )
                                                     .toSeq
                                                 }
