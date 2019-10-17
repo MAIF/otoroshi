@@ -13,11 +13,9 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class WebAuthnAdminDataStore() {
+class WebAuthnRegistrationsDataStore() {
 
   lazy val logger = Logger("otoroshi-webauthn-admin-datastore")
-
-  def key(id: String)(implicit env: Env): String = s"${env.storageRoot}:webauthn:admins:$id"
 
   def setRegistrationRequest(requestId: String, request: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     env.datastores.rawDataStore.set(s"${env.storageRoot}:webauthn:regreq:$requestId", ByteString(Json.stringify(request)), Some(15.minutes.toMillis)).map(_ => ())
@@ -30,6 +28,13 @@ class WebAuthnAdminDataStore() {
   def deleteRegistrationRequest(requestId: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:webauthn:regreq:$requestId")).map(_ => ())
   }
+}
+
+class WebAuthnAdminDataStore() {
+
+  lazy val logger = Logger("otoroshi-webauthn-admin-datastore")
+
+  def key(id: String)(implicit env: Env): String = s"${env.storageRoot}:webauthn:admins:$id"
 
   def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] =
     env.datastores.rawDataStore.get(key(username)).map(_.map(v => Json.parse(v.utf8String)))

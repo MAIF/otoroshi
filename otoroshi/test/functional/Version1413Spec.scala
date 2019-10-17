@@ -60,8 +60,13 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
     }
 
     "support missing header (#364)" in {
+
       val counterBar = new AtomicInteger(0)
       val counterKix = new AtomicInteger(0)
+
+      val counterBarOld = new AtomicInteger(0)
+      val counterKixOld = new AtomicInteger(0)
+
       val (_, port1, _, call1) = testServer("missingheaders.oto.tools", port, validate = req => {
         val header = req.getHeader("foo").get().value()
         if (header == "bar") {
@@ -72,6 +77,18 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         }
         true
       })
+
+      val (_, port2, _, call2) = testServer("missingheadersold.oto.tools", port, validate = req => {
+        val header = req.getHeader("foo").get().value()
+        if (header == "bar") {
+          counterBarOld.incrementAndGet()
+        }
+        if (header == "kix") {
+          counterKixOld.incrementAndGet()
+        }
+        true
+      })
+
       val service1 = ServiceDescriptor(
         id = "missingheaders",
         name = "missingheaders",
@@ -92,7 +109,28 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         )
       )
 
+      val service2 = ServiceDescriptor(
+        id = "missingheadersold",
+        name = "missingheadersold",
+        env = "prod",
+        subdomain = "missingheadersold",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        additionalHeaders = Map(
+          "foo" -> "kix"
+        )
+      )
+
       createOtoroshiService(service1).futureValue
+      createOtoroshiService(service2).futureValue
 
       val resp1 = call1(
         Map(
@@ -110,7 +148,25 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       counterBar.get() mustBe 1
       counterKix.get() mustBe 1
 
+
+      val resp3 = call2(
+        Map(
+          "foo" -> "bar"
+        )
+      )
+
+      val resp4 = call2(
+        Map.empty
+      )
+
+      resp3.status mustBe 200
+      resp4.status mustBe 200
+
+      counterBarOld.get() mustBe 0
+      counterKixOld.get() mustBe 2
+
       deleteOtoroshiService(service1).futureValue
+      deleteOtoroshiService(service2).futureValue
 
       stopServers()
     }
@@ -275,7 +331,7 @@ class Transformer2 extends RequestTransformer {
     TransformersCounters.counter.incrementAndGet()
     context.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
-      case None =>
+      case _ =>
     }
     if (context.otoroshiRequest.headers.get("foo").contains("bar")) {
       TransformersCounters.counter.incrementAndGet()

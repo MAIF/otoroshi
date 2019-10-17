@@ -57,7 +57,7 @@ function updateTray(profiles) {
     items.push({ type: 'separator' });
     currentProfile.tunnels.map(tunnel => {
       const label = `${(tunnel.transport || 'tcp').toUpperCase()} - ${tunnel.name} ${tunnel.transport === 'udp' ? '' : '- ' + ((connectionsPerTunnel[tunnel.name] || '0') + ' conn.')}`;
-      items.push({ label, type: 'normal', enabled: tunnel.enabled });
+      items.push({ label, type: 'normal', enabled: tunnel.enabled || !tunnel.remote });
     });
   } else {
     items.push({ type: 'separator' })

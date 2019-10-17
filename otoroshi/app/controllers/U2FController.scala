@@ -386,7 +386,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
         "handle" -> base64Encoder.encodeToString(userHandle)
       )
 
-      env.datastores.webAuthnAdminDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
+      env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
         Ok(finalRequest)
       }
     }
@@ -413,7 +413,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
       val pkc = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
 
-      env.datastores.webAuthnAdminDataStore.getRegistrationRequest(reqId).flatMap {
+      env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
         case None => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
         case Some(rawRequest) => {
           val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[PublicKeyCredentialCreationOptions])
@@ -474,7 +474,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 "label" -> "--"
               )
 
-              env.datastores.webAuthnAdminDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
+              env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
                 Ok(finalRequest)
               }
             }
@@ -513,7 +513,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
           users.find(u => (u \ "username").as[String] == username) match {
             case None => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad user")))
             case Some(user) => {
-              env.datastores.webAuthnAdminDataStore.getRegistrationRequest(reqId).flatMap {
+              env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
                 case None => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
                 case Some(rawRequest) => {
                   val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])

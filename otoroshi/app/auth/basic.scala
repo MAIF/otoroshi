@@ -445,7 +445,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               "label" -> "--"
             )
 
-            env.datastores.webAuthnAdminDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
+            env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
               Right(finalRequest)
             }
           }
@@ -496,7 +496,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               "label" -> "--"
             )
 
-            env.datastores.webAuthnAdminDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
+            env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
               Right(finalRequest)
             }
           }
@@ -539,7 +539,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         users.find(u => (u \ "username").as[String] == username) match {
           case None => FastFuture.successful(Left("Bad user"))
           case Some(user) => {
-            env.datastores.webAuthnAdminDataStore.getRegistrationRequest(reqId).flatMap {
+            env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
               case None => FastFuture.successful(Left("bad request"))
               case Some(rawRequest) => {
                 val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
@@ -606,7 +606,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         users.find(u => (u \ "username").as[String] == username) match {
           case None => FastFuture.successful(Left("Bad user"))
           case Some(user) => {
-            env.datastores.webAuthnAdminDataStore.getRegistrationRequest(reqId).flatMap {
+            env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
               case None => FastFuture.successful(Left("bad request"))
               case Some(rawRequest) => {
                 val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
@@ -688,7 +688,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       "handle" -> base64Encoder.encodeToString(userHandle)
     )
 
-    env.datastores.webAuthnAdminDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
+    env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
       Right(finalRequest)
     }
   }
@@ -721,7 +721,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
       val pkc = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
 
-      env.datastores.webAuthnAdminDataStore.getRegistrationRequest(reqId).flatMap {
+      env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
         case None => FastFuture.successful(Left("bad request"))
         case Some(rawRequest) => {
           val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[PublicKeyCredentialCreationOptions])

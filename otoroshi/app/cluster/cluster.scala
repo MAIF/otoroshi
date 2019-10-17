@@ -1478,6 +1478,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   private lazy val _webAuthnAdminDataStore = new WebAuthnAdminDataStore()
   override def webAuthnAdminDataStore: WebAuthnAdminDataStore = _webAuthnAdminDataStore
 
+  private lazy val _webAuthnRegistrationsDataStore = new WebAuthnRegistrationsDataStore()
+  override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore

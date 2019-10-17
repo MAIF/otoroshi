@@ -226,12 +226,6 @@ function ProxyServer(options, optionalConfigFile, updateConnections, agent) {
   const color = colors[possibleColors[Math.floor(Math.random() * possibleColors.length)]].bold;
   const sessionId = options.name || faker.random.alphaNumeric(6);
 
-  if (!options.remote) {
-    console.warn(color(`[${sessionId}]`) + ` No remote service location specified with the --remote flag !`);
-    console.log('');
-    process.exit(-1);
-  }
-
   const remoteWsUrl = options.remote.replace('http://', 'ws://').replace('https://', 'wss://');
   const remoteUrl = options.remote;
   let localProcessAddress = options.address || '127.0.0.1';
@@ -619,7 +613,7 @@ exports.start = function(configJson, updateConnections) {
 
   const servers = [];
 
-  const items = (configJson.tunnels || configJson).filter(item => item.enabled);
+  const items = (configJson.tunnels || configJson).filter(item => item.enabled || !item.remote);
   asyncForEach(items, item => {
     const serverp = ProxyServer(item, configJson, updateConnections, agent).start().catch(e => console.log(`Error while starting proxy for ${item.name}`, e));
     serverp.then(server => {
