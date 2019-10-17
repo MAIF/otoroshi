@@ -85,7 +85,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
           nameField = (json \ "nameField").as[String],
           emailField = (json \ "emailField").as[String],
-          metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty)
+          metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
+          extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj())
         )
       )
     } recover {
@@ -109,6 +110,7 @@ case class LdapAuthModuleConfig(
     nameField: String = "cn",
     emailField: String = "mail",
     metadataField: Option[String] = None,
+    extraMetadata: JsObject = Json.obj(),
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
@@ -130,7 +132,8 @@ case class LdapAuthModuleConfig(
     "adminPassword" -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "nameField"     -> this.nameField,
     "emailField"    -> this.emailField,
-    "metadataField" -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "metadataField" -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "extraMetadata" -> this.extraMetadata
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -206,9 +209,9 @@ case class LdapAuthModuleConfig(
             LdapAuthUser(
               name = attrs.get(nameField).toString.split(":").last.trim,
               email = attrs.get(emailField).toString.split(":").last.trim,
-              metadata = metadataField
+              metadata = extraMetadata.deepMerge(metadataField
                 .map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject])
-                .getOrElse(Json.obj())
+                .getOrElse(Json.obj()))
             )
           )
         } recover {

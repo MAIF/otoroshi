@@ -80,7 +80,6 @@ function Base64Url() {
 
 const base64url = Base64Url();
 
-
 function responseToObject(response) {
   if (response.u2fResponse) {
     return response;
@@ -148,6 +147,7 @@ export class Oauth2ModuleConfig extends Component {
     apiKeyMetaField: 'apkMeta',
     apiKeyTagsField: 'apkTags',
     otoroshiDataField: 'app_metadata | otoroshi_data',
+    extraMetadata: {}
   };
 
   componentDidCatch(error) {
@@ -393,6 +393,12 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.otoroshiDataField}
           help="..."
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
+        />
+        <CodeInput
+          label="Extra metadata"
+          mode="json"
+          value={JSON.stringify(settings.extraMetadata, null, 2)}
+          onChange={e => this.changeTheValue(path + '.extraMetadata', JSON.parse(e))}
         />
         <TextInput
           label="Api key metadata field name"
@@ -951,6 +957,12 @@ export class LdapModuleConfig extends Component {
           value={settings.metadataField}
           help="..."
           onChange={v => changeTheValue(path + '.metadataField', v)}
+        />
+        <CodeInput
+          label="Extra metadata"
+          mode="json"
+          value={JSON.stringify(settings.extraMetadata, null, 2)}
+          onChange={e => this.changeTheValue(path + '.extraMetadata', JSON.parse(e))}
         />
       </div>
     );

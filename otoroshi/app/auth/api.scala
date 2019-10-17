@@ -93,6 +93,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def callbackUrl: String
   def oidConfig: Option[String]
   def proxy: Option[WSProxyServer]
+  def extraMetadata: JsObject
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {

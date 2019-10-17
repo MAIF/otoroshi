@@ -66,7 +66,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[String]
             .getOrElse("http://privateapps.foo.bar:8080/privateapps/generic/callback"),
           oidConfig = (json \ "oidConfig").asOpt[String],
-          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
+          proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+          extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj())
         )
       )
     } recover {
@@ -101,7 +102,8 @@ case class GenericOauth2ModuleConfig(
     otoroshiDataField: String = "app_metadata|otoroshi_data",
     callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback",
     oidConfig: Option[String] = None,
-    proxy: Option[WSProxyServer] = None
+    proxy: Option[WSProxyServer] = None,
+    extraMetadata: JsObject = Json.obj()
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -133,7 +135,8 @@ case class GenericOauth2ModuleConfig(
     "otoroshiDataField"    -> this.otoroshiDataField,
     "callbackUrl"          -> this.callbackUrl,
     "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy)
+    "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
+    "extraMetadata"        -> this.extraMetadata
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
@@ -297,7 +300,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
               }
               .map { tuple =>
                 val (user, rawToken) = tuple
-                val meta = PrivateAppsUser
+                val meta: Option[JsObject] = PrivateAppsUser
                   .select(user, authConfig.otoroshiDataField)
                   .asOpt[String]
                   .map(
@@ -307,7 +310,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   )
                   .orElse(
                     Option(PrivateAppsUser.select(user, authConfig.otoroshiDataField))
-                  )
+                  ).map(_.asOpt[JsObject].getOrElse(Json.obj()))
                 Right(
                   PrivateAppsUser(
                     randomId = IdGenerator.token(64),
@@ -319,7 +322,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     profile = user,
                     token = rawToken,
                     realm = authConfig.cookieSuffix(descriptor),
-                    otoroshiData = meta
+                    otoroshiData = Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))
                   )
                 )
               }
