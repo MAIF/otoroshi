@@ -7,28 +7,13 @@ const https = require('https');
 const faker = require('faker');
 const HttpsProxyAgent = require('https-proxy-agent');
 const WebSocket = require('ws');
-// const open = require('open');
 const moment = require('moment');
 const colors = require('colors');
 const _ = require('lodash');
 
 const { shell, BrowserWindow, ipcMain } = require('electron');
 
-const cliOptions = {};
-const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
-const debug = cliOptions.debug || false;
-const clientCaPath = cliOptions.caPath;
-const clientCertPath = cliOptions.certPath;
-const clientKeyPath = cliOptions.keyPath;
-
-const AgentClass = !!proxy ? HttpsProxyAgent : https.Agent;
-const proxyUrl = !!proxy ? url.parse(proxy): {};
-const agent = (clientCaPath || clientCertPath || clientKeyPath) ? new AgentClass({
-  ...proxyUrl,
-  key: clientKeyPath ? fs.readFileSync(clientKeyPath) : undefined,
-  cert: clientCertPath ? fs.readFileSync(clientCertPath) : undefined,
-  ca: clientCaPath ? fs.readFileSync(clientCaPath) : undefined,
-}) : undefined;
+const debug = false;
 
 const possibleColors = [
   'green',
@@ -156,11 +141,12 @@ function askForToken(sessionId, color, cb) {
   // }
 }
 
-function ApiKeyAuthChecker(remoteUrl, headers) {
+function ApiKeyAuthChecker(remoteUrl, headers, agent) {
 
   function check() {
     return new Promise((success, failure) => {
       fetch(`${remoteUrl}/.well-known/otoroshi/me`, {
+        agent,
         method: 'GET',
         headers: { ...headers, 'Accept': 'application/json' }
       }).then(r => {
@@ -195,11 +181,12 @@ function ApiKeyAuthChecker(remoteUrl, headers) {
   };
 }
 
-function SessionAuthChecker(remoteUrl, token, headers) {
+function SessionAuthChecker(remoteUrl, token, headers, agent) {
   
   function check() {
     return new Promise((success, failure) => {
       fetch(`${remoteUrl}/.well-known/otoroshi/me?pappsToken=${token}`, {
+        agent,
         method: 'GET',
         headers: { ...headers, 'Accept': 'application/json' }
       }).then(r => {
@@ -234,7 +221,7 @@ function SessionAuthChecker(remoteUrl, token, headers) {
   };
 }
 
-function ProxyServer(options, optionalConfigFile, updateConnections) {
+function ProxyServer(options, optionalConfigFile, updateConnections, agent) {
 
   const color = colors[possibleColors[Math.floor(Math.random() * possibleColors.length)]].bold;
   const sessionId = options.name || faker.random.alphaNumeric(6);
@@ -276,7 +263,7 @@ function ProxyServer(options, optionalConfigFile, updateConnections) {
     let done = false;
     return new Promise((success, failure) => {
       asyncForEach(Object.keys(existingSessionTokens), token => {
-        return SessionAuthChecker(remoteUrl, token).check().then(r => {
+        return SessionAuthChecker(remoteUrl, token, headers, agent).check().then(r => {
           if (!done) {
             success(token);
           }
@@ -519,7 +506,7 @@ function ProxyServer(options, optionalConfigFile, updateConnections) {
       } else {
         headers[simpleApikeyHeaderName] = apikey;
       }
-      const checker = ApiKeyAuthChecker(remoteUrl, headers);
+      const checker = ApiKeyAuthChecker(remoteUrl, headers, agent);
       return checker.check().then(() => {
         console.log(color(`[${sessionId}]`) + ` Will use apikey authentication to access the service. Apikey access was successful !`.green);
         const server = startLocalProxy();
@@ -535,7 +522,7 @@ function ProxyServer(options, optionalConfigFile, updateConnections) {
 
       function startLocalProxyAndCheckSession(sessionId, remoteUrl, token, success) {
         existingSessionTokens[token] = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
-        const checker = SessionAuthChecker(remoteUrl, token, headers);
+        const checker = SessionAuthChecker(remoteUrl, token, headers, agent);
         finalUrl = finalUrl + '/?pappsToken=' + token;
         checker.check().then(() => {
           console.log(color(`[${sessionId}]`) + ` Will use session authentication to access the service. Session access was successful !`.green);
@@ -546,7 +533,7 @@ function ProxyServer(options, optionalConfigFile, updateConnections) {
             delete existingSessionTokens[token];
             server.close();
             awaitingReconnections.push(() => {
-              return ProxyServer(options, optionalConfigFile, updateConnections).start();
+              return ProxyServer(options, optionalConfigFile, updateConnections, agent).start();
             });
           });
         }, text => {
@@ -577,23 +564,24 @@ function ProxyServer(options, optionalConfigFile, updateConnections) {
       });
     } else {
       return fetch(`${remoteUrl}/.well-known/otoroshi/me`, {
+        agent,
         method: 'GET',
         headers: { ...headers, 'Accept': 'application/json' }
       }).then(r => {
         if (r.status === 200) {
           // access_type = public
           // console.log(color(`Automatically found "access_type" is 'public'`))
-          return ProxyServer({ ...options, access_type: 'public' }, optionalConfigFile, updateConnections).start();
+          return ProxyServer({ ...options, access_type: 'public' }, optionalConfigFile, updateConnections, agent).start();
         } else if (r.status === 401) {
           return r.text().then(text => {
             if (text.toLowerCase().indexOf('session') > -1) {
               // access_type = session
               // console.log(color(`Automatically found "access_type" is 'session'`))
-              return ProxyServer({ ...options, access_type: 'session' }, optionalConfigFile, updateConnections).start();
+              return ProxyServer({ ...options, access_type: 'session' }, optionalConfigFile, updateConnections, agent).start();
             } else if (text.toLowerCase().indexOf('api key') > -1) {
               // access_type = apikey
               // console.log(color(`Automatically found "access_type" is 'apikey'`))
-              return ProxyServer({ ...options, access_type: 'apikey' }, optionalConfigFile, updateConnections).start();
+              return ProxyServer({ ...options, access_type: 'apikey' }, optionalConfigFile, updateConnections, agent).start();
             } else {
               return Promise.reject(new Error('No legal access_type found (possible value: apikey, session, public)!'.bold.red));
             }
@@ -614,11 +602,26 @@ function ProxyServer(options, optionalConfigFile, updateConnections) {
 
 exports.start = function(configJson, updateConnections) {
 
+  const cliOptions = configJson;
+  const proxy = process.env.https_proxy || process.env.http_proxy || cliOptions.proxy;
+  const clientCaPath = cliOptions.caPath;
+  const clientCertPath = cliOptions.certPath;
+  const clientKeyPath = cliOptions.keyPath;
+
+  const AgentClass = !!proxy ? HttpsProxyAgent : https.Agent;
+  const proxyUrl = !!proxy ? url.parse(proxy): {};
+  const agent = (clientCaPath || clientCertPath || clientKeyPath) ? new AgentClass({
+    ...proxyUrl,
+    key: clientKeyPath ? fs.readFileSync(clientKeyPath) : undefined,
+    cert: clientCertPath ? fs.readFileSync(clientCertPath) : undefined,
+    ca: clientCaPath ? fs.readFileSync(clientCaPath) : undefined,
+  }) : undefined;
+
   const servers = [];
 
   const items = (configJson.tunnels || configJson).filter(item => item.enabled);
   asyncForEach(items, item => {
-    const serverp = ProxyServer(item, configJson, updateConnections).start().catch(e => console.log(`Error while starting proxy for ${item.name}`, e));
+    const serverp = ProxyServer(item, configJson, updateConnections, agent).start().catch(e => console.log(`Error while starting proxy for ${item.name}`, e));
     serverp.then(server => {
       if (server) {
         servers.push(server);

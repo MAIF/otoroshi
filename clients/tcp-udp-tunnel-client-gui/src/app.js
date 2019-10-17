@@ -66,7 +66,7 @@ function updateTray(profiles) {
     }}));
   }
   items.push({ type: 'separator' })
-  items.push({ label: `Show config. files`, type: 'normal', click: e => shell.showItemInFolder(path.join(app.getPath('userData'), 'profiles')) })
+  items.push({ label: `Show profile files`, type: 'normal', click: e => shell.showItemInFolder(path.join(app.getPath('userData'), 'profiles')) })
   items.push({ type: 'separator' })
   items.push({ label: `Quit`, type: 'normal', click: e => app.quit() })
   const contextMenu = Menu.buildFromTemplate(items);
