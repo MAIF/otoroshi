@@ -2,7 +2,7 @@
 
 @import play.api.libs.json._
 
-@(user: JsValue, session: String, webauthn: Boolean, _env: Env)
+@(user: JsValue, session: String, expires: Long, webauthn: Boolean, _env: Env)
 
 @authScript = {
 @if(_env.liveJs) {
@@ -12,6 +12,7 @@
 }
     <script>
         Otoroshi.selfUpdate({
+          expires: @expires,
           webauthn: @webauthn,
           session: '@session',
           user: @Html(Json.stringify(user))

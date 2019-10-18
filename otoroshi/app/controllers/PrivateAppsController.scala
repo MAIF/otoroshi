@@ -43,7 +43,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     Ok(views.html.otoroshi.error(message.getOrElse(""), env))
   }
 
-  def withShortSession(req: RequestHeader)(f: (BasicAuthModule, BasicAuthUser) => Future[Result]): Future[Result] = {
+  def withShortSession(req: RequestHeader)(f: (BasicAuthModule, BasicAuthUser, Long) => Future[Result]): Future[Result] = {
     req.getQueryString("session") match {
       case None => NotFound( Json.obj("error" -> s"session not found")).future
       case Some(cipheredSessionId) => {
@@ -54,27 +54,29 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
         env.datastores.rawDataStore.get(s"${env.rootScheme}:self-service:sessions:$sessionId").flatMap {
           case None => NotFound( Json.obj("error" -> s"session not found")).future
           case Some(sessionRaw) => {
-            val session = Json.parse(sessionRaw.utf8String)
-            val username = (session \ "username").as[String]
-            val id = (session \ "auth").as[String]
-            env.datastores.authConfigsDataStore.findById(id).flatMap {
-              case Some(auth) => {
-                auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
-                  case bam: BasicAuthModule if bam.authConfig.webauthn => {
-                    bam.authConfig.users.find(_.email == username) match {
-                      case None => NotFound( Json.obj("error" -> s"user not found")).future
-                      case Some(user) => {
-                        f(bam, user)
+            env.datastores.rawDataStore.pttl(s"${env.rootScheme}:self-service:sessions:$sessionId").flatMap { ttl =>
+              val session = Json.parse(sessionRaw.utf8String)
+              val username = (session \ "username").as[String]
+              val id = (session \ "auth").as[String]
+              env.datastores.authConfigsDataStore.findById(id).flatMap {
+                case Some(auth) => {
+                  auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
+                    case bam: BasicAuthModule if bam.authConfig.webauthn => {
+                      bam.authConfig.users.find(_.email == username) match {
+                        case None => NotFound( Json.obj("error" -> s"user not found")).future
+                        case Some(user) => {
+                          f(bam, user, ttl)
+                        }
                       }
                     }
+                    case _ => BadRequest(Json.obj("error" -> s"Not supported")).future
                   }
-                  case _ => BadRequest(Json.obj("error" -> s"Not supported")).future
                 }
+                case None =>
+                  NotFound(
+                    Json.obj("error" -> s"GlobalAuthModule with id $id not found")
+                  ).future
               }
-              case None =>
-                NotFound(
-                  Json.obj("error" -> s"GlobalAuthModule with id $id not found")
-                ).future
             }
           }
         }
@@ -106,7 +108,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def selfRegistrationStart() = Action.async { req =>
     withShortSession(req) {
-      case (bam, _) =>
+      case (bam, _, _) =>
         bam.webAuthnRegistrationStart(req.body.asJson.get).map {
           case Left(err) => BadRequest(err)
           case Right(reg) => Ok(reg)
@@ -116,7 +118,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def selfRegistrationFinish() = Action.async { req =>
     withShortSession(req) {
-      case (bam, _) =>
+      case (bam, _, _) =>
         bam.webAuthnRegistrationFinish(req.body.asJson.get).map {
           case Left(err) => BadRequest(err)
           case Right(reg) => Ok(reg)
@@ -126,7 +128,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def selfRegistrationDelete() = Action.async { req =>
     withShortSession(req) {
-      case (bam, user) =>
+      case (bam, user, _) =>
         bam.webAuthnRegistrationDelete(user).map {
           case Left(err) => BadRequest(err)
           case Right(reg) => Ok(reg)
@@ -136,19 +138,27 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def selfUpdateProfilePage() = Action.async { req =>
     withShortSession(req) {
-      case (bam, user) =>
-        Ok(views.html.otoroshi.selfUpdate(Json.obj(
-          "name" -> user.name,
-          "email" -> user.email,
-          "hasWebauthnDeviceReg" -> user.webauthn.isDefined,
-          "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-        ), req.getQueryString("session").get, bam.authConfig.webauthn, env)).future
+      case (bam, user, ttl) =>
+        Ok(
+          views.html.otoroshi.selfUpdate(
+            Json.obj(
+              "name" -> user.name,
+              "email" -> user.email,
+              "hasWebauthnDeviceReg" -> user.webauthn.isDefined,
+              "mustRegWebauthnDevice" -> bam.authConfig.webauthn
+            ),
+            req.getQueryString("session").get,
+            ttl,
+            bam.authConfig.webauthn,
+            env
+          )
+        ).future
     }
   }
 
   def selfUpdateProfile() = Action.async(parse.json) { req =>
     withShortSession(req) {
-      case (bam, user) =>
+      case (bam, user, _) =>
         var newUser = user
         (req.body \ "password").asOpt[String] match {
           case Some(pass) if BCrypt.checkpw(pass, user.password) => {

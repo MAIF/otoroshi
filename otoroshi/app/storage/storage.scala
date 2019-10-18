@@ -62,6 +62,7 @@ trait DataStores {
 
 trait RawDataStore {
   def exists(key: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def pttl(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]]
   def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]]
   def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]

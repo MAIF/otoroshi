@@ -219,6 +219,8 @@ class RedisRawDataStore(redis: RedisClientMasterSlaves) extends RawDataStore {
 
   override def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]] = redis.get(key)
 
+  override def pttl(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.pttl(key)
+
   override def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]] =
     redis.mget(keys: _*)
 

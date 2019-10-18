@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import moment from 'moment';
 
 function Base64Url() {
 
@@ -108,8 +109,28 @@ export class SelfUpdatePage extends Component {
     reNewPassword: '',
     webauthn: this.props.webauthn,
     mustRegWebauthnDevice: this.props.user.mustRegWebauthnDevice,
-    hasWebauthnDeviceReg: this.props.user.hasWebauthnDeviceReg
+    hasWebauthnDeviceReg: this.props.user.hasWebauthnDeviceReg,
+    duration: moment.duration(this.props.expires, 'ms'),
+    expired: false
   };
+
+  updateDuration = () => {
+    const duration = this.state.duration;
+    if (duration.hours() <= 0 && duration.minutes() <= 0 && duration.seconds() <= 0) {
+      this.setState({ expired: true });
+      clearInterval(this.interval);
+    } else {
+      this.setState({ duration: this.state.duration.subtract(1, 'seconds') });
+    }
+  }
+
+  componentDidMount() {
+    this.interval = setInterval(this.updateDuration, 1000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
+  }
 
   onChange = e => {
     this.setState({ [e.target.name]: e.target.value });
@@ -263,9 +284,19 @@ export class SelfUpdatePage extends Component {
   };
 
   render() {
+    const duration = this.state.duration;
+    if (this.state.expired) {
+      return (
+        <div className="jumbotron">
+          <h3 style={{ marginBottom: 40 }}>Update your profile</h3>
+          <h5>The link has expired, please ask another link to your administrator</h5>
+        </div>
+      );
+    }
     return (
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Update your profile</h3>
+        <h5>this link will expire in {duration.humanize()} ({("0" + duration.hours()).slice(-2)}:{("0" + duration.minutes()).slice(-2)}:{("0" + duration.seconds()).slice(-2)})</h5>
         <form
           className="form-horizontal"
           style={{ textAlign: 'left' }}>
