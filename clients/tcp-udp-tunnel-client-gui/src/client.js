@@ -38,13 +38,15 @@ function createPopup(id) {
   win.setTitle("Session id value");
   win.loadFile(path.join(__dirname, 'index.html'));
   return new Promise((s) => {
-    ipcMain.emit('set-id', id);
+    setTimeout(() => {
+      win.webContents.send('set-id', id);
+    }, 1000);
     ipcMain.once('session-value', (e, m) => {
-      //if (m.id === id) { 
+      if (m.id === id) { 
         win.hide();
         win.close();
         s(m.value);
-      //}
+      }
     });
   });
 }
