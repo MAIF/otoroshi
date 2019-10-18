@@ -387,6 +387,7 @@ export class JwtVerifier extends Component {
                     fields: {
                       iss: 'The issuer',
                     },
+                    arrayFields: {}
                   },
                 });
                 break;
@@ -397,6 +398,7 @@ export class JwtVerifier extends Component {
                     fields: {
                       iss: 'The issuer',
                     },
+                    arrayFields: {}
                   },
                   algoSettings: {
                     type: 'HSAlgoSettings',
@@ -412,6 +414,7 @@ export class JwtVerifier extends Component {
                     fields: {
                       iss: 'The issuer',
                     },
+                    arrayFields: {}
                   },
                   algoSettings: {
                     type: 'HSAlgoSettings',

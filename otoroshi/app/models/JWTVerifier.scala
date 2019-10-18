@@ -791,7 +791,11 @@ sealed trait JwtVerifier extends AsJson {
                         source match {
                           case _: InQueryParam => f(tSettings.location.asJwtInjection(newToken)).right[Result]
                           case InHeader(n, _) =>
-                            f(tSettings.location.asJwtInjection(newToken).copy(removeHeaders = Seq(n))).right[Result]
+                            val inj = tSettings.location.asJwtInjection(newToken)
+                            tSettings.location match {
+                              case InHeader(nn, _) if nn == n => f(inj).right[Result]
+                              case _                          => f(inj.copy(removeHeaders = Seq(n))).right[Result]
+                            }
                           case InCookie(n) =>
                             f(tSettings.location.asJwtInjection(newToken).copy(removeCookies = Seq(n))).right[Result]
                         }

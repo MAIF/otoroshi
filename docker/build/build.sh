@@ -129,7 +129,7 @@ case "${1}" in
     echo "Will build version 1.4.13-dev-$NBR"
     cp ../../otoroshi/target/universal/otoroshi-1.4.13-dev.zip otoroshi-dist.zip
     prepare_build
-    docker build --no-cache -t otoroshi .
+    docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi .
     docker tag otoroshi "maif/otoroshi:1.4.13-dev-$NBR"
     cleanup
     docker push "maif/otoroshi:1.4.13-dev-$NBR"
@@ -139,7 +139,7 @@ case "${1}" in
     echo "Will build version 1.4.13-dev-$NBR"
     cp ../../otoroshi/target/universal/otoroshi-1.4.13-dev.zip otoroshi-dist.zip
     prepare_build
-    docker build --no-cache -t otoroshi .
+    docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi .
     docker tag otoroshi "maif/otoroshi:1.4.13-dev-$NBR"
     cleanup
     ;;

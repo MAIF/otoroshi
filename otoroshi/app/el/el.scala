@@ -70,7 +70,8 @@ object GlobalExpressionLanguage {
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
             case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*)" => context.getOrElse(field, value)
+            case r"token.$field@(.*)" =>
+              context.getOrElse(field, s"no-token-$field")
 
             case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
               context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
@@ -80,7 +81,7 @@ object GlobalExpressionLanguage {
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
             case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-            case r"ctx.$field@(.*)" => context.getOrElse(field, value)
+            case r"ctx.$field@(.*)" => context.getOrElse(field, s"no-ctx-$field")
 
             case "user.name"                                   if user.isDefined    => user.get.name
             case "user.email"                                  if user.isDefined    => user.get.email
