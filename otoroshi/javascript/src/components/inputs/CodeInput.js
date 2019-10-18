@@ -23,7 +23,11 @@ export class CodeInput extends Component {
           this.props.onChange(e);
         });
       } catch (ex) {
-        this.setState({ value: e });
+        if (e.trim() === '') {
+          this.setState({ value: '{}' });
+        } else {
+          this.setState({ value: e });
+        }
       }
     } else {
       this.setState({ value: e });

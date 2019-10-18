@@ -155,7 +155,7 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def applyJwtVerifier(service: ServiceDescriptor, req: RequestHeader)(
+  def applyJwtVerifier(service: ServiceDescriptor, req: RequestHeader, elContext: Map[String, String])(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     if (service.jwtVerifier.enabled) {
@@ -163,7 +163,7 @@ class WebSocketHandler()(implicit env: Env) {
         case false => f(JwtInjection())
         case true => {
           logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-          service.jwtVerifier.verifyWs(req, service, None, None)(f)
+          service.jwtVerifier.verifyWs(req, service, None, None, elContext)(f)
         }
       }
     } else {
@@ -344,6 +344,12 @@ class WebSocketHandler()(implicit env: Env) {
     val counterOut       = new AtomicLong(0L)
     val start            = System.currentTimeMillis()
 
+    val elCtx: Map[String, String] = Map(
+      "id" -> snowflake,
+      "snowflake" -> snowflake,
+      "timestamp" -> requestTimestamp
+    )
+
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       ServiceLocation(req.host, globalConfig) match {
         case None =>
@@ -381,7 +387,7 @@ class WebSocketHandler()(implicit env: Env) {
                   .successful(
                     Results
                       .Status(rawDesc.redirection.code)
-                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc))
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx))
                   )
                   .asLeft[WSFlow]
               }
@@ -389,7 +395,7 @@ class WebSocketHandler()(implicit env: Env) {
                 passWithTcpUdpTunneling(req, rawDesc) {
                   passWithHeadersVerification(rawDesc, req) {
                     passWithReadOnly(rawDesc.readOnly, req) {
-                      applyJwtVerifier(rawDesc, req) { jwtInjection =>
+                      applyJwtVerifier(rawDesc, req, elCtx) { jwtInjection =>
                         applySidecar(rawDesc, remoteAddress, req) { desc =>
                           val maybeCanaryId = req.cookies
                             .get("otoroshi-canary")
@@ -586,7 +592,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
                                 val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
                                 val root   = descriptor.root
-                                val url    = TargetExpressionLanguage(s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri", Some(req), Some(descriptor), apiKey, paUsr)
+                                val url    = TargetExpressionLanguage(s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri", Some(req), Some(descriptor), apiKey, paUsr, elCtx)
                                 // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                 val fromOtoroshi = req.headers
                                   .get(env.Headers.OtoroshiRequestId)
@@ -633,7 +639,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   case None => Map.empty[String, String]
                                 }) ++ descriptor.additionalHeaders
                                   .filter(t => t._1.trim.nonEmpty)
-                                  .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)) ++ fromOtoroshi
+                                  .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)) ++ fromOtoroshi
                                   .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                   .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
                                   .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc,
@@ -824,7 +830,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                     Seq.empty[(String, String)]
                                                   }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut
                                             .mapValues(
-                                              v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr)
+                                              v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
                                             )
                                             .toSeq
                                           promise.trySuccess(
@@ -853,7 +859,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     case Right(_)
                                         if descriptor.tcpUdpTunneling && req.relativeUri
                                           .startsWith("/.well-known/otoroshi/tunnel") => {
-                                      val (theHost: String, thePort: Int) = (target.scheme, TargetExpressionLanguage(target.host, Some(req), Some(descriptor), apiKey, paUsr)) match {
+                                      val (theHost: String, thePort: Int) = (target.scheme, TargetExpressionLanguage(target.host, Some(req), Some(descriptor), apiKey, paUsr, elCtx)) match {
                                         case (_, host) if host.contains(":") =>
                                           (host.split(":").apply(0), host.split(":").apply(1).toInt)
                                         case (scheme, host) if scheme.contains("https") => (host, 443)

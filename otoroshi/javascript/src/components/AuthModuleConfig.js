@@ -398,7 +398,13 @@ export class Oauth2ModuleConfig extends Component {
           label="Extra metadata"
           mode="json"
           value={JSON.stringify(settings.extraMetadata, null, 2)}
-          onChange={e => this.changeTheValue(path + '.extraMetadata', JSON.parse(e))}
+          onChange={e => {
+            if (e.trim() === '') {
+              this.changeTheValue(path + '.extraMetadata', {});
+            } else {
+              this.changeTheValue(path + '.extraMetadata', JSON.parse(e))
+            }
+          }}
         />
         <TextInput
           label="Api key metadata field name"
@@ -962,7 +968,14 @@ export class LdapModuleConfig extends Component {
           label="Extra metadata"
           mode="json"
           value={JSON.stringify(settings.extraMetadata, null, 2)}
-          onChange={e => this.changeTheValue(path + '.extraMetadata', JSON.parse(e))}
+          onChange={e => {
+            console.log('changes "', e, '"')
+            if (e.trim() === '') {
+              this.changeTheValue(path + '.extraMetadata', {});
+            } else {
+              this.changeTheValue(path + '.extraMetadata', JSON.parse(e))
+            }
+          }}
         />
       </div>
     );
@@ -982,6 +995,8 @@ export class AuthModuleConfig extends Component {
               this.props.onChange({
                 id: faker.random.alphaNumeric(64),
                 type: 'basic',
+                name: 'Basic config.',
+                sessionMaxAge: 86400,
                 users: [
                   {
                     name: 'John Doe',
@@ -995,6 +1010,7 @@ export class AuthModuleConfig extends Component {
             case 'ldap':
               this.props.onChange({
                 id: faker.random.alphaNumeric(64),
+                name: 'Ldap config.',
                 type: 'ldap',
                 serverUrl: 'ldap://ldap.forumsys.com:389',
                 searchBase: 'dc=example,dc=com',
@@ -1004,11 +1020,14 @@ export class AuthModuleConfig extends Component {
                 nameField: 'cn',
                 emailField: 'mail',
                 metadataField: null,
+                sessionMaxAge: 86400,
+                extraMetadata: {}
               });
               break;
             case 'oauth2':
               this.props.onChange({
                 id: faker.random.alphaNumeric(64),
+                name: 'OAuth2 config.',
                 type: 'oauth2',
                 clientId: 'client',
                 clientSecret: 'secret',
@@ -1020,6 +1039,7 @@ export class AuthModuleConfig extends Component {
                 callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback',
                 accessTokenField: 'access_token',
                 scope: 'openid profile email name',
+                sessionMaxAge: 86400,
                 useJson: false,
                 readProfileFromToken: false,
                 jwtVerifier: {
@@ -1030,6 +1050,7 @@ export class AuthModuleConfig extends Component {
                 nameField: 'name',
                 emailField: 'email',
                 otoroshiDataField: 'app_metadata | otoroshi_data',
+                extraMetadata: {}
               });
               break;
           }

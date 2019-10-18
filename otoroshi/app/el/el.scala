@@ -24,7 +24,7 @@ object GlobalExpressionLanguage {
     service: Option[ServiceDescriptor],
     apiKey:  Option[ApiKey],
     user:    Option[PrivateAppsUser],
-    context: Map[String, String] = Map.empty,
+    context: Map[String, String],
   ): String = {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
@@ -135,7 +135,7 @@ object HeadersExpressionLanguage {
      service: Option[ServiceDescriptor],
      apiKey:  Option[ApiKey],
      user:    Option[PrivateAppsUser],
-     context: Map[String, String] = Map.empty,
+     context: Map[String, String],
    ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -212,7 +212,7 @@ object RedirectionExpressionLanguage {
     service: Option[ServiceDescriptor],
     apiKey:  Option[ApiKey],
     user:    Option[PrivateAppsUser],
-    context: Map[String, String] = Map.empty,
+    context: Map[String, String],
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -266,7 +266,7 @@ object TargetExpressionLanguage {
    service: Option[ServiceDescriptor],
    apiKey:  Option[ApiKey],
    user:    Option[PrivateAppsUser],
-   context: Map[String, String] = Map.empty,
+   context: Map[String, String],
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -317,7 +317,7 @@ object JwtExpressionLanguage {
     service: Option[ServiceDescriptor],
     apiKey:  Option[ApiKey],
     user:    Option[PrivateAppsUser],
-    context: Map[String, String] = Map.empty
+    context: Map[String, String]
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -370,7 +370,7 @@ object JwtExpressionLanguage {
     service: Option[ServiceDescriptor],
     apiKey:  Option[ApiKey],
     user:    Option[PrivateAppsUser],
-    context: Map[String, String] = Map.empty
+    context: Map[String, String]
   ): JsValue = {
     value match {
       case JsObject(map) =>

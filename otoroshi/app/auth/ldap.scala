@@ -90,7 +90,9 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
         )
       )
     } recover {
-      case e => Left(e)
+      case e =>
+        e.printStackTrace()
+        Left(e)
     } get
 }
 
