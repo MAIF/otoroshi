@@ -2,11 +2,11 @@ package models
 
 import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{ConcurrentLinkedQueue, TimeUnit}
 
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.scaladsl.Flow
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException
@@ -15,7 +15,6 @@ import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-import org.joda.time.DateTime
 import otoroshi.el.JwtExpressionLanguage
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -24,13 +23,11 @@ import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.PemUtils
 import storage.BasicStore
-import utils.ReplaceAllWith
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-import scala.annotation.meta.field
 
 trait AsJson {
   def asJson: JsValue
@@ -784,6 +781,11 @@ sealed trait JwtVerifier extends AsJson {
                             .foldLeft(jsonToken)(
                               (a, b) => a.+(b._2, JwtExpressionLanguage.fromJson((a \ b._1).as[JsValue], Some(request), Some(desc), apikey, user, context)).-(b._1)
                             ) ++ evaluatedValues).fields
+                            .filterNot {
+                              case (_, JsNull) => true
+                              case (_, JsString("null")) => true
+                              case _ => false
+                            }
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
                         )

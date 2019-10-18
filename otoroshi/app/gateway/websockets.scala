@@ -639,7 +639,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   case None => Map.empty[String, String]
                                 }) ++ descriptor.additionalHeaders
                                   .filter(t => t._1.trim.nonEmpty)
-                                  .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)) ++ fromOtoroshi
+                                  .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++ fromOtoroshi
                                   .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                   .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
                                   .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc,
@@ -831,7 +831,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                   }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut
                                             .mapValues(
                                               v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-                                            )
+                                            ).filterNot(h => h._2 == "null")
                                             .toSeq
                                           promise.trySuccess(
                                             ProxyDone(

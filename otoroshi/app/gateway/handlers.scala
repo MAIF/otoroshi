@@ -641,7 +641,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     if (desc.headersVerification.isEmpty) {
       f
     } else {
-      val inputHeaders = req.headers.toSimpleMap.mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx))
+      val inputHeaders = req.headers.toSimpleMap.mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx)).filterNot(h => h._2 == "null")
       desc.headersVerification.map(tuple => inputHeaders.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>
           Errors.craftResponseResult(
@@ -1101,7 +1101,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
                                       val headersIn: Seq[(String, String)] = {
                                         (desc.missingOnlyHeadersIn.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)) ++
+                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++
                                           req.headers.toMap.toSeq
                                           .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
                                           .filterNot(
@@ -1148,7 +1148,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .getOrElse(Map.empty[String, String]) ++
                                         descriptor.additionalHeaders
                                           .filter(t => t._1.trim.nonEmpty)
-                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)) ++ fromOtoroshi
+                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++ fromOtoroshi
                                           .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
                                           .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
                                           .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(
@@ -1363,7 +1363,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           quotas.fast.map { remainingQuotas =>
                                             val _headersOut: Seq[(String, String)] = {
                                               descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                                .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).toSeq ++
+                                                .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
                                               badResult.header.headers.toSeq
                                                 .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
                                                 .filterNot(
@@ -1397,7 +1397,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
                                                 .mapValues(
                                                   v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-                                                ).toSeq
+                                                ).filterNot(h => h._2 == "null").toSeq
                                             }
                                             promise.trySuccess(
                                               ProxyDone(
@@ -1564,7 +1564,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 val upstreamLatency = System.currentTimeMillis() - upstreamStart
                                                 val _headersOut: Seq[(String, String)] = {
                                                   descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                                    .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).toSeq ++
+                                                    .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
                                                   _headersForOut
                                                     .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
                                                     .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
@@ -1594,7 +1594,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     .asHeaders(req) ++ desc.additionalHeadersOut
                                                     .mapValues(
                                                       v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-                                                    )
+                                                    ).filterNot(h => h._2 == "null")
                                                     .toSeq
                                                 }
 
