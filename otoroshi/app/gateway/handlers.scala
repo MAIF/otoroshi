@@ -194,9 +194,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     } else {
       val isSecured = getSecuredFor(request)
       val protocol  = getProtocolFor(request)
-      val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
-      val cookies   = request.cookies.map(_.value).map(ByteString.apply)
-      val headers   = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
+      lazy val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
+      lazy val cookies   = request.cookies.map(_.value).map(ByteString.apply)
+      lazy val headers   = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
       // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
       if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
         Some(clusterError("Waiting for first Otoroshi leader sync."))
