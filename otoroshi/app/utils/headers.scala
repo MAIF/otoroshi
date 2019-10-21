@@ -88,64 +88,11 @@ object HeadersHelper {
       descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
 
     if (env.useOldHeadersComposition) {
-      val headersIn: Seq[(String, String)] = {
-        (descriptor.missingOnlyHeadersIn.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++
-          req.headers.toMap.toSeq
-            .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
-            .filterNot(
-            t =>
-              if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
-              else if (t._1.toLowerCase == "content-length") true
-              else false
-          )
-            .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
-            .filterNot(
-              t =>
-                (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))
-                  .contains(t._1.toLowerCase)
-            ) ++ Map(
-          env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
-          //"Host"                               -> host,
-          "Host" -> (if (descriptor.overrideHost) host
-          else req.headers.get("Host").getOrElse("--")),
-          env.Headers.OtoroshiRequestId        -> snowflake,
-          env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-        ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
-          Map(
-            claimRequestHeaderName -> claim
-          )
-        } else {
-          Map.empty[String, String]
-        }) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-          Map(
-            stateRequestHeaderName -> stateToken
-          )
-        } else {
-          Map.empty[String, String]
-        }) ++ (req.clientCertificateChain match {
-          case Some(chain) =>
-            Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
-          case None => Map.empty[String, String]
-        }) ++ req.headers
-          .get("Content-Length")
-          .map(l => {
-            Map(
-              "Content-Length" -> (l.toInt + snowMonkeyContext.trailingRequestBodySize).toString
-            )
-          })
-          .getOrElse(Map.empty[String, String]) ++
-          descriptor.additionalHeaders
-            .filter(t => t._1.trim.nonEmpty)
-            .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++ fromOtoroshi
-          .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
-          .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-          .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(
-          descriptor,
-          req
-        )
-      }
-      headersIn
+      oldComposeHeadersIn(
+        descriptor, req, apiKey, paUsr, elCtx, currentReqHasBody, headersInFiltered,
+        snowflake, requestTimestamp, host, claim, stateToken, fromOtoroshi, snowMonkeyContext,
+        jwtInjection, stateRequestHeaderName, claimRequestHeaderName
+      )
     } else {
 
       val headersFromRequest: Seq[(String, String)] = req.headers.toMap.toSeq
@@ -219,45 +166,11 @@ object HeadersHelper {
       .getOrElse(env.Headers.OtoroshiStateResp)
 
     if (env.useOldHeadersComposition) {
-      val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
-        c => c._2.map(v => (c._1, v))
+      oldComposeHeadersOut(
+        descriptor, req, resp, apiKey, paUsr, elCtx, currentReqHasBody, headersInFiltered,
+        snowflake, requestTimestamp, host, headersOutFiltered, overhead, upstreamLatency,
+        canaryId, remainingQuotas, stateResponseHeaderName
       )
-      val _headersOut: Seq[(String, String)] = {
-        descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
-          _headersForOut
-            .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
-            .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
-          if (descriptor.sendOtoroshiHeadersBack) {
-            Seq(
-              env.Headers.OtoroshiRequestId -> snowflake,
-              env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-              env.Headers.OtoroshiProxyLatency -> s"$overhead",
-              env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
-              //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
-            )
-          } else {
-            Seq.empty[(String, String)]
-          }
-          ) ++ Some(canaryId)
-          .filter(_ => descriptor.canary.enabled)
-          .map(
-            _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
-          ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-          Seq(
-            env.Headers.OtoroshiDailyCallsRemaining -> remainingQuotas.remainingCallsPerDay.toString,
-            env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-          )
-        } else {
-          Seq.empty[(String, String)]
-        }) ++ descriptor.cors
-          .asHeaders(req) ++ descriptor.additionalHeadersOut
-          .mapValues(
-            v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-          ).filterNot(h => h._2 == "null")
-          .toSeq
-      }
-      _headersOut
     } else {
 
       val headersFromResponse: Seq[(String, String)] = resp.headers.toSeq
@@ -337,45 +250,11 @@ object HeadersHelper {
       .getOrElse(env.Headers.OtoroshiStateResp)
 
     if (env.useOldHeadersComposition) {
-      val _headersOut: Seq[(String, String)] = {
-        descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
-          badResult.header.headers.toSeq
-            .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
-            .filterNot(
-              t =>
-                (headersOutFiltered :+ stateResponseHeaderName)
-                  .contains(t._1.toLowerCase)
-            ) ++ (
-          if (descriptor.sendOtoroshiHeadersBack) {
-            Seq(
-              env.Headers.OtoroshiRequestId -> snowflake,
-              env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-              env.Headers.OtoroshiProxyLatency -> s"$overhead",
-              env.Headers.OtoroshiUpstreamLatency -> s"0"
-            )
-          } else {
-            Seq.empty[(String, String)]
-          }
-          ) ++ Some(canaryId)
-          .filter(_ => descriptor.canary.enabled)
-          .map(
-            _ =>
-              env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
-          ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-          Seq(
-            env.Headers.OtoroshiDailyCallsRemaining -> remainingQuotas.remainingCallsPerDay.toString,
-            env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-          )
-        } else {
-          Seq.empty[(String, String)]
-        }) ++ descriptor.cors.asHeaders(req) ++ descriptor.additionalHeadersOut
-          .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-          .mapValues(
-            v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-          ).filterNot(h => h._2 == "null").toSeq
-      }
-      _headersOut
+      oldComposeHeadersOutBadResult(
+        descriptor, req, badResult, apiKey, paUsr, elCtx, currentReqHasBody, headersInFiltered,
+        snowflake, requestTimestamp, host, headersOutFiltered, overhead, upstreamLatency,
+        canaryId, remainingQuotas, stateResponseHeaderName
+      )
     } else {
 
       val headersFromResponse: Seq[(String, String)] = badResult.header.headers.toSeq
@@ -430,5 +309,207 @@ object HeadersHelper {
         .appendAll(additionalHeadersOut)
 
     }
+  }
+
+  // old stuff
+
+  private def oldComposeHeadersIn(
+    descriptor: ServiceDescriptor,
+    req: RequestHeader,
+    apiKey:  Option[ApiKey],
+    paUsr:    Option[PrivateAppsUser],
+    elCtx: Map[String, String],
+    currentReqHasBody: Boolean,
+    headersInFiltered: Seq[String],
+    snowflake: String,
+    requestTimestamp: String,
+    host: String,
+    claim: String,
+    stateToken: String,
+    fromOtoroshi: Option[String],
+    snowMonkeyContext: SnowMonkeyContext,
+    jwtInjection: JwtInjection,
+    stateRequestHeaderName: String,
+    claimRequestHeaderName: String
+  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+    val headersIn: Seq[(String, String)] = {
+      (descriptor.missingOnlyHeadersIn.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
+        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++
+        req.headers.toMap.toSeq
+          .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
+          .filterNot(
+          t =>
+            if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
+            else if (t._1.toLowerCase == "content-length") true
+            else false
+        )
+          .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
+          .filterNot(
+            t =>
+              (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))
+                .contains(t._1.toLowerCase)
+          ) ++ Map(
+        env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
+        //"Host"                               -> host,
+        "Host" -> (if (descriptor.overrideHost) host
+        else req.headers.get("Host").getOrElse("--")),
+        env.Headers.OtoroshiRequestId        -> snowflake,
+        env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
+      ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
+        Map(
+          claimRequestHeaderName -> claim
+        )
+      } else {
+        Map.empty[String, String]
+      }) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
+        Map(
+          stateRequestHeaderName -> stateToken
+        )
+      } else {
+        Map.empty[String, String]
+      }) ++ (req.clientCertificateChain match {
+        case Some(chain) =>
+          Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
+        case None => Map.empty[String, String]
+      }) ++ req.headers
+        .get("Content-Length")
+        .map(l => {
+          Map(
+            "Content-Length" -> (l.toInt + snowMonkeyContext.trailingRequestBodySize).toString
+          )
+        })
+        .getOrElse(Map.empty[String, String]) ++
+        descriptor.additionalHeaders
+          .filter(t => t._1.trim.nonEmpty)
+          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++ fromOtoroshi
+        .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
+        .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
+        .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(
+        descriptor,
+        req
+      )
+    }
+    headersIn
+  }
+
+  private def oldComposeHeadersOut(
+    descriptor: ServiceDescriptor,
+    req: RequestHeader,
+    resp: WSResponse,
+    apiKey: Option[ApiKey],
+    paUsr: Option[PrivateAppsUser],
+    elCtx: Map[String, String],
+    currentReqHasBody: Boolean,
+    headersInFiltered: Seq[String],
+    snowflake: String,
+    requestTimestamp: String,
+    host: String,
+    headersOutFiltered: Seq[String],
+    overhead: Long,
+    upstreamLatency: Long,
+    canaryId: String,
+    remainingQuotas: RemainingQuotas,
+    stateResponseHeaderName: String
+  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+
+    val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
+      c => c._2.map(v => (c._1, v))
+    )
+    val _headersOut: Seq[(String, String)] = {
+      descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
+        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
+        _headersForOut
+          .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
+          .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
+        if (descriptor.sendOtoroshiHeadersBack) {
+          Seq(
+            env.Headers.OtoroshiRequestId -> snowflake,
+            env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
+            env.Headers.OtoroshiProxyLatency -> s"$overhead",
+            env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency" //,
+            //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
+          )
+        } else {
+          Seq.empty[(String, String)]
+        }
+        ) ++ Some(canaryId)
+        .filter(_ => descriptor.canary.enabled)
+        .map(
+          _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
+        ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
+        Seq(
+          env.Headers.OtoroshiDailyCallsRemaining -> remainingQuotas.remainingCallsPerDay.toString,
+          env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+        )
+      } else {
+        Seq.empty[(String, String)]
+      }) ++ descriptor.cors
+        .asHeaders(req) ++ descriptor.additionalHeadersOut
+        .mapValues(
+          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
+        ).filterNot(h => h._2 == "null")
+        .toSeq
+    }
+    _headersOut
+  }
+
+  def oldComposeHeadersOutBadResult(
+    descriptor: ServiceDescriptor,
+    req: RequestHeader,
+    badResult: Result,
+    apiKey: Option[ApiKey],
+    paUsr: Option[PrivateAppsUser],
+    elCtx: Map[String, String],
+    currentReqHasBody: Boolean,
+    headersInFiltered: Seq[String],
+    snowflake: String,
+    requestTimestamp: String,
+    host: String,
+    headersOutFiltered: Seq[String],
+    overhead: Long,
+    upstreamLatency: Long,
+    canaryId: String,
+    remainingQuotas: RemainingQuotas,
+    stateResponseHeaderName: String
+  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+    val _headersOut: Seq[(String, String)] = {
+      descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
+        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
+        badResult.header.headers.toSeq
+          .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
+          .filterNot(
+            t =>
+              (headersOutFiltered :+ stateResponseHeaderName)
+                .contains(t._1.toLowerCase)
+          ) ++ (
+        if (descriptor.sendOtoroshiHeadersBack) {
+          Seq(
+            env.Headers.OtoroshiRequestId -> snowflake,
+            env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
+            env.Headers.OtoroshiProxyLatency -> s"$overhead",
+            env.Headers.OtoroshiUpstreamLatency -> s"0"
+          )
+        } else {
+          Seq.empty[(String, String)]
+        }
+        ) ++ Some(canaryId)
+        .filter(_ => descriptor.canary.enabled)
+        .map(
+          _ =>
+            env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
+        ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
+        Seq(
+          env.Headers.OtoroshiDailyCallsRemaining -> remainingQuotas.remainingCallsPerDay.toString,
+          env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+        )
+      } else {
+        Seq.empty[(String, String)]
+      }) ++ descriptor.cors.asHeaders(req) ++ descriptor.additionalHeadersOut
+        .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
+        .mapValues(
+          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
+        ).filterNot(h => h._2 == "null").toSeq
+    }
+    _headersOut
   }
 }
