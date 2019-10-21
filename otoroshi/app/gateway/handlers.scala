@@ -21,7 +21,7 @@ import controllers.routes
 import env.{Env, SidecarConfig}
 import events._
 import models._
-import utils.{MaxLengthLimiter, RegexPool, UrlSanitizer}
+import utils.{HeadersHelper, MaxLengthLimiter, RegexPool, UrlSanitizer}
 import org.joda.time.DateTime
 import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import play.api.Logger
@@ -230,22 +230,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
             }
         }
       }
-    }
-  }
-
-  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
-    if (desc.xForwardedHeaders) {
-      val xForwardedFor = request.headers
-        .get("X-Forwarded-For")
-        .map(v => v + ", " + request.remoteAddress)
-        .getOrElse(request.remoteAddress)
-      val xForwardedProto = getProtocolFor(request)
-      val xForwardedHost  = request.headers.get("X-Forwarded-Host").getOrElse(request.host)
-      Seq("X-Forwarded-For"   -> xForwardedFor,
-          "X-Forwarded-Host"  -> xForwardedHost,
-          "X-Forwarded-Proto" -> xForwardedProto)
-    } else {
-      Seq.empty[(String, String)]
     }
   }
 
@@ -1093,12 +1077,32 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                                       val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                                       logger.trace(s"Claim is : $claim")
-                                      val stateRequestHeaderName =
-                                        descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
+
                                       val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName
                                         .getOrElse(env.Headers.OtoroshiStateResp)
-                                      val claimRequestHeaderName =
-                                        descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
+
+                                      val headersIn: Seq[(String, String)] = HeadersHelper.composeHeadersIn(
+                                        descriptor = descriptor,
+                                        req = req,
+                                        apiKey = apiKey,
+                                        paUsr = paUsr,
+                                        elCtx = elCtx,
+                                        currentReqHasBody = currentReqHasBody,
+                                        headersInFiltered = headersInFiltered,
+                                        snowflake = snowflake,
+                                        requestTimestamp = requestTimestamp,
+                                        host = host,
+                                        claim = claim,
+                                        stateToken = stateToken,
+                                        fromOtoroshi = fromOtoroshi,
+                                        snowMonkeyContext = snowMonkeyContext,
+                                        jwtInjection = jwtInjection
+                                      )
+                                      //val stateRequestHeaderName =
+                                      //  descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
+                                      //val claimRequestHeaderName =
+                                      //  descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
+                                      /*
                                       val headersIn: Seq[(String, String)] = {
                                         (desc.missingOnlyHeadersIn.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
                                           .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++
@@ -1156,6 +1160,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           req
                                         )
                                       }
+                                      */
 
                                       val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
                                         bodyAlreadyConsumed.compareAndSet(false, true)

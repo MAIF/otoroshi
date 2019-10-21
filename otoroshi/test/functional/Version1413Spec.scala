@@ -165,6 +165,66 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       stopServers()
     }
 
+    "support override header case insensitive (#364)" in {
+
+      val counterCanal02 = new AtomicInteger(0)
+      val counterCanalBar = new AtomicInteger(0)
+
+
+      val (_, port1, _, call) = testServer("overrideheader.oto.tools", port, validate = req => {
+        val header = req.getHeader("MAIF_CANAL").get().value()
+        if (header == "02") {
+          counterCanal02.incrementAndGet()
+        }
+        if (header == "bar") {
+          counterCanalBar.incrementAndGet()
+        }
+        true
+      })
+
+      val service1 = ServiceDescriptor(
+        id = "overrideheader",
+        name = "overrideheader",
+        env = "prod",
+        subdomain = "overrideheader",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        additionalHeaders = Map(
+          "MAIF_CANAL" -> "02"
+        )
+      )
+
+      createOtoroshiService(service1).futureValue
+
+      val resp1 = call(
+        Map(
+          "maif_canal" -> "bar"
+        )
+      )
+
+      val resp2 = call(
+        Map.empty
+      )
+
+      resp1.status mustBe 200
+      resp2.status mustBe 200
+
+      counterCanal02.get() mustBe 2
+      counterCanalBar.get() mustBe 0
+
+      deleteOtoroshiService(service1).futureValue
+
+      stopServers()
+    }
+
     "be able to validate access (#360)" in {
       val (_, port1, counter1, call1) = testServer("accessvalidator.oto.tools", port)
       val service1 = ServiceDescriptor(

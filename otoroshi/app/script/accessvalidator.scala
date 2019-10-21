@@ -125,7 +125,9 @@ class HasClientCertMatchingValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
-        val config =  (context.config \ "HasClientCertMatchingValidator").asOpt[JsValue].getOrElse(context.config)
+        val config =  (context.config \ "HasClientCertMatchingValidator").asOpt[JsValue]
+          .orElse((context.globalConfig \ "GlobalHasClientCertMatchingValidator").asOpt[JsValue])
+          .getOrElse(context.config)
         val allowedSerialNumbers = (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedSubjectDNs = (config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedIssuerDNs = (config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
@@ -196,7 +198,8 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
-        val config =  (context.config \ "HasClientCertMatchingHttpValidator").asOpt[JsValue].getOrElse(context.config)
+        val config =  (context.config \ "HasClientCertMatchingHttpValidator").asOpt[JsValue]
+          .orElse((context.globalConfig \ "GlobalHasClientCertMatchingHttpValidator").asOpt[JsValue]).getOrElse(context.config)
         val url =     (config \ "url").as[String]
         val headers = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
         val ttl =     (config \ "ttl").asOpt[Long].getOrElse(10 * 60000L)
@@ -220,7 +223,9 @@ class HasAllowedUsersValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.user match {
       case Some(user) => {
-        val config =  (context.config \ "HasAllowedUsersValidator").asOpt[JsValue].getOrElse(context.config)
+        val config = (context.config \ "HasAllowedUsersValidator").asOpt[JsValue]
+          .orElse((context.config \ "GlobalHasAllowedUsersValidator").asOpt[JsValue])
+          .getOrElse(context.config)
         val allowedUsernames = (config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedEmails = (config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedEmailDomains = (config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
@@ -239,7 +244,9 @@ class HasAllowedApiKeyValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.apikey match {
       case Some(apiKey) => {
-        val config =  (context.config \ "HasAllowedApiKeyValidator").asOpt[JsValue].getOrElse(context.config)
+        val config =  (context.config \ "HasAllowedApiKeyValidator").asOpt[JsValue]
+          .orElse((context.config \ "GlobalHasAllowedApiKeyValidator").asOpt[JsValue])
+          .getOrElse(context.config)
         val allowedClientIds = (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedTags = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedMetadatas = (config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
@@ -381,7 +388,9 @@ class ExternalHttpValidator extends AccessValidator {
   }
 
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
-    val config =  (context.config \ "ExternalHttpValidator").asOpt[JsValue].getOrElse(context.config)
+    val config =  (context.config \ "ExternalHttpValidator").asOpt[JsValue]
+      .orElse((context.config \ "GlobalExternalHttpValidator").asOpt[JsValue])
+      .getOrElse(context.config)
     val valCfg = ExternalHttpValidatorConfig(config)
     context.request.clientCertificateChain match {
       case None if !valCfg.allowNoClientCert => FastFuture.successful(false)
