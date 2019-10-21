@@ -1967,11 +1967,11 @@ export class ServicePage extends Component {
               value={this.state.service.accessValidator.refs}
               onChange={(e, item, index) => {
                 this.changeTheValue('accessValidator.refs', e)
-                this.mergeConfig(item, index, this.state.service.accessValidator.config, newConfig => {
-                  setTimeout(() => {
-                    this.changeTheValue('accessValidator.config', newConfig);
-                  }, 300);
-                });
+                // this.mergeConfig(item, index, this.state.service.accessValidator.config, newConfig => {
+                //   setTimeout(() => {
+                //     this.changeTheValue('accessValidator.config', newConfig);
+                //   }, 300);
+                // });
               }}
               valuesFrom="/bo/api/proxy/api/scripts/_list?type=validator"
               transformer={a => ({ value: a.id, label: a.name })}

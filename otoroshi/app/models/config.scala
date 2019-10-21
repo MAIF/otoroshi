@@ -120,6 +120,43 @@ object Proxies {
   }
 }
 
+case class GlobalScripts(
+  enabled: Boolean = false,
+  transformersRefs: Seq[String] = Seq.empty,
+  transformersConfig: JsValue = Json.obj(),
+  validatorRefs: Seq[String] = Seq.empty,
+  validatorConfig: JsValue = Json.obj(),
+) {
+  def json: JsValue = GlobalScripts.format.writes(this)
+}
+
+object GlobalScripts {
+  val format = new Format[GlobalScripts] {
+    override def writes(o: GlobalScripts): JsValue = Json.obj(
+      "enabled"     -> o.enabled,
+      "transformersRefs"   -> JsArray(o.transformersRefs.map(JsString.apply)),
+      "transformersConfig" -> o.transformersConfig,
+      "validatorRefs"      -> JsArray(o.validatorRefs.map(JsString.apply)),
+      "validatorConfig"    -> o.validatorConfig,
+    )
+    override def reads(json: JsValue): JsResult[GlobalScripts] =
+      Try {
+        JsSuccess(
+          GlobalScripts(
+            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty) ,
+            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty) ,
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+            transformersConfig = (json \ "transformersConfig").asOpt[JsValue].getOrElse(Json.obj()),
+            validatorConfig = (json \ "validatorConfig").asOpt[JsValue].getOrElse(Json.obj()),
+          )
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
+
 case class GlobalConfig(
     lines: Seq[String] = Seq("prod"),
     enableEmbeddedMetrics: Boolean = true,
@@ -154,7 +191,8 @@ case class GlobalConfig(
     maxLogsSize: Int = 10000,
     otoroshiId: String = IdGenerator.uuid,
     snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
-    proxies: Proxies = Proxies()
+    proxies: Proxies = Proxies(),
+    scripts: GlobalScripts = GlobalScripts()
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -267,7 +305,8 @@ object GlobalConfig {
         "middleFingers"           -> o.middleFingers,
         "maxLogsSize"             -> o.maxLogsSize,
         "otoroshiId"              -> o.otoroshiId,
-        "snowMonkeyConfig"        -> o.snowMonkeyConfig.asJson
+        "snowMonkeyConfig"        -> o.snowMonkeyConfig.asJson,
+        "scripts"                 -> o.scripts.json
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -375,7 +414,10 @@ object GlobalConfig {
               case _ => None
             }
           },
-          snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig())
+          snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig()),
+          scripts = GlobalScripts.format
+            .reads((json \ "scripts").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(GlobalScripts())
         )
       } map {
         case sd => JsSuccess(sd)

@@ -37,6 +37,9 @@ export class CodeInput extends Component {
 
   render() {
     let code = this.state.value || this.props.value;
+    if (this.props.mode === 'json' && typeof code !== 'string') {
+      code = JSON.stringify(code, null, 2);
+    }
     return (
       <div className="form-group">
         <label htmlFor={`input-${this.props.label}`} className="col-sm-2 control-label">

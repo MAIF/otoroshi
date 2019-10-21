@@ -7,12 +7,10 @@ import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
 import env.Env
 import gateway.Errors
 import models._
 import org.apache.commons.codec.binary.Hex
-import org.apache.commons.codec.digest.DigestUtils
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -22,7 +20,7 @@ import utils.{RegexPool, TypedMap}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.Try
 
 case class AccessValidatorRef(enabled: Boolean = false, excludedPatterns: Seq[String] = Seq.empty[String], refs: Seq[String] = Seq.empty, config: JsValue = Json.obj()) {
   def json: JsValue = AccessValidatorRef.format.writes(this)
@@ -80,7 +78,8 @@ case class AccessContext(
   user: Option[PrivateAppsUser],
   apikey: Option[ApiKey],
   config: JsValue,
-  attrs: TypedMap
+  attrs: TypedMap,
+  globalConfig: JsValue
   // TODO: add user-agent infos
   // TODO: add client geoloc infos
 ) {
@@ -126,11 +125,12 @@ class HasClientCertMatchingValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
-        val allowedSerialNumbers = (context.config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedSubjectDNs = (context.config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedIssuerDNs = (context.config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val regexAllowedSubjectDNs = (context.config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val regexAllowedIssuerDNs = (context.config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val config =  (context.config \ "HasClientCertMatchingValidator").asOpt[JsValue].getOrElse(context.config)
+        val allowedSerialNumbers = (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedSubjectDNs = (config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedIssuerDNs = (config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val regexAllowedSubjectDNs = (config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val regexAllowedIssuerDNs = (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
             certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
             certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
@@ -140,8 +140,8 @@ class HasClientCertMatchingValidator extends AccessValidator {
         } else {
           FastFuture.successful(false)
         }
-        // val subjectDnMatching = (context.config \ "subjectDN").asOpt[String]
-        // val issuerDnMatching = (context.config \ "issuerDN").asOpt[String]
+        // val subjectDnMatching = (config \ "subjectDN").asOpt[String]
+        // val issuerDnMatching = (config \ "issuerDN").asOpt[String]
         // (subjectDnMatching, issuerDnMatching) match {
         //   case (None, None)                  => FastFuture.successful(true)
         //   case (Some(subject), None)         => FastFuture.successful(certs.exists(_.getSubjectDN.getName.matches(subject)))
@@ -198,8 +198,8 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
       case Some(certs) => {
         val config =  (context.config \ "HasClientCertMatchingHttpValidator").asOpt[JsValue].getOrElse(context.config)
         val url =     (config \ "url").as[String]
-        val headers = (config \ "headers").as[Map[String, String]]
-        val ttl =     (config \ "ttl").as[Long]
+        val headers = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+        val ttl =     (config \ "ttl").asOpt[Long].getOrElse(10 * 60000L)
         val start =   System.currentTimeMillis()
         cache.get(url) match {
           case None                                        =>
@@ -220,9 +220,10 @@ class HasAllowedUsersValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.user match {
       case Some(user) => {
-        val allowedUsernames = (context.config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedEmails = (context.config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedEmailDomains = (context.config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val config =  (context.config \ "HasAllowedUsersValidator").asOpt[JsValue].getOrElse(context.config)
+        val allowedUsernames = (config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedEmails = (config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedEmailDomains = (config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (allowedUsernames.contains(user.name) || allowedEmails.contains(user.email) || allowedEmailDomains.exists(domain => user.email.endsWith(domain))) {
           FastFuture.successful(true)
         } else {
@@ -238,9 +239,10 @@ class HasAllowedApiKeyValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.apikey match {
       case Some(apiKey) => {
-        val allowedClientIds = (context.config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedTags = (context.config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedMetadatas = (context.config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+        val config =  (context.config \ "HasAllowedApiKeyValidator").asOpt[JsValue].getOrElse(context.config)
+        val allowedClientIds = (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedTags = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val allowedMetadatas = (config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
         if (allowedClientIds.contains(apiKey.clientId) || allowedTags.exists(tag => apiKey.tags.contains(tag)) || allowedMetadatas.exists(meta => apiKey.metadata.get(meta._1) == Some(meta._2))) {
           FastFuture.successful(true)
         } else {
@@ -299,7 +301,7 @@ class ExternalHttpValidator extends AccessValidator {
     user: Option[PrivateAppsUser] = None,
     cfg: ExternalHttpValidatorConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
-    val globalConfig= env.datastores.globalConfigDataStore.latest()
+    val globalConfig = env.datastores.globalConfigDataStore.latest()
     val certPayload = chain
       .map { cert =>
         s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
@@ -379,7 +381,8 @@ class ExternalHttpValidator extends AccessValidator {
   }
 
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
-    val valCfg = ExternalHttpValidatorConfig(context.config)
+    val config =  (context.config \ "ExternalHttpValidator").asOpt[JsValue].getOrElse(context.config)
+    val valCfg = ExternalHttpValidatorConfig(config)
     context.request.clientCertificateChain match {
       case None if !valCfg.allowNoClientCert => FastFuture.successful(false)
       case None if valCfg.allowNoClientCert => {
@@ -392,3 +395,80 @@ class ExternalHttpValidator extends AccessValidator {
     }
   }
 }
+
+
+/**
+  * Configuration for built-in Access validators
+  *
+  * # HasClientCertMatchingValidator
+  *
+  * {
+  *   "serialNumbers": [],   // allowed certificated serial numbers
+  *   "subjectDNs": [],      // allowed certificated DNs
+  *   "issuerDNs": [],       // allowed certificated issuer DNs
+  *   "regexSubjectDNs": [], // allowed certificated DNs matching regex
+  *   "regexIssuerDNs": [],  // allowed certificated issuer DNs matching regex
+  * }
+  *
+  * # HasClientCertMatchingHttpValidator
+  *
+  * Like HasClientCertMatchingValidator but with the config. returned by an http call
+  *
+  * {
+  *   "url"          // url for the call
+  *   "headers": {}  // http header for the call
+  *   "ttl": 600000  // cache ttl
+  * }
+  *
+  * # HasAllowedUsersValidator
+  *
+  * Allow access based on connected user infos
+  *
+  * {
+  *   "usernames": [],   // allowed usernames
+  *   "emails": [],      // allowed user email addresses
+  *   "emailDomains": [] // allowed user email domainss
+  * }
+  *
+  * # HasAllowedApiKeyValidator
+  *
+  * validation based on apikeys
+  *
+  * ```json
+  * {
+  *   "clientIds": [],  // list of allowed client ids,
+  *   "tags": [],       // list of allowed tafs
+  *   "metadata": {}    // allowed metadata
+  * }
+  * ```
+  *
+  * # ExternalHttpValidator
+  *
+  * Calls an external http service to know if a user has access or not. Uses cache for performances.
+  *
+  * The sent payload is the following:
+  *
+  * {
+  *   "apikey": {...},
+  *   "user": {...},
+  *   "service": : {...},
+  *   "chain": "...",  // PEM cert chain
+  *   "fingerprints": [...]
+  * }
+  *
+  * ## Configuration
+  *
+  * {
+  *   "url"                             // url for the http call
+  *   "host"                            // value of the host header for the call. default is host of the url
+  *   "goodTtl": 600000                 // ttl in ms for a validated call
+  *   "badTtl": 60000,                  // ttl in ms for a not validated call
+  *   "method": "POST"                  // http methode
+  *   "path": "/certificates/_validate" // http uri path
+  *   "timeout": 10000,                 // http call timeout
+  *   "noCache": false,                 // use cache or not
+  *   "allowNoClientCert": false,       //
+  *   "headers": {}                     // headers for the http call if needed
+  *   "proxy"
+  * }
+  */

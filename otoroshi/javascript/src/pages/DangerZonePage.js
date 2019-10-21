@@ -600,6 +600,47 @@ export class DangerZonePage extends Component {
     'proxies.jwk': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.elastic': { type: Proxy, props: { showNonProxyHosts: true } },
     mailerSettings: { type: Mailer },
+    'scripts.enabled': {
+      type: 'bool',
+      props: {
+        label: 'Global scripts enabled',
+        help: '...',
+      },
+    },
+    'scripts.transformersRefs': {
+      type: 'array',
+      props: {
+        label: 'Request transformers',
+        help: 'Transformers added to any request of any service',
+        valuesFrom: "/bo/api/proxy/api/scripts/_list?type=transformer",
+        transformer: a => ({ value: a.id, label: a.name })
+      },
+    },
+    'scripts.transformersConfig': {
+      type: 'code',
+      props: {
+        mode: 'json',
+        label: 'Transformers config.',
+        help: '...',
+      },
+    },
+    'scripts.validatorRefs': {
+      type: 'array',
+      props: {
+        label: 'Access validators',
+        help: 'Transformers added to any request of any service',
+        valuesFrom: "/bo/api/proxy/api/scripts/_list?type=validator",
+        transformer: a => ({ value: a.id, label: a.name })
+      },
+    },
+    'scripts.validatorConfig': {
+      type: 'code',
+      props: {
+        mode: 'json',
+        label: 'Validators config.',
+        help: '...',
+      },
+    },
   };
 
   formFlow = [
@@ -658,6 +699,12 @@ export class DangerZonePage extends Component {
     'cleverSettings.token',
     'cleverSettings.secret',
     'cleverSettings.orgaId',
+    '>>>Global scripts',
+    'scripts.enabled',
+    'scripts.validatorRefs',
+    'scripts.validatorConfig',
+    'scripts.transformersRefs',
+    'scripts.transformersConfig',
     '>>>Proxies',
     '-- Proxy for alert emails (mailgun)',
     'proxies.alertEmails',

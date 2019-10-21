@@ -187,7 +187,7 @@ export class Form extends Component {
             />
           );
         } else if (type === 'code') {
-          return (
+          component = (
             <CodeInput
               disabled={disabled}
               key={name}
@@ -197,7 +197,7 @@ export class Form extends Component {
             />
           );
         } else if (type === 'text') {
-          return (
+          component =  (
             <TextareaInput
               disabled={disabled}
               key={name}
@@ -207,7 +207,7 @@ export class Form extends Component {
             />
           );
         } else if (type === 'datetime') {
-          return (
+          component =  (
             <DateTimeInput
               disabled={disabled}
               key={name}

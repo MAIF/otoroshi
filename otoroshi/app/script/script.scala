@@ -57,6 +57,7 @@ sealed trait TransformerContext {
   def request: RequestHeader
   def config: JsValue
   def attrs: TypedMap
+  def globalConfig: JsValue
   // TODO: add user-agent infos
   // TODO: add client geoloc infos
   def conf[A](prefix: String = "config-"): Option[JsValue] = {
@@ -86,7 +87,8 @@ case class TransformerRequestContext(
   user: Option[PrivateAppsUser],
   request: RequestHeader,
   config: JsValue,
-  attrs: TypedMap
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 case class TransformerResponseContext(
@@ -99,7 +101,8 @@ case class TransformerResponseContext(
   user: Option[PrivateAppsUser],
   request: RequestHeader,
   config: JsValue,
-  attrs: TypedMap
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 case class TransformerRequestBodyContext(
@@ -113,7 +116,8 @@ case class TransformerRequestBodyContext(
   user: Option[PrivateAppsUser],
   request: RequestHeader,
   config: JsValue,
-  attrs: TypedMap
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 case class TransformerResponseBodyContext(
@@ -127,7 +131,8 @@ case class TransformerResponseBodyContext(
   user: Option[PrivateAppsUser],
   request: RequestHeader,
   config: JsValue,
-  attrs: TypedMap
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 trait RequestTransformer {
@@ -517,27 +522,28 @@ object Implicits {
     //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     def transformRequest(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
-        case true if desc.transformerRefs.nonEmpty =>
-          val refs = desc.transformerRefs
-          val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
-          Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-            case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
-            case (Right(lastHttpRequest), (ref, index)) =>
-              env.scriptManager
-                .getScript(ref)
-                .transformRequestWithCtx(context.copy(otoroshiRequest = lastHttpRequest, index = index, config = context.config match {
-                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
-                  case json: JsObject => json
-                  case _ => Json.obj()
-                }))(env, ec, mat)
+        case true =>
+          if (desc.transformerRefs.nonEmpty) {
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
+            Source(refs.toList.zipWithIndex).runFoldAsync(either) {
+              case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
+              case (Right(lastHttpRequest), (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformRequestWithCtx(context.copy(otoroshiRequest = lastHttpRequest, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+            }
+            // desc.transformerRef match {
+            //   case Some(ref) =>
+            //     env.scriptManager
+            //       .getScript(ref)
+            //       .transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
+            //   case None => FastFuture.successful(Right(otoroshiRequest))
+            // }
+          } else {
+            FastFuture.successful(Right(context.otoroshiRequest))
           }
-          // desc.transformerRef match {
-          //   case Some(ref) =>
-          //     env.scriptManager
-          //       .getScript(ref)
-          //       .transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
-          //   case None => FastFuture.successful(Right(otoroshiRequest))
-          // }
         case _ => FastFuture.successful(Right(context.otoroshiRequest))
       }
     }
@@ -552,27 +558,28 @@ object Implicits {
     // )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     def transformResponse(context: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
       env.scriptingEnabled match {
-        case true if desc.transformerRefs.nonEmpty =>
-          val refs = desc.transformerRefs
-          val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
-          Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-            case (Left(badResult), _) => FastFuture.successful(Left(badResult))
-            case (Right(lastHttpResponse), (ref, index)) =>
-              env.scriptManager
-                .getScript(ref)
-                .transformResponseWithCtx(context.copy(otoroshiResponse = lastHttpResponse, index = index, config = context.config match {
-                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
-                  case json: JsObject => json
-                  case _ => Json.obj()
-                }))(env, ec, mat)
+        case true =>
+          if (desc.transformerRefs.nonEmpty) {
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
+            Source(refs.toList.zipWithIndex).runFoldAsync(either) {
+              case (Left(badResult), _) => FastFuture.successful(Left(badResult))
+              case (Right(lastHttpResponse), (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformResponseWithCtx(context.copy(otoroshiResponse = lastHttpResponse, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+            }
+            // desc.transformerRef match {
+            //   case Some(ref) =>
+            //     env.scriptManager
+            //       .getScript(ref)
+            //       .transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
+            //   case None => FastFuture.successful(Right(otoroshiResponse))
+            // }
+          } else {
+            FastFuture.successful(Right(context.otoroshiResponse))
           }
-          // desc.transformerRef match {
-          //   case Some(ref) =>
-          //     env.scriptManager
-          //       .getScript(ref)
-          //       .transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
-          //   case None => FastFuture.successful(Right(otoroshiResponse))
-          // }
         case _ => FastFuture.successful(Right(context.otoroshiResponse))
       }
     }
@@ -588,25 +595,26 @@ object Implicits {
     //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
     def transformRequestBody(context: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
-        case true if desc.transformerRefs.nonEmpty =>
-          val refs = desc.transformerRefs
-          Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
-            case (body, (ref, index)) =>
-              env.scriptManager
-                .getScript(ref)
-                .transformRequestBodyWithCtx(context.copy(body = body, index = index, config = context.config match {
-                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
-                  case json: JsObject => json
-                  case _ => Json.obj()
-                }))(env, ec, mat)
-          })
-          // desc.transformerRef match {
-          //   case Some(ref) =>
-          //     env.scriptManager
-          //       .getScript(ref)
-          //       .transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
-          //   case None => body
-          // }
+        case true =>
+          if (desc.transformerRefs.nonEmpty) {
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+              case (body, (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformRequestBodyWithCtx(context.copy(body = body, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+            })
+            // desc.transformerRef match {
+            //   case Some(ref) =>
+            //     env.scriptManager
+            //       .getScript(ref)
+            //       .transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
+            //   case None => body
+            // }
+          } else {
+            context.body
+          }
         case _ => context.body
       }
     }
@@ -622,25 +630,26 @@ object Implicits {
     //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
     def transformResponseBody(context: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
-        case true if desc.transformerRefs.nonEmpty =>
-          val refs = desc.transformerRefs
-          Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
-            case (body, (ref, index)) =>
-              env.scriptManager
-                .getScript(ref)
-                .transformResponseBodyWithCtx(context.copy(body = body, index = index, config = context.config match {
-                  case json: JsArray => Option(json.value(index)).getOrElse(context.config)
-                  case json: JsObject => json
-                  case _ => Json.obj()
-                }))(env, ec, mat)
-          })
-          // desc.transformerRef match {
-          //   case Some(ref) =>
-          //     env.scriptManager
-          //       .getScript(ref)
-          //       .transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
-          //   case None => body
-          // }
+        case true =>
+          if (desc.transformerRefs.nonEmpty) {
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+              case (body, (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformResponseBodyWithCtx(context.copy(body = body, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+            })
+            // desc.transformerRef match {
+            //   case Some(ref) =>
+            //     env.scriptManager
+            //       .getScript(ref)
+            //       .transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
+            //   case None => body
+            // }
+          } else {
+            context.body
+          }
         case _ => context.body
       }
     }

@@ -1896,10 +1896,11 @@ case class ServiceDescriptor(
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    if (accessValidator.enabled
-        && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
-      if (accessValidator.refs.nonEmpty) {
-        Source(accessValidator.refs.toList.zipWithIndex).mapAsync(1) {
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(validatorConfig = Json.obj()))
+    if (gScripts.enabled && accessValidator.enabled && accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+      val refs = gScripts.validatorRefs
+      if (refs.nonEmpty) {
+        Source(refs.toList.zipWithIndex).mapAsync(1) {
           case (ref, index) =>
             val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
               case Left("compiling") => CompilingValidator
@@ -1914,11 +1915,40 @@ case class ServiceDescriptor(
               user = user,
               apikey = apikey,
               attrs = utils.TypedMap.empty,
-              config = accessValidator.config match {
-                case json: JsArray => Option(json.value(index)).getOrElse(accessValidator.config)
-                case json: JsObject => json
-                case _ => Json.obj()
-              }
+              globalConfig = gScripts.validatorConfig,
+              config = accessValidator.config
+            ))
+        }.takeWhile(a => a match {
+          case Allowed => true
+          case Denied(_) => false
+        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
+          case Allowed => f
+          case Denied(result) => FastFuture.successful(result)
+        }
+      } else {
+        f
+      }
+    } else if ((accessValidator.enabled || gScripts.enabled)
+        && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+      val refs = gScripts.validatorRefs ++ accessValidator.refs
+      if (refs.nonEmpty) {
+        Source(refs.toList.zipWithIndex).mapAsync(1) {
+          case (ref, index) =>
+            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+              case Left("compiling") => CompilingValidator
+              case Left(_)           => DefaultValidator
+              case Right(validator)  => validator
+            }
+            validator.access(AccessContext(
+              snowflake = snowflake,
+              index = index,
+              request = req,
+              descriptor = this,
+              user = user,
+              apikey = apikey,
+              attrs = utils.TypedMap.empty,
+              globalConfig = gScripts.validatorConfig,
+              config = accessValidator.config
             ))
         }.takeWhile(a => a match {
           case Allowed => true
@@ -1973,9 +2003,40 @@ case class ServiceDescriptor(
                                    config: GlobalConfig)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    if (accessValidator.enabled
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(validatorConfig = Json.obj()))
+    if (gScripts.enabled && accessValidator.enabled && accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+      val refs = gScripts.validatorRefs
+      if (refs.nonEmpty) {
+        Source(refs.toList.zipWithIndex).mapAsync(1) {
+          case (ref, index) =>
+            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+              case Left("compiling") => CompilingValidator
+              case Left(_)           => DefaultValidator
+              case Right(validator)  => validator
+            }
+            validator.access(AccessContext(
+              snowflake = snowflake,
+              index = index,
+              request = req,
+              descriptor = this,
+              user = user,
+              apikey = apikey,
+              attrs = utils.TypedMap.empty,
+              globalConfig = gScripts.validatorConfig,
+              config = accessValidator.config
+            ))
+        }.takeWhile(a => a match {
+          case Allowed => true
+          case Denied(_) => false
+        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
+          case Allowed => f
+          case Denied(result) => FastFuture.successful(Left(result))
+        }
+      } else {
+        f
+      }
+    } else if ((accessValidator.enabled || gScripts.enabled)
       && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
-      f
       // accessValidator.ref.map { ref =>
       //   val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
       //     case Left("compiling") => CompilingValidator
@@ -1993,8 +2054,9 @@ case class ServiceDescriptor(
       //     case Denied(result) => FastFuture.successful(Left(result))
       //   }
       // } getOrElse f
-      if (accessValidator.refs.nonEmpty) {
-        Source(accessValidator.refs.zipWithIndex.toList).mapAsync(1) {
+      val refs = gScripts.validatorRefs ++ accessValidator.refs
+      if (refs.nonEmpty) {
+        Source(refs.zipWithIndex.toList).mapAsync(1) {
           case (ref, index) =>
             val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
               case Left("compiling") => CompilingValidator
@@ -2009,11 +2071,8 @@ case class ServiceDescriptor(
               user = user,
               apikey = apikey,
               attrs = utils.TypedMap.empty,
-              config = accessValidator.config match {
-                case json: JsArray => Option(json.value(index)).getOrElse(accessValidator.config)
-                case json: JsObject => json
-                case _ => Json.obj()
-              }
+              globalConfig = gScripts.validatorConfig,
+              config = accessValidator.config
             ))
         }.takeWhile(a => a match {
           case Allowed => true
