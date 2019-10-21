@@ -402,6 +402,8 @@ class ExternalHttpValidator extends AccessValidator {
   *
   * # HasClientCertMatchingValidator
   *
+  * Check if client certificate matches the following configuration
+  *
   * {
   *   "serialNumbers": [],   // allowed certificated serial numbers
   *   "subjectDNs": [],      // allowed certificated DNs
