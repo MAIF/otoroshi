@@ -345,9 +345,9 @@ class WebSocketHandler()(implicit env: Env) {
     val start            = System.currentTimeMillis()
 
     val elCtx: Map[String, String] = Map(
-      "id" -> snowflake,
-      "snowflake" -> snowflake,
-      "timestamp" -> requestTimestamp
+      "requestId" -> snowflake,
+      "requestSnowflake" -> snowflake,
+      "requestTimestamp" -> requestTimestamp
     )
 
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>

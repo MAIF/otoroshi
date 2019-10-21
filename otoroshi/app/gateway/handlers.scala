@@ -196,16 +196,16 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       val protocol  = getProtocolFor(request)
       val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
       val cookies   = request.cookies.map(_.value).map(ByteString.apply)
-      val headers   = request.headers.toSimpleMap.values.map(ByteString.apply)
+      val headers   = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
       // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
       if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
         Some(clusterError("Waiting for first Otoroshi leader sync."))
-      } else if (url.size > (4 * 1024)) {
-        Some(tooBig("URL should be smaller than 4 Kb"))
-      } else if (cookies.exists(_.size > (16 * 1024))) {
-        Some(tooBig("Cookies should be smaller than 16 Kb"))
-      } else if (headers.exists(_.size > (16 * 1024))) {
-        Some(tooBig("Headers should be smaller than 16 Kb"))
+      } else if (env.validateRequests && url.size > env.maxUrlLength) {
+        Some(tooBig("URL should be smaller", UriTooLong))
+      } else if (env.validateRequests && cookies.exists(_.size > env.maxCookieLength)) {
+        Some(tooBig("Cookies should be smaller"))
+      } else if (env.validateRequests && headers.exists(t => t._1.size > env.maxHeaderNameLength || t._2.size > env.maxHeaderValueLength)) {
+        Some(tooBig(s"Headers should be smaller"))
       } else {
         val toHttps = env.exposedRootSchemeIsHttps
         val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
@@ -449,7 +449,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     Errors.craftResponseResult(message, InternalServerError, req, None, Some("errors.no.state.yet"))
   }
 
-  def tooBig(message: String) = actionBuilder.async { req =>
+  def tooBig(message: String, status: Status = BadRequest) = actionBuilder.async { req =>
     Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"))
   }
 
@@ -764,9 +764,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val protocol            = getProtocolFor(req)
 
     val elCtx: Map[String, String] = Map(
-      "id" -> snowflake,
-      "snowflake" -> snowflake,
-      "timestamp" -> requestTimestamp
+      "requestId" -> snowflake,
+      "requestSnowflake" -> snowflake,
+      "requestTimestamp" -> requestTimestamp
     )
 
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()

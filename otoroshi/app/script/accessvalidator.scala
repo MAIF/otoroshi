@@ -122,18 +122,6 @@ class HasClientCertValidator extends AccessValidator {
   }
 }
 
-class AlwaysDenyValidator extends AccessValidator {
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
-    FastFuture.successful(false)
-  }
-}
-
-class AlwaysAllowValidator extends AccessValidator {
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
-    FastFuture.successful(true)
-  }
-}
-
 class HasClientCertMatchingValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {

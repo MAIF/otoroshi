@@ -3,19 +3,11 @@ package functional
 import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
-import com.google.common.hash.Hashing
 import com.typesafe.config.ConfigFactory
 import env.Env
 import models._
-import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import otoroshi.script
@@ -24,11 +16,8 @@ import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Result, Results}
-import security.IdGenerator
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.math.BigDecimal.RoundingMode
-import scala.util.Try
 
 class Version1413Spec(name: String, configurationSpec: => Configuration)
   extends PlaySpec
@@ -39,8 +28,6 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
   implicit lazy val ws = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   implicit val env     = otoroshiComponents.env
-
-  import scala.concurrent.duration._
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
     ConfigFactory
@@ -64,9 +51,6 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       val counterBar = new AtomicInteger(0)
       val counterKix = new AtomicInteger(0)
 
-      val counterBarOld = new AtomicInteger(0)
-      val counterKixOld = new AtomicInteger(0)
-
       val (_, port1, _, call1) = testServer("missingheaders.oto.tools", port, validate = req => {
         val header = req.getHeader("foo").get().value()
         if (header == "bar") {
@@ -74,17 +58,6 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         }
         if (header == "kix") {
           counterKix.incrementAndGet()
-        }
-        true
-      })
-
-      val (_, port2, _, call2) = testServer("missingheadersold.oto.tools", port, validate = req => {
-        val header = req.getHeader("foo").get().value()
-        if (header == "bar") {
-          counterBarOld.incrementAndGet()
-        }
-        if (header == "kix") {
-          counterKixOld.incrementAndGet()
         }
         true
       })
@@ -109,28 +82,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         )
       )
 
-      val service2 = ServiceDescriptor(
-        id = "missingheadersold",
-        name = "missingheadersold",
-        env = "prod",
-        subdomain = "missingheadersold",
-        domain = "oto.tools",
-        targets = Seq(
-          Target(
-            host = s"127.0.0.1:${port2}",
-            scheme = "http"
-          )
-        ),
-        forceHttps = false,
-        enforceSecureCommunication = false,
-        publicPatterns = Seq("/.*"),
-        additionalHeaders = Map(
-          "foo" -> "kix"
-        )
-      )
-
       createOtoroshiService(service1).futureValue
-      createOtoroshiService(service2).futureValue
 
       val resp1 = call1(
         Map(
@@ -148,25 +100,67 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       counterBar.get() mustBe 1
       counterKix.get() mustBe 1
 
+      deleteOtoroshiService(service1).futureValue
 
-      val resp3 = call2(
-        Map(
-          "foo" -> "bar"
+      stopServers()
+    }
+
+    "support override header (#364)" in {
+
+      val counterCanal02 = new AtomicInteger(0)
+      val counterCanalBar = new AtomicInteger(0)
+
+
+      val (_, port1, _, call) = testServer("overrideheader.oto.tools", port, validate = req => {
+        val header = req.getHeader("MAIF_CANAL").get().value()
+        if (header == "02") {
+          counterCanal02.incrementAndGet()
+        }
+        if (header == "bar") {
+          counterCanalBar.incrementAndGet()
+        }
+        true
+      })
+
+      val service1 = ServiceDescriptor(
+        id = "overrideheader",
+        name = "overrideheader",
+        env = "prod",
+        subdomain = "overrideheader",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        additionalHeaders = Map(
+          "MAIF_CANAL" -> "02"
         )
       )
 
-      val resp4 = call2(
+      createOtoroshiService(service1).futureValue
+
+      val resp1 = call(
+        Map(
+          "MAIF_CANAL" -> "bar"
+        )
+      )
+
+      val resp2 = call(
         Map.empty
       )
 
-      resp3.status mustBe 200
-      resp4.status mustBe 200
+      resp1.status mustBe 200
+      resp2.status mustBe 200
 
-      counterBarOld.get() mustBe 0
-      counterKixOld.get() mustBe 2
+      counterCanal02.get() mustBe 2
+      counterCanalBar.get() mustBe 0
 
       deleteOtoroshiService(service1).futureValue
-      deleteOtoroshiService(service2).futureValue
 
       stopServers()
     }

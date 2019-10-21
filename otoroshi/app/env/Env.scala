@@ -174,6 +174,13 @@ class Env(val configuration: Configuration,
 
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
+
+  lazy val validateRequests: Boolean    = configuration.getOptional[Boolean]("otoroshi.requests.validate").getOrElse(true)
+  lazy val maxUrlLength: Long           = Option(configuration.underlying.getBytes("otoroshi.requests.maxUrlLength")).map(_.toLong).getOrElse(4 * 1024L)
+  lazy val maxCookieLength: Long        = Option(configuration.underlying.getBytes("otoroshi.requests.maxCookieLength")).map(_.toLong).getOrElse(16 * 1024L)
+  lazy val maxHeaderValueLength: Long   = Option(configuration.underlying.getBytes("otoroshi.requests.maxHeaderValueLength")).map(_.toLong).getOrElse(16 * 1024L)
+  lazy val maxHeaderNameLength: Long    = Option(configuration.underlying.getBytes("otoroshi.requests.maxHeaderNameLength")).map(_.toLong).getOrElse(128L)
+
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
   lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)

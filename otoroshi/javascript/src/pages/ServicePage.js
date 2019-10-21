@@ -763,7 +763,7 @@ export class ServicePage extends Component {
         newConf[index] = { ...what };
         return newConf;
       } else {
-        delete newConf['_cfgFor'];
+        delete conf['_cfgFor'];
         return { ...conf, ...what };
       }
     }
@@ -1896,29 +1896,6 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="JWT tokens verification">
-            <SelectInput
-              label="Type"
-              value={this.state.service.jwtVerifier.type}
-              onChange={e => {
-                switch (e) {
-                  case 'local':
-                    this.changeTheValue('jwtVerifier', JwtVerifier.defaultVerifier);
-                    break;
-                  case 'ref':
-                    this.changeTheValue('jwtVerifier', {
-                      type: 'ref',
-                      enabled: this.state.service.jwtVerifier.enabled,
-                      id: null,
-                    });
-                    break;
-                }
-              }}
-              possibleValues={[
-                { label: 'Local to service descriptor', value: 'local' },
-                { label: 'Reference to global definition', value: 'ref' },
-              ]}
-              help="..."
-            />
             {this.state.service.jwtVerifier.type === 'ref' && (
               <div>
                 {/*<SelectInput
@@ -1963,13 +1940,6 @@ export class ServicePage extends Component {
                   </div>
                 </div>
               </div>
-            )}
-            {this.state.service.jwtVerifier.type === 'local' && (
-              <JwtVerifier
-                path="jwtVerifier"
-                changeTheValue={this.changeTheValue}
-                verifier={this.state.service.jwtVerifier}
-              />
             )}
             <ArrayInput
               label="Excluded patterns"

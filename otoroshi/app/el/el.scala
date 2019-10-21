@@ -62,17 +62,21 @@ object GlobalExpressionLanguage {
             case r"apikey.tags\\[$field@(.*)\\]"               if apiKey.isDefined  => Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
 
             // for jwt comptab only
-            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"   => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"    => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"   => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"    => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"      => context.get(field).orElse(context.get(field2)).getOrElse(dv)
+            case r"token.$field@(.*)\|token.$field2@(.*)"               => context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
             case r"token.$field@(.*):$dv@(.*)"                          => context.getOrElse(field, dv)
             case r"token.$field@(.*)"                                   => context.getOrElse(field, s"no-token-$field")
 
-            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"   => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"    => context.get(field).map(v => v.replace(a, b)).getOrElse("no-value")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse("no-value")
+            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"   => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"    => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*)\|ctx.$field2@(.*):$dv@(.*)"        => context.get(field).orElse(context.get(field2)).getOrElse(dv)
+            case r"ctx.$field@(.*)\|ctx.$field2@(.*)"                 => context.get(field).orElse(context.get(field2)).getOrElse(s"no-ctx-$field-$field2")
             case r"ctx.$field@(.*):$dv@(.*)"                          => context.getOrElse(field, dv)
             case r"ctx.$field@(.*)"                                   => context.getOrElse(field, s"no-ctx-$field")
 
@@ -365,7 +369,6 @@ object JwtExpressionLanguage {
     user:    Option[PrivateAppsUser],
     context: Map[String, String]
   ): JsValue = {
-    println(value)
     value match {
       case JsObject(map) =>
         new JsObject(map.toSeq.map {
