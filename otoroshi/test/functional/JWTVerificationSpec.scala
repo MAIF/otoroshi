@@ -16,7 +16,7 @@ import play.api.Configuration
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import play.api.libs.json.Json
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class JWTVerification2Spec(name: String, configurationSpec: => Configuration) extends PlaySpec {
   "blah" should {
@@ -216,7 +216,6 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       val (status3, body3) = callServerWithBadJWT2()
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
-      println(body1)
       status1 mustBe 200
       body1.contains("hello world 1") mustBe true
       status2 mustBe 400
@@ -236,7 +235,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
       val algorithm  = Algorithm.HMAC512("secret")
-      val algorithm2 = Algorithm.HMAC512(key)
+      // val algorithm2 = Algorithm.HMAC512(key)
 
       val goodJwt = JWT
         .create()
@@ -244,11 +243,11 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         .withClaim("bar", "yo")
         .sign(algorithm)
 
-      val goodJwtResigned = JWT
-        .create()
-        .withIssuer("foo")
-        .withClaim("bar", "yo")
-        .sign(algorithm2)
+      // val goodJwtResigned = JWT
+      //   .create()
+      //   .withIssuer("foo")
+      //   .withClaim("bar", "yo")
+      //   .sign(algorithm2)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
@@ -258,7 +257,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         "application/json", { r =>
           r.getHeader("X-JWT-Token").asOption.map(a => a.value()).foreach { a =>
             val v = JWT
-              .require(algorithm2)
+              .require(algorithm)
               .withIssuer("foo")
               .build()
             val verified = Try { v.verify(a) }.map(_ => true).getOrElse(false)
@@ -605,8 +604,8 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
       createOtoroshiVerifier(verifier3).futureValue
 
       val service = ServiceDescriptor(
-        id = "jwt-test",
-        name = "jwt-test",
+        id = "jwt-test-ref",
+        name = "jwt-test-ref",
         env = "prod",
         subdomain = "jwtref",
         domain = "foo.bar",
@@ -692,7 +691,6 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
       val (status3, body3) = callServerWithBadJWT2()
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
-      println(body1)
       status1 mustBe 200
       body1.contains("hello world 1") mustBe true
       status2 mustBe 400

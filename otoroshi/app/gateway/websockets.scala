@@ -30,7 +30,7 @@ import play.api.mvc.Results.{BadGateway, Forbidden, MethodNotAllowed, NotFound, 
 import play.api.mvc._
 import play.api.libs.json.{JsArray, JsString, Json}
 import security.{IdGenerator, OtoroshiClaim}
-import utils.{Metrics, UdpClient, UrlSanitizer}
+import utils.{HeadersHelper, Metrics, UdpClient, UrlSanitizer}
 import utils.future.Implicits._
 
 import scala.concurrent.duration._
@@ -601,49 +601,70 @@ class WebSocketHandler()(implicit env: Env) {
 
                                 val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                                 logger.trace(s"Claim is : $claim")
-                                val stateRequestHeaderName =
-                                  descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
+                                //val stateRequestHeaderName =
+                                //  descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
                                 val stateResponseHeaderName =
                                   descriptor.secComHeaders.stateResponseName.getOrElse(env.Headers.OtoroshiStateResp)
-                                val claimRequestHeaderName =
-                                  descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
-                                val headersIn: Seq[(String, String)] =
-                                (req.headers.toMap.toSeq
-                                  .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
-                                  .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
-                                  .filterNot(
-                                    t =>
-                                      (headersInFiltered ++ Seq(claimRequestHeaderName, stateRequestHeaderName))
-                                        .contains(t._1.toLowerCase)
-                                  ) ++ Map(
-                                  env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
-                                  // "Host"                               -> host,
-                                  "Host"                               -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
-                                  env.Headers.OtoroshiRequestId        -> snowflake,
-                                  env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                                ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
-                                        Map(
-                                          claimRequestHeaderName -> claim
-                                        )
-                                      } else {
-                                        Map.empty[String, String]
-                                      }) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-                                               Map(
-                                                 stateRequestHeaderName -> stateToken
-                                               )
-                                             } else {
-                                               Map.empty[String, String]
-                                             }) ++ (req.clientCertificateChain match {
-                                  case Some(chain) =>
-                                    Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
-                                  case None => Map.empty[String, String]
-                                }) ++ descriptor.additionalHeaders
-                                  .filter(t => t._1.trim.nonEmpty)
-                                  .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++ fromOtoroshi
-                                  .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
-                                  .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-                                  .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc,
-                                                                                                                 req)
+
+                                val headersIn: Seq[(String, String)] = HeadersHelper.composeHeadersIn(
+                                  descriptor = descriptor,
+                                  req = req,
+                                  apiKey = apiKey,
+                                  paUsr = paUsr,
+                                  elCtx = elCtx,
+                                  currentReqHasBody = false,
+                                  headersInFiltered = headersInFiltered,
+                                  snowflake = snowflake,
+                                  requestTimestamp = requestTimestamp,
+                                  host = host,
+                                  claim = claim,
+                                  stateToken = stateToken,
+                                  fromOtoroshi = fromOtoroshi,
+                                  snowMonkeyContext = SnowMonkeyContext(
+                                    Source.empty[ByteString],
+                                    Source.empty[ByteString]
+                                  ),
+                                  jwtInjection = jwtInjection
+                                )
+                                //val claimRequestHeaderName =
+                                //  descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
+                                // val headersIn: Seq[(String, String)] =
+                                // (req.headers.toMap.toSeq
+                                //   .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
+                                //   .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
+                                //   .filterNot(
+                                //     t =>
+                                //       (headersInFiltered ++ Seq(claimRequestHeaderName, stateRequestHeaderName))
+                                //         .contains(t._1.toLowerCase)
+                                //   ) ++ Map(
+                                //   env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
+                                //   // "Host"                               -> host,
+                                //   "Host"                               -> (if (desc.overrideHost) host else req.headers.get("Host").getOrElse("--")),
+                                //   env.Headers.OtoroshiRequestId        -> snowflake,
+                                //   env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
+                                // ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
+                                //         Map(
+                                //           claimRequestHeaderName -> claim
+                                //         )
+                                //       } else {
+                                //         Map.empty[String, String]
+                                //       }) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
+                                //                Map(
+                                //                  stateRequestHeaderName -> stateToken
+                                //                )
+                                //              } else {
+                                //                Map.empty[String, String]
+                                //              }) ++ (req.clientCertificateChain match {
+                                //   case Some(chain) =>
+                                //     Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
+                                //   case None => Map.empty[String, String]
+                                // }) ++ descriptor.additionalHeaders
+                                //   .filter(t => t._1.trim.nonEmpty)
+                                //   .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++ fromOtoroshi
+                                //   .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
+                                //   .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
+                                //   .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(desc,
+                                //                                                                                  req)
 
                                 // val requestHeader = ByteString(
                                 //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
