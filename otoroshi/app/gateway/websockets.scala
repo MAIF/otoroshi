@@ -793,13 +793,17 @@ class WebSocketHandler()(implicit env: Env) {
                                   url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
                                   method = req.method,
                                   headers = req.headers.toSimpleMap,
-                                  cookies = wsCookiesIn
+                                  cookies = wsCookiesIn,
+                                  version = req.version,
+                                  clientCertificateChain = req.clientCertificateChain
                                 )
                                 val otoroshiRequest = otoroshi.script.HttpRequest(
                                   url = url,
                                   method = req.method,
                                   headers = headersIn.toMap,
-                                  cookies = wsCookiesIn
+                                  cookies = wsCookiesIn,
+                                  version = req.version,
+                                  clientCertificateChain = req.clientCertificateChain
                                 )
                                 val upstreamStart = System.currentTimeMillis()
                                 descriptor

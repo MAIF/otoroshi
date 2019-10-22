@@ -12,33 +12,43 @@ import utils.RequestImplicits._
 
 object HeadersHelperImplicits {
   implicit class BetterSeq(val seq: Seq[(String, String)]) extends AnyVal {
+    @inline
     def appendOpt(opt: Option[String], f: String => (String, String)): Seq[(String, String)] = opt.map(k => seq :+ f(k)).getOrElse(seq)
+    @inline
     def appendIf(f: => Boolean, header: (String, String)): Seq[(String, String)] =  if (f) {
       seq :+ header
     } else {
       seq
     }
+    @inline
     def appendIfElse(f: => Boolean, name: String, ten: String, els: String): Seq[(String, String)] = if (f) {
       seq :+ (name, ten)
     } else {
       seq :+ (name, els)
     }
+    @inline
     def removeIf(name: String, f: => Boolean): Seq[(String, String)] = if (f) seq.filterNot(_._1.toLowerCase() == name.toLowerCase()) else seq
+    @inline
     def remove(name: String): Seq[(String, String)] = seq.filterNot(_._1.toLowerCase() == name.toLowerCase())
+    @inline
     def removeAll(names: Seq[String]): Seq[(String, String)] = {
       val lowerNames = names.map(_.toLowerCase)
       seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
     }
+    @inline
     def removeAllArgs(names: String*): Seq[(String, String)] = {
       val lowerNames = names.map(_.toLowerCase)
       seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
     }
+    @inline
     def appendAll(other: Seq[(String, String)]): Seq[(String, String)] = seq ++ other
+    @inline
     def appendAllArgs(other: (String, String)*): Seq[(String, String)] = seq ++ other
+    @inline
     def appendAllArgsIf(f: => Boolean)(other: (String, String)*): Seq[(String, String)] = if (f) seq ++ other else seq
+
     def debug(name: String): Seq[(String, String)] = {
-      println(s"\n\n$name\n")
-      println(seq.mkString("\n"))
+      println(name, seq.mkString("\n"))
       seq
     }
   }
@@ -48,6 +58,7 @@ object HeadersHelper {
 
   import HeadersHelperImplicits._
 
+  @inline
   def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
     if (desc.xForwardedHeaders) {
       val xForwardedFor = request.headers
@@ -64,6 +75,7 @@ object HeadersHelper {
     }
   }
 
+  @inline
   def composeHeadersIn(
     descriptor: ServiceDescriptor,
     req: RequestHeader,
@@ -143,6 +155,7 @@ object HeadersHelper {
     }
   }
 
+  @inline
   def composeHeadersOut(
     descriptor: ServiceDescriptor,
     req: RequestHeader,
@@ -150,11 +163,8 @@ object HeadersHelper {
     apiKey: Option[ApiKey],
     paUsr: Option[PrivateAppsUser],
     elCtx: Map[String, String],
-    currentReqHasBody: Boolean,
-    headersInFiltered: Seq[String],
     snowflake: String,
     requestTimestamp: String,
-    host: String,
     headersOutFiltered: Seq[String],
     overhead: Long,
     upstreamLatency: Long,
@@ -167,8 +177,8 @@ object HeadersHelper {
 
     if (env.useOldHeadersComposition) {
       oldComposeHeadersOut(
-        descriptor, req, resp, apiKey, paUsr, elCtx, currentReqHasBody, headersInFiltered,
-        snowflake, requestTimestamp, host, headersOutFiltered, overhead, upstreamLatency,
+        descriptor, req, resp, apiKey, paUsr, elCtx,
+        snowflake, requestTimestamp, headersOutFiltered, overhead, upstreamLatency,
         canaryId, remainingQuotas, stateResponseHeaderName
       )
     } else {
@@ -199,7 +209,7 @@ object HeadersHelper {
         .removeAll(headersFromResponse.map(_._1))
         .appendAll(headersFromResponse)
         .removeAll(descriptor.removeHeadersOut)
-        .removeAll(headersInFiltered :+ stateResponseHeaderName)
+        .removeAll(headersOutFiltered :+ stateResponseHeaderName)
         .removeAllArgs(
           env.Headers.OtoroshiRequestId,
           env.Headers.OtoroshiRequestTimestamp,
@@ -227,6 +237,7 @@ object HeadersHelper {
     }
   }
 
+  @inline
   def composeHeadersOutBadResult(
     descriptor: ServiceDescriptor,
     req: RequestHeader,
@@ -234,11 +245,8 @@ object HeadersHelper {
     apiKey: Option[ApiKey],
     paUsr: Option[PrivateAppsUser],
     elCtx: Map[String, String],
-    currentReqHasBody: Boolean,
-    headersInFiltered: Seq[String],
     snowflake: String,
     requestTimestamp: String,
-    host: String,
     headersOutFiltered: Seq[String],
     overhead: Long,
     upstreamLatency: Long,
@@ -251,8 +259,8 @@ object HeadersHelper {
 
     if (env.useOldHeadersComposition) {
       oldComposeHeadersOutBadResult(
-        descriptor, req, badResult, apiKey, paUsr, elCtx, currentReqHasBody, headersInFiltered,
-        snowflake, requestTimestamp, host, headersOutFiltered, overhead, upstreamLatency,
+        descriptor, req, badResult, apiKey, paUsr, elCtx,
+        snowflake, requestTimestamp, headersOutFiltered, overhead, upstreamLatency,
         canaryId, remainingQuotas, stateResponseHeaderName
       )
     } else {
@@ -282,7 +290,7 @@ object HeadersHelper {
         .removeAll(headersFromResponse.map(_._1))
         .appendAll(headersFromResponse)
         .removeAll(descriptor.removeHeadersOut)
-        .removeAll(headersInFiltered :+ stateResponseHeaderName)
+        .removeAll(headersOutFiltered :+ stateResponseHeaderName)
         .removeAllArgs(
           env.Headers.OtoroshiRequestId,
           env.Headers.OtoroshiRequestTimestamp,
@@ -313,6 +321,7 @@ object HeadersHelper {
 
   // old stuff
 
+  @inline
   private def oldComposeHeadersIn(
     descriptor: ServiceDescriptor,
     req: RequestHeader,
@@ -392,6 +401,7 @@ object HeadersHelper {
     headersIn
   }
 
+  @inline
   private def oldComposeHeadersOut(
     descriptor: ServiceDescriptor,
     req: RequestHeader,
@@ -399,11 +409,8 @@ object HeadersHelper {
     apiKey: Option[ApiKey],
     paUsr: Option[PrivateAppsUser],
     elCtx: Map[String, String],
-    currentReqHasBody: Boolean,
-    headersInFiltered: Seq[String],
     snowflake: String,
     requestTimestamp: String,
-    host: String,
     headersOutFiltered: Seq[String],
     overhead: Long,
     upstreamLatency: Long,
@@ -453,6 +460,7 @@ object HeadersHelper {
     _headersOut
   }
 
+  @inline
   def oldComposeHeadersOutBadResult(
     descriptor: ServiceDescriptor,
     req: RequestHeader,
@@ -460,11 +468,8 @@ object HeadersHelper {
     apiKey: Option[ApiKey],
     paUsr: Option[PrivateAppsUser],
     elCtx: Map[String, String],
-    currentReqHasBody: Boolean,
-    headersInFiltered: Seq[String],
     snowflake: String,
     requestTimestamp: String,
-    host: String,
     headersOutFiltered: Seq[String],
     overhead: Long,
     upstreamLatency: Long,
@@ -487,7 +492,7 @@ object HeadersHelper {
             env.Headers.OtoroshiRequestId -> snowflake,
             env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
             env.Headers.OtoroshiProxyLatency -> s"$overhead",
-            env.Headers.OtoroshiUpstreamLatency -> s"0"
+            env.Headers.OtoroshiUpstreamLatency -> s"$upstreamLatency"
           )
         } else {
           Seq.empty[(String, String)]

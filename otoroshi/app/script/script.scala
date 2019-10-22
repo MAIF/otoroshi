@@ -2,6 +2,7 @@ package otoroshi.script
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
@@ -34,7 +35,9 @@ import scala.util.{Failure, Success, Try}
 case class HttpRequest(url: String,
                        method: String,
                        headers: Map[String, String],
-                       cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
+                       cookies: Seq[WSCookie] = Seq.empty[WSCookie],
+                       version: String,
+                       clientCertificateChain: Option[Seq[X509Certificate]]) {
   lazy val contentType: Option[String] = headers.get("Content-Type")
   lazy val host: String                = headers.getOrElse("Host", "")
   lazy val uri: Uri                    = Uri(url)

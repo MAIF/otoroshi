@@ -1324,13 +1324,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
                                         method = req.method,
                                         headers = req.headers.toSimpleMap,
-                                        cookies = wsCookiesIn
+                                        cookies = wsCookiesIn,
+                                        version = req.version,
+                                        clientCertificateChain = req.clientCertificateChain
                                       )
                                       val otoroshiRequest = otoroshi.script.HttpRequest(
                                         url = url,
                                         method = req.method,
                                         headers = headersIn.toMap,
-                                        cookies = wsCookiesIn
+                                        cookies = wsCookiesIn,
+                                        version = req.version,
+                                        clientCertificateChain = req.clientCertificateChain
                                       )
                                       val upstreamStart = System.currentTimeMillis()
                                       val finalRequest = descriptor
@@ -1373,11 +1377,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               apiKey = apiKey,
                                               paUsr = paUsr,
                                               elCtx = elCtx,
-                                              currentReqHasBody = currentReqHasBody,
-                                              headersInFiltered = headersInFiltered,
                                               snowflake = snowflake,
                                               requestTimestamp = requestTimestamp,
-                                              host = host,
                                               headersOutFiltered = headersOutFiltered,
                                               overhead = overhead,
                                               upstreamLatency = 0L,
@@ -1592,11 +1593,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   apiKey = apiKey,
                                                   paUsr = paUsr,
                                                   elCtx = elCtx,
-                                                  currentReqHasBody = currentReqHasBody,
-                                                  headersInFiltered = headersInFiltered,
                                                   snowflake = snowflake,
                                                   requestTimestamp = requestTimestamp,
-                                                  host = host,
                                                   headersOutFiltered = headersOutFiltered,
                                                   overhead = overhead,
                                                   upstreamLatency = upstreamLatency,
