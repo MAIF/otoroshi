@@ -3,16 +3,8 @@ import ReactDOM from 'react-dom';
 import _ from 'lodash';
 
 class Alert extends Component {
-  defaultButton = e => {
-    if (e.keyCode === 13) {
-      this.props.close();
-    }
-  };
   componentDidMount() {
-    document.body.addEventListener('keydown', this.defaultButton);
-  }
-  componentWillUnmount() {
-    document.body.removeEventListener('keydown', this.defaultButton);
+    this.okRef.focus();
   }
   render() {
     const res = _.isFunction(this.props.message)
@@ -48,7 +40,7 @@ class Alert extends Component {
                   {this.props.linkOpt.title}
                 </a>
               )}
-              <button type="button" className="btn btn-primary" onClick={this.props.close}>
+              <button ref={r => this.okRef = r} type="button" className="btn btn-primary" onClick={this.props.close}>
                 Close
               </button>
             </div>
@@ -60,16 +52,9 @@ class Alert extends Component {
 }
 
 class Confirm extends Component {
-  defaultButton = e => {
-    if (e.keyCode === 13) {
-      this.props.ok();
-    }
-  };
   componentDidMount() {
     document.body.addEventListener('keydown', this.defaultButton);
-  }
-  componentWillUnmount() {
-    document.body.removeEventListener('keydown', this.defaultButton);
+    this.okRef.focus();
   }
   render() {
     return (
@@ -91,10 +76,10 @@ class Confirm extends Component {
               <p>{this.props.message}</p>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+              <button ref={r => this.cancelRef = r} type="button" className="btn btn-danger" onClick={this.props.cancel}>
                 Cancel
               </button>
-              <button type="button" className="btn btn-success" onClick={this.props.ok}>
+              <button ref={r => this.okRef = r} type="button" className="btn btn-success" onClick={this.props.ok}>
                 Ok
               </button>
             </div>
@@ -109,19 +94,11 @@ class Prompt extends Component {
   state = {
     text: this.props.value || '',
   };
-  defaultButton = e => {
-    if (e.keyCode === 13) {
-      this.props.ok(this.state.text);
-    }
-  };
   componentDidMount() {
-    document.body.addEventListener('keydown', this.defaultButton);
+    this.okRef.focus();
     if (this.ref) {
       this.ref.focus();
     }
-  }
-  componentWillUnmount() {
-    document.body.removeEventListener('keydown', this.defaultButton);
   }
   render() {
     return (
@@ -167,6 +144,7 @@ class Prompt extends Component {
               <button
                 type="button"
                 className="btn btn-success"
+                ref={r => this.okRef = r}
                 onClick={e => this.props.ok(this.state.text)}>
                 Ok
               </button>
