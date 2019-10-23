@@ -774,19 +774,36 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
 
     "allow better timeout management : callTimeout (#301)" in {
-      val (_, port1, counter1, call1) = testServer("calltimeout.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, _)     = testServer("calltimeout.oto.tools", port, 200.millis)
-      val serviceweight = ServiceDescriptor(
-        id = "callTimeout-test",
-        name = "callTimeout-test",
+      val (_, port1, _, call1) = testServer("calltimeout1.oto.tools", port, 2000.millis)
+      val (_, port2, _, call2) = testServer("calltimeout2.oto.tools", port, 200.millis)
+      val service1 = ServiceDescriptor(
+        id = "callTimeout1-test",
+        name = "callTimeout1-test",
         env = "prod",
-        subdomain = "calltimeout",
+        subdomain = "calltimeout1",
         domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http"
-          ),
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        useAkkaHttpClient = false,
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callTimeout = 1000
+        )
+      )
+      val service2 = ServiceDescriptor(
+        id = "callTimeout2-test",
+        name = "callTimeout2-test",
+        env = "prod",
+        subdomain = "calltimeout2",
+        domain = "oto.tools",
+        targets = Seq(
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http"
@@ -801,14 +818,18 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callTimeout = 1000
         )
       )
-      createOtoroshiService(serviceweight).futureValue
+      createOtoroshiService(service1).futureValue
+      createOtoroshiService(service2).futureValue
       val resp1 = call1(Map.empty)
-      val resp2 = call1(Map.empty)
+      val resp2 = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
-      resp1.status mustBe 200
-      resp2.status mustBe 502
-      deleteOtoroshiService(serviceweight).futureValue
+      println(resp1.status, resp1.body)
+      println(resp2.status, resp2.body)
+      resp1.status mustBe 502
+      resp2.status mustBe 200
+      deleteOtoroshiService(service1).futureValue
+      deleteOtoroshiService(service2).futureValue
       stopServers()
     }
 
