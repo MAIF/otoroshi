@@ -235,7 +235,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
       val algorithm  = Algorithm.HMAC512("secret")
-      // val algorithm2 = Algorithm.HMAC512(key)
+      val algorithm2 = Algorithm.HMAC512(key)
 
       val goodJwt = JWT
         .create()
@@ -257,7 +257,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         "application/json", { r =>
           r.getHeader("X-JWT-Token").asOption.map(a => a.value()).foreach { a =>
             val v = JWT
-              .require(algorithm)
+              .require(algorithm2)
               .withIssuer("foo")
               .build()
             val verified = Try { v.verify(a) }.map(_ => true).getOrElse(false)
