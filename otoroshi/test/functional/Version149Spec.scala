@@ -824,8 +824,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val resp2 = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
-      println(resp1.status, resp1.body)
-      println(resp2.status, resp2.body)
       resp1.status mustBe 502
       resp2.status mustBe 200
       deleteOtoroshiService(service1).futureValue

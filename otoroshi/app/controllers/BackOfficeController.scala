@@ -159,7 +159,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
             "version"            -> env.latestVersionHolder.get(),
             "currentVersion"     -> env.otoroshiVersion,
-            "commitVersion"      -> commitVersion
+            "commitVersion"      -> commitVersion,
+            "adminApiId"         -> env.backOfficeServiceId
           )
         )
       }

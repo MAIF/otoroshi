@@ -508,6 +508,7 @@ export class ServicePage extends Component {
   componentDidMount() {
     this.load();
     this.mountShortcuts();
+    BackOfficeServices.env().then(env => this.setState({ env }));
   }
 
   componentWillReceiveProps(nextProps) {
@@ -627,18 +628,41 @@ export class ServicePage extends Component {
 
   deleteService = e => {
     if (e && e.preventDefault) e.preventDefault();
-    window
-      .newPrompt(`Type the name of the service (${this.state.service.name})to delete it`)
-      .then(name => {
-        if (name && name === this.state.service.name) {
-          BackOfficeServices.deleteService(this.state.service).then(() => {
-            window.location.href = `/bo/dashboard/services`;
-            // this.props.history.push({
-            //   pathname: `/lines/${this.state.service.env}/services`
-            // });
+    if (this.state.env.adminApiId === this.state.service.id) {
+      window.newConfirm(`The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`).then(ok1 => {
+        if (ok1) {
+          window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
+            if (ok1 && ok2) {
+              window
+                .newPrompt(`Type the name of the service (${this.state.service.name}) to delete it`)
+                .then(name => {
+                  if (name && name === this.state.service.name) {
+                    BackOfficeServices.deleteService(this.state.service).then(() => {
+                      window.location.href = `/bo/dashboard/services`;
+                      // this.props.history.push({
+                      //   pathname: `/lines/${this.state.service.env}/services`
+                      // });
+                    });
+                  }
+                });
+            }
           });
         }
       });
+    } else {
+      window
+        .newPrompt(`Type the name of the service (${this.state.service.name}) to delete it`)
+        .then(name => {
+          if (name && name === this.state.service.name) {
+            BackOfficeServices.deleteService(this.state.service).then(() => {
+              window.location.href = `/bo/dashboard/services`;
+              // this.props.history.push({
+              //   pathname: `/lines/${this.state.service.env}/services`
+              // });
+            });
+          }
+        });
+    }
   };
 
   duplicateService = e => {

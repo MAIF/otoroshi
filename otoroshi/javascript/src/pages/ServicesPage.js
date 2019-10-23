@@ -126,15 +126,29 @@ export class ServicesPage extends Component {
   }
 
   deleteService = (service, table) => {
-    window
-      .newConfirm('Are you sure you want to delete service "' + service.name + '"')
-      .then(confirmed => {
-        if (confirmed) {
-          BackOfficeServices.deleteService(service).then(() => {
-            table.update();
+    if (this.state.env.adminApiId === service.id) {
+      window.newConfirm(`The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`).then(ok1 => {
+        if (ok1) {
+          window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
+            if (ok1 && ok2) {
+              BackOfficeServices.deleteService(service).then(() => {
+                table.update();
+              });
+            }
           });
         }
       });
+    } else {
+      window
+        .newConfirm('Are you sure you want to delete service "' + service.name + '"')
+        .then(confirmed => {
+          if (confirmed) {
+            BackOfficeServices.deleteService(service).then(() => {
+              table.update();
+            });
+          }
+        });
+    }
   };
 
   componentDidMount() {
@@ -150,6 +164,7 @@ export class ServicesPage extends Component {
       this.title = `All services`;
     }
     this.props.setTitle(this.title);
+    BackOfficeServices.env().then(env => this.setState({ env }));
   }
 
   nothing() {
