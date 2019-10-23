@@ -107,7 +107,7 @@ case class InHeader(name: String, remove: String = "") extends JwtTokenLocation 
       h.replaceAll(remove, "")
     }
   }
-  def asJwtInjection(newToken: String): JwtInjection = JwtInjection(additionalHeaders = Map(name -> newToken))
+  def asJwtInjection(newToken: String): JwtInjection = JwtInjection(additionalHeaders = Map(name -> (remove + newToken)))
   override def asJson                                = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
 }
 object InCookie extends FromJson[InCookie] {

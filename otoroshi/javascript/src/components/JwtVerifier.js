@@ -81,10 +81,10 @@ export class LocationSettings extends Component {
             onChange={e => changeTheValue(path + '.name', e)}
           />,
           <TextInput
-            label="Remove value"
+            label={this.props.sign ? `Prepend value`: `Remove value`}
             placeholder="Bearer "
             value={location.remove}
-            help="Remove a value (regexp) inside the header value"
+            help={(this.props.sign ? "Remove" : "Prepend") + " a value inside the header value"}
             onChange={e => changeTheValue(path + '.remove', e)}
           />,
         ]}
@@ -516,6 +516,7 @@ export class JwtVerifier extends Component {
           />,
           <Separator title="Transformation settings" />,
           <LocationSettings
+            sign={true}
             locationTitle="Token location"
             path={`${path}.strategy.transformSettings.location`}
             changeTheValue={this.changeTheValue}
