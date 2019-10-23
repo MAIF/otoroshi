@@ -124,6 +124,10 @@ object HeadersHelper {
         .filterNot(h => h._2 == "null")
         .toSeq
 
+      val jwtAdditionalHeaders = jwtInjection.additionalHeaders
+        .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
+        .toSeq
+
       missingOnlyHeaders
         .removeAll(headersFromRequest.map(_._1))
         .appendAll(headersFromRequest)
@@ -148,7 +152,10 @@ object HeadersHelper {
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendStateChallenge, stateRequestHeaderName -> stateToken)
         .appendOpt(req.headers.get("Content-Length"), value => "Content-Length" -> (value.toInt + snowMonkeyContext.trailingRequestBodySize).toString)
         .removeAll(additionalHeaders.map(_._1))
+        .removeAll(jwtAdditionalHeaders.map(_._1))
         .appendAll(additionalHeaders)
+        .appendAll(jwtAdditionalHeaders)
+        .removeAll(jwtInjection.removeHeaders)
         .appendAll(xForwardedHeader(descriptor, req))
         .removeIf("content-type", !currentReqHasBody)
         .remove("content-length")
