@@ -131,6 +131,8 @@ object HeadersHelper {
       missingOnlyHeaders
         .removeAll(headersFromRequest.map(_._1))
         .appendAll(headersFromRequest)
+        .removeIf("content-type", !currentReqHasBody)
+        .remove("content-length")
         .removeAll(descriptor.removeHeadersIn)
         .removeAll(headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))
         .appendIfElse(descriptor.overrideHost, "Host", host, req.headers.get("Host").getOrElse("--"))
@@ -157,8 +159,6 @@ object HeadersHelper {
         .appendAll(jwtAdditionalHeaders)
         .removeAll(jwtInjection.removeHeaders)
         .appendAll(xForwardedHeader(descriptor, req))
-        .removeIf("content-type", !currentReqHasBody)
-        .remove("content-length")
     }
   }
 
