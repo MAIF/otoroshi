@@ -25,20 +25,35 @@ export class ServicesPage extends Component {
     {
       title: 'Name',
       content: item => item.name,
+      cell: (v, item, table) => {
+        if (this.state && this.state.env && this.state.env.adminApiId === item.id) {
+          return (
+            <span 
+              title="This service is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it" 
+              className="label label-danger">
+              {item.name}
+            </span>
+          )
+        }
+        return item.name
+      },
     },
     {
       title: 'Delete',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       content: item => item.enabled,
-      cell: (v, item, table) => (
-        <button
-          type="button"
-          className="btn btn-danger btn-sm"
-          onClick={e => this.deleteService(item, table)}>
-          <i className="glyphicon glyphicon-trash" />
-        </button>
-      ),
+      cell: (v, item, table) => {
+        return (
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
+            onClick={e => this.deleteService(item, table)}>
+            <i className="glyphicon glyphicon-trash" />
+          </button>
+        )
+      },
     },
     {
       title: 'Env.',
@@ -123,6 +138,23 @@ export class ServicesPage extends Component {
           item.redirectToLocal ? <span className="glyphicon glyphicon-ok-sign" /> : '',
       });
     }
+  }
+
+  displayName = (item) => {
+    console.log(this.state)
+    return this.state && this.state.env && this.state.env.adminApiId === item.id ? <span className="label label-danger">{item.name}</span> : item.name
+  }
+
+  deleteCell = (v, item, table) => {
+    return (
+      <button
+        type="button"
+        className="btn btn-danger btn-sm"
+        disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
+        onClick={e => this.deleteService(item, table)}>
+        <i className="glyphicon glyphicon-trash" />
+      </button>
+    )
   }
 
   deleteService = (service, table) => {
