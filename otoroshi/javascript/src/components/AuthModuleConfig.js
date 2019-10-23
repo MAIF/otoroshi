@@ -566,7 +566,7 @@ export class User extends Component {
                   if (value1 && value2 && value1 === value2) {
                     this.props.hashPassword(this.props.user.email, value1);
                   } else {
-                    window.newAlert('Passwords does not match !');
+                    window.newAlert('Passwords does not match !', 'Error');
                   }
                 });
               });
@@ -581,7 +581,7 @@ export class User extends Component {
             onClick={e => {
               const password = faker.random.alphaNumeric(16);
               this.props.hashPassword(this.props.user.email, password);
-              window.newAlert(`The generated password is: ${password}`);
+              window.newAlert(`The generated password is: ${password}`, 'Generated passssord');
             }}
             style={{ marginRight: 0 }}>
             <i className="glyphicon glyphicon-repeat" />
@@ -604,7 +604,7 @@ export class User extends Component {
                   window.newAlert(<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                     <p>The link to update user profile is usable for the next 10 minutes</p>
                     <a target="_blank" href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
-                  </div>);
+                  </div>, 'Profile updates');
                 });
               }}
               style={{ marginRight: 0 }}>
@@ -624,7 +624,7 @@ export class User extends Component {
                   Accept: 'application/json',
                 },
               }).then(r => r.json()).then(r => {
-                window.newAlert("Email sent", "Email sent");
+                window.newAlert("The email containing update link has been sent", "Email sent");
               });
             }}
             style={{ marginRight: 0 }}>

@@ -35,7 +35,8 @@ export class PrivateAppsSessionsPage extends Component {
           className="btn btn-success btn-xs"
           onClick={e =>
             window.newAlert(
-              <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>
+              <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>,
+              'Profile'
             )
           }>
           Profile
@@ -53,7 +54,8 @@ export class PrivateAppsSessionsPage extends Component {
           className="btn btn-success btn-xs"
           onClick={e =>
             window.newAlert(
-              <pre style={{ height: 300 }}>{JSON.stringify(item.otoroshiData, null, 2)}</pre>
+              <pre style={{ height: 300 }}>{JSON.stringify(item.otoroshiData, null, 2)}</pre>,
+              'Metadata'
             )
           }>
           Meta.
@@ -71,7 +73,8 @@ export class PrivateAppsSessionsPage extends Component {
           className="btn btn-success btn-xs"
           onClick={e =>
             window.newAlert(
-              <pre style={{ height: 300 }}>{JSON.stringify(item.token, null, 2)}</pre>
+              <pre style={{ height: 300 }}>{JSON.stringify(item.token, null, 2)}</pre>,
+              'Tokens'
             )
           }>
           Tokens

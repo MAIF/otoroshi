@@ -200,7 +200,7 @@ export class U2FRegisterPage extends Component {
     const passwordcheck = this.state.passwordcheck;
     const label = this.state.label;
     if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!');
+      return window.newAlert('Password does not match !!!', 'Password error');
     }
     fetch(`/bo/u2f/register/start`, {
       method: 'POST',
@@ -267,7 +267,7 @@ export class U2FRegisterPage extends Component {
     const passwordcheck = this.state.passwordcheck;
     const label = this.state.label;
     if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!');
+      return window.newAlert('Password does not match !!!', 'Password error');
     }
     fetch(`/bo/simple/admins`, {
       method: 'POST',
@@ -308,7 +308,7 @@ export class U2FRegisterPage extends Component {
     const label = this.state.label;
 
     if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!');
+      return window.newAlert('Password does not match !!!', 'Password error');
     }
 
     return fetch('/bo/webauthn/register/start', {
