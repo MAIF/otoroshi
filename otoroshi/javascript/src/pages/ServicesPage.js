@@ -25,7 +25,7 @@ export class ServicesPage extends Component {
     {
       title: 'Name',
       content: item => item.name,
-      cell: (v, item, table) => {
+      wrappedCell: (v, item, table) => {
         if (this.state && this.state.env && this.state.env.adminApiId === item.id) {
           return (
             <span 

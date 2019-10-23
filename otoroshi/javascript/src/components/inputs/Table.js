@@ -289,7 +289,7 @@ export class Table extends Component {
                   }
                 }}
                 style={{ cursor: 'pointer', width: '100%' }}>
-                {value}
+                {c.wrappedCell ? c.wrappedCell(value, original, this) : value}
               </div>
             );
           },
