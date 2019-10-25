@@ -732,7 +732,7 @@ class Env(val configuration: Configuration,
                   val keyPair2 = keyPairGenerator.generateKeyPair()
                   val keyPair3 = keyPairGenerator.generateKeyPair()
                   val ca = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
-                  val caCert = Cert(ca, keyPair1, None).enrich()
+                  val caCert = Cert(ca, keyPair1, None, false).enrich()
                   if (!foundOtoroshiCa) {
                     logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
                     caCert.copy(id = Cert.OtoroshiCA).save()
@@ -744,7 +744,7 @@ class Env(val configuration: Configuration,
                       keyPair2,
                       ca,
                       keyPair1)
-                    Cert(cert1, keyPair2, None).enrich().save()
+                    Cert(cert1, keyPair2, None, false).enrich().save()
                   }
                 }
               }

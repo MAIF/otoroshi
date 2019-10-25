@@ -37,7 +37,8 @@ case class HttpRequest(url: String,
                        headers: Map[String, String],
                        cookies: Seq[WSCookie] = Seq.empty[WSCookie],
                        version: String,
-                       clientCertificateChain: Option[Seq[X509Certificate]]) {
+                       clientCertificateChain: Option[Seq[X509Certificate]],
+                       target: Option[Target]) {
   lazy val contentType: Option[String] = headers.get("Content-Type")
   lazy val host: String                = headers.getOrElse("Host", "")
   lazy val uri: Uri                    = Uri(url)

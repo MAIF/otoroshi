@@ -662,7 +662,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                                                                 keyPair,
                                                                 ca.certificate.get,
                                                                 ca.keyPair)
-                Ok(Cert(cert, keyPair, ca).enrich().toJson)
+                Ok(Cert(cert, keyPair, ca, false).enrich().toJson)
               }
             }
             Ok(FakeKeyStore.generateCert(host).toJson)
@@ -693,7 +693,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               privateKey =
                 s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
               caRef = None,
-              autoRenew = false
+              autoRenew = false,
+              client = false
             ).enrich()
             Ok(cert.toJson)
           }
@@ -723,7 +724,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                                                                 keyPair,
                                                                 ca.certificate.get,
                                                                 ca.keyPair)
-                Ok(Cert(cert, keyPair, ca).enrich().toJson)
+                Ok(Cert(cert, keyPair, ca, false).enrich().toJson)
               }
             }
           }
@@ -743,7 +744,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       case Some(original) if original.ca && original.selfSigned => {
         val keyPair: KeyPair      = original.keyPair
         val cert: X509Certificate = FakeKeyStore.createCA(original.subject, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-        val certificate: Cert     = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert     = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
         certificate.save().map { _ =>
           Ok(certificate.toJson)
         }
@@ -752,7 +753,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         val keyPair: KeyPair = original.keyPair
         val cert: X509Certificate =
           FakeKeyStore.createSelfSignedCertificate(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
         certificate.save().map { _ =>
           Ok(certificate.toJson)
         }
@@ -767,7 +768,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                                                                              keyPair,
                                                                              ca.certificate.get,
                                                                              ca.keyPair)
-            val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+            val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
             certificate.save().map { _ =>
               Ok(certificate.toJson)
             }

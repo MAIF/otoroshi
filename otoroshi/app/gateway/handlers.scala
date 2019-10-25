@@ -1069,7 +1069,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       }
                                     }
 
-                                    def actuallyCallDownstream(target: Target,
+                                    def actuallyCallDownstream(_target: Target,
                                                                apiKey: Option[ApiKey] = None,
                                                                paUsr: Option[PrivateAppsUser] = None,
                                                                cbDuration: Long,
@@ -1097,8 +1097,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .map(m => req.relativeUri.replace(m, ""))
                                           .getOrElse(rawUri)
                                       val scheme =
-                                        if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                                      val host                   = TargetExpressionLanguage(if (descriptor.redirectToLocal) descriptor.localHost else target.host, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
+                                        if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
+                                      val host                   = TargetExpressionLanguage(if (descriptor.redirectToLocal) descriptor.localHost else _target.host, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
                                       val root                   = descriptor.root
                                       val url                    = TargetExpressionLanguage(s"$scheme://$host$root$uri", Some(req), Some(descriptor), apiKey, paUsr, elCtx)
                                       lazy val currentReqHasBody = hasBody(req)
@@ -1251,9 +1251,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                                           descriptor.targetsLoadBalancing match {
                                             case BestResponseTime =>
-                                              BestResponseTime.incrementAverage(descriptor, target, duration)
+                                              BestResponseTime.incrementAverage(descriptor, _target, duration)
                                             case WeightedBestResponseTime(_) =>
-                                              BestResponseTime.incrementAverage(descriptor, target, duration)
+                                              BestResponseTime.incrementAverage(descriptor, _target, duration)
                                             case _ =>
                                           }
 
@@ -1359,7 +1359,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         headers = req.headers.toSimpleMap,
                                         cookies = wsCookiesIn,
                                         version = req.version,
-                                        clientCertificateChain = req.clientCertificateChain
+                                        clientCertificateChain = req.clientCertificateChain,
+                                        target = None
                                       )
                                       val otoroshiRequest = otoroshi.script.HttpRequest(
                                         url = url,
@@ -1367,7 +1368,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         headers = headersIn.toMap,
                                         cookies = wsCookiesIn,
                                         version = req.version,
-                                        clientCertificateChain = req.clientCertificateChain
+                                        clientCertificateChain = req.clientCertificateChain,
+                                        target = Some(_target)
                                       )
                                       val upstreamStart = System.currentTimeMillis()
                                       val finalRequest = descriptor
@@ -1489,12 +1491,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             case true =>
                                               env.gatewayClient.akkaUrlWithTarget(
                                                 UrlSanitizer.sanitize(httpRequest.url),
-                                                target,
+                                                httpRequest.target.getOrElse(_target),
                                                 descriptor.clientConfig
                                               )
                                             case false =>
                                               env.gatewayClient.urlWithTarget(UrlSanitizer.sanitize(httpRequest.url),
-                                                                              target,
+                                                                              httpRequest.target.getOrElse(_target),
                                                                               descriptor.clientConfig)
                                           }
 

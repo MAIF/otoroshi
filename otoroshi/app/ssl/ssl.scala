@@ -96,7 +96,8 @@ case class Cert(
     autoRenew: Boolean = false,
     subject: String = "--",
     from: DateTime = DateTime.now(),
-    to: DateTime = DateTime.now()
+    to: DateTime = DateTime.now(),
+    client: Boolean
 ) {
   def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
@@ -105,13 +106,13 @@ case class Cert(
       case original if original.ca && original.selfSigned => {
         val keyPair: KeyPair      = original.keyPair
         val cert: X509Certificate = FakeKeyStore.createCA(original.subject, duration, keyPair)
-        val certificate: Cert     = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert     = Cert(cert, keyPair, None, client).enrich().copy(id = original.id)
         certificate
       }
       case original if original.selfSigned => {
         val keyPair: KeyPair      = original.keyPair
         val cert: X509Certificate = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, keyPair)
-        val certificate: Cert     = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert     = Cert(cert, keyPair, None, client).enrich().copy(id = original.id)
         certificate
       }
       case original if original.caRef.isDefined && caOpt.isDefined && caOpt.get.id == original.caRef.get => {
@@ -119,7 +120,7 @@ case class Cert(
         val keyPair: KeyPair = original.keyPair
         val cert: X509Certificate =
           FakeKeyStore.createCertificateFromCA(original.domain, duration, keyPair, ca.certificate.get, ca.keyPair)
-        val certificate: Cert = Cert(cert, keyPair, None).enrich().copy(id = original.id)
+        val certificate: Cert = Cert(cert, keyPair, None, client).enrich().copy(id = original.id)
         certificate
       }
       case _ => this
@@ -206,7 +207,7 @@ object Cert {
 
   lazy val logger = Logger("otoroshi-cert")
 
-  def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String]): Cert = {
+  def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String], client: Boolean): Cert = {
     Cert(
       id = IdGenerator.token(32),
       chain =
@@ -214,11 +215,12 @@ object Cert {
       privateKey =
         s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = caRef,
-      autoRenew = false
+      autoRenew = false,
+      client = client
     )
   }
 
-  def apply(cert: X509Certificate, keyPair: KeyPair, ca: Cert): Cert = {
+  def apply(cert: X509Certificate, keyPair: KeyPair, ca: Cert, client: Boolean): Cert = {
     Cert(
       id = IdGenerator.token(32),
       chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
@@ -226,7 +228,8 @@ object Cert {
       privateKey =
         s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = Some(ca.id),
-      autoRenew = false
+      autoRenew = false,
+      client = client
     )
   }
 
@@ -244,6 +247,7 @@ object Cert {
       "subject"    -> cert.subject,
       "from"       -> cert.from.getMillis,
       "to"         -> cert.to.getMillis,
+      "client"     -> cert.client
     )
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
@@ -255,6 +259,7 @@ object Cert {
           privateKey = (json \ "privateKey").asOpt[String].getOrElse(""),
           selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
           ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
+          client = (json \ "client").asOpt[Boolean].getOrElse(false),
           valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
           autoRenew = (json \ "autoRenew").asOpt[Boolean].getOrElse(false),
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
@@ -338,7 +343,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
         chain = cacert,
         privateKey = "",
         caRef = None,
-        ca = true
+        ca = true,
+        client = false
       ).enrich()
       findAll().map { certs =>
         val found = certs
@@ -363,7 +369,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
         id = IdGenerator.uuid,
         chain = certContent,
         privateKey = keyContent,
-        caRef = None
+        caRef = None,
+        client = false
       ).enrich()
       findAll().map { certs =>
         val found = certs
@@ -866,7 +873,8 @@ object FakeKeyStore {
       privateKey = s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded),
                                                                  Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
       caRef = None,
-      autoRenew = false
+      autoRenew = false,
+      client = false
     )
   }
 

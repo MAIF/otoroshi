@@ -442,7 +442,7 @@ export class ServiceApiKeysPage extends Component {
             </span>
           )
         }
-        return item.name
+        return item.clientName;
       },
     },
     {

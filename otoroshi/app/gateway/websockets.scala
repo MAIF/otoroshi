@@ -600,7 +600,7 @@ class WebSocketHandler()(implicit env: Env) {
                               }
 
                               def actuallyCallDownstream(
-                                  target: Target,
+                                  _target: Target,
                                   apiKey: Option[ApiKey] = None,
                                   paUsr: Option[PrivateAppsUser] = None,
                                   cbDuration: Long,
@@ -627,10 +627,10 @@ class WebSocketHandler()(implicit env: Env) {
                                 // val index = reqCounter.incrementAndGet() % (if (descriptor.targets.nonEmpty) descriptor.targets.size else 1)
                                 // // Round robin loadbalancing is happening here !!!!!
                                 // val target = descriptor.targets.apply(index.toInt)
-                                val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else target.scheme
-                                val host   = if (descriptor.redirectToLocal) descriptor.localHost else target.host
+                                val scheme = if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
+                                val host   = if (descriptor.redirectToLocal) descriptor.localHost else _target.host
                                 val root   = descriptor.root
-                                val url    = TargetExpressionLanguage(s"${if (target.scheme == "https") "wss" else "ws"}://$host$root$uri", Some(req), Some(descriptor), apiKey, paUsr, elCtx)
+                                val url    = TargetExpressionLanguage(s"${if (_target.scheme == "https") "wss" else "ws"}://$host$root$uri", Some(req), Some(descriptor), apiKey, paUsr, elCtx)
                                 // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                 val fromOtoroshi = req.headers
                                   .get(env.Headers.OtoroshiRequestId)
@@ -833,7 +833,8 @@ class WebSocketHandler()(implicit env: Env) {
                                   headers = req.headers.toSimpleMap,
                                   cookies = wsCookiesIn,
                                   version = req.version,
-                                  clientCertificateChain = req.clientCertificateChain
+                                  clientCertificateChain = req.clientCertificateChain,
+                                  target = None
                                 )
                                 val otoroshiRequest = otoroshi.script.HttpRequest(
                                   url = url,
@@ -841,7 +842,8 @@ class WebSocketHandler()(implicit env: Env) {
                                   headers = headersIn.toMap,
                                   cookies = wsCookiesIn,
                                   version = req.version,
-                                  clientCertificateChain = req.clientCertificateChain
+                                  clientCertificateChain = req.clientCertificateChain,
+                                  target = Some(_target)
                                 )
                                 val upstreamStart = System.currentTimeMillis()
                                 descriptor
@@ -919,9 +921,10 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Some("errors.resource.not.found"))
                                         .asLeft[WSFlow]
                                     }
-                                    case Right(_)
+                                    case Right(_httpReq)
                                         if descriptor.tcpUdpTunneling && req.relativeUri
                                           .startsWith("/.well-known/otoroshi/tunnel") => {
+                                      val target = _httpReq.target.getOrElse(_target)
                                       val (theHost: String, thePort: Int) = (target.scheme, TargetExpressionLanguage(target.host, Some(req), Some(descriptor), apiKey, paUsr, elCtx)) match {
                                         case (_, host) if host.contains(":") =>
                                           (host.split(":").apply(0), host.split(":").apply(1).toInt)

@@ -315,6 +315,10 @@ export class CertificatesPage extends Component {
       type: 'bool',
       props: { label: 'Auto renew cert.' },
     },
+    client: {
+      type: 'bool',
+      props: { label: 'Client cert.' },
+    },
   };
 
   columns = [
@@ -346,6 +350,17 @@ export class CertificatesPage extends Component {
       notFilterable: true,
     },
     {
+      title: 'Client',
+      content: item =>
+        !item.client ? (
+          'no'
+        ) : (
+          'yes'
+        ),
+      style: { textAlign: 'center', width: 70 },
+      notFilterable: true,
+    },
+    {
       title: 'Self signed',
       content: item => (item.selfSigned ? 'yes' : 'no'),
       style: { textAlign: 'center', width: 100 },
@@ -355,7 +370,7 @@ export class CertificatesPage extends Component {
     { title: 'To', content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss') },
   ];
 
-  formFlow = ['id', 'commands', 'valid', 'chain', 'privateKey', 'autoRenew', 'infos'];
+  formFlow = ['id', 'commands', 'valid', 'chain', 'privateKey', 'autoRenew', 'client', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates (experimental)`);
