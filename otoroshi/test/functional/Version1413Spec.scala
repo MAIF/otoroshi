@@ -20,6 +20,7 @@ import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class Version1413Spec(name: String, configurationSpec: => Configuration)
   extends PlaySpec
@@ -359,10 +360,26 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
     "support DefaultToken strategy in JWT Verifiers (#373)" in {
 
-      val (_, port1, counter1, call1) = testServer("defaulttoken.oto.tools", port)
-      val (_, port2, counter2, call2) = testServer("defaulttoken2.oto.tools", port)
-
       val algorithm = Algorithm.HMAC512("secret")
+
+      val (_, port1, counter1, call1) = testServer("defaulttoken.oto.tools", port, validate = req => {
+        val header = req.getHeader("X-JWT-Token").get().value()
+        Try(JWT.require(algorithm).build().verify(header)) match {
+          case Success(_) => true
+          case Failure(_) => false
+        }
+      })
+      val (_, port2, counter2, call2) = testServer("defaulttoken2.oto.tools", port, validate = req => {
+        val maybeHeader = req.getHeader("X-JWT-Token")
+        if (maybeHeader.isPresent) {
+          Try(JWT.require(algorithm).build().verify(maybeHeader.get().value())) match {
+            case Success(_) => true
+            case Failure(_) => false
+          }
+        } else {
+          true
+        }
+      })
 
       val service1 = ServiceDescriptor(
         id = "defaulttoken",

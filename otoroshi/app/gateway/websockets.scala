@@ -251,12 +251,16 @@ class WebSocketHandler()(implicit env: Env) {
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     import utils.RequestImplicits._
 
-    if (desc.tcpUdpTunneling && req.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
-      f
+    if (desc.tcpUdpTunneling) {
+      if (req.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
+        f
+      } else {
+        Errors
+          .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+          .asLeft[WSFlow]
+      }
     } else {
-      Errors
-        .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
-        .asLeft[WSFlow]
+      f
     }
   }
 
@@ -1638,13 +1642,17 @@ class WebSocketProxyActor(url: String,
 
   val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]
 
-  val avoid =
-    Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
+  val avoid = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
+    // Seq("Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Host")
 
   override def preStart() =
     try {
       logger.trace("[WEBSOCKET] initializing client call ...")
-      val _headers = headers.toList.filterNot(t => avoid.contains(t._1)).map(tuple => RawHeader(tuple._1, tuple._2))
+      val _headers = headers.toList.filterNot(t => avoid.contains(t._1)).map {
+        case (key, value) if key.toLowerCase == "host" => akka.http.scaladsl.model.headers.Host(Uri(value).authority.host)
+        case (key, value) if key.toLowerCase == "user-agent" => akka.http.scaladsl.model.headers.`User-Agent`(value)
+        case (key, value) => RawHeader(key, value)
+      }
       val request = _headers.foldLeft[WebSocketRequest](WebSocketRequest(url))(
         (r, header) => r.copy(extraHeaders = r.extraHeaders :+ header)
       )

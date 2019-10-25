@@ -716,16 +716,31 @@ sealed trait JwtVerifier extends AsJson {
     source.token(request) match {
       case None => strategy match {
         case DefaultToken(true, newToken, verif) => {
-          val interpolatedToken = JwtExpressionLanguage(Json.stringify(newToken), Some(request), Some(desc), apikey, user, elContext ++ Map(
-            "jti" -> IdGenerator.uuid,
-            "iat" -> Math.floor(System.currentTimeMillis() / 1000).toString,
-            "nbf" -> Math.floor(System.currentTimeMillis() / 1000).toString,
-            "iss" -> "Otoroshi",
-            "exp" -> Math.floor((System.currentTimeMillis() + 60) / 1000).toString,
-            "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
-            "aud" -> "backend"
-          ))
-          f(source.asJwtInjection(interpolatedToken)).right[Result]
+          algoSettings.asAlgorithmF(OutputMode) flatMap {
+            case None =>
+              Errors
+                .craftResponseResult(
+                  "error.bad.output.algorithm.name",
+                  Results.BadRequest,
+                  request,
+                  Some(desc),
+                  None
+                )
+                .left[A]
+            case Some(outputAlgorithm) => {
+              val interpolatedToken = JwtExpressionLanguage.fromJson(newToken, Some(request), Some(desc), apikey, user, elContext ++ Map(
+                "jti" -> IdGenerator.uuid,
+                "iat" -> Math.floor(System.currentTimeMillis() / 1000).toString,
+                "nbf" -> Math.floor(System.currentTimeMillis() / 1000).toString,
+                "iss" -> "Otoroshi",
+                "exp" -> Math.floor((System.currentTimeMillis() + 60) / 1000).toString,
+                "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
+                "aud" -> "backend"
+              )).as[JsObject]
+              val signedToken = sign(interpolatedToken, outputAlgorithm)
+              f(source.asJwtInjection(signedToken)).right[Result]
+            }
+          }
         }
         case DefaultToken(false, _, _) => {
           f(JwtInjection()).right[Result]
