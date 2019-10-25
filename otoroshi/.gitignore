@@ -18,3 +18,4 @@ target
 /otoroshi.jks
 /root-dir
 /app-2.12
+companion.scala
