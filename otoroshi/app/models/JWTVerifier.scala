@@ -21,6 +21,7 @@ import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
+import security.IdGenerator
 import ssl.PemUtils
 import storage.BasicStore
 
@@ -567,9 +568,10 @@ object VerifierStrategy extends FromJson[VerifierStrategy] {
   override def fromJson(json: JsValue): Either[Throwable, VerifierStrategy] =
     Try {
       (json \ "type").as[String] match {
-        case "PassThrough" => PassThrough.fromJson(json)
-        case "Sign"        => Sign.fromJson(json)
-        case "Transform"   => Transform.fromJson(json)
+        case "PassThrough"  => PassThrough.fromJson(json)
+        case "Sign"         => Sign.fromJson(json)
+        case "Transform"    => Transform.fromJson(json)
+        case "DefaultToken" => DefaultToken.fromJson(json)
       }
     } recover {
       case e => Left(e)
@@ -578,6 +580,28 @@ object VerifierStrategy extends FromJson[VerifierStrategy] {
 
 sealed trait VerifierStrategy extends AsJson {
   def verificationSettings: VerificationSettings
+}
+
+object DefaultToken extends FromJson[VerifierStrategy] {
+  override def fromJson(json: JsValue): Either[Throwable, VerifierStrategy] =
+    Try {
+      Right(DefaultToken(
+        strict = (json \ "strict").asOpt[Boolean].getOrElse(true),
+        token = (json \ "token").asOpt[JsValue].getOrElse(Json.obj()),
+        verificationSettings = VerificationSettings.fromJson((json \ "verificationSettings").as[JsValue]).toOption.getOrElse(VerificationSettings())
+      ))
+    } recover {
+      case e => Left(e)
+    } get
+}
+
+case class DefaultToken(strict: Boolean = true, token: JsValue, verificationSettings: VerificationSettings = VerificationSettings()) extends VerifierStrategy {
+  override def asJson = Json.obj(
+    "type"   -> "DefaultToken",
+    "strict" -> strict,
+    "token"  -> token,
+    "verificationSettings" -> verificationSettings.asJson
+  )
 }
 
 object PassThrough extends FromJson[VerifierStrategy] {
@@ -690,17 +714,46 @@ sealed trait JwtVerifier extends AsJson {
     import Implicits._
 
     source.token(request) match {
-      case None if strict =>
-        Errors
-          .craftResponseResult(
-            "error.expected.token.not.found",
-            Results.BadRequest,
-            request,
-            Some(desc),
-            None
-          )
-          .left[A]
-      case None if !strict => f(JwtInjection()).right[Result]
+      case None => strategy match {
+        case DefaultToken(true, newToken, verif) => {
+          val interpolatedToken = JwtExpressionLanguage(Json.stringify(newToken), Some(request), Some(desc), apikey, user, elContext ++ Map(
+            "jti" -> IdGenerator.uuid,
+            "iat" -> Math.floor(System.currentTimeMillis() / 1000).toString,
+            "nbf" -> Math.floor(System.currentTimeMillis() / 1000).toString,
+            "iss" -> "Otoroshi",
+            "exp" -> Math.floor((System.currentTimeMillis() + 60) / 1000).toString,
+            "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
+            "aud" -> "backend"
+          ))
+          f(source.asJwtInjection(interpolatedToken)).right[Result]
+        }
+        case DefaultToken(false, _, _) => {
+          f(JwtInjection()).right[Result]
+        }
+        case _ if strict => {
+          Errors
+            .craftResponseResult(
+              "error.expected.token.not.found",
+              Results.BadRequest,
+              request,
+              Some(desc),
+              None
+            )
+            .left[A]
+        }
+        case _ if !strict => f(JwtInjection()).right[Result]
+      }
+      // case None if strict =>
+      //   Errors
+      //     .craftResponseResult(
+      //       "error.expected.token.not.found",
+      //       Results.BadRequest,
+      //       request,
+      //       Some(desc),
+      //       None
+      //     )
+      //     .left[A]
+      // case None if !strict => f(JwtInjection()).right[Result]
       case Some(token) =>
         val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(0)))).getOrElse(Json.obj())
         val kid         = (tokenHeader \ "kid").asOpt[String]
@@ -732,6 +785,18 @@ sealed trait JwtVerifier extends AsJson {
                   .left[A]
               case Success(decodedToken) =>
                 strategy match {
+                  case s @ DefaultToken(true, _, _) => {
+                    Errors
+                      .craftResponseResult(
+                        "error.token.already.present",
+                        Results.BadRequest,
+                        request,
+                        Some(desc),
+                        None
+                      )
+                      .left[A]
+                  }
+                  case s @ DefaultToken(false, _, _) => f(JwtInjection()).right[Result]
                   case s @ PassThrough(_) => f(JwtInjection()).right[Result]
                   case s @ Sign(_, aSettings) =>
                     aSettings.asAlgorithmF(OutputMode) flatMap {

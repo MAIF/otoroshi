@@ -4,6 +4,7 @@ import env.Env
 import gateway.SnowMonkeyContext
 import models._
 import otoroshi.el.HeadersExpressionLanguage
+import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{RequestHeader, Result}
 
@@ -15,13 +16,13 @@ object HeadersHelperImplicits {
     @inline
     def appendOpt(opt: Option[String], f: String => (String, String)): Seq[(String, String)] = opt.map(k => seq :+ f(k)).getOrElse(seq)
     @inline
-    def appendIf(f: => Boolean, header: (String, String)): Seq[(String, String)] =  if (f) {
+    def appendIf(f: => Boolean, header: => (String, String)): Seq[(String, String)] =  if (f) {
       seq :+ header
     } else {
       seq
     }
     @inline
-    def appendIfElse(f: => Boolean, name: String, ten: String, els: String): Seq[(String, String)] = if (f) {
+    def appendIfElse(f: => Boolean, name: String, ten: => String, els: => String): Seq[(String, String)] = if (f) {
       seq :+ (name, ten)
     } else {
       seq :+ (name, els)
@@ -150,6 +151,7 @@ object HeadersHelper {
         )
         .appendOpt(fromOtoroshi, value => env.Headers.OtoroshiGatewayParentRequest -> value)
         .appendIf(req.clientCertificateChain.isDefined, env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
+        .appendIf(req.clientCertificateChain.isDefined, (env.Headers.OtoroshiClientCertChain + "DNs") -> Json.stringify(JsArray(req.clientCertificateChain.get.map(c => JsString(c.getSubjectDN.getName)))))
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken, claimRequestHeaderName -> claim)
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendStateChallenge, stateRequestHeaderName -> stateToken)
         .appendOpt(req.headers.get("Content-Length"), value => "Content-Length" -> (value.toInt + snowMonkeyContext.trailingRequestBodySize).toString)

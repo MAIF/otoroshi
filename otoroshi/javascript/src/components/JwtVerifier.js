@@ -12,6 +12,7 @@ import {
   FreeDomainInput,
   Help,
   Form,
+  CodeInput,
 } from './inputs';
 
 import deepSet from 'set-value';
@@ -380,6 +381,21 @@ export class JwtVerifier extends Component {
           value={verifier.strategy.type}
           onChange={e => {
             switch (e) {
+              case 'DefaultToken':
+                changeTheValue(path + '.strategy', {
+                  type: 'DefaultToken',
+                  strict: true,
+                  token: {
+                    "iss": "foo",
+                    "iat": "${iat}",
+                    "nbf": "${nbf}",
+                  },
+                  verificationSettings: {
+                    fields: {},
+                    arrayFields: {}
+                  },
+                });
+                break;
               case 'PassThrough':
                 changeTheValue(path + '.strategy', {
                   type: 'PassThrough',
@@ -441,12 +457,43 @@ export class JwtVerifier extends Component {
             }
           }}
           possibleValues={[
+            { label: 'Default JWT token', value: 'DefaultToken' },
             { label: 'Verify JWT token', value: 'PassThrough' },
             { label: 'Verify and re-sign JWT token', value: 'Sign' },
             { label: 'Verify, re-sign and transform JWT token', value: 'Transform' },
           ]}
-          help="What kind of strategy is used for JWT token verification. PassThrough will only verifiy token signing and fields values if provided. Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings. Transform will do the same as Sign plus will be able to transform the token."
+          help="What kind of strategy is used for JWT token verification. DefaultToken will add a token if no present. PassThrough will only verifiy token signing and fields values if provided. Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings. Transform will do the same as Sign plus will be able to transform the token."
         />
+        {verifier.strategy.type === 'DefaultToken' && [
+          <BooleanInput
+            label="Strict"
+            help="If token already present, the call will fail"
+            value={verifier.strategy.strict}
+            onChange={v => changeTheValue(path + '.strategy.strict', v)}
+          />,
+          <CodeInput
+            label="Default value"
+            mode="json"
+            value={JSON.stringify(verifier.strategy.token, null, 2)}
+            onChange={e => this.changeTheValue(path + '.strategy.token', JSON.parse(e))}
+          />,
+          <ObjectInput
+            label="Verify token fields"
+            placeholderKey="Field name"
+            placeholderValue="Field value"
+            value={verifier.strategy.verificationSettings.fields}
+            help="When the JWT token is checked, each field specified here will be verified with the provided value"
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
+          />,
+          <ObjectInput
+            label="Verify token array value"
+            placeholderKey="Field name"
+            placeholderValue="One or more comma separated values in the array"
+            value={verifier.strategy.verificationSettings.arrayFields}
+            help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
+            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
+          />,
+        ]}
         {verifier.strategy.type === 'PassThrough' && [
           <ObjectInput
             label="Verify token fields"

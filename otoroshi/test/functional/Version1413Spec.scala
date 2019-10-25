@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
 import env.Env
 import models._
@@ -351,6 +353,115 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       resp2.status mustBe 201
 
       deleteOtoroshiService(service1).futureValue
+
+      stopServers()
+    }
+
+    "support DefaultToken strategy in JWT Verifiers (#373)" in {
+
+      val (_, port1, counter1, call1) = testServer("defaulttoken.oto.tools", port)
+      val (_, port2, counter2, call2) = testServer("defaulttoken2.oto.tools", port)
+
+      val algorithm = Algorithm.HMAC512("secret")
+
+      val service1 = ServiceDescriptor(
+        id = "defaulttoken",
+        name = "defaulttoken",
+        env = "prod",
+        subdomain = "defaulttoken",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port1}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        jwtVerifier = LocalJwtVerifier(
+          enabled = true,
+          strict = true,
+          source = InHeader(name = "X-JWT-Token"),
+          algoSettings = HSAlgoSettings(512, "secret"),
+          strategy = DefaultToken(true, Json.obj(
+            "user" -> "bobby",
+            "rights" -> Json.arr(
+              "admin"
+            )
+          ))
+        )
+      )
+
+      val service2 = ServiceDescriptor(
+        id = "defaulttoken2",
+        name = "defaulttoken2",
+        env = "prod",
+        subdomain = "defaulttoken2",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"127.0.0.1:${port2}",
+            scheme = "http"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*"),
+        jwtVerifier = LocalJwtVerifier(
+          enabled = true,
+          strict = true,
+          source = InHeader(name = "X-JWT-Token"),
+          algoSettings = HSAlgoSettings(512, "secret"),
+          strategy = DefaultToken(false, Json.obj(
+            "user" -> "bobby",
+            "rights" -> Json.arr(
+              "admin"
+            )
+          ))
+        )
+      )
+
+      createOtoroshiService(service1).futureValue
+      createOtoroshiService(service2).futureValue
+
+      counter1.get() mustBe 0
+      counter2.get() mustBe 0
+
+      val resp1 = call1(
+        Map.empty
+      )
+
+      val resp2 = call1(
+        Map("X-JWT-Token" -> JWT
+          .create()
+          .withIssuer("mathieu")
+          .withClaim("bar", "yo")
+          .sign(algorithm))
+      )
+
+      resp1.status mustBe 200
+      resp2.status mustBe 400
+      counter1.get() mustBe 1
+
+      val resp3 = call2(
+        Map.empty
+      )
+
+      val resp4 = call2(
+        Map("X-JWT-Token" -> JWT
+          .create()
+          .withIssuer("mathieu")
+          .withClaim("bar", "yo")
+          .sign(algorithm))
+      )
+
+      resp3.status mustBe 200
+      resp4.status mustBe 200
+      counter2.get() mustBe 2
+
+      deleteOtoroshiService(service1).futureValue
+      deleteOtoroshiService(service2).futureValue
 
       stopServers()
     }
