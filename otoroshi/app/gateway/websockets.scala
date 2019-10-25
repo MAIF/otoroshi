@@ -155,7 +155,11 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def applyJwtVerifier(service: ServiceDescriptor, req: RequestHeader, elContext: Map[String, String])(
+  def applyJwtVerifier(service: ServiceDescriptor,
+                       req: RequestHeader,
+                       apiKey: Option[ApiKey],
+                       paUsr: Option[PrivateAppsUser],
+                       elContext: Map[String, String])(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     if (service.jwtVerifier.enabled) {
@@ -163,7 +167,7 @@ class WebSocketHandler()(implicit env: Env) {
         case false => f(JwtInjection())
         case true => {
           logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-          service.jwtVerifier.verifyWs(req, service, None, None, elContext)(f)
+          service.jwtVerifier.verifyWs(req, service, apiKey, paUsr, elContext)(f)
         }
       }
     } else {
@@ -399,7 +403,6 @@ class WebSocketHandler()(implicit env: Env) {
                 passWithTcpUdpTunneling(req, rawDesc) {
                   passWithHeadersVerification(rawDesc, req) {
                     passWithReadOnly(rawDesc.readOnly, req) {
-                      applyJwtVerifier(rawDesc, req, elCtx) { jwtInjection =>
                         applySidecar(rawDesc, remoteAddress, req) { desc =>
                           val maybeCanaryId = req.cookies
                             .get("otoroshi-canary")
@@ -426,15 +429,46 @@ class WebSocketHandler()(implicit env: Env) {
                             logger.debug(s"request has a new tracking id : $canaryId")
                           }
 
+                          // val withTrackingCookies: Seq[Cookie] = {
+                          //   if (!desc.canary.enabled)
+                          //     jwtInjection.additionalCookies
+                          //       .map(t => Cookie(t._1, t._2))
+                          //       .toSeq //Seq.empty[play.api.mvc.Cookie]
+                          //   else if (maybeCanaryId.isDefined)
+                          //     jwtInjection.additionalCookies
+                          //       .map(t => Cookie(t._1, t._2))
+                          //       .toSeq //Seq.empty[play.api.mvc.Cookie]
+                          //   else
+                          //     Seq(
+                          //       play.api.mvc.Cookie(
+                          //         name = "otoroshi-canary",
+                          //         value = s"${env.sign(canaryId)}::$canaryId",
+                          //         maxAge = Some(2592000),
+                          //         path = "/",
+                          //         domain = Some(req.host),
+                          //         httpOnly = false
+                          //       )
+                          //     ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
+                          // } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                          //         Seq(
+                          //           play.api.mvc.Cookie(
+                          //             name = "otoroshi-tracking",
+                          //             value = trackingId,
+                          //             maxAge = Some(2592000),
+                          //             path = "/",
+                          //             domain = Some(req.domain),
+                          //             httpOnly = false
+                          //           )
+                          //         )
+                          //       } else {
+                          //         Seq.empty[Cookie]
+                          //       })
+
                           val withTrackingCookies: Seq[Cookie] = {
                             if (!desc.canary.enabled)
-                              jwtInjection.additionalCookies
-                                .map(t => Cookie(t._1, t._2))
-                                .toSeq //Seq.empty[play.api.mvc.Cookie]
+                              Seq.empty[play.api.mvc.Cookie]
                             else if (maybeCanaryId.isDefined)
-                              jwtInjection.additionalCookies
-                                .map(t => Cookie(t._1, t._2))
-                                .toSeq //Seq.empty[play.api.mvc.Cookie]
+                              Seq.empty[play.api.mvc.Cookie]
                             else
                               Seq(
                                 play.api.mvc.Cookie(
@@ -442,24 +476,24 @@ class WebSocketHandler()(implicit env: Env) {
                                   value = s"${env.sign(canaryId)}::$canaryId",
                                   maxAge = Some(2592000),
                                   path = "/",
-                                  domain = Some(req.host),
+                                  domain = Some(req.domain),
                                   httpOnly = false
                                 )
-                              ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
+                              )
                           } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
-                                  Seq(
-                                    play.api.mvc.Cookie(
-                                      name = "otoroshi-tracking",
-                                      value = trackingId,
-                                      maxAge = Some(2592000),
-                                      path = "/",
-                                      domain = Some(req.domain),
-                                      httpOnly = false
-                                    )
-                                  )
-                                } else {
-                                  Seq.empty[Cookie]
-                                })
+                            Seq(
+                              play.api.mvc.Cookie(
+                                name = "otoroshi-tracking",
+                                value = trackingId,
+                                maxAge = Some(2592000),
+                                path = "/",
+                                domain = Some(req.domain),
+                                httpOnly = false
+                              )
+                            )
+                          } else {
+                            Seq.empty[Cookie]
+                          })
 
                           desc.isUp
                             .flatMap(iu => splitToCanary(desc, canaryId, reqNumber, globalConfig).map(d => (iu, d)))
@@ -571,7 +605,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   paUsr: Option[PrivateAppsUser] = None,
                                   cbDuration: Long,
                                   callAttempts: Int
-                              ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                              ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx) { jwtInjection =>
                                 logger.trace("[WEBSOCKET] Call downstream !!!")
                                 val stateValue = IdGenerator.extendedToken(128)
                                 val stateToken: String = descriptor.secComVersion match {
@@ -1614,7 +1648,7 @@ class WebSocketHandler()(implicit env: Env) {
                         }
                       }
                     }
-                  }
+
                 }
             }
         }

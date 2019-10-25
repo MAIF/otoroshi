@@ -832,19 +832,36 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
 
     "allow better timeout management : callTimeout with akka-http (#301)" in {
-      val (_, port1, counter1, call1) = testServer("calltimeout.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, _)     = testServer("calltimeout.oto.tools", port, 200.millis)
-      val serviceweight = ServiceDescriptor(
-        id = "callTimeout-test",
-        name = "callTimeout-test",
+      val (_, port1, counter1, call1) = testServer("calltimeoutakka1.oto.tools", port, 2000.millis)
+      val (_, port2, counter2, call2)     = testServer("calltimeoutakka2.oto.tools", port, 200.millis)
+      val serviceweight1 = ServiceDescriptor(
+        id = "calltimeoutakka1-test",
+        name = "calltimeoutakka1-test",
         env = "prod",
-        subdomain = "calltimeout",
+        subdomain = "calltimeoutakka1",
         domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http"
-          ),
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        useAkkaHttpClient = true,
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callTimeout = 1000
+        )
+      )
+      val serviceweight2 = ServiceDescriptor(
+        id = "calltimeoutakka2-test",
+        name = "calltimeoutakka2-test",
+        env = "prod",
+        subdomain = "calltimeoutakka2",
+        domain = "oto.tools",
+        targets = Seq(
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http"
@@ -859,31 +876,50 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callTimeout = 1000
         )
       )
-      createOtoroshiService(serviceweight).futureValue
+      createOtoroshiService(serviceweight1).futureValue
+      createOtoroshiService(serviceweight2).futureValue
       val resp1 = call1(Map.empty)
-      val resp2 = call1(Map.empty)
-      // counter1.get() mustBe 1
+      val resp2 = call2(Map.empty)
+      // counter1.get() mustBe 0
       // counter2.get() mustBe 1
-      resp1.status mustBe 200
-      resp2.status mustBe 502
-      deleteOtoroshiService(serviceweight).futureValue
+      resp1.status mustBe 502
+      resp2.status mustBe 200
+      deleteOtoroshiService(serviceweight1).futureValue
+      deleteOtoroshiService(serviceweight2).futureValue
       stopServers()
     }
 
     "allow better timeout management : idleTimeout (#301)" in {
-      val (_, port1, counter1, call1) = testServer("idletimeout.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, _)     = testServer("idletimeout.oto.tools", port, 200.millis)
-      val serviceweight = ServiceDescriptor(
-        id = "idleTimeout-test",
-        name = "idleTimeout-test",
+      val (_, port1, counter1, call1) = testServer("idletimeout1.oto.tools", port, 2000.millis)
+      val (_, port2, counter2, call2)     = testServer("idletimeout2.oto.tools", port, 200.millis)
+      val serviceweight1 = ServiceDescriptor(
+        id = "idletimeout1-test",
+        name = "idletimeout1-test",
         env = "prod",
-        subdomain = "idletimeout",
+        subdomain = "idletimeout1",
         domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http"
-          ),
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        useAkkaHttpClient = true,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          idleTimeout = 1000
+        )
+      )
+      val serviceweight2 = ServiceDescriptor(
+        id = "idletimeout2-test",
+        name = "idletimeout2-test",
+        env = "prod",
+        subdomain = "idletimeout2",
+        domain = "oto.tools",
+        targets = Seq(
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http"
@@ -898,31 +934,50 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           idleTimeout = 1000
         )
       )
-      createOtoroshiService(serviceweight).futureValue
+      createOtoroshiService(serviceweight1).futureValue
+      createOtoroshiService(serviceweight2).futureValue
       val resp1 = call1(Map.empty)
-      val resp2 = call1(Map.empty)
+      val resp2 = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
-      resp1.status mustBe 200
-      resp2.status mustBe 502
-      deleteOtoroshiService(serviceweight).futureValue
+      resp1.status mustBe 502
+      resp2.status mustBe 200
+      deleteOtoroshiService(serviceweight1).futureValue
+      deleteOtoroshiService(serviceweight2).futureValue
       stopServers()
     }
 
     "allow better timeout management : callAndStreamTimeout (#301)" in {
-      val (_, port1, counter1, call1) = testServer("callandstreamtimeout.oto.tools", port, 0.millis, 2000.millis)
-      val (_, port2, counter2, _)     = testServer("callandstreamtimeout.oto.tools", port, 0.millis)
-      val serviceweight = ServiceDescriptor(
-        id = "callAndStreamTimeout-test",
-        name = "callAndStreamTimeout-test",
+      val (_, port1, counter1, call1) = testServer("callandstreamtimeout1.oto.tools", port, 0.millis, 2000.millis)
+      val (_, port2, counter2, call2)     = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
+      val serviceweight1 = ServiceDescriptor(
+        id = "callandstreamtimeout1-test",
+        name = "callandstreamtimeout1-test",
         env = "prod",
-        subdomain = "callandstreamtimeout",
+        subdomain = "callandstreamtimeout1",
         domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http"
-          ),
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        useAkkaHttpClient = false,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callAndStreamTimeout = 1000
+        )
+      )
+      val serviceweight2 = ServiceDescriptor(
+        id = "callandstreamtimeout2-test",
+        name = "callandstreamtimeout2-test",
+        env = "prod",
+        subdomain = "callandstreamtimeout2",
+        domain = "oto.tools",
+        targets = Seq(
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http"
@@ -937,32 +992,51 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callAndStreamTimeout = 1000
         )
       )
-      createOtoroshiService(serviceweight).futureValue
+      createOtoroshiService(serviceweight1).futureValue
+      createOtoroshiService(serviceweight2).futureValue
       val resp1 = call1(Map.empty)
-      val resp2 = call1(Map.empty)
+      val resp2 = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
       resp1.status mustBe 200
       resp2.status mustBe 200
-      resp2.body == "{" mustBe true
-      deleteOtoroshiService(serviceweight).futureValue
+      resp1.body == "{" mustBe true
+      deleteOtoroshiService(serviceweight1).futureValue
+      deleteOtoroshiService(serviceweight2).futureValue
       stopServers()
     }
 
     "allow better timeout management : callAndStreamTimeout with akka-http (#301)" in {
-      val (_, port1, counter1, call1) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis, 2000.millis)
-      val (_, port2, counter2, _)     = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
-      val serviceweight = ServiceDescriptor(
-        id = "callandstreamtimeout2-test",
-        name = "callandstreamtimeout2-test",
+      val (_, port1, counter1, call1) = testServer("callandstreamtimeoutakka1.oto.tools", port, 0.millis, 2000.millis)
+      val (_, port2, counter2, call2) = testServer("callandstreamtimeoutakka2.oto.tools", port, 0.millis)
+      val serviceweight1 = ServiceDescriptor(
+        id = "callandstreamtimeoutakka1-test",
+        name = "callandstreamtimeoutakka1-test",
         env = "prod",
-        subdomain = "callandstreamtimeout2",
+        subdomain = "callandstreamtimeoutakka1",
         domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${port1}",
             scheme = "http"
-          ),
+          )
+        ),
+        publicPatterns = Seq("/.*"),
+        forceHttps = false,
+        useAkkaHttpClient = true,
+        enforceSecureCommunication = false,
+        targetsLoadBalancing = RoundRobin,
+        clientConfig = ClientConfig(
+          callAndStreamTimeout = 1000
+        )
+      )
+      val serviceweight2 = ServiceDescriptor(
+        id = "callandstreamtimeoutakka2-test",
+        name = "callandstreamtimeoutakka2-test",
+        env = "prod",
+        subdomain = "callandstreamtimeoutakka2",
+        domain = "oto.tools",
+        targets = Seq(
           Target(
             host = s"127.0.0.1:${port2}",
             scheme = "http"
@@ -977,15 +1051,17 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callAndStreamTimeout = 1000
         )
       )
-      createOtoroshiService(serviceweight).futureValue
+      createOtoroshiService(serviceweight1).futureValue
+      createOtoroshiService(serviceweight2).futureValue
       val resp1 = call1(Map.empty)
-      val resp2 = call1(Map.empty)
+      val resp2 = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
       resp1.status mustBe 200
       resp2.status mustBe 200
-      resp2.body == "{" mustBe true
-      deleteOtoroshiService(serviceweight).futureValue
+      resp1.body == "{" mustBe true
+      deleteOtoroshiService(serviceweight1).futureValue
+      deleteOtoroshiService(serviceweight2).futureValue
       stopServers()
     }
 

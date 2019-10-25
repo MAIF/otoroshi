@@ -715,7 +715,7 @@ sealed trait JwtVerifier extends AsJson {
 
     source.token(request) match {
       case None => strategy match {
-        case DefaultToken(true, newToken, verif) => {
+        case DefaultToken(true, newToken, _) => {
           algoSettings.asAlgorithmF(OutputMode) flatMap {
             case None =>
               Errors

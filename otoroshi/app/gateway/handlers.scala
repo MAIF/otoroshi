@@ -532,13 +532,16 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def applyJwtVerifier(service: ServiceDescriptor,
-                       req: RequestHeader, elContext: Map[String, String])(f: JwtInjection => Future[Result])(implicit env: Env): Future[Result] = {
+                       req: RequestHeader,
+                       apiKey: Option[ApiKey],
+                       paUsr: Option[PrivateAppsUser],
+                       elContext: Map[String, String])(f: JwtInjection => Future[Result])(implicit env: Env): Future[Result] = {
     if (service.jwtVerifier.enabled) {
       service.jwtVerifier.shouldBeVerified(req.path).flatMap {
         case false => f(JwtInjection())
         case true => {
           logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-          service.jwtVerifier.verify(req, service, None, None, elContext)(f)
+          service.jwtVerifier.verify(req, service, apiKey, paUsr, elContext)(f)
         }
       }
     } else {
@@ -825,7 +828,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     passWithTcpUdpTunneling(req, rawDesc) {
                       passWithHeadersVerification(rawDesc, req, None, None, elCtx) {
                         passWithReadOnly(rawDesc.readOnly, req) {
-                          applyJwtVerifier(rawDesc, req, elCtx) { jwtInjection =>
                             applySidecar(rawDesc, remoteAddress, req) { desc =>
                               val firstOverhead = System.currentTimeMillis() - start
                               snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) {
@@ -858,15 +860,46 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     logger.debug(s"request has a new canary id : $canaryId")
                                   }
 
+                                  // val withTrackingCookies: Seq[Cookie] = {
+                                  //   if (!desc.canary.enabled)
+                                  //     jwtInjection.additionalCookies
+                                  //       .map(t => Cookie(t._1, t._2))
+                                  //       .toSeq //Seq.empty[play.api.mvc.Cookie]
+                                  //   else if (maybeCanaryId.isDefined)
+                                  //     jwtInjection.additionalCookies
+                                  //       .map(t => Cookie(t._1, t._2))
+                                  //       .toSeq //Seq.empty[play.api.mvc.Cookie]
+                                  //   else
+                                  //     Seq(
+                                  //       play.api.mvc.Cookie(
+                                  //         name = "otoroshi-canary",
+                                  //         value = s"${env.sign(canaryId)}::$canaryId",
+                                  //         maxAge = Some(2592000),
+                                  //         path = "/",
+                                  //         domain = Some(req.domain),
+                                  //         httpOnly = false
+                                  //       )
+                                  //     ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
+                                  // } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                                  //         Seq(
+                                  //           play.api.mvc.Cookie(
+                                  //             name = "otoroshi-tracking",
+                                  //             value = trackingId,
+                                  //             maxAge = Some(2592000),
+                                  //             path = "/",
+                                  //             domain = Some(req.domain),
+                                  //             httpOnly = false
+                                  //           )
+                                  //         )
+                                  //       } else {
+                                  //         Seq.empty[Cookie]
+                                  //       })
+
                                   val withTrackingCookies: Seq[Cookie] = {
                                     if (!desc.canary.enabled)
-                                      jwtInjection.additionalCookies
-                                        .map(t => Cookie(t._1, t._2))
-                                        .toSeq //Seq.empty[play.api.mvc.Cookie]
+                                      Seq.empty[play.api.mvc.Cookie]
                                     else if (maybeCanaryId.isDefined)
-                                      jwtInjection.additionalCookies
-                                        .map(t => Cookie(t._1, t._2))
-                                        .toSeq //Seq.empty[play.api.mvc.Cookie]
+                                      Seq.empty[play.api.mvc.Cookie]
                                     else
                                       Seq(
                                         play.api.mvc.Cookie(
@@ -877,21 +910,21 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           domain = Some(req.domain),
                                           httpOnly = false
                                         )
-                                      ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
+                                      )
                                   } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
-                                          Seq(
-                                            play.api.mvc.Cookie(
-                                              name = "otoroshi-tracking",
-                                              value = trackingId,
-                                              maxAge = Some(2592000),
-                                              path = "/",
-                                              domain = Some(req.domain),
-                                              httpOnly = false
-                                            )
-                                          )
-                                        } else {
-                                          Seq.empty[Cookie]
-                                        })
+                                    Seq(
+                                      play.api.mvc.Cookie(
+                                        name = "otoroshi-tracking",
+                                        value = trackingId,
+                                        maxAge = Some(2592000),
+                                        path = "/",
+                                        domain = Some(req.domain),
+                                        httpOnly = false
+                                      )
+                                    )
+                                  } else {
+                                    Seq.empty[Cookie]
+                                  })
 
                                   //desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).fast.map(d => (iu, d))).fast.flatMap {
                                   splitToCanary(desc, canaryId, reqNumber, globalConfig).fast.flatMap { _desc =>
@@ -1040,7 +1073,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                apiKey: Option[ApiKey] = None,
                                                                paUsr: Option[PrivateAppsUser] = None,
                                                                cbDuration: Long,
-                                                               callAttempts: Int): Future[Result] = {
+                                                               callAttempts: Int): Future[Result] = applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx) { jwtInjection =>
                                       //val snowflake        = env.snowflakeGenerator.nextIdStr()
                                       val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
                                       val jti              = IdGenerator.uuid
@@ -1772,7 +1805,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                   ): _*
                                                                 )
                                                                 .as(contentType)
-                                                                .withCookies(withTrackingCookies ++ cookies: _*)
+                                                                .withCookies(withTrackingCookies ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) ++ cookies: _*)
                                                               desc.gzip.handleResult(req, response)
                                                             }
                                                         } else {
@@ -1802,7 +1835,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                     h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                                 ): _*
                                                               )
-                                                              .withCookies((withTrackingCookies ++ cookies): _*)
+                                                              .withCookies((withTrackingCookies ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) ++ cookies): _*)
                                                               .as(contentType)
                                                           }
                                                           case false => {
@@ -1828,7 +1861,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                     h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                                 ): _*
                                                               )
-                                                              .withCookies((withTrackingCookies ++ cookies): _*)
+                                                              .withCookies((withTrackingCookies ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) ++ cookies): _*)
                                                               .as(contentType)
                                                           }
                                                         }
@@ -2591,7 +2624,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                               }
                             }
                           }
-                        }
+
                       }
                     }
                   }
