@@ -432,6 +432,18 @@ export class ServiceApiKeysPage extends Component {
     {
       title: 'Name',
       content: item => item.clientName,
+      wrappedCell: (v, item, table) => {
+        if (this.state && this.state.env && this.state.env.adminApikeyId === item.clientId) {
+          return (
+            <span 
+              title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it" 
+              className="label label-danger">
+              {item.clientName}
+            </span>
+          )
+        }
+        return item.name
+      },
     },
     {
       title: 'ApiKey Id',
@@ -527,6 +539,7 @@ export class ServiceApiKeysPage extends Component {
   }
 
   componentDidMount() {
+    BackOfficeServices.env().then(env => this.setState({ env }));
     BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
       service => {
         this.props.setTitle(`Service Api Keys`);
@@ -582,6 +595,7 @@ export class ServiceApiKeysPage extends Component {
         createItem={this.createItem}
         stayAfterSave={true}
         showActions={true}
+        displayTrash={item => this.state.env && this.state.env.adminApikeyId === item.clientId}
         showLink={false}
         rowNavigation={true}
         navigateTo={item =>

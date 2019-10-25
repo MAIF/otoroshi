@@ -860,6 +860,7 @@ export class ServicePage extends Component {
               <button
                 className="btn btn-danger"
                 type="button"
+                disabled={this.state.env && this.state.env.adminApiId === this.state.service.id}
                 {...createTooltip(
                   'Delete the current service. Will ask for the name of the service to validate.',
                   'left',

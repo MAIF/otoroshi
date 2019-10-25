@@ -160,7 +160,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "version"            -> env.latestVersionHolder.get(),
             "currentVersion"     -> env.otoroshiVersion,
             "commitVersion"      -> commitVersion,
-            "adminApiId"         -> env.backOfficeServiceId
+            "adminApiId"         -> env.backOfficeServiceId,
+            "adminGroupId"       -> env.backOfficeGroupId,
+            "adminApikeyId"      -> env.backOfficeApiKeyClientId,
           )
         )
       }
