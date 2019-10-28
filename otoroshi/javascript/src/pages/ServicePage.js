@@ -186,6 +186,12 @@ class Target extends Component {
           help="The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client"
           onChange={e => this.changeTheValue('ipAddress', e)}
         />
+        <BooleanInput
+          label="TLS loose"
+          value={value.loose}
+          help="If enabled, Otoroshi will accept any certificate and disable hostname verification"
+          onChange={e => this.changeTheValue('loose', e)}
+        />
         <Separator title="Target filter" />,
         <SelectInput
           label="Predicate"

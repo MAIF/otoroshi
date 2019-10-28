@@ -1,5 +1,7 @@
 package utils
 
+import java.security.cert.X509Certificate
+
 import env.Env
 import gateway.SnowMonkeyContext
 import models._
@@ -14,7 +16,12 @@ import utils.RequestImplicits._
 object HeadersHelperImplicits {
   implicit class BetterSeq(val seq: Seq[(String, String)]) extends AnyVal {
     @inline
-    def appendOpt(opt: Option[String], f: String => (String, String)): Seq[(String, String)] = opt.map(k => seq :+ f(k)).getOrElse(seq)
+    def appendOpt[A](opt: Option[A], f: A => (String, String)): Seq[(String, String)] = {
+      opt match {
+        case None => seq
+        case Some(k) => seq :+ f(k)
+      }
+    }
     @inline
     def appendIf(f: => Boolean, header: => (String, String)): Seq[(String, String)] =  if (f) {
       seq :+ header
@@ -149,12 +156,12 @@ object HeadersHelper {
           env.Headers.OtoroshiRequestId        -> snowflake,
           env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
         )
-        .appendOpt(fromOtoroshi, value => env.Headers.OtoroshiGatewayParentRequest -> value)
-        .appendIf(req.clientCertificateChain.isDefined, env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
-        .appendIf(req.clientCertificateChain.isDefined, (env.Headers.OtoroshiClientCertChain + "DNs") -> Json.stringify(JsArray(req.clientCertificateChain.get.map(c => JsString(c.getSubjectDN.getName)))))
+        .appendOpt(fromOtoroshi, (value: String) => env.Headers.OtoroshiGatewayParentRequest -> value)
+        .appendIf(env.sendClientChainAsPem && req.clientCertificateChain.isDefined, env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
+        .appendOpt(req.clientCertificateChain, (chain: Seq[X509Certificate]) => (env.Headers.OtoroshiClientCertChain + "-DNs") -> Json.stringify(JsArray(chain.map(c => JsString(c.getSubjectDN.getName)))))
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken, claimRequestHeaderName -> claim)
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendStateChallenge, stateRequestHeaderName -> stateToken)
-        .appendOpt(req.headers.get("Content-Length"), value => "Content-Length" -> (value.toInt + snowMonkeyContext.trailingRequestBodySize).toString)
+        .appendOpt(req.headers.get("Content-Length"), (value: String) => "Content-Length" -> (value.toInt + snowMonkeyContext.trailingRequestBodySize).toString)
         .removeAll(additionalHeaders.map(_._1))
         .removeAll(jwtAdditionalHeaders.map(_._1))
         .appendAll(additionalHeaders)

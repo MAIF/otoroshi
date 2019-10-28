@@ -434,11 +434,24 @@ case class Target(
     weight: Int = 1,
     protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
     predicate: TargetPredicate = AlwaysMatch,
-    ipAddress: Option[String] = None
+    ipAddress: Option[String] = None,
+    loose: Boolean = false
 ) {
   def toJson = Target.format.writes(this)
   def asUrl  = s"${scheme}://$host"
   def asKey  = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+
+  lazy val thePort: Int = if (host.contains(":")) {
+    host.split(":").last.toInt
+  } else scheme.toLowerCase() match {
+    case "http" => 80
+    case "https" => 443
+    case _ => 80
+  }
+
+  lazy val theHost: String = if (host.contains(":")) {
+    host.split(":").init.mkString("")
+  } else host
 }
 
 object Target {
@@ -447,6 +460,7 @@ object Target {
       "host"      -> o.host,
       "scheme"    -> o.scheme,
       "weight"    -> o.weight,
+      "loose"     -> o.loose,
       "protocol"  -> o.protocol.value,
       "predicate" -> o.predicate.toJson,
       "ipAddress" -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -457,6 +471,7 @@ object Target {
           host = (json \ "host").as[String],
           scheme = (json \ "scheme").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("https"),
           weight = (json \ "weight").asOpt[Int].getOrElse(1),
+          loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           protocol = (json \ "protocol")
             .asOpt[String]
             .filterNot(_.trim.isEmpty)

@@ -175,7 +175,8 @@ class Env(val configuration: Configuration,
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
-  lazy val useOldHeadersComposition: Boolean = configuration.getOptional[Boolean]("otoroshi.useOldHeadersComposition").getOrElse(false)
+  lazy val useOldHeadersComposition: Boolean = configuration.getOptional[Boolean]("otoroshi.options.useOldHeadersComposition").getOrElse(false)
+  lazy val sendClientChainAsPem: Boolean = configuration.getOptional[Boolean]("otoroshi.options.sendClientChainAsPem").getOrElse(false)
   lazy val validateRequests: Boolean    = configuration.getOptional[Boolean]("otoroshi.requests.validate").getOrElse(true)
   lazy val maxUrlLength: Long           = Option(configuration.underlying.getBytes("otoroshi.requests.maxUrlLength")).map(_.toLong).getOrElse(4 * 1024L)
   lazy val maxCookieLength: Long        = Option(configuration.underlying.getBytes("otoroshi.requests.maxCookieLength")).map(_.toLong).getOrElse(16 * 1024L)

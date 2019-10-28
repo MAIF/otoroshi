@@ -1009,6 +1009,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                                           httpRequest.headers.toSeq
                                                                             .filterNot(_._1 == "Cookie"),
                                                                           descriptor,
+                                                                          httpRequest.target.getOrElse(_target),
                                                                           env)
                                             )
                                             .alsoTo(Sink.onComplete {
@@ -1661,14 +1662,15 @@ class WebSocketHandler()(implicit env: Env) {
 }
 
 object WebSocketProxyActor {
-  def props(url: String, out: ActorRef, headers: Seq[(String, String)], descriptor: ServiceDescriptor, env: Env) =
-    Props(new WebSocketProxyActor(url, out, headers, descriptor, env))
+  def props(url: String, out: ActorRef, headers: Seq[(String, String)], descriptor: ServiceDescriptor, target: Target, env: Env) =
+    Props(new WebSocketProxyActor(url, out, headers, descriptor, target, env))
 }
 
 class WebSocketProxyActor(url: String,
                           out: ActorRef,
                           headers: Seq[(String, String)],
                           descriptor: ServiceDescriptor,
+                          target: Target,
                           env: Env)
     extends Actor {
 
@@ -1695,6 +1697,7 @@ class WebSocketProxyActor(url: String,
       )
       val (connected, materialized) = env.gatewayClient.ws(
         request,
+        target.loose,
         Flow
           .fromSinkAndSourceMat(
             Sink.foreach[Message] {

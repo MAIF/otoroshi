@@ -1,21 +1,21 @@
 package utils.http
 
 import java.io.File
-import java.net.{InetSocketAddress, URI}
+import java.net.{InetAddress, InetSocketAddress, URI}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.ActorSystem
-import akka.event.LoggingAdapter
+import akka.http.scaladsl.Http.OutgoingConnection
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.Uri.{IPv4Host, IPv6Host}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, Source}
+import akka.stream.TLSProtocol.NegotiateNewSession
+import akka.stream.scaladsl.{Flow, Source, Tcp}
 import akka.util.ByteString
 import com.google.common.base.Charsets
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
@@ -27,15 +27,14 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{libs, Logger}
-import play.shaded.ahc.io.netty.handler.codec.http.HttpHeaders
-import play.shaded.ahc.org.asynchttpclient.util.{Assertions, MiscUtils}
+import play.api.{Logger, libs}
+import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import ssl.DynamicSSLEngineProvider
 
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 import scala.xml.{Elem, XML}
 
 object WsClientChooser {
@@ -69,9 +68,10 @@ class WsClientChooser(standardClient: WSClient,
   // }
 
   def ws[T](request: WebSocketRequest,
+            loose: Boolean,
             clientFlow: Flow[Message, Message, T],
             customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
-    akkaClient.executeWsRequest(request, clientFlow, customizer)
+    akkaClient.executeWsRequest(request, loose, clientFlow, customizer)
   }
 
   def url(url: String): WSRequest = {
@@ -228,13 +228,21 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
 
   override def underlying[T]: T = client.asInstanceOf[T]
 
-  def url(url: String): WSRequest = new AkkaWsClientRequest(this, url, clientConfig = ClientConfig(), target = None)
+  def url(url: String): WSRequest = new AkkaWsClientRequest(this, url, clientConfig = ClientConfig(), targetOpt = None)
 
   override def close(): Unit = Await.ready(client.shutdownAllConnectionPools(), 10.seconds)
 
   private[utils] val wsClientConfig: WSClientConfig = config
   private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
     config.ssl
+      .withSslParametersConfig(
+        config.ssl.sslParametersConfig.withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
+      )
+      .withDefault(false)
+  )
+  private[utils] val akkaSSLLooseConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
+    config.ssl
+      .withLoose(config.ssl.loose.withAcceptAnyCertificate(true).withDisableHostnameVerification(true))  // TODO: do we really need that ?
       .withSslParametersConfig(
         config.ssl.sslParametersConfig.withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need)
       )
@@ -244,13 +252,15 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
   private[utils] val lastSslContext = new AtomicReference[SSLContext](null)
   private[utils] val connectionContextHolder =
     new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
+  private[utils] val connectionContextLooseHolder =
+    new AtomicReference[HttpsConnectionContext](connectionContextHolder.get())
 
   client.validateAndWarnAboutLooseSettings()
 
   private[utils] val clientConnectionSettings: ClientConnectionSettings = ClientConnectionSettings(system)
     .withConnectingTimeout(FiniteDuration(config.connectionTimeout._1, config.connectionTimeout._2))
     .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
-    .withUserAgentHeader(Some(`User-Agent`("Otoroshi-akka"))) // config.userAgent.map(_ => `User-Agent`(_)))
+    //.withUserAgentHeader(Some(`User-Agent`("Otoroshi-akka"))) // config.userAgent.map(_ => `User-Agent`(_)))
 
   private[utils] val connectionPoolSettings: ConnectionPoolSettings = ConnectionPoolSettings(system)
     .withConnectionSettings(clientConnectionSettings)
@@ -259,20 +269,24 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
 
   private[utils] def executeRequest[T](
       request: HttpRequest,
+      loose: Boolean,
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
   ): Future[HttpResponse] = {
     val currentSslContext = DynamicSSLEngineProvider.current
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
       val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext)
+      val connectionContextLoose: HttpsConnectionContext = ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
       connectionContextHolder.set(connectionContext)
+      connectionContextLooseHolder.set(connectionContextLoose)
     }
     val pool = customizer(connectionPoolSettings).withMaxConnections(512)
-    client.singleRequest(request, connectionContextHolder.get(), pool)
+    client.singleRequest(request, if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(), pool)
   }
 
   private[utils] def executeWsRequest[T](
       request: WebSocketRequest,
+      loose: Boolean,
       clientFlow: Flow[Message, Message, T],
       customizer: ClientConnectionSettings => ClientConnectionSettings
   ): (Future[WebSocketUpgradeResponse], T) = {
@@ -280,12 +294,14 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
       val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext)
+      val connectionContextLoose: HttpsConnectionContext = ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
       connectionContextHolder.set(connectionContext)
+      connectionContextLooseHolder.set(connectionContextLoose)
     }
     client.singleWebSocketRequest(
       request = request,
       clientFlow = clientFlow,
-      connectionContext = connectionContextHolder.get(),
+      connectionContext = if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
       settings = customizer(ClientConnectionSettings(system))
     )(mat)
   }
@@ -420,7 +436,7 @@ object WSProxyServerUtils {
 case class AkkaWsClientRequest(
     client: AkkWsClient,
     rawUrl: String,
-    target: Option[Target],
+    targetOpt: Option[Target],
     protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
     _method: HttpMethod = HttpMethods.GET,
     body: WSBody = EmptyBody,
@@ -437,21 +453,46 @@ case class AkkaWsClientRequest(
 
   private val _uri = {
     val u = Uri(rawUrl)
-    target.flatMap(_.ipAddress) match {
+    targetOpt match {
       case None => u
-      case Some(ipAddress) if ipAddress.contains(":") => {
-        u.copy(
-          authority = u.authority.copy(
-            host = Host(s"[$ipAddress]").asInstanceOf[IPv6Host]
-          )
-        )
-      }
-      case Some(ipAddress) if ipAddress.contains(".") => {
-        u.copy(
-          authority = u.authority.copy(
-            host = IPv4Host(ipAddress)
-          )
-        )
+      case Some(target) => {
+        target.ipAddress match {
+          case None => u // TODO: fix it
+          //case None if target.host.contains(":") => {
+          //  val host = target.host.split(":").init.mkString(":")
+          //  u.copy(
+          //    authority = u.authority.copy(
+          //      port = target.port,
+          //      host = akka.http.scaladsl.model.Uri.Host(host)
+          //    )
+          //  )
+          //}
+          //case None if !target.host.contains(":") => {
+          //  u.copy(
+          //    authority = u.authority.copy(
+          //      port = target.port,
+          //      host = akka.http.scaladsl.model.Uri.Host(target.host)
+          //    )
+          //  )
+          //}
+          case Some(ipAddress) if u.authority.host.isNamedHost() => {
+            val addr = InetAddress.getByAddress(u.authority.host.address(), InetAddress.getByName(ipAddress).getAddress)
+            u.copy(
+              authority = u.authority.copy(
+                port = target.thePort,
+                host = akka.http.scaladsl.model.Uri.Host(addr)
+              )
+            )
+          }
+          case Some(ipAddress) => {
+            u.copy(
+              authority = u.authority.copy(
+                port = target.thePort,
+                host = akka.http.scaladsl.model.Uri.Host(InetAddress.getByName(ipAddress)) //InetAddress.getByAddress(IPAddressUtil.textToNumericFormatV4(ipAddress)))
+              )
+            )
+          }
+        }
       }
     }
   }
@@ -528,7 +569,7 @@ case class AkkaWsClientRequest(
   def stream(): Future[WSResponse] = {
     val req = buildRequest()
     client
-      .executeRequest(req, customizer)
+      .executeRequest(req, targetOpt.exists(_.loose), customizer)
       .map { resp =>
         AkkWsClientStreamedResponse(resp,
                                     rawUrl,
@@ -545,7 +586,7 @@ case class AkkaWsClientRequest(
 
   override def execute(): Future[WSResponse] = {
     client
-      .executeRequest(buildRequest(), customizer)
+      .executeRequest(buildRequest(), targetOpt.exists(_.loose), customizer)
       .flatMap { response: HttpResponse =>
         response.entity
           .toStrict(FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2))
@@ -578,6 +619,7 @@ case class AkkaWsClientRequest(
   private def realUserAgent: Option[String] = {
     headers
       .get(`User-Agent`.name)
+      .orElse(headers.get(`User-Agent`.name.toLowerCase))
       .map(_.head)
   }
 
@@ -585,7 +627,7 @@ case class AkkaWsClientRequest(
     // val internalUri = Uri(rawUrl)
     val ct = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
     val cl = realContentLength
-    val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
+    // val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
     val (akkaHttpEntity, updatedHeaders) = body match {
       case EmptyBody                         => (HttpEntity.Empty, headers)
       case InMemoryBody(bytes)               => (HttpEntity.apply(ct, bytes), headers)
@@ -604,17 +646,17 @@ case class AkkaWsClientRequest(
       .filter { h =>
         h.isNot(`Content-Type`.lowercaseName) &&
         h.isNot(`Content-Length`.lowercaseName) &&
-        h.isNot(`User-Agent`.lowercaseName) &&
+        //h.isNot(`User-Agent`.lowercaseName) &&
         !(h.is(Cookie.lowercaseName) && h.value().trim.isEmpty)
       }
-      .toList ++ ua
+      .toList// ++ ua
 
     HttpRequest(
       method = _method,
       uri = _uri,
       headers = akkaHeaders,
       entity = akkaHttpEntity,
-      protocol = target.map(_.protocol).getOrElse(protocol)
+      protocol = targetOpt.map(_.protocol).getOrElse(protocol)
     )
   }
 
@@ -781,5 +823,66 @@ object Implicits {
         resp
       }
     }
+  }
+}
+
+object ManualResolveTransport {
+
+  def test: ClientTransport = ManualResolveTransportTest()
+
+  def http(ipAddress: String): ClientTransport = {
+    ManualResolveTransport(ipAddress)
+  }
+
+  def https(ipAddress: String, sslContext: SSLContext, neg: NegotiateNewSession): ClientTransport = {
+    ManualResolveTransportTLS(ipAddress, sslContext, neg)
+  }
+
+  private case class ManualResolveTransportTest() extends ClientTransport {
+    def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit system: ActorSystem): Flow[ByteString, ByteString, Future[OutgoingConnection]] = {
+      val inetSocketAddress = if (host.contains("&")) {
+        val parts = host.split("&")
+        val ipAddress = parts(0)
+        val actualHost = parts(1)
+        new InetSocketAddress(InetAddress.getByAddress(actualHost, InetAddress.getByName(ipAddress).getAddress), port)
+      } else {
+        InetSocketAddress.createUnresolved(host, port)
+      }
+      Tcp().outgoingConnection(
+        inetSocketAddress,
+        // InetSocketAddress.createUnresolved(host, port),
+        //new InetSocketAddress(InetAddress.getByAddress(host, InetAddress.getByName(ipAddress).getAddress), port),
+        settings.localAddress,
+        settings.socketOptions,
+        halfClose = true,
+        settings.connectingTimeout,
+        settings.idleTimeout
+      ).mapMaterializedValue(_.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
+    }
+  }
+
+  private case class ManualResolveTransport(ipAddress: String) extends ClientTransport {
+    def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit system: ActorSystem): Flow[ByteString, ByteString, Future[OutgoingConnection]] =
+      Tcp().outgoingConnection(
+        new InetSocketAddress(InetAddress.getByAddress(host, InetAddress.getByName(ipAddress).getAddress), port),
+        settings.localAddress,
+        settings.socketOptions,
+        halfClose = true,
+        settings.connectingTimeout,
+        settings.idleTimeout
+      ).mapMaterializedValue(_.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
+  }
+
+  private case class ManualResolveTransportTLS(ipAddress: String, sslContext: SSLContext, neg: NegotiateNewSession) extends ClientTransport {
+    def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit system: ActorSystem): Flow[ByteString, ByteString, Future[OutgoingConnection]] =
+      Tcp().outgoingTlsConnection(
+        new InetSocketAddress(InetAddress.getByAddress(host, InetAddress.getByName(ipAddress).getAddress), port),
+        sslContext = sslContext,
+        negotiateNewSession = neg,
+        localAddress = settings.localAddress,
+        options = settings.socketOptions,
+        connectTimeout =  settings.connectingTimeout,
+        idleTimeout = settings.idleTimeout
+      ).mapMaterializedValue(_.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
   }
 }
