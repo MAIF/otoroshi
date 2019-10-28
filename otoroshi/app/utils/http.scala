@@ -115,7 +115,7 @@ class WsClientChooser(standardClient: WSClient,
     }
   }
 
-  def urlWithProtocol(protocol: String, url: String, clientConfig: ClientConfig = ClientConfig()): WSRequest = { // TODO: handle idle timeout and other timeout per request here
+  def urlWithProtocol(protocol: String, url: String, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     protocol.toLowerCase() match {
 
@@ -255,17 +255,17 @@ class AkkWsClient(config: WSClientConfig)(implicit system: ActorSystem, material
   private[utils] val connectionContextLooseHolder =
     new AtomicReference[HttpsConnectionContext](connectionContextHolder.get())
 
-  client.validateAndWarnAboutLooseSettings()
+  // client.validateAndWarnAboutLooseSettings()
 
   private[utils] val clientConnectionSettings: ClientConnectionSettings = ClientConnectionSettings(system)
     .withConnectingTimeout(FiniteDuration(config.connectionTimeout._1, config.connectionTimeout._2))
-    .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
+    .withIdleTimeout(config.idleTimeout)
     //.withUserAgentHeader(Some(`User-Agent`("Otoroshi-akka"))) // config.userAgent.map(_ => `User-Agent`(_)))
 
   private[utils] val connectionPoolSettings: ConnectionPoolSettings = ConnectionPoolSettings(system)
     .withConnectionSettings(clientConnectionSettings)
     .withMaxRetries(0)
-    .withIdleTimeout(config.idleTimeout) // TODO: fix that per request
+    .withIdleTimeout(config.idleTimeout)
 
   private[utils] def executeRequest[T](
       request: HttpRequest,
