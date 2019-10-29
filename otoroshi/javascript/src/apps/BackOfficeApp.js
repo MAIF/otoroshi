@@ -23,6 +23,7 @@ import { LoggersPage } from '../pages/LoggersPage';
 import { AlertPage } from '../pages/AlertPage';
 import { ServicesMapPage } from '../pages/ServicesMapPage';
 import { PrivateAppsSessionsPage } from '../pages/PrivateAppsSessionsPage';
+import { GlobalEventsPage } from '../pages/GlobalEventsPage';
 import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
 import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
 import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
@@ -325,6 +326,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/stats"
                           component={props => this.decorate(GlobalAnalyticsPage, props)}
+                        />
+                        <Route
+                          path="/events"
+                          component={props => this.decorate(GlobalEventsPage, props)}
                         />
                         <Route
                           path="/snowmonkey"

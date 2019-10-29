@@ -323,8 +323,17 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
         }
       }
     } getOrElse {
-      NotFound(Json.obj("error" -> s"No entity found")).asFuture
-    }
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+        analyticsService
+          .events("GatewayEvent", None, fromDate, toDate, paginationPage, paginationPageSize)
+          .map(_.getOrElse(Json.obj()))
+          .map { r =>
+            // logger.debug(s"$r")
+            (r \ "events").asOpt[JsValue].getOrElse(Json.arr())
+          }
+          .map(json => Ok(Json.obj("type" -> "None", "events" -> json)))
+      }}
   }
 
   def filterableStats(from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
