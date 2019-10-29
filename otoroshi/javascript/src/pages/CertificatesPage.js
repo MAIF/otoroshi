@@ -355,14 +355,14 @@ export class CertificatesPage extends Component {
         !item.client ? (
           'no'
         ) : (
-          'yes'
+          <span className="label label-success">yes</span>
         ),
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
     },
     {
       title: 'Self signed',
-      content: item => (item.selfSigned ? 'yes' : 'no'),
+      content: item => (item.selfSigned ? <span className="label label-danger">yes</span> : 'no'),
       style: { textAlign: 'center', width: 100 },
       notFilterable: true,
     },

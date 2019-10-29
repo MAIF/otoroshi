@@ -175,6 +175,7 @@ class Env(val configuration: Configuration,
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
+  lazy val manualDnsResolve: Boolean = configuration.getOptional[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)
   lazy val useOldHeadersComposition: Boolean = configuration.getOptional[Boolean]("otoroshi.options.useOldHeadersComposition").getOrElse(false)
   lazy val sendClientChainAsPem: Boolean = configuration.getOptional[Boolean]("otoroshi.options.sendClientChainAsPem").getOrElse(false)
   lazy val validateRequests: Boolean    = configuration.getOptional[Boolean]("otoroshi.requests.validate").getOrElse(true)
@@ -272,7 +273,7 @@ class Env(val configuration: Configuration,
 
     WsClientChooser(
       ahcClient,
-      new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer),
+      new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
       sslconfig => {
         val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
           compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
@@ -313,7 +314,7 @@ class Env(val configuration: Configuration,
     )
     WsClientChooser(
       wsClient,
-      new AkkWsClient(wsClientConfig)(otoroshiActorSystem, otoroshiMaterializer),
+      new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
       sslconfig => {
         val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
           compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
