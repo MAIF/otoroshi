@@ -976,7 +976,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               case RequestTimeoutException =>
                                                 Errors.craftResponseResult(
                                                   s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                                  BadGateway,
+                                                  GatewayTimeout,
                                                   req,
                                                   Some(descriptor),
                                                   Some("errors.request.timeout"),
@@ -988,7 +988,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               case _: scala.concurrent.TimeoutException =>
                                                 Errors.craftResponseResult(
                                                   s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                                  BadGateway,
+                                                  GatewayTimeout,
                                                   req,
                                                   Some(descriptor),
                                                   Some("errors.request.timeout"),
@@ -1814,7 +1814,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           resp.ignore()
                                                           Errors.craftResponseResult(
                                                             "You cannot use HTTP/1.0 here",
-                                                            Forbidden,
+                                                            HttpVersionNotSupported,
                                                             req,
                                                             Some(descriptor),
                                                             Some("errors.http.10.not.allowed"),

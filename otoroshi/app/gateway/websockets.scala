@@ -26,7 +26,7 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.Results.{BadGateway, Forbidden, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
+import play.api.mvc.Results.{BadGateway, Forbidden, GatewayTimeout, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
 import play.api.mvc._
 import play.api.libs.json.{JsArray, JsString, Json}
 import security.{IdGenerator, OtoroshiClaim}
@@ -535,7 +535,7 @@ class WebSocketHandler()(implicit env: Env) {
                                           Errors
                                             .craftResponseResult(
                                               s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                              BadGateway,
+                                              GatewayTimeout,
                                               req,
                                               Some(descriptor),
                                               Some("errors.request.timeout")
@@ -545,7 +545,7 @@ class WebSocketHandler()(implicit env: Env) {
                                           Errors
                                             .craftResponseResult(
                                               s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                              BadGateway,
+                                              GatewayTimeout,
                                               req,
                                               Some(descriptor),
                                               Some("errors.request.timeout")
