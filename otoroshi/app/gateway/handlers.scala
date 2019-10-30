@@ -374,7 +374,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               }
               case Some(descriptor) if !descriptor.privateApp => {
                 Errors.craftResponseResult(s"Private apps are not configured",
-                                           NotFound,
+                                           InternalServerError,
                                            req,
                                            None,
                                            Some("errors.service.auth.not.configured"))
@@ -418,7 +418,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               }
               case _ => {
                 Errors.craftResponseResult(s"Private apps are not configured",
-                                           NotFound,
+                                           InternalServerError,
                                            req,
                                            None,
                                            Some("errors.service.auth.not.configured"))
@@ -430,7 +430,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def clusterError(message: String) = actionBuilder.async { req =>
-    Errors.craftResponseResult(message, InternalServerError, req, None, Some("errors.no.state.yet"))
+    Errors.craftResponseResult(message, InternalServerError, req, None, Some("errors.no.cluster.state.yet"))
   }
 
   def tooBig(message: String, status: Status = BadRequest) = actionBuilder.async { req =>
@@ -783,7 +783,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       }
       if (globalConfig.limitConcurrentRequests && currentHandledRequests > globalConfig.maxConcurrentRequests) {
         Errors.craftResponseResult(s"Cannot process more request",
-                                   BadGateway,
+                                   TooManyRequests,
                                    req,
                                    None,
                                    Some("errors.cant.process.more.request"))
@@ -964,7 +964,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               case BodyAlreadyConsumedException =>
                                                 Errors.craftResponseResult(
                                                   s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
-                                                  BadGateway,
+                                                  GatewayTimeout,
                                                   req,
                                                   Some(descriptor),
                                                   Some("errors.request.timeout"),
@@ -1000,7 +1000,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               case AllCircuitBreakersOpenException =>
                                                 Errors.craftResponseResult(
                                                   s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
-                                                  BadGateway,
+                                                  ServiceUnavailable,
                                                   req,
                                                   Some(descriptor),
                                                   Some("errors.circuit.breaker.open"),

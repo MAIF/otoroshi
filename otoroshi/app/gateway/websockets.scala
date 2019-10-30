@@ -555,7 +555,7 @@ class WebSocketHandler()(implicit env: Env) {
                                           Errors
                                             .craftResponseResult(
                                               s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
-                                              BadGateway,
+                                              ServiceUnavailable,
                                               req,
                                               Some(descriptor),
                                               Some("errors.circuit.breaker.open")
