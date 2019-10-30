@@ -4,6 +4,47 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.13] - 2019-10-30
+
+https://github.com/MAIF/otoroshi/milestone/24?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.12...v1.4.13
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.13
+
+### Added 
+
+- Add an "all events" view (#374)
+- Support Webauthn authentication for backoffice login (#352)
+- Integration of mTLS tests (#359)
+- Chaining transformers enhancement (#313)
+- Support DefaultToken strategy in JWT Verifiers (#373)
+- Early apikey extraction even if service is public (#351)
+- Expression language in targets (#353)
+- Introducing global validators and transformers (#372)
+- Support UDP tunneling (#361)
+- Use webauthn for U2F login of the backoffice (#340)
+- Addionnal headers only if missing (#364)
+- Use webauthn for U2F login of private apps (#358)
+- Global EL (#369)
+- Add extra metadata in auth modules (#370)
+
+### Changed
+
+- Improve tunneling (#354)
+- Improve request transformer request object (#299)
+- Can we use external access validation without client cert ? (#333)
+- Handle multiple JWT verifiers refs, with matchOne strategy (#363)
+- Rewrite validation authorities (#360)
+- Refactor transformer to only take a context as param like AccessValidator (#366)
+- Replace all in EL for multiple values (#371)
+
+### Fixed 
+
+- Issues with target component (#355)
+- Created Global Jwt Verifiers not appears in global list (#362)
+- Fix overflow of icons in public column of services page (#365)
+- JWTVerifier cannot be saved (#368)
+- Case sensitivity issue in headers manipulation bug (#367)
+
 ## [1.4.12] - 2019-09-27
 
 https://github.com/MAIF/otoroshi/compare/v1.4.11...v1.4.12
