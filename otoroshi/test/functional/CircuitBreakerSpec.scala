@@ -101,7 +101,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       callServer()
 
       val basicTestResponse2 = callServer()
-      basicTestResponse2.status mustBe 502
+      basicTestResponse2.status mustBe 503
       basicTestResponse2.body.contains("the downstream service seems a little bit overwhelmed") mustBe true
 
       deleteOtoroshiService(service).futureValue
@@ -149,7 +149,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       callServer()
 
       val basicTestResponse2 = callServer()
-      basicTestResponse2.status mustBe 502
+      basicTestResponse2.status mustBe 503
       basicTestResponse2.body.contains("the downstream service seems a little bit overwhelmed") mustBe true
 
       awaitF(1.seconds).futureValue
@@ -250,7 +250,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       }
 
       val basicTestResponse1 = callServer()
-      basicTestResponse1.status mustBe 502
+      basicTestResponse1.status mustBe 504
       basicTestResponse1.body.contains(
         "Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding"
       ) mustBe true
@@ -294,7 +294,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       val basicTestResponse1 = callServer()
       //println(basicTestResponse1.body)
 
-      basicTestResponse1.status mustBe 502
+      basicTestResponse1.status mustBe 504
       basicTestResponse1.body.contains(
         "Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding"
       ) mustBe true

@@ -824,7 +824,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val resp2 = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
-      resp1.status mustBe 502
+      resp1.status mustBe 504
       resp2.status mustBe 200
       deleteOtoroshiService(service1).futureValue
       deleteOtoroshiService(service2).futureValue
@@ -882,7 +882,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val resp2 = call2(Map.empty)
       // counter1.get() mustBe 0
       // counter2.get() mustBe 1
-      resp1.status mustBe 502
+      resp1.status mustBe 504
       resp2.status mustBe 200
       deleteOtoroshiService(serviceweight1).futureValue
       deleteOtoroshiService(serviceweight2).futureValue
@@ -940,7 +940,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val resp2 = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
-      resp1.status mustBe 502
+      resp1.status mustBe 504
       resp2.status mustBe 200
       deleteOtoroshiService(serviceweight1).futureValue
       deleteOtoroshiService(serviceweight2).futureValue
