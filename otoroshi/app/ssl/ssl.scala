@@ -146,6 +146,17 @@ case class Cert(
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.exists(this)
   def toJson                                            = Cert.toJson(this)
+  lazy val certificatesRaw: Seq[String] = Try {
+    chain.split(PemHeaders.BeginCertificate).toSeq.tail.map(_.replace(PemHeaders.EndCertificate, "").trim()).map(c => s"${PemHeaders.BeginCertificate}\n$c\n${PemHeaders.EndCertificate}")
+  }.toOption.toSeq.flatten
+  lazy val certificates: Seq[X509Certificate] = {
+    val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+    certificatesRaw.map(content => Try(certificateFactory
+      .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(content)))
+      .asInstanceOf[X509Certificate])).collect {
+        case Success(cert) => cert
+      }
+  }
   lazy val certificate: Option[X509Certificate] = Try {
     chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
       val content: String                        = cert.replace(PemHeaders.EndCertificate, "")
