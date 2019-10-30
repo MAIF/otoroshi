@@ -335,8 +335,8 @@ async function uploadAllFiles(release, location, to) {
 }
 
 async function uploadFilesToRelease(release, file) {
-  const assetUrl = `https://uploads.github.com/repos/MAIF/otoroshi/releases/${release.id}/assets?name=$(basename ${file.name})`;
-  fetch(assetUrl, {
+  const assetUrl = `https://uploads.github.com/repos/MAIF/otoroshi/releases/${release.id}/assets?name=${file.name}`;
+  return fetch(assetUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/octet-stream',

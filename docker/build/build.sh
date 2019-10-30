@@ -17,11 +17,11 @@ prepare_build () {
     sbt dist
     sbt assembly
     cd $LOCATION
-    cp ../../otoroshi/target/universal/otoroshi-1.4.13.zip ./otoroshi-dist.zip
+    cp ../../otoroshi/target/universal/otoroshi-1.4.14-dev.zip ./otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
   fi
   unzip otoroshi-dist.zip
-  mv otoroshi-1.4.13 otoroshi
+  mv otoroshi-1.4.14-dev otoroshi
   rm -rf otoroshi-dist.zip
   chmod +x ./otoroshi/bin/otoroshi
   mkdir -p ./otoroshi/imports
@@ -126,21 +126,21 @@ case "${1}" in
     ;;
   build-and-push-snapshot)
     NBR=`date +%s`
-    echo "Will build version 1.4.13-$NBR"
-    cp ../../otoroshi/target/universal/otoroshi-1.4.13.zip otoroshi-dist.zip
+    echo "Will build version 1.4.14-dev-$NBR"
+    cp ../../otoroshi/target/universal/otoroshi-1.4.14-dev.zip otoroshi-dist.zip
     prepare_build
     docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi .
-    docker tag otoroshi "maif/otoroshi:1.4.13-$NBR"
+    docker tag otoroshi "maif/otoroshi:1.4.14-dev-$NBR"
     cleanup
-    docker push "maif/otoroshi:1.4.13-$NBR"
+    docker push "maif/otoroshi:1.4.14-dev-$NBR"
     ;;
   build-snapshot)
     NBR=`date +%s`
-    echo "Will build version 1.4.13-$NBR"
-    cp ../../otoroshi/target/universal/otoroshi-1.4.13.zip otoroshi-dist.zip
+    echo "Will build version 1.4.14-dev-$NBR"
+    cp ../../otoroshi/target/universal/otoroshi-1.4.14-dev.zip otoroshi-dist.zip
     prepare_build
     docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi .
-    docker tag otoroshi "maif/otoroshi:1.4.13-$NBR"
+    docker tag otoroshi "maif/otoroshi:1.4.14-dev-$NBR"
     cleanup
     ;;
   *)

@@ -3,6 +3,6 @@ repositories {
 }
 
 dependencies {
-  compile group: 'fr.maif.otoroshi', name: 'otoroshi_2.12', version: '1.4.13'
-  compile group: 'fr.maif.otoroshi', name: 'otoroshi_2.12', version: '1.4.13', classifier 'assets'
+  compile group: 'fr.maif.otoroshi', name: 'otoroshi_2.12', version: '1.4.14-dev'
+  compile group: 'fr.maif.otoroshi', name: 'otoroshi_2.12', version: '1.4.14-dev', classifier 'assets'
 }

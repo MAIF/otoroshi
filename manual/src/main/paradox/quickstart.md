@@ -29,8 +29,8 @@ As Otoroshi uses Otoroshi to serve its own admin UI and admin API, you won't be 
 ## Now some sh :)
 
 ```sh
-curl -L -o otoroshi.jar https://github.com/MAIF/otoroshi/releases/download/v1.4.13/otoroshi.jar
-curl -L -o otoroshicli https://github.com/MAIF/otoroshi/releases/download/v1.4.13/linux-otoroshicli
+curl -L -o otoroshi.jar https://github.com/MAIF/otoroshi/releases/download/v1.4.14-dev/otoroshi.jar
+curl -L -o otoroshicli https://github.com/MAIF/otoroshi/releases/download/v1.4.14-dev/linux-otoroshicli
 
 chmod +x otoroshicli
 
@@ -119,7 +119,7 @@ If you want to use Docker, just follow these instructions
 export OTOROSHI_PORT=8080
 export LOCAL_IP_ADDRESS=999.999.999.999 # use your real local ip address here
 
-curl -L -o otoroshicli https://github.com/MAIF/otoroshi/releases/download/v1.4.13/linux-otoroshicli
+curl -L -o otoroshicli https://github.com/MAIF/otoroshi/releases/download/v1.4.14-dev/linux-otoroshicli
 
 chmod +x otoroshicli 
 
