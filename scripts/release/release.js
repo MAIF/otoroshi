@@ -23,7 +23,7 @@ const files = [
     replace: (from, to, source) => source.replace(`version = "${from}"`, `version = "${to}"`)
   },
   {
-    file: './clients/tcp-tunnel-client/client.js',
+    file: './clients/tcp-udp-tunnel-client/client.js',
     replace: (from, to, source) => source.replace(`Otoroshi TCP tunnel CLI, version ${from}`, `Otoroshi TCP tunnel CLI, version ${to}`)
   },
   { file: './demos/basic-setup/docker-compose.yml' },

@@ -544,7 +544,7 @@ class Env(val configuration: Configuration,
     missingOnlyHeadersOut = Map.empty
   )
 
-  lazy val otoroshiVersion     = "1.4.13-dev"
+  lazy val otoroshiVersion     = "1.4.13"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 
