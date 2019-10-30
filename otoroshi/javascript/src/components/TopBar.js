@@ -95,6 +95,12 @@ export class TopBar extends Component {
           value: 'Global-Analytics',
         });
         options.push({
+          action: () => (window.location.href = '/bo/dashboard/events'),
+          env: <span className="glyphicon glyphicon-list" />,
+          label: 'Global Events',
+          value: 'Global-Events',
+        });
+        options.push({
           label: 'Groups',
           value: 'Groups',
           env: <i className="glyphicon glyphicon-folder-open" />,
@@ -530,6 +536,11 @@ export class TopBar extends Component {
                   <li>
                     <a href="/bo/dashboard/stats">
                       <i className="glyphicon glyphicon-signal" /> Global Analytics
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/bo/dashboard/events">
+                      <i className="glyphicon glyphicon-list" /> Global Events
                     </a>
                   </li>
                   <li>

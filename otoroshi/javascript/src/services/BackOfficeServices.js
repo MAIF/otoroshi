@@ -192,6 +192,18 @@ export function fetchServiceEvents(serviceId, from, to, limit = 500) {
   ).then(r => r.json());
 }
 
+export function fetchGlobalEvents(from, to, limit = 500) {
+  return fetch(
+    `/bo/api/proxy/api/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    }
+  ).then(r => r.json());
+}
+
 export function fetchServiceStats(serviceId, from, to) {
   return fetch(
     `/bo/api/proxy/api/services/${serviceId}/stats?from=${from.valueOf()}&to=${to.valueOf()}`,
