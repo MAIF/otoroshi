@@ -52,6 +52,7 @@ const config = {
   context: sourcePath,
   entry: {
     backoffice: './backoffice.js',
+    genericlogin: './genericlogin.js'
   },
   output: {
     filename: '[name].js',

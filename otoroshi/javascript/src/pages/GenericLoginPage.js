@@ -286,6 +286,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
         <form
           className="form-horizontal"
           style={{ textAlign: 'left' }}
+          onSubmit={this.webAuthnLogin}
           _method={this.props.method}
           _action={this.props.action}>
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
@@ -317,7 +318,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button
-                type="button"
+                type="submit"
                 className="btn"
                 style={{ marginLeft: 0 }}
                 onClick={this.webAuthnLogin}>

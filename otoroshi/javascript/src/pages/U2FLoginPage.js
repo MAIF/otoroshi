@@ -116,7 +116,7 @@ export class U2FLoginPage extends Component {
   handleError = (mess, t) => {
     return err => {
       console.log(err && err.message ? err.message : err);
-      this.setState({ error: mess });
+      this.setState({ error: err && err.message ? err.message : err });
       throw err;
     };
   };
@@ -212,7 +212,7 @@ export class U2FLoginPage extends Component {
       if (r.ok) {
         window.location.href = '/bo/dashboard';
       } else {
-        this.handleError('Something is wrong ...')();
+        this.webAuthnLogin();
       }
     }, this.handleError('Login and/or password error, sorry ...'));
   };
@@ -242,9 +242,9 @@ export class U2FLoginPage extends Component {
       if (r.status === 200) {
         return r.json();
       } else {
-        throw new Error('Login error, sorry ...');
+        throw new Error('Login and/or password error, sorry ...');
       }
-    }, this.handleError('Login error, sorry ...'))
+    }, this.handleError('Login and/or password error, sorry ...'))
       .then(payload => {
         const requestId = payload.requestId;
         const options = payload.request.publicKeyCredentialRequestOptions
@@ -292,7 +292,7 @@ export class U2FLoginPage extends Component {
     return (
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Admin login</h3>
-        <form className="form-horizontal" style={{ textAlign: 'left' }}>
+        <form className="form-horizontal" style={{ textAlign: 'left' }} onSubmit={this.simpleLogin}>
           <div className="form-group">
             <label className="col-sm-2 control-label">Username</label>
             <div className="col-sm-10">
@@ -321,7 +321,7 @@ export class U2FLoginPage extends Component {
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button
-                type="button"
+                type="submit"
                 className="btn"
                 style={{ marginLeft: 0 }}
                 onClick={this.simpleLogin}>
@@ -330,7 +330,7 @@ export class U2FLoginPage extends Component {
               <button type="button" className="btn hide" style={{ marginLeft: 10 }} onClick={this.login}>
                 Login with FIDO U2F
               </button>
-              <button type="button" className="btn" style={{ marginLeft: 10 }} onClick={this.webAuthnLogin}>
+              <button type="button" className="btn hide" style={{ marginLeft: 10 }} onClick={this.webAuthnLogin}>
                 Login with WebAuthn
               </button>
             </div>
