@@ -509,10 +509,10 @@ export class TopBar extends Component {
                       <span className="fas fa-key" /> Jwt Verifiers
                     </a>
                     <a href="/bo/dashboard/auth-configs">
-                      <span className="glyphicon glyphicon-lock" /> Auth. configs
+                      <span className="glyphicon glyphicon-lock" /> Authentication configs
                     </a>
                     <a href="/bo/dashboard/certificates">
-                      <span className="fas fa-certificate" /> SSL Certificates
+                      <span className="fas fa-certificate" /> SSL/TLS Certificates
                     </a>
                     <a className="hide" href="/bo/dashboard/validation-authorities">
                       <span className="fas fa-gavel" /> Validation authorities
@@ -541,7 +541,7 @@ export class TopBar extends Component {
                   </li>
                   <li>
                     <a href="/bo/dashboard/events">
-                      <i className="glyphicon glyphicon-list" /> Events
+                      <i className="glyphicon glyphicon-list" /> Events log
                     </a>
                   </li>
                   <li className="hide">
@@ -562,12 +562,12 @@ export class TopBar extends Component {
                   </li>
                   <li>
                     <a href="/bo/dashboard/audit">
-                      <span className="glyphicon glyphicon-list" /> Audit Log
+                      <span className="glyphicon glyphicon-list" /> Audit log
                     </a>
                   </li>
                   <li>
                     <a href="/bo/dashboard/alerts">
-                      <span className="glyphicon glyphicon-list" /> Alerts Log
+                      <span className="glyphicon glyphicon-list" /> Alerts log
                     </a>
                   </li>
                   <li role="separator" className="divider" />
