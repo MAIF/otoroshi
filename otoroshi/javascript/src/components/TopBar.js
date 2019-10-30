@@ -499,28 +499,29 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/groups">
                       <span className="glyphicon glyphicon-folder-open" /> All service groups
                     </a>
+                    <a href="/bo/dashboard/clever">
+                      <span className="glyphicon glyphicon-list-alt" /> Clever apps
+                    </a>
+                  </li>
+                  <li role="separator" className="divider" />
+                  <li>
                     <a href="/bo/dashboard/jwt-verifiers">
-                      <span className="fas fa-key" /> Global Jwt Verifiers
+                      <span className="fas fa-key" /> Jwt Verifiers
                     </a>
                     <a href="/bo/dashboard/auth-configs">
-                      <span className="glyphicon glyphicon-lock" /> Global auth. configs
+                      <span className="glyphicon glyphicon-lock" /> Auth. configs
                     </a>
                     <a href="/bo/dashboard/certificates">
                       <span className="fas fa-certificate" /> SSL Certificates
                     </a>
-                    <a href="/bo/dashboard/validation-authorities">
+                    <a className="hide" href="/bo/dashboard/validation-authorities">
                       <span className="fas fa-gavel" /> Validation authorities
                     </a>
                     {this.state.env.scriptingEnabled === true && (
                       <a href="/bo/dashboard/scripts">
-                        <span className="fas fa-book-dead" /> Scripts
+                        <span className="fas fa-book-dead" /> Scripts & validators
                       </a>
                     )}
-                  </li>
-                  <li>
-                    <a href="/bo/dashboard/clever">
-                      <span className="glyphicon glyphicon-list-alt" /> Clever apps
-                    </a>
                   </li>
                   <li role="separator" className="divider" />
                   {this.state.env.clusterRole === 'Leader' && (
@@ -535,26 +536,26 @@ export class TopBar extends Component {
                   )}
                   <li>
                     <a href="/bo/dashboard/stats">
-                      <i className="glyphicon glyphicon-signal" /> Global Analytics
+                      <i className="glyphicon glyphicon-signal" /> Analytics
                     </a>
                   </li>
                   <li>
                     <a href="/bo/dashboard/events">
-                      <i className="glyphicon glyphicon-list" /> Global Events
+                      <i className="glyphicon glyphicon-list" /> Events
                     </a>
                   </li>
-                  <li>
+                  <li className="hide">
                     <a href="/bo/dashboard/top10">
                       <span className="glyphicon glyphicon-fire" /> Top 10 services
                     </a>
                   </li>
-                  <li>
+                  <li className="hide">
                     <a href="/bo/dashboard/map">
                       <span className="glyphicon glyphicon-globe" /> Services map
                     </a>
                   </li>
-                  <li role="separator" className="divider" />
-                  <li>
+                  <li role="separator" className="divider hide" />
+                  <li className="hide">
                     <a href="/bo/dashboard/loggers">
                       <span className="glyphicon glyphicon-book" /> Loggers level
                     </a>
