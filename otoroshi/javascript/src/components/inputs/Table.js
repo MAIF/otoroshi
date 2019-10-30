@@ -321,24 +321,26 @@ export class Table extends Component {
                   <i className="glyphicon glyphicon-link" />
                 </button>
               )}
-              {this.props.displayTrash && this.props.displayTrash(item) && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-danger"
-                  disabled
-                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
-                  <i className="glyphicon glyphicon-trash" />
-                </button>
-              )}
-              {this.props.displayTrash && !this.props.displayTrash(item) && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-danger"
-                  onClick={e => this.deleteItem(e, item)}
-                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
-                  <i className="glyphicon glyphicon-trash" />
-                </button>
-              )}
+              {this.props.displayTrash &&
+                this.props.displayTrash(item) && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger"
+                    disabled
+                    {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
+                    <i className="glyphicon glyphicon-trash" />
+                  </button>
+                )}
+              {this.props.displayTrash &&
+                !this.props.displayTrash(item) && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger"
+                    onClick={e => this.deleteItem(e, item)}
+                    {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
+                    <i className="glyphicon glyphicon-trash" />
+                  </button>
+                )}
               {!this.props.displayTrash && (
                 <button
                   type="button"
@@ -473,24 +475,26 @@ export class Table extends Component {
             )}
             <hr />
             <div className="form-buttons pull-right">
-              {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  title="Delete current item"
-                  disabled>
-                  <i className="glyphicon glyphicon-trash" /> Delete
-                </button>
-              )}
-              {this.props.displayTrash && !this.props.displayTrash(this.state.currentItem) && (
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  title="Delete current item"
-                  onClick={e => this.deleteItem(e, this.state.currentItem)}>
-                  <i className="glyphicon glyphicon-trash" /> Delete
-                </button>
-              )}
+              {this.props.displayTrash &&
+                this.props.displayTrash(this.state.currentItem) && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    title="Delete current item"
+                    disabled>
+                    <i className="glyphicon glyphicon-trash" /> Delete
+                  </button>
+                )}
+              {this.props.displayTrash &&
+                !this.props.displayTrash(this.state.currentItem) && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    title="Delete current item"
+                    onClick={e => this.deleteItem(e, this.state.currentItem)}>
+                    <i className="glyphicon glyphicon-trash" /> Delete
+                  </button>
+                )}
               {!this.props.displayTrash && (
                 <button
                   type="button"

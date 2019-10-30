@@ -82,10 +82,10 @@ export class LocationSettings extends Component {
             onChange={e => changeTheValue(path + '.name', e)}
           />,
           <TextInput
-            label={this.props.sign ? `Prepend value`: `Remove value`}
+            label={this.props.sign ? `Prepend value` : `Remove value`}
             placeholder="Bearer "
             value={location.remove}
-            help={(this.props.sign ? "Remove" : "Prepend") + " a value inside the header value"}
+            help={(this.props.sign ? 'Remove' : 'Prepend') + ' a value inside the header value'}
             onChange={e => changeTheValue(path + '.remove', e)}
           />,
         ]}
@@ -292,7 +292,10 @@ export class JwtVerifier extends Component {
     strict: true,
     source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
     algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
-    strategy: { type: 'PassThrough', verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} } },
+    strategy: {
+      type: 'PassThrough',
+      verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+    },
   };
 
   changeTheValue = (name, value) => {
@@ -386,13 +389,13 @@ export class JwtVerifier extends Component {
                   type: 'DefaultToken',
                   strict: true,
                   token: {
-                    "iss": "foo",
-                    "iat": "${iat}",
-                    "nbf": "${nbf}",
+                    iss: 'foo',
+                    iat: '${iat}',
+                    nbf: '${nbf}',
                   },
                   verificationSettings: {
                     fields: {},
-                    arrayFields: {}
+                    arrayFields: {},
                   },
                 });
                 break;
@@ -403,7 +406,7 @@ export class JwtVerifier extends Component {
                     fields: {
                       iss: 'The issuer',
                     },
-                    arrayFields: {}
+                    arrayFields: {},
                   },
                 });
                 break;
@@ -414,7 +417,7 @@ export class JwtVerifier extends Component {
                     fields: {
                       iss: 'The issuer',
                     },
-                    arrayFields: {}
+                    arrayFields: {},
                   },
                   algoSettings: {
                     type: 'HSAlgoSettings',
@@ -430,7 +433,7 @@ export class JwtVerifier extends Component {
                     fields: {
                       iss: 'The issuer',
                     },
-                    arrayFields: {}
+                    arrayFields: {},
                   },
                   algoSettings: {
                     type: 'HSAlgoSettings',

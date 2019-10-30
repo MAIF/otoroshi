@@ -26,17 +26,28 @@ class JwtTokenTransformer extends RequestTransformer {
     String.format("%s.%s.%s", header, payload, signature)
   }
 
-  override def transformRequest(snowflake: String, rawRequest: script.HttpRequest, otoroshiRequest: script.HttpRequest, desc: ServiceDescriptor, apiKey: Option[ApiKey], user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
+  override def transformRequest(
+      snowflake: String,
+      rawRequest: script.HttpRequest,
+      otoroshiRequest: script.HttpRequest,
+      desc: ServiceDescriptor,
+      apiKey: Option[ApiKey],
+      user: Option[PrivateAppsUser]
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     FastFuture.successful {
       otoroshiRequest.headers.get("Otoroshi-Claim") match {
         case Some(rawJwtToken) => {
           val decoded = JWT.decode(rawJwtToken)
-          val header = Json.parse(new String(Base64.decodeBase64(decoded.getHeader))).as[JsObject]
-          val payload = Json.parse(new String(Base64.decodeBase64(decoded.getPayload))).as[JsObject] ++ Json.obj("the_admin" -> "true")
+          val header  = Json.parse(new String(Base64.decodeBase64(decoded.getHeader))).as[JsObject]
+          val payload = Json.parse(new String(Base64.decodeBase64(decoded.getPayload))).as[JsObject] ++ Json.obj(
+            "the_admin" -> "true"
+          )
           val jwtToken = sign(desc.secComSettings.asAlgorithm(models.OutputMode).get, header, payload)
-          Right(otoroshiRequest.copy(
-            headers = otoroshiRequest.headers ++ Map("Otoroshi-Claim" -> jwtToken)
-          ))
+          Right(
+            otoroshiRequest.copy(
+              headers = otoroshiRequest.headers ++ Map("Otoroshi-Claim" -> jwtToken)
+            )
+          )
         }
         case None => Right(otoroshiRequest)
       }

@@ -310,7 +310,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   )
                   .orElse(
                     Option(PrivateAppsUser.select(user, authConfig.otoroshiDataField))
-                  ).map(_.asOpt[JsObject].getOrElse(Json.obj()))
+                  )
+                  .map(_.asOpt[JsObject].getOrElse(Json.obj()))
                 Right(
                   PrivateAppsUser(
                     randomId = IdGenerator.token(64),

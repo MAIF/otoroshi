@@ -2327,10 +2327,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     env.datastores.authConfigsDataStore.findById(id).flatMap {
       case Some(auth) => {
         auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
-          case bam: BasicAuthModule if bam.authConfig.webauthn => bam.webAuthnRegistrationStart(ctx.request.body.asJson.get).map {
-            case Left(err) => BadRequest(err)
-            case Right(reg) => Ok(reg)
-          }
+          case bam: BasicAuthModule if bam.authConfig.webauthn =>
+            bam.webAuthnRegistrationStart(ctx.request.body.asJson.get).map {
+              case Left(err)  => BadRequest(err)
+              case Right(reg) => Ok(reg)
+            }
           case _ => BadRequest(Json.obj("error" -> s"Not supported")).future
         }
       }
@@ -2345,10 +2346,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     env.datastores.authConfigsDataStore.findById(id).flatMap {
       case Some(auth) => {
         auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
-          case bam: BasicAuthModule if bam.authConfig.webauthn => bam.webAuthnRegistrationFinish(ctx.request.body.asJson.get).map {
-            case Left(err) => BadRequest(err)
-            case Right(reg) => Ok(reg)
-          }
+          case bam: BasicAuthModule if bam.authConfig.webauthn =>
+            bam.webAuthnRegistrationFinish(ctx.request.body.asJson.get).map {
+              case Left(err)  => BadRequest(err)
+              case Right(reg) => Ok(reg)
+            }
           case _ => BadRequest(Json.obj("error" -> s"Not supported")).future
         }
       }

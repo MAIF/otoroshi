@@ -211,9 +211,11 @@ case class LdapAuthModuleConfig(
             LdapAuthUser(
               name = attrs.get(nameField).toString.split(":").last.trim,
               email = attrs.get(emailField).toString.split(":").last.trim,
-              metadata = extraMetadata.deepMerge(metadataField
-                .map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject])
-                .getOrElse(Json.obj()))
+              metadata = extraMetadata.deepMerge(
+                metadataField
+                  .map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject])
+                  .getOrElse(Json.obj())
+              )
             )
           )
         } recover {
@@ -315,7 +317,9 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         }
       } else {
         Results
-          .Ok(views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, false, env))
+          .Ok(
+            views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, false, env)
+          )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)

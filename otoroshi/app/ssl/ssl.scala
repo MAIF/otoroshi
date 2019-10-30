@@ -20,7 +20,13 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
+import com.typesafe.sslconfig.ssl.{
+  KeyManagerConfig,
+  KeyStoreConfig,
+  SSLConfigSettings,
+  TrustManagerConfig,
+  TrustStoreConfig
+}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -147,13 +153,25 @@ case class Cert(
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.exists(this)
   def toJson                                            = Cert.toJson(this)
   lazy val certificatesRaw: Seq[String] = Try {
-    chain.split(PemHeaders.BeginCertificate).toSeq.tail.map(_.replace(PemHeaders.EndCertificate, "").trim()).map(c => s"${PemHeaders.BeginCertificate}\n$c\n${PemHeaders.EndCertificate}")
+    chain
+      .split(PemHeaders.BeginCertificate)
+      .toSeq
+      .tail
+      .map(_.replace(PemHeaders.EndCertificate, "").trim())
+      .map(c => s"${PemHeaders.BeginCertificate}\n$c\n${PemHeaders.EndCertificate}")
   }.toOption.toSeq.flatten
   lazy val certificates: Seq[X509Certificate] = {
     val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
-    certificatesRaw.map(content => Try(certificateFactory
-      .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(content)))
-      .asInstanceOf[X509Certificate])).collect {
+    certificatesRaw
+      .map(
+        content =>
+          Try(
+            certificateFactory
+              .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(content)))
+              .asInstanceOf[X509Certificate]
+        )
+      )
+      .collect {
         case Success(cert) => cert
       }
   }
@@ -326,16 +344,16 @@ trait CertificateDataStore extends BasicStore[Cert] {
   def readCertOrKey(conf: Configuration, path: String, env: Env): Option[String] = {
     conf.getOptional[String](path).flatMap { cacert =>
       if ((cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) ||
-        (cacert.contains(PemHeaders.BeginPrivateKey) && cacert.contains(PemHeaders.EndPrivateKey)) ||
-        (cacert.contains(PemHeaders.BeginPrivateRSAKey) && cacert.contains(PemHeaders.EndPrivateRSAKey))) {
+          (cacert.contains(PemHeaders.BeginPrivateKey) && cacert.contains(PemHeaders.EndPrivateKey)) ||
+          (cacert.contains(PemHeaders.BeginPrivateRSAKey) && cacert.contains(PemHeaders.EndPrivateRSAKey))) {
         Some(cacert)
       } else {
         val file = new File(cacert)
         if (file.exists()) {
           val content = new String(java.nio.file.Files.readAllBytes(file.toPath))
           if ((content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) ||
-            (content.contains(PemHeaders.BeginPrivateKey) && content.contains(PemHeaders.EndPrivateKey)) ||
-            (content.contains(PemHeaders.BeginPrivateRSAKey) && content.contains(PemHeaders.EndPrivateRSAKey))) {
+              (content.contains(PemHeaders.BeginPrivateKey) && content.contains(PemHeaders.EndPrivateKey)) ||
+              (content.contains(PemHeaders.BeginPrivateRSAKey) && content.contains(PemHeaders.EndPrivateRSAKey))) {
             Some(content)
           } else {
             None
@@ -347,7 +365,10 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
   }
 
-  def importOneCert(conf: Configuration, caPath: String, certPath: String, keyPath: String, logger: Logger)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def importOneCert(conf: Configuration, caPath: String, certPath: String, keyPath: String, logger: Logger)(
+      implicit env: Env,
+      ec: ExecutionContext
+  ): Unit = {
     readCertOrKey(conf, caPath, env).foreach { cacert =>
       val cert = Cert(
         id = IdGenerator.uuid,
@@ -401,10 +422,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
   }
 
   def importInitialCerts(logger: Logger)(implicit env: Env, ec: ExecutionContext) = {
-    importOneCert(env.configuration, "otoroshi.ssl.initialCacert", "otoroshi.ssl.initialCert", "otoroshi.ssl.initialCertKey", logger)(env, ec)
-    env.configuration.getOptional[Seq[Configuration]]("otoroshi.ssl.initialCerts").getOrElse(Seq.empty[Configuration]).foreach { conf =>
-      importOneCert(conf,"ca", "cert", "key", logger)(env, ec)
-    }
+    importOneCert(env.configuration,
+                  "otoroshi.ssl.initialCacert",
+                  "otoroshi.ssl.initialCert",
+                  "otoroshi.ssl.initialCertKey",
+                  logger)(env, ec)
+    env.configuration
+      .getOptional[Seq[Configuration]]("otoroshi.ssl.initialCerts")
+      .getOrElse(Seq.empty[Configuration])
+      .foreach { conf =>
+        importOneCert(conf, "ca", "cert", "key", logger)(env, ec)
+      }
   }
 }
 
@@ -786,7 +814,7 @@ object CertificateData {
       "serialNumber" -> cert.getSerialNumber.toString(16),
       "sigAlgName"   -> cert.getSigAlgName,
       "sigAlgOID"    -> cert.getSigAlgOID,
-      "_signature"    -> new String(encoder.encode(cert.getSignature)),
+      "_signature"   -> new String(encoder.encode(cert.getSignature)),
       "signature"    -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
       "subjectDN"    -> cert.getSubjectDN.getName,
       "domain"       -> domain,
@@ -823,14 +851,14 @@ object CertificateData {
 }
 
 object PemHeaders {
-  val BeginCertificate = "-----BEGIN CERTIFICATE-----"
-  val EndCertificate   = "-----END CERTIFICATE-----"
-  val BeginPublicKey   = "-----BEGIN PUBLIC KEY-----"
-  val EndPublicKey     = "-----END PUBLIC KEY-----"
-  val BeginPrivateKey  = "-----BEGIN PRIVATE KEY-----"
-  val EndPrivateKey    = "-----END PRIVATE KEY-----"
-  val BeginPrivateRSAKey  = "-----BEGIN RSA PRIVATE KEY-----"
-  val EndPrivateRSAKey    = "-----END RSA PRIVATE KEY-----"
+  val BeginCertificate   = "-----BEGIN CERTIFICATE-----"
+  val EndCertificate     = "-----END CERTIFICATE-----"
+  val BeginPublicKey     = "-----BEGIN PUBLIC KEY-----"
+  val EndPublicKey       = "-----END PUBLIC KEY-----"
+  val BeginPrivateKey    = "-----BEGIN PRIVATE KEY-----"
+  val EndPrivateKey      = "-----END PRIVATE KEY-----"
+  val BeginPrivateRSAKey = "-----BEGIN RSA PRIVATE KEY-----"
+  val EndPrivateRSAKey   = "-----END RSA PRIVATE KEY-----"
 }
 
 object FakeKeyStore {

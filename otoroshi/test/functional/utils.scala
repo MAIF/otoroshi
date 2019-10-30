@@ -398,8 +398,8 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
   }
 
   def createOtoroshiVerifier(verifier: GlobalJwtVerifier,
-                            customPort: Option[Int] = None,
-                            ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
+                             customPort: Option[Int] = None,
+                             ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/verifiers")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.foo.bar",

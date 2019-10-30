@@ -11,7 +11,6 @@ import scala.util.Try
 import utils.RequestImplicits._
 import kaleidoscope._
 
-
 object GlobalExpressionLanguage {
 
   lazy val logger = Logger("otoroshi-global-el")
@@ -19,70 +18,92 @@ object GlobalExpressionLanguage {
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(
-    value: String,
-    req:     Option[RequestHeader],
-    service: Option[ServiceDescriptor],
-    apiKey:  Option[ApiKey],
-    user:    Option[PrivateAppsUser],
-    context: Map[String, String],
+      value: String,
+      req: Option[RequestHeader],
+      service: Option[ServiceDescriptor],
+      apiKey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      context: Map[String, String],
   ): String = {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>
         Try {
           expressionReplacer.replaceOn(value) {
-            case "date"                                                             => DateTime.now().toString()
-            case r"date.format\('$format@(.*)'\)"                                   => DateTime.now().toString(format)
-            case "service.domain"                              if service.isDefined => service.get._domain
-            case "service.subdomain"                           if service.isDefined => service.get.subdomain
-            case "service.tld"                                 if service.isDefined => service.get.domain
-            case "service.env"                                 if service.isDefined => service.get.env
-            case "service.group"                               if service.isDefined => service.get.groupId
-            case "service.id"                                  if service.isDefined => service.get.id
-            case "service.name"                                if service.isDefined => service.get.name
-            case r"service.metadata.$field@(.*):$dv@(.*)"      if service.isDefined => service.get.metadata.get(field).getOrElse(dv)
-            case r"service.metadata.$field@(.*)"               if service.isDefined => service.get.metadata.get(field).getOrElse(s"no-meta-$field")
+            case "date"                                   => DateTime.now().toString()
+            case r"date.format\('$format@(.*)'\)"         => DateTime.now().toString(format)
+            case "service.domain" if service.isDefined    => service.get._domain
+            case "service.subdomain" if service.isDefined => service.get.subdomain
+            case "service.tld" if service.isDefined       => service.get.domain
+            case "service.env" if service.isDefined       => service.get.env
+            case "service.group" if service.isDefined     => service.get.groupId
+            case "service.id" if service.isDefined        => service.get.id
+            case "service.name" if service.isDefined      => service.get.name
+            case r"service.metadata.$field@(.*):$dv@(.*)" if service.isDefined =>
+              service.get.metadata.get(field).getOrElse(dv)
+            case r"service.metadata.$field@(.*)" if service.isDefined =>
+              service.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
-            case "req.path"                                    if req.isDefined     => req.get.path
-            case "req.uri"                                     if req.isDefined     => req.get.relativeUri
-            case "req.host"                                    if req.isDefined     => req.get.host
-            case "req.domain"                                  if req.isDefined     => req.get.domain
-            case "req.method"                                  if req.isDefined     => req.get.method
-            case "req.protocol"                                if req.isDefined     => req.get.theProtocol
-            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined     => req.get.headers.get(field).getOrElse(defaultValue)
-            case r"req.headers.$field@(.*)"                    if req.isDefined     => req.get.headers.get(field).getOrElse(s"no-header-$field")
-            case r"req.query.$field@(.*):$defaultValue@(.*)"   if req.isDefined     => req.get.getQueryString(field).getOrElse(defaultValue)
-            case r"req.query.$field@(.*)"                      if req.isDefined     => req.get.getQueryString(field).getOrElse(s"no-query-$field")
+            case "req.path" if req.isDefined     => req.get.path
+            case "req.uri" if req.isDefined      => req.get.relativeUri
+            case "req.host" if req.isDefined     => req.get.host
+            case "req.domain" if req.isDefined   => req.get.domain
+            case "req.method" if req.isDefined   => req.get.method
+            case "req.protocol" if req.isDefined => req.get.theProtocol
+            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined =>
+              req.get.headers.get(field).getOrElse(defaultValue)
+            case r"req.headers.$field@(.*)" if req.isDefined =>
+              req.get.headers.get(field).getOrElse(s"no-header-$field")
+            case r"req.query.$field@(.*):$defaultValue@(.*)" if req.isDefined =>
+              req.get.getQueryString(field).getOrElse(defaultValue)
+            case r"req.query.$field@(.*)" if req.isDefined =>
+              req.get.getQueryString(field).getOrElse(s"no-query-$field")
 
-            case "apikey.name"                                 if apiKey.isDefined  => apiKey.get.clientName
-            case "apikey.id"                                   if apiKey.isDefined  => apiKey.get.clientId
-            case r"apikey.metadata.$field@(.*):$dv@(.*)"       if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse(dv)
-            case r"apikey.metadata.$field@(.*)"                if apiKey.isDefined  => apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
-            case r"apikey.tags\\[$field@(.*):$dv@(.*)\\]"      if apiKey.isDefined  => Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
-            case r"apikey.tags\\[$field@(.*)\\]"               if apiKey.isDefined  => Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
+            case "apikey.name" if apiKey.isDefined => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined   => apiKey.get.clientId
+            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined =>
+              apiKey.get.metadata.get(field).getOrElse(dv)
+            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined =>
+              apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
+            case r"apikey.tags\\[$field@(.*):$dv@(.*)\\]" if apiKey.isDefined =>
+              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
+            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined =>
+              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
 
             // for jwt comptab only
-            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"   => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"    => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"      => context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"token.$field@(.*)\|token.$field2@(.*)"               => context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
-            case r"token.$field@(.*):$dv@(.*)"                          => context.getOrElse(field, dv)
-            case r"token.$field@(.*)"                                   => context.getOrElse(field, s"no-token-$field")
+            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
+            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)" =>
+              context.get(field).orElse(context.get(field2)).getOrElse(dv)
+            case r"token.$field@(.*)\|token.$field2@(.*)" =>
+              context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
+            case r"token.$field@(.*):$dv@(.*)" => context.getOrElse(field, dv)
+            case r"token.$field@(.*)"          => context.getOrElse(field, s"no-token-$field")
 
-            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"   => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"    => context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" => context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
-            case r"ctx.$field@(.*)\|ctx.$field2@(.*):$dv@(.*)"        => context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"ctx.$field@(.*)\|ctx.$field2@(.*)"                 => context.get(field).orElse(context.get(field2)).getOrElse(s"no-ctx-$field-$field2")
-            case r"ctx.$field@(.*):$dv@(.*)"                          => context.getOrElse(field, dv)
-            case r"ctx.$field@(.*)"                                   => context.getOrElse(field, s"no-ctx-$field")
+            case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)" =>
+              context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*)\|ctx.$field2@(.*):$dv@(.*)" =>
+              context.get(field).orElse(context.get(field2)).getOrElse(dv)
+            case r"ctx.$field@(.*)\|ctx.$field2@(.*)" =>
+              context.get(field).orElse(context.get(field2)).getOrElse(s"no-ctx-$field-$field2")
+            case r"ctx.$field@(.*):$dv@(.*)" => context.getOrElse(field, dv)
+            case r"ctx.$field@(.*)"          => context.getOrElse(field, s"no-ctx-$field")
 
-            case "user.name"                                   if user.isDefined    => user.get.name
-            case "user.email"                                  if user.isDefined    => user.get.email
-            case r"user.metadata.$field@(.*):$dv@(.*)"         if user.isDefined    =>
+            case "user.name" if user.isDefined  => user.get.name
+            case "user.email" if user.isDefined => user.get.email
+            case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined =>
               user
                 .flatMap(_.otoroshiData)
                 .map(
@@ -92,10 +113,10 @@ object GlobalExpressionLanguage {
                       case Some(JsString(str))    => str
                       case Some(JsBoolean(b))     => b.toString
                       case _                      => dv
-                    }
+                  }
                 )
                 .getOrElse(dv)
-            case r"user.metadata.$field@(.*)"                  if user.isDefined =>
+            case r"user.metadata.$field@(.*)" if user.isDefined =>
               user
                 .flatMap(_.otoroshiData)
                 .map(
@@ -105,7 +126,7 @@ object GlobalExpressionLanguage {
                       case Some(JsString(str))    => str
                       case Some(JsBoolean(b))     => b.toString
                       case _                      => s"no-meta-$field"
-                    }
+                  }
                 )
                 .getOrElse(s"no-meta-$field")
 
@@ -127,13 +148,13 @@ object HeadersExpressionLanguage {
   // val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(
-     value: String,
-     req:     Option[RequestHeader],
-     service: Option[ServiceDescriptor],
-     apiKey:  Option[ApiKey],
-     user:    Option[PrivateAppsUser],
-     context: Map[String, String],
-   ): String = {
+      value: String,
+      req: Option[RequestHeader],
+      service: Option[ServiceDescriptor],
+      apiKey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      context: Map[String, String],
+  ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
       req = req,
@@ -195,7 +216,7 @@ object HeadersExpressionLanguage {
       case _ => value
     }
   }
-  */
+ */
 }
 
 object RedirectionExpressionLanguage {
@@ -204,12 +225,12 @@ object RedirectionExpressionLanguage {
   // val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(
-    value: String,
-    req:     Option[RequestHeader],
-    service: Option[ServiceDescriptor],
-    apiKey:  Option[ApiKey],
-    user:    Option[PrivateAppsUser],
-    context: Map[String, String],
+      value: String,
+      req: Option[RequestHeader],
+      service: Option[ServiceDescriptor],
+      apiKey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      context: Map[String, String],
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -249,7 +270,7 @@ object RedirectionExpressionLanguage {
       case _ => value
     }
   }
-  */
+ */
 }
 
 object TargetExpressionLanguage {
@@ -258,12 +279,12 @@ object TargetExpressionLanguage {
   // val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(
-   value: String,
-   req:     Option[RequestHeader],
-   service: Option[ServiceDescriptor],
-   apiKey:  Option[ApiKey],
-   user:    Option[PrivateAppsUser],
-   context: Map[String, String],
+      value: String,
+      req: Option[RequestHeader],
+      service: Option[ServiceDescriptor],
+      apiKey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      context: Map[String, String],
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -303,18 +324,18 @@ object TargetExpressionLanguage {
       case _ => value
     }
   }
-  */
+ */
 }
 
 object JwtExpressionLanguage {
 
   def apply(
-    value: String,
-    req:     Option[RequestHeader],
-    service: Option[ServiceDescriptor],
-    apiKey:  Option[ApiKey],
-    user:    Option[PrivateAppsUser],
-    context: Map[String, String]
+      value: String,
+      req: Option[RequestHeader],
+      service: Option[ServiceDescriptor],
+      apiKey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      context: Map[String, String]
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -359,15 +380,15 @@ object JwtExpressionLanguage {
       case _ => value
     }
   }
-  */
+   */
 
   def fromJson(
-    value:   JsValue,
-    req:     Option[RequestHeader],
-    service: Option[ServiceDescriptor],
-    apiKey:  Option[ApiKey],
-    user:    Option[PrivateAppsUser],
-    context: Map[String, String]
+      value: JsValue,
+      req: Option[RequestHeader],
+      service: Option[ServiceDescriptor],
+      apiKey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      context: Map[String, String]
   ): JsValue = {
     value match {
       case JsObject(map) =>
@@ -429,5 +450,5 @@ object JwtExpressionLanguage {
       case _ => value
     }
   }
-  */
+ */
 }

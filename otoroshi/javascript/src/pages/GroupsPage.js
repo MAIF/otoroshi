@@ -18,20 +18,20 @@ export class GroupsPage extends Component {
   };
 
   columns = [
-    { 
-      title: 'Name', 
+    {
+      title: 'Name',
       content: item => item.name,
       wrappedCell: (v, item, table) => {
         if (this.state && this.state.env && this.state.env.adminGroupId === item.id) {
           return (
-            <span 
-              title="This group holds the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it" 
+            <span
+              title="This group holds the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
               className="label label-danger">
               {item.name}
             </span>
-          )
+          );
         }
-        return item.name
+        return item.name;
       },
     },
     { title: 'Description', noMobile: true, content: item => item.description },

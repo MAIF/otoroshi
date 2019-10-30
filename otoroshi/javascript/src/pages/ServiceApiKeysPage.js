@@ -435,12 +435,12 @@ export class ServiceApiKeysPage extends Component {
       wrappedCell: (v, item, table) => {
         if (this.state && this.state.env && this.state.env.adminApikeyId === item.clientId) {
           return (
-            <span 
-              title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it" 
+            <span
+              title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
               className="label label-danger">
               {item.clientName}
             </span>
-          )
+          );
         }
         return item.clientName;
       },

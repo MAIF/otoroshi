@@ -40,7 +40,11 @@ class Alert extends Component {
                   {this.props.linkOpt.title}
                 </a>
               )}
-              <button ref={r => this.okRef = r} type="button" className="btn btn-primary" onClick={this.props.close}>
+              <button
+                ref={r => (this.okRef = r)}
+                type="button"
+                className="btn btn-primary"
+                onClick={this.props.close}>
                 Close
               </button>
             </div>
@@ -76,10 +80,18 @@ class Confirm extends Component {
               <p>{this.props.message}</p>
             </div>
             <div className="modal-footer">
-              <button ref={r => this.cancelRef = r} type="button" className="btn btn-danger" onClick={this.props.cancel}>
+              <button
+                ref={r => (this.cancelRef = r)}
+                type="button"
+                className="btn btn-danger"
+                onClick={this.props.cancel}>
                 Cancel
               </button>
-              <button ref={r => this.okRef = r} type="button" className="btn btn-success" onClick={this.props.ok}>
+              <button
+                ref={r => (this.okRef = r)}
+                type="button"
+                className="btn btn-success"
+                onClick={this.props.ok}>
                 Ok
               </button>
             </div>
@@ -144,7 +156,7 @@ class Prompt extends Component {
               <button
                 type="button"
                 className="btn btn-success"
-                ref={r => this.okRef = r}
+                ref={r => (this.okRef = r)}
                 onClick={e => this.props.ok(this.state.text)}>
                 Ok
               </button>

@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class Version1413Spec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {
@@ -54,16 +54,20 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       val counterBar = new AtomicInteger(0)
       val counterKix = new AtomicInteger(0)
 
-      val (_, port1, _, call1) = testServer("missingheaders.oto.tools", port, validate = req => {
-        val header = req.getHeader("foo").get().value()
-        if (header == "bar") {
-          counterBar.incrementAndGet()
+      val (_, port1, _, call1) = testServer(
+        "missingheaders.oto.tools",
+        port,
+        validate = req => {
+          val header = req.getHeader("foo").get().value()
+          if (header == "bar") {
+            counterBar.incrementAndGet()
+          }
+          if (header == "kix") {
+            counterKix.incrementAndGet()
+          }
+          true
         }
-        if (header == "kix") {
-          counterKix.incrementAndGet()
-        }
-        true
-      })
+      )
 
       val service1 = ServiceDescriptor(
         id = "missingheaders",
@@ -110,20 +114,23 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
     "support override header (#364)" in {
 
-      val counterCanal02 = new AtomicInteger(0)
+      val counterCanal02  = new AtomicInteger(0)
       val counterCanalBar = new AtomicInteger(0)
 
-
-      val (_, port1, _, call) = testServer("overrideheader.oto.tools", port, validate = req => {
-        val header = req.getHeader("MAIF_CANAL").get().value()
-        if (header == "02") {
-          counterCanal02.incrementAndGet()
+      val (_, port1, _, call) = testServer(
+        "overrideheader.oto.tools",
+        port,
+        validate = req => {
+          val header = req.getHeader("MAIF_CANAL").get().value()
+          if (header == "02") {
+            counterCanal02.incrementAndGet()
+          }
+          if (header == "bar") {
+            counterCanalBar.incrementAndGet()
+          }
+          true
         }
-        if (header == "bar") {
-          counterCanalBar.incrementAndGet()
-        }
-        true
-      })
+      )
 
       val service1 = ServiceDescriptor(
         id = "overrideheader",
@@ -170,20 +177,23 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
     "support override header case insensitive (#364)" in {
 
-      val counterCanal02 = new AtomicInteger(0)
+      val counterCanal02  = new AtomicInteger(0)
       val counterCanalBar = new AtomicInteger(0)
 
-
-      val (_, port1, _, call) = testServer("overrideheader.oto.tools", port, validate = req => {
-        val header = req.getHeader("MAIF_CANAL").get().value()
-        if (header == "02") {
-          counterCanal02.incrementAndGet()
+      val (_, port1, _, call) = testServer(
+        "overrideheader.oto.tools",
+        port,
+        validate = req => {
+          val header = req.getHeader("MAIF_CANAL").get().value()
+          if (header == "02") {
+            counterCanal02.incrementAndGet()
+          }
+          if (header == "bar") {
+            counterCanalBar.incrementAndGet()
+          }
+          true
         }
-        if (header == "bar") {
-          counterCanalBar.incrementAndGet()
-        }
-        true
-      })
+      )
 
       val service1 = ServiceDescriptor(
         id = "overrideheader",
@@ -274,7 +284,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
       val resp1 = call1(
         Map(
-          "Otoroshi-Client-Id" -> validApiKey.clientId,
+          "Otoroshi-Client-Id"     -> validApiKey.clientId,
           "Otoroshi-Client-Secret" -> validApiKey.clientSecret
         )
       )
@@ -283,7 +293,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
       val resp2 = call1(
         Map(
-          "Otoroshi-Client-Id" -> invalidApiKey.clientId,
+          "Otoroshi-Client-Id"     -> invalidApiKey.clientId,
           "Otoroshi-Client-Secret" -> invalidApiKey.clientSecret
         )
       )
@@ -341,8 +351,8 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       counter1.get() mustBe 1
       resp1.status mustBe 200
 
-
-      val resp2 = ws.url(s"http://127.0.0.1:${port}/hello")
+      val resp2 = ws
+        .url(s"http://127.0.0.1:${port}/hello")
         .withHttpHeaders("Host" -> "reqtrans.oto.tools")
         .get()
         .futureValue
@@ -362,24 +372,32 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
       val algorithm = Algorithm.HMAC512("secret")
 
-      val (_, port1, counter1, call1) = testServer("defaulttoken.oto.tools", port, validate = req => {
-        val header = req.getHeader("X-JWT-Token").get().value()
-        Try(JWT.require(algorithm).build().verify(header)) match {
-          case Success(_) => true
-          case Failure(_) => false
-        }
-      })
-      val (_, port2, counter2, call2) = testServer("defaulttoken2.oto.tools", port, validate = req => {
-        val maybeHeader = req.getHeader("X-JWT-Token")
-        if (maybeHeader.isPresent) {
-          Try(JWT.require(algorithm).build().verify(maybeHeader.get().value())) match {
+      val (_, port1, counter1, call1) = testServer(
+        "defaulttoken.oto.tools",
+        port,
+        validate = req => {
+          val header = req.getHeader("X-JWT-Token").get().value()
+          Try(JWT.require(algorithm).build().verify(header)) match {
             case Success(_) => true
             case Failure(_) => false
           }
-        } else {
-          true
         }
-      })
+      )
+      val (_, port2, counter2, call2) = testServer(
+        "defaulttoken2.oto.tools",
+        port,
+        validate = req => {
+          val maybeHeader = req.getHeader("X-JWT-Token")
+          if (maybeHeader.isPresent) {
+            Try(JWT.require(algorithm).build().verify(maybeHeader.get().value())) match {
+              case Success(_) => true
+              case Failure(_) => false
+            }
+          } else {
+            true
+          }
+        }
+      )
 
       val service1 = ServiceDescriptor(
         id = "defaulttoken",
@@ -401,12 +419,13 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = DefaultToken(true, Json.obj(
-            "user" -> "bobby",
-            "rights" -> Json.arr(
-              "admin"
-            )
-          ))
+          strategy = DefaultToken(true,
+                                  Json.obj(
+                                    "user" -> "bobby",
+                                    "rights" -> Json.arr(
+                                      "admin"
+                                    )
+                                  ))
         )
       )
 
@@ -430,12 +449,13 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = DefaultToken(false, Json.obj(
-            "user" -> "bobby",
-            "rights" -> Json.arr(
-              "admin"
-            )
-          ))
+          strategy = DefaultToken(false,
+                                  Json.obj(
+                                    "user" -> "bobby",
+                                    "rights" -> Json.arr(
+                                      "admin"
+                                    )
+                                  ))
         )
       )
 
@@ -450,11 +470,13 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       )
 
       val resp2 = call1(
-        Map("X-JWT-Token" -> JWT
-          .create()
-          .withIssuer("mathieu")
-          .withClaim("bar", "yo")
-          .sign(algorithm))
+        Map(
+          "X-JWT-Token" -> JWT
+            .create()
+            .withIssuer("mathieu")
+            .withClaim("bar", "yo")
+            .sign(algorithm)
+        )
       )
 
       resp1.status mustBe 200
@@ -466,11 +488,13 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       )
 
       val resp4 = call2(
-        Map("X-JWT-Token" -> JWT
-          .create()
-          .withIssuer("mathieu")
-          .withClaim("bar", "yo")
-          .sign(algorithm))
+        Map(
+          "X-JWT-Token" -> JWT
+            .create()
+            .withIssuer("mathieu")
+            .withClaim("bar", "yo")
+            .sign(algorithm)
+        )
       )
 
       resp3.status mustBe 200
@@ -486,10 +510,10 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 }
 
 object TransformersCounters {
-  val attrsCounter = new AtomicInteger(0)
+  val attrsCounter     = new AtomicInteger(0)
   val counterValidator = new AtomicInteger(0)
-  val counter = new AtomicInteger(0)
-  val counter3 = new AtomicInteger(0)
+  val counter          = new AtomicInteger(0)
+  val counter3         = new AtomicInteger(0)
 }
 
 case class FakeUser(username: String)
@@ -499,21 +523,31 @@ object Attrs {
 }
 
 class Transformer1 extends RequestTransformer {
-  override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
+  override def transformRequestWithCtx(
+      context: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     TransformersCounters.counter.incrementAndGet()
     context.attrs.put(Attrs.CurrentUserKey -> FakeUser("bobby"))
-    FastFuture.successful(Right(context.otoroshiRequest.copy(headers = context.otoroshiRequest.headers ++ Map(
-      "foo" -> "bar"
-    ))))
+    FastFuture.successful(
+      Right(
+        context.otoroshiRequest.copy(
+          headers = context.otoroshiRequest.headers ++ Map(
+            "foo" -> "bar"
+          )
+        )
+      )
+    )
   }
 }
 
 class Transformer2 extends RequestTransformer {
-  override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
+  override def transformRequestWithCtx(
+      context: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     TransformersCounters.counter.incrementAndGet()
     context.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
-      case _ =>
+      case _                       =>
     }
     if (context.otoroshiRequest.headers.get("foo").contains("bar")) {
       TransformersCounters.counter.incrementAndGet()
@@ -528,11 +562,13 @@ class Transformer2 extends RequestTransformer {
 }
 
 class Transformer3 extends RequestTransformer {
-  override def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
+  override def transformRequestWithCtx(
+      context: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
     TransformersCounters.counter3.incrementAndGet()
     context.attrs.get(Attrs.CurrentUserKey) match {
       case Some(FakeUser("bobby")) => TransformersCounters.attrsCounter.incrementAndGet()
-      case _ =>
+      case _                       =>
     }
     FastFuture.successful(Right(context.otoroshiRequest))
   }

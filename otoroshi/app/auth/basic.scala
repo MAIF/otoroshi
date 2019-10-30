@@ -12,7 +12,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import controllers.{LocalCredentialRepository, routes}
+import controllers.{routes, LocalCredentialRepository}
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, Alerts}
 import models._
@@ -33,7 +33,7 @@ case class WebAuthnDetails(handle: String, registration: JsValue) {
 object WebAuthnDetails {
   def fmt = new Format[WebAuthnDetails] {
     override def writes(o: WebAuthnDetails) = Json.obj(
-      "handle"     -> o.handle,
+      "handle"       -> o.handle,
       "registration" -> o.registration
     )
     override def reads(json: JsValue) =
@@ -242,7 +242,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         }
       } else {
         Results
-          .Ok(views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, authConfig.webauthn, env))
+          .Ok(
+            views.html.otoroshi
+              .login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, authConfig.webauthn, env)
+          )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
               routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
@@ -400,31 +403,33 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   private val base64Encoder = java.util.Base64.getUrlEncoder
   private val base64Decoder = java.util.Base64.getUrlDecoder
-  private val random = new SecureRandom()
+  private val random        = new SecureRandom()
   private val jsonMapper = new ObjectMapper()
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     .setSerializationInclusion(Include.NON_ABSENT)
     .registerModule(new Jdk8Module())
 
-
-  def webAuthnLoginStart(body: JsValue, descriptor: ServiceDescriptor)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  def webAuthnLoginStart(
+      body: JsValue,
+      descriptor: ServiceDescriptor
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import collection.JavaConverters._
 
-    val usernameOpt = (body \ "username").asOpt[String]
-    val passwordOpt = (body \"password").asOpt[String]
-    val reqOrigin = (body \ "origin").as[String]
+    val usernameOpt   = (body \ "username").asOpt[String]
+    val passwordOpt   = (body \ "password").asOpt[String]
+    val reqOrigin     = (body \ "origin").as[String]
     val reqOriginHost = Uri(reqOrigin).authority.host.address()
     val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
       case tld :: domain :: _ => s"$domain.$tld"
-      case value => value.mkString(".")
+      case value              => value.mkString(".")
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
       Json.obj(
-        "handle" -> usr.webauthn.get.handle,
+        "handle"     -> usr.webauthn.get.handle,
         "credential" -> usr.webauthn.get.registration,
-        "username" -> usr.email
+        "username"   -> usr.email
       )
     }
 
@@ -432,22 +437,30 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       case (Some(username), Some(password)) => {
         bindUser(username, password, descriptor).toOption match {
           case Some(_) => {
-            val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-            val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
-            val request: AssertionRequest = rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
+            val rpIdentity: RelyingPartyIdentity =
+              RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+            val rp: RelyingParty = RelyingParty.builder
+              .identity(rpIdentity)
+              .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+              .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+              .build
+            val request: AssertionRequest =
+              rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
 
             val registrationRequestId = IdGenerator.token(32)
-            val jsonRequest: String = jsonMapper.writeValueAsString(request)
+            val jsonRequest: String   = jsonMapper.writeValueAsString(request)
             val finalRequest = Json.obj(
               "requestId" -> registrationRequestId,
-              "request" -> Json.parse(jsonRequest),
-              "username" -> username,
-              "label" -> "--"
+              "request"   -> Json.parse(jsonRequest),
+              "username"  -> username,
+              "label"     -> "--"
             )
 
-            env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
-              Right(finalRequest)
-            }
+            env.datastores.webAuthnRegistrationsDataStore
+              .setRegistrationRequest(registrationRequestId, finalRequest)
+              .map { _ =>
+                Right(finalRequest)
+              }
           }
           case _ => FastFuture.successful(Left("bad request"))
         }
@@ -458,24 +471,25 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def webAuthnAdminLoginStart(body: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  def webAuthnAdminLoginStart(body: JsValue)(implicit env: Env,
+                                             ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import collection.JavaConverters._
 
-    val usernameOpt = (body \ "username").asOpt[String]
-    val passwordOpt = (body \"password").asOpt[String]
-    val reqOrigin = (body \ "origin").as[String]
+    val usernameOpt   = (body \ "username").asOpt[String]
+    val passwordOpt   = (body \ "password").asOpt[String]
+    val reqOrigin     = (body \ "origin").as[String]
     val reqOriginHost = Uri(reqOrigin).authority.host.address()
     val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
       case tld :: domain :: _ => s"$domain.$tld"
-      case value => value.mkString(".")
+      case value              => value.mkString(".")
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
       Json.obj(
-        "handle" -> usr.webauthn.get.handle,
+        "handle"     -> usr.webauthn.get.handle,
         "credential" -> usr.webauthn.get.registration,
-        "username" -> usr.email
+        "username"   -> usr.email
       )
     }
 
@@ -483,22 +497,30 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       case (Some(username), Some(password)) => {
         bindAdminUser(username, password).toOption match {
           case Some(_) => {
-            val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-            val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
-            val request: AssertionRequest = rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
+            val rpIdentity: RelyingPartyIdentity =
+              RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+            val rp: RelyingParty = RelyingParty.builder
+              .identity(rpIdentity)
+              .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+              .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+              .build
+            val request: AssertionRequest =
+              rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
 
             val registrationRequestId = IdGenerator.token(32)
-            val jsonRequest: String = jsonMapper.writeValueAsString(request)
+            val jsonRequest: String   = jsonMapper.writeValueAsString(request)
             val finalRequest = Json.obj(
               "requestId" -> registrationRequestId,
-              "request" -> Json.parse(jsonRequest),
-              "username" -> username,
-              "label" -> "--"
+              "request"   -> Json.parse(jsonRequest),
+              "username"  -> username,
+              "label"     -> "--"
             )
 
-            env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
-              Right(finalRequest)
-            }
+            env.datastores.webAuthnRegistrationsDataStore
+              .setRegistrationRequest(registrationRequestId, finalRequest)
+              .map { _ =>
+                Right(finalRequest)
+              }
           }
           case _ => FastFuture.successful(Left("bad request"))
         }
@@ -509,26 +531,29 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def webAuthnLoginFinish(body: JsValue, descriptor: ServiceDescriptor)(implicit env: Env, ec: ExecutionContext): Future[Either[String, PrivateAppsUser]] = {
+  def webAuthnLoginFinish(
+      body: JsValue,
+      descriptor: ServiceDescriptor
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, PrivateAppsUser]] = {
 
     import collection.JavaConverters._
 
-    val json = body
-    val webauthn = (json \ "webauthn").as[JsObject]
-    val otoroshi = (json \ "otoroshi").as[JsObject]
-    val reqOrigin = (otoroshi \ "origin").as[String]
-    val reqId = (json \ "requestId").as[String]
+    val json          = body
+    val webauthn      = (json \ "webauthn").as[JsObject]
+    val otoroshi      = (json \ "otoroshi").as[JsObject]
+    val reqOrigin     = (otoroshi \ "origin").as[String]
+    val reqId         = (json \ "requestId").as[String]
     val reqOriginHost = Uri(reqOrigin).authority.host.address()
     val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
       case tld :: domain :: _ => s"$domain.$tld"
-      case value => value.mkString(".")
+      case value              => value.mkString(".")
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
       Json.obj(
-        "handle" -> usr.webauthn.get.handle,
+        "handle"     -> usr.webauthn.get.handle,
         "credential" -> usr.webauthn.get.registration,
-        "username" -> usr.email
+        "username"   -> usr.email
       )
     }
 
@@ -542,7 +567,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
               case None => FastFuture.successful(Left("bad request"))
               case Some(rawRequest) => {
-                val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
+                val request =
+                  jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
                 //val password = (user \ "password").as[String]
                 //val label = (user \ "label").as[String]
                 //val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
@@ -550,80 +576,23 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                 bindUser(username, pass, descriptor) match {
                   case Left(err) => FastFuture.successful(Left(err))
                   case Right(user) => {
-                    val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-                    val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
+                    val rpIdentity: RelyingPartyIdentity =
+                      RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                    val rp: RelyingParty = RelyingParty.builder
+                      .identity(rpIdentity)
+                      .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                      .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                      .build
                     val pkc = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
-                    Try(rp.finishAssertion(FinishAssertionOptions.builder()
-                      .request(request)
-                      .response(pkc)
-                      .build())) match {
-                        case Failure(e) =>
-                          FastFuture.successful(Left("bad request"))
-                        case Success(result) if !result.isSuccess =>
-                          FastFuture.successful(Left("bad request"))
-                        case Success(result) if result.isSuccess => {
-                          FastFuture.successful(Right(user))
-                        }
-                      }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      case (_, _) => FastFuture.successful(Left("Not Authorized"))
-    }
-  }
-
-  def webAuthnAdminLoginFinish(body: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, BackOfficeUser]] = {
-
-    import collection.JavaConverters._
-
-    val json = body
-    val webauthn = (json \ "webauthn").as[JsObject]
-    val otoroshi = (json \ "otoroshi").as[JsObject]
-    val reqOrigin = (otoroshi \ "origin").as[String]
-    val reqId = (json \ "requestId").as[String]
-    val reqOriginHost = Uri(reqOrigin).authority.host.address()
-    val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
-      case tld :: domain :: _ => s"$domain.$tld"
-      case value => value.mkString(".")
-    }
-
-    val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      Json.obj(
-        "handle" -> usr.webauthn.get.handle,
-        "credential" -> usr.webauthn.get.registration,
-        "username" -> usr.email
-      )
-    }
-
-    val usernameOpt = (otoroshi \ "username").asOpt[String]
-    val passwordOpt = (otoroshi \ "password").asOpt[String]
-    (usernameOpt, passwordOpt) match {
-      case (Some(username), Some(pass)) => {
-        users.find(u => (u \ "username").as[String] == username) match {
-          case None => FastFuture.successful(Left("Bad user"))
-          case Some(user) => {
-            env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
-              case None => FastFuture.successful(Left("bad request"))
-              case Some(rawRequest) => {
-                val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
-                //val password = (user \ "password").as[String]
-                //val label = (user \ "label").as[String]
-                //val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
-
-                bindAdminUser(username, pass) match {
-                  case Left(err) => FastFuture.successful(Left(err))
-                  case Right(user) => {
-                    val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-                    val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
-                    val pkc = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
-                    Try(rp.finishAssertion(FinishAssertionOptions.builder()
-                      .request(request)
-                      .response(pkc)
-                      .build())) match {
+                    Try(
+                      rp.finishAssertion(
+                        FinishAssertionOptions
+                          .builder()
+                          .request(request)
+                          .response(pkc)
+                          .build()
+                      )
+                    ) match {
                       case Failure(e) =>
                         FastFuture.successful(Left("bad request"))
                       case Success(result) if !result.isSuccess =>
@@ -643,49 +612,137 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def webAuthnRegistrationStart(body: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  def webAuthnAdminLoginFinish(body: JsValue)(implicit env: Env,
+                                              ec: ExecutionContext): Future[Either[String, BackOfficeUser]] = {
 
     import collection.JavaConverters._
 
-    val username =  (body \ "username").as[String]
-    val label =     (body \ "label").as[String]
-    val reqOrigin = (body \ "origin").as[String]
+    val json          = body
+    val webauthn      = (json \ "webauthn").as[JsObject]
+    val otoroshi      = (json \ "otoroshi").as[JsObject]
+    val reqOrigin     = (otoroshi \ "origin").as[String]
+    val reqId         = (json \ "requestId").as[String]
     val reqOriginHost = Uri(reqOrigin).authority.host.address()
     val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
       case tld :: domain :: _ => s"$domain.$tld"
-      case value => value.mkString(".")
+      case value              => value.mkString(".")
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
       Json.obj(
-        "handle" -> usr.webauthn.get.handle,
+        "handle"     -> usr.webauthn.get.handle,
         "credential" -> usr.webauthn.get.registration,
-        "username" -> usr.email
+        "username"   -> usr.email
+      )
+    }
+
+    val usernameOpt = (otoroshi \ "username").asOpt[String]
+    val passwordOpt = (otoroshi \ "password").asOpt[String]
+    (usernameOpt, passwordOpt) match {
+      case (Some(username), Some(pass)) => {
+        users.find(u => (u \ "username").as[String] == username) match {
+          case None => FastFuture.successful(Left("Bad user"))
+          case Some(user) => {
+            env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
+              case None => FastFuture.successful(Left("bad request"))
+              case Some(rawRequest) => {
+                val request =
+                  jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
+                //val password = (user \ "password").as[String]
+                //val label = (user \ "label").as[String]
+                //val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
+
+                bindAdminUser(username, pass) match {
+                  case Left(err) => FastFuture.successful(Left(err))
+                  case Right(user) => {
+                    val rpIdentity: RelyingPartyIdentity =
+                      RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                    val rp: RelyingParty = RelyingParty.builder
+                      .identity(rpIdentity)
+                      .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                      .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                      .build
+                    val pkc = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
+                    Try(
+                      rp.finishAssertion(
+                        FinishAssertionOptions
+                          .builder()
+                          .request(request)
+                          .response(pkc)
+                          .build()
+                      )
+                    ) match {
+                      case Failure(e) =>
+                        FastFuture.successful(Left("bad request"))
+                      case Success(result) if !result.isSuccess =>
+                        FastFuture.successful(Left("bad request"))
+                      case Success(result) if result.isSuccess => {
+                        FastFuture.successful(Right(user))
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      case (_, _) => FastFuture.successful(Left("Not Authorized"))
+    }
+  }
+
+  def webAuthnRegistrationStart(body: JsValue)(implicit env: Env,
+                                               ec: ExecutionContext): Future[Either[String, JsValue]] = {
+
+    import collection.JavaConverters._
+
+    val username      = (body \ "username").as[String]
+    val label         = (body \ "label").as[String]
+    val reqOrigin     = (body \ "origin").as[String]
+    val reqOriginHost = Uri(reqOrigin).authority.host.address()
+    val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
+      case tld :: domain :: _ => s"$domain.$tld"
+      case value              => value.mkString(".")
+    }
+
+    val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
+      Json.obj(
+        "handle"     -> usr.webauthn.get.handle,
+        "credential" -> usr.webauthn.get.registration,
+        "username"   -> usr.email
       )
     }
 
     val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-    val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
+    val rp: RelyingParty = RelyingParty.builder
+      .identity(rpIdentity)
+      .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+      .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+      .build
 
     val userHandle = new Array[Byte](64)
     random.nextBytes(userHandle)
 
     val registrationRequestId = IdGenerator.token(32)
-    val request: PublicKeyCredentialCreationOptions = rp.startRegistration(StartRegistrationOptions.builder
-      .user(UserIdentity.builder
-        .name(username)
-        .displayName(label)
-        .id(new ByteArray(userHandle))
-        .build)
-      .build)
+    val request: PublicKeyCredentialCreationOptions = rp.startRegistration(
+      StartRegistrationOptions.builder
+        .user(
+          UserIdentity.builder
+            .name(username)
+            .displayName(label)
+            .id(new ByteArray(userHandle))
+            .build
+        )
+        .build
+    )
 
     val jsonRequest = jsonMapper.writeValueAsString(request)
     val finalRequest = Json.obj(
       "requestId" -> registrationRequestId,
-      "request" -> Json.parse(jsonRequest),
-      "username" -> username,
-      "label" -> label,
-      "handle" -> base64Encoder.encodeToString(userHandle)
+      "request"   -> Json.parse(jsonRequest),
+      "username"  -> username,
+      "label"     -> label,
+      "handle"    -> base64Encoder.encodeToString(userHandle)
     )
 
     env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map { _ =>
@@ -693,70 +750,86 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def webAuthnRegistrationFinish(body: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  def webAuthnRegistrationFinish(body: JsValue)(implicit env: Env,
+                                                ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import collection.JavaConverters._
 
-    val json = body
-    val responseJson = Json.stringify((json \ "webauthn").as[JsValue])
-    val otoroshi = (json \ "otoroshi").as[JsObject]
-    val reqOrigin = (otoroshi \ "origin").as[String]
-    val reqId = (json \ "requestId").as[String]
-    val handle = (otoroshi \ "handle").as[String]
+    val json          = body
+    val responseJson  = Json.stringify((json \ "webauthn").as[JsValue])
+    val otoroshi      = (json \ "otoroshi").as[JsObject]
+    val reqOrigin     = (otoroshi \ "origin").as[String]
+    val reqId         = (json \ "requestId").as[String]
+    val handle        = (otoroshi \ "handle").as[String]
     val reqOriginHost = Uri(reqOrigin).authority.host.address()
     val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
       case tld :: domain :: _ => s"$domain.$tld"
-      case value => value.mkString(".")
+      case value              => value.mkString(".")
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
       Json.obj(
-        "handle" -> usr.webauthn.get.handle,
+        "handle"     -> usr.webauthn.get.handle,
         "credential" -> usr.webauthn.get.registration,
-        "username" -> usr.email
+        "username"   -> usr.email
       )
     }
 
-      val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-      val rp: RelyingParty = RelyingParty.builder.identity(rpIdentity).credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder)).origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava).build
-      val pkc = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
+    val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+    val rp: RelyingParty = RelyingParty.builder
+      .identity(rpIdentity)
+      .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+      .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+      .build
+    val pkc = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
 
-      env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
-        case None => FastFuture.successful(Left("bad request"))
-        case Some(rawRequest) => {
-          val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[PublicKeyCredentialCreationOptions])
+    env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
+      case None => FastFuture.successful(Left("bad request"))
+      case Some(rawRequest) => {
+        val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]),
+                                           classOf[PublicKeyCredentialCreationOptions])
 
-          Try(rp.finishRegistration(FinishRegistrationOptions.builder()
-            .request(request)
-            .response(pkc)
-            .build())) match {
-            case Failure(e) =>
-              e.printStackTrace()
-              FastFuture.successful(Left("bad request"))
-            case Success(result) => {
-              val username = (otoroshi \ "username").as[String]
-              val password = (otoroshi \ "password").as[String]
-              val label = (otoroshi \ "label").as[String]
-              val authorizedGroupOpt = (otoroshi \ "authorizedGroup").asOpt[String]
-              val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-              val credential = Json.parse(jsonMapper.writeValueAsString(result))
-              val user = authConfig.users.find(_.email == username).get
-              val newUser = user.copy(webauthn = Some(WebAuthnDetails(
-                handle = handle,
-                registration = credential
-              )))
-              val conf = authConfig.copy(users = authConfig.users.filterNot(_.email == username) :+ newUser)
-              conf.save().map { _ =>
-                Right(Json.obj("username" -> username))
-              }
+        Try(
+          rp.finishRegistration(
+            FinishRegistrationOptions
+              .builder()
+              .request(request)
+              .response(pkc)
+              .build()
+          )
+        ) match {
+          case Failure(e) =>
+            e.printStackTrace()
+            FastFuture.successful(Left("bad request"))
+          case Success(result) => {
+            val username           = (otoroshi \ "username").as[String]
+            val password           = (otoroshi \ "password").as[String]
+            val label              = (otoroshi \ "label").as[String]
+            val authorizedGroupOpt = (otoroshi \ "authorizedGroup").asOpt[String]
+            val saltedPassword     = BCrypt.hashpw(password, BCrypt.gensalt())
+            val credential         = Json.parse(jsonMapper.writeValueAsString(result))
+            val user               = authConfig.users.find(_.email == username).get
+            val newUser = user.copy(
+              webauthn = Some(
+                WebAuthnDetails(
+                  handle = handle,
+                  registration = credential
+                )
+              )
+            )
+            val conf = authConfig.copy(users = authConfig.users.filterNot(_.email == username) :+ newUser)
+            conf.save().map { _ =>
+              Right(Json.obj("username" -> username))
             }
           }
         }
       }
+    }
 
   }
 
-  def webAuthnRegistrationDelete(user: BasicAuthUser)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  def webAuthnRegistrationDelete(user: BasicAuthUser)(implicit env: Env,
+                                                      ec: ExecutionContext): Future[Either[String, JsValue]] = {
     val conf = authConfig.copy(users = authConfig.users.filterNot(_.email == user.email) :+ user.copy(webauthn = None))
     conf.save().map { _ =>
       Right(Json.obj("username" -> user.email))

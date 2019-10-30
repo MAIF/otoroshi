@@ -197,7 +197,7 @@ export class Form extends Component {
             />
           );
         } else if (type === 'text') {
-          component =  (
+          component = (
             <TextareaInput
               disabled={disabled}
               key={name}
@@ -207,7 +207,7 @@ export class Form extends Component {
             />
           );
         } else if (type === 'datetime') {
-          component =  (
+          component = (
             <DateTimeInput
               disabled={disabled}
               key={name}

@@ -194,7 +194,8 @@ export function fetchServiceEvents(serviceId, from, to, limit = 500) {
 
 export function fetchGlobalEvents(from, to, limit = 500) {
   return fetch(
-    `/bo/api/proxy/api/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`, {
+    `/bo/api/proxy/api/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`,
+    {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -598,7 +599,6 @@ export function fetchAdmins() {
 }
 
 export function discardAdmin(username, id, type) {
-
   if (type === 'SIMPLE') {
     return fetch(`/bo/simple/admins/${username}`, {
       method: 'DELETE',
@@ -626,7 +626,7 @@ export function discardAdmin(username, id, type) {
   } else {
     // nothing
     return;
-  } 
+  }
 }
 
 export function fetchOtoroshi() {

@@ -13,8 +13,8 @@ import scala.concurrent.{Future, Promise}
 
 final class Datagram(val data: ByteString, val remote: InetSocketAddress) {
 
-  def withData(data: ByteString) = copy(data = data)
-  def withRemote(remote: InetSocketAddress) = copy(remote = remote)
+  def withData(data: ByteString)                                        = copy(data = data)
+  def withRemote(remote: InetSocketAddress)                             = copy(remote = remote)
   def copy(data: ByteString = data, remote: InetSocketAddress = remote) = new Datagram(data, remote)
 
   override def toString: String =
@@ -29,18 +29,19 @@ object Datagram {
 }
 
 object UdpClient {
-  def flow(localAddress: InetSocketAddress)(implicit system: ActorSystem): Flow[Datagram, Datagram, Future[InetSocketAddress]] = {
+  def flow(
+      localAddress: InetSocketAddress
+  )(implicit system: ActorSystem): Flow[Datagram, Datagram, Future[InetSocketAddress]] = {
     Flow.fromGraph(new UdpBindFlow(localAddress))
   }
 }
 
-private[utils] final class UdpBindLogic(localAddress: InetSocketAddress,
-                                                   boundPromise: Promise[InetSocketAddress])(
-                                                    val shape: FlowShape[Datagram, Datagram]
-                                                  )(implicit val system: ActorSystem)
-  extends GraphStageLogic(shape) {
+private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPromise: Promise[InetSocketAddress])(
+    val shape: FlowShape[Datagram, Datagram]
+)(implicit val system: ActorSystem)
+    extends GraphStageLogic(shape) {
 
-  private def in = shape.in
+  private def in  = shape.in
   private def out = shape.out
 
   private var listener: ActorRef = _
@@ -97,9 +98,9 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress,
 }
 
 private[utils] final class UdpBindFlow(localAddress: InetSocketAddress)(implicit val system: ActorSystem)
-  extends GraphStageWithMaterializedValue[FlowShape[Datagram, Datagram], Future[InetSocketAddress]] {
-  val in: Inlet[Datagram] = Inlet("UdpBindFlow.in")
-  val out: Outlet[Datagram] = Outlet("UdpBindFlow.in")
+    extends GraphStageWithMaterializedValue[FlowShape[Datagram, Datagram], Future[InetSocketAddress]] {
+  val in: Inlet[Datagram]                  = Inlet("UdpBindFlow.in")
+  val out: Outlet[Datagram]                = Outlet("UdpBindFlow.in")
   val shape: FlowShape[Datagram, Datagram] = FlowShape.of(in, out)
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes) = {
     val boundPromise = Promise[InetSocketAddress]

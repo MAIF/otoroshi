@@ -333,7 +333,8 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
             (r \ "events").asOpt[JsValue].getOrElse(Json.arr())
           }
           .map(json => Ok(Json.obj("type" -> "None", "events" -> json)))
-      }}
+      }
+    }
   }
 
   def filterableStats(from: Option[String], to: Option[String]) = ApiAction.async { ctx =>

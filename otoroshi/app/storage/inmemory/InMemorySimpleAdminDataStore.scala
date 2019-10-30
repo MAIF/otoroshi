@@ -44,17 +44,19 @@ class InMemorySimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends Simpl
       case Some(g) => JsString(g)
       case None    => JsNull
     }
-    redisCli.set(key(username),
-                 Json.stringify(
-                   Json.obj(
-                     "username"        -> username,
-                     "password"        -> password,
-                     "label"           -> label,
-                     "authorizedGroup" -> group,
-                     "createdAt"       -> DateTime.now(),
-                     "type"            -> "SIMPLE"
-                   )
-                 ))
+    redisCli.set(
+      key(username),
+      Json.stringify(
+        Json.obj(
+          "username"        -> username,
+          "password"        -> password,
+          "label"           -> label,
+          "authorizedGroup" -> group,
+          "createdAt"       -> DateTime.now(),
+          "type"            -> "SIMPLE"
+        )
+      )
+    )
   }
 
   override def hasAlreadyLoggedIn(username: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =

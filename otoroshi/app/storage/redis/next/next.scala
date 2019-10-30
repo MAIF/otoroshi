@@ -328,10 +328,10 @@ abstract class AbstractRedisDataStores(configuration: Configuration,
   private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
   override def rawDataStore: RawDataStore = _rawDataStore
 
-  private lazy val _webAuthnAdminDataStore = new WebAuthnAdminDataStore()
+  private lazy val _webAuthnAdminDataStore                    = new WebAuthnAdminDataStore()
   override def webAuthnAdminDataStore: WebAuthnAdminDataStore = _webAuthnAdminDataStore
 
-  private lazy val _webAuthnRegistrationsDataStore = new WebAuthnRegistrationsDataStore()
+  private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore

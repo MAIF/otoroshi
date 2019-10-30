@@ -7,66 +7,71 @@ import moment from 'moment';
 import faker from 'faker';
 
 function Base64Url() {
-
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
   // Use a lookup table to find the index.
   let lookup = new Uint8Array(256);
   for (let i = 0; i < chars.length; i++) {
-      lookup[chars.charCodeAt(i)] = i;
+    lookup[chars.charCodeAt(i)] = i;
   }
 
   let encode = function(arraybuffer) {
-      let bytes = new Uint8Array(arraybuffer),
-      i, len = bytes.length, base64url = '';
+    let bytes = new Uint8Array(arraybuffer),
+      i,
+      len = bytes.length,
+      base64url = '';
 
-      for (i = 0; i < len; i+=3) {
-          base64url += chars[bytes[i] >> 2];
-          base64url += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
-          base64url += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
-          base64url += chars[bytes[i + 2] & 63];
-      }
+    for (i = 0; i < len; i += 3) {
+      base64url += chars[bytes[i] >> 2];
+      base64url += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
+      base64url += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
+      base64url += chars[bytes[i + 2] & 63];
+    }
 
-      if ((len % 3) === 2) {
-          base64url = base64url.substring(0, base64url.length - 1);
-      } else if (len % 3 === 1) {
-          base64url = base64url.substring(0, base64url.length - 2);
-      }
+    if (len % 3 === 2) {
+      base64url = base64url.substring(0, base64url.length - 1);
+    } else if (len % 3 === 1) {
+      base64url = base64url.substring(0, base64url.length - 2);
+    }
 
-      return base64url;
+    return base64url;
   };
 
   let decode = function(base64string) {
-      let bufferLength = base64string.length * 0.75,
-      len = base64string.length, i, p = 0,
-      encoded1, encoded2, encoded3, encoded4;
+    let bufferLength = base64string.length * 0.75,
+      len = base64string.length,
+      i,
+      p = 0,
+      encoded1,
+      encoded2,
+      encoded3,
+      encoded4;
 
-      let bytes = new Uint8Array(bufferLength);
+    let bytes = new Uint8Array(bufferLength);
 
-      for (i = 0; i < len; i+=4) {
-          encoded1 = lookup[base64string.charCodeAt(i)];
-          encoded2 = lookup[base64string.charCodeAt(i+1)];
-          encoded3 = lookup[base64string.charCodeAt(i+2)];
-          encoded4 = lookup[base64string.charCodeAt(i+3)];
+    for (i = 0; i < len; i += 4) {
+      encoded1 = lookup[base64string.charCodeAt(i)];
+      encoded2 = lookup[base64string.charCodeAt(i + 1)];
+      encoded3 = lookup[base64string.charCodeAt(i + 2)];
+      encoded4 = lookup[base64string.charCodeAt(i + 3)];
 
-          bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-          bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-          bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
-      }
+      bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+      bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+      bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+    }
 
-      return bytes.buffer
+    return bytes.buffer;
   };
 
   return {
-    'decode': decode,
-    'encode': encode,
-    'fromByteArray': encode,
-    'toByteArray': decode
+    decode: decode,
+    encode: encode,
+    fromByteArray: encode,
+    toByteArray: decode,
   };
 }
 
 const base64url = Base64Url();
-
 
 function responseToObject(response) {
   if (response.u2fResponse) {
@@ -98,15 +103,14 @@ function responseToObject(response) {
           authenticatorData: base64url.fromByteArray(response.response.authenticatorData),
           clientDataJSON: base64url.fromByteArray(response.response.clientDataJSON),
           signature: base64url.fromByteArray(response.response.signature),
-          userHandle: response.response.userHandle && base64url.fromByteArray(response.response.userHandle),
+          userHandle:
+            response.response.userHandle && base64url.fromByteArray(response.response.userHandle),
         },
         clientExtensionResults,
       };
     }
   }
 }
-
-
 
 export class U2FRegisterPage extends Component {
   state = {
@@ -296,8 +300,7 @@ export class U2FRegisterPage extends Component {
       }, this.handleError);
   };
 
-  registerWebAuthn = (e) => {
-
+  registerWebAuthn = e => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -322,51 +325,65 @@ export class U2FRegisterPage extends Component {
         username,
         password,
         label,
-        origin: window.location.origin
-      })
-    }).then(r => r.json()).then(resp => {
-      const requestId = resp.requestId;
-      const publicKeyCredentialCreationOptions = resp.request;
-      const handle = publicKeyCredentialCreationOptions.user.id + '';
-      publicKeyCredentialCreationOptions.challenge = base64url.decode(publicKeyCredentialCreationOptions.challenge);
-      publicKeyCredentialCreationOptions.user.id = base64url.decode(publicKeyCredentialCreationOptions.user.id);
-      return navigator.credentials.create({
-        publicKey: publicKeyCredentialCreationOptions
-      }, this.handleErrorWithMessage('Webauthn error')).then(credentials => {
-        const json = responseToObject(credentials);
-        return fetch('/bo/webauthn/register/finish', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            requestId,
-            webauthn: json, 
-            otoroshi: { 
-              origin: window.location.origin,
-              username,
-              password,
-              label,
-              handle
-            } 
-          }),
-        }).then(r => r.json()).then(resp => {
-          if (this.table) this.table.update();
-          this.setState({
-            error: null,
-            email: '',
-            label: '',
-            password: '',
-            passwordcheck: '',
-            message: `Registration done for '${username}'`,
-          });
-        });
-      }, this.handleErrorWithMessage('Webauthn error')).catch(this.handleError);
-    });
+        origin: window.location.origin,
+      }),
+    })
+      .then(r => r.json())
+      .then(resp => {
+        const requestId = resp.requestId;
+        const publicKeyCredentialCreationOptions = resp.request;
+        const handle = publicKeyCredentialCreationOptions.user.id + '';
+        publicKeyCredentialCreationOptions.challenge = base64url.decode(
+          publicKeyCredentialCreationOptions.challenge
+        );
+        publicKeyCredentialCreationOptions.user.id = base64url.decode(
+          publicKeyCredentialCreationOptions.user.id
+        );
+        return navigator.credentials
+          .create(
+            {
+              publicKey: publicKeyCredentialCreationOptions,
+            },
+            this.handleErrorWithMessage('Webauthn error')
+          )
+          .then(credentials => {
+            const json = responseToObject(credentials);
+            return fetch('/bo/webauthn/register/finish', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                requestId,
+                webauthn: json,
+                otoroshi: {
+                  origin: window.location.origin,
+                  username,
+                  password,
+                  label,
+                  handle,
+                },
+              }),
+            })
+              .then(r => r.json())
+              .then(resp => {
+                if (this.table) this.table.update();
+                this.setState({
+                  error: null,
+                  email: '',
+                  label: '',
+                  password: '',
+                  passwordcheck: '',
+                  message: `Registration done for '${username}'`,
+                });
+              });
+          }, this.handleErrorWithMessage('Webauthn error'))
+          .catch(this.handleError);
+      });
   };
- 
+
   discardAdmin = (e, username, id, table, type) => {
     if (e && e.preventDefault) e.preventDefault();
     window

@@ -33,7 +33,10 @@ export class ServiceEventsPage extends Component {
           type="button"
           className="btn btn-success btn-xs"
           onClick={e =>
-            window.newAlert(<pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>, 'Content')
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
+              'Content'
+            )
           }>
           content
         </button>

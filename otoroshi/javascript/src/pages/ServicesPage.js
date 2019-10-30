@@ -28,14 +28,14 @@ export class ServicesPage extends Component {
       wrappedCell: (v, item, table) => {
         if (this.state && this.state.env && this.state.env.adminApiId === item.id) {
           return (
-            <span 
-              title="This service is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it" 
+            <span
+              title="This service is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
               className="label label-danger">
               {item.name}
             </span>
-          )
+          );
         }
-        return item.name
+        return item.name;
       },
     },
     {
@@ -52,7 +52,7 @@ export class ServicesPage extends Component {
             onClick={e => this.deleteService(item, table)}>
             <i className="glyphicon glyphicon-trash" />
           </button>
-        )
+        );
       },
     },
     {
@@ -140,10 +140,14 @@ export class ServicesPage extends Component {
     }
   }
 
-  displayName = (item) => {
-    console.log(this.state)
-    return this.state && this.state.env && this.state.env.adminApiId === item.id ? <span className="label label-danger">{item.name}</span> : item.name
-  }
+  displayName = item => {
+    console.log(this.state);
+    return this.state && this.state.env && this.state.env.adminApiId === item.id ? (
+      <span className="label label-danger">{item.name}</span>
+    ) : (
+      item.name
+    );
+  };
 
   deleteCell = (v, item, table) => {
     return (
@@ -154,22 +158,26 @@ export class ServicesPage extends Component {
         onClick={e => this.deleteService(item, table)}>
         <i className="glyphicon glyphicon-trash" />
       </button>
-    )
-  }
+    );
+  };
 
   deleteService = (service, table) => {
     if (this.state.env.adminApiId === service.id) {
-      window.newConfirm(`The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`).then(ok1 => {
-        if (ok1) {
-          window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
-            if (ok1 && ok2) {
-              BackOfficeServices.deleteService(service).then(() => {
-                table.update();
-              });
-            }
-          });
-        }
-      });
+      window
+        .newConfirm(
+          `The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`
+        )
+        .then(ok1 => {
+          if (ok1) {
+            window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
+              if (ok1 && ok2) {
+                BackOfficeServices.deleteService(service).then(() => {
+                  table.update();
+                });
+              }
+            });
+          }
+        });
     } else {
       window
         .newConfirm('Are you sure you want to delete service "' + service.name + '"')

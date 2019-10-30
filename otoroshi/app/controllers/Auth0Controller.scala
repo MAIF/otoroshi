@@ -184,8 +184,11 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
 
     implicit val req = ctx.request
 
-    def saveUser(user: PrivateAppsUser, auth: AuthModuleConfig, descriptor: ServiceDescriptor, webauthn: Boolean)(implicit req: RequestHeader) = {
-      user.save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
+    def saveUser(user: PrivateAppsUser, auth: AuthModuleConfig, descriptor: ServiceDescriptor, webauthn: Boolean)(
+        implicit req: RequestHeader
+    ) = {
+      user
+        .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
         .map { paUser =>
           env.clusterAgent.createSession(paUser)
           ctx.request.session
@@ -243,7 +246,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                   case Some("start") => {
                     authModule.webAuthnLoginStart(ctx.request.body.asJson.get, descriptor).map {
                       case Left(error) => BadRequest(Json.obj("error" -> error))
-                      case Right(reg) => Ok(reg)
+                      case Right(reg)  => Ok(reg)
                     }
                   }
                   case Some("finish") => {
@@ -252,12 +255,11 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                       case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
                     }
                   }
-                  case _ => BadRequest(
-                    views.html.otoroshi
-                      .error(message = s"Missing step",
-                        _env = env,
-                        title = "Authorization error")
-                  ).asFuture
+                  case _ =>
+                    BadRequest(
+                      views.html.otoroshi
+                        .error(message = s"Missing step", _env = env, title = "Authorization error")
+                    ).asFuture
                 }
               }
               case auth => {
@@ -266,8 +268,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                     BadRequest(
                       views.html.otoroshi
                         .error(message = s"You're not authorized here: ${error}",
-                          _env = env,
-                          title = "Authorization error")
+                               _env = env,
+                               title = "Authorization error")
                     ).asFuture
                   }
                   case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
@@ -406,51 +408,50 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                   env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
                     case None =>
                       FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not found", env)))
-                    case Some(oauth) => oauth match {
+                    case Some(oauth) =>
+                      oauth match {
 
-
-                      case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
-                        val authModule = auth.authModule(config).asInstanceOf[BasicAuthModule]
-                        request.headers.get("WebAuthn-Login-Step") match {
-                          case Some("start") => {
-                            authModule.webAuthnAdminLoginStart(ctx.request.body.asJson.get).map {
-                              case Left(error) => BadRequest(Json.obj("error" -> error))
-                              case Right(reg) => Ok(reg)
+                        case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
+                          val authModule = auth.authModule(config).asInstanceOf[BasicAuthModule]
+                          request.headers.get("WebAuthn-Login-Step") match {
+                            case Some("start") => {
+                              authModule.webAuthnAdminLoginStart(ctx.request.body.asJson.get).map {
+                                case Left(error) => BadRequest(Json.obj("error" -> error))
+                                case Right(reg)  => Ok(reg)
+                              }
                             }
-                          }
-                          case Some("finish") => {
-                            authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get).flatMap {
-                              case Left(error) => BadRequest(Json.obj("error" -> error)).future
-                              case Right(user) => saveUser(user, auth, true)(ctx.request)
+                            case Some("finish") => {
+                              authModule.webAuthnAdminLoginFinish(ctx.request.body.asJson.get).flatMap {
+                                case Left(error) => BadRequest(Json.obj("error" -> error)).future
+                                case Right(user) => saveUser(user, auth, true)(ctx.request)
+                              }
                             }
-                          }
-                          case _ => BadRequest(
-                            views.html.otoroshi
-                              .error(message = s"Missing step",
-                                _env = env,
-                                title = "Authorization error")
-                          ).asFuture
-                        }
-                      }
-                      case auth => {
-                        oauth.authModule(config).boCallback(ctx.request, config).flatMap {
-                          case Left(err) => {
-                            FastFuture.successful(
+                            case _ =>
                               BadRequest(
                                 views.html.otoroshi
-                                  .error(message = s"You're not authorized here: ${error}",
-                                    _env = env,
-                                    title = "Authorization error")
-                              )
-                            )
+                                  .error(message = s"Missing step", _env = env, title = "Authorization error")
+                              ).asFuture
                           }
-                          case Right(user) => {
-                            logger.debug(s"Login successful for user '${user.email}'")
-                            saveUser(user, auth, false)(ctx.request)
+                        }
+                        case auth => {
+                          oauth.authModule(config).boCallback(ctx.request, config).flatMap {
+                            case Left(err) => {
+                              FastFuture.successful(
+                                BadRequest(
+                                  views.html.otoroshi
+                                    .error(message = s"You're not authorized here: ${error}",
+                                           _env = env,
+                                           title = "Authorization error")
+                                )
+                              )
+                            }
+                            case Right(user) => {
+                              logger.debug(s"Login successful for user '${user.email}'")
+                              saveUser(user, auth, false)(ctx.request)
+                            }
                           }
                         }
                       }
-                    }
                   }
                 }
               }

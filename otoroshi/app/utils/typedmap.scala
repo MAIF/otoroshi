@@ -4,7 +4,6 @@ import play.api.libs.typedmap.{TypedEntry, TypedKey}
 
 import scala.collection.concurrent.TrieMap
 
-
 trait TypedMap {
   def get[A](key: TypedKey[A]): Option[A]
   def contains(key: TypedKey[_]): Boolean

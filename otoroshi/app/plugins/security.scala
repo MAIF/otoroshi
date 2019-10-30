@@ -11,31 +11,42 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class SecurityTxt extends RequestTransformer {
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/security.txt") => {
-        val config = (ctx.config \ "securityTxt").asOpt[JsValue]
+        val config = (ctx.config \ "securityTxt")
+          .asOpt[JsValue]
           .orElse((ctx.globalConfig \ "securityTxt").asOpt[JsValue])
           .getOrElse(ctx.config)
-        val host = s"https://${ctx.descriptor.toHost}"
+        val host    = s"https://${ctx.descriptor.toHost}"
         val contact = (config \ "contact").asOpt[String].map(c => s"Contact: $c\n")
         val values = Seq("Encryption", "Acknowledgments", "Preferred-Languages", "Policy", "Hiring").map { key =>
-          (config \ key.toLowerCase()).asOpt[String].orElse((config \ key).asOpt[String]).map { fromConfig =>
-            if (key == "Preferred-Languages") {
-              s"$key: $fromConfig\n"
-            } else {
-              if (fromConfig.startsWith("http")) {
+          (config \ key.toLowerCase())
+            .asOpt[String]
+            .orElse((config \ key).asOpt[String])
+            .map { fromConfig =>
+              if (key == "Preferred-Languages") {
                 s"$key: $fromConfig\n"
               } else {
-                s"$key: $host/$fromConfig\n"
+                if (fromConfig.startsWith("http")) {
+                  s"$key: $fromConfig\n"
+                } else {
+                  s"$key: $host/$fromConfig\n"
+                }
               }
             }
-          }.getOrElse("")
+            .getOrElse("")
         }
         contact match {
           case None => Left(Results.InternalServerError("Contact missing !!!")).future
           case Some(cont) => {
-            Left(Results.Ok((Seq(cont) ++ values ++ Seq(s"Canonical: ${host}/.well-known/security.txt\n")).mkString("")).as("text/plain")).future
+            Left(
+              Results
+                .Ok((Seq(cont) ++ values ++ Seq(s"Canonical: ${host}/.well-known/security.txt\n")).mkString(""))
+                .as("text/plain")
+            ).future
           }
         }
       }

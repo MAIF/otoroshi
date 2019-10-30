@@ -426,11 +426,11 @@ case class U2FAdminDeletedAlert(`@id`: String,
 }
 
 case class WebAuthnAdminDeletedAlert(`@id`: String,
-                                `@env`: String,
-                                user: BackOfficeUser,
-                                event: BackOfficeEvent,
-                                `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+                                     `@env`: String,
+                                     user: BackOfficeUser,
+                                     event: BackOfficeEvent,
+                                     `@timestamp`: DateTime = DateTime.now())
+    extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"

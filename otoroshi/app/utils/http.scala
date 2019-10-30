@@ -28,7 +28,7 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{Logger, libs}
+import play.api.{libs, Logger}
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import ssl.DynamicSSLEngineProvider
 
@@ -91,7 +91,12 @@ class WsClientChooser(standardClient: WSClient,
     )
   }
   def akkaUrlWithTarget(url: String, target: Target, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
-    new AkkaWsClientRequest(akkaClient, url, Some(target), HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(
+    new AkkaWsClientRequest(akkaClient,
+                            url,
+                            Some(target),
+                            HttpProtocols.`HTTP/1.1`,
+                            clientConfig = clientConfig,
+                            env = env)(
       akkaClient.mat
     )
   }
@@ -108,7 +113,12 @@ class WsClientChooser(standardClient: WSClient,
   def urlWithTarget(url: String, target: Target, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     if (useAkkaHttpClient || fullAkka) {
-      new AkkaWsClientRequest(akkaClient, url, Some(target), HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(
+      new AkkaWsClientRequest(akkaClient,
+                              url,
+                              Some(target),
+                              HttpProtocols.`HTTP/1.1`,
+                              clientConfig = clientConfig,
+                              env = env)(
         akkaClient.mat
       )
     } else {
@@ -121,11 +131,21 @@ class WsClientChooser(standardClient: WSClient,
     protocol.toLowerCase() match {
 
       case "http" if useAkkaHttpClient || fullAkka =>
-        new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(
+        new AkkaWsClientRequest(akkaClient,
+                                url,
+                                None,
+                                HttpProtocols.`HTTP/1.1`,
+                                clientConfig = clientConfig,
+                                env = env)(
           akkaClient.mat
         )
       case "https" if useAkkaHttpClient || fullAkka =>
-        new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(
+        new AkkaWsClientRequest(akkaClient,
+                                url,
+                                None,
+                                HttpProtocols.`HTTP/1.1`,
+                                clientConfig = clientConfig,
+                                env = env)(
           akkaClient.mat
         )
 
@@ -163,7 +183,7 @@ class WsClientChooser(standardClient: WSClient,
                                 None,
                                 HttpProtocols.`HTTP/1.1`,
                                 clientConfig = clientConfig,
-          env = env)(
+                                env = env)(
           akkaClient.mat
         )
       case "ahttps" =>
@@ -172,7 +192,7 @@ class WsClientChooser(standardClient: WSClient,
                                 None,
                                 HttpProtocols.`HTTP/1.1`,
                                 clientConfig = clientConfig,
-          env = env)(
+                                env = env)(
           akkaClient.mat
         )
       case "http2" =>
@@ -181,7 +201,7 @@ class WsClientChooser(standardClient: WSClient,
                                 None,
                                 HttpProtocols.`HTTP/2.0`,
                                 clientConfig = clientConfig,
-          env = env)(
+                                env = env)(
           akkaClient.mat
         )
       case "http2s" =>
@@ -190,12 +210,17 @@ class WsClientChooser(standardClient: WSClient,
                                 None,
                                 HttpProtocols.`HTTP/2.0`,
                                 clientConfig = clientConfig,
-          env = env)(
+                                env = env)(
           akkaClient.mat
         )
 
       case _ if useAkkaHttpClient || fullAkka =>
-        new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(
+        new AkkaWsClientRequest(akkaClient,
+                                url,
+                                None,
+                                HttpProtocols.`HTTP/1.1`,
+                                clientConfig = clientConfig,
+                                env = env)(
           akkaClient.mat
         )
       case _ if !(useAkkaHttpClient || fullAkka) => standardClient.url(url)
@@ -236,17 +261,21 @@ class CustomLooseHostnameVerifier(mkLogger: LoggerFactory) extends HostnameVerif
 
   override def verify(hostname: String, sslSession: SSLSession): Boolean = {
     if (hostname.contains("&")) {
-      val parts = hostname.split("&")
-      val actualHost = parts(1)
+      val parts           = hostname.split("&")
+      val actualHost      = parts(1)
       val hostNameMatches = defaultHostnameVerifier.verify(actualHost, sslSession)
       if (!hostNameMatches) {
-        logger.warn(s"Hostname verification failed on hostname $actualHost, but the connection was accepted because 'loose' is enabled on service target.")
+        logger.warn(
+          s"Hostname verification failed on hostname $actualHost, but the connection was accepted because 'loose' is enabled on service target."
+        )
       }
       true
     } else {
       val hostNameMatches = defaultHostnameVerifier.verify(hostname, sslSession)
       if (!hostNameMatches) {
-        logger.warn(s"Hostname verification failed on hostname $hostname, but the connection was accepted because 'loose' is enabled on service target.")
+        logger.warn(
+          s"Hostname verification failed on hostname $hostname, but the connection was accepted because 'loose' is enabled on service target."
+        )
       }
       true
     }
@@ -262,7 +291,7 @@ class CustomHostnameVerifier(mkLogger: LoggerFactory) extends HostnameVerifier {
 
   override def verify(hostname: String, sslSession: SSLSession): Boolean = {
     if (hostname.contains("&")) {
-      val parts = hostname.split("&")
+      val parts      = hostname.split("&")
       val actualHost = parts(1)
       // println(s"verifying ${actualHost} over ${sslSession.getPeerCertificateChain.head.getSubjectDN.getName}")
       defaultHostnameVerifier.verify(actualHost, sslSession)
@@ -285,7 +314,8 @@ object SSLConfigSettingsCustomizer {
   }
 }
 
-class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem, materializer: Materializer) extends WSClient {
+class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem, materializer: Materializer)
+    extends WSClient {
 
   import SSLConfigSettingsCustomizer._
 
@@ -295,27 +325,30 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   override def underlying[T]: T = client.asInstanceOf[T]
 
-  def url(url: String): WSRequest = new AkkaWsClientRequest(this, url, clientConfig = ClientConfig(), targetOpt = None, env = env)
+  def url(url: String): WSRequest =
+    new AkkaWsClientRequest(this, url, clientConfig = ClientConfig(), targetOpt = None, env = env)
 
   override def close(): Unit = Await.ready(client.shutdownAllConnectionPools(), 10.seconds)
 
   private[utils] val wsClientConfig: WSClientConfig = config
   private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
     config.ssl
-      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+    // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
       .withSslParametersConfig(
-        config.ssl.sslParametersConfig.withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
+        config.ssl.sslParametersConfig
+          .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
       )
       .withDefault(false)
   )
   private[utils] val akkaSSLLooseConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
     config.ssl
-      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+    // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
       .withLoose(config.ssl.loose.withAcceptAnyCertificate(true)) // .withDisableHostnameVerification(true))
       .withSslParametersConfig(
-        config.ssl.sslParametersConfig.withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
+        config.ssl.sslParametersConfig
+          .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
       )
       .withDefault(false)
   )
@@ -331,7 +364,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   private[utils] val clientConnectionSettings: ClientConnectionSettings = ClientConnectionSettings(system)
     .withConnectingTimeout(FiniteDuration(config.connectionTimeout._1, config.connectionTimeout._2))
     .withIdleTimeout(config.idleTimeout)
-    //.withUserAgentHeader(Some(`User-Agent`("Otoroshi-akka"))) // config.userAgent.map(_ => `User-Agent`(_)))
+  //.withUserAgentHeader(Some(`User-Agent`("Otoroshi-akka"))) // config.userAgent.map(_ => `User-Agent`(_)))
 
   private[utils] val connectionPoolSettings: ConnectionPoolSettings = ConnectionPoolSettings(system)
     .withConnectionSettings(clientConnectionSettings)
@@ -346,13 +379,17 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     val currentSslContext = DynamicSSLEngineProvider.current
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
-      val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
-      val connectionContextLoose: HttpsConnectionContext = ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+      val connectionContext: HttpsConnectionContext =
+        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+      val connectionContextLoose: HttpsConnectionContext =
+        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
       connectionContextHolder.set(connectionContext)
       connectionContextLooseHolder.set(connectionContextLoose)
     }
     val pool = customizer(connectionPoolSettings).withMaxConnections(512)
-    client.singleRequest(request, if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(), pool)
+    client.singleRequest(request,
+                         if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
+                         pool)
   }
 
   private[utils] def executeWsRequest[T](
@@ -364,8 +401,10 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     val currentSslContext = DynamicSSLEngineProvider.current
     if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
       lastSslContext.set(currentSslContext)
-      val connectionContext: HttpsConnectionContext = ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
-      val connectionContextLoose: HttpsConnectionContext = ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+      val connectionContext: HttpsConnectionContext =
+        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+      val connectionContextLoose: HttpsConnectionContext =
+        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
       connectionContextHolder.set(connectionContext)
       connectionContextLooseHolder.set(connectionContextLoose)
     }
@@ -724,7 +763,7 @@ case class AkkaWsClientRequest(
         //h.isNot(`User-Agent`.lowercaseName) &&
         !(h.is(Cookie.lowercaseName) && h.value().trim.isEmpty)
       }
-      .toList// ++ ua
+      .toList // ++ ua
 
     HttpRequest(
       method = _method,
@@ -908,23 +947,29 @@ object ManualResolveTransport {
   lazy val http: ClientTransport = ManualResolveTransport()
 
   private case class ManualResolveTransport() extends ClientTransport {
-    def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit system: ActorSystem): Flow[ByteString, ByteString, Future[OutgoingConnection]] = {
+    def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(
+        implicit system: ActorSystem
+    ): Flow[ByteString, ByteString, Future[OutgoingConnection]] = {
       val inetSocketAddress = if (host.contains("&")) {
-        val parts = host.split("&")
-        val ipAddress = parts(0)
+        val parts      = host.split("&")
+        val ipAddress  = parts(0)
         val actualHost = parts(1)
         new InetSocketAddress(InetAddress.getByAddress(actualHost, InetAddress.getByName(ipAddress).getAddress), port)
       } else {
         InetSocketAddress.createUnresolved(host, port)
       }
-      Tcp().outgoingConnection(
-        inetSocketAddress,
-        settings.localAddress,
-        settings.socketOptions,
-        halfClose = true,
-        settings.connectingTimeout,
-        settings.idleTimeout
-      ).mapMaterializedValue(_.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
+      Tcp()
+        .outgoingConnection(
+          inetSocketAddress,
+          settings.localAddress,
+          settings.socketOptions,
+          halfClose = true,
+          settings.connectingTimeout,
+          settings.idleTimeout
+        )
+        .mapMaterializedValue(
+          _.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher)
+        )
     }
   }
 

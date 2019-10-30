@@ -391,22 +391,23 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         Some(serviceHost),
         "/api",
         "application/json", { r =>
-          r.getHeader("X-Barrr").asOption.map(a => a.value()).foreach { a =>
-            import collection.JavaConverters._
-            val v = JWT
-              .require(algorithm2)
-              .withIssuer("foo")
-              .withClaim("x-bar", "yo")
-              .withClaim("x-yo", "foo")
-              .withClaim("the-host", "jwt.foo.bar")
-              .build()
-            val verified = Try {
-              val dec = v.verify(a)
-              //println(dec.getClaim("the-host").asString())
-              //println(dec.getClaims.asScala.mapValues(v => v.asString()))
+          r.getHeader("X-Barrr").asOption.map(a => a.value()).foreach {
+            a =>
+              import collection.JavaConverters._
+              val v = JWT
+                .require(algorithm2)
+                .withIssuer("foo")
+                .withClaim("x-bar", "yo")
+                .withClaim("x-yo", "foo")
+                .withClaim("the-host", "jwt.foo.bar")
+                .build()
+              val verified = Try {
+                val dec = v.verify(a)
+                //println(dec.getClaim("the-host").asString())
+                //println(dec.getClaims.asScala.mapValues(v => v.asString()))
 
-            }.map(_ => true).getOrElse(false)
-            verified mustEqual true
+              }.map(_ => true).getOrElse(false)
+              verified mustEqual true
           }
           callCounter1.incrementAndGet()
           basicTestExpectedBody1
@@ -537,7 +538,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 }
 
 class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
+    extends PlaySpec
     with OneServerPerSuiteWithMyComponents
     with OtoroshiSpecHelper
     with IntegrationPatience {

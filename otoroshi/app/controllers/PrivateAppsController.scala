@@ -16,8 +16,9 @@ import utils.future.Implicits._
 
 import scala.concurrent.Future
 
-class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)(implicit env: Env)
-    extends AbstractController(cc) {
+class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)(
+    implicit env: Env
+) extends AbstractController(cc) {
 
   private lazy val secret = new SecretKeySpec(env.secretSession.getBytes, "AES")
 
@@ -43,27 +44,29 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     Ok(views.html.otoroshi.error(message.getOrElse(""), env))
   }
 
-  def withShortSession(req: RequestHeader)(f: (BasicAuthModule, BasicAuthUser, Long) => Future[Result]): Future[Result] = {
+  def withShortSession(
+      req: RequestHeader
+  )(f: (BasicAuthModule, BasicAuthUser, Long) => Future[Result]): Future[Result] = {
     req.getQueryString("session") match {
-      case None => NotFound( Json.obj("error" -> s"session not found")).future
+      case None => NotFound(Json.obj("error" -> s"session not found")).future
       case Some(cipheredSessionId) => {
         val sessionIdBytes = java.util.Base64.getUrlDecoder.decode(cipheredSessionId)
         val cipher: Cipher = Cipher.getInstance("AES")
         cipher.init(Cipher.DECRYPT_MODE, secret)
         val sessionId = new String(cipher.doFinal(sessionIdBytes))
         env.datastores.rawDataStore.get(s"${env.rootScheme}:self-service:sessions:$sessionId").flatMap {
-          case None => NotFound( Json.obj("error" -> s"session not found")).future
+          case None => NotFound(Json.obj("error" -> s"session not found")).future
           case Some(sessionRaw) => {
             env.datastores.rawDataStore.pttl(s"${env.rootScheme}:self-service:sessions:$sessionId").flatMap { ttl =>
-              val session = Json.parse(sessionRaw.utf8String)
+              val session  = Json.parse(sessionRaw.utf8String)
               val username = (session \ "username").as[String]
-              val id = (session \ "auth").as[String]
+              val id       = (session \ "auth").as[String]
               env.datastores.authConfigsDataStore.findById(id).flatMap {
                 case Some(auth) => {
                   auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
                     case bam: BasicAuthModule if bam.authConfig.webauthn => {
                       bam.authConfig.users.find(_.email == username) match {
-                        case None => NotFound( Json.obj("error" -> s"user not found")).future
+                        case None => NotFound(Json.obj("error" -> s"user not found")).future
                         case Some(user) => {
                           f(bam, user, ttl)
                         }
@@ -87,17 +90,27 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   def registerSessionForUser(authModuleId: String, username: String): Future[(String, String)] = {
     import scala.concurrent.duration._
     val sessionId = IdGenerator.token(32)
-    env.datastores.rawDataStore.set(s"${env.rootScheme}:self-service:sessions:$sessionId", ByteString(Json.stringify(Json.obj(
-      "username" -> username,
-      "auth" -> authModuleId
-    ))), Some(10.minutes.toMillis)).map { _ =>
-      val host = "http://" + env.privateAppsHost + env.privateAppsPort.map(p => ":" + p).getOrElse("")
-      val cipher: Cipher = Cipher.getInstance("AES")
-      cipher.init(Cipher.ENCRYPT_MODE, secret)
-      val bytes = cipher.doFinal(sessionId.getBytes)
-      val cipheredSessionId = java.util.Base64.getUrlEncoder.encodeToString(bytes)
-      (cipheredSessionId, host)
-    }
+    env.datastores.rawDataStore
+      .set(
+        s"${env.rootScheme}:self-service:sessions:$sessionId",
+        ByteString(
+          Json.stringify(
+            Json.obj(
+              "username" -> username,
+              "auth"     -> authModuleId
+            )
+          )
+        ),
+        Some(10.minutes.toMillis)
+      )
+      .map { _ =>
+        val host           = "http://" + env.privateAppsHost + env.privateAppsPort.map(p => ":" + p).getOrElse("")
+        val cipher: Cipher = Cipher.getInstance("AES")
+        cipher.init(Cipher.ENCRYPT_MODE, secret)
+        val bytes             = cipher.doFinal(sessionId.getBytes)
+        val cipheredSessionId = java.util.Base64.getUrlEncoder.encodeToString(bytes)
+        (cipheredSessionId, host)
+      }
   }
 
   def registerSession(authModuleId: String, username: String) = ApiAction.async { ctx =>
@@ -110,9 +123,9 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     withShortSession(req) {
       case (bam, _, _) =>
         bam.webAuthnRegistrationStart(req.body.asJson.get).map {
-          case Left(err) => BadRequest(err)
+          case Left(err)  => BadRequest(err)
           case Right(reg) => Ok(reg)
-      }
+        }
     }
   }
 
@@ -120,7 +133,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     withShortSession(req) {
       case (bam, _, _) =>
         bam.webAuthnRegistrationFinish(req.body.asJson.get).map {
-          case Left(err) => BadRequest(err)
+          case Left(err)  => BadRequest(err)
           case Right(reg) => Ok(reg)
         }
     }
@@ -130,7 +143,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     withShortSession(req) {
       case (bam, user, _) =>
         bam.webAuthnRegistrationDelete(user).map {
-          case Left(err) => BadRequest(err)
+          case Left(err)  => BadRequest(err)
           case Right(reg) => Ok(reg)
         }
     }
@@ -142,9 +155,9 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
         Ok(
           views.html.otoroshi.selfUpdate(
             Json.obj(
-              "name" -> user.name,
-              "email" -> user.email,
-              "hasWebauthnDeviceReg" -> user.webauthn.isDefined,
+              "name"                  -> user.name,
+              "email"                 -> user.email,
+              "hasWebauthnDeviceReg"  -> user.webauthn.isDefined,
               "mustRegWebauthnDevice" -> bam.authConfig.webauthn
             ),
             req.getQueryString("session").get,
@@ -162,8 +175,8 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
         var newUser = user
         (req.body \ "password").asOpt[String] match {
           case Some(pass) if BCrypt.checkpw(pass, user.password) => {
-            val name = (req.body \ "name").asOpt[String].getOrElse(user.name)
-            val newPassword = (req.body \ "newPassword").asOpt[String]
+            val name          = (req.body \ "name").asOpt[String].getOrElse(user.name)
+            val newPassword   = (req.body \ "newPassword").asOpt[String]
             val reNewPassword = (req.body \ "reNewPassword").asOpt[String]
             (newPassword, reNewPassword) match {
               case (Some(p1), Some(p2)) if p1 == p2 =>
@@ -171,24 +184,28 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
                 newUser = newUser.copy(name = name, password = password)
                 val conf = bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
                 conf.save().map { _ =>
-                  Ok(Json.obj(
-                    "name" -> newUser.name,
-                    "email" -> newUser.email,
-                    "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
-                    "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-                  ))
+                  Ok(
+                    Json.obj(
+                      "name"                  -> newUser.name,
+                      "email"                 -> newUser.email,
+                      "hasWebauthnDeviceReg"  -> newUser.webauthn.isDefined,
+                      "mustRegWebauthnDevice" -> bam.authConfig.webauthn
+                    )
+                  )
                 }
               case (None, None) =>
                 val password = user.password
                 newUser = newUser.copy(name = name, password = password)
                 val conf = bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
                 conf.save().map { _ =>
-                  Ok(Json.obj(
-                    "name" -> newUser.name,
-                    "email" -> newUser.email,
-                    "hasWebauthnDeviceReg" -> newUser.webauthn.isDefined,
-                    "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-                  ))
+                  Ok(
+                    Json.obj(
+                      "name"                  -> newUser.name,
+                      "email"                 -> newUser.email,
+                      "hasWebauthnDeviceReg"  -> newUser.webauthn.isDefined,
+                      "mustRegWebauthnDevice" -> bam.authConfig.webauthn
+                    )
+                  )
                 }
               case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 1")))
             }
@@ -206,7 +223,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
             auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
               case bam: BasicAuthModule if bam.authConfig.webauthn => {
                 bam.authConfig.users.find(_.email == username) match {
-                  case None => NotFound( Json.obj("error" -> s"user not found")).future
+                  case None => NotFound(Json.obj("error" -> s"user not found")).future
                   case Some(user) => {
                     env.datastores.globalConfigDataStore
                       .singleton()
@@ -223,9 +240,10 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
                             )
                           )
                           .getOrElse(FastFuture.successful(()))
-                      }.map { _ =>
-                      Ok(Json.obj("done" -> true))
-                    }
+                      }
+                      .map { _ =>
+                        Ok(Json.obj("done" -> true))
+                      }
                   }
                 }
               }

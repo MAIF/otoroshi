@@ -17,7 +17,7 @@ import {
   Help,
   Form,
   LabelInput,
-  HelpInput
+  HelpInput,
 } from '../components/inputs';
 import faker from 'faker';
 import deepSet from 'set-value';
@@ -40,10 +40,10 @@ function shallowDiffers(a, b) {
 }
 
 class Target extends Component {
-  state = { 
-    showMore: false, 
+  state = {
+    showMore: false,
     dirtyTarget: null,
-    url: this.props.itemValue.scheme + '://' + this.props.itemValue.host 
+    url: this.props.itemValue.scheme + '://' + this.props.itemValue.host,
   };
 
   changeTheValue = (key, value) => {
@@ -83,15 +83,15 @@ class Target extends Component {
       const scheme = (t.split('://')[0] || '').replace('://', '');
       const host = (t.split('://')[1] || '').replace('://', '');
       //this.setState({ dirtyTarget: null }, () => {
-        this.changeTheValue('scheme', scheme);
-        this.changeTheValue('host', host);
+      this.changeTheValue('scheme', scheme);
+      this.changeTheValue('host', host);
       //});
     } else {
       // this.setState({ dirtyTarget: t });
     }
   };
 
-  renderFirstLine = (value) => {
+  renderFirstLine = value => {
     return (
       <TextInput
         label={`Target ${this.props.idx + 1}`}
@@ -115,16 +115,12 @@ class Target extends Component {
         )}
       />
     );
-  }
+  };
 
   render() {
     const value = this.props.itemValue;
     if (!this.state.showMore) {
-      return (
-        <div style={{ marginLeft: 0, marginRight: 0 }}>
-          {this.renderFirstLine(value)}
-        </div>
-      );
+      return <div style={{ marginLeft: 0, marginRight: 0 }}>{this.renderFirstLine(value)}</div>;
     }
     return (
       <div style={{ marginLeft: 0, marginRight: 0 }}>
@@ -135,8 +131,8 @@ class Target extends Component {
           value={value.host}
           help="The host of the target"
           onChange={e => {
-            this.setState({ url: value.scheme + '://' + e })
-            this.changeTheValue('host', e)
+            this.setState({ url: value.scheme + '://' + e });
+            this.changeTheValue('host', e);
           }}
         />
         <TextInput
@@ -145,8 +141,8 @@ class Target extends Component {
           value={value.scheme}
           help="The Scheme of the target"
           onChange={e => {
-            this.setState({ url: e + '://' + value.host })
-            this.changeTheValue('scheme', e)
+            this.setState({ url: e + '://' + value.host });
+            this.changeTheValue('scheme', e);
           }}
         />
         <NumberInput
@@ -635,26 +631,32 @@ export class ServicePage extends Component {
   deleteService = e => {
     if (e && e.preventDefault) e.preventDefault();
     if (this.state.env.adminApiId === this.state.service.id) {
-      window.newConfirm(`The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`).then(ok1 => {
-        if (ok1) {
-          window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
-            if (ok1 && ok2) {
-              window
-                .newPrompt(`Type the name of the service (${this.state.service.name}) to delete it`)
-                .then(name => {
-                  if (name && name === this.state.service.name) {
-                    BackOfficeServices.deleteService(this.state.service).then(() => {
-                      window.location.href = `/bo/dashboard/services`;
-                      // this.props.history.push({
-                      //   pathname: `/lines/${this.state.service.env}/services`
-                      // });
-                    });
-                  }
-                });
-            }
-          });
-        }
-      });
+      window
+        .newConfirm(
+          `The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`
+        )
+        .then(ok1 => {
+          if (ok1) {
+            window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
+              if (ok1 && ok2) {
+                window
+                  .newPrompt(
+                    `Type the name of the service (${this.state.service.name}) to delete it`
+                  )
+                  .then(name => {
+                    if (name && name === this.state.service.name) {
+                      BackOfficeServices.deleteService(this.state.service).then(() => {
+                        window.location.href = `/bo/dashboard/services`;
+                        // this.props.history.push({
+                        //   pathname: `/lines/${this.state.service.env}/services`
+                        // });
+                      });
+                    }
+                  });
+              }
+            });
+          }
+        });
     } else {
       window
         .newPrompt(`Type the name of the service (${this.state.service.name}) to delete it`)
@@ -780,10 +782,9 @@ export class ServicePage extends Component {
   };
 
   mergeConfig = (item, index, oldConfig, cb) => {
-
     function copyConfig() {
       if (Array.isArray(oldConfig)) {
-        return [ ...oldConfig ];
+        return [...oldConfig];
       } else {
         return { ...oldConfig };
       }
@@ -791,7 +792,7 @@ export class ServicePage extends Component {
 
     function appendToConfig(conf, what) {
       if (Array.isArray(conf)) {
-        const newConf = [ ...conf ];
+        const newConf = [...conf];
         newConf[index] = { ...what };
         return newConf;
       } else {
@@ -802,7 +803,7 @@ export class ServicePage extends Component {
 
     let newConfig = copyConfig();
     if (item) {
-      console.log('item')
+      console.log('item');
       if (item === 'cp:otoroshi.script.ExternalHttpValidator') {
         newConfig = appendToConfig(newConfig, {
           _cfgFor: 'otoroshi.script.ExternalHttpValidator',
@@ -816,27 +817,27 @@ export class ServicePage extends Component {
           noCache: false,
           allowNoClientCert: false,
           headers: {},
-          proxy: null
+          proxy: null,
         });
       } else if (item === 'cp:otoroshi.script.HasClientCertMatchingValidator') {
         newConfig = appendToConfig(newConfig, {
           _cfgFor: 'otoroshi.script.HasClientCertMatchingValidator',
           subjectDNs: ['CN=localhost'],
-          issuerDNs: ['CN=remotehost']
+          issuerDNs: ['CN=remotehost'],
         });
       } else if (item === 'cp:otoroshi.script.HasAllowedUsersValidator') {
         newConfig = appendToConfig(newConfig, {
           _cfgFor: 'otoroshi.script.HasAllowedUsersValidator',
           usernames: [],
           emails: [],
-          emailDomains: []
+          emailDomains: [],
         });
       } else if (item === 'cp:otoroshi.script.HasAllowedApiKeyValidator') {
         newConfig = appendToConfig(newConfig, {
           _cfgFor: 'otoroshi.script.HasAllowedApiKeyValidator',
           clientIds: [],
           tags: [],
-          metadata: {}
+          metadata: {},
         });
       } else {
         newConfig = appendToConfig(newConfig, {
@@ -850,7 +851,7 @@ export class ServicePage extends Component {
       }
       cb(newConfig);
     }
-  }
+  };
 
   render() {
     if (!this.state.service) return null;
@@ -1344,18 +1345,22 @@ export class ServicePage extends Component {
                 />
               </div>
             )}
-            {!this.state.service.tcpUdpTunneling && <TextInput
-              label="Targets root"
-              placeholder="The root URL of the target service"
-              value={this.state.service.root}
-              help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
-              onChange={e => this.changeTheValue('root', e)}
-            />}
-            {!this.state.service.tcpUdpTunneling && <LinkDisplay
-              link={`${this.state.service.targets[0].scheme}://${
-                this.state.service.targets[0].host
-              }${this.state.service.root}`}
-            />}
+            {!this.state.service.tcpUdpTunneling && (
+              <TextInput
+                label="Targets root"
+                placeholder="The root URL of the target service"
+                value={this.state.service.root}
+                help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
+                onChange={e => this.changeTheValue('root', e)}
+              />
+            )}
+            {!this.state.service.tcpUdpTunneling && (
+              <LinkDisplay
+                link={`${this.state.service.targets[0].scheme}://${
+                  this.state.service.targets[0].host
+                }${this.state.service.root}`}
+              />
+            )}
           </Collapse>
           <Collapse
             notVisible={this.state.service.redirection.enabled}
@@ -1393,7 +1398,9 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
+            notVisible={
+              this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
+            }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Restrictions">
@@ -1403,7 +1410,9 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
+            notVisible={
+              this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
+            }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Otoroshi exchange protocol">
@@ -1939,7 +1948,7 @@ export class ServicePage extends Component {
                   transformer={a => ({ value: a.id, label: a.name })}
                   help="..."
                 />*/}
-                <ArrayInput 
+                <ArrayInput
                   label="Verifiers"
                   value={this.state.service.jwtVerifier.ids}
                   onChange={e => this.changeTheValue('jwtVerifier.ids', e)}
@@ -1961,15 +1970,16 @@ export class ServicePage extends Component {
                         <i className="glyphicon glyphicon-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}
-                    {this.state.service.jwtVerifier.ids.length > 0 && (
+                    {this.state.service.jwtVerifier.ids.length > 0 &&
                       this.state.service.jwtVerifier.ids.map(id => {
-                        return <a
-                          href={`/bo/dashboard/jwt-verifiers/edit/${id}`}
-                          className="btn btn-success">
-                          <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
-                        </a>
-                      })
-                    )}
+                        return (
+                          <a
+                            href={`/bo/dashboard/jwt-verifiers/edit/${id}`}
+                            className="btn btn-success">
+                            <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
+                          </a>
+                        );
+                      })}
                   </div>
                 </div>
               </div>
@@ -1999,7 +2009,7 @@ export class ServicePage extends Component {
               label="Access validator"
               value={this.state.service.accessValidator.refs}
               onChange={(e, item, index) => {
-                this.changeTheValue('accessValidator.refs', e)
+                this.changeTheValue('accessValidator.refs', e);
                 // this.mergeConfig(item, index, this.state.service.accessValidator.config, newConfig => {
                 //   setTimeout(() => {
                 //     this.changeTheValue('accessValidator.config', newConfig);
@@ -2052,7 +2062,10 @@ export class ServicePage extends Component {
               loading={true}
               value={
                 <p>
-                  For more information about configuration, see the <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L401">documentation</a>
+                  For more information about configuration, see the{' '}
+                  <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L401">
+                    documentation
+                  </a>
                 </p>
               }
             />
@@ -2063,7 +2076,7 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Validation authority">
             <div class="form-group">
-              <label class="col-xs-12 col-sm-2 control-label"></label>
+              <label class="col-xs-12 col-sm-2 control-label" />
               <div class="col-sm-10">
                 <div
                   style={{
@@ -2073,11 +2086,13 @@ export class ServicePage extends Component {
                     width: '100%',
                   }}>
                   <p style={{ textAlign: 'justify' }}>
-                    <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities are deprecated and will be removed in a near future. 
-                    <br/>
+                    <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities are
+                    deprecated and will be removed in a near future.
+                    <br />
                     Please use <b>Access validator</b> instead (see above).
-                    <br/>
-                    If you defined a validation authority and an <b>access validator</b> at the same time, then the validation authority will be bypassed
+                    <br />
+                    If you defined a validation authority and an <b>access validator</b> at the same
+                    time, then the validation authority will be bypassed
                   </p>
                 </div>
               </div>
@@ -2116,7 +2131,9 @@ export class ServicePage extends Component {
             </div>
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
+            notVisible={
+              this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
+            }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Gzip support">
@@ -2292,7 +2309,9 @@ export class ServicePage extends Component {
             )}
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
+            notVisible={
+              this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
+            }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="HTTP Headers">
@@ -2555,7 +2574,9 @@ export class ServicePage extends Component {
             </div>
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
+            notVisible={
+              this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
+            }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="HealthCheck settings">
@@ -2573,7 +2594,9 @@ export class ServicePage extends Component {
             />
           </Collapse>
           <Collapse
-            notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
+            notVisible={
+              this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
+            }
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Faults injection">

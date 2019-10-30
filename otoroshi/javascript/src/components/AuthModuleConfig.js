@@ -20,61 +20,67 @@ import faker from 'faker';
 import bcrypt from 'bcryptjs';
 
 function Base64Url() {
-
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
   // Use a lookup table to find the index.
   let lookup = new Uint8Array(256);
   for (let i = 0; i < chars.length; i++) {
-      lookup[chars.charCodeAt(i)] = i;
+    lookup[chars.charCodeAt(i)] = i;
   }
 
   let encode = function(arraybuffer) {
-      let bytes = new Uint8Array(arraybuffer),
-      i, len = bytes.length, base64url = '';
+    let bytes = new Uint8Array(arraybuffer),
+      i,
+      len = bytes.length,
+      base64url = '';
 
-      for (i = 0; i < len; i+=3) {
-          base64url += chars[bytes[i] >> 2];
-          base64url += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
-          base64url += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
-          base64url += chars[bytes[i + 2] & 63];
-      }
+    for (i = 0; i < len; i += 3) {
+      base64url += chars[bytes[i] >> 2];
+      base64url += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
+      base64url += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
+      base64url += chars[bytes[i + 2] & 63];
+    }
 
-      if ((len % 3) === 2) {
-          base64url = base64url.substring(0, base64url.length - 1);
-      } else if (len % 3 === 1) {
-          base64url = base64url.substring(0, base64url.length - 2);
-      }
+    if (len % 3 === 2) {
+      base64url = base64url.substring(0, base64url.length - 1);
+    } else if (len % 3 === 1) {
+      base64url = base64url.substring(0, base64url.length - 2);
+    }
 
-      return base64url;
+    return base64url;
   };
 
   let decode = function(base64string) {
-      let bufferLength = base64string.length * 0.75,
-      len = base64string.length, i, p = 0,
-      encoded1, encoded2, encoded3, encoded4;
+    let bufferLength = base64string.length * 0.75,
+      len = base64string.length,
+      i,
+      p = 0,
+      encoded1,
+      encoded2,
+      encoded3,
+      encoded4;
 
-      let bytes = new Uint8Array(bufferLength);
+    let bytes = new Uint8Array(bufferLength);
 
-      for (i = 0; i < len; i+=4) {
-          encoded1 = lookup[base64string.charCodeAt(i)];
-          encoded2 = lookup[base64string.charCodeAt(i+1)];
-          encoded3 = lookup[base64string.charCodeAt(i+2)];
-          encoded4 = lookup[base64string.charCodeAt(i+3)];
+    for (i = 0; i < len; i += 4) {
+      encoded1 = lookup[base64string.charCodeAt(i)];
+      encoded2 = lookup[base64string.charCodeAt(i + 1)];
+      encoded3 = lookup[base64string.charCodeAt(i + 2)];
+      encoded4 = lookup[base64string.charCodeAt(i + 3)];
 
-          bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-          bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-          bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
-      }
+      bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+      bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+      bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+    }
 
-      return bytes.buffer
+    return bytes.buffer;
   };
 
   return {
-    'decode': decode,
-    'encode': encode,
-    'fromByteArray': encode,
-    'toByteArray': decode
+    decode: decode,
+    encode: encode,
+    fromByteArray: encode,
+    toByteArray: decode,
   };
 }
 
@@ -110,7 +116,8 @@ function responseToObject(response) {
           authenticatorData: base64url.fromByteArray(response.response.authenticatorData),
           clientDataJSON: base64url.fromByteArray(response.response.clientDataJSON),
           signature: base64url.fromByteArray(response.response.signature),
-          userHandle: response.response.userHandle && base64url.fromByteArray(response.response.userHandle),
+          userHandle:
+            response.response.userHandle && base64url.fromByteArray(response.response.userHandle),
         },
         clientExtensionResults,
       };
@@ -147,7 +154,7 @@ export class Oauth2ModuleConfig extends Component {
     apiKeyMetaField: 'apkMeta',
     apiKeyTagsField: 'apkTags',
     otoroshiDataField: 'app_metadata | otoroshi_data',
-    extraMetadata: {}
+    extraMetadata: {},
   };
 
   componentDidCatch(error) {
@@ -402,7 +409,7 @@ export class Oauth2ModuleConfig extends Component {
             if (e.trim() === '') {
               this.changeTheValue(path + '.extraMetadata', {});
             } else {
-              this.changeTheValue(path + '.extraMetadata', JSON.parse(e))
+              this.changeTheValue(path + '.extraMetadata', JSON.parse(e));
             }
           }}
         />
@@ -445,12 +452,11 @@ export class User extends Component {
   };
 
   handleErrorWithMessage = message => () => {
-    console.log('error', message)
+    console.log('error', message);
     this.setState({ error: message });
   };
 
-  registerWebAuthn = (e) => {
-
+  registerWebAuthn = e => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -470,46 +476,60 @@ export class User extends Component {
           username,
           password: '',
           label,
-          origin: window.location.origin
-        })
-      }).then(r => r.json()).then(resp => {
-        const requestId = resp.requestId;
-        const publicKeyCredentialCreationOptions = resp.request;
-        const handle = publicKeyCredentialCreationOptions.user.id + '';
-        publicKeyCredentialCreationOptions.challenge = base64url.decode(publicKeyCredentialCreationOptions.challenge);
-        publicKeyCredentialCreationOptions.user.id = base64url.decode(publicKeyCredentialCreationOptions.user.id);
-        return navigator.credentials.create({
-          publicKey: publicKeyCredentialCreationOptions
-        }, this.handleErrorWithMessage('Webauthn error')).then(credentials => {
-          const json = responseToObject(credentials);
-          return fetch(`/bo/api/proxy/api/auths/${this.props.authModuleId}/register/finish`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-              requestId,
-              webauthn: json, 
-              otoroshi: { 
-                origin: window.location.origin,
-                username,
-                password: '',
-                label,
-                handle
-              } 
-            }),
-          }).then(r => r.json()).then(resp => {
-            this.props.updateAll();
-            console.log('done');
-            this.setState({
-              error: null,
-              message: `Registration done for '${username}'`,
-            });
-          });
-        }, this.handleErrorWithMessage('Webauthn error')).catch(this.handleError);
-      });
+          origin: window.location.origin,
+        }),
+      })
+        .then(r => r.json())
+        .then(resp => {
+          const requestId = resp.requestId;
+          const publicKeyCredentialCreationOptions = resp.request;
+          const handle = publicKeyCredentialCreationOptions.user.id + '';
+          publicKeyCredentialCreationOptions.challenge = base64url.decode(
+            publicKeyCredentialCreationOptions.challenge
+          );
+          publicKeyCredentialCreationOptions.user.id = base64url.decode(
+            publicKeyCredentialCreationOptions.user.id
+          );
+          return navigator.credentials
+            .create(
+              {
+                publicKey: publicKeyCredentialCreationOptions,
+              },
+              this.handleErrorWithMessage('Webauthn error')
+            )
+            .then(credentials => {
+              const json = responseToObject(credentials);
+              return fetch(`/bo/api/proxy/api/auths/${this.props.authModuleId}/register/finish`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  requestId,
+                  webauthn: json,
+                  otoroshi: {
+                    origin: window.location.origin,
+                    username,
+                    password: '',
+                    label,
+                    handle,
+                  },
+                }),
+              })
+                .then(r => r.json())
+                .then(resp => {
+                  this.props.updateAll();
+                  console.log('done');
+                  this.setState({
+                    error: null,
+                    message: `Registration done for '${username}'`,
+                  });
+                });
+            }, this.handleErrorWithMessage('Webauthn error'))
+            .catch(this.handleError);
+        });
     });
   };
 
@@ -518,9 +538,9 @@ export class User extends Component {
       <div
         style={{
           display: 'flex',
-          marginTop: 10
+          marginTop: 10,
         }}>
-        <div className="csol-sm-10 row" style={{ width: "80%", paddingLeft: 15, paddingRight: 20 }}>
+        <div className="csol-sm-10 row" style={{ width: '80%', paddingLeft: 15, paddingRight: 20 }}>
           <input
             type="text"
             placeholder="User name"
@@ -592,20 +612,40 @@ export class User extends Component {
               className="btn btn-sm btn-info"
               title="Update profile link"
               onClick={e => {
-                return fetch(`/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${this.props.user.email}`, {
-                  method: 'POST',
-                  credentials: 'include',
-                  headers: {
-                    Accept: 'application/json',
-                  },
-                }).then(r => r.json()).then(r => {
-                  console.log(r);
-                  const sessionId = r.sessionId;
-                  window.newAlert(<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                    <p>The link to update user profile is usable for the next 10 minutes</p>
-                    <a target="_blank" href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
-                  </div>, 'Profile updates');
-                });
+                return fetch(
+                  `/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${
+                    this.props.user.email
+                  }`,
+                  {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                      Accept: 'application/json',
+                    },
+                  }
+                )
+                  .then(r => r.json())
+                  .then(r => {
+                    console.log(r);
+                    const sessionId = r.sessionId;
+                    window.newAlert(
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}>
+                        <p>The link to update user profile is usable for the next 10 minutes</p>
+                        <a
+                          target="_blank"
+                          href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${
+                          r.host
+                        }/privateapps/profile?session=${sessionId}`}</a>
+                      </div>,
+                      'Profile updates'
+                    );
+                  });
               }}
               style={{ marginRight: 0 }}>
               <i className="glyphicon glyphicon-link" />
@@ -613,22 +653,29 @@ export class User extends Component {
           )}
           {this.props.webauthn && (
             <button
-            type="button"
-            className="btn btn-sm btn-info"
-            title="Send update profile link to user"
-            onClick={e => {
-              return fetch(`/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${this.props.user.email}`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                  Accept: 'application/json',
-                },
-              }).then(r => r.json()).then(r => {
-                window.newAlert("The email containing update link has been sent", "Email sent");
-              });
-            }}
-            style={{ marginRight: 0 }}>
-            <i className="glyphicon glyphicon-envelope" />
+              type="button"
+              className="btn btn-sm btn-info"
+              title="Send update profile link to user"
+              onClick={e => {
+                return fetch(
+                  `/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${
+                    this.props.user.email
+                  }`,
+                  {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                      Accept: 'application/json',
+                    },
+                  }
+                )
+                  .then(r => r.json())
+                  .then(r => {
+                    window.newAlert('The email containing update link has been sent', 'Email sent');
+                  });
+              }}
+              style={{ marginRight: 0 }}>
+              <i className="glyphicon glyphicon-envelope" />
             </button>
           )}
           {this.props.webauthn && (
@@ -638,7 +685,7 @@ export class User extends Component {
               onClick={this.registerWebAuthn}
               title="Register webauthn device"
               style={{ marginRight: 0 }}>
-            <i className="glyphicon glyphicon-lock" />
+              <i className="glyphicon glyphicon-lock" />
             </button>
           )}
           <button
@@ -719,13 +766,15 @@ export class BasicModuleConfig extends Component {
 
   updateAll = () => {
     const settings = this.props.value || this.props.settings;
-    return BackOfficeServices.findAuthConfigById(settings.id).then(auth => this.props.onChange(auth));
-  }
+    return BackOfficeServices.findAuthConfigById(settings.id).then(auth =>
+      this.props.onChange(auth)
+    );
+  };
 
   save = () => {
     const settings = this.props.value || this.props.settings;
     return BackOfficeServices.updateAuthConfig(settings).then(auth => this.props.onChange(auth));
-  }
+  };
 
   render() {
     const settings = this.props.value || this.props.settings;
@@ -969,11 +1018,11 @@ export class LdapModuleConfig extends Component {
           mode="json"
           value={JSON.stringify(settings.extraMetadata, null, 2)}
           onChange={e => {
-            console.log('changes "', e, '"')
+            console.log('changes "', e, '"');
             if (e.trim() === '') {
               this.changeTheValue(path + '.extraMetadata', {});
             } else {
-              this.changeTheValue(path + '.extraMetadata', JSON.parse(e))
+              this.changeTheValue(path + '.extraMetadata', JSON.parse(e));
             }
           }}
         />
@@ -1021,7 +1070,7 @@ export class AuthModuleConfig extends Component {
                 emailField: 'mail',
                 metadataField: null,
                 sessionMaxAge: 86400,
-                extraMetadata: {}
+                extraMetadata: {},
               });
               break;
             case 'oauth2':
@@ -1050,7 +1099,7 @@ export class AuthModuleConfig extends Component {
                 nameField: 'name',
                 emailField: 'email',
                 otoroshiDataField: 'app_metadata | otoroshi_data',
-                extraMetadata: {}
+                extraMetadata: {},
               });
               break;
           }

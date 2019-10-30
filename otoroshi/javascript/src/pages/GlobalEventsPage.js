@@ -35,7 +35,10 @@ export class GlobalEventsPage extends Component {
           type="button"
           className="btn btn-success btn-xs"
           onClick={e =>
-            window.newAlert(<pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>, 'Content')
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
+              'Content'
+            )
           }>
           content
         </button>
@@ -129,11 +132,10 @@ export class GlobalEventsPage extends Component {
   fetchEvents = () => {
     const query = queryString.parse(window.location.search);
     const limit = query.limit || this.state.limit;
-    return BackOfficeServices.fetchGlobalEvents(
-      this.state.from,
-      this.state.to,
-      limit
-    ).then(d => d.events, err => console.error(err));
+    return BackOfficeServices.fetchGlobalEvents(this.state.from, this.state.to, limit).then(
+      d => d.events,
+      err => console.error(err)
+    );
   };
 
   updateDateRange = (from, to) => {

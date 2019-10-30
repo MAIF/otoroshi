@@ -351,12 +351,7 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'Client',
-      content: item =>
-        !item.client ? (
-          'no'
-        ) : (
-          <span className="label label-success">yes</span>
-        ),
+      content: item => (!item.client ? 'no' : <span className="label label-success">yes</span>),
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
     },

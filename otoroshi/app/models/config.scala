@@ -121,11 +121,11 @@ object Proxies {
 }
 
 case class GlobalScripts(
-  enabled: Boolean = false,
-  transformersRefs: Seq[String] = Seq.empty,
-  transformersConfig: JsValue = Json.obj(),
-  validatorRefs: Seq[String] = Seq.empty,
-  validatorConfig: JsValue = Json.obj(),
+    enabled: Boolean = false,
+    transformersRefs: Seq[String] = Seq.empty,
+    transformersConfig: JsValue = Json.obj(),
+    validatorRefs: Seq[String] = Seq.empty,
+    validatorConfig: JsValue = Json.obj(),
 ) {
   def json: JsValue = GlobalScripts.format.writes(this)
 }
@@ -133,7 +133,7 @@ case class GlobalScripts(
 object GlobalScripts {
   val format = new Format[GlobalScripts] {
     override def writes(o: GlobalScripts): JsValue = Json.obj(
-      "enabled"     -> o.enabled,
+      "enabled"            -> o.enabled,
       "transformersRefs"   -> JsArray(o.transformersRefs.map(JsString.apply)),
       "transformersConfig" -> o.transformersConfig,
       "validatorRefs"      -> JsArray(o.validatorRefs.map(JsString.apply)),
@@ -143,8 +143,8 @@ object GlobalScripts {
       Try {
         JsSuccess(
           GlobalScripts(
-            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty) ,
-            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty) ,
+            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             transformersConfig = (json \ "transformersConfig").asOpt[JsValue].getOrElse(Json.obj()),
             validatorConfig = (json \ "validatorConfig").asOpt[JsValue].getOrElse(Json.obj()),
@@ -155,7 +155,6 @@ object GlobalScripts {
       } get
   }
 }
-
 
 case class GlobalConfig(
     lines: Seq[String] = Seq("prod"),

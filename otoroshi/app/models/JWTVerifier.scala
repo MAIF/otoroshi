@@ -108,8 +108,9 @@ case class InHeader(name: String, remove: String = "") extends JwtTokenLocation 
       h.replaceAll(remove, "")
     }
   }
-  def asJwtInjection(newToken: String): JwtInjection = JwtInjection(additionalHeaders = Map(name -> (remove + newToken)))
-  override def asJson                                = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
+  def asJwtInjection(newToken: String): JwtInjection =
+    JwtInjection(additionalHeaders = Map(name -> (remove + newToken)))
+  override def asJson = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
 }
 object InCookie extends FromJson[InCookie] {
   override def fromJson(json: JsValue): Either[Throwable, InCookie] =
@@ -585,21 +586,29 @@ sealed trait VerifierStrategy extends AsJson {
 object DefaultToken extends FromJson[VerifierStrategy] {
   override def fromJson(json: JsValue): Either[Throwable, VerifierStrategy] =
     Try {
-      Right(DefaultToken(
-        strict = (json \ "strict").asOpt[Boolean].getOrElse(true),
-        token = (json \ "token").asOpt[JsValue].getOrElse(Json.obj()),
-        verificationSettings = VerificationSettings.fromJson((json \ "verificationSettings").as[JsValue]).toOption.getOrElse(VerificationSettings())
-      ))
+      Right(
+        DefaultToken(
+          strict = (json \ "strict").asOpt[Boolean].getOrElse(true),
+          token = (json \ "token").asOpt[JsValue].getOrElse(Json.obj()),
+          verificationSettings = VerificationSettings
+            .fromJson((json \ "verificationSettings").as[JsValue])
+            .toOption
+            .getOrElse(VerificationSettings())
+        )
+      )
     } recover {
       case e => Left(e)
     } get
 }
 
-case class DefaultToken(strict: Boolean = true, token: JsValue, verificationSettings: VerificationSettings = VerificationSettings()) extends VerifierStrategy {
+case class DefaultToken(strict: Boolean = true,
+                        token: JsValue,
+                        verificationSettings: VerificationSettings = VerificationSettings())
+    extends VerifierStrategy {
   override def asJson = Json.obj(
-    "type"   -> "DefaultToken",
-    "strict" -> strict,
-    "token"  -> token,
+    "type"                 -> "DefaultToken",
+    "strict"               -> strict,
+    "token"                -> token,
     "verificationSettings" -> verificationSettings.asJson
   )
 }
@@ -689,7 +698,11 @@ sealed trait JwtVerifier extends AsJson {
     s"$content.$signature"
   }
 
-  def verifyWs(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser], elContext: Map[String, String])(
+  def verifyWs(request: RequestHeader,
+               desc: ServiceDescriptor,
+               apikey: Option[ApiKey],
+               user: Option[PrivateAppsUser],
+               elContext: Map[String, String])(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     internalVerify(request, desc, apikey, user, elContext)(f).map {
@@ -698,7 +711,11 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
-  def verify(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser], elContext: Map[String, String])(
+  def verify(request: RequestHeader,
+             desc: ServiceDescriptor,
+             apikey: Option[ApiKey],
+             user: Option[PrivateAppsUser],
+             elContext: Map[String, String])(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     internalVerify(request, desc, apikey, user, elContext)(f).map {
@@ -707,57 +724,71 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
-  private[models] def internalVerify[A](request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser], elContext: Map[String, String])(
+  private[models] def internalVerify[A](request: RequestHeader,
+                                        desc: ServiceDescriptor,
+                                        apikey: Option[ApiKey],
+                                        user: Option[PrivateAppsUser],
+                                        elContext: Map[String, String])(
       f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
     import Implicits._
 
     source.token(request) match {
-      case None => strategy match {
-        case DefaultToken(true, newToken, _) => {
-          algoSettings.asAlgorithmF(OutputMode) flatMap {
-            case None =>
-              Errors
-                .craftResponseResult(
-                  "error.bad.output.algorithm.name",
-                  Results.BadRequest,
-                  request,
-                  Some(desc),
-                  None
-                )
-                .left[A]
-            case Some(outputAlgorithm) => {
-              val interpolatedToken = JwtExpressionLanguage.fromJson(newToken, Some(request), Some(desc), apikey, user, elContext ++ Map(
-                "jti" -> IdGenerator.uuid,
-                "iat" -> Math.floor(System.currentTimeMillis() / 1000).toString,
-                "nbf" -> Math.floor(System.currentTimeMillis() / 1000).toString,
-                "iss" -> "Otoroshi",
-                "exp" -> Math.floor((System.currentTimeMillis() + 60) / 1000).toString,
-                "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
-                "aud" -> "backend"
-              )).as[JsObject]
-              val signedToken = sign(interpolatedToken, outputAlgorithm)
-              f(source.asJwtInjection(signedToken)).right[Result]
+      case None =>
+        strategy match {
+          case DefaultToken(true, newToken, _) => {
+            algoSettings.asAlgorithmF(OutputMode) flatMap {
+              case None =>
+                Errors
+                  .craftResponseResult(
+                    "error.bad.output.algorithm.name",
+                    Results.BadRequest,
+                    request,
+                    Some(desc),
+                    None
+                  )
+                  .left[A]
+              case Some(outputAlgorithm) => {
+                val interpolatedToken = JwtExpressionLanguage
+                  .fromJson(
+                    newToken,
+                    Some(request),
+                    Some(desc),
+                    apikey,
+                    user,
+                    elContext ++ Map(
+                      "jti" -> IdGenerator.uuid,
+                      "iat" -> Math.floor(System.currentTimeMillis() / 1000).toString,
+                      "nbf" -> Math.floor(System.currentTimeMillis() / 1000).toString,
+                      "iss" -> "Otoroshi",
+                      "exp" -> Math.floor((System.currentTimeMillis() + 60) / 1000).toString,
+                      "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
+                      "aud" -> "backend"
+                    )
+                  )
+                  .as[JsObject]
+                val signedToken = sign(interpolatedToken, outputAlgorithm)
+                f(source.asJwtInjection(signedToken)).right[Result]
+              }
             }
           }
+          case DefaultToken(false, _, _) => {
+            f(JwtInjection()).right[Result]
+          }
+          case _ if strict => {
+            Errors
+              .craftResponseResult(
+                "error.expected.token.not.found",
+                Results.BadRequest,
+                request,
+                Some(desc),
+                None
+              )
+              .left[A]
+          }
+          case _ if !strict => f(JwtInjection()).right[Result]
         }
-        case DefaultToken(false, _, _) => {
-          f(JwtInjection()).right[Result]
-        }
-        case _ if strict => {
-          Errors
-            .craftResponseResult(
-              "error.expected.token.not.found",
-              Results.BadRequest,
-              request,
-              Some(desc),
-              None
-            )
-            .left[A]
-        }
-        case _ if !strict => f(JwtInjection()).right[Result]
-      }
       // case None if strict =>
       //   Errors
       //     .craftResponseResult(
@@ -812,7 +843,7 @@ sealed trait JwtVerifier extends AsJson {
                       .left[A]
                   }
                   case s @ DefaultToken(false, _, _) => f(JwtInjection()).right[Result]
-                  case s @ PassThrough(_) => f(JwtInjection()).right[Result]
+                  case s @ PassThrough(_)            => f(JwtInjection()).right[Result]
                   case s @ Sign(_, aSettings) =>
                     aSettings.asAlgorithmF(OutputMode) flatMap {
                       case None =>
@@ -854,17 +885,32 @@ sealed trait JwtVerifier extends AsJson {
                           case (key, JsNull)            => (key, "null")
                         } toMap
                         val evaluatedValues: JsObject =
-                          JwtExpressionLanguage.fromJson(tSettings.mappingSettings.values, Some(request), Some(desc), apikey, user, context).as[JsObject]
+                          JwtExpressionLanguage
+                            .fromJson(tSettings.mappingSettings.values,
+                                      Some(request),
+                                      Some(desc),
+                                      apikey,
+                                      user,
+                                      context)
+                            .as[JsObject]
                         val newJsonToken: JsObject = JsObject(
                           (tSettings.mappingSettings.map
                             .filter(a => (jsonToken \ a._1).isDefined)
                             .foldLeft(jsonToken)(
-                              (a, b) => a.+(b._2, JwtExpressionLanguage.fromJson((a \ b._1).as[JsValue], Some(request), Some(desc), apikey, user, context)).-(b._1)
+                              (a, b) =>
+                                a.+(b._2,
+                                     JwtExpressionLanguage.fromJson((a \ b._1).as[JsValue],
+                                                                    Some(request),
+                                                                    Some(desc),
+                                                                    apikey,
+                                                                    user,
+                                                                    context))
+                                  .-(b._1)
                             ) ++ evaluatedValues).fields
                             .filterNot {
-                              case (_, JsNull) => true
+                              case (_, JsNull)           => true
                               case (_, JsString("null")) => true
-                              case _ => false
+                              case _                     => false
                             }
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
@@ -940,7 +986,11 @@ case class RefJwtVerifier(
 
   private def id: Option[String] = ids.headOption
 
-  override def verify(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser], elContext: Map[String, String])(
+  override def verify(request: RequestHeader,
+                      desc: ServiceDescriptor,
+                      apikey: Option[ApiKey],
+                      user: Option[PrivateAppsUser],
+                      elContext: Map[String, String])(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
@@ -949,37 +999,51 @@ case class RefJwtVerifier(
       case _ => {
 
         val promise = Promise[Result]
-        val last = new AtomicReference[Result](Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id")))
+        val last = new AtomicReference[Result](
+          Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id"))
+        )
         val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
 
         def dequeueNext(): Unit = {
           queue.dequeueFirst(_ => true) match {
-            case None => Option(last.get()) match {
-              case None =>
-                promise.tryFailure(new RuntimeException("Should have last result set ..."))
-              case Some(result) =>
-                promise.trySuccess(result)
-            }
-            case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-              case Some(verifier) =>
-                verifier.internalVerify(request, desc, apikey, user, elContext)(f).map {
-                  case Left(result) =>
-                    last.set(result)
-                    dequeueNext()
-                  case Right(result) =>
-                    promise.trySuccess(result)
-                }.andThen { case Failure(e) => promise.tryFailure(e) }
-              case None => Errors.craftResponseResult(
-                "error.bad.globaljwtverifier.id",
-                Results.InternalServerError,
-                request,
-                Some(desc),
-                None
-              ).map { result =>
-                last.set(result)
-                dequeueNext()
-              }.andThen { case Failure(e) => promise.tryFailure(e) }
-            }.andThen { case Failure(e) => promise.tryFailure(e) }
+            case None =>
+              Option(last.get()) match {
+                case None =>
+                  promise.tryFailure(new RuntimeException("Should have last result set ..."))
+                case Some(result) =>
+                  promise.trySuccess(result)
+              }
+            case Some(ref) =>
+              env.datastores.globalJwtVerifierDataStore
+                .findById(ref)
+                .flatMap {
+                  case Some(verifier) =>
+                    verifier
+                      .internalVerify(request, desc, apikey, user, elContext)(f)
+                      .map {
+                        case Left(result) =>
+                          last.set(result)
+                          dequeueNext()
+                        case Right(result) =>
+                          promise.trySuccess(result)
+                      }
+                      .andThen { case Failure(e) => promise.tryFailure(e) }
+                  case None =>
+                    Errors
+                      .craftResponseResult(
+                        "error.bad.globaljwtverifier.id",
+                        Results.InternalServerError,
+                        request,
+                        Some(desc),
+                        None
+                      )
+                      .map { result =>
+                        last.set(result)
+                        dequeueNext()
+                      }
+                      .andThen { case Failure(e) => promise.tryFailure(e) }
+                }
+                .andThen { case Failure(e) => promise.tryFailure(e) }
           }
         }
 
@@ -1002,7 +1066,11 @@ case class RefJwtVerifier(
     }
   }
 
-  override def verifyWs(request: RequestHeader, desc: ServiceDescriptor, apikey: Option[ApiKey], user: Option[PrivateAppsUser], elContext: Map[String, String])(
+  override def verifyWs(request: RequestHeader,
+                        desc: ServiceDescriptor,
+                        apikey: Option[ApiKey],
+                        user: Option[PrivateAppsUser],
+                        elContext: Map[String, String])(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val mat = env.otoroshiMaterializer
@@ -1011,42 +1079,57 @@ case class RefJwtVerifier(
       case _ => {
 
         val promise = Promise[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-        val last = new AtomicReference[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]](Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id"))))
+        val last = new AtomicReference[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]](
+          Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id")))
+        )
         val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
 
         def dequeueNext(): Unit = {
           queue.dequeueFirst(_ => true) match {
-            case None => Option(last.get()) match {
-              case None =>
-                promise.tryFailure(new RuntimeException("Should have last result set ..."))
-              case Some(result) =>
-                promise.trySuccess(result)
-            }
-            case Some(ref) => env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-              case Some(verifier) =>
-                verifier.internalVerify(request, desc, apikey, user, elContext)(f).map {
-                  case Left(result) =>
-                    last.set(Left(result))
-                    dequeueNext()
-                  case Right(result) => result match {
-                    case Left(result) =>
-                      last.set(Left(result))
-                      dequeueNext()
-                    case Right(flow) =>
-                      promise.trySuccess(result)
-                  }
-                }.andThen { case Failure(e) => promise.tryFailure(e) }
-              case None => Errors.craftResponseResult(
-                "error.bad.globaljwtverifier.id",
-                Results.InternalServerError,
-                request,
-                Some(desc),
-                None
-              ).map { result =>
-                last.set(Left(result))
-                dequeueNext()
-              }.andThen { case Failure(e) => promise.tryFailure(e) }
-            }.andThen { case Failure(e) => promise.tryFailure(e) }
+            case None =>
+              Option(last.get()) match {
+                case None =>
+                  promise.tryFailure(new RuntimeException("Should have last result set ..."))
+                case Some(result) =>
+                  promise.trySuccess(result)
+              }
+            case Some(ref) =>
+              env.datastores.globalJwtVerifierDataStore
+                .findById(ref)
+                .flatMap {
+                  case Some(verifier) =>
+                    verifier
+                      .internalVerify(request, desc, apikey, user, elContext)(f)
+                      .map {
+                        case Left(result) =>
+                          last.set(Left(result))
+                          dequeueNext()
+                        case Right(result) =>
+                          result match {
+                            case Left(result) =>
+                              last.set(Left(result))
+                              dequeueNext()
+                            case Right(flow) =>
+                              promise.trySuccess(result)
+                          }
+                      }
+                      .andThen { case Failure(e) => promise.tryFailure(e) }
+                  case None =>
+                    Errors
+                      .craftResponseResult(
+                        "error.bad.globaljwtverifier.id",
+                        Results.InternalServerError,
+                        request,
+                        Some(desc),
+                        None
+                      )
+                      .map { result =>
+                        last.set(Left(result))
+                        dequeueNext()
+                      }
+                      .andThen { case Failure(e) => promise.tryFailure(e) }
+                }
+                .andThen { case Failure(e) => promise.tryFailure(e) }
           }
         }
 
@@ -1077,7 +1160,7 @@ case class RefJwtVerifier(
   override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     ids match {
       case s if s.isEmpty => FastFuture.successful(false)
-      case _ => FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
+      case _              => FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
     }
   }
 }
@@ -1085,7 +1168,9 @@ case class RefJwtVerifier(
 object RefJwtVerifier extends FromJson[RefJwtVerifier] {
   override def fromJson(json: JsValue): Either[Throwable, RefJwtVerifier] =
     Try {
-      val refs: Seq[String] = (json \ "ids").asOpt[JsArray].map(_.value.map(_.as[String]))
+      val refs: Seq[String] = (json \ "ids")
+        .asOpt[JsArray]
+        .map(_.value.map(_.as[String]))
         .orElse((json \ "id").asOpt[String].map(v => Seq(v)))
         .getOrElse(Seq.empty)
       Right[Throwable, RefJwtVerifier](

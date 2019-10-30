@@ -33,7 +33,6 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-
 case class ServiceDescriptorQuery(subdomain: String,
                                   line: String = "prod",
                                   domain: String,
@@ -443,11 +442,12 @@ case class Target(
 
   lazy val thePort: Int = if (host.contains(":")) {
     host.split(":").last.toInt
-  } else scheme.toLowerCase() match {
-    case "http" => 80
-    case "https" => 443
-    case _ => 80
-  }
+  } else
+    scheme.toLowerCase() match {
+      case "http"  => 80
+      case "https" => 443
+      case _       => 80
+    }
 
   lazy val theHost: String = if (host.contains(":")) {
     host.split(":").init.mkString("")
@@ -783,9 +783,10 @@ object Canary {
 }
 
 case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: String = "https://www.otoroshi.io") {
-  def toJson                                      = RedirectionSettings.format.writes(this)
-  def hasValidCode                                = RedirectionSettings.validRedirectionCodes.contains(code)
-  def formattedTo(request: RequestHeader, descriptor: ServiceDescriptor, ctx: Map[String, String]): String = RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx)
+  def toJson       = RedirectionSettings.format.writes(this)
+  def hasValidCode = RedirectionSettings.validRedirectionCodes.contains(code)
+  def formattedTo(request: RequestHeader, descriptor: ServiceDescriptor, ctx: Map[String, String]): String =
+    RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx)
 }
 
 object RedirectionSettings {
@@ -1911,67 +1912,90 @@ case class ServiceDescriptor(
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(validatorConfig = Json.obj()))
-    if (gScripts.enabled && accessValidator.enabled && accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+      .filter(_.scripts.enabled)
+      .map(_.scripts)
+      .getOrElse(GlobalScripts(validatorConfig = Json.obj()))
+    if (gScripts.enabled && accessValidator.enabled && accessValidator.excludedPatterns.exists(
+          p => utils.RegexPool.regex(p).matches(req.path)
+        )) {
       val refs = gScripts.validatorRefs
       if (refs.nonEmpty) {
-        Source(refs.toList.zipWithIndex).mapAsync(1) {
-          case (ref, index) =>
-            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-              case Left("compiling") => CompilingValidator
-              case Left(_)           => DefaultValidator
-              case Right(validator)  => validator
-            }
-            validator.access(AccessContext(
-              snowflake = snowflake,
-              index = index,
-              request = req,
-              descriptor = this,
-              user = user,
-              apikey = apikey,
-              attrs = utils.TypedMap.empty,
-              globalConfig = gScripts.validatorConfig,
-              config = accessValidator.config
-            ))
-        }.takeWhile(a => a match {
-          case Allowed => true
-          case Denied(_) => false
-        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
-          case Allowed => f
-          case Denied(result) => FastFuture.successful(result)
-        }
+        Source(refs.toList.zipWithIndex)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                case Left("compiling") => CompilingValidator
+                case Left(_)           => DefaultValidator
+                case Right(validator)  => validator
+              }
+              validator.access(
+                AccessContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  user = user,
+                  apikey = apikey,
+                  attrs = utils.TypedMap.empty,
+                  globalConfig = gScripts.validatorConfig,
+                  config = accessValidator.config
+                )
+              )
+          }
+          .takeWhile(a =>
+                       a match {
+                         case Allowed   => true
+                         case Denied(_) => false
+                     },
+                     true)
+          .toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap {
+            case Allowed        => f
+            case Denied(result) => FastFuture.successful(result)
+          }
       } else {
         f
       }
     } else if ((accessValidator.enabled || gScripts.enabled)
-        && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+               && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
       val refs = gScripts.validatorRefs ++ accessValidator.refs
       if (refs.nonEmpty) {
-        Source(refs.toList.zipWithIndex).mapAsync(1) {
-          case (ref, index) =>
-            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-              case Left("compiling") => CompilingValidator
-              case Left(_)           => DefaultValidator
-              case Right(validator)  => validator
-            }
-            validator.access(AccessContext(
-              snowflake = snowflake,
-              index = index,
-              request = req,
-              descriptor = this,
-              user = user,
-              apikey = apikey,
-              attrs = utils.TypedMap.empty,
-              globalConfig = gScripts.validatorConfig,
-              config = accessValidator.config
-            ))
-        }.takeWhile(a => a match {
-          case Allowed => true
-          case Denied(_) => false
-        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
-          case Allowed => f
-          case Denied(result) => FastFuture.successful(result)
-        }
+        Source(refs.toList.zipWithIndex)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                case Left("compiling") => CompilingValidator
+                case Left(_)           => DefaultValidator
+                case Right(validator)  => validator
+              }
+              validator.access(
+                AccessContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  user = user,
+                  apikey = apikey,
+                  attrs = utils.TypedMap.empty,
+                  globalConfig = gScripts.validatorConfig,
+                  config = accessValidator.config
+                )
+              )
+          }
+          .takeWhile(a =>
+                       a match {
+                         case Allowed   => true
+                         case Denied(_) => false
+                     },
+                     true)
+          .toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap {
+            case Allowed        => f
+            case Denied(result) => FastFuture.successful(result)
+          }
       } else {
         f
       }
@@ -2018,40 +2042,54 @@ case class ServiceDescriptor(
                                    config: GlobalConfig)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(validatorConfig = Json.obj()))
-    if (gScripts.enabled && accessValidator.enabled && accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+      .filter(_.scripts.enabled)
+      .map(_.scripts)
+      .getOrElse(GlobalScripts(validatorConfig = Json.obj()))
+    if (gScripts.enabled && accessValidator.enabled && accessValidator.excludedPatterns.exists(
+          p => utils.RegexPool.regex(p).matches(req.path)
+        )) {
       val refs = gScripts.validatorRefs
       if (refs.nonEmpty) {
-        Source(refs.toList.zipWithIndex).mapAsync(1) {
-          case (ref, index) =>
-            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-              case Left("compiling") => CompilingValidator
-              case Left(_)           => DefaultValidator
-              case Right(validator)  => validator
-            }
-            validator.access(AccessContext(
-              snowflake = snowflake,
-              index = index,
-              request = req,
-              descriptor = this,
-              user = user,
-              apikey = apikey,
-              attrs = utils.TypedMap.empty,
-              globalConfig = gScripts.validatorConfig,
-              config = accessValidator.config
-            ))
-        }.takeWhile(a => a match {
-          case Allowed => true
-          case Denied(_) => false
-        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
-          case Allowed => f
-          case Denied(result) => FastFuture.successful(Left(result))
-        }
+        Source(refs.toList.zipWithIndex)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                case Left("compiling") => CompilingValidator
+                case Left(_)           => DefaultValidator
+                case Right(validator)  => validator
+              }
+              validator.access(
+                AccessContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  user = user,
+                  apikey = apikey,
+                  attrs = utils.TypedMap.empty,
+                  globalConfig = gScripts.validatorConfig,
+                  config = accessValidator.config
+                )
+              )
+          }
+          .takeWhile(a =>
+                       a match {
+                         case Allowed   => true
+                         case Denied(_) => false
+                     },
+                     true)
+          .toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap {
+            case Allowed        => f
+            case Denied(result) => FastFuture.successful(Left(result))
+          }
       } else {
         f
       }
     } else if ((accessValidator.enabled || gScripts.enabled)
-      && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+               && !accessValidator.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
       // accessValidator.ref.map { ref =>
       //   val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
       //     case Left("compiling") => CompilingValidator
@@ -2071,31 +2109,40 @@ case class ServiceDescriptor(
       // } getOrElse f
       val refs = gScripts.validatorRefs ++ accessValidator.refs
       if (refs.nonEmpty) {
-        Source(refs.zipWithIndex.toList).mapAsync(1) {
-          case (ref, index) =>
-            val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-              case Left("compiling") => CompilingValidator
-              case Left(_)           => DefaultValidator
-              case Right(validator)  => validator
-            }
-            validator.access(AccessContext(
-              snowflake = snowflake,
-              index = index,
-              request = req,
-              descriptor = this,
-              user = user,
-              apikey = apikey,
-              attrs = utils.TypedMap.empty,
-              globalConfig = gScripts.validatorConfig,
-              config = accessValidator.config
-            ))
-        }.takeWhile(a => a match {
-          case Allowed => true
-          case Denied(_) => false
-        }, true).toMat(Sink.last)(Keep.right).run()(env.otoroshiMaterializer).flatMap {
-          case Allowed => f
-          case Denied(result) => FastFuture.successful(Left(result))
-        }
+        Source(refs.zipWithIndex.toList)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                case Left("compiling") => CompilingValidator
+                case Left(_)           => DefaultValidator
+                case Right(validator)  => validator
+              }
+              validator.access(
+                AccessContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  user = user,
+                  apikey = apikey,
+                  attrs = utils.TypedMap.empty,
+                  globalConfig = gScripts.validatorConfig,
+                  config = accessValidator.config
+                )
+              )
+          }
+          .takeWhile(a =>
+                       a match {
+                         case Allowed   => true
+                         case Denied(_) => false
+                     },
+                     true)
+          .toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap {
+            case Allowed        => f
+            case Denied(result) => FastFuture.successful(Left(result))
+          }
       } else {
         f
       }
@@ -2259,7 +2306,8 @@ object ServiceDescriptor {
           forceHttps = (json \ "forceHttps").asOpt[Boolean].getOrElse(true),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
-          tcpUdpTunneling = (json \ "tcpUdpTunneling").asOpt[Boolean].orElse((json \ "tcpTunneling").asOpt[Boolean]).getOrElse(false),
+          tcpUdpTunneling =
+            (json \ "tcpUdpTunneling").asOpt[Boolean].orElse((json \ "tcpTunneling").asOpt[Boolean]).getOrElse(false),
           detectApiKeySooner = (json \ "detectApiKeySooner").asOpt[Boolean].getOrElse(false),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           buildMode = (json \ "buildMode").asOpt[Boolean].getOrElse(false),
@@ -2288,8 +2336,10 @@ object ServiceDescriptor {
             (json \ "additionalHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           additionalHeadersOut =
             (json \ "additionalHeadersOut").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-          missingOnlyHeadersIn = (json \ "missingOnlyHeadersIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-          missingOnlyHeadersOut = (json \ "missingOnlyHeadersOut").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          missingOnlyHeadersIn =
+            (json \ "missingOnlyHeadersIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+          missingOnlyHeadersOut =
+            (json \ "missingOnlyHeadersOut").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           headersVerification =
             (json \ "headersVerification").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           matchingHeaders = (json \ "matchingHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
@@ -2314,7 +2364,8 @@ object ServiceDescriptor {
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
-          transformerRefs = (json \ "transformerRefs").asOpt[Seq[String]]
+          transformerRefs = (json \ "transformerRefs")
+            .asOpt[Seq[String]]
             .orElse((json \ "transformerRef").asOpt[String].map(r => Seq(r)))
             .map(_.filterNot(_.trim.isEmpty))
             .getOrElse(Seq.empty),

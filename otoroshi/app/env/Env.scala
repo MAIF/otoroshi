@@ -73,12 +73,12 @@ class Env(val configuration: Configuration,
     Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
   }) getOrElse configuration
 
-  private lazy val xmasStart = 
+  private lazy val xmasStart =
     DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
   private lazy val xmasStop =
     DateTime.now().withMonthOfYear(12).dayOfMonth().withMaximumValue().plusDays(1).withMillisOfDay(1)
 
-  private lazy val halloweenStart = 
+  private lazy val halloweenStart =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).withMillisOfDay(0)
   private lazy val halloweenStop =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
@@ -175,14 +175,22 @@ class Env(val configuration: Configuration,
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
-  lazy val manualDnsResolve: Boolean = configuration.getOptional[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)
-  lazy val useOldHeadersComposition: Boolean = configuration.getOptional[Boolean]("otoroshi.options.useOldHeadersComposition").getOrElse(false)
-  lazy val sendClientChainAsPem: Boolean = configuration.getOptional[Boolean]("otoroshi.options.sendClientChainAsPem").getOrElse(false)
-  lazy val validateRequests: Boolean    = configuration.getOptional[Boolean]("otoroshi.requests.validate").getOrElse(true)
-  lazy val maxUrlLength: Long           = Option(configuration.underlying.getBytes("otoroshi.requests.maxUrlLength")).map(_.toLong).getOrElse(4 * 1024L)
-  lazy val maxCookieLength: Long        = Option(configuration.underlying.getBytes("otoroshi.requests.maxCookieLength")).map(_.toLong).getOrElse(16 * 1024L)
-  lazy val maxHeaderValueLength: Long   = Option(configuration.underlying.getBytes("otoroshi.requests.maxHeaderValueLength")).map(_.toLong).getOrElse(16 * 1024L)
-  lazy val maxHeaderNameLength: Long    = Option(configuration.underlying.getBytes("otoroshi.requests.maxHeaderNameLength")).map(_.toLong).getOrElse(128L)
+  lazy val manualDnsResolve: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)
+  lazy val useOldHeadersComposition: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.options.useOldHeadersComposition").getOrElse(false)
+  lazy val sendClientChainAsPem: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.options.sendClientChainAsPem").getOrElse(false)
+  lazy val validateRequests: Boolean = configuration.getOptional[Boolean]("otoroshi.requests.validate").getOrElse(true)
+  lazy val maxUrlLength: Long =
+    Option(configuration.underlying.getBytes("otoroshi.requests.maxUrlLength")).map(_.toLong).getOrElse(4 * 1024L)
+  lazy val maxCookieLength: Long =
+    Option(configuration.underlying.getBytes("otoroshi.requests.maxCookieLength")).map(_.toLong).getOrElse(16 * 1024L)
+  lazy val maxHeaderValueLength: Long = Option(
+    configuration.underlying.getBytes("otoroshi.requests.maxHeaderValueLength")
+  ).map(_.toLong).getOrElse(16 * 1024L)
+  lazy val maxHeaderNameLength: Long =
+    Option(configuration.underlying.getBytes("otoroshi.requests.maxHeaderNameLength")).map(_.toLong).getOrElse(128L)
 
   lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
   lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
@@ -195,15 +203,16 @@ class Env(val configuration: Configuration,
   lazy val cacheTtl: Int                   = configuration.getOptional[Int]("otoroshi.cache.ttl").filter(_ >= 2000).getOrElse(2000)
   lazy val useRedisScan: Boolean           = configuration.getOptional[Boolean]("app.redis.useScan").getOrElse(false)
   lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
-  lazy val secretSession: String           = configuration.getOptional[String]("otoroshi.sessions.secret").map(_.padTo(16, "0").mkString("").take(16)).get
-  lazy val sharedKey: String               = configuration.getOptional[String]("app.claim.sharedKey").get
-  lazy val env: String                     = configuration.getOptional[String]("app.env").getOrElse("prod")
-  lazy val name: String                    = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")
-  lazy val rack: String                    = configuration.getOptional[String]("app.instance.rack").getOrElse("local")
-  lazy val infraProvider: String           = configuration.getOptional[String]("app.instance.provider").getOrElse("local")
-  lazy val dataCenter: String              = configuration.getOptional[String]("app.instance.dc").getOrElse("local")
-  lazy val zone: String                    = configuration.getOptional[String]("app.instance.zone").getOrElse("local")
-  lazy val region: String                  = configuration.getOptional[String]("app.instance.region").getOrElse("local")
+  lazy val secretSession: String =
+    configuration.getOptional[String]("otoroshi.sessions.secret").map(_.padTo(16, "0").mkString("").take(16)).get
+  lazy val sharedKey: String     = configuration.getOptional[String]("app.claim.sharedKey").get
+  lazy val env: String           = configuration.getOptional[String]("app.env").getOrElse("prod")
+  lazy val name: String          = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")
+  lazy val rack: String          = configuration.getOptional[String]("app.instance.rack").getOrElse("local")
+  lazy val infraProvider: String = configuration.getOptional[String]("app.instance.provider").getOrElse("local")
+  lazy val dataCenter: String    = configuration.getOptional[String]("app.instance.dc").getOrElse("local")
+  lazy val zone: String          = configuration.getOptional[String]("app.instance.zone").getOrElse("local")
+  lazy val region: String        = configuration.getOptional[String]("app.instance.region").getOrElse("local")
   lazy val liveJs: Boolean = configuration
     .getOptional[String]("app.env")
     .filter(_ == "dev")
@@ -724,17 +733,18 @@ class Env(val configuration: Configuration,
               .findAll()
               .map { certs =>
                 val hasInitialCert =
-                  (configuration.has("otoroshi.ssl.initialCacert") && configuration.has("otoroshi.ssl.initialCert") && configuration.has("otoroshi.ssl.initialCertKey")) || configuration.has("otoroshi.ssl.initialCerts")
+                (configuration.has("otoroshi.ssl.initialCacert") && configuration.has("otoroshi.ssl.initialCert") && configuration
+                  .has("otoroshi.ssl.initialCertKey")) || configuration.has("otoroshi.ssl.initialCerts")
                 if (!hasInitialCert && certs.isEmpty) {
-                  val foundOtoroshiCa = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
+                  val foundOtoroshiCa         = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
                   val foundOtoroshiDomainCert = certs.find(c => c.domain == s"*.${this.domain}")
-                  val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+                  val keyPairGenerator        = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                   keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                   val keyPair1 = keyPairGenerator.generateKeyPair()
                   val keyPair2 = keyPairGenerator.generateKeyPair()
                   val keyPair3 = keyPairGenerator.generateKeyPair()
-                  val ca = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
-                  val caCert = Cert(ca, keyPair1, None, false).enrich()
+                  val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), keyPair1)
+                  val caCert   = Cert(ca, keyPair1, None, false).enrich()
                   if (foundOtoroshiCa.isEmpty) {
                     logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
                     caCert.copy(id = Cert.OtoroshiCA).save()
@@ -742,10 +752,10 @@ class Env(val configuration: Configuration,
                   if (foundOtoroshiDomainCert.isEmpty) {
                     logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
                     val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
-                      FiniteDuration(365, TimeUnit.DAYS),
-                      keyPair2,
-                      ca,
-                      keyPair1)
+                                                                     FiniteDuration(365, TimeUnit.DAYS),
+                                                                     keyPair2,
+                                                                     ca,
+                                                                     keyPair1)
                     Cert(cert1, keyPair2, foundOtoroshiCa.getOrElse(caCert), false).enrich().save()
                   }
                 }

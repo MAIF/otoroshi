@@ -40,7 +40,12 @@ import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
-import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
+import otoroshi.script.{
+  TransformerRequestBodyContext,
+  TransformerRequestContext,
+  TransformerResponseBodyContext,
+  TransformerResponseContext
+}
 import utils.http.Implicits._
 import play.libs.ws.WSCookie
 import ssl.PemHeaders
@@ -192,11 +197,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         Some(globalMaintenanceMode())
       }
     } else {
-      val isSecured = getSecuredFor(request)
-      val protocol  = getProtocolFor(request)
-      lazy val url       = ByteString(s"$protocol://${request.host}${request.relativeUri}")
-      lazy val cookies   = request.cookies.map(_.value).map(ByteString.apply)
-      lazy val headers   = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
+      val isSecured    = getSecuredFor(request)
+      val protocol     = getProtocolFor(request)
+      lazy val url     = ByteString(s"$protocol://${request.host}${request.relativeUri}")
+      lazy val cookies = request.cookies.map(_.value).map(ByteString.apply)
+      lazy val headers = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
       // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
       if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
         Some(clusterError("Waiting for first Otoroshi leader sync."))
@@ -204,7 +209,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         Some(tooBig("URL should be smaller", UriTooLong))
       } else if (env.validateRequests && cookies.exists(_.size > env.maxCookieLength)) {
         Some(tooBig("Cookies should be smaller"))
-      } else if (env.validateRequests && headers.exists(t => t._1.size > env.maxHeaderNameLength || t._2.size > env.maxHeaderValueLength)) {
+      } else if (env.validateRequests && headers.exists(
+                   t => t._1.size > env.maxHeaderNameLength || t._2.size > env.maxHeaderValueLength
+                 )) {
         Some(tooBig(s"Headers should be smaller"))
       } else {
         val toHttps = env.exposedRootSchemeIsHttps
@@ -531,11 +538,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def applyJwtVerifier(service: ServiceDescriptor,
-                       req: RequestHeader,
-                       apiKey: Option[ApiKey],
-                       paUsr: Option[PrivateAppsUser],
-                       elContext: Map[String, String])(f: JwtInjection => Future[Result])(implicit env: Env): Future[Result] = {
+  def applyJwtVerifier(
+      service: ServiceDescriptor,
+      req: RequestHeader,
+      apiKey: Option[ApiKey],
+      paUsr: Option[PrivateAppsUser],
+      elContext: Map[String, String]
+  )(f: JwtInjection => Future[Result])(implicit env: Env): Future[Result] = {
     if (service.jwtVerifier.enabled) {
       service.jwtVerifier.shouldBeVerified(req.path).flatMap {
         case false => f(JwtInjection())
@@ -628,7 +637,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     if (desc.headersVerification.isEmpty) {
       f
     } else {
-      val inputHeaders = req.headers.toSimpleMap.mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx)).filterNot(h => h._2 == "null")
+      val inputHeaders = req.headers.toSimpleMap
+        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx))
+        .filterNot(h => h._2 == "null")
       desc.headersVerification.map(tuple => inputHeaders.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>
           Errors.craftResponseResult(
@@ -751,7 +762,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val protocol            = getProtocolFor(req)
 
     val elCtx: Map[String, String] = Map(
-      "requestId" -> snowflake,
+      "requestId"        -> snowflake,
       "requestSnowflake" -> snowflake,
       "requestTimestamp" -> requestTimestamp
     )
@@ -828,252 +839,254 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     passWithTcpUdpTunneling(req, rawDesc) {
                       passWithHeadersVerification(rawDesc, req, None, None, elCtx) {
                         passWithReadOnly(rawDesc.readOnly, req) {
-                            applySidecar(rawDesc, remoteAddress, req) { desc =>
-                              val firstOverhead = System.currentTimeMillis() - start
-                              snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) {
-                                snowMonkeyContext =>
-                                  val secondStart = System.currentTimeMillis()
-                                  val maybeCanaryId: Option[String] = req.cookies
-                                    .get("otoroshi-canary")
-                                    .map(_.value)
-                                    .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
-                                    .filter { value =>
-                                      if (value.contains("::")) {
-                                        value.split("::").toList match {
-                                          case signed :: id :: Nil if env.sign(id) == signed => true
-                                          case _                                             => false
-                                        }
-                                      } else {
-                                        false
+                          applySidecar(rawDesc, remoteAddress, req) { desc =>
+                            val firstOverhead = System.currentTimeMillis() - start
+                            snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) {
+                              snowMonkeyContext =>
+                                val secondStart = System.currentTimeMillis()
+                                val maybeCanaryId: Option[String] = req.cookies
+                                  .get("otoroshi-canary")
+                                  .map(_.value)
+                                  .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
+                                  .filter { value =>
+                                    if (value.contains("::")) {
+                                      value.split("::").toList match {
+                                        case signed :: id :: Nil if env.sign(id) == signed => true
+                                        case _                                             => false
                                       }
-                                    } map (value => value.split("::")(1))
-                                  val canaryId: String = maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
+                                    } else {
+                                      false
+                                    }
+                                  } map (value => value.split("::")(1))
+                                val canaryId: String = maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
 
-                                  val trackingId: String = req.cookies
-                                    .get("otoroshi-tracking")
-                                    .map(_.value)
-                                    .getOrElse(IdGenerator.uuid + "-" + reqNumber)
+                                val trackingId: String = req.cookies
+                                  .get("otoroshi-tracking")
+                                  .map(_.value)
+                                  .getOrElse(IdGenerator.uuid + "-" + reqNumber)
 
-                                  if (maybeCanaryId.isDefined) {
-                                    logger.debug(s"request already has canary id : $canaryId")
-                                  } else {
-                                    logger.debug(s"request has a new canary id : $canaryId")
-                                  }
+                                if (maybeCanaryId.isDefined) {
+                                  logger.debug(s"request already has canary id : $canaryId")
+                                } else {
+                                  logger.debug(s"request has a new canary id : $canaryId")
+                                }
 
-                                  // val withTrackingCookies: Seq[Cookie] = {
-                                  //   if (!desc.canary.enabled)
-                                  //     jwtInjection.additionalCookies
-                                  //       .map(t => Cookie(t._1, t._2))
-                                  //       .toSeq //Seq.empty[play.api.mvc.Cookie]
-                                  //   else if (maybeCanaryId.isDefined)
-                                  //     jwtInjection.additionalCookies
-                                  //       .map(t => Cookie(t._1, t._2))
-                                  //       .toSeq //Seq.empty[play.api.mvc.Cookie]
-                                  //   else
-                                  //     Seq(
-                                  //       play.api.mvc.Cookie(
-                                  //         name = "otoroshi-canary",
-                                  //         value = s"${env.sign(canaryId)}::$canaryId",
-                                  //         maxAge = Some(2592000),
-                                  //         path = "/",
-                                  //         domain = Some(req.domain),
-                                  //         httpOnly = false
-                                  //       )
-                                  //     ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
-                                  // } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
-                                  //         Seq(
-                                  //           play.api.mvc.Cookie(
-                                  //             name = "otoroshi-tracking",
-                                  //             value = trackingId,
-                                  //             maxAge = Some(2592000),
-                                  //             path = "/",
-                                  //             domain = Some(req.domain),
-                                  //             httpOnly = false
-                                  //           )
-                                  //         )
-                                  //       } else {
-                                  //         Seq.empty[Cookie]
-                                  //       })
+                                // val withTrackingCookies: Seq[Cookie] = {
+                                //   if (!desc.canary.enabled)
+                                //     jwtInjection.additionalCookies
+                                //       .map(t => Cookie(t._1, t._2))
+                                //       .toSeq //Seq.empty[play.api.mvc.Cookie]
+                                //   else if (maybeCanaryId.isDefined)
+                                //     jwtInjection.additionalCookies
+                                //       .map(t => Cookie(t._1, t._2))
+                                //       .toSeq //Seq.empty[play.api.mvc.Cookie]
+                                //   else
+                                //     Seq(
+                                //       play.api.mvc.Cookie(
+                                //         name = "otoroshi-canary",
+                                //         value = s"${env.sign(canaryId)}::$canaryId",
+                                //         maxAge = Some(2592000),
+                                //         path = "/",
+                                //         domain = Some(req.domain),
+                                //         httpOnly = false
+                                //       )
+                                //     ) ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2))
+                                // } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                                //         Seq(
+                                //           play.api.mvc.Cookie(
+                                //             name = "otoroshi-tracking",
+                                //             value = trackingId,
+                                //             maxAge = Some(2592000),
+                                //             path = "/",
+                                //             domain = Some(req.domain),
+                                //             httpOnly = false
+                                //           )
+                                //         )
+                                //       } else {
+                                //         Seq.empty[Cookie]
+                                //       })
 
-                                  val withTrackingCookies: Seq[Cookie] = {
-                                    if (!desc.canary.enabled)
-                                      Seq.empty[play.api.mvc.Cookie]
-                                    else if (maybeCanaryId.isDefined)
-                                      Seq.empty[play.api.mvc.Cookie]
-                                    else
-                                      Seq(
-                                        play.api.mvc.Cookie(
-                                          name = "otoroshi-canary",
-                                          value = s"${env.sign(canaryId)}::$canaryId",
-                                          maxAge = Some(2592000),
-                                          path = "/",
-                                          domain = Some(req.domain),
-                                          httpOnly = false
-                                        )
-                                      )
-                                  } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                                val withTrackingCookies: Seq[Cookie] = {
+                                  if (!desc.canary.enabled)
+                                    Seq.empty[play.api.mvc.Cookie]
+                                  else if (maybeCanaryId.isDefined)
+                                    Seq.empty[play.api.mvc.Cookie]
+                                  else
                                     Seq(
                                       play.api.mvc.Cookie(
-                                        name = "otoroshi-tracking",
-                                        value = trackingId,
+                                        name = "otoroshi-canary",
+                                        value = s"${env.sign(canaryId)}::$canaryId",
                                         maxAge = Some(2592000),
                                         path = "/",
                                         domain = Some(req.domain),
                                         httpOnly = false
                                       )
                                     )
-                                  } else {
-                                    Seq.empty[Cookie]
-                                  })
+                                } ++ (if (desc.targetsLoadBalancing.needTrackingCookie) {
+                                        Seq(
+                                          play.api.mvc.Cookie(
+                                            name = "otoroshi-tracking",
+                                            value = trackingId,
+                                            maxAge = Some(2592000),
+                                            path = "/",
+                                            domain = Some(req.domain),
+                                            httpOnly = false
+                                          )
+                                        )
+                                      } else {
+                                        Seq.empty[Cookie]
+                                      })
 
-                                  //desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).fast.map(d => (iu, d))).fast.flatMap {
-                                  splitToCanary(desc, canaryId, reqNumber, globalConfig).fast.flatMap { _desc =>
-                                    val isUp = true
+                                //desc.isUp.flatMap(iu => splitToCanary(desc, trackingId).fast.map(d => (iu, d))).fast.flatMap {
+                                splitToCanary(desc, canaryId, reqNumber, globalConfig).fast.flatMap { _desc =>
+                                  val isUp = true
 
-                                    val descriptor = _desc
+                                  val descriptor = _desc
 
-                                    def callDownstream(config: GlobalConfig,
-                                                       apiKey: Option[ApiKey] = None,
-                                                       paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                                      desc.validateClientCertificates(snowflake, req, apiKey, paUsr, config) {
-                                        passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
-                                          if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
-                                            val cbStart = System.currentTimeMillis()
-                                            val counter = new AtomicInteger(0)
-                                            val relUri  = req.relativeUri
-                                            val cachedPath: String =
-                                              descriptor.clientConfig.timeouts(relUri).map(_ => relUri).getOrElse("")
-                                            env.circuitBeakersHolder
-                                              .get(desc.id + cachedPath, () => new ServiceDescriptorCircuitBreaker())
-                                              .call(
-                                                descriptor,
-                                                reqNumber.toString,
-                                                trackingId,
-                                                req.relativeUri,
+                                  def callDownstream(config: GlobalConfig,
+                                                     apiKey: Option[ApiKey] = None,
+                                                     paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
+                                    desc.validateClientCertificates(snowflake, req, apiKey, paUsr, config) {
+                                      passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
+                                        if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
+                                          val cbStart = System.currentTimeMillis()
+                                          val counter = new AtomicInteger(0)
+                                          val relUri  = req.relativeUri
+                                          val cachedPath: String =
+                                            descriptor.clientConfig.timeouts(relUri).map(_ => relUri).getOrElse("")
+                                          env.circuitBeakersHolder
+                                            .get(desc.id + cachedPath, () => new ServiceDescriptorCircuitBreaker())
+                                            .call(
+                                              descriptor,
+                                              reqNumber.toString,
+                                              trackingId,
+                                              req.relativeUri,
+                                              req,
+                                              bodyAlreadyConsumed,
+                                              s"${req.method} ${req.relativeUri}",
+                                              counter,
+                                              (t, attempts) =>
+                                                actuallyCallDownstream(t,
+                                                                       apiKey,
+                                                                       paUsr,
+                                                                       System.currentTimeMillis - cbStart,
+                                                                       counter.get())
+                                            ) recoverWith {
+                                            case BodyAlreadyConsumedException =>
+                                              Errors.craftResponseResult(
+                                                s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
+                                                GatewayTimeout,
                                                 req,
-                                                bodyAlreadyConsumed,
-                                                s"${req.method} ${req.relativeUri}",
-                                                counter,
-                                                (t, attempts) =>
-                                                  actuallyCallDownstream(t,
-                                                                         apiKey,
-                                                                         paUsr,
-                                                                         System.currentTimeMillis - cbStart,
-                                                                         counter.get())
-                                              ) recoverWith {
-                                              case BodyAlreadyConsumedException =>
-                                                Errors.craftResponseResult(
-                                                  s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
-                                                  GatewayTimeout,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.request.timeout"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  cbDuration = System.currentTimeMillis - cbStart,
-                                                  callAttempts = counter.get()
-                                                )
-                                              case RequestTimeoutException =>
-                                                Errors.craftResponseResult(
-                                                  s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                                  GatewayTimeout,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.request.timeout"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  cbDuration = System.currentTimeMillis - cbStart,
-                                                  callAttempts = counter.get()
-                                                )
-                                              case _: scala.concurrent.TimeoutException =>
-                                                Errors.craftResponseResult(
-                                                  s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
-                                                  GatewayTimeout,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.request.timeout"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  cbDuration = System.currentTimeMillis - cbStart,
-                                                  callAttempts = counter.get()
-                                                )
-                                              case AllCircuitBreakersOpenException =>
-                                                Errors.craftResponseResult(
-                                                  s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
-                                                  ServiceUnavailable,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.circuit.breaker.open"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  cbDuration = System.currentTimeMillis - cbStart,
-                                                  callAttempts = counter.get()
-                                                )
-                                              case error
-                                                  if error != null && error.getMessage != null && error.getMessage
-                                                    .toLowerCase()
-                                                    .contains("connection refused") =>
-                                                Errors.craftResponseResult(
-                                                  s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
-                                                  BadGateway,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.connection.refused"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  cbDuration = System.currentTimeMillis - cbStart,
-                                                  callAttempts = counter.get()
-                                                )
-                                              case error if error != null && error.getMessage != null =>
-                                                logger.error(s"Something went wrong, you should try later", error)
-                                                Errors.craftResponseResult(
-                                                  s"Something went wrong, you should try later. Thanks for your understanding.",
-                                                  BadGateway,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.proxy.error"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  cbDuration = System.currentTimeMillis - cbStart,
-                                                  callAttempts = counter.get()
-                                                )
-                                              case error =>
-                                                logger.error(s"Something went wrong, you should try later", error)
-                                                Errors.craftResponseResult(
-                                                  s"Something went wrong, you should try later. Thanks for your understanding",
-                                                  BadGateway,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.proxy.error"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  cbDuration = System.currentTimeMillis - cbStart,
-                                                  callAttempts = counter.get()
-                                                )
-                                            }
-                                          } else {
-                                            val targets: Seq[Target] = descriptor.targets
-                                              .filter(_.predicate.matches(reqNumber.toString))
-                                              .flatMap(t => Seq.fill(t.weight)(t))
-                                            val target = descriptor.targetsLoadBalancing.select(reqNumber.toString,
-                                                                                                trackingId,
-                                                                                                req,
-                                                                                                targets,
-                                                                                                descriptor)
-                                            //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
-                                            // Round robin loadbalancing is happening here !!!!!
-                                            //val target = targets.apply(index.toInt)
-                                            actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
+                                                Some(descriptor),
+                                                Some("errors.request.timeout"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                cbDuration = System.currentTimeMillis - cbStart,
+                                                callAttempts = counter.get()
+                                              )
+                                            case RequestTimeoutException =>
+                                              Errors.craftResponseResult(
+                                                s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                                GatewayTimeout,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.request.timeout"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                cbDuration = System.currentTimeMillis - cbStart,
+                                                callAttempts = counter.get()
+                                              )
+                                            case _: scala.concurrent.TimeoutException =>
+                                              Errors.craftResponseResult(
+                                                s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                                GatewayTimeout,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.request.timeout"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                cbDuration = System.currentTimeMillis - cbStart,
+                                                callAttempts = counter.get()
+                                              )
+                                            case AllCircuitBreakersOpenException =>
+                                              Errors.craftResponseResult(
+                                                s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                                                ServiceUnavailable,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.circuit.breaker.open"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                cbDuration = System.currentTimeMillis - cbStart,
+                                                callAttempts = counter.get()
+                                              )
+                                            case error
+                                                if error != null && error.getMessage != null && error.getMessage
+                                                  .toLowerCase()
+                                                  .contains("connection refused") =>
+                                              Errors.craftResponseResult(
+                                                s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
+                                                BadGateway,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.connection.refused"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                cbDuration = System.currentTimeMillis - cbStart,
+                                                callAttempts = counter.get()
+                                              )
+                                            case error if error != null && error.getMessage != null =>
+                                              logger.error(s"Something went wrong, you should try later", error)
+                                              Errors.craftResponseResult(
+                                                s"Something went wrong, you should try later. Thanks for your understanding.",
+                                                BadGateway,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.proxy.error"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                cbDuration = System.currentTimeMillis - cbStart,
+                                                callAttempts = counter.get()
+                                              )
+                                            case error =>
+                                              logger.error(s"Something went wrong, you should try later", error)
+                                              Errors.craftResponseResult(
+                                                s"Something went wrong, you should try later. Thanks for your understanding",
+                                                BadGateway,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.proxy.error"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                cbDuration = System.currentTimeMillis - cbStart,
+                                                callAttempts = counter.get()
+                                              )
                                           }
+                                        } else {
+                                          val targets: Seq[Target] = descriptor.targets
+                                            .filter(_.predicate.matches(reqNumber.toString))
+                                            .flatMap(t => Seq.fill(t.weight)(t))
+                                          val target = descriptor.targetsLoadBalancing.select(reqNumber.toString,
+                                                                                              trackingId,
+                                                                                              req,
+                                                                                              targets,
+                                                                                              descriptor)
+                                          //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+                                          // Round robin loadbalancing is happening here !!!!!
+                                          //val target = targets.apply(index.toInt)
+                                          actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
                                         }
                                       }
                                     }
+                                  }
 
-                                    def actuallyCallDownstream(_target: Target,
-                                                               apiKey: Option[ApiKey] = None,
-                                                               paUsr: Option[PrivateAppsUser] = None,
-                                                               cbDuration: Long,
-                                                               callAttempts: Int): Future[Result] = applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx) { jwtInjection =>
+                                  def actuallyCallDownstream(_target: Target,
+                                                             apiKey: Option[ApiKey] = None,
+                                                             paUsr: Option[PrivateAppsUser] = None,
+                                                             cbDuration: Long,
+                                                             callAttempts: Int)
+                                    : Future[Result] = applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx) {
+                                    jwtInjection =>
                                       //val snowflake        = env.snowflakeGenerator.nextIdStr()
                                       val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
                                       val jti              = IdGenerator.uuid
@@ -1098,9 +1111,21 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           .getOrElse(rawUri)
                                       val scheme =
                                         if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
-                                      val host                   = TargetExpressionLanguage(if (descriptor.redirectToLocal) descriptor.localHost else _target.host, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-                                      val root                   = descriptor.root
-                                      val url                    = TargetExpressionLanguage(s"$scheme://$host$root$uri", Some(req), Some(descriptor), apiKey, paUsr, elCtx)
+                                      val host = TargetExpressionLanguage(if (descriptor.redirectToLocal)
+                                                                            descriptor.localHost
+                                                                          else _target.host,
+                                                                          Some(req),
+                                                                          Some(descriptor),
+                                                                          apiKey,
+                                                                          paUsr,
+                                                                          elCtx)
+                                      val root = descriptor.root
+                                      val url = TargetExpressionLanguage(s"$scheme://$host$root$uri",
+                                                                         Some(req),
+                                                                         Some(descriptor),
+                                                                         apiKey,
+                                                                         paUsr,
+                                                                         elCtx)
                                       lazy val currentReqHasBody = hasBody(req)
                                       // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                       val fromOtoroshi = req.headers
@@ -1193,7 +1218,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           req
                                         )
                                       }
-                                      */
+                                       */
 
                                       val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
                                         bodyAlreadyConsumed.compareAndSet(false, true)
@@ -1405,21 +1430,22 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       finalRequest.flatMap {
                                         case Left(badResult) => {
                                           quotas.fast.map { remainingQuotas =>
-                                            val _headersOut: Seq[(String, String)] = HeadersHelper.composeHeadersOutBadResult(
-                                              descriptor = descriptor,
-                                              req = req,
-                                              badResult = badResult,
-                                              apiKey = apiKey,
-                                              paUsr = paUsr,
-                                              elCtx = elCtx,
-                                              snowflake = snowflake,
-                                              requestTimestamp = requestTimestamp,
-                                              headersOutFiltered = headersOutFiltered,
-                                              overhead = overhead,
-                                              upstreamLatency = 0L,
-                                              canaryId = canaryId,
-                                              remainingQuotas = remainingQuotas
-                                            )
+                                            val _headersOut: Seq[(String, String)] =
+                                              HeadersHelper.composeHeadersOutBadResult(
+                                                descriptor = descriptor,
+                                                req = req,
+                                                badResult = badResult,
+                                                apiKey = apiKey,
+                                                paUsr = paUsr,
+                                                elCtx = elCtx,
+                                                snowflake = snowflake,
+                                                requestTimestamp = requestTimestamp,
+                                                headersOutFiltered = headersOutFiltered,
+                                                overhead = overhead,
+                                                upstreamLatency = 0L,
+                                                canaryId = canaryId,
+                                                remainingQuotas = remainingQuotas
+                                              )
                                             // val _headersOut: Seq[(String, String)] = {
                                             //   descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
                                             //     .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
@@ -1621,21 +1647,22 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 }
                                               } else {
                                                 val upstreamLatency = System.currentTimeMillis() - upstreamStart
-                                                val _headersOut: Seq[(String, String)] = HeadersHelper.composeHeadersOut(
-                                                  descriptor = descriptor,
-                                                  req = req,
-                                                  resp = resp,
-                                                  apiKey = apiKey,
-                                                  paUsr = paUsr,
-                                                  elCtx = elCtx,
-                                                  snowflake = snowflake,
-                                                  requestTimestamp = requestTimestamp,
-                                                  headersOutFiltered = headersOutFiltered,
-                                                  overhead = overhead,
-                                                  upstreamLatency = upstreamLatency,
-                                                  canaryId = canaryId,
-                                                  remainingQuotas = remainingQuotas
-                                                )
+                                                val _headersOut: Seq[(String, String)] =
+                                                  HeadersHelper.composeHeadersOut(
+                                                    descriptor = descriptor,
+                                                    req = req,
+                                                    resp = resp,
+                                                    apiKey = apiKey,
+                                                    paUsr = paUsr,
+                                                    elCtx = elCtx,
+                                                    snowflake = snowflake,
+                                                    requestTimestamp = requestTimestamp,
+                                                    headersOutFiltered = headersOutFiltered,
+                                                    overhead = overhead,
+                                                    upstreamLatency = upstreamLatency,
+                                                    canaryId = canaryId,
+                                                    remainingQuotas = remainingQuotas
+                                                  )
                                                 // val _headersOut: Seq[(String, String)] = {
                                                 //   descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
                                                 //     .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
@@ -1807,7 +1834,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                   ): _*
                                                                 )
                                                                 .as(contentType)
-                                                                .withCookies(withTrackingCookies ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) ++ cookies: _*)
+                                                                .withCookies(
+                                                                  withTrackingCookies ++ jwtInjection.additionalCookies
+                                                                    .map(t => Cookie(t._1, t._2)) ++ cookies: _*
+                                                                )
                                                               desc.gzip.handleResult(req, response)
                                                             }
                                                         } else {
@@ -1837,7 +1867,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                     h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                                 ): _*
                                                               )
-                                                              .withCookies((withTrackingCookies ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) ++ cookies): _*)
+                                                              .withCookies(
+                                                                (withTrackingCookies ++ jwtInjection.additionalCookies
+                                                                  .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                                              )
                                                               .as(contentType)
                                                           }
                                                           case false => {
@@ -1863,7 +1896,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                     h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
                                                                 ): _*
                                                               )
-                                                              .withCookies((withTrackingCookies ++ jwtInjection.additionalCookies.map(t => Cookie(t._1, t._2)) ++ cookies): _*)
+                                                              .withCookies(
+                                                                (withTrackingCookies ++ jwtInjection.additionalCookies
+                                                                  .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                                              )
                                                               .as(contentType)
                                                           }
                                                         }
@@ -1875,404 +1911,363 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             }
                                         }
                                       }
-                                    }
+                                  }
 
-                                    def passWithApiKey(config: GlobalConfig): Future[Result] = {
-                                      if (descriptor.thirdPartyApiKey.enabled) {
-                                        descriptor.thirdPartyApiKey.handle(req, descriptor, config) { key =>
-                                          callDownstream(config, key)
-                                        }
-                                      } else {
-                                        val authByJwtToken = req.headers
-                                          .get(
-                                            descriptor.apiKeyConstraints.jwtAuth.headerName
-                                              .getOrElse(env.Headers.OtoroshiBearer)
-                                          )
-                                          .orElse(
-                                            req.headers.get("Authorization").filter(_.startsWith("Bearer "))
-                                          )
-                                          .map(_.replace("Bearer ", ""))
-                                          .orElse(
-                                            req.queryString
+                                  def passWithApiKey(config: GlobalConfig): Future[Result] = {
+                                    if (descriptor.thirdPartyApiKey.enabled) {
+                                      descriptor.thirdPartyApiKey.handle(req, descriptor, config) { key =>
+                                        callDownstream(config, key)
+                                      }
+                                    } else {
+                                      val authByJwtToken = req.headers
+                                        .get(
+                                          descriptor.apiKeyConstraints.jwtAuth.headerName
+                                            .getOrElse(env.Headers.OtoroshiBearer)
+                                        )
+                                        .orElse(
+                                          req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+                                        )
+                                        .map(_.replace("Bearer ", ""))
+                                        .orElse(
+                                          req.queryString
+                                            .get(
+                                              descriptor.apiKeyConstraints.jwtAuth.queryName
+                                                .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+                                            )
+                                            .flatMap(_.lastOption)
+                                        )
+                                        .orElse(
+                                          req.cookies
+                                            .get(
+                                              descriptor.apiKeyConstraints.jwtAuth.cookieName
+                                                .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+                                            )
+                                            .map(_.value)
+                                        )
+                                        .filter(_.split("\\.").length == 3)
+                                      val authBasic = req.headers
+                                        .get(
+                                          descriptor.apiKeyConstraints.basicAuth.headerName
+                                            .getOrElse(env.Headers.OtoroshiAuthorization)
+                                        )
+                                        .orElse(
+                                          req.headers.get("Authorization").filter(_.startsWith("Basic "))
+                                        )
+                                        .map(_.replace("Basic ", ""))
+                                        .flatMap(e => Try(decodeBase64(e)).toOption)
+                                        .orElse(
+                                          req.queryString
+                                            .get(
+                                              descriptor.apiKeyConstraints.basicAuth.queryName
+                                                .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+                                            )
+                                            .flatMap(_.lastOption)
+                                            .flatMap(e => Try(decodeBase64(e)).toOption)
+                                        )
+                                      val authByCustomHeaders = req.headers
+                                        .get(
+                                          descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
+                                            .getOrElse(env.Headers.OtoroshiClientId)
+                                        )
+                                        .flatMap(
+                                          id =>
+                                            req.headers
                                               .get(
-                                                descriptor.apiKeyConstraints.jwtAuth.queryName
-                                                  .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+                                                descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName
+                                                  .getOrElse(env.Headers.OtoroshiClientSecret)
                                               )
-                                              .flatMap(_.lastOption)
-                                          )
-                                          .orElse(
-                                            req.cookies
-                                              .get(
-                                                descriptor.apiKeyConstraints.jwtAuth.cookieName
-                                                  .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+                                              .map(s => (id, s))
+                                        )
+                                      val authBySimpleApiKeyClientId = req.headers
+                                        .get(
+                                          descriptor.apiKeyConstraints.clientIdAuth.headerName
+                                            .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+                                        )
+                                        .orElse(
+                                          req.queryString
+                                            .get(
+                                              descriptor.apiKeyConstraints.clientIdAuth.queryName
+                                                .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+                                            )
+                                            .flatMap(_.lastOption)
+                                        )
+                                      if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
+                                        val clientId = authBySimpleApiKeyClientId.get
+                                        env.datastores.apiKeyDataStore
+                                          .findAuthorizeKeyFor(clientId, descriptor.id)
+                                          .flatMap {
+                                            case None =>
+                                              Errors.craftResponseResult(
+                                                "Invalid API key",
+                                                Unauthorized,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.invalid.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                               )
-                                              .map(_.value)
-                                          )
-                                          .filter(_.split("\\.").length == 3)
-                                        val authBasic = req.headers
-                                          .get(
-                                            descriptor.apiKeyConstraints.basicAuth.headerName
-                                              .getOrElse(env.Headers.OtoroshiAuthorization)
-                                          )
-                                          .orElse(
-                                            req.headers.get("Authorization").filter(_.startsWith("Basic "))
-                                          )
-                                          .map(_.replace("Basic ", ""))
-                                          .flatMap(e => Try(decodeBase64(e)).toOption)
-                                          .orElse(
-                                            req.queryString
-                                              .get(
-                                                descriptor.apiKeyConstraints.basicAuth.queryName
-                                                  .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+                                            case Some(key) if !key.allowClientIdOnly => {
+                                              Errors.craftResponseResult(
+                                                "Bad API key",
+                                                BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                               )
-                                              .flatMap(_.lastOption)
-                                              .flatMap(e => Try(decodeBase64(e)).toOption)
-                                          )
-                                        val authByCustomHeaders = req.headers
-                                          .get(
-                                            descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
-                                              .getOrElse(env.Headers.OtoroshiClientId)
-                                          )
-                                          .flatMap(
-                                            id =>
-                                              req.headers
-                                                .get(
-                                                  descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName
-                                                    .getOrElse(env.Headers.OtoroshiClientSecret)
-                                                )
-                                                .map(s => (id, s))
-                                          )
-                                        val authBySimpleApiKeyClientId = req.headers
-                                          .get(
-                                            descriptor.apiKeyConstraints.clientIdAuth.headerName
-                                              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
-                                          )
-                                          .orElse(
-                                            req.queryString
-                                              .get(
-                                                descriptor.apiKeyConstraints.clientIdAuth.queryName
-                                                  .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
-                                              )
-                                              .flatMap(_.lastOption)
-                                          )
-                                        if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
-                                          val clientId = authBySimpleApiKeyClientId.get
-                                          env.datastores.apiKeyDataStore
-                                            .findAuthorizeKeyFor(clientId, descriptor.id)
-                                            .flatMap {
-                                              case None =>
-                                                Errors.craftResponseResult(
-                                                  "Invalid API key",
-                                                  Unauthorized,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.invalid.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              case Some(key) if !key.allowClientIdOnly => {
-                                                Errors.craftResponseResult(
-                                                  "Bad API key",
-                                                  BadRequest,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.bad.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              }
-                                              case Some(key) if !key.matchRouting(descriptor) => {
-                                                Errors.craftResponseResult(
-                                                  "Invalid API key",
-                                                  Unauthorized,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.bad.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              }
-                                              case Some(key)
-                                                  if key.restrictions.enabled && key.restrictions
-                                                    .isNotFound(req.method, req.domain, req.relativeUri) => {
-                                                Errors.craftResponseResult(
-                                                  "Not Found",
-                                                  NotFound,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.not.found"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              }
-                                              case Some(key)
-                                                  if key.restrictions
-                                                    .handleRestrictions(descriptor, Some(key), req)
-                                                    ._1 => {
-                                                key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
-                                              }
-                                              case Some(key) if key.allowClientIdOnly =>
-                                                key.withingQuotas().flatMap {
-                                                  case true => callDownstream(config, Some(key))
-                                                  case false =>
-                                                    Errors.craftResponseResult(
-                                                      "You performed too much requests",
-                                                      TooManyRequests,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.too.much.requests"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead
-                                                    )
-                                                }
                                             }
-                                        } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
-                                          val (clientId, clientSecret) = authByCustomHeaders.get
-                                          env.datastores.apiKeyDataStore
-                                            .findAuthorizeKeyFor(clientId, descriptor.id)
-                                            .flatMap {
-                                              case None =>
-                                                Errors.craftResponseResult(
-                                                  "Invalid API key",
-                                                  Unauthorized,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.invalid.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              case Some(key) if key.isInvalid(clientSecret) => {
-                                                Alerts.send(
-                                                  RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                          DateTime.now(),
-                                                                          env.env,
-                                                                          req,
-                                                                          key,
-                                                                          descriptor)
-                                                )
-                                                Errors.craftResponseResult(
-                                                  "Bad API key",
-                                                  BadRequest,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.bad.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              }
-                                              case Some(key) if !key.matchRouting(descriptor) => {
-                                                Errors.craftResponseResult(
-                                                  "Bad API key",
-                                                  Unauthorized,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.bad.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                              }
-                                              case Some(key)
-                                                  if key.restrictions
-                                                    .handleRestrictions(descriptor, Some(key), req)
-                                                    ._1 => {
-                                                key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
-                                              }
-                                              case Some(key) if key.isValid(clientSecret) =>
-                                                key.withingQuotas().flatMap {
-                                                  case true => callDownstream(config, Some(key))
-                                                  case false =>
-                                                    Errors.craftResponseResult(
-                                                      "You performed too much requests",
-                                                      TooManyRequests,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.too.much.requests"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead
-                                                    )
-                                                }
+                                            case Some(key) if !key.matchRouting(descriptor) => {
+                                              Errors.craftResponseResult(
+                                                "Invalid API key",
+                                                Unauthorized,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
                                             }
-                                        } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
-                                          val jwtTokenValue = authByJwtToken.get
-                                          Try {
-                                            JWT.decode(jwtTokenValue)
-                                          } map { jwt =>
-                                            Option(jwt.getClaim("iss"))
-                                              .filterNot(_.isNull)
-                                              .map(_.asString())
-                                              .orElse(
-                                                Option(jwt.getClaim("clientId")).filterNot(_.isNull).map(_.asString())
-                                              ) match {
-                                              case Some(clientId) =>
-                                                env.datastores.apiKeyDataStore
-                                                  .findAuthorizeKeyFor(clientId, descriptor.id)
-                                                  .flatMap {
-                                                    case Some(apiKey) => {
-                                                      val algorithm = Option(jwt.getAlgorithm).map {
-                                                        case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
-                                                        case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
-                                                      } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
-                                                      val exp =
-                                                        Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
-                                                      val iat =
-                                                        Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
-                                                      val httpPath = Option(jwt.getClaim("httpPath"))
-                                                        .filterNot(_.isNull)
-                                                        .map(_.asString())
-                                                      val httpVerb = Option(jwt.getClaim("httpVerb"))
-                                                        .filterNot(_.isNull)
-                                                        .map(_.asString())
-                                                      val httpHost = Option(jwt.getClaim("httpHost"))
-                                                        .filterNot(_.isNull)
-                                                        .map(_.asString())
-                                                      val verifier =
-                                                        JWT
-                                                          .require(algorithm)
-                                                          .withIssuer(clientId)
-                                                          .acceptLeeway(10)
-                                                          .build
-                                                      Try(verifier.verify(jwtTokenValue))
-                                                        .filter { token =>
-                                                          val xsrfToken       = token.getClaim("xsrfToken")
-                                                          val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                                                          if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
-                                                            xsrfToken.asString() == xsrfTokenHeader.get
-                                                          } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
-                                                            false
-                                                          } else {
-                                                            true
-                                                          }
-                                                        }
-                                                        .filter { _ =>
-                                                          desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
-                                                            maxJwtLifespanSecs =>
-                                                              if (exp.isEmpty || iat.isEmpty) {
-                                                                false
-                                                              } else {
-                                                                if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
-                                                                  true
-                                                                } else {
-                                                                  false
-                                                                }
-                                                              }
-                                                          } getOrElse {
-                                                            true
-                                                          }
-                                                        }
-                                                        .filter { _ =>
-                                                          if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
-                                                            val matchPath = httpPath.exists(_ == req.relativeUri)
-                                                            val matchVerb =
-                                                              httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
-                                                            val matchHost = httpHost.exists(_.toLowerCase == req.host)
-                                                            matchPath && matchVerb && matchHost
-                                                          } else {
-                                                            true
-                                                          }
-                                                        } match {
-                                                        case Success(_) if !apiKey.matchRouting(descriptor) => {
-                                                          Errors.craftResponseResult(
-                                                            "Invalid API key",
-                                                            Unauthorized,
-                                                            req,
-                                                            Some(descriptor),
-                                                            Some("errors.bad.api.key"),
-                                                            duration = System.currentTimeMillis - start,
-                                                            overhead = (System
-                                                              .currentTimeMillis() - secondStart) + firstOverhead
-                                                          )
-                                                        }
-                                                        case Success(_)
-                                                            if apiKey.restrictions
-                                                              .handleRestrictions(descriptor, Some(apiKey), req)
-                                                              ._1 => {
-                                                          apiKey.restrictions
-                                                            .handleRestrictions(descriptor, Some(apiKey), req)
-                                                            ._2
-                                                        }
-                                                        case Success(_) =>
-                                                          apiKey.withingQuotas().flatMap {
-                                                            case true => callDownstream(config, Some(apiKey))
-                                                            case false =>
-                                                              Errors.craftResponseResult(
-                                                                "You performed too much requests",
-                                                                TooManyRequests,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.too.much.requests"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead
-                                                              )
-                                                          }
-                                                        case Failure(e) => {
-                                                          Alerts.send(
-                                                            RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                                    DateTime.now(),
-                                                                                    env.env,
-                                                                                    req,
-                                                                                    apiKey,
-                                                                                    descriptor)
-                                                          )
-                                                          Errors.craftResponseResult(
-                                                            s"Bad API key",
-                                                            BadRequest,
-                                                            req,
-                                                            Some(descriptor),
-                                                            Some("errors.bad.api.key"),
-                                                            duration = System.currentTimeMillis - start,
-                                                            overhead = (System
-                                                              .currentTimeMillis() - secondStart) + firstOverhead
-                                                          )
+                                            case Some(key)
+                                                if key.restrictions.enabled && key.restrictions
+                                                  .isNotFound(req.method, req.domain, req.relativeUri) => {
+                                              Errors.craftResponseResult(
+                                                "Not Found",
+                                                NotFound,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.not.found"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            }
+                                            case Some(key)
+                                                if key.restrictions
+                                                  .handleRestrictions(descriptor, Some(key), req)
+                                                  ._1 => {
+                                              key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                            }
+                                            case Some(key) if key.allowClientIdOnly =>
+                                              key.withingQuotas().flatMap {
+                                                case true => callDownstream(config, Some(key))
+                                                case false =>
+                                                  Errors.craftResponseResult(
+                                                    "You performed too much requests",
+                                                    TooManyRequests,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.too.much.requests"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                  )
+                                              }
+                                          }
+                                      } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
+                                        val (clientId, clientSecret) = authByCustomHeaders.get
+                                        env.datastores.apiKeyDataStore
+                                          .findAuthorizeKeyFor(clientId, descriptor.id)
+                                          .flatMap {
+                                            case None =>
+                                              Errors.craftResponseResult(
+                                                "Invalid API key",
+                                                Unauthorized,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.invalid.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            case Some(key) if key.isInvalid(clientSecret) => {
+                                              Alerts.send(
+                                                RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                                        DateTime.now(),
+                                                                        env.env,
+                                                                        req,
+                                                                        key,
+                                                                        descriptor)
+                                              )
+                                              Errors.craftResponseResult(
+                                                "Bad API key",
+                                                BadRequest,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            }
+                                            case Some(key) if !key.matchRouting(descriptor) => {
+                                              Errors.craftResponseResult(
+                                                "Bad API key",
+                                                Unauthorized,
+                                                req,
+                                                Some(descriptor),
+                                                Some("errors.bad.api.key"),
+                                                duration = System.currentTimeMillis - start,
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              )
+                                            }
+                                            case Some(key)
+                                                if key.restrictions
+                                                  .handleRestrictions(descriptor, Some(key), req)
+                                                  ._1 => {
+                                              key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                            }
+                                            case Some(key) if key.isValid(clientSecret) =>
+                                              key.withingQuotas().flatMap {
+                                                case true => callDownstream(config, Some(key))
+                                                case false =>
+                                                  Errors.craftResponseResult(
+                                                    "You performed too much requests",
+                                                    TooManyRequests,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.too.much.requests"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                  )
+                                              }
+                                          }
+                                      } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
+                                        val jwtTokenValue = authByJwtToken.get
+                                        Try {
+                                          JWT.decode(jwtTokenValue)
+                                        } map { jwt =>
+                                          Option(jwt.getClaim("iss"))
+                                            .filterNot(_.isNull)
+                                            .map(_.asString())
+                                            .orElse(
+                                              Option(jwt.getClaim("clientId")).filterNot(_.isNull).map(_.asString())
+                                            ) match {
+                                            case Some(clientId) =>
+                                              env.datastores.apiKeyDataStore
+                                                .findAuthorizeKeyFor(clientId, descriptor.id)
+                                                .flatMap {
+                                                  case Some(apiKey) => {
+                                                    val algorithm = Option(jwt.getAlgorithm).map {
+                                                      case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
+                                                      case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
+                                                    } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
+                                                    val exp =
+                                                      Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                                                    val iat =
+                                                      Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                                                    val httpPath = Option(jwt.getClaim("httpPath"))
+                                                      .filterNot(_.isNull)
+                                                      .map(_.asString())
+                                                    val httpVerb = Option(jwt.getClaim("httpVerb"))
+                                                      .filterNot(_.isNull)
+                                                      .map(_.asString())
+                                                    val httpHost = Option(jwt.getClaim("httpHost"))
+                                                      .filterNot(_.isNull)
+                                                      .map(_.asString())
+                                                    val verifier =
+                                                      JWT
+                                                        .require(algorithm)
+                                                        .withIssuer(clientId)
+                                                        .acceptLeeway(10)
+                                                        .build
+                                                    Try(verifier.verify(jwtTokenValue))
+                                                      .filter { token =>
+                                                        val xsrfToken       = token.getClaim("xsrfToken")
+                                                        val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                                                        if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                                                          xsrfToken.asString() == xsrfTokenHeader.get
+                                                        } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                                                          false
+                                                        } else {
+                                                          true
                                                         }
                                                       }
+                                                      .filter { _ =>
+                                                        desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
+                                                          maxJwtLifespanSecs =>
+                                                            if (exp.isEmpty || iat.isEmpty) {
+                                                              false
+                                                            } else {
+                                                              if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
+                                                                true
+                                                              } else {
+                                                                false
+                                                              }
+                                                            }
+                                                        } getOrElse {
+                                                          true
+                                                        }
+                                                      }
+                                                      .filter { _ =>
+                                                        if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
+                                                          val matchPath = httpPath.exists(_ == req.relativeUri)
+                                                          val matchVerb =
+                                                            httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
+                                                          val matchHost = httpHost.exists(_.toLowerCase == req.host)
+                                                          matchPath && matchVerb && matchHost
+                                                        } else {
+                                                          true
+                                                        }
+                                                      } match {
+                                                      case Success(_) if !apiKey.matchRouting(descriptor) => {
+                                                        Errors.craftResponseResult(
+                                                          "Invalid API key",
+                                                          Unauthorized,
+                                                          req,
+                                                          Some(descriptor),
+                                                          Some("errors.bad.api.key"),
+                                                          duration = System.currentTimeMillis - start,
+                                                          overhead = (System
+                                                            .currentTimeMillis() - secondStart) + firstOverhead
+                                                        )
+                                                      }
+                                                      case Success(_)
+                                                          if apiKey.restrictions
+                                                            .handleRestrictions(descriptor, Some(apiKey), req)
+                                                            ._1 => {
+                                                        apiKey.restrictions
+                                                          .handleRestrictions(descriptor, Some(apiKey), req)
+                                                          ._2
+                                                      }
+                                                      case Success(_) =>
+                                                        apiKey.withingQuotas().flatMap {
+                                                          case true => callDownstream(config, Some(apiKey))
+                                                          case false =>
+                                                            Errors.craftResponseResult(
+                                                              "You performed too much requests",
+                                                              TooManyRequests,
+                                                              req,
+                                                              Some(descriptor),
+                                                              Some("errors.too.much.requests"),
+                                                              duration = System.currentTimeMillis - start,
+                                                              overhead = (System
+                                                                .currentTimeMillis() - secondStart) + firstOverhead
+                                                            )
+                                                        }
+                                                      case Failure(e) => {
+                                                        Alerts.send(
+                                                          RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                                                  DateTime.now(),
+                                                                                  env.env,
+                                                                                  req,
+                                                                                  apiKey,
+                                                                                  descriptor)
+                                                        )
+                                                        Errors.craftResponseResult(
+                                                          s"Bad API key",
+                                                          BadRequest,
+                                                          req,
+                                                          Some(descriptor),
+                                                          Some("errors.bad.api.key"),
+                                                          duration = System.currentTimeMillis - start,
+                                                          overhead = (System
+                                                            .currentTimeMillis() - secondStart) + firstOverhead
+                                                        )
+                                                      }
                                                     }
-                                                    case None =>
-                                                      Errors.craftResponseResult(
-                                                        "Invalid ApiKey provided",
-                                                        Unauthorized,
-                                                        req,
-                                                        Some(descriptor),
-                                                        Some("errors.invalid.api.key"),
-                                                        duration = System.currentTimeMillis - start,
-                                                        overhead = (System
-                                                          .currentTimeMillis() - secondStart) + firstOverhead
-                                                      )
                                                   }
-                                              case None =>
-                                                Errors.craftResponseResult(
-                                                  "Invalid ApiKey provided",
-                                                  Unauthorized,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.invalid.api.key"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                                )
-                                            }
-                                          } getOrElse Errors.craftResponseResult(
-                                            s"Invalid ApiKey provided",
-                                            Unauthorized,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.invalid.api.key"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          )
-                                        } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
-                                          val auth   = authBasic.get
-                                          val id     = auth.split(":").headOption.map(_.trim)
-                                          val secret = auth.split(":").lastOption.map(_.trim)
-                                          (id, secret) match {
-                                            case (Some(apiKeyClientId), Some(apiKeySecret)) => {
-                                              env.datastores.apiKeyDataStore
-                                                .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
-                                                .flatMap {
                                                   case None =>
                                                     Errors.craftResponseResult(
-                                                      "Invalid API key",
+                                                      "Invalid ApiKey provided",
                                                       Unauthorized,
                                                       req,
                                                       Some(descriptor),
@@ -2281,167 +2276,227 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       overhead = (System
                                                         .currentTimeMillis() - secondStart) + firstOverhead
                                                     )
-                                                  case Some(key) if key.isInvalid(apiKeySecret) => {
-                                                    Alerts.send(
-                                                      RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                              DateTime.now(),
-                                                                              env.env,
-                                                                              req,
-                                                                              key,
-                                                                              descriptor)
-                                                    )
-                                                    Errors.craftResponseResult(
-                                                      "Bad API key",
-                                                      BadGateway,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.bad.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead
-                                                    )
-                                                  }
-                                                  case Some(key) if !key.matchRouting(descriptor) => {
-                                                    Errors.craftResponseResult(
-                                                      "Invalid API key",
-                                                      Unauthorized,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.bad.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead
-                                                    )
-                                                  }
-                                                  case Some(key)
-                                                      if key.restrictions
-                                                        .handleRestrictions(descriptor, Some(key), req)
-                                                        ._1 => {
-                                                    key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
-                                                  }
-                                                  case Some(key) if key.isValid(apiKeySecret) =>
-                                                    key.withingQuotas().flatMap {
-                                                      case true => callDownstream(config, Some(key))
-                                                      case false =>
-                                                        Errors.craftResponseResult(
-                                                          "You performed too much requests",
-                                                          TooManyRequests,
-                                                          req,
-                                                          Some(descriptor),
-                                                          Some("errors.too.much.requests"),
-                                                          duration = System.currentTimeMillis - start,
-                                                          overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead
-                                                        )
-                                                    }
                                                 }
-                                            }
-                                            case _ =>
+                                            case None =>
                                               Errors.craftResponseResult(
-                                                "No ApiKey provided",
-                                                BadRequest,
+                                                "Invalid ApiKey provided",
+                                                Unauthorized,
                                                 req,
                                                 Some(descriptor),
-                                                Some("errors.no.api.key"),
+                                                Some("errors.invalid.api.key"),
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                               )
                                           }
-                                        } else {
-                                          Errors.craftResponseResult(
-                                            "No ApiKey provided",
-                                            BadRequest,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.no.api.key"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          )
-                                        }
-                                      }
-                                    }
-
-                                    def passWithAuth0(config: GlobalConfig): Future[Result] = {
-                                      isPrivateAppsSessionValid(req, descriptor).flatMap {
-                                        case Some(paUsr) =>
-                                          callDownstream(config, paUsr = Some(paUsr))
-                                        case None => {
-                                          val redirect = req
-                                            .getQueryString("redirect")
-                                            .getOrElse(s"${protocol}://${req.host}${req.relativeUri}")
-                                          val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
-                                            .map(a => s":$a")
-                                            .getOrElse("") + controllers.routes.AuthController
-                                            .confidentialAppLoginPage()
-                                            .url + s"?desc=${descriptor.id}&redirect=${redirect}"
-                                          logger.trace("should redirect to " + redirectTo)
-                                          descriptor.authConfigRef match {
-                                            case None =>
-                                              Errors.craftResponseResult(
-                                                "Auth. config. ref not found on the descriptor",
-                                                InternalServerError,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.auth.config.ref.not.found"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                              )
-                                            case Some(ref) => {
-                                              env.datastores.authConfigsDataStore.findById(ref).flatMap {
+                                        } getOrElse Errors.craftResponseResult(
+                                          s"Invalid ApiKey provided",
+                                          Unauthorized,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.invalid.api.key"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
+                                      } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
+                                        val auth   = authBasic.get
+                                        val id     = auth.split(":").headOption.map(_.trim)
+                                        val secret = auth.split(":").lastOption.map(_.trim)
+                                        (id, secret) match {
+                                          case (Some(apiKeyClientId), Some(apiKeySecret)) => {
+                                            env.datastores.apiKeyDataStore
+                                              .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
+                                              .flatMap {
                                                 case None =>
                                                   Errors.craftResponseResult(
-                                                    "Auth. config. not found on the descriptor",
-                                                    InternalServerError,
+                                                    "Invalid API key",
+                                                    Unauthorized,
                                                     req,
                                                     Some(descriptor),
-                                                    Some("errors.auth.config.not.found"),
+                                                    Some("errors.invalid.api.key"),
                                                     duration = System.currentTimeMillis - start,
                                                     overhead = (System
                                                       .currentTimeMillis() - secondStart) + firstOverhead
                                                   )
-                                                case Some(auth) => {
-                                                  FastFuture.successful(
-                                                    Results
-                                                      .Redirect(redirectTo)
-                                                      .discardingCookies(
-                                                        env.removePrivateSessionCookies(
-                                                          ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
-                                                          descriptor,
-                                                          auth
-                                                        ): _*
-                                                      )
+                                                case Some(key) if key.isInvalid(apiKeySecret) => {
+                                                  Alerts.send(
+                                                    RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                                            DateTime.now(),
+                                                                            env.env,
+                                                                            req,
+                                                                            key,
+                                                                            descriptor)
+                                                  )
+                                                  Errors.craftResponseResult(
+                                                    "Bad API key",
+                                                    BadGateway,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.bad.api.key"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
                                                   )
                                                 }
+                                                case Some(key) if !key.matchRouting(descriptor) => {
+                                                  Errors.craftResponseResult(
+                                                    "Invalid API key",
+                                                    Unauthorized,
+                                                    req,
+                                                    Some(descriptor),
+                                                    Some("errors.bad.api.key"),
+                                                    duration = System.currentTimeMillis - start,
+                                                    overhead = (System
+                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                  )
+                                                }
+                                                case Some(key)
+                                                    if key.restrictions
+                                                      .handleRestrictions(descriptor, Some(key), req)
+                                                      ._1 => {
+                                                  key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                                }
+                                                case Some(key) if key.isValid(apiKeySecret) =>
+                                                  key.withingQuotas().flatMap {
+                                                    case true => callDownstream(config, Some(key))
+                                                    case false =>
+                                                      Errors.craftResponseResult(
+                                                        "You performed too much requests",
+                                                        TooManyRequests,
+                                                        req,
+                                                        Some(descriptor),
+                                                        Some("errors.too.much.requests"),
+                                                        duration = System.currentTimeMillis - start,
+                                                        overhead = (System
+                                                          .currentTimeMillis() - secondStart) + firstOverhead
+                                                      )
+                                                  }
+                                              }
+                                          }
+                                          case _ =>
+                                            Errors.craftResponseResult(
+                                              "No ApiKey provided",
+                                              BadRequest,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.no.api.key"),
+                                              duration = System.currentTimeMillis - start,
+                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                            )
+                                        }
+                                      } else {
+                                        Errors.craftResponseResult(
+                                          "No ApiKey provided",
+                                          BadRequest,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.no.api.key"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
+                                      }
+                                    }
+                                  }
+
+                                  def passWithAuth0(config: GlobalConfig): Future[Result] = {
+                                    isPrivateAppsSessionValid(req, descriptor).flatMap {
+                                      case Some(paUsr) =>
+                                        callDownstream(config, paUsr = Some(paUsr))
+                                      case None => {
+                                        val redirect = req
+                                          .getQueryString("redirect")
+                                          .getOrElse(s"${protocol}://${req.host}${req.relativeUri}")
+                                        val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
+                                          .map(a => s":$a")
+                                          .getOrElse("") + controllers.routes.AuthController
+                                          .confidentialAppLoginPage()
+                                          .url + s"?desc=${descriptor.id}&redirect=${redirect}"
+                                        logger.trace("should redirect to " + redirectTo)
+                                        descriptor.authConfigRef match {
+                                          case None =>
+                                            Errors.craftResponseResult(
+                                              "Auth. config. ref not found on the descriptor",
+                                              InternalServerError,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.auth.config.ref.not.found"),
+                                              duration = System.currentTimeMillis - start,
+                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                            )
+                                          case Some(ref) => {
+                                            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+                                              case None =>
+                                                Errors.craftResponseResult(
+                                                  "Auth. config. not found on the descriptor",
+                                                  InternalServerError,
+                                                  req,
+                                                  Some(descriptor),
+                                                  Some("errors.auth.config.not.found"),
+                                                  duration = System.currentTimeMillis - start,
+                                                  overhead = (System
+                                                    .currentTimeMillis() - secondStart) + firstOverhead
+                                                )
+                                              case Some(auth) => {
+                                                FastFuture.successful(
+                                                  Results
+                                                    .Redirect(redirectTo)
+                                                    .discardingCookies(
+                                                      env.removePrivateSessionCookies(
+                                                        ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/").toHost,
+                                                        descriptor,
+                                                        auth
+                                                      ): _*
+                                                    )
+                                                )
                                               }
                                             }
                                           }
                                         }
                                       }
                                     }
+                                  }
 
-                                    // Algo is :
-                                    // if (app.private) {
-                                    //   if (uri.isPublic) {
-                                    //      AUTH0
-                                    //   } else {
-                                    //      APIKEY
-                                    //   }
-                                    // } else {
-                                    //   if (uri.isPublic) {
-                                    //     PASSTHROUGH without gateway auth
-                                    //   } else {
-                                    //     APIKEY
-                                    //   }
-                                    // }
+                                  // Algo is :
+                                  // if (app.private) {
+                                  //   if (uri.isPublic) {
+                                  //      AUTH0
+                                  //   } else {
+                                  //      APIKEY
+                                  //   }
+                                  // } else {
+                                  //   if (uri.isPublic) {
+                                  //     PASSTHROUGH without gateway auth
+                                  //   } else {
+                                  //     APIKEY
+                                  //   }
+                                  // }
 
-                                    env.datastores.globalConfigDataStore.quotasValidationFor(from).flatMap { r =>
-                                      val (within, secCalls, maybeQuota) = r
-                                      val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
-                                      val (restrictionsNotPassing, restrictionsResponse) =
-                                        descriptor.restrictions.handleRestrictions(descriptor, None, req)
-                                      if (secCalls > (quota * 10L)) {
+                                  env.datastores.globalConfigDataStore.quotasValidationFor(from).flatMap { r =>
+                                    val (within, secCalls, maybeQuota) = r
+                                    val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+                                    val (restrictionsNotPassing, restrictionsResponse) =
+                                      descriptor.restrictions.handleRestrictions(descriptor, None, req)
+                                    if (secCalls > (quota * 10L)) {
+                                      Errors.craftResponseResult(
+                                        "[IP] You performed too much requests",
+                                        TooManyRequests,
+                                        req,
+                                        Some(descriptor),
+                                        Some("errors.too.much.requests"),
+                                        duration = System.currentTimeMillis - start,
+                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                      )
+                                    } else {
+                                      if (!isSecured && desc.forceHttps) {
+                                        val theDomain = req.domain
+                                        val protocol  = getProtocolFor(req)
+                                        logger.trace(
+                                          s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
+                                        )
+                                        //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
+                                        FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
+                                      } else if (!within) {
                                         Errors.craftResponseResult(
-                                          "[IP] You performed too much requests",
+                                          "[GLOBAL] You performed too much requests",
                                           TooManyRequests,
                                           req,
                                           Some(descriptor),
@@ -2449,183 +2504,165 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           duration = System.currentTimeMillis - start,
                                           overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                         )
-                                      } else {
-                                        if (!isSecured && desc.forceHttps) {
-                                          val theDomain = req.domain
-                                          val protocol  = getProtocolFor(req)
-                                          logger.trace(
-                                            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
-                                          )
-                                          //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
-                                          FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
-                                        } else if (!within) {
-                                          Errors.craftResponseResult(
-                                            "[GLOBAL] You performed too much requests",
-                                            TooManyRequests,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.too.much.requests"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          )
-                                        } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
-                                          /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
+                                      } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+                                        /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
                                                    .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                          Errors.craftResponseResult(
-                                            "Your IP address is not allowed",
-                                            Forbidden,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.ip.address.not.allowed"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          ) // global whitelist
-                                        } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
-                                          /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
+                                        Errors.craftResponseResult(
+                                          "Your IP address is not allowed",
+                                          Forbidden,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.ip.address.not.allowed"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        ) // global whitelist
+                                      } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+                                        /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
                                                      .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                          Errors.craftResponseResult(
-                                            "Your IP address is not allowed",
-                                            Forbidden,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.ip.address.not.allowed"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          ) // global blacklist
-                                        } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
-                                          /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
+                                        Errors.craftResponseResult(
+                                          "Your IP address is not allowed",
+                                          Forbidden,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.ip.address.not.allowed"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        ) // global blacklist
+                                      } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+                                        /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
                                                    .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                          Errors.craftResponseResult(
-                                            "Your IP address is not allowed",
-                                            Forbidden,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.ip.address.not.allowed"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          ) // service whitelist
-                                        } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
-                                          /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
+                                        Errors.craftResponseResult(
+                                          "Your IP address is not allowed",
+                                          Forbidden,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.ip.address.not.allowed"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        ) // service whitelist
+                                      } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
+                                        /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
                                                    .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                          Errors.craftResponseResult(
-                                            "Your IP address is not allowed",
-                                            Forbidden,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.ip.address.not.allowed"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          ) // service blacklist
-                                        } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
-                                          /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
+                                        Errors.craftResponseResult(
+                                          "Your IP address is not allowed",
+                                          Forbidden,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.ip.address.not.allowed"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        ) // service blacklist
+                                      } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
+                                        /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
                                                    .exists(ip => RegexPool(ip).matches(remoteAddress))) {*/
-                                          val gigas: Long = 128L * 1024L * 1024L * 1024L
-                                          val middleFingers = ByteString.fromString(
-                                            "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
-                                          )
-                                          val zeros =
-                                            ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-                                          val characters: ByteString =
-                                            if (!globalConfig.middleFingers) middleFingers else zeros
-                                          val expected: Long = (gigas / characters.size) + 1L
-                                          FastFuture.successful(
-                                            Status(200)
-                                              .sendEntity(
-                                                HttpEntity.Streamed(
-                                                  Source
-                                                    .repeat(characters)
-                                                    .take(expected), // 128 Go of zeros or middle fingers
-                                                  None,
-                                                  Some("application/octet-stream")
-                                                )
+                                        val gigas: Long = 128L * 1024L * 1024L * 1024L
+                                        val middleFingers = ByteString.fromString(
+                                          "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
+                                        )
+                                        val zeros =
+                                          ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                                        val characters: ByteString =
+                                          if (!globalConfig.middleFingers) middleFingers else zeros
+                                        val expected: Long = (gigas / characters.size) + 1L
+                                        FastFuture.successful(
+                                          Status(200)
+                                            .sendEntity(
+                                              HttpEntity.Streamed(
+                                                Source
+                                                  .repeat(characters)
+                                                  .take(expected), // 128 Go of zeros or middle fingers
+                                                None,
+                                                Some("application/octet-stream")
                                               )
-                                          )
-                                        } else if (descriptor.maintenanceMode) {
+                                            )
+                                        )
+                                      } else if (descriptor.maintenanceMode) {
+                                        Errors.craftResponseResult(
+                                          "Service in maintenance mode",
+                                          ServiceUnavailable,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.service.in.maintenance"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
+                                      } else if (descriptor.buildMode) {
+                                        Errors.craftResponseResult(
+                                          "Service under construction",
+                                          ServiceUnavailable,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.service.under.construction"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
+                                      } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
+                                                   .get("Access-Control-Request-Method")
+                                                   .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
+                                        // handle cors preflight request
+                                        if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
                                           Errors.craftResponseResult(
-                                            "Service in maintenance mode",
-                                            ServiceUnavailable,
+                                            "Cors error",
+                                            BadRequest,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.service.in.maintenance"),
+                                            Some("errors.cors.error"),
                                             duration = System.currentTimeMillis - start,
                                             overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                           )
-                                        } else if (descriptor.buildMode) {
-                                          Errors.craftResponseResult(
-                                            "Service under construction",
-                                            ServiceUnavailable,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.service.under.construction"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        } else {
+                                          FastFuture.successful(
+                                            Results
+                                              .Ok(ByteString.empty)
+                                              .withHeaders(descriptor.cors.asHeaders(req): _*)
                                           )
-                                        } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
-                                                     .get("Access-Control-Request-Method")
-                                                     .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
-                                          // handle cors preflight request
-                                          if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
-                                            Errors.craftResponseResult(
-                                              "Cors error",
-                                              BadRequest,
-                                              req,
-                                              Some(descriptor),
-                                              Some("errors.cors.error"),
-                                              duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                            )
+                                        }
+                                      } else if (restrictionsNotPassing) {
+                                        restrictionsResponse
+                                      } else if (isUp) {
+                                        if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
+                                              .isExcludedFromSecurity(req.path)) {
+                                          if (descriptor.isUriPublic(req.path)) {
+                                            passWithAuth0(globalConfig)
                                           } else {
-                                            FastFuture.successful(
-                                              Results
-                                                .Ok(ByteString.empty)
-                                                .withHeaders(descriptor.cors.asHeaders(req): _*)
-                                            )
-                                          }
-                                        } else if (restrictionsNotPassing) {
-                                          restrictionsResponse
-                                        } else if (isUp) {
-                                          if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
-                                                .isExcludedFromSecurity(req.path)) {
-                                            if (descriptor.isUriPublic(req.path)) {
-                                              passWithAuth0(globalConfig)
-                                            } else {
-                                              isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
-                                                case Some(_) if descriptor.strictlyPrivate =>
-                                                  passWithApiKey(globalConfig)
-                                                case Some(user) => passWithAuth0(globalConfig)
-                                                case None       => passWithApiKey(globalConfig)
-                                              }
-                                            }
-                                          } else {
-                                            if (descriptor.isUriPublic(req.path)) {
-                                              if (env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper.detectApiKey(req, descriptor)) {
+                                            isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
+                                              case Some(_) if descriptor.strictlyPrivate =>
                                                 passWithApiKey(globalConfig)
-                                              } else {
-                                                callDownstream(globalConfig)
-                                              }
-                                            } else {
-                                              passWithApiKey(globalConfig)
+                                              case Some(user) => passWithAuth0(globalConfig)
+                                              case None       => passWithApiKey(globalConfig)
                                             }
                                           }
                                         } else {
-                                          // fail fast
-                                          Errors.craftResponseResult(
-                                            "The service seems to be down :( come back later",
-                                            Forbidden,
-                                            req,
-                                            Some(descriptor),
-                                            Some("errors.service.down"),
-                                            duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
-                                          )
-
+                                          if (descriptor.isUriPublic(req.path)) {
+                                            if (env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
+                                                  .detectApiKey(req, descriptor)) {
+                                              passWithApiKey(globalConfig)
+                                            } else {
+                                              callDownstream(globalConfig)
+                                            }
+                                          } else {
+                                            passWithApiKey(globalConfig)
+                                          }
                                         }
+                                      } else {
+                                        // fail fast
+                                        Errors.craftResponseResult(
+                                          "The service seems to be down :( come back later",
+                                          Forbidden,
+                                          req,
+                                          Some(descriptor),
+                                          Some("errors.service.down"),
+                                          duration = System.currentTimeMillis - start,
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        )
+
                                       }
                                     }
                                   }
-                              }
+                                }
                             }
                           }
+                        }
 
                       }
                     }

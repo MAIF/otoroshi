@@ -66,95 +66,125 @@ sealed trait TransformerContext {
   // TODO: add client geoloc infos
   def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {
-      case json: JsArray => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
+      case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
       case json: JsObject => (json \ s"$prefix$index").asOpt[JsValue]
-      case _ => None
+      case _              => None
     }
   }
   def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
     val conf = config match {
-      case json: JsArray => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
+      case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
       case json: JsObject => (json \ s"$prefix$index").as[JsValue]
-      case _ => Json.obj()
+      case _              => Json.obj()
     }
     (conf \ key).asOpt[A]
   }
 }
 
 case class TransformerRequestContext(
-  rawRequest: HttpRequest,
-  otoroshiRequest: HttpRequest,
-  index: Int,
-  snowflake: String,
-  descriptor: ServiceDescriptor,
-  apikey: Option[ApiKey],
-  user: Option[PrivateAppsUser],
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    index: Int,
+    snowflake: String,
+    descriptor: ServiceDescriptor,
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 case class TransformerResponseContext(
-  rawResponse: HttpResponse,
-  otoroshiResponse: HttpResponse,
-  index: Int,
-  snowflake: String,
-  descriptor: ServiceDescriptor,
-  apikey: Option[ApiKey],
-  user: Option[PrivateAppsUser],
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+    rawResponse: HttpResponse,
+    otoroshiResponse: HttpResponse,
+    index: Int,
+    snowflake: String,
+    descriptor: ServiceDescriptor,
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 case class TransformerRequestBodyContext(
-  rawRequest: HttpRequest,
-  otoroshiRequest: HttpRequest,
-  body: Source[ByteString, Any],
-  index: Int,
-  snowflake: String,
-  descriptor: ServiceDescriptor,
-  apikey: Option[ApiKey],
-  user: Option[PrivateAppsUser],
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    body: Source[ByteString, Any],
+    index: Int,
+    snowflake: String,
+    descriptor: ServiceDescriptor,
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 case class TransformerResponseBodyContext(
-  rawResponse: HttpResponse,
-  otoroshiResponse: HttpResponse,
-  body: Source[ByteString, Any],
-  index: Int,
-  snowflake: String,
-  descriptor: ServiceDescriptor,
-  apikey: Option[ApiKey],
-  user: Option[PrivateAppsUser],
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+    rawResponse: HttpResponse,
+    otoroshiResponse: HttpResponse,
+    body: Source[ByteString, Any],
+    index: Int,
+    snowflake: String,
+    descriptor: ServiceDescriptor,
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
 trait RequestTransformer {
 
-  def transformRequestWithCtx(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    transformRequest(context.snowflake, context.rawRequest, context.otoroshiRequest, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  def transformRequestWithCtx(
+      context: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    transformRequest(context.snowflake,
+                     context.rawRequest,
+                     context.otoroshiRequest,
+                     context.descriptor,
+                     context.apikey,
+                     context.user)(env, ec, mat)
   }
 
-  def transformResponseWithCtx(context: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
-    transformResponse(context.snowflake, context.rawResponse, context.otoroshiResponse, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  def transformResponseWithCtx(
+      context: TransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+    transformResponse(context.snowflake,
+                      context.rawResponse,
+                      context.otoroshiResponse,
+                      context.descriptor,
+                      context.apikey,
+                      context.user)(env, ec, mat)
   }
 
-  def transformRequestBodyWithCtx(context: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    transformRequestBody(context.snowflake, context.body, context.rawRequest, context.otoroshiRequest, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  def transformRequestBodyWithCtx(
+      context: TransformerRequestBodyContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    transformRequestBody(context.snowflake,
+                         context.body,
+                         context.rawRequest,
+                         context.otoroshiRequest,
+                         context.descriptor,
+                         context.apikey,
+                         context.user)(env, ec, mat)
   }
 
-  def transformResponseBodyWithCtx(context: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    transformResponseBody(context.snowflake, context.body, context.rawResponse, context.otoroshiResponse, context.descriptor, context.apikey, context.user)(env, ec, mat)
+  def transformResponseBodyWithCtx(
+      context: TransformerResponseBodyContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    transformResponseBody(context.snowflake,
+                          context.body,
+                          context.rawResponse,
+                          context.otoroshiResponse,
+                          context.descriptor,
+                          context.apikey,
+                          context.user)(env, ec, mat)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -325,7 +355,7 @@ class ScriptCompiler(env: Env) {
             )
           } else {
             val ctx = new SimpleScriptContext
-            val res = engine.eval(script, ctx)// .asInstanceOf[RequestTransformer]
+            val res = engine.eval(script, ctx) // .asInstanceOf[RequestTransformer]
             ctx.getErrorWriter.flush()
             ctx.getWriter.flush()
             Right(res)
@@ -425,9 +455,9 @@ class ScriptManager(env: Env) {
 
   def getScript(ref: String)(implicit ec: ExecutionContext): RequestTransformer = {
     getAnyScript[RequestTransformer](ref) match {
-      case Left("compiling")    => CompilingRequestTransformer
-      case Left(_)              => DefaultRequestTransformer
-      case Right(any)           => any.asInstanceOf[RequestTransformer]
+      case Left("compiling") => CompilingRequestTransformer
+      case Left(_)           => DefaultRequestTransformer
+      case Right(any)        => any.asInstanceOf[RequestTransformer]
     }
     // ref match {
     //   case r if r.startsWith("cp:") => {
@@ -464,15 +494,15 @@ class ScriptManager(env: Env) {
     ref match {
       case r if r.startsWith("cp:") => {
         if (!cpTryCache.contains(ref)) {
-          Try(env.environment.classLoader.loadClass(r.replace("cp:", "")))// .asSubclass(classOf[A]))
+          Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
             .map(clazz => clazz.newInstance()) match {
             case Success(tr) =>
               cpTryCache.put(ref, ())
               val typ: ScriptType = tr match {
-                case _: NanoApp => AppType
+                case _: NanoApp            => AppType
                 case _: RequestTransformer => TransformerType
-                case _: AccessValidator => AccessValidatorType
-                case _ => TransformerType
+                case _: AccessValidator    => AccessValidatorType
+                case _                     => TransformerType
               }
               cpCache.put(ref, (typ, tr))
             case Failure(e) =>
@@ -481,7 +511,7 @@ class ScriptManager(env: Env) {
         }
         cpCache.get(ref).flatMap(a => Option(a._2)) match {
           case Some(script) => Right(script.asInstanceOf[A])
-          case None => Left("not-in-cache")
+          case None         => Left("not-in-cache")
         }
       }
       case r => {
@@ -524,19 +554,29 @@ object Implicits {
     //    apiKey: Option[ApiKey] = None,
     //    user: Option[PrivateAppsUser] = None,
     //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    def transformRequest(context: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    def transformRequest(
+        context: TransformerRequestContext
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
         case true =>
           if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs                                = gScripts.transformersRefs ++ desc.transformerRefs
             val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
             Source(refs.toList.zipWithIndex).runFoldAsync(either) {
               case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
               case (Right(lastHttpRequest), (ref, index)) =>
                 env.scriptManager
                   .getScript(ref)
-                  .transformRequestWithCtx(context.copy(otoroshiRequest = lastHttpRequest, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+                  .transformRequestWithCtx(
+                    context.copy(otoroshiRequest = lastHttpRequest,
+                                 index = index,
+                                 config = context.config,
+                                 globalConfig = gScripts.transformersConfig)
+                  )(env, ec, mat)
             }
             // desc.transformerRef match {
             //   case Some(ref) =>
@@ -560,19 +600,29 @@ object Implicits {
     //     apiKey: Option[ApiKey] = None,
     //     user: Option[PrivateAppsUser] = None
     // )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
-    def transformResponse(context: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+    def transformResponse(
+        context: TransformerResponseContext
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
       env.scriptingEnabled match {
         case true =>
           if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs                                 = gScripts.transformersRefs ++ desc.transformerRefs
             val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
             Source(refs.toList.zipWithIndex).runFoldAsync(either) {
               case (Left(badResult), _) => FastFuture.successful(Left(badResult))
               case (Right(lastHttpResponse), (ref, index)) =>
                 env.scriptManager
                   .getScript(ref)
-                  .transformResponseWithCtx(context.copy(otoroshiResponse = lastHttpResponse, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+                  .transformResponseWithCtx(
+                    context.copy(otoroshiResponse = lastHttpResponse,
+                                 index = index,
+                                 config = context.config,
+                                 globalConfig = gScripts.transformersConfig)
+                  )(env, ec, mat)
             }
             // desc.transformerRef match {
             //   case Some(ref) =>
@@ -597,17 +647,27 @@ object Implicits {
     //    apiKey: Option[ApiKey] = None,
     //    user: Option[PrivateAppsUser] = None
     //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
-    def transformRequestBody(context: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    def transformRequestBody(
+        context: TransformerRequestBodyContext
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
         case true =>
           if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs = gScripts.transformersRefs ++ desc.transformerRefs
             Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
               case (body, (ref, index)) =>
                 env.scriptManager
                   .getScript(ref)
-                  .transformRequestBodyWithCtx(context.copy(body = body, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+                  .transformRequestBodyWithCtx(
+                    context.copy(body = body,
+                                 index = index,
+                                 config = context.config,
+                                 globalConfig = gScripts.transformersConfig)
+                  )(env, ec, mat)
             })
             // desc.transformerRef match {
             //   case Some(ref) =>
@@ -632,17 +692,27 @@ object Implicits {
     //    apiKey: Option[ApiKey] = None,
     //    user: Option[PrivateAppsUser] = None
     //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
-    def transformResponseBody(context: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    def transformResponseBody(
+        context: TransformerResponseBodyContext
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
         case true =>
           if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe.filter(_.scripts.enabled).map(_.scripts).getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs = gScripts.transformersRefs ++ desc.transformerRefs
             Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
               case (body, (ref, index)) =>
                 env.scriptManager
                   .getScript(ref)
-                  .transformResponseBodyWithCtx(context.copy(body = body, index = index, config = context.config, globalConfig = gScripts.transformersConfig))(env, ec, mat)
+                  .transformResponseBodyWithCtx(
+                    context.copy(body = body,
+                                 index = index,
+                                 config = context.config,
+                                 globalConfig = gScripts.transformersConfig)
+                  )(env, ec, mat)
             })
             // desc.transformerRef match {
             //   case Some(ref) =>
@@ -667,7 +737,6 @@ sealed trait ScriptType {
 object AppType extends ScriptType {
   def name: String = "app"
 }
-
 
 object TransformerType extends ScriptType {
   def name: String = "transformer"
@@ -702,10 +771,10 @@ object Script {
     override def reads(json: JsValue): JsResult[Script] =
       Try {
         val scriptType = (json \ "type").asOpt[String].getOrElse("transformer") match {
-          case "app" =>         AppType
+          case "app"         => AppType
           case "transformer" => TransformerType
-          case "validator" =>   AccessValidatorType
-          case _ =>             TransformerType
+          case "validator"   => AccessValidatorType
+          case _             => TransformerType
         }
         Script(
           id = (json \ "id").as[String],
@@ -795,16 +864,16 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val controlClasses1: ClassInfoList = scanResult.getSubclasses(classOf[RequestTransformer].getName)
       val controlClasses2: ClassInfoList = scanResult.getClassesImplementing(classOf[RequestTransformer].getName)
 
-      val classes                        = controlClasses1.asScala ++ controlClasses2.asScala
+      val classes = controlClasses1.asScala ++ controlClasses2.asScala
       classes
         .filterNot(
-          c => c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+          c =>
+            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
             c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
             c.getName == "otoroshi.script.CompilingValidator$" ||
             c.getName == "otoroshi.script.DefaultValidator$" ||
             c.getName == "otoroshi.script.NanoApp" ||
             c.getName == "otoroshi.script.NanoApp$"
-
         )
         .map(c => c.getName)
     } catch {
@@ -828,16 +897,16 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val controlClasses3: ClassInfoList = scanResult.getSubclasses(classOf[AccessValidator].getName)
       val controlClasses4: ClassInfoList = scanResult.getClassesImplementing(classOf[AccessValidator].getName)
 
-      val classes                        = controlClasses3.asScala ++ controlClasses4.asScala
+      val classes = controlClasses3.asScala ++ controlClasses4.asScala
       classes
         .filterNot(
-          c => c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+          c =>
+            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
             c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
             c.getName == "otoroshi.script.CompilingValidator$" ||
             c.getName == "otoroshi.script.DefaultValidator$" ||
             c.getName == "otoroshi.script.NanoApp" ||
             c.getName == "otoroshi.script.NanoApp$"
-
         )
         .map(c => c.getName)
     } catch {
@@ -851,29 +920,31 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     OnlyIfScriptingEnabled {
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
-        case None => transformersNames
+        case None                => transformersNames
         case Some("transformer") => transformersNames
-        case Some("app") => transformersNames
-        case _ => Seq.empty
+        case Some("app")         => transformersNames
+        case _                   => Seq.empty
       }
       val cpValidators = typ match {
-        case None => validatorsNames
+        case None              => validatorsNames
         case Some("validator") => validatorsNames
-        case _ => Seq.empty
+        case _                 => Seq.empty
       }
       env.datastores.scriptDataStore.findAll().map { all =>
-        val allClasses = all.filter { script =>
-          typ match {
-            case None => true
-            case Some("transformer") if script.`type` == TransformerType => true
-            case Some("transformer") if script.`type` == AppType => true
-            case Some("app") if script.`type` == AppType => true
-            case Some("validator") if script.`type` == AccessValidatorType => true
-            case _ => false
+        val allClasses = all
+          .filter { script =>
+            typ match {
+              case None                                                      => true
+              case Some("transformer") if script.`type` == TransformerType   => true
+              case Some("transformer") if script.`type` == AppType           => true
+              case Some("app") if script.`type` == AppType                   => true
+              case Some("validator") if script.`type` == AccessValidatorType => true
+              case _                                                         => false
+            }
           }
-        }.map(c => Json.obj("id" -> c.id, "name" -> c.name)) ++
-          cpTransformers.map(c => Json.obj("id" -> s"cp:$c", "name" -> c)) ++
-          cpValidators.map(c => Json.obj("id" -> s"cp:$c", "name" -> c))
+          .map(c => Json.obj("id"             -> c.id, "name"     -> c.name)) ++
+        cpTransformers.map(c => Json.obj("id" -> s"cp:$c", "name" -> c)) ++
+        cpValidators.map(c => Json.obj("id"   -> s"cp:$c", "name" -> c))
         Ok(JsArray(allClasses))
       }
     }

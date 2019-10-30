@@ -833,7 +833,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : callTimeout with akka-http (#301)" in {
       val (_, port1, counter1, call1) = testServer("calltimeoutakka1.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, call2)     = testServer("calltimeoutakka2.oto.tools", port, 200.millis)
+      val (_, port2, counter2, call2) = testServer("calltimeoutakka2.oto.tools", port, 200.millis)
       val serviceweight1 = ServiceDescriptor(
         id = "calltimeoutakka1-test",
         name = "calltimeoutakka1-test",
@@ -891,7 +891,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : idleTimeout (#301)" in {
       val (_, port1, counter1, call1) = testServer("idletimeout1.oto.tools", port, 2000.millis)
-      val (_, port2, counter2, call2)     = testServer("idletimeout2.oto.tools", port, 200.millis)
+      val (_, port2, counter2, call2) = testServer("idletimeout2.oto.tools", port, 200.millis)
       val serviceweight1 = ServiceDescriptor(
         id = "idletimeout1-test",
         name = "idletimeout1-test",
@@ -949,7 +949,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     "allow better timeout management : callAndStreamTimeout (#301)" in {
       val (_, port1, counter1, call1) = testServer("callandstreamtimeout1.oto.tools", port, 0.millis, 2000.millis)
-      val (_, port2, counter2, call2)     = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
+      val (_, port2, counter2, call2) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
       val serviceweight1 = ServiceDescriptor(
         id = "callandstreamtimeout1-test",
         name = "callandstreamtimeout1-test",

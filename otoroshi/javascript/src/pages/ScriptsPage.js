@@ -217,11 +217,19 @@ class ScriptTypeSelector extends Component {
           }
           if (t === 'transformer') {
             this.setState({ type: 'transformer' });
-            this.props.rawOnChange({ ...this.props.rawValue, type: 'transformer', code: basicTransformer });
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'transformer',
+              code: basicTransformer,
+            });
           }
           if (t === 'validator') {
             this.setState({ type: 'validator' });
-            this.props.rawOnChange({ ...this.props.rawValue, type: 'validator', code: basicValidator});
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'validator',
+              code: basicValidator,
+            });
           }
         }}
         possibleValues={[
