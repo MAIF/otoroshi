@@ -2077,7 +2077,7 @@ export class ServicePage extends Component {
                     <br/>
                     Please use <b>Access validator</b> instead (see above).
                     <br/>
-                    If you defined a validation authority and an <b>access validator</b> at the same time, then the validation authority will be bypasse
+                    If you defined a validation authority and an <b>access validator</b> at the same time, then the validation authority will be bypassed
                   </p>
                 </div>
               </div>

@@ -240,6 +240,27 @@ async function buildTcpTunnelingCli(location, version) {
   );
 }
 
+async function buildTcpTunnelingCliGUI(location, version) {
+  await runScript(`
+    source $NVM_TOOL
+    nvm install 12.7.0
+    nvm use 12.7.0
+    cd ${location}/clients/tcp-tunnel-client-gui
+    yarn install
+    yarn dist-mac
+    hdiutil create -format UDZO -srcfolder "$LOCATION/clients/tcp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
+    zip -r "$LOCATION/release-$VERSION/otoroshi-tunneling-client.zip" "$LOCATION/clients/tcp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" 
+    `, 
+    location, 
+    {
+      LOCATION: location,
+      VERSION: version,
+      BINTRAY_API_KEY,
+      GITHUB_TOKEN
+    }
+  );
+}
+
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `Prepare the release of Otoroshi version ${version}`], location);
   await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, 'v' + version], location);
@@ -281,7 +302,7 @@ async function publishSbt(location, version) {
   );
 }
 
-async function createGithubRelease(version) {
+async function createGithubRelease(version, location) {
   return fetch('https://api.github.com/repos/MAIF/otoroshi/releases', {
     method: 'POST',
     headers: {
@@ -298,7 +319,34 @@ async function createGithubRelease(version) {
     })
   }).then(r => r.json()).then(r => {
     console.log(r);
+    return uploadAllFiles(r, location);
   });
+}
+
+async function uploadAllFiles(release, location) {
+  await uploadFilesToRelease(release, { name: 'otoroshi.jar', path: path.resolve(location, `otoroshi.jar`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-${to}.zip`, path: path.resolve(location, `otoroshi-${to}.zip`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-manual-${to}.zip`, path: path.resolve(location, `otoroshi-manual-${to}.zip`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tcp-tunnel-cli-linux`, path: path.resolve(location, `otoroshi-tcp-tunnel-cli-linux`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tcp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-tunnel-cli-macos`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tcp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-tunnel-cli-win.exe`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.dmg`, path: path.resolve(location, `otoroshi-tunneling-client.dmg`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.zip`, path: path.resolve(location, `otoroshi-tunneling-client.zip`) });
+}
+
+async function uploadFilesToRelease(release, file) {
+  const assetUrl = `https://uploads.github.com/repos/MAIF/otoroshi/releases/${release.id}/assets?name=$(basename ${file.name})`;
+  fetch(assetUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'Authorization': `token ${GITHUB_TOKEN}`,
+    },
+    body: fs.readFileSync(file.path)
+  }).then(r => r.text()).then(r => {
+    console.log(r);
+    return r;
+  })  
 }
 
 async function installDependencies(location) {
@@ -374,9 +422,10 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   });
   await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir));
   // await ensureStep('BUILD_LINUX_CLI', releaseFile, () => buildLinuxCLI(location, to));
-  await ensureStep('BUILD_TC_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
+  await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
+  await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
   if (!dryRun) {
-    await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to));
+    await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
     await ensureStep('PUSH_TO_BINTRAY', releaseFile, () => pushToBintray(location, to));
     await ensureStep('PUBLISH_LIBRARIES', releaseFile, () => publishSbt(location, to));

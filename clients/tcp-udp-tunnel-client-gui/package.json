@@ -4,6 +4,7 @@
   "main": "src/app.js",
   "scripts": {
     "start": "electron .",
+    "dist-mac": "electron-packager . otoroshi-tunneling-client --overwrite --out=./dist --platform=darwin",
     "dist": "electron-packager . otoroshi-tunneling-client --overwrite --out=./dist --platform=darwin,linux"
   },
   "dependencies": {
