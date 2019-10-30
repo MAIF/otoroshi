@@ -9,7 +9,7 @@
     "dev": "nodemon client.js",
     "start": "node client.js",
     "start-and-watch": "nodemon client.js",
-    "pkg": "pkg . && rm -rf ./binaries && mkdir -p ./binaries && mv otoroshi-tcp-tunnel-cli-* ./binaries/"
+    "pkg": "pkg . && rm -rf ./binaries && mkdir -p ./binaries && mv otoroshi-tcp-udp-tunnel-cli-* ./binaries/"
   },
   "dependencies": {
     "colors": "1.3.3",

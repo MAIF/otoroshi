@@ -223,12 +223,12 @@ async function buildTcpTunnelingCli(location, version) {
     source $NVM_TOOL
     nvm install 12.7.0
     nvm use 12.7.0
-    cd ${location}/clients/tcp-tunnel-client
+    cd ${location}/clients/tcp-udp-tunnel-client
     yarn install
     yarn pkg
-    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-linux" "$LOCATION/release-$VERSION/"
-    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-macos" "$LOCATION/release-$VERSION/"
-    cp -v "$LOCATION/clients/tcp-tunnel-client/binaries/otoroshi-tcp-tunnel-cli-win.exe" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/clients/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-linux" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/clients/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-macos" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/clients/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-win.exe" "$LOCATION/release-$VERSION/"
     `, 
     location, 
     {
@@ -245,11 +245,11 @@ async function buildTcpTunnelingCliGUI(location, version) {
     source $NVM_TOOL
     nvm install 12.7.0
     nvm use 12.7.0
-    cd ${location}/clients/tcp-tunnel-client-gui
+    cd ${location}/clients/tcp-udp-tunnel-client-gui
     yarn install
     yarn dist-mac
-    hdiutil create -format UDZO -srcfolder "$LOCATION/clients/tcp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
-    zip -r "$LOCATION/release-$VERSION/otoroshi-tunneling-client.zip" "$LOCATION/clients/tcp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" 
+    hdiutil create -format UDZO -srcfolder "$LOCATION/clients/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
+    zip -r "$LOCATION/release-$VERSION/otoroshi-tunneling-client.zip" "$LOCATION/clients/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" 
     `, 
     location, 
     {
@@ -319,17 +319,17 @@ async function createGithubRelease(version, location) {
     })
   }).then(r => r.json()).then(r => {
     console.log(r);
-    return uploadAllFiles(r, location);
+    return uploadAllFiles(r, location, version);
   });
 }
 
-async function uploadAllFiles(release, location) {
+async function uploadAllFiles(release, location, to) {
   await uploadFilesToRelease(release, { name: 'otoroshi.jar', path: path.resolve(location, `otoroshi.jar`) });
   await uploadFilesToRelease(release, { name: `otoroshi-${to}.zip`, path: path.resolve(location, `otoroshi-${to}.zip`) });
   await uploadFilesToRelease(release, { name: `otoroshi-manual-${to}.zip`, path: path.resolve(location, `otoroshi-manual-${to}.zip`) });
-  await uploadFilesToRelease(release, { name: `otoroshi-tcp-tunnel-cli-linux`, path: path.resolve(location, `otoroshi-tcp-tunnel-cli-linux`) });
-  await uploadFilesToRelease(release, { name: `otoroshi-tcp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-tunnel-cli-macos`) });
-  await uploadFilesToRelease(release, { name: `otoroshi-tcp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-tunnel-cli-win.exe`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-linux`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-linux`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-macos`) });
+  await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-win.exe`) });
   await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.dmg`, path: path.resolve(location, `otoroshi-tunneling-client.dmg`) });
   await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.zip`, path: path.resolve(location, `otoroshi-tunneling-client.zip`) });
 }
