@@ -249,7 +249,6 @@ async function buildTcpTunnelingCliGUI(location, version) {
     yarn install
     yarn dist-mac
     hdiutil create -format UDZO -srcfolder "$LOCATION/clients/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
-    zip -r "$LOCATION/release-$VERSION/otoroshi-tunneling-client.zip" "$LOCATION/clients/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" 
     `, 
     location, 
     {
@@ -331,7 +330,6 @@ async function uploadAllFiles(release, location, to) {
   await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-macos`) });
   await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-win.exe`) });
   await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.dmg`, path: path.resolve(location, `otoroshi-tunneling-client.dmg`) });
-  await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.zip`, path: path.resolve(location, `otoroshi-tunneling-client.zip`) });
 }
 
 async function uploadFilesToRelease(release, file) {
