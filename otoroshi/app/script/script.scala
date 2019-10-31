@@ -275,7 +275,7 @@ object CompilingRequestTransformer extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
     val accept = rawRequest.headers.get("Accept").getOrElse("text/html").split(",").toSeq.map(_.trim)
     if (accept.contains("text/html")) { // in a browser
-      Left(Results.InternalServerError("<h3>not ready yet ...</h3>"))
+      Left(Results.InternalServerError("<h3>not ready yet ...</h3>").as("text/html"))
     } else {
       Left(Results.InternalServerError(Json.obj("error" -> "not ready yet ...")))
     }
