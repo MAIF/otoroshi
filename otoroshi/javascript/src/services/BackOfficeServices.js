@@ -179,9 +179,9 @@ export function resetRemainingQuotas(groupId, clientId) {
   }).then(r => r.json());
 }
 
-export function fetchServiceEvents(serviceId, from, to, limit = 500) {
+export function fetchServiceEvents(serviceId, from, to, limit = 500, order = "asc") {
   return fetch(
-    `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`,
+    `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}&order=${order}`,
     {
       method: 'GET',
       credentials: 'include',
@@ -192,9 +192,9 @@ export function fetchServiceEvents(serviceId, from, to, limit = 500) {
   ).then(r => r.json());
 }
 
-export function fetchGlobalEvents(from, to, limit = 500) {
+export function fetchGlobalEvents(from, to, limit = 500, order = "asc") {
   return fetch(
-    `/bo/api/proxy/api/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}`,
+    `/bo/api/proxy/api/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}&order=${order}`,
     {
       method: 'GET',
       credentials: 'include',

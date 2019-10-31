@@ -290,7 +290,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
                       from: Option[DateTime],
                       to: Option[DateTime],
                       page: Int,
-                      size: Int)(
+                      size: Int, order: String = "desc")(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
@@ -314,7 +314,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
         ),
         "sort" -> Json.obj(
           "@timestamp" -> Json.obj(
-            "order" -> "desc"
+            "order" -> order
           )
         )
       )

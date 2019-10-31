@@ -368,7 +368,8 @@ trait AnalyticsReadsService {
              from: Option[DateTime],
              to: Option[DateTime],
              page: Int = 1,
-             size: Int = 50)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+             size: Int = 50,
+             order: String = "desc")(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
       implicit env: Env,
       ec: ExecutionContext
@@ -460,12 +461,13 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
                       from: Option[DateTime],
                       to: Option[DateTime],
                       page: Int,
-                      size: Int)(
+                      size: Int, 
+                      order: String = "desc")(
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     underlyingService().flatMap(
-      _.map(_.events(eventType, filterable, from, to, page, size))
+      _.map(_.events(eventType, filterable, from, to, page, size, order))
         .getOrElse(FastFuture.successful(None))
     )
 

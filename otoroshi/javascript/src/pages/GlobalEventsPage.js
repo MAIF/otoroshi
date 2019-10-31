@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { converterBase2 } from 'byte-converter';
-import { Table } from '../components/inputs';
+import { Table, SimpleBooleanInput } from '../components/inputs';
 import moment from 'moment';
 import queryString from 'query-string';
 
@@ -14,6 +14,7 @@ export class GlobalEventsPage extends Component {
     from: moment().subtract(1, 'hours'),
     to: moment(),
     limit: 500,
+    asc: true
   };
 
   columns = [
@@ -132,7 +133,7 @@ export class GlobalEventsPage extends Component {
   fetchEvents = () => {
     const query = queryString.parse(window.location.search);
     const limit = query.limit || this.state.limit;
-    return BackOfficeServices.fetchGlobalEvents(this.state.from, this.state.to, limit).then(
+    return BackOfficeServices.fetchGlobalEvents(this.state.from, this.state.to, limit, this.state.asc ? "asc" : "desc").then(
       d => d.events,
       err => console.error(err)
     );
@@ -164,6 +165,14 @@ export class GlobalEventsPage extends Component {
                 onChange={e => this.setState({ limit: e.target.value }, () => this.table.update())}
               />
             </div>
+            <div className="input-group" style={{ marginLeft: 10, width: '100%', display: 'flex' }}>
+              <span style={{ marginTop: 10, marginRight: 5 }}>Order by timestamp ascending values</span>
+              <SimpleBooleanInput value={this.state.asc} onChange={e => {
+                this.setState({ asc: !this.state.asc }, () => {
+                  this.table.update();
+                });
+              }} />
+            </div>
           </div>
         </div>
         <Table
@@ -174,7 +183,7 @@ export class GlobalEventsPage extends Component {
           defaultTitle="Global Events"
           defaultValue={() => ({})}
           defaultSort={this.columns[0].title}
-          defaultSortDesc={true}
+          defaultSortDesc={!this.state.asc}
           itemName="Events"
           formSchema={null}
           formFlow={null}

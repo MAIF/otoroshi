@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { converterBase2 } from 'byte-converter';
-import { Table } from '../components/inputs';
+import { Table, SimpleBooleanInput } from '../components/inputs';
 import moment from 'moment';
 import queryString from 'query-string';
 
@@ -14,6 +14,7 @@ export class ServiceEventsPage extends Component {
     from: moment().subtract(1, 'hours'),
     to: moment(),
     limit: 500,
+    asc: true
   };
 
   columns = [
@@ -152,7 +153,8 @@ export class ServiceEventsPage extends Component {
       this.state.service.id,
       this.state.from,
       this.state.to,
-      limit
+      limit,
+      this.state.asc ? "asc" : "desc",
     ).then(d => d, err => console.error(err));
   };
 
@@ -183,6 +185,14 @@ export class ServiceEventsPage extends Component {
                 onChange={e => this.setState({ limit: e.target.value }, () => this.table.update())}
               />
             </div>
+            <div className="input-group" style={{ marginLeft: 10, width: '100%', display: 'flex' }}>
+              <span style={{ marginTop: 10, marginRight: 5 }}>Order by timestamp ascending values</span>
+              <SimpleBooleanInput value={this.state.asc} onChange={e => {
+                this.setState({ asc: !this.state.asc }, () => {
+                  this.table.update();
+                });
+              }} />
+            </div>
           </div>
         </div>
         <Table
@@ -193,7 +203,7 @@ export class ServiceEventsPage extends Component {
           defaultTitle="Service Events"
           defaultValue={() => ({})}
           defaultSort={this.columns[0].title}
-          defaultSortDesc={true}
+          defaultSortDesc={!this.state.asc}
           itemName="Events"
           formSchema={null}
           formFlow={null}
