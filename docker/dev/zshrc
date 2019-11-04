@@ -49,7 +49,7 @@ ZSH_THEME="robbyrussell"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git rsync sbt scala zsh-syntax-highlighting history-substring-search wd docker)
+plugins=(git sbt scala history-substring-search wd docker)
 
 # User configuration
 
@@ -83,18 +83,7 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+export PATH=$PATH:/root/sbt/bin
 export NVM_DIR="/root/.nvm" 
 . "$NVM_DIR/nvm.sh" 
-export PATH=$PATH:/root/sbt/bin:/root/.cargo/bin
 
-otohelp () {
-  clear
-  echo "Welcome to the Otoroshi dev env. Just run the following commands and you're ready to patch Otoroshi"
-  echo " "
-  echo " * cd /root/otoroshi"
-  echo " * git pull --rebase origin master"
-  echo " * sh ./scripts/session.sh"
-  echo " "
-  echo "Have fun ;)" 
-  echo " "
-}

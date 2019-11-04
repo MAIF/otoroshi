@@ -2,15 +2,15 @@
 
 this docker image provide a functionnal dev environement to patch Otoroshi quickly without installing a lot of stuff, you just need `Docker` and a web browser available on your machine.
 
-## Build and Run it
+## Build
 
 ```sh
 docker build -t otoroshi-dev .
-docker run -p "8080:8080" -p "9999:9999" -it otoroshi-dev zsh
 ```
 
-## Run it
+## Run
 
 ```sh 
-docker run -p "8080:8080" -p "9999:9999" -it otoroshi-dev zsh
+docker run -p "9997:9997" -p "9998:9998" -p "9999:9999" -p "3040:3040" -v "$(pwd)/oto/src:/root/otoroshi" -v "$(pwd)/oto/db:/root/otoroshi/otoroshi/filedb" -it otoroshi-dev 
+http://localhost:9997?folder=/root/otoroshi
 ```

@@ -1,8 +1,9 @@
-FROM openjdk:8
-
-LABEL maintainer "MAIF <oss@maif.fr>"
+FROM openjdk:11
 
 ENV HOME /root
+
+RUN mkdir -p /root/otoroshi
+RUN mkdir -p /root/coder
 
 WORKDIR $HOME
 
@@ -11,40 +12,20 @@ COPY . $HOME/
 RUN apt-get update -y
 RUN apt-get install -y git wget curl vim tmux openssh-server zsh ack tig tree apt-transport-https openssl build-essential
 RUN git clone https://github.com/robbyrussell/oh-my-zsh.git
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.35.1/install.sh | bash
 RUN chmod -R 777 $HOME/.nvm 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-RUN apt-get update
-RUN apt-get install yarn -y
-RUN curl https://sh.rustup.rs > $HOME/install-rustup.sh
-RUN chmod +x $HOME/install-rustup.sh
-RUN $HOME/install-rustup.sh -y
-RUN $HOME/.cargo/bin/rustup toolchain install stable
-RUN $HOME/.cargo/bin/rustup toolchain install nightly
-RUN $HOME/.cargo/bin/rustup update
-RUN $HOME/.cargo/bin/rustup default stable
-RUN $HOME/.cargo/bin/cargo install cargo-watch
-RUN $HOME/.cargo/bin/rustup component add rustfmt-preview --toolchain=nightly
-RUN wget --quiet https://github.com/sbt/sbt/releases/download/v1.1.1/sbt-1.1.1.zip
-RUN unzip $HOME/sbt-1.1.1.zip
-RUN mkdir -p $HOME/.sbt/1.0/plugins
-RUN touch $HOME/.sbt/1.0/plugins/build.sbt
-RUN echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.1")' >> $HOME/.sbt/1.0/plugins/build.sbt
-RUN curl -fLo $HOME/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-RUN mv $HOME/tmux.conf $HOME/.tmux.conf
-RUN mv $HOME/vimrc $HOME/.vimrc
-RUN mv $HOME/zshrc $HOME/.zshrc
-RUN vim -c ":PlugInstall" -c ":qa"
-RUN export NVM_DIR="/root/.nvm" && . "$NVM_DIR/nvm.sh" && nvm install 8.6.0 && nvm use 8.6.0 && nvm alias default 8.6.0
-RUN mkdir $HOME/otoroshi && cd $HOME/otoroshi && git init && git remote add origin https://github.com/MAIF/otoroshi.git
-RUN rm -f $HOME/Docker
-RUN rm -f $HOME/install-rustup.sh
+RUN apt-get update&& apt-get install yarn -y
+RUN wget --quiet https://github.com/sbt/sbt/releases/download/v1.3.3/sbt-1.3.3.zip && unzip $HOME/sbt-1.3.3.zip && rm -f $HOME/sbt-1.3.3.zip
+RUN mv $HOME/tmux.conf $HOME/.tmux.conf && mv $HOME/zshrc $HOME/.zshrc
+RUN export NVM_DIR="/root/.nvm" && . "$NVM_DIR/nvm.sh"
+RUN cd /root/otoroshi && git init && git remote add origin https://github.com/MAIF/otoroshi.git
+RUN cd /root/coder && wget --quiet https://github.com/cdr/code-server/releases/download/2.1665-vsc1.39.2/code-server2.1665-vsc1.39.2-linux-x86_64.tar.gz && tar -xf code-server2.1665-vsc1.39.2-linux-x86_64.tar.gz && mv code-server2.1665-vsc1.39.2-linux-x86_64/code-server ./code-server && rm -rf code-server2.1665-vsc1.39.2-linux* 
 
-EXPOSE 8080
 EXPOSE 9999
-EXPOSE 22
+EXPOSE 9998
+EXPOSE 9997
+EXPOSE 3040
 
-CMD [""]
-# docker run -p "8080:8080" -p "9999:9999" -it otoroshi-dev zsh
-# docker run -it otoroshi-dev zsh
+CMD ["/root/entrypoint.sh"]
