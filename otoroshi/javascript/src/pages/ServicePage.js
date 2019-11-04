@@ -1059,6 +1059,13 @@ export class ServicePage extends Component {
                   hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
+                  label="Use new WebSocket client"
+                  value={this.state.service.useNewWSClient}
+                  help="Will use the new websocket client for every websocket request"
+                  onChange={v => this.changeTheValue('useNewWSClient', v)}
+                  hide={this.state.service.tcpUdpTunneling}
+                />
+                <BiColumnBooleanInput
                   label="TCP/UDP tunneling"
                   value={this.state.service.tcpUdpTunneling}
                   help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled"

@@ -1793,6 +1793,7 @@ case class ServiceDescriptor(
     allowHttp10: Boolean = true,
     logAnalyticsOnServer: Boolean = false,
     useAkkaHttpClient: Boolean = false,
+    useNewWSClient: Boolean = false,
     tcpUdpTunneling: Boolean = false,
     detectApiKeySooner: Boolean = false,
     // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
@@ -2306,6 +2307,7 @@ object ServiceDescriptor {
           forceHttps = (json \ "forceHttps").asOpt[Boolean].getOrElse(true),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
+          useNewWSClient = (json \ "useNewWSClient").asOpt[Boolean].getOrElse(false),
           tcpUdpTunneling =
             (json \ "tcpUdpTunneling").asOpt[Boolean].orElse((json \ "tcpTunneling").asOpt[Boolean]).getOrElse(false),
           detectApiKeySooner = (json \ "detectApiKeySooner").asOpt[Boolean].getOrElse(false),
@@ -2415,6 +2417,7 @@ object ServiceDescriptor {
       "forceHttps"                 -> sd.forceHttps,
       "logAnalyticsOnServer"       -> sd.logAnalyticsOnServer,
       "useAkkaHttpClient"          -> sd.useAkkaHttpClient,
+      "useNewWSClient"             -> sd.useNewWSClient,
       "tcpUdpTunneling"            -> sd.tcpUdpTunneling,
       "detectApiKeySooner"         -> sd.detectApiKeySooner,
       "maintenanceMode"            -> sd.maintenanceMode,
