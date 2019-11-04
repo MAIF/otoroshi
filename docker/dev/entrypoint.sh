@@ -3,7 +3,7 @@
 cd /root/otoroshi
 
 echo "Fetching last sources"
-if [! -d "./.git"]
+if [ ! -d "./.git" ]
 then
   git init 
   git remote add origin https://github.com/MAIF/otoroshi.git
