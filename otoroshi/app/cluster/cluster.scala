@@ -152,9 +152,9 @@ object ClusterConfig {
           .getOptional[String]("leader.name")
           .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-leader-$i"))
           .getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}"),
-        urls = configuration
+        urls = configuration.getOptional[String]("leader.url").map(s => Seq(s)).orElse(configuration
           .getOptional[Seq[String]]("leader.urls")
-          .map(_.toSeq)
+          .map(_.toSeq))
           .getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
         host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.foo.bar"),
         clientId = configuration.getOptional[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
