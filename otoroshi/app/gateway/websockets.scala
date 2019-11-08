@@ -810,7 +810,8 @@ class WebSocketHandler()(implicit env: Env) {
                                           `@product` = descriptor.metadata.getOrElse("product", "--"),
                                           remainingQuotas = q,
                                           viz = Some(viz),
-                                          clientCertChain = req.clientCertChainPem
+                                          clientCertChain = req.clientCertChainPem,
+                                          err = false
                                         )
                                         evt.toAnalytics()
                                         if (descriptor.logAnalyticsOnServer) {

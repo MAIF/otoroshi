@@ -289,6 +289,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       headersOut = Seq.empty,
       identity = None,
       gwError = None,
+      err = false,
       `@serviceId` = "mon-service-id",
       `@service` = "mon-service",
       `@product` = "mon-product",

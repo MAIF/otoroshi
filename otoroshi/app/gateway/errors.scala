@@ -92,7 +92,8 @@ object Errors {
             `@product` = descriptor.metadata.getOrElse("product", "--"),
             remainingQuotas = RemainingQuotas(),
             responseChunked = false,
-            viz = Some(viz)
+            viz = Some(viz),
+            err = true
           ).toAnalytics()(env)
         }
         case None => {
@@ -145,7 +146,8 @@ object Errors {
             `@product` = "--",
             remainingQuotas = RemainingQuotas(),
             responseChunked = false,
-            viz = None
+            viz = None,
+            err = true
           ).toAnalytics()(env)
         }
       }
