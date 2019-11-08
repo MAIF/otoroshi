@@ -43,7 +43,7 @@ export class ClientValidatorsPage extends Component {
     host: {
       type: 'string',
       display: value => !value.alwaysValid,
-      props: { label: 'Host', placeholder: 'validator.foo.bar' },
+      props: { label: 'Host', placeholder: 'validator.oto.tools' },
     },
     noCache: {
       type: 'bool',
@@ -125,7 +125,7 @@ export class ClientValidatorsPage extends Component {
             name: 'Validation authority',
             description: 'A new validation authority',
             url: 'http://127.0.0.1:3000',
-            host: 'validation.foo.bar',
+            host: 'validation.oto.tools',
             goodTtl: 600000,
             badTtl: 60000,
             method: 'POST',

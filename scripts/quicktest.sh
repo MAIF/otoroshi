@@ -37,7 +37,7 @@ $LOCATION/clients/cli/target/debug/otoroshicli services create \
   --id oto-test \
   --name oto-test \
   --env prod \
-  --domain foo.bar \
+  --domain oto.tools \
   --subdomain test \
   --target http://127.0.0.1:8081 \
   --target http://127.0.0.1:8082 \
@@ -51,8 +51,8 @@ $LOCATION/clients/cli/target/debug/otoroshicli config update \
   --throttling-quota 9999999  >> /dev/null
 
 echo "Warm up for 70 sec ..."
-wrk -t2 -c200 -d70s -H "Host: test.foo.bar" http://127.0.0.1:8080/ >> /dev/null
+wrk -t2 -c200 -d70s -H "Host: test.oto.tools" http://127.0.0.1:8080/ >> /dev/null
 echo "Actual test ..."
-wrk -t2 -c200 -d60s -H "Host: test.foo.bar" --latency http://127.0.0.1:8080/
+wrk -t2 -c200 -d60s -H "Host: test.oto.tools" --latency http://127.0.0.1:8080/
 
 kill_otoroshi

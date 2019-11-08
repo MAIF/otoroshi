@@ -63,7 +63,7 @@
     "description" : "Find out more about Otoroshi",
     "url" : "https://maif.github.io/otoroshi/"
   },
-  "host" : "otoroshi-api.foo.bar",
+  "host" : "otoroshi-api.oto.tools",
   "basePath" : "/",
   "schemes" : [ "http" ],
   "paths" : {

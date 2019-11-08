@@ -113,7 +113,7 @@ async function buildVersion(version, where, releaseDir) {
     cd ${where}/otoroshi/target/scala-2.12/
     java -jar otoroshi.jar &
     sleep 20
-    curl http://otoroshi.foo.bar:8080/api/swagger.json > ${releaseDir}/swagger.json
+    curl http://otoroshi.oto.tools:8080/api/swagger.json > ${releaseDir}/swagger.json
     cp ${releaseDir}/swagger.json ${where}/manual/src/main/paradox/code/
     ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
     rm -f ./RUNNING_PID

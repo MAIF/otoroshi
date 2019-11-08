@@ -309,7 +309,7 @@ export class TcpServicesPage extends Component {
     },
     'sni.forwardsTo.host': {
       type: 'string',
-      props: { label: 'Target host', placeholder: 'foo.bar' },
+      props: { label: 'Target host', placeholder: 'oto.tools' },
     },
     'sni.forwardsTo.ip': {
       type: 'string',

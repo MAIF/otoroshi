@@ -156,7 +156,7 @@ export class AlgoSettings extends Component {
               case 'JWKSAlgoSettings':
                 changeTheValue(path + '', {
                   type: 'JWKSAlgoSettings',
-                  url: 'https://jwk.foo.bar/.well-known/jwks.json',
+                  url: 'https://jwk.oto.tools/.well-known/jwks.json',
                   headers: {},
                   timeout: 2000,
                   ttl: 5 * 60 * 60 * 1000,

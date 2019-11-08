@@ -17,7 +17,6 @@ The use case is the following :
 for this demo you will have to edit your `/etc/hosts` file to add the following entries
 
 ```
-127.0.0.1    otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar 
 127.0.0.1    api.backend.lol api.frontend.lol www.backend.lol www.frontend.lol validation.backend.lol
 ```
 
@@ -205,15 +204,15 @@ Download the latest version of the Otoroshi jar and run it like
 ```sh
 java -jar otoroshi.jar
 
-[info] otoroshi-env - Admin API exposed on http://otoroshi-api.foo.bar:8080
-[info] otoroshi-env - Admin UI  exposed on http://otoroshi.foo.bar:8080
+[info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
+[info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
 [info] otoroshi-in-memory-datastores - Now using InMemory DataStores
 [info] otoroshi-env - The main datastore seems to be empty, registering some basic services
 [info] otoroshi-env - You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / xxxxxxxxxxxx
 [info] play.api.Play - Application started (Prod)
 [info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 [info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:8443
-[info] otoroshi-env - Generating a self signed SSL certificate for https://*.foo.bar ...
+[info] otoroshi-env - Generating a self signed SSL certificate for https://*.oto.tools ...
 ```
 
 and log into otoroshi with the tuple `admin@otoroshi.io / xxxxxxxxxxxx` displayed in the logs. Once logged in, create a new public service exposed on `http://api.frontend.lol` that targets `ahttps://api.backend.lol:8444/`.
@@ -235,7 +234,7 @@ As seen before, the target of the otoroshi service is `ahttps://api.backend.lol:
 
 you should get an error due to the fact that Otoroshi doesn't know about the server certificate or the client certificate expected by the server.
 
-We have to add the client certificate for `https://api.backend.lol` to Otoroshi. Go to http://otoroshi.foo.bar:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./client/_.backend.lol.cer` and `./client/_.backend.lol.key` respectively in `Certificate full chain` and `Certificate private key`.
+We have to add the client certificate for `https://api.backend.lol` to Otoroshi. Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./client/_.backend.lol.cer` and `./client/_.backend.lol.key` respectively in `Certificate full chain` and `Certificate private key`.
 
 @@@ div { .centered-img }
 <img src="../img/mtls-cert-client-backend-1.png" />
@@ -248,7 +247,7 @@ curl http://api.frontend.lol:8080/
 # the output should be: {"message":"Hello World!"}
 ```
 
-now we have to expose `https://api.frontend.lol:8443` using otoroshi. Go to http://otoroshi.foo.bar:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.lol.cer` and `./server/_.frontend.lol.key` respectively in `Certificate full chain` and `Certificate private key`.
+now we have to expose `https://api.frontend.lol:8443` using otoroshi. Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.lol.cer` and `./server/_.frontend.lol.key` respectively in `Certificate full chain` and `Certificate private key`.
 
 and try the following command
 
@@ -257,7 +256,7 @@ curl --cacert ./ca/ca-frontend.cer https://api.frontend.lol:8443/
 # the output should be: {"message":"Hello World!"}
 ```
 
-now we have to enforce the fact that we want client certificate for `api.frontend.lol`. To do that, we have to create a `Validation authority` in otoroshi and use it on the `api.frontend.lol` service. Go to http://otoroshi.foo.bar:8080/bo/dashboard/validation-authorities and create a new item. A validation authority is supposed to be a remote service that will say if the client certificate is valid. Here we don't really care if the certificate is valid or not, but we want to enforce the fact that there is a client certificate. So just check the `All cert. valid button`.
+now we have to enforce the fact that we want client certificate for `api.frontend.lol`. To do that, we have to create a `Validation authority` in otoroshi and use it on the `api.frontend.lol` service. Go to http://otoroshi.oto.tools:8080/bo/dashboard/validation-authorities and create a new item. A validation authority is supposed to be a remote service that will say if the client certificate is valid. Here we don't really care if the certificate is valid or not, but we want to enforce the fact that there is a client certificate. So just check the `All cert. valid button`.
 
 @@@ div { .centered-img }
 <img src="../img/mtls-va-1.png" />
@@ -389,7 +388,7 @@ const apps = [
 const users = [
   {
     "name": "Mathieu",
-    "email": "mathieu@foo.bar",
+    "email": "mathieu@oto.tools",
     "appRights": [
       {
         "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
@@ -458,7 +457,7 @@ function chainIsValid(chain) {
 function call(req, res) {
   readBody(req).then(body => {
     const service = body.service;
-    const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
+    const email = (body.user || { email: 'mathieu@oto.tools' }).email; // here, should not be null if used with an otoroshi auth. module
     // common name should be device serial number
     const commonName = x509.getSubject(body.chain).commonName
     // search for a known device
@@ -558,8 +557,8 @@ You can start Otoroshi and import data from the `state.json` file in the demo fo
 ```sh
 java -Dapp.importFrom=$(pwd)/state.json -Dapp.privateapps.port=8080 -jar otoroshi.jar
 
-[info] otoroshi-env - Admin API exposed on http://otoroshi-api.foo.bar:8080
-[info] otoroshi-env - Admin UI  exposed on http://otoroshi.foo.bar:8080
+[info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
+[info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
 [info] otoroshi-in-memory-datastores - Now using InMemory DataStores
 [info] otoroshi-env - The main datastore seems to be empty, registering some basic services
 [info] otoroshi-env - Importing from: /pwd/state.json
@@ -597,7 +596,7 @@ Now restart firefox.
 Next, go to the `my-web-service` service in otoroshi (log in with `admin@otoroshi.io / password`) and activate `Enforce user login` in the Authentication section. It means that now, you'll have to log in when you'll go to https://www.frontend.lol:8443. With authentication activated on otoroshi, the user identity will be sent to the validation authority, so you can change the following line in the file `validation.js`
 
 ```js
-const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
+const email = (body.user || { email: 'mathieu@oto.tools' }).email; // here, should not be null if used with an otoroshi auth. module
 ```
 
 to
@@ -612,7 +611,7 @@ Then, in Firefox, go to https://www.frontend.lol:8443/, firefox will ask which c
 <img src="../img/mtls-ff-2.png" />
 @@@
 
-then, you'll see a login screen from otoroshi. You can log in with `mathieu@foo.bar / password` and then you should see the hello world message.
+then, you'll see a login screen from otoroshi. You can log in with `mathieu@oto.tools / password` and then you should see the hello world message.
 
 @@@ div { .centered-img }
 <img src="../img/mtls-ff-3.png" />

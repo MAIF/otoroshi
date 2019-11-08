@@ -64,7 +64,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           otoroshiDataField = (json \ "otoroshiDataField").asOpt[String].getOrElse("app_metadata | otoroshi_data"),
           callbackUrl = (json \ "callbackUrl")
             .asOpt[String]
-            .getOrElse("http://privateapps.foo.bar:8080/privateapps/generic/callback"),
+            .getOrElse("http://privateapps.oto.tools:8080/privateapps/generic/callback"),
           oidConfig = (json \ "oidConfig").asOpt[String],
           proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj())
@@ -100,7 +100,7 @@ case class GenericOauth2ModuleConfig(
     apiKeyMetaField: String = "apkMeta",
     apiKeyTagsField: String = "apkTags",
     otoroshiDataField: String = "app_metadata|otoroshi_data",
-    callbackUrl: String = "http://privateapps.foo.bar:8080/privateapps/generic/callback",
+    callbackUrl: String = "http://privateapps.oto.tools:8080/privateapps/generic/callback",
     oidConfig: Option[String] = None,
     proxy: Option[WSProxyServer] = None,
     extraMetadata: JsObject = Json.obj()
@@ -319,7 +319,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .asOpt[String]
                       .orElse((user \ "sub").asOpt[String])
                       .getOrElse("No Name"),
-                    email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
+                    email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools"),
                     profile = user,
                     token = rawToken,
                     realm = authConfig.cookieSuffix(descriptor),
@@ -416,7 +416,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .asOpt[String]
                       .orElse((user \ "sub").asOpt[String])
                       .getOrElse("No Name"),
-                    email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@foo.bar"),
+                    email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools"),
                     profile = user,
                     authorizedGroup = None,
                     simpleLogin = false

@@ -18,15 +18,15 @@ Create a new `Generic oauth2 provider` config and customize the following inform
   "accessTokenField": "access_token",
   "nameField": "name",
   "emailField": "email",
-  "callbackUrl": "http://privateapps.foo.bar/privateapps/generic/callback"
+  "callbackUrl": "http://privateapps.oto.tools/privateapps/generic/callback"
 }
 ```
 
-If used for BackOffice authentication, the callback url should be `http://otoroshi.foo.bar/backoffice/auth0/callback`.
+If used for BackOffice authentication, the callback url should be `http://otoroshi.oto.tools/backoffice/auth0/callback`.
 
 For `logoutUrl`, `redirectQueryParamName` is a parameter with a name specific to your OAuth2 provider (for example, in Auth0, this parameter is called `returnTo`, in Kecloak it is called `redirect_uri`).
 
-if you are using a [KeyCloak](https://www.keycloak.org/) server, you can configure it this way, assuming you are using the master realm and you created a new client with a client secret, callback urls set to `http://privateapps.foo.bar/*`.
+if you are using a [KeyCloak](https://www.keycloak.org/) server, you can configure it this way, assuming you are using the master realm and you created a new client with a client secret, callback urls set to `http://privateapps.oto.tools/*`.
 
 ```json
 {
@@ -40,7 +40,7 @@ if you are using a [KeyCloak](https://www.keycloak.org/) server, you can configu
   "accessTokenField": "access_token",
   "nameField": "name",
   "emailField": "email",
-  "callbackUrl": "http://privateapps.foo.bar/privateapps/generic/callback"
+  "callbackUrl": "http://privateapps.oto.tools/privateapps/generic/callback"
 }
 ```
 
@@ -82,7 +82,7 @@ Create a new OAuth 2 config and add the following informations:
   "nameField": "name",
   "emailField": "email",
   "otoroshiDataField": "app_metadata | otoroshi_data",
-  "callbackUrl": "http://privateapps.foo.bar/privateapps/generic/callback"
+  "callbackUrl": "http://privateapps.oto.tools/privateapps/generic/callback"
 }
 ```
 

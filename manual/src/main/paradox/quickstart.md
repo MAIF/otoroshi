@@ -24,7 +24,7 @@ Otoroshi is an awesome reverse proxy built with Scala that handles all the calls
 
 ## I like sh but I really want to see the UI
 
-As Otoroshi uses Otoroshi to serve its own admin UI and admin API, you won't be able to access the admin UI on `http://localhost:8080`. Otoroshi needs a domain name to know that you want to access the admin UI. By default, the admin UI is exposed on `http://otoroshi.foo.bar:8080`. Of course you can @ref:[configure](./firstrun/configfile.md#common-configuration) the domain of the subdomain. To configure access to the admin, just go to the [UI section of the quickstart](#what-about-the-ui).
+As Otoroshi uses Otoroshi to serve its own admin UI and admin API, you won't be able to access the admin UI on `http://localhost:8080`. Otoroshi needs a domain name to know that you want to access the admin UI. By default, the admin UI is exposed on `http://otoroshi.oto.tools:8080`. Of course you can @ref:[configure](./firstrun/configfile.md#common-configuration) the domain of the subdomain. To configure access to the admin, just go to the [UI section of the quickstart](#what-about-the-ui).
 
 ## Now some sh :)
 
@@ -94,19 +94,7 @@ open "http://api.hello.com:8080/"
 
 ## What about the UI
 
-first you need to add the following line to your `/etc/hosts` file.
-
-```
-127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar
-```
-
-you can use the following command
-
-```sh
-sudo echo "127.0.0.1     otoroshi-api.foo.bar otoroshi.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar" >> /etc/hosts
-```
-
-Then go to <a href="http://otoroshi.foo.bar:8080/" target="_blank">http://otoroshi.foo.bar:8080/</a> and **log in with the credential generated in the logs** during first startup ;-)
+Go to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a> and **log in with the credential generated in the logs** during first startup ;-)
 
 If you want to know more about Otoroshi, you should continue reading the documentation starting with @ref:[how to get Otoroshi](./getotoroshi/index.md)
 

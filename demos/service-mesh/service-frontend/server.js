@@ -14,7 +14,7 @@ app.get('/front', (req, res) => {
   fetch('http://otoroshi-service-frontend:8080/api', {
     method: 'GET',
     headers: {
-      'Host': 'service-1.foo.bar',
+      'Host': 'service-1.oto.tools',
       'Accept': 'application/json'
     }
   }).then(r => r.json()).then(res1 => {
@@ -25,7 +25,7 @@ app.get('/front', (req, res) => {
     return fetch('http://otoroshi-service-frontend:8080/api', {
       method: 'GET',
       headers: {
-        'Host': 'service-2.foo.bar',
+        'Host': 'service-2.oto.tools',
         'Accept': 'application/json'
       }
     }).then(r => r.json()).then(res2 => {

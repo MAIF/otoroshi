@@ -44,7 +44,7 @@ services:
       - REDIS_HOST=redis-master
       - PORT=8080
       - APP_IMPORT_FROM=/usr/app/otoroshi/imports/otoroshi-state.json
-      - APP_DOMAIN=foo.bar
+      - APP_DOMAIN=oto.tools
     volumes:
       - "./config:/usr/app/otoroshi/imports"
     expose:
@@ -61,7 +61,7 @@ services:
       - REDIS_HOST=redis-master
       - PORT=8080
       - APP_IMPORT_FROM=/usr/app/otoroshi/imports/otoroshi-state.json
-      - APP_DOMAIN=foo.bar
+      - APP_DOMAIN=oto.tools
     volumes:
       - "./config:/usr/app/otoroshi/imports"
     expose:
@@ -124,7 +124,7 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:6.3.0
     environment:
-      SERVER_NAME: kibana.foo.bar
+      SERVER_NAME: kibana.oto.tools
       ELASTICSEARCH_URL: http://elastic:9200
     expose:
       - 5601

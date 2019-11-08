@@ -15,7 +15,7 @@ object MyApp extends App {
     name = "embed-test",
     env = "prod",
     subdomain = "api",
-    domain = "foo.bar",
+    domain = "oto.tools",
     targets = Seq(
       Target(
         host = s"127.0.0.1:8080",
@@ -80,7 +80,7 @@ object MyApp extends App {
     _ <- otoroshi.dataStores.apiKeyDataStore.set(apiKey)
     _ <- otoroshi.dataStores.serviceDescriptorDataStore.set(descriptor)
   } yield {
-    // here your otoroshi is configured to serve http://127.0.0.1:8080 on http://api.foo.bar:8888
+    // here your otoroshi is configured to serve http://127.0.0.1:8080 on http://api.oto.tools:8888
     // ...
     otoroshi.stop()
     System.exit(0)

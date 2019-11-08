@@ -141,7 +141,7 @@
       "groupId": "admin-api-group",
       "name": "otoroshi-admin-api",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "otoroshi-api",
       "targets": [
         {
@@ -172,7 +172,7 @@
       ],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "otoroshi-admin-internal-api.foo.bar"
+        "Host": "otoroshi-admin-internal-api.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {
@@ -495,7 +495,7 @@
         {
           "name": "Mathieu",
           "password": "$2a$10$HlpxIV407.I156tJ1T7bv.7/V9ttt3mzaVR0p.8PbZ5BGMNkIkgBu",
-          "email": "mathieu@foo.bar",
+          "email": "mathieu@oto.tools",
           "metadata": {}
         }
       ]
@@ -504,7 +504,7 @@
   "certificates": [
     {
       "id": "TnMo3rWHGCrZW9ex99n0S9H0bRBzOAVI",
-      "domain": "*.foo.bar",
+      "domain": "*.oto.tools",
       "chain": "-----BEGIN CERTIFICATE-----\nMIIDKTCCAhGgAwIBAgIJALImajBLDFxGMA0GCSqGSIb3DQEBCwUAMFQxCzAJBgNVBAYTAkZSMREwDwYDVQQKEwhPdG9yb3NoaTEeMBwGA1UECxMVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMRIwEAYDVQQDDAkqLmZvby5iYXIwHhcNMTgxMjA3MTA1ODQ1WhcNMTkxMjA3MTA1ODQ1WjBUMQswCQYDVQQGEwJGUjERMA8GA1UEChMIT3Rvcm9zaGkxHjAcBgNVBAsTFU90b3Jvc2hpIENlcnRpZmljYXRlczESMBAGA1UEAwwJKi5mb28uYmFyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkVy5Hg3voFd27LNkhtCGnQUqql3rMxihh3bmYc5JQmxstKJTXmaRa7QZyT/QeAH8gk/iR/6o7nH+POqYLZz1S5hwKG1RmwXOEJCz6ltYPm5kHgsWRiE8G7KrGEw0sjKS77Vj9MWnJd60Dj5Pwy6aqXyjUMg0QQG2qKp9e0ml3SPFGhuw+pyuYIbVsJcxW1Rp94hs8r7Xuw0MLoPo5QtsfHmnYVpAJ+NBgLNp8ytZoDItSxrdCfmaQ2CkcOM528l/6sQuWZBtE+RwCiV+xk812GlvF/pJTEvLxqpyNDxMeuDMW6jQTbgq3mCFZ5mgDNknWScJNH2bxujMRSy5LIEI5wIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBrB1bRR8uIipouDnfJNFcl85CuDz3vSGjry4b/Hf8Q/2vhPamFgTP2dTMUWWI8oBw282ppwL0bFTQMflzBpgedYMVzD68q6rrfihhtAVJUqXWzzeMJ5nh4k4iRLOKa0bGU0EYeBM05mvqBJT9m5ivA8H74BlPTpa3TMS2Q4xn+x59WDmHYa/FbIw+WY1f8wjUTQjev8Rv+RNP6wQ6w34pdRU6bayXPGwcUS8vBf47FPQx87CHN9OWld5kpKzhQAoZEzvZKxadn+WSwkKV9qY1y8CMUlznh5sCtJwCxkUlNe61b8uLHxhf99oWePwOPj1lke/LK8gt+WveLhqa/Ee6K\n-----END CERTIFICATE-----",
       "caRef": null,
       "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCRXLkeDe+gV3bss2SG0IadBSqqXeszGKGHduZhzklCbGy0olNeZpFrtBnJP9B4AfyCT+JH/qjucf486pgtnPVLmHAobVGbBc4QkLPqW1g+bmQeCxZGITwbsqsYTDSyMpLvtWP0xacl3rQOPk/DLpqpfKNQyDRBAbaoqn17SaXdI8UaG7D6nK5ghtWwlzFbVGn3iGzyvte7DQwug+jlC2x8eadhWkAn40GAs2nzK1mgMi1LGt0J+ZpDYKRw4znbyX/qxC5ZkG0T5HAKJX7GTzXYaW8X+klMS8vGqnI0PEx64MxbqNBNuCreYIVnmaAM2SdZJwk0fZvG6MxFLLksgQjnAgMBAAECggEANa7DosjMxS9n+RRrPKqH/DcrQY27zbv783ZCsL4pKgG2x6LnHQbOD7OMjlkl2RwKr+lmjOYMZzrsBH0yxC2iHU/no9Zze8fSCSYXe6ZOWYgVK08246FkfGooa6nBEEpDH4mip4PTLdYoMtZqSI/OiGdCPRQi0Bsc5P9Jph1VxuvfYqnm36LxanL2ZOD3MIf3huuV39Cgu2uHmE1xtqgPVlq7aQy4dJeP35BURgw/kgqdxE8m5oyt/BvlRlXMbK5Qpa/Tm7QfGV3oa2OSVHvuD5nbEXy2Mt4iQm60iB1+XFEEaxoMzrwl3V5KsnnZG9DQi8p+70/g88rVcw1C53f+EQKBgQDChAl5mh2ap+XoHP/KP9gIv/G5HUagQs2F/qp3w6TyxuqcsRMUnZFlzQDmkxcD8wIDH2oltzGF7jNLHEMyheJ356nQpJJhaCSLmWsEkVxZK3e1IA2pAEfbQUUhot41WEgtKmGWS4lv0i07HYCWGI4Hw4WOgpKqmOyCNlmUjuhpKQKBgQC/Tz5BDKRssUYCEPWMuafZ97jsAVE+lnF66dPxDNHH/Jgxinv6CSPlNaLW6PmBHTAqsJKRoR7pn8zxvCogi+mTsdKg2yWuMevae+tQtj3b82Dy/0GzsHwVqYchYoVWW2m0RYdTTQb8Wz37qTZ6yOrLALbDdSSjUFJE0BV5HqZTjwKBgQC5/di1fqi5/br3A+uNrxhZ3Xc7wwOKL/YnHshPNjKdtZgV9bdB6hxiE/C9iH3kV9NfuwUbRRzEbGx9cGvMfnp6nngguYwCObtgBHVw67E6zjZraVfGdi8/NhztObdxmJWDIlgnhtjGpFh9gws1+gqs38bv6mhlWU4kf+WOCEuwaQKBgCJ2hgJ14pDqBnCM2Y82SrSLWba6LgaWV28K/HEqHAhoyonyJo9OYjcCSIlqgrftqCWolV7Cpaz0apkJipU+Xx+KIyVzFQCiYZiERknN6qra1xYvQYi7PD8ywPMUqmx6HzqoY85vy9heH3Zcb0IDO7jCMipXyffZmlhnG9cr3E6lAoGAIdevcS7tG83PmUKSaC5EXuRKvkOwG3e5xlNkkF43pIyqSk7LSnoOEZleK5YOgNOUSO4PqRfSCsvLR70JIkgDMidS1TeYJYjkfV8mZRPm9s3FYRv+kClAzZZK6krOpRznT1CaB4KwupznyYtdp2hSkS477YGJtgCmgwPrxq1uKvU=\n-----END PRIVATE KEY-----",
@@ -512,7 +512,7 @@
       "ca": false,
       "valid": true,
       "autoRenew": false,
-      "subject": "CN=*.foo.bar, OU=Otoroshi Certificates, O=Otoroshi, C=FR",
+      "subject": "CN=*.oto.tools, OU=Otoroshi Certificates, O=Otoroshi, C=FR",
       "from": 1544180325000,
       "to": 1575716325000
     },
@@ -551,7 +551,7 @@
       "name": "Always true authority",
       "description": "Always true authority",
       "url": "http://127.0.0.1:3000",
-      "host": "validation.foo.bar",
+      "host": "validation.oto.tools",
       "goodTtl": 600000,
       "badTtl": 60000,
       "method": "POST",

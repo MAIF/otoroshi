@@ -5,20 +5,20 @@ There is a lot of things you can configure in Otoroshi. By default, Otoroshi pro
 In this page, any configuration property can be set at runtime using a `-D` flag when launching Otoroshi like
 
 ```sh
-java -Dapp.domain=foo.bar -Dhttp.port=8080 -jar otoroshi.jar
+java -Dapp.domain=oto.tools -Dhttp.port=8080 -jar otoroshi.jar
 ```
 
 or
 
 ```sh
-./bin/otoroshi -Dhttp.port=8080 -Dapp.domain=foo.bar 
+./bin/otoroshi -Dhttp.port=8080 -Dapp.domain=oto.tools 
 ```
 
 ## Common configuration
 
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
-| `app.domain` | string | "foo.bar" | the domain on which Otoroshi UI/API is be exposed|
+| `app.domain` | string | "oto.tools" | the domain on which Otoroshi UI/API is be exposed|
 | `app.rootScheme` | string | "http" | the scheme on which Otoroshi is exposed, either "http" or "https" |
 | `app.snowflake.seed` | number | 0 | this number will is used to generate unique ids across the cluster. Each Otorshi instance must have a unique seed. |
 | `app.events.maxSize` | number | 1000 | max number of analytic and alert events stored locally |
@@ -113,7 +113,7 @@ As Otoroshi is a [Play app](https://www.playframework.com/), you should take a l
 | `play.http.session.secure` | boolean | false | whether or not the Otoroshi backoffice session will be served over https only |
 | `play.http.session.httpOnly` | boolean | true | whether or not the Otoroshi backoffice session will be accessible from Javascript |
 | `play.http.session.maxAge` | number | 259200000 | the number of seconds before Otoroshi backoffice session expired |
-| `play.http.session.domain` | string | ".foo.bar" | the domain on which the Otoroshi backoffice session is authorized |
+| `play.http.session.domain` | string | ".oto.tools" | the domain on which the Otoroshi backoffice session is authorized |
 | `play.http.session.cookieName` |  string | "otoroshi-session" | the name of the Otoroshi backoffice session |
 | `play.ws.play.ws.useragent` | string | "Otoroshi" | the user agent sent by Otoroshi if not present on the original http request |
 | `play.server.https.keyStore.path` | string | | the path to the keystore containing the private key and certificate, if not provided generates a keystore for you |
@@ -138,7 +138,7 @@ app {
   storage = "leveldb"
   importFrom = "./my-state.json"
   env = "prod"
-  domain = "foo.bar"
+  domain = "oto.tools"
   rootScheme = "http"
   snowflake {
     seed = 0
@@ -181,7 +181,7 @@ play.http {
     secure = false
     httpOnly = true
     maxAge = 2592000000
-    domain = ".foo.bar"
+    domain = ".oto.tools"
     cookieName = "oto-sess"
   }
 }

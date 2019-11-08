@@ -12,7 +12,7 @@ const a = {
   "groupId": "default",
   "name": "lb-test",
   "env": "prod",
-  "domain": "foo.bar",
+  "domain": "oto.tools",
   "subdomain": "test",
   "targets": _.range(from, to).map(port => {
     return {
@@ -164,7 +164,7 @@ configApp.get('/otoroshi.json', (req, res) => {
         "groupId": "admin-api-group",
         "name": "otoroshi-admin-api",
         "env": "prod",
-        "domain": "foo.bar",
+        "domain": "oto.tools",
         "subdomain": "otoroshi-api",
         "targets": [
           {
@@ -188,7 +188,7 @@ configApp.get('/otoroshi.json', (req, res) => {
         "publicPatterns": [],
         "privatePatterns": [],
         "additionalHeaders": {
-          "Host": "otoroshi-admin-internal-api.foo.bar"
+          "Host": "otoroshi-admin-internal-api.oto.tools"
         },
         "matchingHeaders": {},
         "ipFiltering": {

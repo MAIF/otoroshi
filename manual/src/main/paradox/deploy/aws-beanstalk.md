@@ -171,7 +171,7 @@ For the second option your otoroshi.conf would look like this :
    http.port = 8080
    app {
      env = "prod"
-     domain = "mysubdomain.foo.bar"
+     domain = "mysubdomain.oto.tools"
      rootScheme = "https"
      snowflake {
        seed = 0
@@ -220,7 +220,7 @@ For the second option your otoroshi.conf would look like this :
        secure = false
        httpOnly = true
        maxAge = 2147483646
-       domain = ".mysubdomain.foo.bar"
+       domain = ".mysubdomain.oto.tools"
        cookieName = "oto-sess"
      }
    }
@@ -242,7 +242,7 @@ Keep the default selected value **Request a public certificate** and hit **Reque
 <img src="../img/deploy-elb-11.png" />
 @@@  
 
-Put your **Domain name**, use *. for wildcard, for instance *\*.mysubdomain.foo.bar*, then hit **Next**.
+Put your **Domain name**, use *. for wildcard, for instance *\*.mysubdomain.oto.tools*, then hit **Next**.
 
 @@@ div { .centered-img }
 <img src="../img/deploy-elb-12.png" />
@@ -293,7 +293,7 @@ Now you have **https**, so let's use Otoroshi.
 
 ### Configure your DNS to redirect all traffic on your domain to Otoroshi
   
-It's actually pretty simple, you just need to add a `CNAME` record to your DNS configuration, that redirects *\*.mysubdomain.foo.bar* to the DNS name of Otoroshi's load balancer.
+It's actually pretty simple, you just need to add a `CNAME` record to your DNS configuration, that redirects *\*.mysubdomain.oto.tools* to the DNS name of Otoroshi's load balancer.
 
 To find the DNS name of Otoroshi's load balancer go to [AWS Ec2](https://eu-west-3.console.aws.amazon.com/ec2/v2/home?region=eu-west-3#LoadBalancers:tag:elasticbeanstalk:environment-name=Otoroshi-env;sort=loadBalancerName)
 

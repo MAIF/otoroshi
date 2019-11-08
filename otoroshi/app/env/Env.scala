@@ -229,7 +229,7 @@ class Env(val configuration: Configuration,
   lazy val adminApiProxyHttps: Boolean = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
     configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
-  lazy val domain: String = configuration.getOptional[String]("app.domain").getOrElse("foo.bar")
+  lazy val domain: String = configuration.getOptional[String]("app.domain").getOrElse("oto.tools")
   lazy val adminApiSubDomain: String =
     configuration.getOptional[String]("app.adminapi.targetSubdomain").getOrElse("otoroshi-admin-internal-api")
   lazy val adminApiExposedSubDomain: String =

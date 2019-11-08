@@ -54,7 +54,7 @@ if (action === 'server') {
   app.get('/*', (req, res) => res.status(200).send({ message: `Hello from ${name}`, name }));
   app.listen(port, () => console.log(`serving API with name '${name}' on http://0.0.0.0:${port}`));
 } else if (action === 'injector') {
-  const host = String(argv.host || 'api.foo.bar');
+  const host = String(argv.host || 'api.oto.tools');
   const location = String(argv.location || '127.0.0.1:8080');
   const clientId = String(argv.clientId || '--');
   const clientSecret = String(argv.clientSecret || '--');

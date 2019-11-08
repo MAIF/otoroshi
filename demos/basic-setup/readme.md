@@ -16,29 +16,23 @@ docker-compose up
 You can try the app apis with curl
 
 ```sh
-curl -H 'Host: api-tenant1.foo.bar' http://127.0.0.1:8889/ -u basicsetup-prod-tenant1-apikey:basicsetup-prod-tenant1-apikey | jqn
+curl http://api-tenant1.oto.tools:8889/ -u basicsetup-prod-tenant1-apikey:basicsetup-prod-tenant1-apikey | jqn
 ```
 
 ## Test otoroshi
 
-To try otoroshi, just add some hostnames in your `/etc/hosts` file
-
-```
-127.0.0.1   tenant1.foo.bar api-tenant1.foo.bar kibana.foo.bar elastic.foo.bar otoroshi.foo.bar otoroshi-api.foo.bar otoroshi-admin-internal-api.foo.bar privateapps.foo.bar  
-```
-
-go to http://otoroshi.foo.bar:8889, login with admin@otoroshi.io/password
+To try otoroshi, just go to http://otoroshi.oto.tools:8889, login with admin@otoroshi.io/password
 
 You can also try to access basic-setup lines from your browser, just go to 
 
-* http://tenant1.foo.bar:8889
+* http://tenant1.oto.tools:8889
 
-You can also access Otoroshi events in kibana at http://kibana.foo.bar:8889
+You can also access Otoroshi events in kibana at http://kibana.oto.tools:8889
 
 You can also access Elastic data 
 
 ```sh
-curl -X GET http://elastic.foo.bar:8889/analytics*/analytics/_search?q=@type:GatewayEvent&q=status:200 -u basicsetup-es-apikey:basicsetup-es-apikey | jqn
+curl -X GET http://elastic.oto.tools:8889/analytics*/analytics/_search?q=@type:GatewayEvent&q=status:200 -u basicsetup-es-apikey:basicsetup-es-apikey | jqn
 ```
 
 ## Restart a service

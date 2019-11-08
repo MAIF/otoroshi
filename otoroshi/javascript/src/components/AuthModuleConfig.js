@@ -135,7 +135,7 @@ export class Oauth2ModuleConfig extends Component {
     userInfoUrl: 'http://my.iam.local:8082/userinfo',
     loginUrl: 'http://my.iam.local:8082/login',
     logoutUrl: 'http://my.iam.local:8082/logout',
-    callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback',
+    callbackUrl: 'http://privateapps.oto.tools:8080/privateapps/generic/callback',
     accessTokenField: 'access_token',
     scope: 'openid profile email name',
     useJson: false,
@@ -726,7 +726,7 @@ export class BasicModuleConfig extends Component {
     newValue.users.push({
       name: firstName + ' ' + lastName,
       password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
-      email: firstName.toLowerCase() + '.' + lastName.toLowerCase() + '@foo.bar',
+      email: firstName.toLowerCase() + '.' + lastName.toLowerCase() + '@oto.tools',
       metadata: {},
     });
     this.props.onChange(newValue);
@@ -1047,7 +1047,7 @@ export class AuthModuleConfig extends Component {
                 users: [
                   {
                     name: 'John Doe',
-                    email: 'john.doe@foo.bar',
+                    email: 'john.doe@oto.tools',
                     password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
                     metadata: {},
                   },
@@ -1083,7 +1083,7 @@ export class AuthModuleConfig extends Component {
                 userInfoUrl: 'http://my.iam.local:8082/userinfo',
                 loginUrl: 'http://my.iam.local:8082/login',
                 logoutUrl: 'http://my.iam.local:8082/logout',
-                callbackUrl: 'http://privateapps.foo.bar:8080/privateapps/generic/callback',
+                callbackUrl: 'http://privateapps.oto.tools:8080/privateapps/generic/callback',
                 accessTokenField: 'access_token',
                 scope: 'openid profile email name',
                 sessionMaxAge: 86400,

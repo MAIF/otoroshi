@@ -11,7 +11,7 @@ function generateService(name, isSelf, overridePublic) {
     "groupId": "default",
     "name": name,
     "env": "prod",
-    "domain": "foo.bar",
+    "domain": "oto.tools",
     "subdomain": name,
     "targets": [
       {
@@ -35,7 +35,7 @@ function generateService(name, isSelf, overridePublic) {
     "publicPatterns": overridePublic ? ['/.*'] : (!isSelf ? ['/.*'] : []), // local service does not have to provide an apikey
     "privatePatterns": [],
     "additionalHeaders": {
-      "Host": `${name}.foo.bar`,
+      "Host": `${name}.oto.tools`,
       "Otoroshi-Client-Id": "service-frontend-apikey",
       "Otoroshi-Client-Secret": "service-frontend-apikey",
     },
@@ -159,7 +159,7 @@ app.get('/*', (req, res) => {
         "groupId": "admin-api-group",
         "name": "otoroshi-admin-api",
         "env": "prod",
-        "domain": "foo.bar",
+        "domain": "oto.tools",
         "subdomain": "otoroshi-api",
         "targets": [
           {
@@ -183,7 +183,7 @@ app.get('/*', (req, res) => {
         "publicPatterns": [],
         "privatePatterns": [],
         "additionalHeaders": {
-          "Host": "otoroshi-admin-internal-api.foo.bar"
+          "Host": "otoroshi-admin-internal-api.oto.tools"
         },
         "matchingHeaders": {},
         "ipFiltering": {

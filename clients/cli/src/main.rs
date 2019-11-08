@@ -94,7 +94,7 @@ fn extract_oto_args(
             let host = subcommand
                 .value_of("oto-host")
                 .or(default_config.get("host").and_then(|i| i.as_str()))
-                .m_get_or_else("otoroshi-api.foo.bar");
+                .m_get_or_else("otoroshi-api.oto.tools");
             //.expect("You have to specify Otoroshi Host");
             let url = subcommand
                 .value_of("oto-url")

@@ -14,7 +14,7 @@ const apps = [
 const users = [
   {
     "name": "Mathieu",
-    "email": "mathieu@foo.bar",
+    "email": "mathieu@oto.tools",
     "appRights": [
       {
         "id": "iogOIDH09EktFhydTp8xspGvdaBq961DUDr6MBBNwHO2EiBMlOdafGnImhbRGy8z",
@@ -75,7 +75,7 @@ function decodeBody(request) {
 function call(req, res) {
   decodeBody(req).then(body => {
     const service = body.service;
-    const email = (body.user || { email: 'mathieu@foo.bar' }).email; // here, should not be null if used with an otoroshi auth. module
+    const email = (body.user || { email: 'mathieu@oto.tools' }).email; // here, should not be null if used with an otoroshi auth. module
     const commonName = x509.getSubject(body.chain).commonName
     const device = devices.filter(d => d.serialNumber === commonName)[0];
     const user = users.filter(d => d.email === email)[0];

@@ -1,7 +1,7 @@
 export PW="ouhUpHgmowd2xXz3"
 
 rm -f ./foobar*
-rm -f ./foo.bar*
+rm -f ./oto.tools*
 
 # Generate Certificate Authority to sign certificate
 keytool -genkeypair -v \
@@ -25,26 +25,26 @@ keytool -export -v \
   -keystore foobar.jks \
   -rfc
 
-# Create a server certificate, tied to foo.bar
+# Create a server certificate, tied to oto.tools
 keytool -genkeypair -v \
-  -alias foo.bar \
-  -dname "CN=*.foo.bar, OU=FooBar Org, O=FooBar Company, L=Poitiers, ST=Vienne, C=FR" \
-  -keystore foo.bar.jks \
+  -alias oto.tools \
+  -dname "CN=*.oto.tools, OU=FooBar Org, O=FooBar Company, L=Poitiers, ST=Vienne, C=FR" \
+  -keystore oto.tools.jks \
   -keypass:env PW \
   -storepass:env PW \
   -keyalg RSA \
   -keysize 2048 \
   -validity 385
 
-# Create a certificate signing request for foo.bar
+# Create a certificate signing request for oto.tools
 keytool -certreq -v \
-  -alias foo.bar \
+  -alias oto.tools \
   -keypass:env PW \
   -storepass:env PW \
-  -keystore foo.bar.jks \
-  -file foo.bar.csr
+  -keystore oto.tools.jks \
+  -file oto.tools.csr
 
-# Tell foobar to sign the foo.bar certificate. Note the extension is on the request, not the
+# Tell foobar to sign the oto.tools certificate. Note the extension is on the request, not the
 # original certificate.
 # Technically, keyUsage should be digitalSignature for DHE or ECDHE, keyEncipherment for RSA.
 keytool -gencert -v \
@@ -52,11 +52,11 @@ keytool -gencert -v \
   -keypass:env PW \
   -storepass:env PW \
   -keystore foobar.jks \
-  -infile foo.bar.csr \
-  -outfile foo.bar.cert \
+  -infile oto.tools.csr \
+  -outfile oto.tools.cert \
   -ext KeyUsage:critical="digitalSignature,keyEncipherment" \
   -ext EKU="serverAuth" \
-  -ext SAN="DNS:foo.bar" \
+  -ext SAN="DNS:oto.tools" \
   -rfc
 
 keytool -gencert -v \
@@ -64,71 +64,71 @@ keytool -gencert -v \
   -keypass:env PW \
   -storepass:env PW \
   -keystore foobar.jks \
-  -infile foo.bar.csr \
-  -outfile foo.bar-cert.pem \
+  -infile oto.tools.csr \
+  -outfile oto.tools-cert.pem \
   -ext KeyUsage:critical="digitalSignature,keyEncipherment" \
   -ext EKU="serverAuth" \
-  -ext SAN="DNS:foo.bar" \
+  -ext SAN="DNS:oto.tools" \
   -rfc
 
-# Tell foo.bar.jks it can trust foobar as a signer.
+# Tell oto.tools.jks it can trust foobar as a signer.
 keytool -import -v \
   -alias foobar \
   -file foobar.cert \
-  -keystore foo.bar.jks \
+  -keystore oto.tools.jks \
   -storetype JKS \
   -storepass:env PW << EOF
 yes
 EOF
 
-# Import the signed certificate back into foo.bar.jks
+# Import the signed certificate back into oto.tools.jks
 keytool -import -v \
-  -alias foo.bar \
-  -file foo.bar.cert \
-  -keystore foo.bar.jks \
+  -alias oto.tools \
+  -file oto.tools.cert \
+  -keystore oto.tools.jks \
   -storetype JKS \
   -storepass:env PW
 
-# List out the contents of foo.bar.jks just to confirm it.
+# List out the contents of oto.tools.jks just to confirm it.
 # If you are using Play as a TLS termination point, this is the key store you should present as the server.
 keytool -list -v \
-  -keystore foo.bar.jks \
+  -keystore oto.tools.jks \
   -storepass:env PW
 
 keytool -export -v \
-  -alias foo.bar \
-  -file foo.bar.cert \
+  -alias oto.tools \
+  -file oto.tools.cert \
   -keypass:env PW \
   -storepass:env PW \
-  -keystore foo.bar.jks \
+  -keystore oto.tools.jks \
   -rfc
 
 # Create a PKCS#12 keystore containing the public and private keys.
 keytool -importkeystore -v \
-  -srcalias foo.bar \
-  -srckeystore foo.bar.jks \
+  -srcalias oto.tools \
+  -srckeystore oto.tools.jks \
   -srcstoretype jks \
   -srcstorepass:env PW \
-  -destkeystore foo.bar.p12 \
+  -destkeystore oto.tools.p12 \
   -destkeypass:env PW \
   -deststorepass:env PW \
   -deststoretype PKCS12
 
-# Export the foo.bar private key for use in nginx.  Note this requires the use of OpenSSL.
+# Export the oto.tools private key for use in nginx.  Note this requires the use of OpenSSL.
 openssl pkcs12 \
   -nocerts \
   -nodes \
   -passout env:PW \
   -passin env:PW \
-  -in foo.bar.p12 \
-  -out foo.bar.key
+  -in oto.tools.p12 \
+  -out oto.tools.key
 
 openssl pkcs12 \
   -nocerts \
   -nodes \
   -passout env:PW \
   -passin env:PW \
-  -in foo.bar.p12 \
-  -out foo.bar-key.pem
+  -in oto.tools.p12 \
+  -out oto.tools-key.pem
 
-# openssl pkcs12 -in foo.bar.p12 -out foo.bar.pem -passin env:PW -passout env:PW
+# openssl pkcs12 -in oto.tools.p12 -out oto.tools.pem -passin env:PW -passout env:PW

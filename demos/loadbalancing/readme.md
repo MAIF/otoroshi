@@ -31,7 +31,7 @@ now, create a new Otoroshi service
   --id hello-api \
   --name hello-api \
   --env prod \
-  --domain foo.bar \
+  --domain oto.tools \
   --subdomain api \
   --root / \
   --target "http://127.0.0.1:8081" \

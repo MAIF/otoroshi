@@ -118,7 +118,7 @@
       "groupId": "admin-api-group",
       "name": "otoroshi-admin-api",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "otoroshi-api",
       "targets": [
         {
@@ -142,7 +142,7 @@
       "publicPatterns": [],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "otoroshi-admin-internal-api.foo.bar"
+        "Host": "otoroshi-admin-internal-api.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {
@@ -179,7 +179,7 @@
       "groupId": "default",
       "name": "service-1",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "service-1",
       "targets": [
         {
@@ -203,7 +203,7 @@
       "publicPatterns": [],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "service-1.foo.bar"
+        "Host": "service-1.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {
@@ -240,7 +240,7 @@
       "groupId": "default",
       "name": "service-2",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "service-2",
       "targets": [
         {
@@ -264,7 +264,7 @@
       "publicPatterns": [],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "service-2.foo.bar"
+        "Host": "service-2.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {
@@ -301,7 +301,7 @@
       "groupId": "default",
       "name": "service-3",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "service-3",
       "targets": [
         {
@@ -325,7 +325,7 @@
       "publicPatterns": [],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "service-3.foo.bar"
+        "Host": "service-3.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {
@@ -362,7 +362,7 @@
       "groupId": "default",
       "name": "service-frontend",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "service-frontend",
       "targets": [
         {
@@ -386,7 +386,7 @@
       "publicPatterns": [],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "service-frontend.foo.bar"
+        "Host": "service-frontend.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {

@@ -121,7 +121,7 @@
       "groupId": "admin-api-group",
       "name": "otoroshi-admin-api",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "otoroshi-api",
       "targets": [
         {
@@ -145,7 +145,7 @@
       "publicPatterns": [],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "otoroshi-admin-internal-api.foo.bar"
+        "Host": "otoroshi-admin-internal-api.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {
@@ -182,7 +182,7 @@
       "groupId": "basicsetup-prod-tenant1",
       "name": "basicsetup-prod-tenant1-app",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "tenant1",
       "targets": [
         {
@@ -247,7 +247,7 @@
       "groupId": "basicsetup-prod-tenant1",
       "name": "basicsetup-prod-tenant1-api",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "api-tenant1",
       "targets": [
         {
@@ -312,7 +312,7 @@
       "groupId": "basicsetup-es",
       "name": "kibana",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "kibana",
       "targets": [
         {
@@ -372,7 +372,7 @@
       "groupId": "basicsetup-es",
       "name": "elastic",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "elastic",
       "targets": [
         {

@@ -11,7 +11,7 @@ app.get('/api', (req, res) => {
   fetch('http://otoroshi-service-2:8080/api', {
     method: 'GET',
     headers: {
-      'Host': 'service-3.foo.bar',
+      'Host': 'service-3.oto.tools',
       'Accept': 'application/json'
     }
   }).then(r => r.json()).then(res1 => {

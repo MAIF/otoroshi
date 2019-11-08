@@ -17,11 +17,11 @@ Now, you can fill the following fields :
 For the `Callback URL` fields, use something like
 
 ```
-https://otoroshi.foo.bar/backoffice/auth0/callback
-https://privateapps.foo.bar/privateapps/auth0/callback
+https://otoroshi.oto.tools/backoffice/auth0/callback
+https://privateapps.oto.tools/privateapps/auth0/callback
 ```
 
-Of course, you need to replace `otoroshi.foo.bar` and `privateapps.foo.bar` with your own domain and sub-domains. Don't forget to customize the callback URLs in your Auth0 backoffice too.
+Of course, you need to replace `otoroshi.oto.tools` and `privateapps.oto.tools` with your own domain and sub-domains. Don't forget to customize the callback URLs in your Auth0 backoffice too.
 
 Now if you logout, you will see the Auth0 option on the login screen
 

@@ -2,7 +2,7 @@
 
 Now that Otoroshi is running, you are ready to log into the Otoroshi admin dashboard and setup your instance. Just go to :
 
-<a href="http://otoroshi.foo.bar:8080" target="_blank">http://otoroshi.foo.bar:8080</a>
+<a href="http://otoroshi.oto.tools:8080" target="_blank">http://otoroshi.oto.tools:8080</a>
 
 and you will see the following page
  

@@ -70,7 +70,7 @@ It can be a file path or a URL
       "groupId": "admin-api-group",
       "name": "otoroshi-admin-api",
       "env": "prod",
-      "domain": "foo.bar",
+      "domain": "oto.tools",
       "subdomain": "otoroshi-api",
       "targets": [
         {
@@ -88,7 +88,7 @@ It can be a file path or a URL
       "publicPatterns": [],
       "privatePatterns": [],
       "additionalHeaders": {
-        "Host": "otoroshi-admin-internal-api.foo.bar"
+        "Host": "otoroshi-admin-internal-api.oto.tools"
       },
       "matchingHeaders": {},
       "ipFiltering": {

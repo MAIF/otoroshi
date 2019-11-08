@@ -286,7 +286,7 @@ export class CertificatesPage extends Component {
     domain: {
       type: 'string',
       disabled: true,
-      props: { label: 'Certificate domain', placeholder: 'www.foo.bar' },
+      props: { label: 'Certificate domain', placeholder: 'www.oto.tools' },
     },
     commands: {
       type: Commands,

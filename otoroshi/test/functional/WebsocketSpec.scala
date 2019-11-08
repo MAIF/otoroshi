@@ -53,7 +53,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
         name = "ws-test",
         env = "prod",
         subdomain = "ws",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"echo.websocket.org",
@@ -106,7 +106,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
 
       http.singleWebSocketRequest(
         WebSocketRequest(s"ws://127.0.0.1:$port")
-          .copy(extraHeaders = List(Host("ws.foo.bar"))),
+          .copy(extraHeaders = List(Host("ws.oto.tools"))),
         Flow
           .fromSinkAndSourceMat(printSink, nameSource)(Keep.both)
           .alsoTo(Sink.onComplete { _ =>

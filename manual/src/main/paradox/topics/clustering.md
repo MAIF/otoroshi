@@ -28,7 +28,7 @@ otoroshi {
     leader {
       name = ${?CLUSTER_LEADER_NAME}   # name of the instance, if none, it will be generated
       urls = ["http://127.0.0.1:8080"] # urls to contact the leader cluster
-      host = "otoroshi-api.foo.bar"    # host of the otoroshi api in the leader cluster
+      host = "otoroshi-api.oto.tools"    # host of the otoroshi api in the leader cluster
       clientId = "apikey-id"           # otoroshi api client id
       clientSecret = "secret"          # otoroshi api client secret
       cacheStateFor = 4000             # state is cached during (ms)
@@ -62,6 +62,7 @@ otoroshi {
     leader {
       name = ${?CLUSTER_LEADER_NAME}
       host = ${?CLUSTER_LEADER_HOST}
+      url = ${?CLUSTER_LEADER_URL}
       clientId = ${?CLUSTER_LEADER_CLIENT_ID}
       clientSecret = ${?CLUSTER_LEADER_CLIENT_SECRET}
       groupingBy = ${?CLUSTER_LEADER_GROUP_BY}

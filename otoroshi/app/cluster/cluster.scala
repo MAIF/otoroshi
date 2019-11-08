@@ -110,7 +110,7 @@ case class WorkerConfig(
 case class LeaderConfig(
     name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
     urls: Seq[String] = Seq.empty,
-    host: String = "otoroshi-api.foo.bar",
+    host: String = "otoroshi-api.oto.tools",
     clientId: String = "admin-api-apikey-id",
     clientSecret: String = "admin-api-apikey-secret",
     groupingBy: Int = 50,
@@ -155,8 +155,8 @@ object ClusterConfig {
         urls = configuration.getOptional[String]("leader.url").map(s => Seq(s)).orElse(configuration
           .getOptional[Seq[String]]("leader.urls")
           .map(_.toSeq))
-          .getOrElse(Seq("http://otoroshi-api.foo.bar:8080")),
-        host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.foo.bar"),
+          .getOrElse(Seq("http://otoroshi-api.oto.tools:8080")),
+        host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.oto.tools"),
         clientId = configuration.getOptional[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
         clientSecret = configuration.getOptional[String]("leader.clientSecret").getOrElse("admin-api-apikey-secret"),
         groupingBy = configuration.getOptional[Int]("leader.groupingBy").getOrElse(50),

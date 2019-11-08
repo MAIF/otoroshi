@@ -98,7 +98,7 @@ class Target extends Component {
       <TextInput
         label={`Target ${this.props.idx + 1}`}
         placeholder={
-          this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.foo.bar'
+          this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.oto.tools'
         }
         value={
           this.state.url
@@ -129,7 +129,7 @@ class Target extends Component {
         {this.renderFirstLine(value)}
         <TextInput
           label="Host"
-          placeholder="changeme.foo.bar"
+          placeholder="changeme.oto.tools"
           value={value.host}
           help="The host of the target"
           onChange={e => {
@@ -1323,7 +1323,7 @@ export class ServicePage extends Component {
                   help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
                   component={Target}
                   defaultValue={{
-                    host: 'changeme.foo.bar',
+                    host: 'changeme.oto.tools',
                     scheme: 'https',
                     weight: 1,
                     protocol: 'HTTP/1.1',
@@ -2545,7 +2545,7 @@ export class ServicePage extends Component {
               help="The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
               component={Target}
               defaultValue={{
-                host: 'changeme.foo.bar',
+                host: 'changeme.oto.tools',
                 scheme: 'https',
                 weight: 1,
                 protocol: 'HTTP/1.1',

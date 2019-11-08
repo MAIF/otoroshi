@@ -1288,10 +1288,10 @@ case class ClientCertificateValidator(
   app.post('/certificates/_validate', (req, res) => {
     console.log('need to validate the following certificate chain');
     const service = req.body.service;
-    const identity = req.body.apikey || req.body.user || { email: 'nobody@foo.bar' };
+    const identity = req.body.apikey || req.body.user || { email: 'nobody@oto.tools' };
     const cert = x509.parseCert(req.body.chain);
     console.log(identity, service, cert);
-    if (cert.subject.emailAddress === 'john.doe@foo.bar') {
+    if (cert.subject.emailAddress === 'john.doe@oto.tools') {
       res.send({ status: "good" });
     } else {
       res.send({ status: "revoked" });
@@ -1656,13 +1656,13 @@ openssl genrsa -aes256 -out ca/ca.key 4096
 # with CN=CA-ROOT
 openssl req -new -x509 -sha256 -days 730 -key ca/ca.key -out ca/ca.crt
 # chmod 444 ca/ca.crt
-openssl genrsa -out server/app.foo.bar.key 2048
-# chmod 400 server/app.foo.bar.key
-# with CN=*.foo.bar
-openssl req -new -key server/app.foo.bar.key -sha256 -out server/app.foo.bar.csr
-openssl x509 -req -days 365 -sha256 -in server/app.foo.bar.csr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 1 -out server/app.foo.bar.crt
-# chmod 444 server/app.foo.bar.crt
-openssl verify -CAfile ca/ca.crt server/app.foo.bar.crt
+openssl genrsa -out server/app.oto.tools.key 2048
+# chmod 400 server/app.oto.tools.key
+# with CN=*.oto.tools
+openssl req -new -key server/app.oto.tools.key -sha256 -out server/app.oto.tools.csr
+openssl x509 -req -days 365 -sha256 -in server/app.oto.tools.csr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 1 -out server/app.oto.tools.crt
+# chmod 444 server/app.oto.tools.crt
+openssl verify -CAfile ca/ca.crt server/app.oto.tools.crt
 openssl genrsa -out client/client.key 2048
 # with CN and other stuff about the actual device/user
 openssl req -new -key client/client.key -out client/client.csr
