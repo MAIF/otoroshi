@@ -68,6 +68,26 @@ object ElasticTemplates {
       |        },
       |        "@env": {
       |          "type": "keyword"
+      |        },
+      |        "headers": {
+      |          "properties": {
+      |            "key": {
+      |              "type": "keyword"
+      |            },
+      |            "value": {
+      |              "type": "keyword"
+      |            }
+      |          }
+      |        },
+      |        "headersOut": {
+      |          "properties": {
+      |            "key": {
+      |              "type": "keyword"
+      |            },
+      |            "value": {
+      |              "type": "keyword"
+      |            }
+      |          }
       |        }
       |      }
       |    }
