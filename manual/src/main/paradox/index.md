@@ -32,12 +32,6 @@ docker run -p "8080:8080" -e "APP_DOMAIN=oto.tools" maif/otoroshi:1.4.14-dev
 
 now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)
 
-You can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform
-
-@@@ div { .centered-img }
-[![Open in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https%3A%2F%2Fgithub.com%2Fmathieuancelin%2Fotoroshi-tutorial&page=shell&tutorial=tutorial.md)
-@@@
-
 ## Documentation
 
 * @ref:[About Otoroshi](./about.md)
