@@ -2691,6 +2691,23 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     }
   }
 
+  @inline
+  def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+    ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
+    findAll().flatMap { descriptors =>
+      val validDescriptors = descriptors.filter { sr =>
+        if (!sr.enabled) {
+          false
+        } else {
+          utils.RegexPool(sr.toHost).matches(query.toHost)
+        }
+      }
+      query.addServices(validDescriptors)
+      sortServices(validDescriptors, query, requestHeader)
+    }
+  }
+
+
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
   def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
                                                                         env: Env): Future[Option[ServiceDescriptor]] = {
@@ -2705,34 +2722,13 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
             case services if services.isEmpty => {
               // fast lookup should not store empty results, so ...
               ServiceDescriptorDataStore.logger.warn(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
-              findAll().flatMap { descriptors =>
-                val validDescriptors = descriptors.filter { sr =>
-                  if (!sr.enabled) {
-                    false
-                  } else {
-                    utils.RegexPool(sr.toHost).matches(query.toHost)
-                  }
-                }
-                query.addServices(validDescriptors)
-                sortServices(validDescriptors, query, requestHeader)
-              }
+              rawFind(query, requestHeader)
             }
             case services => sortServices(services, query, requestHeader)
           }
       }
       case false => {
-        ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
-        findAll().flatMap { descriptors =>
-          val validDescriptors = descriptors.filter { sr =>
-            if (!sr.enabled) {
-              false
-            } else {
-              utils.RegexPool(sr.toHost).matches(query.toHost)
-            }
-          }
-          query.addServices(validDescriptors)
-          sortServices(validDescriptors, query, requestHeader)
-        }
+        rawFind(query, requestHeader)
       }
     } map { filteredDescriptors =>
       filteredDescriptors.headOption
