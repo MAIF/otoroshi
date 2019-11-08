@@ -820,15 +820,16 @@ export class TopBar extends Component {
                   optionRenderer={p => {
                     const env =
                       p.env && _.isString(p.env)
-                        ? p.env.length > 4 ? p.env.substring(0, 4) + '.' : p.env
+                        ? p.env.length > 4
+                          ? p.env.substring(0, 4) + '.'
+                          : p.env
                         : null;
                     return (
                       <div style={{ display: 'flex' }}>
                         <div style={{ width: 60 }}>
-                          {p.env &&
-                            _.isString(p.env) && (
-                              <span className={`label ${this.color(p.env)}`}>{env}</span>
-                            )}
+                          {p.env && _.isString(p.env) && (
+                            <span className={`label ${this.color(p.env)}`}>{env}</span>
+                          )}
                           {p.env && !_.isString(p.env) && p.env}
                         </div>
                         <span>{p.label}</span>

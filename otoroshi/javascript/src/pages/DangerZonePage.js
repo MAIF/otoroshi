@@ -935,9 +935,8 @@ export class DangerZonePage extends Component {
               <label className="col-sm-2 control-label" />
               <div className="col-sm-10">
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
-                  <i className="glyphicon glyphicon-import" /> Flush DataStore & Import file '{
-                    this.state.readyToPush
-                  }'
+                  <i className="glyphicon glyphicon-import" /> Flush DataStore & Import file '
+                  {this.state.readyToPush}'
                 </button>
               </div>
             </div>

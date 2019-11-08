@@ -1,4 +1,4 @@
-FROM node:8.6.0
+FROM node:13.1.0
 
 MAINTAINER MAIF <oss@maif.fr>
 

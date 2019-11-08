@@ -403,13 +403,12 @@ export class U2FRegisterPage extends Component {
   render() {
     return (
       <div>
-        {this.props.env &&
-          this.props.env.changePassword && (
-            <div class="alert alert-danger" role="alert">
-              You are using the default admin account with the default password. You should create a
-              new admin account.
-            </div>
-          )}
+        {this.props.env && this.props.env.changePassword && (
+          <div class="alert alert-danger" role="alert">
+            You are using the default admin account with the default password. You should create a
+            new admin account.
+          </div>
+        )}
         <form className="form-horizontal">
           <div className="form-group">
             <label className="col-sm-2 control-label">Label</label>

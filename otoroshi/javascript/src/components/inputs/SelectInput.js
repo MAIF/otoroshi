@@ -99,7 +99,9 @@ export class SelectInput extends Component {
                 className="form-control classic-select"
                 value={this.state.value}
                 onChange={this.onChangeClassic}>
-                {this.state.values.map(value => <option value={value.value}>{value.label}</option>)}
+                {this.state.values.map(value => (
+                  <option value={value.value}>{value.label}</option>
+                ))}
               </select>
             </div>
           </div>

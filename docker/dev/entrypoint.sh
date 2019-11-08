@@ -12,9 +12,9 @@ git pull --rebase origin master
 echo "Installing node"
 export NVM_DIR="/root/.nvm" 
 . "$NVM_DIR/nvm.sh" 
-nvm install 8.6.0 
-nvm use 8.6.0 
-nvm alias default 8.6.0
+nvm install 13.1.0 
+nvm use 13.1.0 
+nvm alias default 13.1.0
 cd /root/otoroshi/otoroshi/javascript
 echo "installing nodejs dependencies"
 yarn install

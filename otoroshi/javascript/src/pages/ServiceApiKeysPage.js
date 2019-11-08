@@ -571,9 +571,7 @@ export class ServiceApiKeysPage extends Component {
     return (
       <Table
         parentProps={this.props}
-        selfUrl={`lines/${this.props.params.lineId}/services/${
-          this.props.params.serviceId
-        }/apikeys`}
+        selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
         defaultTitle="Service Api Keys"
         defaultValue={() => ({
           clientId: faker.random.alphaNumeric(16),
@@ -600,16 +598,12 @@ export class ServiceApiKeysPage extends Component {
         rowNavigation={true}
         navigateTo={item =>
           this.props.history.push({
-            pathname: `/lines/${this.props.params.lineId}/services/${
-              this.props.params.serviceId
-            }/apikeys/edit/${item.clientId}`,
+            pathname: `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}`,
             query: { group: item.id, groupName: item.name },
           })
         }
         itemUrl={i =>
-          `/bo/dashboard/lines/${this.props.params.lineId}/services/${
-            this.props.params.serviceId
-          }/apikeys/edit/${i.clientId}`
+          `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
         }
         extractKey={item => item.clientId}
       />

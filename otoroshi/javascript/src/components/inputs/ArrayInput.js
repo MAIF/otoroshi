@@ -148,39 +148,37 @@ export class ArrayInput extends Component {
             {idx > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
             <div className="col-sm-10">
               <div className="input-group">
-                {!this.props.valuesFrom &&
-                  !this.props.component && (
-                    <div className="input-group" style={{ width: '100%' }}>
-                      {this.props.prefix && (
-                        <div className="input-group-addon">{this.props.prefix}</div>
-                      )}
-                      <input
-                        disabled={this.props.disabled}
-                        type="text"
-                        className="form-control"
-                        id={`input-${this.props.label}`}
-                        placeholder={this.props.placeholder}
-                        value={value}
-                        onChange={e => this.changeValue(e, idx)}
-                        style={{ width: '100%' }}
-                      />
-                      {this.props.suffix && (
-                        <div className="input-group-addon">{this.props.suffix}</div>
-                      )}
-                    </div>
-                  )}
-                {this.props.valuesFrom &&
-                  !this.props.component && (
-                    <Select
-                      name={`selector-${idx}`}
-                      value={value}
-                      isLoading={this.state.loading}
+                {!this.props.valuesFrom && !this.props.component && (
+                  <div className="input-group" style={{ width: '100%' }}>
+                    {this.props.prefix && (
+                      <div className="input-group-addon">{this.props.prefix}</div>
+                    )}
+                    <input
                       disabled={this.props.disabled}
+                      type="text"
+                      className="form-control"
+                      id={`input-${this.props.label}`}
                       placeholder={this.props.placeholder}
-                      options={this.state.values}
-                      onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
+                      value={value}
+                      onChange={e => this.changeValue(e, idx)}
+                      style={{ width: '100%' }}
                     />
-                  )}
+                    {this.props.suffix && (
+                      <div className="input-group-addon">{this.props.suffix}</div>
+                    )}
+                  </div>
+                )}
+                {this.props.valuesFrom && !this.props.component && (
+                  <Select
+                    name={`selector-${idx}`}
+                    value={value}
+                    isLoading={this.state.loading}
+                    disabled={this.props.disabled}
+                    placeholder={this.props.placeholder}
+                    options={this.state.values}
+                    onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
+                  />
+                )}
                 {this.props.component && <Component idx={idx} itemValue={value} {...this.props} />}
                 <span className="input-group-btn">
                   <button

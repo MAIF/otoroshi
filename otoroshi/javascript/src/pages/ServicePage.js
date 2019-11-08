@@ -1,9 +1,8 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import {
-  CodeInput,
   ArrayInput,
   ObjectInput,
   BooleanInput,
@@ -19,6 +18,9 @@ import {
   LabelInput,
   HelpInput,
 } from '../components/inputs';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
+
 import faker from 'faker';
 import deepSet from 'set-value';
 import { Collapse } from '../components/inputs/Collapse';
@@ -385,10 +387,9 @@ class CanaryCampaign extends Component {
         {this.state.campaign && (
           <div className="col-sm-10" style={{ paddingTop: 5 }}>
             <span style={{ marginRight: 10 }}>
-              {this.state.campaign.canaryUsers + this.state.campaign.standardUsers} users ({
-                this.state.campaign.canaryUsers
-              }{' '}
-              canary / {this.state.campaign.standardUsers} standard)
+              {this.state.campaign.canaryUsers + this.state.campaign.standardUsers} users (
+              {this.state.campaign.canaryUsers} canary / {this.state.campaign.standardUsers}{' '}
+              standard)
             </span>
             <button type="button" className="btn btn-danger btn-xs" onClick={this.reset}>
               <i className="glyphicon glyphicon-trash" /> Reset campaign
@@ -1363,9 +1364,7 @@ export class ServicePage extends Component {
             )}
             {!this.state.service.tcpUdpTunneling && (
               <LinkDisplay
-                link={`${this.state.service.targets[0].scheme}://${
-                  this.state.service.targets[0].host
-                }${this.state.service.root}`}
+                link={`${this.state.service.targets[0].scheme}://${this.state.service.targets[0].host}${this.state.service.root}`}
               />
             )}
           </Collapse>
@@ -1785,9 +1784,7 @@ export class ServicePage extends Component {
                     )}
                     {this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a
-                        href={`/bo/dashboard/auth-configs/edit/${
-                          this.state.service.thirdPartyApiKey.oidcConfigRef
-                        }`}
+                        href={`/bo/dashboard/auth-configs/edit/${this.state.service.thirdPartyApiKey.oidcConfigRef}`}
                         className="btn btn-sm btn-success">
                         <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
                       </a>
@@ -2056,12 +2053,14 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('accessValidator.excludedPatterns', v)}
             />
             <div className="form-group">
-              <CodeInput
-                label="Configuration"
-                mode="json"
-                value={JSON.stringify(this.state.service.accessValidator.config, null, 2)}
-                onChange={e => this.changeTheValue('accessValidator.config', JSON.parse(e))}
-              />
+              <Suspense fallback={<div>loading ...</div>}>
+                <CodeInput
+                  label="Configuration"
+                  mode="json"
+                  value={JSON.stringify(this.state.service.accessValidator.config, null, 2)}
+                  onChange={e => this.changeTheValue('accessValidator.config', JSON.parse(e))}
+                />
+              </Suspense>
             </div>
             <HelpInput
               label=""
@@ -2124,9 +2123,7 @@ export class ServicePage extends Component {
                 )}
                 {this.state.service.clientValidatorRef && (
                   <a
-                    href={`/bo/dashboard/validation-authorities/edit/${
-                      this.state.service.clientValidatorRef
-                    }`}
+                    href={`/bo/dashboard/validation-authorities/edit/${this.state.service.clientValidatorRef}`}
                     className="btn btn-sm btn-success">
                     <i className="glyphicon glyphicon-edit" /> Edit the validation authority.
                   </a>
@@ -2686,12 +2683,14 @@ export class ServicePage extends Component {
               </div>
             </div>
             <div className="form-group">
-              <CodeInput
-                label="Configuration"
-                mode="json"
-                value={JSON.stringify(this.state.service.transformerConfig, null, 2)}
-                onChange={e => this.changeTheValue('transformerConfig', JSON.parse(e))}
-              />
+              <Suspense fallback={<div>loading ...</div>}>
+                <CodeInput
+                  label="Configuration"
+                  mode="json"
+                  value={JSON.stringify(this.state.service.transformerConfig, null, 2)}
+                  onChange={e => this.changeTheValue('transformerConfig', JSON.parse(e))}
+                />
+              </Suspense>
             </div>
           </Collapse>
         </form>
@@ -2757,7 +2756,8 @@ export class TemplateInput extends Component {
 
   formFlow = ['template40x', 'template50x', 'templateBuild', 'templateMaintenance', 'messages'];
 
-  message = 'You can use some variables in your templates that will be swapped with actual values : ${otoroshiMessage} will contain the raw otoroshi message for the error, ${status} will contain sthe current http status, ${errorId} will contain a unique number to track the error, ${message} will contain a translated value based on http status, ${cause} will contain a translated value based on a unique error id (ie. like errors.service.not.found). ${message} and ${cause} will be fetched from the `Custom messages` map and will have the value you specified.';
+  message =
+    'You can use some variables in your templates that will be swapped with actual values : ${otoroshiMessage} will contain the raw otoroshi message for the error, ${status} will contain sthe current http status, ${errorId} will contain a unique number to track the error, ${message} will contain a translated value based on http status, ${cause} will contain a translated value based on a unique error id (ie. like errors.service.not.found). ${message} and ${cause} will be fetched from the `Custom messages` map and will have the value you specified.';
 
   componentDidMount() {
     BackOfficeServices.findTemplateById(this.props.service.id).then(template =>

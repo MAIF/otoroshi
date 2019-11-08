@@ -1,14 +1,14 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 
 import {
   TextInput,
   NumberInput,
   SelectInput,
-  CodeInput,
   ArrayInput,
   BooleanInput,
   PasswordInput,
 } from './inputs';
+
 import { Separator } from './Separator';
 
 import deepSet from 'set-value';

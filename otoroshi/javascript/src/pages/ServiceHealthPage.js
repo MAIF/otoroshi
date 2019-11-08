@@ -127,9 +127,7 @@ export class ServiceHealthPage extends Component {
         {this.state.health && (
           <Table
             parentProps={this.props}
-            selfUrl={`lines/${this.props.params.lineId}/services/${
-              this.props.params.serviceId
-            }/health`}
+            selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/health`}
             defaultTitle={this.title}
             defaultValue={() => ({})}
             itemName="Health Check"

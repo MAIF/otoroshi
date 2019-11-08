@@ -142,7 +142,8 @@ class BackOfficeAppContainer extends Component {
                           {...createTooltip(
                             'Home dashboard of Otoroshi displaying global metrics'
                           )}>
-                          <i className="fas fa-tachometer-alt" />Dashboard
+                          <i className="fas fa-tachometer-alt" />
+                          Dashboard
                         </a>
                       </h2>
                     </li>

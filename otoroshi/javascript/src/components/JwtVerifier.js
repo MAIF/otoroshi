@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 
 import {
   ArrayInput,
@@ -12,8 +12,9 @@ import {
   FreeDomainInput,
   Help,
   Form,
-  CodeInput,
 } from './inputs';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -474,12 +475,14 @@ export class JwtVerifier extends Component {
             value={verifier.strategy.strict}
             onChange={v => changeTheValue(path + '.strategy.strict', v)}
           />,
-          <CodeInput
-            label="Default value"
-            mode="json"
-            value={JSON.stringify(verifier.strategy.token, null, 2)}
-            onChange={e => this.changeTheValue(path + '.strategy.token', JSON.parse(e))}
-          />,
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label="Default value"
+              mode="json"
+              value={JSON.stringify(verifier.strategy.token, null, 2)}
+              onChange={e => this.changeTheValue(path + '.strategy.token', JSON.parse(e))}
+            />
+          </Suspense>,
           <ObjectInput
             label="Verify token fields"
             placeholderKey="Field name"

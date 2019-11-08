@@ -97,8 +97,8 @@ async function buildVersion(version, where, releaseDir) {
   // build ui
   await runScript(`
     source $NVM_TOOL
-    nvm install 8.6.0
-    nvm use 8.6.0
+    nvm install 13.1.0
+    nvm use 13.1.0
     cd ${where}/otoroshi/javascript
     yarn install
     cd ${where}

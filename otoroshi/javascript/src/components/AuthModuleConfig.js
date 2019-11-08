@@ -1,13 +1,9 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 
-import {
-  TextInput,
-  NumberInput,
-  SelectInput,
-  CodeInput,
-  BooleanInput,
-  PasswordInput,
-} from './inputs';
+import { TextInput, NumberInput, SelectInput, BooleanInput, PasswordInput } from './inputs';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
+
 import { Proxy } from './Proxy';
 import { Separator } from './Separator';
 import { AlgoSettings } from './JwtVerifier';
@@ -211,7 +207,9 @@ export class Oauth2ModuleConfig extends Component {
         const configUrl = `${serverUrl}/realms/${realm}/.well-known/openid-configuration`;
         const clientId = config.resource;
         const clientSecret = config.credentials
-          ? config.credentials.secret ? config.credentials.secret : ''
+          ? config.credentials.secret
+            ? config.credentials.secret
+            : ''
           : '';
         return fetch(`/bo/api/oidc/_fetchConfig`, {
           method: 'POST',
@@ -401,18 +399,20 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
         />
-        <CodeInput
-          label="Extra metadata"
-          mode="json"
-          value={JSON.stringify(settings.extraMetadata, null, 2)}
-          onChange={e => {
-            if (e.trim() === '') {
-              this.changeTheValue(path + '.extraMetadata', {});
-            } else {
-              this.changeTheValue(path + '.extraMetadata', JSON.parse(e));
-            }
-          }}
-        />
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Extra metadata"
+            mode="json"
+            value={JSON.stringify(settings.extraMetadata, null, 2)}
+            onChange={e => {
+              if (e.trim() === '') {
+                this.changeTheValue(path + '.extraMetadata', {});
+              } else {
+                this.changeTheValue(path + '.extraMetadata', JSON.parse(e));
+              }
+            }}
+          />
+        </Suspense>
         <TextInput
           label="Api key metadata field name"
           value={settings.apiKeyMetaField}
@@ -613,9 +613,7 @@ export class User extends Component {
               title="Update profile link"
               onClick={e => {
                 return fetch(
-                  `/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${
-                    this.props.user.email
-                  }`,
+                  `/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${this.props.user.email}`,
                   {
                     method: 'POST',
                     credentials: 'include',
@@ -639,9 +637,7 @@ export class User extends Component {
                         <p>The link to update user profile is usable for the next 10 minutes</p>
                         <a
                           target="_blank"
-                          href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${
-                          r.host
-                        }/privateapps/profile?session=${sessionId}`}</a>
+                          href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
                       </div>,
                       'Profile updates'
                     );
@@ -658,9 +654,7 @@ export class User extends Component {
               title="Send update profile link to user"
               onClick={e => {
                 return fetch(
-                  `/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${
-                    this.props.user.email
-                  }`,
+                  `/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${this.props.user.email}`,
                   {
                     method: 'POST',
                     credentials: 'include',
@@ -877,12 +871,14 @@ export class BasicModuleConfig extends Component {
           </div>
         )}
         {this.state.showRaw && (
-          <CodeInput
-            label=""
-            value={JSON.stringify(settings.users, null, 2)}
-            help="..."
-            onChange={v => changeTheValue(path + '.users', JSON.parse(v))}
-          />
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label=""
+              value={JSON.stringify(settings.users, null, 2)}
+              help="..."
+              onChange={v => changeTheValue(path + '.users', JSON.parse(v))}
+            />
+          </Suspense>
         )}
       </div>
     );
@@ -1013,19 +1009,21 @@ export class LdapModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.metadataField', v)}
         />
-        <CodeInput
-          label="Extra metadata"
-          mode="json"
-          value={JSON.stringify(settings.extraMetadata, null, 2)}
-          onChange={e => {
-            console.log('changes "', e, '"');
-            if (e.trim() === '') {
-              this.changeTheValue(path + '.extraMetadata', {});
-            } else {
-              this.changeTheValue(path + '.extraMetadata', JSON.parse(e));
-            }
-          }}
-        />
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Extra metadata"
+            mode="json"
+            value={JSON.stringify(settings.extraMetadata, null, 2)}
+            onChange={e => {
+              console.log('changes "', e, '"');
+              if (e.trim() === '') {
+                this.changeTheValue(path + '.extraMetadata', {});
+              } else {
+                this.changeTheValue(path + '.extraMetadata', JSON.parse(e));
+              }
+            }}
+          />
+        </Suspense>
       </div>
     );
   }

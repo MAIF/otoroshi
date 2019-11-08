@@ -92,14 +92,12 @@ export class ServicesMapPage extends Component {
 
       let t = vis.transition().duration(d3.event.altKey ? 3500 : 750);
 
-      t
-        .selectAll('circle')
+      t.selectAll('circle')
         .attr('cx', d => x(d.x))
         .attr('cy', d => y(d.y))
         .attr('r', d => k * d.r);
 
-      t
-        .selectAll('text')
+      t.selectAll('text')
         .attr('x', d => x(d.x))
         .attr('y', d => {
           if (d === root) {
@@ -107,12 +105,8 @@ export class ServicesMapPage extends Component {
           }
           return zoomed ? y(d.children ? d.y - d.r + 20 : d.y) : y(d.y);
         })
-        .attr(
-          'style',
-          d =>
-            (zoomed && d.children) || d === root
-              ? 'font-weight:bold;font-size:20px;color:white;'
-              : ''
+        .attr('style', d =>
+          (zoomed && d.children) || d === root ? 'font-weight:bold;font-size:20px;color:white;' : ''
         )
         .text(d => (zoomed ? d.name : d.children ? shortName(d) : ''))
         .style('opacity', d => (k * d.r > 20 ? 1 : 0));

@@ -35,7 +35,7 @@ tmux send-keys -t $SESSION_NAME:1.1 "cd $LOCATION/otoroshi" C-m
 tmux send-keys -t $SESSION_NAME:1.1 clear C-m
 tmux send-keys -t $SESSION_NAME:1.2 clear C-m
 tmux send-keys -t $SESSION_NAME:1.3 clear C-m
-tmux send-keys -t $SESSION_NAME:1.3 "nvm use 8.6.0" C-m
+tmux send-keys -t $SESSION_NAME:1.3 "nvm use 13.1.0" C-m
 tmux send-keys -t $SESSION_NAME:1.3 "yarn install" C-m
 tmux send-keys -t $SESSION_NAME:1.5 clear C-m
 tmux send-keys -t $SESSION_NAME:1.4 clear C-m
@@ -62,12 +62,12 @@ tmux split-window -v -c $LOCATION/clients/demo -t $SESSION_NAME:5.1 -p 25
 tmux split-window -v -c $LOCATION/clients/demo -t $SESSION_NAME:5.1 -p 25
 tmux split-window -v -c $LOCATION/clients/demo -t $SESSION_NAME:5.5 -p 50
 
-tmux send-keys -t $SESSION_NAME:5.1 "nvm use 8.6.0" C-m
-tmux send-keys -t $SESSION_NAME:5.3 "nvm use 8.6.0" C-m
-tmux send-keys -t $SESSION_NAME:5.4 "nvm use 8.6.0" C-m
-tmux send-keys -t $SESSION_NAME:5.5 "nvm use 8.6.0" C-m
-tmux send-keys -t $SESSION_NAME:5.2 "nvm use 8.6.0" C-m
-tmux send-keys -t $SESSION_NAME:5.6 "nvm use 8.6.0" C-m
+tmux send-keys -t $SESSION_NAME:5.1 "nvm use 13.1.0" C-m
+tmux send-keys -t $SESSION_NAME:5.3 "nvm use 13.1.0" C-m
+tmux send-keys -t $SESSION_NAME:5.4 "nvm use 13.1.0" C-m
+tmux send-keys -t $SESSION_NAME:5.5 "nvm use 13.1.0" C-m
+tmux send-keys -t $SESSION_NAME:5.2 "nvm use 13.1.0" C-m
+tmux send-keys -t $SESSION_NAME:5.6 "nvm use 13.1.0" C-m
 
 tmux send-keys -t $SESSION_NAME:5.1 clear C-m
 tmux send-keys -t $SESSION_NAME:5.3 clear C-m

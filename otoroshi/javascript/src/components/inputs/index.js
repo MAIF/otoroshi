@@ -8,7 +8,7 @@ export * from './NumberInput';
 export * from './Form';
 export * from './Table';
 export * from './LabelInput';
-export * from './CodeInput';
+// export * from './CodeInput';
 export * from './Help';
 export * from './FreeDomainInput';
 export * from './DateInput';

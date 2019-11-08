@@ -321,9 +321,8 @@ export class SelfUpdatePage extends Component {
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Update your profile</h3>
         <h5>
-          this link will expire in {duration.humanize()} ({('0' + duration.hours()).slice(-2)}:{(
-            '0' + duration.minutes()
-          ).slice(-2)}:{('0' + duration.seconds()).slice(-2)})
+          this link will expire in {duration.humanize()} ({('0' + duration.hours()).slice(-2)}:
+          {('0' + duration.minutes()).slice(-2)}:{('0' + duration.seconds()).slice(-2)})
         </h5>
         <form className="form-horizontal" style={{ textAlign: 'left' }}>
           <div className="form-group">
@@ -390,27 +389,26 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          {this.state.webauthn &&
-            this.state.mustRegWebauthnDevice && (
-              <div className="form-group">
-                <label className="col-sm-2 control-label" />
-                <div className="col-sm-10">
-                  {this.state.hasWebauthnDeviceReg && (
-                    <p style={{ width: '100%', textAlign: 'left' }}>
-                      The auth. module requires strong authentication with Webauthn compatible
-                      device. You have one device already registered
-                    </p>
-                  )}
-                  {!this.state.hasWebauthnDeviceReg && (
-                    <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
-                      The auth. module requires strong authentication with Webauthn compatible
-                      device. You have to register a Webauthn compatible device or you won't be able
-                      to log in.
-                    </p>
-                  )}
-                </div>
+          {this.state.webauthn && this.state.mustRegWebauthnDevice && (
+            <div className="form-group">
+              <label className="col-sm-2 control-label" />
+              <div className="col-sm-10">
+                {this.state.hasWebauthnDeviceReg && (
+                  <p style={{ width: '100%', textAlign: 'left' }}>
+                    The auth. module requires strong authentication with Webauthn compatible device.
+                    You have one device already registered
+                  </p>
+                )}
+                {!this.state.hasWebauthnDeviceReg && (
+                  <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
+                    The auth. module requires strong authentication with Webauthn compatible device.
+                    You have to register a Webauthn compatible device or you won't be able to log
+                    in.
+                  </p>
+                )}
               </div>
-            )}
+            </div>
+          )}
           <div className="form-group">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">

@@ -1,103 +1,120 @@
 const path = require('path');
-const webpack = require('webpack');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const TerserJSPlugin = require('terser-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-const resolve = path.resolve;
-
-const isProd = process.env.NODE_ENV === 'production';
-const sourcePath = resolve(__dirname, 'src');
-
-const devPlugins = [
-  new webpack.optimize.ModuleConcatenationPlugin(),
-  new webpack.DefinePlugin({
-    '__DEV__': true,
-    'process.env': { NODE_ENV: JSON.stringify('dev') }
-  }),
-  new webpack.NamedModulesPlugin(),
-  new webpack.HotModuleReplacementPlugin(),
-];
-const prodPlugins = [
-  new webpack.optimize.ModuleConcatenationPlugin(),
-  new webpack.optimize.OccurrenceOrderPlugin(),
-  new webpack.LoaderOptionsPlugin({
-    minimize: true,
-    debug: false
-  }),
-  new webpack.optimize.UglifyJsPlugin({
-    beautify: false,
-    compress: {
-      warnings: false,
-      screw_ie8: true,
-      conditionals: true,
-      unused: true,
-      comparisons: true,
-      sequences: true,
-      dead_code: true,
-      evaluate: true,
-      if_return: true,
-      join_vars: true,
+module.exports = (env, argv) => {
+  const isProd = argv.mode === 'production' || process.env.NODE_ENV === 'production';
+  const config = {
+    entry: {
+      backoffice: path.resolve(__dirname, 'src/backoffice.js'),
+      genericlogin: path.resolve(__dirname, 'src/genericlogin.js'),
     },
     output: {
-      comments: false,
-    }
-  }),
-  new webpack.DefinePlugin({
-    '__DEV__': false,
-    'process.env': { NODE_ENV: JSON.stringify('production') }
-  }),
-  new ExtractTextPlugin({ filename: 'style.css', disable: false, allChunks: true }),
-];
-
-const config = {
-  context: sourcePath,
-  entry: {
-    backoffice: './backoffice.js',
-    genericlogin: './genericlogin.js'
-  },
-  output: {
-    filename: '[name].js',
-    path: resolve(__dirname, '../public/javascripts/bundle/'),
-    publicPath: '/assets/javascripts/bundle/',
-    library: 'Otoroshi',
-    libraryTarget: 'umd'
-  },
-  devServer: {
-    hot: true,
-    https: process.env.DEV_SERVER_HTTPS ? true : false,
-    port: process.env.DEV_SERVER_PORT || 3000,
-    contentBase: resolve(__dirname)
-  },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        loaders: ['babel-loader'],
-        include: [
-          path.resolve(__dirname, "src"),
-          path.resolve(__dirname, "node_modules/set-value"),
-          path.resolve(__dirname, "node_modules/get-value")
-        ]
-        //exclude: /node_modules/
-      },
-      {
-        test: /\.css|\.scss$/,
-        use: [ 'style-loader', 'css-loader', 'sass-loader' ]
-      },
-      { test: /\.(png|jpg)$/, use: 'url-loader?limit=15000' },
-      { test: /\.eot(\?v=\d+.\d+.\d+)?$/, use: 'file-loader' },
-      { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, use: 'url-loader?limit=10000&mimetype=application/font-woff' },
-      { test: /\.[ot]tf(\?v=\d+.\d+.\d+)?$/, use: 'url-loader?limit=10000&mimetype=application/octet-stream' },
-      { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, use: 'url-loader?limit=10000&mimetype=image/svg+xml' }
-    ]
-  },
-  plugins: isProd ? prodPlugins : devPlugins,
-  resolve: {
-    extensions: ['.js', '.jsx', '.css'],
-    modules: [
-      resolve(__dirname, 'node_modules'),
-      sourcePath
-    ]
-  },
+      filename: '[name].js',
+      path: path.resolve(__dirname, '../public/javascripts/bundle/'),
+      publicPath: '/assets/javascripts/bundle/',
+      library: 'Otoroshi',
+      libraryTarget: 'umd'
+    },
+    devServer: {
+      hot: true,
+      disableHostCheck: true,
+      https: process.env.DEV_SERVER_HTTPS ? true : false,
+      port: process.env.DEV_SERVER_PORT || 3040,
+    },
+    module: {
+      rules: [{
+          test: /\.js$/,
+          loaders: ['babel-loader'],
+          include: [
+            path.resolve(__dirname, 'src'),
+            path.resolve(__dirname, 'node_modules/set-value'),
+            path.resolve(__dirname, 'node_modules/get-value')
+          ]
+        },
+        {
+          test: /\.css$/,
+          use: [{
+              loader: MiniCssExtractPlugin.loader,
+            },
+            'css-loader'
+          ]
+        },
+        {
+          test: /\.scss$/,
+          use: [
+            'style-loader', // creates style nodes from JS strings
+            'css-loader', // translates CSS into CommonJS
+            'sass-loader' // compiles Sass to CSS, using Node Sass by default
+          ]
+        },
+        {
+          test: /\.less$/,
+          use: [
+            'style-loader', // creates style nodes from JS strings
+            'css-loader', // translates CSS into CommonJS
+            'less-loader' // compiles less to CSS, using less by default
+          ]
+        },
+        {
+          test: /\.gif$/,
+          loader: 'url-loader?limit=1&name=[name]/.[ext]'
+        },
+        {
+          test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
+          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+        },
+        {
+          test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
+          loader: 'url-loader?limit=10000&mimetype=application/font-woff&name=[name]/[name].[ext]'
+        },
+        {
+          test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/,
+          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+        },
+        {
+          test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
+          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+        },
+        {
+          test: /\.gif$/,
+          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+        },
+        {
+          test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+        },
+        {
+          test: /\.png$/,
+          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+        },
+      ]
+    },
+    plugins: [
+      // new BundleAnalyzerPlugin(),
+      new MiniCssExtractPlugin({
+        filename: '[name].css',
+        chunkFilename: '[id].css'
+      }),
+    ],
+  };
+  if (isProd) {
+    return { 
+      ...config, 
+      optimization: {
+        minimize: true,
+        minimizer: [
+          new TerserJSPlugin({
+            parallel: true,
+            cache: true
+          }),
+          new OptimizeCSSAssetsPlugin({})
+        ],
+      }
+    };
+  } else {
+    return config;
+  }
 };
-
-module.exports = config;

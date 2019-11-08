@@ -20,6 +20,14 @@
     </script>
 }
 
-@main("Update your profile", _env, moreScripts = authScript) {
+@authStyle = {
+    @if(_env.liveJs) {
+        <link rel="stylesheet" href="//localhost:3040/assets/javascripts/bundle/genericlogin.css">
+    } else {
+        <link rel="stylesheet" href="@routes.Assets.versioned(s"javascripts/bundle/genericlogin.css?v=${_env.hash}")">
+    }
+}
+
+@main("Update your profile", _env, moreScripts = authScript, moreStyles = authStyle) {
     <div id="app"></div>
 }

@@ -14,7 +14,7 @@ export class GlobalEventsPage extends Component {
     from: moment().subtract(1, 'hours'),
     to: moment(),
     limit: 500,
-    asc: true
+    asc: true,
   };
 
   columns = [
@@ -133,10 +133,12 @@ export class GlobalEventsPage extends Component {
   fetchEvents = () => {
     const query = queryString.parse(window.location.search);
     const limit = query.limit || this.state.limit;
-    return BackOfficeServices.fetchGlobalEvents(this.state.from, this.state.to, limit, this.state.asc ? "asc" : "desc").then(
-      d => d.events,
-      err => console.error(err)
-    );
+    return BackOfficeServices.fetchGlobalEvents(
+      this.state.from,
+      this.state.to,
+      limit,
+      this.state.asc ? 'asc' : 'desc'
+    ).then(d => d.events, err => console.error(err));
   };
 
   updateDateRange = (from, to) => {
@@ -166,20 +168,23 @@ export class GlobalEventsPage extends Component {
               />
             </div>
             <div className="input-group" style={{ marginLeft: 10, width: '100%', display: 'flex' }}>
-              <span style={{ marginTop: 10, marginRight: 5 }}>Order by timestamp ascending values</span>
-              <SimpleBooleanInput value={this.state.asc} onChange={e => {
-                this.setState({ asc: !this.state.asc }, () => {
-                  this.table.update();
-                });
-              }} />
+              <span style={{ marginTop: 10, marginRight: 5 }}>
+                Order by timestamp ascending values
+              </span>
+              <SimpleBooleanInput
+                value={this.state.asc}
+                onChange={e => {
+                  this.setState({ asc: !this.state.asc }, () => {
+                    this.table.update();
+                  });
+                }}
+              />
             </div>
           </div>
         </div>
         <Table
           parentProps={this.props}
-          selfUrl={`lines/${this.props.params.lineId}/services/${
-            this.props.params.serviceId
-          }/events`}
+          selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/events`}
           defaultTitle="Global Events"
           defaultValue={() => ({})}
           defaultSort={this.columns[0].title}

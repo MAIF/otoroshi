@@ -12,7 +12,11 @@
         <meta name="robots" content="noindex, nofollow">
         <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
         <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")">
-
+        @if(_env.liveJs) {
+            <link rel="stylesheet" href="//localhost:3040/assets/javascripts/bundle/backoffice.css">
+        } else {
+            <link rel="stylesheet" href="@routes.Assets.versioned(s"javascripts/bundle/backoffice.css?v=${_env.hash}")">
+        }
 		<link rel="icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
         <!--[if IE]>
 		<link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.versioned("images/favicon.ico")">

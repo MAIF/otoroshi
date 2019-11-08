@@ -14,7 +14,7 @@ export class ServiceEventsPage extends Component {
     from: moment().subtract(1, 'hours'),
     to: moment(),
     limit: 500,
-    asc: true
+    asc: true,
   };
 
   columns = [
@@ -154,7 +154,7 @@ export class ServiceEventsPage extends Component {
       this.state.from,
       this.state.to,
       limit,
-      this.state.asc ? "asc" : "desc",
+      this.state.asc ? 'asc' : 'desc'
     ).then(d => d, err => console.error(err));
   };
 
@@ -186,20 +186,23 @@ export class ServiceEventsPage extends Component {
               />
             </div>
             <div className="input-group" style={{ marginLeft: 10, width: '100%', display: 'flex' }}>
-              <span style={{ marginTop: 10, marginRight: 5 }}>Order by timestamp ascending values</span>
-              <SimpleBooleanInput value={this.state.asc} onChange={e => {
-                this.setState({ asc: !this.state.asc }, () => {
-                  this.table.update();
-                });
-              }} />
+              <span style={{ marginTop: 10, marginRight: 5 }}>
+                Order by timestamp ascending values
+              </span>
+              <SimpleBooleanInput
+                value={this.state.asc}
+                onChange={e => {
+                  this.setState({ asc: !this.state.asc }, () => {
+                    this.table.update();
+                  });
+                }}
+              />
             </div>
           </div>
         </div>
         <Table
           parentProps={this.props}
-          selfUrl={`lines/${this.props.params.lineId}/services/${
-            this.props.params.serviceId
-          }/events`}
+          selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/events`}
           defaultTitle="Service Events"
           defaultValue={() => ({})}
           defaultSort={this.columns[0].title}

@@ -25,9 +25,7 @@ export class UpdateOtoroshiVersion extends Component {
               );
               this.forceUpdate();
             }}
-            href={`https://github.com/MAIF/otoroshi/releases/tag/${
-              this.props.env.version.version_raw
-            }`}>
+            href={`https://github.com/MAIF/otoroshi/releases/tag/${this.props.env.version.version_raw}`}>
             A new version of Otoroshi is available ({this.props.env.version.version_raw})
           </a>
           <button

@@ -149,7 +149,9 @@ export function resetCanaryCampaign(serviceId) {
 export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?env=${env}`
-    : group ? `/bo/api/proxy/api/services?group=${group}` : `/bo/api/proxy/api/services`;
+    : group
+    ? `/bo/api/proxy/api/services?group=${group}`
+    : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -179,7 +181,7 @@ export function resetRemainingQuotas(groupId, clientId) {
   }).then(r => r.json());
 }
 
-export function fetchServiceEvents(serviceId, from, to, limit = 500, order = "asc") {
+export function fetchServiceEvents(serviceId, from, to, limit = 500, order = 'asc') {
   return fetch(
     `/bo/api/proxy/api/services/${serviceId}/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}&order=${order}`,
     {
@@ -192,7 +194,7 @@ export function fetchServiceEvents(serviceId, from, to, limit = 500, order = "as
   ).then(r => r.json());
 }
 
-export function fetchGlobalEvents(from, to, limit = 500, order = "asc") {
+export function fetchGlobalEvents(from, to, limit = 500, order = 'asc') {
   return fetch(
     `/bo/api/proxy/api/events?from=${from.valueOf()}&to=${to.valueOf()}&pageSize=${limit}&order=${order}`,
     {

@@ -1,16 +1,17 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import {
   ArrayInput,
   ObjectInput,
   BooleanInput,
-  CodeInput,
   SelectInput,
   TextInput,
   NumberInput,
   LabelInput,
   DateTimeInput,
 } from '.';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 
 import _ from 'lodash';
 import deepGet from 'get-value';
@@ -188,13 +189,15 @@ export class Form extends Component {
           );
         } else if (type === 'code') {
           component = (
-            <CodeInput
-              disabled={disabled}
-              key={name}
-              value={this.getValue(name, '')}
-              {...props}
-              onChange={v => this.changeValue(name, v)}
-            />
+            <Suspense fallback={<div>loading ...</div>}>
+              <CodeInput
+                disabled={disabled}
+                key={name}
+                value={this.getValue(name, '')}
+                {...props}
+                onChange={v => this.changeValue(name, v)}
+              />
+            </Suspense>
           );
         } else if (type === 'text') {
           component = (

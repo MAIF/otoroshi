@@ -321,26 +321,24 @@ export class Table extends Component {
                   <i className="glyphicon glyphicon-link" />
                 </button>
               )}
-              {this.props.displayTrash &&
-                this.props.displayTrash(item) && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-danger"
-                    disabled
-                    {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
-                    <i className="glyphicon glyphicon-trash" />
-                  </button>
-                )}
-              {this.props.displayTrash &&
-                !this.props.displayTrash(item) && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-danger"
-                    onClick={e => this.deleteItem(e, item)}
-                    {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
-                    <i className="glyphicon glyphicon-trash" />
-                  </button>
-                )}
+              {this.props.displayTrash && this.props.displayTrash(item) && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger"
+                  disabled
+                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
+                  <i className="glyphicon glyphicon-trash" />
+                </button>
+              )}
+              {this.props.displayTrash && !this.props.displayTrash(item) && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger"
+                  onClick={e => this.deleteItem(e, item)}
+                  {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
+                  <i className="glyphicon glyphicon-trash" />
+                </button>
+              )}
               {!this.props.displayTrash && (
                 <button
                   type="button"
@@ -357,65 +355,64 @@ export class Table extends Component {
     }
     return (
       <div>
-        {!this.state.showEditForm &&
-          !this.state.showAddForm && (
-            <div>
-              <div className="row" style={{ marginBottom: 10 }}>
-                <div className="col-md-12">
+        {!this.state.showEditForm && !this.state.showAddForm && (
+          <div>
+            <div className="row" style={{ marginBottom: 10 }}>
+              <div className="col-md-12">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  {...createTooltip('Reload the current table')}
+                  onClick={this.update}>
+                  <span className="glyphicon glyphicon-refresh" />
+                </button>
+                {this.props.showActions && (
                   <button
                     type="button"
                     className="btn btn-primary"
-                    {...createTooltip('Reload the current table')}
-                    onClick={this.update}>
-                    <span className="glyphicon glyphicon-refresh" />
+                    style={{ marginLeft: 10 }}
+                    onClick={this.showAddForm}
+                    {...createTooltip(`Create a new ${this.props.itemName}`)}>
+                    <span className="glyphicon glyphicon-plus-sign" /> Add item
                   </button>
-                  {this.props.showActions && (
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{ marginLeft: 10 }}
-                      onClick={this.showAddForm}
-                      {...createTooltip(`Create a new ${this.props.itemName}`)}>
-                      <span className="glyphicon glyphicon-plus-sign" /> Add item
-                    </button>
-                  )}
-                  {this.props.injectTopBar && this.props.injectTopBar()}
-                </div>
-              </div>
-              <div className="rrow">
-                <ReactTable
-                  className="fulltable -striped -highlight"
-                  data={this.state.items}
-                  loading={this.state.loading}
-                  filterable={true}
-                  filterAll={true}
-                  defaultSorted={[
-                    {
-                      id: this.props.defaultSort || this.props.columns[0].title,
-                      desc: this.props.defaultSortDesc || false,
-                    },
-                  ]}
-                  defaultFiltered={
-                    this.props.search
-                      ? [{ id: this.props.columns[0].title, value: this.props.search }]
-                      : []
-                  }
-                  defaultPageSize={this.props.pageSize}
-                  columns={columns}
-                  LoadingComponent={LoadingComponent}
-                  defaultFilterMethod={(filter, row, column) => {
-                    const id = filter.pivotId || filter.id;
-                    if (row[id] !== undefined) {
-                      const value = String(row[id]);
-                      return value.toLowerCase().indexOf(filter.value.toLowerCase()) > -1;
-                    } else {
-                      return true;
-                    }
-                  }}
-                />
+                )}
+                {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-          )}
+            <div className="rrow">
+              <ReactTable
+                className="fulltable -striped -highlight"
+                data={this.state.items}
+                loading={this.state.loading}
+                filterable={true}
+                filterAll={true}
+                defaultSorted={[
+                  {
+                    id: this.props.defaultSort || this.props.columns[0].title,
+                    desc: this.props.defaultSortDesc || false,
+                  },
+                ]}
+                defaultFiltered={
+                  this.props.search
+                    ? [{ id: this.props.columns[0].title, value: this.props.search }]
+                    : []
+                }
+                defaultPageSize={this.props.pageSize}
+                columns={columns}
+                LoadingComponent={LoadingComponent}
+                defaultFilterMethod={(filter, row, column) => {
+                  const id = filter.pivotId || filter.id;
+                  if (row[id] !== undefined) {
+                    const value = String(row[id]);
+                    return value.toLowerCase().indexOf(filter.value.toLowerCase()) > -1;
+                  } else {
+                    return true;
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
         {this.state.showAddForm && (
           <div className="" role="dialog">
             {this.props.formComponent && (
@@ -475,26 +472,24 @@ export class Table extends Component {
             )}
             <hr />
             <div className="form-buttons pull-right">
-              {this.props.displayTrash &&
-                this.props.displayTrash(this.state.currentItem) && (
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    title="Delete current item"
-                    disabled>
-                    <i className="glyphicon glyphicon-trash" /> Delete
-                  </button>
-                )}
-              {this.props.displayTrash &&
-                !this.props.displayTrash(this.state.currentItem) && (
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    title="Delete current item"
-                    onClick={e => this.deleteItem(e, this.state.currentItem)}>
-                    <i className="glyphicon glyphicon-trash" /> Delete
-                  </button>
-                )}
+              {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  title="Delete current item"
+                  disabled>
+                  <i className="glyphicon glyphicon-trash" /> Delete
+                </button>
+              )}
+              {this.props.displayTrash && !this.props.displayTrash(this.state.currentItem) && (
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  title="Delete current item"
+                  onClick={e => this.deleteItem(e, this.state.currentItem)}>
+                  <i className="glyphicon glyphicon-trash" /> Delete
+                </button>
+              )}
               {!this.props.displayTrash && (
                 <button
                   type="button"

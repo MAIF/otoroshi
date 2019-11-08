@@ -9,7 +9,7 @@ import 'brace/theme/monokai';
 import 'brace/ext/language_tools';
 import 'brace/ext/searchbox';
 
-export class CodeInput extends Component {
+export default class CodeInput extends Component {
   state = {
     value: null,
   };
@@ -49,7 +49,9 @@ export class CodeInput extends Component {
           <AceEditor
             mode={
               this.props.mode
-                ? this.props.mode === 'json' ? 'javascript' : this.props.mode
+                ? this.props.mode === 'json'
+                  ? 'javascript'
+                  : this.props.mode
                 : 'javascript'
             }
             theme="monokai"
