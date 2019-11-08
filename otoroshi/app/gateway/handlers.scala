@@ -802,7 +802,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
         ServiceLocation(req.host, globalConfig) match {
           case None =>
-            Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+            Errors.craftResponseResult(s"Service not found: invalid host", NotFound, req, None, Some("errors.service.not.found.invalid.host"))
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
             val uriParts = req.relativeUri.split("/").toSeq
 
@@ -818,8 +818,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
                 case Some(desc) if !desc.enabled =>
                   Errors
-                    .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+                    .craftResponseResult(s"Service unavailable", ServiceUnavailable, req, None, Some("errors.service.unavailable"))
                 case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
+                  // TODO: event here
                   FastFuture.successful(
                     Results
                       .Status(rawDesc.redirection.code)

@@ -97,11 +97,15 @@ case class ServiceDescriptorQuery(subdomain: String,
   }
 
   def addServices(services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    val key = this.asKey
-    existsCache.put(key, true)
-    serviceIdsCache.put(key, services.map(_.id))
-    servicesCache.put(key, services)
-    env.datastores.serviceDescriptorDataStore.addFastLookups(this, services)
+    if (services.isEmpty) {
+      FastFuture.successful(true)
+    } else {
+      val key = this.asKey
+      existsCache.put(key, true)
+      serviceIdsCache.put(key, services.map(_.id))
+      servicesCache.put(key, services)
+      env.datastores.serviceDescriptorDataStore.addFastLookups(this, services)
+    }
   }
 
   def remServices(services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
@@ -2697,7 +2701,24 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         query
           .getServices(false)
           .fast
-          .flatMap(services => sortServices(services, query, requestHeader))
+          .flatMap { 
+            case services if services.isEmpty => {
+              // fast lookup should not store empty results, so ...
+              ServiceDescriptorDataStore.logger.warn(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
+              findAll().flatMap { descriptors =>
+                val validDescriptors = descriptors.filter { sr =>
+                  if (!sr.enabled) {
+                    false
+                  } else {
+                    utils.RegexPool(sr.toHost).matches(query.toHost)
+                  }
+                }
+                query.addServices(validDescriptors)
+                sortServices(validDescriptors, query, requestHeader)
+              }
+            }
+            case services => sortServices(services, query, requestHeader)
+          }
       }
       case false => {
         ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
@@ -2715,10 +2736,10 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
     } map { filteredDescriptors =>
       filteredDescriptors.headOption
-    } andThen {
+    }/* andThen {
       case _ =>
         ServiceDescriptorDataStore.logger.debug(s"Found microservice in ${System.currentTimeMillis() - start} ms.")
-    }
+    }*/
   }
 }
 
