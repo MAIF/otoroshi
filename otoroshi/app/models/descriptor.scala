@@ -1843,7 +1843,8 @@ case class ServiceDescriptor(
     thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
     apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
     restrictions: Restrictions = Restrictions(),
-    accessValidator: AccessValidatorRef = AccessValidatorRef()
+    accessValidator: AccessValidatorRef = AccessValidatorRef(),
+    hosts: Seq[String] = Seq.empty[String]
 ) {
 
   lazy val toHost: String = subdomain match {
@@ -1852,6 +1853,8 @@ case class ServiceDescriptor(
     case s if env == "prod"              => s"$subdomain.$domain"
     case s                               => s"$subdomain.$env.$domain"
   }
+
+  lazy val allHosts: Seq[String] = toHost +: hosts
 
   def target: Target                                    = targets.head
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.serviceDescriptorDataStore.set(this)
@@ -2391,7 +2394,8 @@ object ServiceDescriptor {
             .getOrElse(Restrictions()),
           accessValidator = AccessValidatorRef.format
             .reads((json \ "accessValidator").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(AccessValidatorRef())
+            .getOrElse(AccessValidatorRef()),
+          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         )
       } map {
         case sd => JsSuccess(sd)
@@ -2471,7 +2475,8 @@ object ServiceDescriptor {
       "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson,
       "apiKeyConstraints"          -> sd.apiKeyConstraints.json,
       "restrictions"               -> sd.restrictions.json,
-      "accessValidator"            -> sd.accessValidator.json
+      "accessValidator"            -> sd.accessValidator.json,
+      "hosts"                      -> JsArray(sd.hosts.map(JsString.apply)),
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)
@@ -2699,7 +2704,13 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         if (!sr.enabled) {
           false
         } else {
-          utils.RegexPool(sr.toHost).matches(query.toHost)
+          sr.allHosts match {
+            case hosts if hosts.isEmpty => false
+            case hosts if hosts.size == 1 => utils.RegexPool(hosts.head).matches(query.toHost)
+            case hosts => {
+              hosts.exists(host => utils.RegexPool(host).matches(query.toHost))
+            }
+          }
         }
       }
       query.addServices(validDescriptors)
