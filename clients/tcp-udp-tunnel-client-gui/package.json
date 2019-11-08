@@ -11,14 +11,14 @@
     "colors": "1.4.0",
     "faker": "4.1.0",
     "fs-extra": "8.1.0",
-    "https-proxy-agent": "3.0.0",
+    "https-proxy-agent": "3.0.1",
     "lodash": "4.17.15",
     "moment": "2.24.0",
     "node-fetch": "2.6.0",
-    "ws": "7.1.2"
+    "ws": "7.2.0"
   },
   "devDependencies": {
-    "electron": "6.0.12",
-    "electron-packager": "14.0.6"
+    "electron": "7.1.1",
+    "electron-packager": "14.1.0"
   }
 }

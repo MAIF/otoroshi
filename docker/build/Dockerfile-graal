@@ -15,7 +15,7 @@ RUN mkdir /otoroshi/conf \
 
 VOLUME /otoroshi/conf
 VOLUME /otoroshi/imports
-VOLUME /otoroshi/leveldb
+VOLUME /otoroshi/filedb
 
 RUN native-image -H:+ReportUnsupportedElementsAtRuntime --verbose --delay-class-initialization-to-runtime=play.api.Play$ -jar otoroshi.jar 
 

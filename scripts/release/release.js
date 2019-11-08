@@ -164,26 +164,6 @@ async function publishDockerCli(location, version) {
   );
 }
 
-async function publishDockerDemo(location, version) {
-  await runScript(`
-    cd $LOCATION/docker/demo
-    docker build --no-cache -t otoroshi-demo .
-    docker tag otoroshi-demo "maif/otoroshi-demo:$VERSION" 
-    docker tag otoroshi-demo "maif/otoroshi-demo:latest"
-    docker push "maif/otoroshi-demo:$VERSION"
-    docker push "maif/otoroshi-demo:latest"
-    cd $LOCATION
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
 async function buildMacCLI(location, version) {
   await runScript(`
     # build cli for mac

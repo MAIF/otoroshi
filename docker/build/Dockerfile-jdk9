@@ -14,7 +14,7 @@ COPY ./entrypoint.sh /usr/app/
 RUN chown -R otoroshi:otoroshi /usr/app/otoroshi
 
 VOLUME /usr/app/otoroshi/imports
-VOLUME /usr/app/otoroshi/leveldb
+VOLUME /usr/app/otoroshi/filedb
 VOLUME /usr/app/otoroshi/conf
 VOLUME /usr/app/otoroshi
 

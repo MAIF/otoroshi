@@ -14,4 +14,8 @@ docker pull maif/otoroshi:jdk8-1.4.14-dev
 docker pull maif/otoroshi:jdk11-1.4.14-dev
 # or 
 docker pull maif/otoroshi:jdk12-1.4.14-dev
+# or 
+docker pull maif/otoroshi:jdk13-1.4.14-dev
+# or 
+docker pull maif/otoroshi:jdk14-1.4.14-dev
 ```

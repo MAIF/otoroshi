@@ -57,6 +57,16 @@ build_jdk12 () {
   docker tag otoroshi-jdk12 "maif/otoroshi:$1-jdk12"
 }
 
+build_jdk13 () {
+  docker build --no-cache -f ./Dockerfile-jdk13 -t otoroshi-jdk13 .
+  docker tag otoroshi-jdk13 "maif/otoroshi:$1-jdk13"
+}
+
+build_jdk14 () {
+  docker build --no-cache -f ./Dockerfile-jdk14 -t otoroshi-jdk14 .
+  docker tag otoroshi-jdk14 "maif/otoroshi:$1-jdk14"
+}
+
 build_graal () {
   docker build --no-cache -f ./Dockerfile-graal -t otoroshi-graal .
   docker tag otoroshi-graal "maif/otoroshi:$1-graal"
@@ -96,6 +106,16 @@ case "${1}" in
     build_jdk12 $2
     cleanup
     ;;
+  build-jdk13)
+    prepare_build
+    build_jdk13 $2
+    cleanup
+    ;;
+  build-jdk14)
+    prepare_build
+    build_jdk14 $2
+    cleanup
+    ;;
   build-all)
     prepare_build
     build_jdk8 $2
@@ -103,6 +123,8 @@ case "${1}" in
     #build_jdk10 $2
     build_jdk11 $2
     build_jdk12 $2
+    build_jdk13 $2
+    #build_jdk14 $2
     #build_graal $2
     cleanup
     ;;
@@ -113,6 +135,8 @@ case "${1}" in
     #build_jdk10 $2
     build_jdk11 $2
     build_jdk12 $2
+    build_jdk13 $2
+    #build_jdk14 $2
     #build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
@@ -121,6 +145,8 @@ case "${1}" in
     #docker push "maif/otoroshi:$2-jdk10"
     docker push "maif/otoroshi:$2-jdk11"
     docker push "maif/otoroshi:$2-jdk12"
+    docker push "maif/otoroshi:$2-jdk13"
+    #docker push "maif/otoroshi:$2-jdk14"
     #docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
     ;;

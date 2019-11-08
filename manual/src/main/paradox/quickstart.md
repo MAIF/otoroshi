@@ -9,7 +9,7 @@ what you will need :
 If you don't/can't have these tools on your machine, you can start a sandboxed environment using here with the following command
 
 ```sh
-docker run -p "8080:8080" -it maif/otoroshi-demo bash
+docker run -p "8080:8080" -it maif/otoroshi bash
 ```
 
 or you can also try Otoroshi online with Google Cloud Shell if you're a user of the Google Cloud Platform

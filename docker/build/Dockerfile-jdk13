@@ -1,4 +1,4 @@
-FROM openjdk:12
+FROM openjdk:13
 
 LABEL maintainer "MAIF <oss@maif.fr>"
 

@@ -1,5 +1,5 @@
 {
-  "name": "otoroshi-demo",
+  "name": "otoroshi-loadbalancing-demo",
   "version": "1.0.0",
   "description": "a demo for otoroshi",
   "main": "server.js",
