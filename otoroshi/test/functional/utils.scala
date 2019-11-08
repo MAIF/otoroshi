@@ -187,7 +187,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
                       payload: Option[JsValue] = None,
                       customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     val headers = Seq(
-      "Host"   -> "otoroshi-api.foo.bar",
+      "Host"   -> "otoroshi-api.oto.tools",
       "Accept" -> "application/json"
     )
     if (payload.isDefined) {
@@ -226,7 +226,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
                         ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig")
       .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
+        "Host"   -> "otoroshi-api.oto.tools",
         "Accept" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -244,7 +244,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
                            ws: WSClient = suite.otoroshiComponents.wsClient): Future[GlobalConfig] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/globalconfig")
       .withHttpHeaders(
-        "Host"         -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -262,7 +262,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     def fetch() =
       ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
         .withHttpHeaders(
-          "Host"   -> "otoroshi-api.foo.bar",
+          "Host"   -> "otoroshi-api.oto.tools",
           "Accept" -> "application/json"
         )
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -287,7 +287,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/_start")
       .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
+        "Host"   -> "otoroshi-api.oto.tools",
         "Accept" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -301,7 +301,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/_start")
       .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
+        "Host"   -> "otoroshi-api.oto.tools",
         "Accept" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -316,7 +316,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
       .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
+        "Host"   -> "otoroshi-api.oto.tools",
         "Accept" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -327,7 +327,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
         suite.otoroshiComponents.wsClient
           .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
           .withHttpHeaders(
-            "Host"         -> "otoroshi-api.foo.bar",
+            "Host"         -> "otoroshi-api.oto.tools",
             "Accept"       -> "application/json",
             "Content-Type" -> "application/json"
           )
@@ -344,7 +344,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/outages")
       .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
+        "Host"   -> "otoroshi-api.oto.tools",
         "Accept" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -358,7 +358,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/groups")
       .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
+        "Host"   -> "otoroshi-api.oto.tools",
         "Accept" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -372,7 +372,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/apikeys")
       .withHttpHeaders(
-        "Host"   -> "otoroshi-api.foo.bar",
+        "Host"   -> "otoroshi-api.oto.tools",
         "Accept" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -387,7 +387,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
                             ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/services")
       .withHttpHeaders(
-        "Host"         -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -402,7 +402,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
                              ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/verifiers")
       .withHttpHeaders(
-        "Host"         -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -417,7 +417,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
                            ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups/default/apikeys")
       .withHttpHeaders(
-        "Host"         -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -432,7 +432,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
                            ws: WSClient = suite.otoroshiComponents.wsClient): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/groups/default/apikeys/${apiKey.clientId}")
       .withHttpHeaders(
-        "Host"         -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -446,7 +446,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
-        "Host"         -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
@@ -460,7 +460,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     suite.otoroshiComponents.wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
-        "Host"         -> "otoroshi-api.foo.bar",
+        "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)

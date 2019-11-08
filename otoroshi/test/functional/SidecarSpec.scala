@@ -19,7 +19,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "sidecar.foo.bar"
+  lazy val serviceHost = "sidecar.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   lazy val fakePort    = TargetService.freePort
@@ -62,7 +62,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
     }).await()
 
     val basicTestExpectedBody3 = """{"message":"yeah world"}"""
-    val basicTestServer3 = TargetService(Some("sidecar2.foo.bar"), "/api", "application/json", { _ =>
+    val basicTestServer3 = TargetService(Some("sidecar2.oto.tools"), "/api", "application/json", { _ =>
       basicTestExpectedBody3
     }).await()
 
@@ -71,7 +71,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       name = "sidecar-service1-test",
       env = "prod",
       subdomain = "sidecar",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer2.port}",
@@ -87,7 +87,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       name = "sidecar-service2-test",
       env = "prod",
       subdomain = "sidecar2",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer3.port}",
@@ -155,7 +155,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"            -> "sidecar2.foo.bar",
+          "Host"            -> "sidecar2.oto.tools",
           "X-Forwarded-For" -> "127.0.0.1"
         )
         .get()
@@ -175,7 +175,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       val resp = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"            -> "sidecar2.foo.bar",
+          "Host"            -> "sidecar2.oto.tools",
           "X-Forwarded-For" -> "127.0.0.2"
         )
         .get()

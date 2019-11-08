@@ -23,7 +23,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "basictest.foo.bar"
+  lazy val serviceHost = "basictest.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -50,7 +50,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       name = "basic-test",
       env = "prod",
       subdomain = "basictest",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer.port}",
@@ -199,7 +199,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         .futureValue
 
       basicTestResponse2.status mustBe 303
-      basicTestResponse2.header("Location") mustBe Some("https://basictest.foo.bar/api")
+      basicTestResponse2.header("Location") mustBe Some("https://basictest.oto.tools/api")
       callCounter.get() mustBe 4
 
       updateOtoroshiService(initialDescriptor.copy(forceHttps = false)).futureValue
@@ -265,7 +265,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "header-test",
         env = "prod",
         subdomain = "header",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -282,7 +282,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "header.foo.bar"
+          "Host" -> "header.oto.tools"
         )
         .get()
         .futureValue
@@ -306,7 +306,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "match-test",
         env = "prod",
         subdomain = "match",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -323,14 +323,14 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "match.foo.bar"
+          "Host" -> "match.oto.tools"
         )
         .get()
         .futureValue
       val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"  -> "match.foo.bar",
+          "Host"  -> "match.oto.tools",
           "X-Foo" -> "Bar"
         )
         .get()
@@ -851,7 +851,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "match-test",
         env = "prod",
         subdomain = "bot",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server1.port}",
@@ -870,7 +870,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "match-test-2",
         env = "prod",
         subdomain = "bot",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server2.port}",
@@ -887,7 +887,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "bot.foo.bar"
+          "Host" -> "bot.oto.tools"
         )
         .get()
         .futureValue
@@ -899,7 +899,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         val resp = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host"       -> "bot.foo.bar",
+            "Host"       -> "bot.oto.tools",
             "User-Agent" -> userAgent
           )
           .get()
@@ -929,7 +929,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "match-test",
         env = "prod",
         subdomain = "match",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -946,14 +946,14 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "match.foo.bar"
+          "Host" -> "match.oto.tools"
         )
         .get()
         .futureValue
       val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"      -> "match.foo.bar",
+          "Host"      -> "match.oto.tools",
           "X-Session" -> "user=mathieu"
         )
         .get()
@@ -961,7 +961,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp3 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host"      -> "match.foo.bar",
+          "Host"      -> "match.oto.tools",
           "X-Session" -> "user=jason"
         )
         .get()
@@ -988,7 +988,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "matchroot-test",
         env = "prod",
         subdomain = "matchroot",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -1005,7 +1005,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/foo/api")
         .withHttpHeaders(
-          "Host" -> "matchroot.foo.bar"
+          "Host" -> "matchroot.oto.tools"
         )
         .get()
         .futureValue
@@ -1029,7 +1029,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "root-test",
         env = "prod",
         subdomain = "root",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -1046,7 +1046,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port")
         .withHttpHeaders(
-          "Host" -> "root.foo.bar"
+          "Host" -> "root.oto.tools"
         )
         .get()
         .futureValue
@@ -1070,7 +1070,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "wildcard-test",
         env = "prod",
         subdomain = "wild*",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -1086,21 +1086,21 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "wildcard.foo.bar"
+          "Host" -> "wildcard.oto.tools"
         )
         .get()
         .futureValue
       val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "wildbar.foo.bar"
+          "Host" -> "wildbar.oto.tools"
         )
         .get()
         .futureValue
       val resp3 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "wildfoo.foo.bar"
+          "Host" -> "wildfoo.oto.tools"
         )
         .get()
         .futureValue
@@ -1135,7 +1135,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "seccom-v1-test",
         env = "prod",
         subdomain = "seccom",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -1151,7 +1151,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "seccom.foo.bar"
+          "Host" -> "seccom.oto.tools"
         )
         .get()
         .futureValue
@@ -1194,7 +1194,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "seccom-v1-test",
         env = "prod",
         subdomain = "seccom",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -1211,7 +1211,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "seccom.foo.bar"
+          "Host" -> "seccom.oto.tools"
         )
         .get()
         .futureValue
@@ -1242,7 +1242,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         name = "seccom-v1-test",
         env = "prod",
         subdomain = "seccom",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -1259,7 +1259,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "seccom.foo.bar"
+          "Host" -> "seccom.oto.tools"
         )
         .get()
         .futureValue

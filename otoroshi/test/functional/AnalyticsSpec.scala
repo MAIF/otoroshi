@@ -25,7 +25,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
   implicit val system = ActorSystem("otoroshi-test")
 
-  lazy val serviceHost  = "api.foo.bar"
+  lazy val serviceHost  = "api.oto.tools"
   lazy val ws: WSClient = otoroshiComponents.wsClient
   lazy val elasticUrl   = "http://127.0.0.1:9200"
   lazy val analytics = new ElasticWritesAnalytics(
@@ -319,7 +319,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       groupId = testGroup.id,
       name = "mon-service",
       env = "prod",
-      domain = "foo.bar",
+      domain = "oto.tools",
       subdomain = "api",
       targets = Seq(
         Target(host = "127.0.0.1:9999", scheme = "http")

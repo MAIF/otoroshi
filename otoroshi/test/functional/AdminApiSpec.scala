@@ -13,7 +13,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "api.foo.bar"
+  lazy val serviceHost = "api.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -64,7 +64,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
       groupId = testGroup.id,
       name = "test-service",
       env = "prod",
-      domain = "foo.bar",
+      domain = "oto.tools",
       subdomain = "api",
       targets = Seq(
         Target(host = "127.0.0.1:9999", scheme = "http")

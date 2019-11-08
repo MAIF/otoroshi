@@ -18,7 +18,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "analytics.foo.bar"
+  lazy val serviceHost = "analytics.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 

@@ -20,8 +20,8 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost  = "basictest.foo.bar"
-  lazy val serviceHost2 = "basictest2.foo.bar"
+  lazy val serviceHost  = "basictest.oto.tools"
+  lazy val serviceHost2 = "basictest2.oto.tools"
   lazy val ws           = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -54,7 +54,7 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
         name = "basic-test",
         env = "prod",
         subdomain = "basictest",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer.port}",
@@ -71,7 +71,7 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
         name = "basic-test-2",
         env = "prod",
         subdomain = "basictest2",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer.port}",

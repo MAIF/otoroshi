@@ -17,7 +17,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "cb.foo.bar"
+  lazy val serviceHost = "cb.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
@@ -65,7 +65,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
         name = "cb-test",
         env = "prod",
         subdomain = "cb",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:$fakePort",
@@ -85,7 +85,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       def callServer() = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "cb.foo.bar"
+            "Host" -> "cb.oto.tools"
           )
           .get()
           .futureValue
@@ -114,7 +114,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
         name = "cb-test",
         env = "prod",
         subdomain = "cb",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:$fakePort",
@@ -134,7 +134,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       def callServer() = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "cb.foo.bar"
+            "Host" -> "cb.oto.tools"
           )
           .get()
           .futureValue
@@ -168,7 +168,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
         name = "cb-test",
         env = "prod",
         subdomain = "cb1",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:$fakePort",
@@ -197,7 +197,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       def callServer() = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "cb.foo.bar"
+            "Host" -> "cb.oto.tools"
           )
           .get()
           .futureValue
@@ -224,7 +224,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
         name = "cb-test",
         env = "prod",
         subdomain = "cb",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer3.port}",
@@ -243,7 +243,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       def callServer() = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "cb.foo.bar"
+            "Host" -> "cb.oto.tools"
           )
           .get()
           .futureValue
@@ -264,7 +264,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
         name = "cb-test",
         env = "prod",
         subdomain = "cb",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer3.port}",
@@ -285,7 +285,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       def callServer() = {
         ws.url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "cb.foo.bar"
+            "Host" -> "cb.oto.tools"
           )
           .get()
           .futureValue

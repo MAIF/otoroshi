@@ -542,7 +542,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         name = "seccom-v1-test",
         env = "prod",
         subdomain = "seccom",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server.port}",
@@ -560,7 +560,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         name = "seccom-v2-test",
         env = "prod",
         subdomain = "seccomv2",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${server2.port}",
@@ -579,7 +579,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "seccom.foo.bar"
+          "Host" -> "seccom.oto.tools"
         )
         .get()
         .futureValue
@@ -591,7 +591,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val resp2 = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
-          "Host" -> "seccomv2.foo.bar"
+          "Host" -> "seccomv2.oto.tools"
         )
         .get()
         .futureValue

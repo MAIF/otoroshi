@@ -18,7 +18,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "auth.foo.bar"
+  lazy val serviceHost = "auth.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
@@ -46,7 +46,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       name = "auth-test",
       env = "prod",
       subdomain = "auth",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer1.port}",
@@ -61,7 +61,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       name = "auth-test",
       env = "prod",
       subdomain = "auth",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer1.port}",
@@ -78,7 +78,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       name = "auth-test",
       env = "prod",
       subdomain = "auth",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer1.port}",
@@ -94,7 +94,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       name = "auth-test",
       env = "prod",
       subdomain = "auth",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer1.port}",

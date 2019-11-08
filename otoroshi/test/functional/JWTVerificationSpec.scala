@@ -96,7 +96,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "jwt.foo.bar"
+  lazy val serviceHost = "jwt.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -130,7 +130,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         name = "jwt-test",
         env = "prod",
         subdomain = "jwt",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer1.port}",
@@ -273,7 +273,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         name = "jwt-test",
         env = "prod",
         subdomain = "jwt",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer1.port}",
@@ -399,7 +399,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
                 .withIssuer("foo")
                 .withClaim("x-bar", "yo")
                 .withClaim("x-yo", "foo")
-                .withClaim("the-host", "jwt.foo.bar")
+                .withClaim("the-host", "jwt.oto.tools")
                 .build()
               val verified = Try {
                 val dec = v.verify(a)
@@ -419,7 +419,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         name = "jwt-test",
         env = "prod",
         subdomain = "jwt",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer1.port}",
@@ -543,7 +543,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "jwtref.foo.bar"
+  lazy val serviceHost = "jwtref.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -609,7 +609,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
         name = "jwt-test-ref",
         env = "prod",
         subdomain = "jwtref",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer1.port}",

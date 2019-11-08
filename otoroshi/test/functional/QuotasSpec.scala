@@ -18,7 +18,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "quotas.foo.bar"
+  lazy val serviceHost = "quotas.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
@@ -47,7 +47,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       name = "quotas-test",
       env = "prod",
       subdomain = "quotas",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${server.port}",

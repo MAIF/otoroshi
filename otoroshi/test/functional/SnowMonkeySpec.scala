@@ -19,7 +19,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "monkey.foo.bar"
+  lazy val serviceHost = "monkey.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
   implicit val mat     = otoroshiComponents.materializer
 
@@ -56,7 +56,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
       name = "basic-sm-test",
       env = "prod",
       subdomain = "monkey",
-      domain = "foo.bar",
+      domain = "oto.tools",
       targets = Seq(
         Target(
           host = s"127.0.0.1:${basicTestServer.port}",

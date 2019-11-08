@@ -14,7 +14,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "canary.foo.bar"
+  lazy val serviceHost = "canary.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -55,7 +55,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
         name = "cb-test",
         env = "prod",
         subdomain = "canary",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer1.port}",
@@ -129,7 +129,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
         name = "cb-test-2",
         env = "prod",
         subdomain = "canary2",
-        domain = "foo.bar",
+        domain = "oto.tools",
         targets = Seq(
           Target(
             host = s"127.0.0.1:${basicTestServer1.port}",
@@ -156,7 +156,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "canary2.foo.bar"
+            "Host" -> "canary2.oto.tools"
           )
           .get()
           .futureValue
@@ -167,7 +167,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host"               -> "canary2.foo.bar",
+            "Host"               -> "canary2.oto.tools",
             "Otoroshi-Canary-Id" -> id
           )
           .get()
