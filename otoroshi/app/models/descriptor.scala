@@ -1780,6 +1780,7 @@ case class ServiceDescriptor(
     targets: Seq[Target] = Seq.empty[Target],
     root: String = "/",
     matchingRoot: Option[String] = None,
+    stripPath: Boolean = true,
     localHost: String = "localhost:8080",
     localScheme: String = "http",
     redirectToLocal: Boolean = false,
@@ -2309,6 +2310,7 @@ object ServiceDescriptor {
           localScheme = (json \ "localScheme").asOpt[String].getOrElse("http"),
           redirectToLocal = (json \ "redirectToLocal").asOpt[Boolean].getOrElse(false),
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+          stripPath = (json \ "stripPath").asOpt[Boolean].getOrElse(true),
           userFacing = (json \ "userFacing").asOpt[Boolean].getOrElse(false),
           privateApp = (json \ "privateApp").asOpt[Boolean].getOrElse(false),
           forceHttps = (json \ "forceHttps").asOpt[Boolean].getOrElse(true),
@@ -2416,6 +2418,7 @@ object ServiceDescriptor {
       "targets"                    -> JsArray(sd.targets.map(_.toJson)),
       "root"                       -> sd.root,
       "matchingRoot"               -> sd.matchingRoot,
+      "stripPath"                  -> sd.stripPath,
       "localHost"                  -> sd.localHost,
       "localScheme"                -> sd.localScheme,
       "redirectToLocal"            -> sd.redirectToLocal,
@@ -2520,7 +2523,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       removeHeadersOut = Seq.empty,
       accessValidator = AccessValidatorRef(),
       missingOnlyHeadersIn = Map.empty,
-      missingOnlyHeadersOut = Map.empty
+      missingOnlyHeadersOut = Map.empty,
+      stripPath = true
     )
   def updateMetrics(id: String,
                     callDuration: Long,

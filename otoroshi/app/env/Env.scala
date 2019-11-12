@@ -550,7 +550,8 @@ class Env(val configuration: Configuration,
     removeHeadersOut = Seq.empty,
     accessValidator = AccessValidatorRef(),
     missingOnlyHeadersIn = Map.empty,
-    missingOnlyHeadersOut = Map.empty
+    missingOnlyHeadersOut = Map.empty,
+    stripPath = true
   )
 
   lazy val otoroshiVersion     = "1.4.14-dev"

@@ -1187,6 +1187,12 @@ export class ServicePage extends Component {
                   .matchingRoot || ''}/`}
               />
             )}
+            <BooleanInput 
+              label="Strip path"
+              value={this.state.service.stripPath}
+              help="When matching, strip the matching prefix from the upstream request URL. Defaults to true"
+              onChange={e => this.changeTheValue('stripPath', e)}
+            />
           </Collapse>
           <Collapse
             notVisible={this.state.service.tcpUdpTunneling}

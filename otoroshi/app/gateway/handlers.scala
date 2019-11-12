@@ -1108,6 +1108,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                       val uriParts = rawUri.split("/").toSeq
                                       val uri: String =
                                         descriptor.matchingRoot
+                                          .filter(_ => descriptor.stripPath)
                                           .map(m => req.relativeUri.replace(m, ""))
                                           .getOrElse(rawUri)
                                       val scheme =
