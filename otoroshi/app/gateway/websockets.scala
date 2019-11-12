@@ -614,7 +614,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       iss = env.Headers.OtoroshiIssuer,
                                       sub = env.Headers.OtoroshiIssuer,
                                       aud = descriptor.name,
-                                      exp = DateTime.now().plusSeconds(30).toDate.getTime,
+                                      exp = DateTime.now().plusSeconds(descriptor.secComTtl.toSeconds.toInt).toDate.getTime,
                                       iat = DateTime.now().toDate.getTime,
                                       jti = IdGenerator.uuid
                                     ).withClaim("state", stateValue).serialize(descriptor.secComSettings)
