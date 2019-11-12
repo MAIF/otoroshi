@@ -1845,7 +1845,8 @@ case class ServiceDescriptor(
     apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
     restrictions: Restrictions = Restrictions(),
     accessValidator: AccessValidatorRef = AccessValidatorRef(),
-    hosts: Seq[String] = Seq.empty[String]
+    hosts: Seq[String] = Seq.empty[String],
+    paths: Seq[String] = Seq.empty[String],
 ) {
 
   lazy val toHost: String = subdomain match {
@@ -1856,6 +1857,7 @@ case class ServiceDescriptor(
   }
 
   lazy val allHosts: Seq[String] = toHost +: hosts
+  lazy val allPaths: Seq[String] = matchingRoot.toSeq ++ paths
 
   def target: Target                                    = targets.head
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.serviceDescriptorDataStore.set(this)
@@ -2632,6 +2634,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
     }*/
 
+/*
     val filtered1 = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
       val rootMatched = sr.matchingRoot match {
@@ -2657,15 +2660,47 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         } else {
           allSers
         }
-        val res = res1.sortWith {
+        res1.sortWith {
           case (a, b) => b.toHost.contains("*") && !a.toHost.contains("*")
         }
-        // println("--------------")
-        // println(s"for query on ${query.toHost}")
-        // println("--------------")
-        // println(res.map(s => s"${s.name} - ${s.toHost}").mkString("\n"))
-        // println("==============")
-        res
+      }
+      */
+
+    val matched = new TrieMap[String, String]()
+    val filtered1 = services.filter { sr =>
+      val allHeadersMatched = matchAllHeaders(sr, query)
+      val rootMatched = sr.allPaths match {
+        case ps if ps.isEmpty => true
+        case ps => 
+          val found = sr.allPaths.find(p => query.root.startsWith(p))
+          found.foreach(p => matched.putIfAbsent(sr.id, p))
+          found.isDefined
+      }
+      allHeadersMatched && rootMatched
+    }
+    val sersWithoutMatchingRoot = filtered1.filter(_.allPaths.isEmpty)
+    val sersWithMatchingRoot = filtered1.filter(_.allPaths.nonEmpty).sortWith {
+      case (a, b) => 
+        val aMatchedSize = matched.get(a.id).map(_.size).getOrElse(0)
+        val bMatchedSize = matched.get(b.id).map(_.size).getOrElse(0)
+        aMatchedSize > bMatchedSize
+    }
+    val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
+    FastFuture
+      .sequence(filtered.map { sr =>
+        matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
+      })
+      .map { s =>
+        val allSers = s.filter(_._2).map(_._1)
+        val res1 = if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+          // let apikey check in handler produce an Unauthorized response instead of service not found
+          Seq(filtered.last)
+        } else {
+          allSers
+        }
+        res1.sortWith {
+          case (a, b) => b.toHost.contains("*") && !a.toHost.contains("*")
+        }
       }
   }
 
