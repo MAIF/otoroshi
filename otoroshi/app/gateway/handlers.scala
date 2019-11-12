@@ -714,7 +714,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                     .require(algo)
                     .withAudience(env.Headers.OtoroshiIssuer)
                     .withClaim("state-resp", stateValue)
-                    .acceptLeeway(10)
+                    .acceptLeeway(10) // TODO: customize ???
                     .build()
                     .verify(resp)
                   val exp =
@@ -2170,7 +2170,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       JWT
                                                         .require(algorithm)
                                                         .withIssuer(clientId)
-                                                        .acceptLeeway(10)
+                                                        .acceptLeeway(10) // TODO: customize ???
                                                         .build
                                                     Try(verifier.verify(jwtTokenValue))
                                                       .filter { token =>
