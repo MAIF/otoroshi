@@ -105,7 +105,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
 
-      basicTestResponse2.status mustBe 404
+      basicTestResponse2.status mustBe 503
       callCounter.get() mustBe 1
 
       updateOtoroshiService(initialDescriptor.copy(enabled = true)).futureValue
