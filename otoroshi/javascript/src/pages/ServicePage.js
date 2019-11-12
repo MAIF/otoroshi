@@ -1064,7 +1064,6 @@ export class ServicePage extends Component {
                   value={this.state.service.useNewWSClient}
                   help="Will use the new websocket client for every websocket request"
                   onChange={v => this.changeTheValue('useNewWSClient', v)}
-                  hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="TCP/UDP tunneling"
