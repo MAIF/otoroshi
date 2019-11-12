@@ -1856,8 +1856,8 @@ case class ServiceDescriptor(
     case s                               => s"$subdomain.$env.$domain"
   }
 
-  lazy val allHosts: Seq[String] = toHost +: hosts
-  lazy val allPaths: Seq[String] = matchingRoot.toSeq ++ paths
+  lazy val allHosts: Seq[String] = hosts :+ toHost
+  lazy val allPaths: Seq[String] = paths ++ matchingRoot.toSeq
 
   def target: Target                                    = targets.head
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.serviceDescriptorDataStore.set(this)
@@ -2676,7 +2676,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           found.foreach(p => matched.putIfAbsent(sr.id, p))
           found.isDefined
       }
-      allHeadersMatched && rootMatched
+      sr.enabled && allHeadersMatched && rootMatched
     }
     val sersWithoutMatchingRoot = filtered1.filter(_.allPaths.isEmpty)
     val sersWithMatchingRoot = filtered1.filter(_.allPaths.nonEmpty).sortWith {
