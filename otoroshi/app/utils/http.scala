@@ -715,6 +715,11 @@ case class AkkaWsClientRequest(
     headers
       .get(`Content-Type`.name)
       .map(_.head)
+      .orElse(
+        headers
+          .get(`Content-Type`.name.toLowerCase())
+          .map(_.head)
+      )
       .map { value =>
         HttpHeader.parse("Content-Type", value)
       }

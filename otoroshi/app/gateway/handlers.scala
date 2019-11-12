@@ -1730,7 +1730,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     case Right(httpResponse) => {
                                                       val headersOut = httpResponse.headers.toSeq
                                                       val contentType =
-                                                        httpResponse.headers.getOrElse("Content-Type", MimeTypes.TEXT)
+                                                        httpResponse.headers.get("Content-Type").orElse(httpResponse.headers.get("content-type")).getOrElse(MimeTypes.TEXT)
 
                                                       // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                                       // meterOut.mark(responseHeader.length)
@@ -1831,10 +1831,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             .flatMap { body =>
                                                               val response: Result = Status(httpResponse.status)(body)
                                                                 .withHeaders(
-                                                                  headersOut.filterNot(
-                                                                    h =>
-                                                                      h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
-                                                                  ): _*
+                                                                  headersOut.filterNot { h =>
+                                                                    val lower = h._1.toLowerCase()
+                                                                    lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
+                                                                  }: _*
                                                                 )
                                                                 .as(contentType)
                                                                 .withCookies(
@@ -1865,10 +1865,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             Status(httpResponse.status)
                                                               .chunked(finalStream)
                                                               .withHeaders(
-                                                                headersOut.filterNot(
-                                                                  h =>
-                                                                    h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
-                                                                ): _*
+                                                                headersOut.filterNot { h =>
+                                                                  val lower = h._1.toLowerCase()
+                                                                  lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
+                                                                }: _*
                                                               )
                                                               .withCookies(
                                                                 (withTrackingCookies ++ jwtInjection.additionalCookies
@@ -1890,14 +1890,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                     .map(
                                                                       _.toLong + snowMonkeyContext.trailingResponseBodySize
                                                                     ),
-                                                                  httpResponse.headers.get("Content-Type")
+                                                                  httpResponse.headers.get("Content-Type").orElse(httpResponse.headers.get("content-type"))
                                                                 )
                                                               )
                                                               .withHeaders(
-                                                                headersOut.filterNot(
-                                                                  h =>
-                                                                    h._1 == "Content-Type" || h._1 == "Set-Cookie" || h._1 == "Transfer-Encoding"
-                                                                ): _*
+                                                                headersOut.filterNot { h =>
+                                                                  val lower = h._1.toLowerCase()
+                                                                  lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
+                                                                }: _*
                                                               )
                                                               .withCookies(
                                                                 (withTrackingCookies ++ jwtInjection.additionalCookies

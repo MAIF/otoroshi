@@ -39,8 +39,8 @@ case class HttpRequest(url: String,
                        version: String,
                        clientCertificateChain: Option[Seq[X509Certificate]],
                        target: Option[Target]) {
-  lazy val contentType: Option[String] = headers.get("Content-Type")
-  lazy val host: String                = headers.getOrElse("Host", "")
+  lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
+  lazy val host: String                = headers.get("Host").orElse("host").getOrElse("")
   lazy val uri: Uri                    = Uri(url)
   lazy val scheme: String              = uri.scheme
   lazy val authority: Uri.Authority    = uri.authority
