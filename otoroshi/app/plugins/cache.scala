@@ -2,6 +2,7 @@ package otoroshi.plugins.cache
 
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -11,6 +12,7 @@ import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestConte
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result, Results}
+import redis.{RedisClientMasterSlaves, RedisServer}
 import utils.RegexPool
 import utils.RequestImplicits._
 
@@ -21,6 +23,9 @@ case class ResponseCacheFilterConfig(json: JsValue) {
   lazy val statuses: Seq[Int] = (json \ "statuses").asOpt[Seq[Int]].getOrElse(Seq(200))
   lazy val methods: Seq[String] = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq("GET"))
   lazy val paths: Seq[String] = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq("/.*"))
+  lazy val notStatuses: Seq[Int] = (json \ "not" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq(200))
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq("GET"))
+  lazy val notPaths: Seq[String] = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq("/.*"))
 }
 
 case class ResponseCacheConfig(json: JsValue) {
@@ -38,17 +43,71 @@ object ResponseCache {
 
 class ResponseCache extends RequestTransformer {
 
+  private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
+
+  override def start(env: Env): Future[Unit] = {
+    val actorSystem = ActorSystem("cache-redisee")
+    implicit val ec = actorSystem.dispatcher
+    env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
+      if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
+        val redis: RedisClientMasterSlaves = {
+          val master = RedisServer(
+            host = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "host").asOpt[String].getOrElse("localhost"),
+            port = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "port").asOpt[Int].getOrElse(6379),
+            password = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "password").asOpt[String]
+          )
+          val slaves = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "slaves").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+            .map { config =>
+              RedisServer(
+                host = (config \ "host").asOpt[String].getOrElse("localhost"),
+                port = (config \ "port").asOpt[Int].getOrElse(6379),
+                password = (config \ "password").asOpt[String]
+              )
+            }
+          RedisClientMasterSlaves(master, slaves)(actorSystem)
+        }
+        ref.set((redis, actorSystem))
+      }
+      ()
+    }
+  }
+
+  override def stop(env: Env): Future[Unit] = {
+    Option(ref.get()).foreach(_._2.terminate())
+    FastFuture.successful(())
+  }
+
+  private def get(key: String)(implicit env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
+    ref.get() match {
+      case null => env.datastores.rawDataStore.get(key)
+      case redis => redis._1.get(key)
+    }
+  }
+
+  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    ref.get() match {
+      case null => env.datastores.rawDataStore.set(key, value, ttl)
+      case redis => redis._1.set(key, value, pxMilliseconds = ttl)
+    }
+  }
+
   private def filter(req: RequestHeader, config: ResponseCacheConfig, statusOpt: Option[Int] = None): Boolean = {
     config.filter match {
       case None => true
       case Some(filter) => {
         val matchPath = if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
+        val matchNotPath = if (filter.notPaths.isEmpty) true else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
         val methodMatch = if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
+        val methodNotMatch = if (filter.notMethods.isEmpty) true else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
         val statusMatch = if (filter.statuses.isEmpty) true else statusOpt match {
           case None => true
           case Some(status) => filter.statuses.contains(status)
         }
-        matchPath && methodMatch && statusMatch
+        val statusNotMatch = if (filter.notStatuses.isEmpty) true else statusOpt match {
+          case None => true
+          case Some(status) => filter.notStatuses.contains(status)
+        }
+        matchPath && methodMatch && statusMatch && !matchNotPath && !methodNotMatch && !statusNotMatch
       }
     }
   }
@@ -65,25 +124,28 @@ class ResponseCache extends RequestTransformer {
     }
   }
 
-  private def cachedResponse(ctx: TransformerRequestContext, config: ResponseCacheConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Option[JsValue]] = {
+  private def cachedResponse(ctx: TransformerRequestContext, config: ResponseCacheConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Unit, Option[JsValue]]] = {
     if (filter(ctx.request, config)) {
-      env.datastores.rawDataStore.get(s"${env.storageRoot}:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}").map {
-        case None => None
-        case Some(json) => Some(Json.parse(json.utf8String))
+      get(s"${env.storageRoot}:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}").map {
+        case None => Right(None)
+        case Some(json) => Right(Some(Json.parse(json.utf8String)))
       }
     } else {
-      FastFuture.successful(None)
+      FastFuture.successful(Left(()))
     }
   }
 
   override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = ResponseCacheConfig((ctx.config \ "ResponseCache").asOpt[JsValue].getOrElse(Json.obj()))
     cachedResponse(ctx, config).map {
-      case None => Right(ctx.otoroshiRequest)
-      case Some(res) => {
+      case Left(_) => Right(ctx.otoroshiRequest)
+      case Right(None) => Right(ctx.otoroshiRequest.copy(
+        headers = ctx.otoroshiRequest.headers ++ Map("X-Otoroshi-Cache" -> "MISS")
+      ))
+      case Right(Some(res)) => {
         val status = (res \ "status").as[Int]
         val body = new String(ResponseCache.base64Decoder.decode((res \ "body").as[String]))
-        val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-From-Otoroshi-Cache" -> "true")
+        val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
         val ctype = (res \ "ctype").as[String]
         ResponseCache.logger.debug(s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache")
         Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
@@ -118,7 +180,7 @@ class ResponseCache extends RequestTransformer {
               "body" -> ResponseCache.base64Encoder.encodeToString(ref.get().toArray)
             )
             ResponseCache.logger.debug(s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms.")
-            env.datastores.rawDataStore.set(s"${env.storageRoot}:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}", ByteString(Json.stringify(event)), Some(config.ttl))
+            set(s"${env.storageRoot}:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}", ByteString(Json.stringify(event)), Some(config.ttl))
           }
         }
       })

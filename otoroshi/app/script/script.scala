@@ -32,6 +32,11 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+trait StartableAndStoppable {
+  def start(env: Env): Future[Unit] = FastFuture.successful(())
+  def stop(env: Env): Future[Unit] = FastFuture.successful(())
+}
+
 case class HttpRequest(url: String,
                        method: String,
                        headers: Map[String, String],
@@ -139,7 +144,7 @@ case class TransformerResponseBodyContext(
     globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
-trait RequestTransformer {
+trait RequestTransformer extends StartableAndStoppable {
 
   def transformRequestWithCtx(
       context: TransformerRequestContext
@@ -413,6 +418,8 @@ class ScriptManager(env: Env) {
   }
 
   def stop(): Unit = {
+    cache.foreach(s => Try(s._2._3.asInstanceOf[StartableAndStoppable].stop(env)))
+    cpCache.foreach(s => Try(s._2._2.asInstanceOf[StartableAndStoppable].stop(env)))
     Option(updateRef.get()).foreach(_.cancel())
   }
 
@@ -426,6 +433,7 @@ class ScriptManager(env: Env) {
             logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
             compiling.remove(script.id)
           case Right(trans) => {
+            Try(trans.asInstanceOf[StartableAndStoppable].start(env))
             cache.put(script.id, (script.hash, script.`type`, trans))
             compiling.remove(script.id)
           }
@@ -459,35 +467,6 @@ class ScriptManager(env: Env) {
       case Left(_)           => DefaultRequestTransformer
       case Right(any)        => any.asInstanceOf[RequestTransformer]
     }
-    // ref match {
-    //   case r if r.startsWith("cp:") => {
-    //     if (!cpTryCache.contains(ref)) {
-    //       Try(env.environment.classLoader.loadClass(r.replace("cp:", "")).asSubclass(classOf[RequestTransformer]))
-    //         .map(clazz => clazz.newInstance()) match {
-    //         case Success(tr) =>
-    //           cpTryCache.put(ref, ())
-    //           cpCache.put(ref, (TransformerType, tr))
-    //         case Failure(e) => logger.error(s"Classpath transformer `$ref` does not exists ...")
-    //       }
-    //     }
-    //     cpCache.get(ref).flatMap(a => Option(a)).getOrElse(DefaultRequestTransformer)
-    //   }
-    //   case r => {
-    //     env.datastores.scriptDataStore.findById(ref).map {
-    //       case Some(script) => compileAndUpdateIfNeeded(script)
-    //       case None =>
-    //         logger.error(s"Script with id `$ref` does not exists ...")
-    //       // do nothing as the script does not exists
-    //     }
-    //     cache.get(ref).flatMap(a => Option(a._2)).getOrElse {
-    //       if (compiling.contains(ref)) {
-    //         CompilingRequestTransformer
-    //       } else {
-    //         DefaultRequestTransformer
-    //       }
-    //     }
-    //   }
-    // }
   }
 
   def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
@@ -505,6 +484,7 @@ class ScriptManager(env: Env) {
                 case _                     => TransformerType
               }
               cpCache.put(ref, (typ, tr))
+              Try(tr.asInstanceOf[StartableAndStoppable].start(env))
             case Failure(e) =>
               logger.error(s"Classpath script `$ref` does not exists ...")
           }

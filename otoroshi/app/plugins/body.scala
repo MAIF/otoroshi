@@ -2,6 +2,8 @@ package otoroshi.plugins.loggers
 
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -11,18 +13,21 @@ import org.joda.time.DateTime
 import otoroshi.script.{RequestTransformer, TransformerRequestBodyContext, TransformerResponseBodyContext}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.RequestHeader
+import redis.{RedisClientMasterSlaves, RedisServer}
 import utils.JsonImplicits._
-import utils.{Regex, RegexPool}
-
+import utils.RegexPool
 import utils.RequestImplicits._
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BodyLoggerFilterConfig(json: JsValue) {
   lazy val statuses: Seq[Int] = (json \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
   lazy val methods: Seq[String] = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
   lazy val paths: Seq[String] = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val notStatuses: Seq[Int] = (json \ "not" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val notPaths: Seq[String] = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
 }
 
 case class BodyLoggerConfig(json: JsValue) {
@@ -99,17 +104,64 @@ object BodyLogger {
 
 class BodyLogger extends RequestTransformer {
 
+  private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
+
+  override def start(env: Env): Future[Unit] = {
+    val actorSystem = ActorSystem("body-logger-redis")
+    implicit val ec = actorSystem.dispatcher
+    env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
+      if ((conf.scripts.transformersConfig \ "BodyLogger").isDefined) {
+        val redis: RedisClientMasterSlaves = {
+          val master = RedisServer(
+            host = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "host").asOpt[String].getOrElse("localhost"),
+            port = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "port").asOpt[Int].getOrElse(6379),
+            password = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "password").asOpt[String]
+          )
+          val slaves = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "slaves").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+            .map { config =>
+              RedisServer(
+                host = (config \ "host").asOpt[String].getOrElse("localhost"),
+                port = (config \ "port").asOpt[Int].getOrElse(6379),
+                password = (config \ "password").asOpt[String]
+              )
+            }
+          RedisClientMasterSlaves(master, slaves)(actorSystem)
+        }
+        ref.set((redis, actorSystem))
+      }
+      ()
+    }
+  }
+
+  override def stop(env: Env): Future[Unit] = {
+    Option(ref.get()).foreach(_._2.terminate())
+    FastFuture.successful(())
+  }
+
+  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    ref.get() match {
+      case null => env.datastores.rawDataStore.set(key, value, ttl)
+      case redis => redis._1.set(key, value, pxMilliseconds = ttl)
+    }
+  }
+
   private def filter(req: RequestHeader, config: BodyLoggerConfig, statusOpt: Option[Int] = None): Boolean = {
     config.filter match {
       case None => true
       case Some(filter) => {
         val matchPath = if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
+        val matchNotPath = if (filter.notPaths.isEmpty) true else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
         val methodMatch = if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
+        val methodNotMatch = if (filter.notMethods.isEmpty) true else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
         val statusMatch = if (filter.statuses.isEmpty) true else statusOpt match {
           case None => true
           case Some(status) => filter.statuses.contains(status)
         }
-        matchPath && methodMatch && statusMatch
+        val statusNotMatch = if (filter.notStatuses.isEmpty) true else statusOpt match {
+          case None => true
+          case Some(status) => filter.notStatuses.contains(status)
+        }
+        matchPath && methodMatch && statusMatch && !matchNotPath && !methodNotMatch && !statusNotMatch
       }
     }
   }
@@ -146,7 +198,7 @@ class BodyLogger extends RequestTransformer {
             event.toAnalytics()
           }
           if (config.store) {
-            env.datastores.rawDataStore.set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request", ByteString(Json.stringify(event.toJson)), Some(config.ttl))
+            set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request", ByteString(Json.stringify(event.toJson)), Some(config.ttl))
           }
         }
       })
@@ -188,7 +240,7 @@ class BodyLogger extends RequestTransformer {
             event.toAnalytics()
           }
           if (config.store) {
-            env.datastores.rawDataStore.set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response", ByteString(Json.stringify(event.toJson)), Some(config.ttl))
+            set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response", ByteString(Json.stringify(event.toJson)), Some(config.ttl))
           }
         }
       })
