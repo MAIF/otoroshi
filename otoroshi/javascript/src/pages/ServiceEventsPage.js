@@ -8,6 +8,39 @@ import queryString from 'query-string';
 
 import { OtoDatePicker } from '../components/datepicker';
 
+function readableType(contentType) {
+  if (contentType.indexOf("text/html") > -1) {
+    return true;
+  } else if (contentType.indexOf("application/json") > -1) {
+    return true;
+  } else if (contentType.indexOf("application/xml") > -1) {
+    return true;
+  } else if (contentType.indexOf("text/plain") > -1) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function readContent(req) {
+  if (req) {
+    if (req.body.trim() === '') {
+      return '';
+    } else {
+      const ctype = req.headers['Content-Type'] || req.headers['content-type'] || 'none';
+      console.log(ctype);
+      const isReadable = readableType(ctype); 
+      if (isReadable) {
+        return decodeURIComponent(escape(window.atob(req.body)));
+      } else {
+        return req.body;
+      }
+    }
+  } else {
+    return '';
+  }
+}
+
 export class ServiceEventsPage extends Component {
   state = {
     service: null,
@@ -40,6 +73,49 @@ export class ServiceEventsPage extends Component {
             )
           }>
           content
+        </button>
+      ),
+    },
+    {
+      title: 'Bodies',
+      content: item => item['@timestamp'],
+      notFilterable: true,
+      style: { textAlign: 'center', width: 70 },
+      cell: (v, item) => (
+        <button
+          type="button"
+          className="btn btn-success btn-xs"
+          onClick={e => {
+            BackOfficeServices.fetchBodiesFor(item['@serviceId'], item.reqId).then(res => {
+              if (!res.error) {
+                const bodyIn  = readContent(res.request);
+                const bodyOut = readContent(res.response);
+                window.newAlert(
+                  <>
+                    {bodyIn.trim() !== '' && (
+                      <>
+                        <h3>Body in</h3>
+                        <pre style={{ height: 150, width: '100%' }}>{bodyIn}</pre>
+                      </>
+                    )}
+                    {bodyOut.trim() !== '' && (
+                      <>
+                        <h3>Body out</h3>
+                        <pre style={{ height: 150, width: '100%' }}>{bodyOut}</pre>
+                      </>
+                    )}
+                  </>,
+                  'Bodies'
+                )
+              } else {
+                window.newAlert(
+                  'No body has been found for this request !',
+                  'No body found'
+                )
+              }
+            })
+          }}>
+          bodies
         </button>
       ),
     },

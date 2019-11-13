@@ -30,6 +30,16 @@ export function fetchLine(lineId) {
   throw new Error('Deprecated API. Should not be used anymore !');
 }
 
+export function fetchBodiesFor(serviceId, requestId) {
+  return fetch(`/bo/api/bodies/${serviceId}/${requestId}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // should use api proxy
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -898,4 +898,20 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       }
     }
   }
+
+  def fetchBodiesFor(serviceId: String, requestId: String) = BackOfficeActionAuth.async { ctx =>
+    for {
+      req <- env.datastores.rawDataStore.get(s"${env.storageRoot}:bodies:$serviceId:$requestId:request")
+      resp <- env.datastores.rawDataStore.get(s"${env.storageRoot}:bodies:$serviceId:$requestId:response")
+    } yield {
+      if (req.isEmpty && resp.isEmpty) {
+        NotFound(Json.obj("error" -> "Bodies not found"))
+      } else {
+        Ok(Json.obj(
+          "response" -> resp.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue],
+          "request" -> req.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue]
+        ))
+      }
+    }
+  }
 }
