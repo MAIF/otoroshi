@@ -1,5 +1,7 @@
 package env
 
+import java.lang.management.ManagementFactory
+import java.rmi.registry.LocateRegistry
 import java.security.KeyPairGenerator
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -14,6 +16,7 @@ import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
+import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
@@ -557,6 +560,19 @@ class Env(val configuration: Configuration,
   lazy val otoroshiVersion     = "1.4.14-dev"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
+
+
+  lazy val jmxEnabled = configuration.getOptional[Boolean]("otoroshi.jmx.enabled").getOrElse(false)
+  lazy val jmxPort    = configuration.getOptional[Int]("otoroshi.jmx.port").getOrElse(16000)
+
+   if (jmxEnabled) {
+     LocateRegistry.createRegistry(jmxPort)
+     val mbs = ManagementFactory.getPlatformMBeanServer
+     val url = new JMXServiceURL(s"service:jmx:rmi://localhost/jndi/rmi://localhost:$jmxPort/jmxrmi")
+     val svr = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs)
+     svr.start()
+     logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
+  }
 
   timeout(300.millis).andThen {
     case _ =>
