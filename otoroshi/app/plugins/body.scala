@@ -31,6 +31,7 @@ case class BodyLoggerFilterConfig(json: JsValue) {
 }
 
 case class BodyLoggerConfig(json: JsValue) {
+  lazy val enabled: Boolean = (json \ "enabled").asOpt[Boolean].getOrElse(true)
   lazy val log: Boolean = (json \ "log").asOpt[Boolean].getOrElse(true)
   lazy val store: Boolean = (json \ "store").asOpt[Boolean].getOrElse(false)
   lazy val ttl: Long = (json \ "ttl").asOpt[Long].getOrElse(5.minutes.toMillis)
@@ -168,7 +169,7 @@ class BodyLogger extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
-    if (filter(ctx.request, config)) {
+    if (config.enabled && filter(ctx.request, config)) {
       val size = new AtomicLong(0L)
       val ref = new AtomicReference[ByteString](ByteString.empty)
       ctx.body.wireTap(bs => ref.updateAndGet { (t: ByteString) =>
@@ -209,7 +210,7 @@ class BodyLogger extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(ctx: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
-    if (filter(ctx.request, config, Some(ctx.rawResponse.status))) {
+    if (config.enabled && filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       val size = new AtomicLong(0L)
       val ref = new AtomicReference[ByteString](ByteString.empty)
       ctx.body.wireTap(bs => ref.updateAndGet { (t: ByteString) =>

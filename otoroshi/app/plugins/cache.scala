@@ -29,6 +29,7 @@ case class ResponseCacheFilterConfig(json: JsValue) {
 }
 
 case class ResponseCacheConfig(json: JsValue) {
+  lazy val enabled: Boolean = (json \ "enabled").asOpt[Boolean].getOrElse(true)
   lazy val ttl: Long = (json \ "ttl").asOpt[Long].getOrElse(60.minutes.toMillis)
   lazy val filter: Option[ResponseCacheFilterConfig] = (json \ "filter").asOpt[JsObject].map(o => ResponseCacheFilterConfig(o))
   lazy val hasFilter: Boolean = filter.isDefined
@@ -137,25 +138,29 @@ class ResponseCache extends RequestTransformer {
 
   override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = ResponseCacheConfig((ctx.config \ "ResponseCache").asOpt[JsValue].getOrElse(Json.obj()))
-    cachedResponse(ctx, config).map {
-      case Left(_) => Right(ctx.otoroshiRequest)
-      case Right(None) => Right(ctx.otoroshiRequest.copy(
-        headers = ctx.otoroshiRequest.headers ++ Map("X-Otoroshi-Cache" -> "MISS")
-      ))
-      case Right(Some(res)) => {
-        val status = (res \ "status").as[Int]
-        val body = new String(ResponseCache.base64Decoder.decode((res \ "body").as[String]))
-        val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
-        val ctype = (res \ "ctype").as[String]
-        ResponseCache.logger.debug(s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache")
-        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+    if (config.enabled) {
+      cachedResponse(ctx, config).map {
+        case Left(_) => Right(ctx.otoroshiRequest)
+        case Right(None) => Right(ctx.otoroshiRequest.copy(
+          headers = ctx.otoroshiRequest.headers ++ Map("X-Otoroshi-Cache" -> "MISS")
+        ))
+        case Right(Some(res)) => {
+          val status = (res \ "status").as[Int]
+          val body = new String(ResponseCache.base64Decoder.decode((res \ "body").as[String]))
+          val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
+          val ctype = (res \ "ctype").as[String]
+          ResponseCache.logger.debug(s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache")
+          Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+        }
       }
+    } else {
+      FastFuture.successful(Right(ctx.otoroshiRequest))
     }
   }
 
   override def transformResponseBodyWithCtx(ctx: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = ResponseCacheConfig((ctx.config \ "ResponseCache").asOpt[JsValue].getOrElse(Json.obj()))
-    if (couldCacheResponse(ctx, config)) {
+    if (config.enabled && couldCacheResponse(ctx, config)) {
       val size = new AtomicLong(0L)
       val ref = new AtomicReference[ByteString](ByteString.empty)
       ctx.body.wireTap(bs => ref.updateAndGet { (t: ByteString) =>
@@ -185,7 +190,6 @@ class ResponseCache extends RequestTransformer {
         }
       })
     } else {
-      ResponseCache.logger.info("nope")
       ctx.body
     }
   }
