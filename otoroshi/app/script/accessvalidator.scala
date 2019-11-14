@@ -302,6 +302,18 @@ class HasAllowedApiKeyValidator extends AccessValidator {
   }
 }
 
+class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.apikey match {
+      case Some(apiKey) => {
+        val serviceIds = apiKey.tags.map(tag => tag.replace("allowed-on-", ""))
+        FastFuture.successful(serviceIds.exists(id => id == ctx.descriptor.id))
+      }
+      case _ => FastFuture.successful(false)
+    }
+  }
+}
+
 case class ExternalHttpValidatorConfig(config: JsValue) {
   lazy val url: String                  = (config \ "url").as[String]
   lazy val host: String                 = (config \ "host").asOpt[String].getOrElse(Uri(url).authority.host.toString())
