@@ -303,8 +303,8 @@ class HasAllowedApiKeyValidator extends AccessValidator {
 }
 
 class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
-    context.apikey match {
+  def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    ctx.apikey match {
       case Some(apiKey) => {
         val serviceIds = apiKey.tags.map(tag => tag.replace("allowed-on-", ""))
         FastFuture.successful(serviceIds.exists(id => id == ctx.descriptor.id))
