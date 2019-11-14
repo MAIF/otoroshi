@@ -5,18 +5,23 @@ import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
+import com.google.common.base.Charsets
 import env.Env
 import events._
+import models.ServiceDescriptor
 import org.joda.time.DateTime
-import otoroshi.script.{RequestTransformer, TransformerRequestBodyContext, TransformerResponseBodyContext}
-import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.mvc.RequestHeader
+import otoroshi.script._
+import play.api.libs.json._
+import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
+import security.OtoroshiClaim
 import utils.JsonImplicits._
 import utils.RegexPool
 import utils.RequestImplicits._
+import utils.future.Implicits._
+import kaleidoscope._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +32,7 @@ case class BodyLoggerFilterConfig(json: JsValue) {
   lazy val paths: Seq[String] = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
   lazy val notStatuses: Seq[Int] = (json \ "not" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
   lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notPaths: Seq[String] = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val notPaths: Seq[String] = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
 }
 
 case class BodyLoggerConfig(json: JsValue) {
@@ -39,6 +44,7 @@ case class BodyLoggerConfig(json: JsValue) {
   lazy val filter: Option[BodyLoggerFilterConfig] = (json \ "filter").asOpt[JsObject].map(o => BodyLoggerFilterConfig(o))
   lazy val hasFilter: Boolean = filter.isDefined
   lazy val maxSize: Long = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
+  lazy val password: String = (json \ "password").asOpt[String].getOrElse("password")
 }
 
 case class RequestBodyEvent(
@@ -139,10 +145,81 @@ class BodyLogger extends RequestTransformer {
     FastFuture.successful(())
   }
 
+  private def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+
+  private def extractUsernamePassword(header: String): Option[(String, String)] = {
+    val base64 = header.replace("Basic ", "").replace("basic ", "")
+    Option(base64)
+      .map(decodeBase64)
+      .map(_.split(":").toSeq)
+      .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
+  }
+
   private def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     ref.get() match {
       case null => env.datastores.rawDataStore.set(key, value, ttl)
       case redis => redis._1.set(key, value, pxMilliseconds = ttl)
+    }
+  }
+
+  private def getAllKeys(pattern: String, desc: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Seq[JsValue]] = {
+    ref.get() match {
+      case null =>
+        Source.fromFuture(env.datastores.rawDataStore.keys(pattern))
+          .flatMapConcat(keys => Source(keys.toList))
+          .mapAsync(1)(key => env.datastores.rawDataStore.pttl(key).map(ttl => (key, ttl)))
+          .map {
+            case (key, ttl) => Json.obj(
+              "reqId" -> key.replace(s"${env.storageRoot}:bodies:${desc.id}:", "").replace(":request", "").replace(":response", ""),
+              "ttl" -> ttl
+            )
+          }.toMat(Sink.seq)(Keep.right).run()
+      case redis => Source.fromFuture(redis._1.keys(pattern))
+        .flatMapConcat(keys => Source(keys.toList))
+        .mapAsync(1)(key => redis._1.pttl(key).map(ttl => (key, ttl)))
+        .map {
+          case (key, ttl) => Json.obj(
+            "reqId" -> key.replace(s"${env.storageRoot}:bodies:${desc.id}:", "").replace(":request", "").replace(":response", ""),
+            "ttl" -> ttl
+          )
+        }.toMat(Sink.seq)(Keep.right).run()
+    }
+  }
+
+  private def deleteAll(pattern: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+    ref.get() match {
+      case null => env.datastores.rawDataStore.keys(pattern).flatMap(keys => env.datastores.rawDataStore.del(keys)).map(_ => ())
+      case redis => redis._1.keys(pattern).flatMap(keys => redis._1.del(keys: _*)).map(_ => ())
+    }
+  }
+
+  private def getAll(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
+    ref.get() match {
+      case null => env.datastores.rawDataStore.keys(pattern).flatMap { keys =>
+          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+          else env.datastores.rawDataStore.mget(keys)
+        }.map { seq =>
+          seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String))
+        }
+      case redis => redis._1.keys(pattern).flatMap { keys =>
+        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+        else redis._1.mget(keys: _*)
+      }.map { seq =>
+        seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String))
+      }
+    }
+  }
+
+  private def getOne(key: String)(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
+    ref.get() match {
+      case null => env.datastores.rawDataStore.get(key).map {
+        case Some(value) => Json.parse(value.utf8String)
+        case None => JsNull
+      }
+      case redis => redis._1.get(key).map {
+        case Some(value) => Json.parse(value.utf8String)
+        case None => JsNull
+      }
     }
   }
 
@@ -164,6 +241,215 @@ class BodyLogger extends RequestTransformer {
         }
         matchPath && methodMatch && statusMatch && !matchNotPath && !methodNotMatch && !statusNotMatch
       }
+    }
+  }
+
+  private def passWithAuth(config: BodyLoggerConfig, ctx: TransformerRequestContext)(f: => Future[Either[Result, HttpRequest]])(implicit env: Env, ec: ExecutionContext): Future[Either[Result, HttpRequest]] = {
+    ctx.request.headers.get("Authorization") match {
+      case Some(auth) if auth.startsWith("Basic ") => extractUsernamePassword(auth) match {
+        case Some((username, password)) if username == "user" && password == config.password => f
+        case _ => Left(Results
+          .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+          .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")).future
+          //Left(Results.Forbidden(views.html.otoroshi.error("Forbidden access", env))).future
+      }
+      case _ => Left(Results
+        .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+        .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")).future
+    }
+  }
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
+    (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
+      case ("get", "/.well-known/otoroshi/bodylogger") => passWithAuth(config, ctx) {
+        FastFuture.successful(Left(Results.Ok(
+          s"""<html>
+           |  <head>
+           |    <link rel="stylesheet" media="screen" href="/__otoroshi_assets/javascripts/bundle/backoffice.css">
+           |    <style>
+           |      body {
+           |        font-family: monospace;
+           |      }
+           |      .selected {
+           |        background-color: #f9b000 !important;
+           |      }
+           |    </style>
+           |  </head>
+           |  <body style="margin: 0px; display: flex; flex-direction: column; width: 100vw; height: 100vh;">
+           |    <div style="display: flex; justify-content: center; align-items: center; font-weight: bold; background-color: #494948; color: #b5b3b3; padding: 10px;">
+           |      request body debugger
+           |    </div>
+           |    <div style="display: flex; width: 100%; height: 100%;">
+           |      <div style="display: flex; flex-direction: column; width: 20%; height: 100vh; overflow-y: auto;" id="list"></div>
+           |      <div style="display: flex; flex-direction: column; width: 80%; height: 100vh; overflow-y: auto;" id="content"></div>
+           |    </div>
+           |    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+           |    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js" integrity="sha256-VeNaFBVDhoX3H+gJ37DpT/nTuZTdjYro9yBruHjVmoQ=" crossorigin="anonymous"></script>
+           |    <script>
+           |
+           |      const escapeTypes = ['text/html', 'application/xml'];
+           |
+           |      const jsonTypes = ['application/json'];
+           |
+           |      const textualTypes = ['text/html', 'text/css', 'application/json', 'application/javascript', 'application/xml', 'text/plain'];
+           |
+           |      const imagesTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/svg'];
+           |
+           |      const supportedTypes = [...textualTypes].concat([...imagesTypes]);
+           |
+           |      function pre(code) {
+           |        return `<pre style="padding: 10px; margin: 0px; max-height: 50%; background-color: #222; color: #eaeaea; overflow: auto;">$${code}</pre>`;
+           |      }
+           |
+           |      function readableType(contentType, types) {
+           |        const found = _.find(types, t => contentType.indexOf(t) > -1);
+           |        if (found) {
+           |          return true;
+           |        } else {
+           |          return false;
+           |        }
+           |      }
+           |
+           |      function renderValue(body, ctype) {
+           |        if (readableType(ctype, jsonTypes)) {
+           |          return pre(JSON.stringify(JSON.parse(decodeURIComponent(escape(window.atob(body)))), null, 2));
+           |        } else if (readableType(ctype, escapeTypes)) {
+           |          return pre(_.escape(decodeURIComponent(escape(window.atob(body)))));
+           |        } else if (readableType(ctype, textualTypes)) {
+           |          return pre(decodeURIComponent(escape(window.atob(body))));
+           |        } else if (readableType(ctype, imagesTypes)) {
+           |          return `<img style="max-height: 300px" src="data:$${ctype};base64, $${body}" />`;
+           |        } else {
+           |          return pre(body.match(/.{80}/g).join('\\n'));
+           |        }
+           |      }
+           |
+           |      function format(body, req) {
+           |        const ctype = req.headers['Content-Type'] || req.headers['content-type'] || 'none';
+           |        const isReadable = readableType(ctype, supportedTypes);
+           |        if (isReadable) {
+           |          return renderValue(body, ctype);
+           |        } else {
+           |          return pre(body.match(/.{80}/g).join('\\n'));
+           |        }
+           |      }
+           |
+           |      function renderRequestCell(req, idx) {
+           |        if (idx % 2 === 0) {
+           |          return `<div class="cell" data-reqId="$${req.reqId}" style="height: 30px; width: 100%; background-color: #ddd;cursor: pointer; padding: 5px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
+           |          <span>req: $${req.reqId}</span>
+           |          <span>exp: $${(req.ttl / 1000).toFixed(0)} sec.</span>
+           |          </div>`;
+           |        } else {
+           |          return `<div class="cell" data-reqId="$${req.reqId}" style="height: 30px; width: 100%;cursor: pointer; padding: 5px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
+           |          <span>req: $${req.reqId}</span>
+           |          <span>exp: $${(req.ttl / 1000).toFixed(0)} sec.</span>
+           |          </div>`;
+           |        }
+           |      }
+           |
+           |      function renderList(reqs) {
+           |        const html = reqs.map((item, idx) => renderRequestCell(item, idx)).join('\\n');
+           |        $$('#list').html(`<button type="button" id="reload">reload</button><button type="button" id="cleanup">cleanup</button>`+ html);
+           |      }
+           |
+           |      function renderRequest(req) {
+           |        let html = '';
+           |        if (req.request && req.request.body) {
+           |          const body = req.request.body;
+           |          delete req.request.body;
+           |          html = html + `<span style="font-weight: bold; margin-top: 10px; margin-bottom: 10px; margin-left: 5px;">request body</span>` + format(body, req.request);
+           |        }
+           |        if (req.response && req.response.body) {
+           |          const body = req.response.body;
+           |          delete req.response.body;
+           |          html = html + `<span style="font-weight: bold;  margin-top: 10px; margin-bottom: 10px; margin-left: 5px;">response body</span>` + format(body, req.response);
+           |        }
+           |        html = pre(JSON.stringify(req, null, 2)) + html;
+           |        $$('#content').html(html);
+           |      }
+           |
+           |      function fetchAndRenderRequest(id) {
+           |        fetch(`/.well-known/otoroshi/bodylogger/requests/$${id}.json`).then(r => r.json()).then(r => {
+           |          $$('.cell').removeClass('selected');
+           |          $$(`[data-reqid="$${id}"`).addClass('selected');
+           |          renderRequest(r);
+           |        });
+           |      }
+           |
+           |      function reload() {
+           |        fetch('/.well-known/otoroshi/bodylogger/requests.json').then(r => r.json()).then(r => {
+           |          const arr = _.sortBy(r, i => i.reqId);
+           |          renderList(arr);
+           |          const first = arr[0];
+           |          if (first) {
+           |            fetchAndRenderRequest(first.reqId);
+           |          }
+           |        });
+           |      }
+           |
+           |      reload();
+           |
+           |      $$('body').on('click', '.cell', function(e) {
+           |        const reqId = $$(this).data('reqid');
+           |        fetchAndRenderRequest(reqId);
+           |      });
+           |
+           |      $$('body').on('click', '#reload', function(e) {
+           |        reload();
+           |      });
+           |
+           |      $$('body').on('click', '#cleanup', function(e) {
+           |        fetch('/.well-known/otoroshi/bodylogger/requests.json', {
+           |          method: 'DELETE'
+           |        }).then(() => {
+           |          reload();
+           |        })
+           |      });
+           |
+           |    </script>
+           |  </body>
+           |</html>
+          """.stripMargin).as("text/html")))
+      }
+      case ("get", "/.well-known/otoroshi/bodylogger/requests.json") => passWithAuth(config, ctx) {
+        for {
+          requests <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request", ctx.descriptor)
+          responses <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response", ctx.descriptor)
+        } yield {
+          val all: Seq[JsValue] = (requests ++ responses).groupBy(v => (v \ "reqId").as[String]).map(_._2.head).toSeq
+          Left(Results.Ok(JsArray(all)))
+        }
+      }
+      case ("delete", "/.well-known/otoroshi/bodylogger/requests.json") => passWithAuth(config, ctx) {
+        for {
+          _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
+          _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response")
+        } yield {
+          Left(Results.Ok(Json.obj("done" -> true)))
+        }
+      }
+      case ("get", "/.well-known/otoroshi/bodylogger/bodies.json") => passWithAuth(config, ctx) {
+        for {
+          requests <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
+          responses <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response")
+        } yield {
+          Left(Results.Ok(JsArray(requests ++ responses)))
+        }
+      }
+      case ("get", r"/.well-known/otoroshi/bodylogger/requests/${id}@(.*).json") => passWithAuth(config, ctx) {
+        for {
+          request <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:request")
+          response <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:response")
+        } yield {
+          Left(Results.Ok(Json.obj(
+            "request" -> request,
+            "response" -> response
+          )))
+        }
+      }
+      case _ => FastFuture.successful(Right(ctx.otoroshiRequest))
     }
   }
 
