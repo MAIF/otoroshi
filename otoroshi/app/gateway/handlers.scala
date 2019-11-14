@@ -455,27 +455,30 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
-    env.datastores.authConfigsDataStore.findById(desc.authConfigRef.get).flatMap {
-      case None => FastFuture.successful(None)
-      case Some(auth) => {
-        val expected = "oto-papps-" + auth.cookieSuffix(desc)
-        req.cookies
-          .get(expected)
-          .flatMap { cookie =>
-            env.extractPrivateSessionId(cookie)
+    desc.authConfigRef match {
+      case Some(ref) => env.datastores.authConfigsDataStore.findById(ref).flatMap {
+        case None => FastFuture.successful(None)
+        case Some(auth) => {
+          val expected = "oto-papps-" + auth.cookieSuffix(desc)
+          req.cookies
+            .get(expected)
+            .flatMap { cookie =>
+              env.extractPrivateSessionId(cookie)
+            }
+            .orElse(
+              req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
+            )
+            .orElse(
+              req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
+            )
+            .map { id =>
+              env.datastores.privateAppsUserDataStore.findById(id)
+            } getOrElse {
+            FastFuture.successful(None)
           }
-          .orElse(
-            req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
-          )
-          .orElse(
-            req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
-          )
-          .map { id =>
-            env.datastores.privateAppsUserDataStore.findById(id)
-          } getOrElse {
-          FastFuture.successful(None)
         }
       }
+      case None => FastFuture.successful(None)
     }
   }
 
