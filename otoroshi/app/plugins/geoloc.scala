@@ -10,6 +10,7 @@ import akka.stream.Materializer
 import com.maxmind.geoip2.DatabaseReader
 import env.Env
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
+import play.api.Logger
 import play.api.libs.json.{JsNumber, JsValue, Json}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
@@ -104,19 +105,23 @@ object MaxMindGeolocationHelper {
 
   private val ipCache = new TrieMap[String, InetAddress]()
   private val cache = new TrieMap[String, Option[JsValue]]()
-  private val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
+  private val exc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
   private val dbInitializing = new AtomicBoolean(false)
   private val dbInitializationDone = new AtomicBoolean(false)
   private val dbRef = new AtomicReference[DatabaseReader]()
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     if (dbInitializing.compareAndSet(false, true)) {
+      Logger.info("Initializing Geolocation db ...")
       Future {
         val cityDbFile = new File(file)
         val cityDb = new DatabaseReader.Builder(cityDbFile).build()
         dbRef.set(cityDb)
         dbInitializationDone.set(true)
-      }(ec)
+      }(exc).andThen {
+        case Success(_) => Logger.info("Geolocation db initialized")
+        case Failure(e) => Logger.error("Geolocation db initialization failed", e)
+      }(exc)
     }
     cache.get(ip) match {
       case loc @ Some(_) => FastFuture.successful(loc.flatten)

@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import com.blueconic.browscap.{UserAgentParser, UserAgentService}
 import env.Env
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
+import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
@@ -20,6 +21,8 @@ object UserAgentHelper {
 
   import collection.JavaConverters._
 
+  private val logger = Logger("UserAgentHelper")
+
   private val ec = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
   private val parserInitializing = new AtomicBoolean(false)
   private val parserInitializationDone = new AtomicBoolean(false)
@@ -28,9 +31,13 @@ object UserAgentHelper {
 
   def userAgentDetails(ua: String): Option[JsObject] = {
     if (parserInitializing.compareAndSet(false, true)) {
+      Logger.info("Initializing User-Agent parser ...")
       Future {
         parserRef.set(new UserAgentService().loadParser()) // blocking for a looooooong time !
         parserInitializationDone.set(true)
+      }(ec).andThen {
+        case Success(_) => Logger.info("User-Agent parser initialized")
+        case Failure(e) => Logger.error("User-Agent parser initialization failed", e)
       }(ec)
     }
     cache.get(ua) match {
@@ -69,6 +76,8 @@ class UserAgentInfo extends RequestTransformer {
         UserAgentHelper.userAgentDetails(ua) match {
         case None => Right(ctx.otoroshiRequest).future
         case Some(info) => {
+          println("UA " + ua + ", " + Json.prettyPrint(info))
+
           ctx.attrs.putIfAbsent(UserAgentInfo.UserAgentInfoKey -> info)
           Right(ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
