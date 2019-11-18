@@ -12,7 +12,7 @@ import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSoc
 import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
-import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.{FlowShape, Materializer, OverflowStrategy}
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -26,8 +26,8 @@ import otoroshi.script.Implicits._
 import otoroshi.script.TransformerRequestContext
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
-import play.api.libs.json.JsValue
+import play.api.http.websocket.{ CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Results.{BadGateway, GatewayTimeout, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
@@ -36,7 +36,7 @@ import security.{IdGenerator, OtoroshiClaim}
 import utils.RequestImplicits._
 import utils.future.Implicits._
 import utils.http.WSProxyServerUtils
-import utils.{HeadersHelper, UdpClient, UrlSanitizer}
+import utils.{Datagram, HeadersHelper, UdpClient, UrlSanitizer}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -1024,6 +1024,53 @@ class WebSocketHandler()(implicit env: Env) {
                                                     )
                                                   )
                                               })
+                                          FastFuture.successful(Right(flow))
+                                        }
+                                        case "udp-enhanced" => {
+
+                                          import akka.stream.scaladsl.{ UnzipWith, ZipWith, Balance, Flow, GraphDSL, Merge, Source }
+                                          import GraphDSL.Implicits._
+
+                                          val base64decoder = java.util.Base64.getDecoder
+                                          val base64encoder = java.util.Base64.getEncoder
+
+                                          val fromJson: Flow[PlayWSMessage, (Int, Datagram), NotUsed] = Flow[PlayWSMessage].collect {
+                                            case PlayWSBinaryMessage(data) =>
+                                              val json = Json.parse(data.utf8String)
+                                              val port: Int = (json \ "port").as[Int]
+                                              val _data: ByteString = (json \ "data").asOpt[String].map(str => ByteString(base64decoder.decode(str))).getOrElse(ByteString.empty)
+                                              (port, utils.Datagram(_data, remoteAddress))
+                                            case _ =>
+                                              (0, utils.Datagram(ByteString.empty, remoteAddress))
+                                          }
+
+                                          val updFlow: Flow[Datagram, Datagram, Future[InetSocketAddress]] = UdpClient
+                                            .flow(new InetSocketAddress("0.0.0.0", 0))
+
+                                          val nothing: Flow[Int, Int, NotUsed] = Flow[Int].map(e => e)
+
+                                          val flow: Flow[PlayWSMessage, PlayWSBinaryMessage, NotUsed] = fromJson via Flow.fromGraph(GraphDSL.create() { implicit builder =>
+                                            val dispatch = builder.add(UnzipWith[(Int, utils.Datagram), Int, utils.Datagram](a => a))
+                                            val merge = builder.add(ZipWith[Int, utils.Datagram, (Int, utils.Datagram)]((a, b) => (a, b)))
+                                            dispatch.out1 ~> updFlow.async ~> merge.in1
+                                            dispatch.out0 ~> nothing.async ~> merge.in0
+                                            FlowShape(dispatch.in, merge.out)
+                                          }).map {
+                                            case (port, dg) => PlayWSBinaryMessage(ByteString(Json.stringify(Json.obj(
+                                              "port" -> port,
+                                              "data" -> base64encoder.encodeToString(dg.data.toArray)
+                                            ))))
+                                          }.alsoTo(Sink.onComplete {
+                                            case _ =>
+                                              promise.trySuccess(
+                                                ProxyDone(
+                                                  200,
+                                                  false,
+                                                  0,
+                                                  Seq.empty[Header]
+                                                )
+                                              )
+                                          })
                                           FastFuture.successful(Right(flow))
                                         }
                                       }
