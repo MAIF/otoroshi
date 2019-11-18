@@ -66,18 +66,20 @@ object UserAgentInfo {
 
 class UserAgentInfo extends RequestTransformer {
 
+  private val logger = Logger("UserAgentInfo")
+
   override def transformRequestWithCtx(
     ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val headerName = (ctx.config \ "UserAgentInfo" \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
+    val log = (ctx.config \ "UserAgentInfo" \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(ua) =>
         UserAgentHelper.userAgentDetails(ua) match {
         case None => Right(ctx.otoroshiRequest).future
         case Some(info) => {
-          println("UA " + ua + ", " + Json.prettyPrint(info))
-
+          if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
           ctx.attrs.putIfAbsent(UserAgentInfo.UserAgentInfoKey -> info)
           Right(ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
