@@ -31,13 +31,13 @@ object UserAgentHelper {
 
   def userAgentDetails(ua: String): Option[JsObject] = {
     if (parserInitializing.compareAndSet(false, true)) {
-      Logger.info("Initializing User-Agent parser ...")
+      logger.info("Initializing User-Agent parser ...")
       Future {
         parserRef.set(new UserAgentService().loadParser()) // blocking for a looooooong time !
         parserInitializationDone.set(true)
       }(ec).andThen {
-        case Success(_) => Logger.info("User-Agent parser initialized")
-        case Failure(e) => Logger.error("User-Agent parser initialization failed", e)
+        case Success(_) => logger.info("User-Agent parser initialized")
+        case Failure(e) => logger.error("User-Agent parser initialization failed", e)
       }(ec)
     }
     cache.get(ua) match {

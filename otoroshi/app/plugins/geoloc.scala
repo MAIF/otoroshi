@@ -103,6 +103,7 @@ object IpStackGeolocationHelper {
 
 object MaxMindGeolocationHelper {
 
+  private val logger = Logger("MaxMindGeolocationHelper")
   private val ipCache = new TrieMap[String, InetAddress]()
   private val cache = new TrieMap[String, Option[JsValue]]()
   private val exc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
@@ -112,15 +113,15 @@ object MaxMindGeolocationHelper {
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     if (dbInitializing.compareAndSet(false, true)) {
-      Logger.info("Initializing Geolocation db ...")
+      logger.info("Initializing Geolocation db ...")
       Future {
         val cityDbFile = new File(file)
         val cityDb = new DatabaseReader.Builder(cityDbFile).build()
         dbRef.set(cityDb)
         dbInitializationDone.set(true)
       }(exc).andThen {
-        case Success(_) => Logger.info("Geolocation db initialized")
-        case Failure(e) => Logger.error("Geolocation db initialization failed", e)
+        case Success(_) => logger.info("Geolocation db initialized")
+        case Failure(e) => logger.error("Geolocation db initialization failed", e)
       }(exc)
     }
     cache.get(ip) match {
