@@ -27,17 +27,21 @@ object GeolocationInfo {
 
 class MaxMindGeolocationInfo extends RequestTransformer {
 
+  private val logger = Logger("MaxMindGeolocationInfo")
+
   override def transformRequestWithCtx(
                                         ctx: TransformerRequestContext
                                       )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val headerName = (ctx.config \ "GeolocationInfo" \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
     val apikeyOpt = (ctx.config \ "GeolocationInfo" \ "path").asOpt[String]
+    val log = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
     val from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
     apikeyOpt match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(path) => MaxMindGeolocationHelper.find(from, path).map {
         case None =>  Right(ctx.otoroshiRequest)
         case Some(location) => {
+          if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
           ctx.attrs.putIfAbsent(GeolocationInfo.GeolocationInfoKey -> location)
           Right(ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
@@ -52,18 +56,22 @@ class MaxMindGeolocationInfo extends RequestTransformer {
 
 class IpStackGeolocationInfo extends RequestTransformer {
 
+  private val logger = Logger("IpStackGeolocationInfo")
+
   override def transformRequestWithCtx(
     ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val headerName = (ctx.config \ "GeolocationInfo" \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
     val timeout: Long = (ctx.config \ "GeolocationInfo" \ "timeout").asOpt[Long].getOrElse(2000)
     val apikeyOpt = (ctx.config \ "GeolocationInfo" \ "apikey").asOpt[String]
+    val log = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
     val from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
     apikeyOpt match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(apikey) => IpStackGeolocationHelper.find(from, apikey, timeout).map {
         case None =>  Right(ctx.otoroshiRequest)
         case Some(location) => {
+          if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
           ctx.attrs.putIfAbsent(GeolocationInfo.GeolocationInfoKey -> location)
           Right(ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
