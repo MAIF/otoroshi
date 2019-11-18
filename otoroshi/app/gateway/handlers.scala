@@ -26,7 +26,7 @@ import org.joda.time.DateTime
 import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import play.api.Logger
 import play.api.http.{Status => _, _}
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody, StandaloneWSRequest, WSResponse}
 import play.api.mvc.Results._
@@ -40,12 +40,7 @@ import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
-import otoroshi.script.{
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseBodyContext,
-  TransformerResponseContext
-}
+import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import utils.http.Implicits._
 import play.libs.ws.WSCookie
 import ssl.PemHeaders
@@ -1138,6 +1133,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                                       val promise = Promise[ProxyDone]
 
+                                      val attrs = utils.TypedMap.empty
+
                                       val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                                       logger.trace(s"Claim is : $claim")
 
@@ -1359,7 +1356,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 remainingQuotas = q,
                                                 viz = Some(viz),
                                                 clientCertChain = req.clientCertChainPem,
-                                                err = false
+                                                err = false,
+                                                userAgentInfo = attrs.get[JsValue](otoroshi.plugins.useragent.UserAgentInfo.UserAgentInfoKey),
+                                                geolocationInfo = attrs.get[JsValue](otoroshi.plugins.geoloc.GeolocationInfo.GeolocationInfoKey)
                                               )
                                               evt.toAnalytics()
                                               if (descriptor.logAnalyticsOnServer) {
@@ -1415,7 +1414,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             user = paUsr,
                                             request = req,
                                             config = descriptor.transformerConfig,
-                                            attrs = utils.TypedMap.empty
+                                            attrs = attrs
                                           )
                                         )
                                       val finalBody = descriptor.transformRequestBody(
@@ -1430,7 +1429,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           request = req,
                                           config = descriptor.transformerConfig,
                                           body = lazySource,
-                                          attrs = utils.TypedMap.empty
+                                          attrs = attrs
                                         )
                                       )
                                       finalRequest.flatMap {
@@ -1722,7 +1721,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       user = paUsr,
                                                       request = req,
                                                       config = descriptor.transformerConfig,
-                                                      attrs = utils.TypedMap.empty
+                                                      attrs = attrs
                                                     )
                                                   )
                                                   .flatMap {
@@ -1801,7 +1800,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           request = req,
                                                           config = descriptor.transformerConfig,
                                                           body = theStream,
-                                                          attrs = utils.TypedMap.empty
+                                                          attrs = attrs
                                                         )
                                                       )
 

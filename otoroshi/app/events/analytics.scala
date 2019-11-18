@@ -231,7 +231,9 @@ case class GatewayEvent(
     `@product`: String = "--",
     remainingQuotas: RemainingQuotas,
     viz: Option[OtoroshiViz],
-    clientCertChain: Seq[String] = Seq.empty[String]
+    clientCertChain: Seq[String] = Seq.empty[String],
+    userAgentInfo: Option[JsValue],
+    geolocationInfo: Option[JsValue],
 ) extends AnalyticEvent {
   def toJson(implicit _env: Env): JsValue = GatewayEvent.writes(this, _env)
 }
@@ -270,7 +272,9 @@ object GatewayEvent {
     "cbDuration"      -> o.cbDuration,
     "overheadWoCb"    -> o.overheadWoCb,
     "callAttempts"    -> o.callAttempts,
-    "clientCertChain" -> o.clientCertChain
+    "clientCertChain" -> o.clientCertChain,
+    "userAgentInfo"   -> o.userAgentInfo.getOrElse(JsNull).as[JsValue],
+    "geolocationInfo" -> o.geolocationInfo.getOrElse(JsNull).as[JsValue],
   )
 }
 

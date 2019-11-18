@@ -27,6 +27,7 @@ import otoroshi.script.TransformerRequestContext
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Results.{BadGateway, GatewayTimeout, MethodNotAllowed, NotFound, ServiceUnavailable, Status, TooManyRequests, Unauthorized}
@@ -649,6 +650,8 @@ class WebSocketHandler()(implicit env: Env) {
                                   .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                                 val promise = Promise[ProxyDone]
 
+                                val attrs = utils.TypedMap.empty
+
                                 val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                                 logger.trace(s"Claim is : $claim")
                                 //val stateRequestHeaderName =
@@ -817,7 +820,10 @@ class WebSocketHandler()(implicit env: Env) {
                                           remainingQuotas = q,
                                           viz = Some(viz),
                                           clientCertChain = req.clientCertChainPem,
-                                          err = false
+                                          err = false,
+                                          userAgentInfo = attrs.get[JsValue](otoroshi.plugins.useragent.UserAgentInfo.UserAgentInfoKey),
+                                          geolocationInfo = attrs.get[JsValue](otoroshi.plugins.geoloc.GeolocationInfo.GeolocationInfoKey)
+
                                         )
                                         evt.toAnalytics()
                                         if (descriptor.logAnalyticsOnServer) {
@@ -871,7 +877,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       user = paUsr,
                                       request = req,
                                       config = descriptor.transformerConfig,
-                                      attrs = utils.TypedMap.empty
+                                      attrs = attrs
                                     )
                                   )
                                   .flatMap {

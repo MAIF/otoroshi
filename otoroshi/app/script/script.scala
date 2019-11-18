@@ -146,6 +146,9 @@ case class TransformerResponseBodyContext(
 
 trait RequestTransformer extends StartableAndStoppable {
 
+  // def name: String
+  // def description: String
+
   def transformRequestWithCtx(
       context: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {

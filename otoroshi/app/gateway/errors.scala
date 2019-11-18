@@ -93,7 +93,9 @@ object Errors {
             remainingQuotas = RemainingQuotas(),
             responseChunked = false,
             viz = Some(viz),
-            err = true
+            err = true,
+            userAgentInfo = None,
+            geolocationInfo = None
           ).toAnalytics()(env)
         }
         case None => {
@@ -147,7 +149,9 @@ object Errors {
             remainingQuotas = RemainingQuotas(),
             responseChunked = false,
             viz = None,
-            err = true
+            err = true,
+            userAgentInfo = None,
+            geolocationInfo = None
           ).toAnalytics()(env)
         }
       }
