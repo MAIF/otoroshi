@@ -432,10 +432,12 @@ function ProxyServer(options, optionalConfigFile) {
         lastRemote = remote; // TODO: find a better way ...
         if (clientConnected) {
           debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes`);
-          client.send(data);
+          // client.send(data);
+          client.send(Buffer.from(JSON.stringify({ port: remote.port, address: remote.address, data: data.toString('base64') })));
         } else {
           debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes stored in buffer`);
-          clientBuffer.push(data);
+          // clientBuffer.push(data);
+          clientBuffer.push(Buffer.from(JSON.stringify({ port: remote.port, address: remote.address, data: data.toString('base64') })));
         }
       });
       // client callbacks
@@ -445,7 +447,7 @@ function ProxyServer(options, optionalConfigFile) {
           while (clientBuffer.length > 0) {
             const bytes = clientBuffer.shift();
             if (bytes) {
-              client.send(bytes);
+              client.send(bytes); // ok as messages are already serialized
             }
           }
           debugLog(`WS Client buffer emptied for ${sessionId}`);
@@ -456,7 +458,11 @@ function ProxyServer(options, optionalConfigFile) {
         debugLog(`Data received from server from session ${sessionId}: ${payload.length} bytes`);
         if (payload) {
           if (payload.length > 0) {
-            server.send(payload, 0, payload.length, lastRemote.port, lastRemote.address, (err) => {
+            const { port, address, data } = JSON.parse(payload.toString('utf8'));
+            const buffer = Buffer.from(data, 'base64');
+            // console.log(`received packet for ${address}:${port}`)
+            // server.send(payload, 0, payload.length, lastRemote.port, lastRemote.address, (err) => {
+            server.send(buffer, 0, buffer.length, port, address, (err) => {
               if (err) console.log('send error', err);
             });
           }

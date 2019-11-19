@@ -999,7 +999,7 @@ class WebSocketHandler()(implicit env: Env) {
                                               })
                                           FastFuture.successful(Right(flow))
                                         }
-                                        case "udp" => {
+                                        case "udp-old" => {
                                           val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
                                             Flow[PlayWSMessage]
                                               .collect {
@@ -1026,7 +1026,7 @@ class WebSocketHandler()(implicit env: Env) {
                                               })
                                           FastFuture.successful(Right(flow))
                                         }
-                                        case "udp-enhanced" => {
+                                        case "udp" => {
 
                                           import akka.stream.scaladsl.{ UnzipWith, ZipWith, Balance, Flow, GraphDSL, Merge, Source }
                                           import GraphDSL.Implicits._
@@ -1034,30 +1034,33 @@ class WebSocketHandler()(implicit env: Env) {
                                           val base64decoder = java.util.Base64.getDecoder
                                           val base64encoder = java.util.Base64.getEncoder
 
-                                          val fromJson: Flow[PlayWSMessage, (Int, Datagram), NotUsed] = Flow[PlayWSMessage].collect {
+                                          val fromJson: Flow[PlayWSMessage, (Int, String, Datagram), NotUsed] = Flow[PlayWSMessage].collect {
                                             case PlayWSBinaryMessage(data) =>
                                               val json = Json.parse(data.utf8String)
                                               val port: Int = (json \ "port").as[Int]
+                                              val address: String = (json \ "address").as[String]
                                               val _data: ByteString = (json \ "data").asOpt[String].map(str => ByteString(base64decoder.decode(str))).getOrElse(ByteString.empty)
-                                              (port, utils.Datagram(_data, remoteAddress))
+                                              (port, address, utils.Datagram(_data, remoteAddress))
                                             case _ =>
-                                              (0, utils.Datagram(ByteString.empty, remoteAddress))
+                                              (0, "localhost", utils.Datagram(ByteString.empty, remoteAddress))
                                           }
 
                                           val updFlow: Flow[Datagram, Datagram, Future[InetSocketAddress]] = UdpClient
                                             .flow(new InetSocketAddress("0.0.0.0", 0))
 
-                                          val nothing: Flow[Int, Int, NotUsed] = Flow[Int].map(e => e)
+                                          def nothing[T]: Flow[T, T, NotUsed] = Flow[T].map(identity)
 
                                           val flow: Flow[PlayWSMessage, PlayWSBinaryMessage, NotUsed] = fromJson via Flow.fromGraph(GraphDSL.create() { implicit builder =>
-                                            val dispatch = builder.add(UnzipWith[(Int, utils.Datagram), Int, utils.Datagram](a => a))
-                                            val merge = builder.add(ZipWith[Int, utils.Datagram, (Int, utils.Datagram)]((a, b) => (a, b)))
-                                            dispatch.out1 ~> updFlow.async ~> merge.in1
-                                            dispatch.out0 ~> nothing.async ~> merge.in0
+                                            val dispatch = builder.add(UnzipWith[(Int, String, utils.Datagram), Int, String, utils.Datagram](a => a))
+                                            val merge = builder.add(ZipWith[Int, String, utils.Datagram, (Int, String, utils.Datagram)]((a, b, c) => (a, b, c)))
+                                            dispatch.out2 ~> updFlow.async ~> merge.in2
+                                            dispatch.out1 ~> nothing[String].async ~> merge.in1
+                                            dispatch.out0 ~> nothing[Int].async ~> merge.in0
                                             FlowShape(dispatch.in, merge.out)
                                           }).map {
-                                            case (port, dg) => PlayWSBinaryMessage(ByteString(Json.stringify(Json.obj(
+                                            case (port, address, dg) => PlayWSBinaryMessage(ByteString(Json.stringify(Json.obj(
                                               "port" -> port,
+                                              "address" -> address,
                                               "data" -> base64encoder.encodeToString(dg.data.toArray)
                                             ))))
                                           }.alsoTo(Sink.onComplete {
