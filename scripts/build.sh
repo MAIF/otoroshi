@@ -34,6 +34,11 @@ build_server () {
   sbt ';clean;compile;dist;assembly'
 }
 
+compile_server () {
+  cd $LOCATION/otoroshi
+  sbt ';clean;compile'
+}
+
 test_server () {
   cd $LOCATION/otoroshi
   TEST_STORE=inmemory sbt 'testOnly OtoroshiTests'
@@ -61,6 +66,19 @@ case "${1}" in
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_manual
     build_server
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+    test_server
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+    test_mtls
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+    # build_cli
+    ;;
+  test_all)
+    clean
+    build_ui
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+    # build_manual
+    compile_server
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_server
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi

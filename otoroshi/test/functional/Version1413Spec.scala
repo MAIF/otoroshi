@@ -258,7 +258,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
           enabled = true,
           refs = Seq(
             "cp:otoroshi.script.HasAllowedApiKeyValidator",
-            "cp:cp:functional.Validator1"
+            "cp:functional.Validator1"
           ),
           config = Json.obj(
             "tags" -> Json.arr("foo")
