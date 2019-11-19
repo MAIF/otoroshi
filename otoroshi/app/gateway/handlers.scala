@@ -978,7 +978,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                                     val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(_apiKey)
                                     val paUsr = attrs.get(otoroshi.plugins.Keys.UserKey).orElse(_paUsr)
-                                    apiKey.foreach(apk => attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
+
+                                    apiKey.foreach(apk => attrs.putIfAbsent(otoroshi.plugins.Keys.ApiKeyKey -> apk))
                                     paUsr.foreach(usr => attrs.putIfAbsent(otoroshi.plugins.Keys.UserKey -> usr))
 
                                     desc.validateClientCertificates(snowflake, req, apiKey, paUsr, config, attrs) {

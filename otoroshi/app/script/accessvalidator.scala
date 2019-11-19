@@ -296,7 +296,9 @@ class HasAllowedApiKeyValidator extends AccessValidator {
           FastFuture.successful(false)
         }
       }
-      case _ => FastFuture.successful(false)
+      case _ =>
+        println("fuuuuu2")
+        FastFuture.successful(false)
     }
   }
 }

@@ -18,7 +18,7 @@ trait TypedMap {
 }
 
 object TypedMap {
-  val empty: TypedMap = new ConcurrentMutableTypedMap(new TrieMap[TypedKey[_], Any])
+  def empty: TypedMap = new ConcurrentMutableTypedMap(new TrieMap[TypedKey[_], Any])
   def apply(entries: TypedEntry[_]*): TypedMap = {
     TypedMap.empty.put(entries: _*)
   }
