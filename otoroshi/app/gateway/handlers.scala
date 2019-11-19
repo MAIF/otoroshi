@@ -3,6 +3,7 @@ package gateway
 import java.net.URLEncoder
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
+import java.util.regex.Pattern
 
 import actions.{PrivateAppsAction, PrivateAppsActionContext}
 import akka.NotUsed
@@ -132,6 +133,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   lazy val analyticsQueue = env.otoroshiActorSystem.actorOf(AnalyticsQueue.props(env))
 
+  lazy val ipRegex = RegexPool.regex("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:\\d{2,5})?$")
+  lazy val monitoringPaths = Seq("/health", "/metrics")
+
   val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
@@ -211,10 +215,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       } else {
         val toHttps = env.exposedRootSchemeIsHttps
         val host    = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+        val monitoring = monitoringPaths.contains(request.relativeUri)
         host match {
-          case str if matchRedirection(str)                                          => Some(redirectToMainDomain())
-          case _ if request.relativeUri.contains("__otoroshi_assets")                => super.routeRequest(request)
-          case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login") => Some(setPrivateAppsCookies())
+          case str if matchRedirection(str)                                           => Some(redirectToMainDomain())
+          case _ if ipRegex.matches(request.host) && monitoring                       => super.routeRequest(request)
+          case _ if request.relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
+          case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") =>
             Some(removePrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
@@ -222,6 +228,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
           case env.backOfficeHost if !isSecured && toHttps                         => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
+          case env.backOfficeHost  if monitoring                                   => Some(forbidden())
+          case env.privateAppsHost if monitoring                                   => Some(forbidden())
+          case env.adminApiHost if monitoring                                      => super.routeRequest(request)
           case env.adminApiHost if env.exposeAdminApi                              => super.routeRequest(request)
           case env.backOfficeHost if env.exposeAdminDashboard                      => super.routeRequest(request)
           case env.privateAppsHost                                                 => super.routeRequest(request)
@@ -523,6 +532,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         f
       }
     }
+  }
+
+  def forbidden() = actionBuilder { req =>
+    Forbidden(Json.obj("error" -> "forbidden"))
   }
 
   def redirectToHttps() = actionBuilder { req =>
