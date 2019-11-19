@@ -56,7 +56,7 @@ const service = {
   ],
   "root": "/hello",
   "matchingRoot": null,
-  "localHost": "localhost:8080",
+  "localHost": "localhost:18080",
   "localScheme": "http",
   "redirectToLocal": false,
   "enabled": true,
@@ -282,7 +282,7 @@ const otoCertBack = {
   "to": 1885301242000
 };
 
-fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
+fetch('http://otoroshi-api.oto.tools:18080/api/certificates', {
   method: 'GET',
   headers: {
     'Accept': 'application/json',
@@ -291,7 +291,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
 }).then(r => r.json()).then(certs => {
   return Promise.all(certs.map(cert => {
     //console.log(cert)
-    return fetch(`http://otoroshi-api.oto.tools:8080/api/certificates/${cert.id}`, {
+    return fetch(`http://otoroshi-api.oto.tools:18080/api/certificates/${cert.id}`, {
       method: 'DELETE',
       headers: {
         'Accept': 'application/json',
@@ -301,7 +301,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
       // console.log('delete ', cert.domain, ':', r.status)
     });
   })).then(() => {
-    return fetch(`http://otoroshi-api.oto.tools:8080/api/certificates`, {
+    return fetch(`http://otoroshi-api.oto.tools:18080/api/certificates`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -310,7 +310,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
       },
       body: JSON.stringify(otoCertFront)
     }).then(r => r.json()).then(() => {
-      return fetch(`http://otoroshi-api.oto.tools:8080/api/certificates`, {
+      return fetch(`http://otoroshi-api.oto.tools:18080/api/certificates`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -319,7 +319,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
         },
         body: JSON.stringify(otoCertBack)
       }).then(r => r.json()).then(() => {
-        return fetch(`http://otoroshi-api.oto.tools:8080/api/services`, {
+        return fetch(`http://otoroshi-api.oto.tools:18080/api/services`, {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
@@ -328,7 +328,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
           },
           body: JSON.stringify(service)
         }).then(r => r.json()).then(() => {
-          return fetch(`http://otoroshi-api.oto.tools:8080/api/groups/default/apikeys`, {
+          return fetch(`http://otoroshi-api.oto.tools:18080/api/groups/default/apikeys`, {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
@@ -337,7 +337,7 @@ fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
             },
             body: JSON.stringify(apikey)
           }).then(r => r.json()).then(() => {
-            return fetch('http://otoroshi-api.oto.tools:8080/api/certificates', {
+            return fetch('http://otoroshi-api.oto.tools:18080/api/certificates', {
               method: 'GET',
               headers: {
                 'Accept': 'application/json',

@@ -44,11 +44,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def processMetrics() = UnAuthApiAction.async { ctx =>
+  def processMetrics() = Action.async { req =>
     def fetchMetrics(): Result = {
-      if (ctx.req.accepts("application/json")) {
+      if (req.accepts("application/json")) {
         Ok(env.metrics.jsonExport).withHeaders("Content-Type" -> "application/json")
-      } else if (ctx.req.accepts("application/prometheus")) {
+      } else if (req.accepts("application/prometheus")) {
         Ok(env.metrics.prometheusExport).withHeaders("Content-Type" -> "text/plain")
       } else {
         Ok(env.metrics.defaultHttpFormat)
@@ -57,12 +57,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
     if (env.metricsEnabled) {
       FastFuture.successful(
-        ((ctx.req.getQueryString("access_key"), env.metricsAccessKey) match {
+        ((req.getQueryString("access_key"), env.metricsAccessKey) match {
           case (_, None)                                  => fetchMetrics()
           case (Some(header), Some(key)) if header == key => fetchMetrics()
           case _                                          => Unauthorized(Json.obj("error" -> "unauthorized"))
         }) withHeaders (
-          env.Headers.OtoroshiStateResp -> ctx.req.headers
+          env.Headers.OtoroshiStateResp -> req.headers
             .get(env.Headers.OtoroshiState)
             .getOrElse("--")
         )
@@ -72,7 +72,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     }
   }
 
-  def health() = UnAuthApiAction.async { ctx =>
+  def health() = Action.async { req =>
     def fetchHealth() = {
       val membersF = if (env.clusterConfig.mode == ClusterMode.Leader) {
         env.datastores.clusterStateDataStore.getMembers()
@@ -86,7 +86,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       } yield {
         val cluster = env.clusterConfig.mode match {
           case ClusterMode.Off    => Json.obj()
-          case ClusterMode.Worker => Json.obj("cluster" -> Json.obj("lastSync" -> env.clusterAgent.lastSync.toString()))
+          case ClusterMode.Worker => Json.obj("cluster" -> Json.obj("health" -> "healthy", "lastSync" -> env.clusterAgent.lastSync.toString()))
           case ClusterMode.Leader => {
             val healths     = members.map(_.health)
             val foundOrange = healths.contains("orange")
@@ -95,31 +95,37 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             Json.obj("cluster" -> Json.obj("health" -> health))
           }
         }
-        Ok(
-          Json.obj(
-            "otoroshi" -> JsString(_health match {
-              case Healthy if overhead <= env.healthLimit => "healthy"
-              case Healthy if overhead > env.healthLimit  => "unhealthy"
-              case Unhealthy                              => "unhealthy"
-              case Unreachable                            => "down"
-            }),
-            "datastore" -> JsString(_health match {
-              case Healthy     => "healthy"
-              case Unhealthy   => "unhealthy"
-              case Unreachable => "unreachable"
-            })
-          ) ++ cluster
-        )
+        val payload = Json.obj(
+          "otoroshi" -> JsString(_health match {
+            case Healthy if overhead <= env.healthLimit => "healthy"
+            case Healthy if overhead > env.healthLimit  => "unhealthy"
+            case Unhealthy                              => "unhealthy"
+            case Unreachable                            => "down"
+          }),
+          "datastore" -> JsString(_health match {
+            case Healthy     => "healthy"
+            case Unhealthy   => "unhealthy"
+            case Unreachable => "unreachable"
+          })
+        ) ++ cluster
+        val err = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
+          (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
+          (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy")
+        if (err) {
+          InternalServerError(payload)
+        } else {
+          Ok(payload)
+        }
       }
     }
 
-    ((ctx.req.getQueryString("access_key"), env.healthAccessKey) match {
+    ((req.getQueryString("access_key"), env.healthAccessKey) match {
       case (_, None)                                  => fetchHealth()
       case (Some(header), Some(key)) if header == key => fetchHealth()
       case _                                          => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
     }) map { res =>
       res.withHeaders(
-        env.Headers.OtoroshiStateResp -> ctx.req.headers
+        env.Headers.OtoroshiStateResp -> req.headers
           .get(env.Headers.OtoroshiState)
           .getOrElse("--")
       )
