@@ -34,9 +34,9 @@ func main() {
 		},
 	}
 
-	// Request /hello via the created HTTPS client over port 8443 via GET
-	//r, err := client.Get("https://mtls.oto.tools:8443/")
-	req, _ := http.NewRequest("GET", "https://mtls.oto.tools:8443/", nil)
+	// Request /hello via the created HTTPS client over port 18443 via GET
+	//r, err := client.Get("https://mtls.oto.tools:18443/")
+	req, _ := http.NewRequest("GET", "https://mtls.oto.tools:18443/", nil)
 	req.Header.Add("Otoroshi-Client-Id", "clientId")
 	req.Header.Add("Otoroshi-Client-Secret", "clientSecret")
 	r, err := client.Do(req)
