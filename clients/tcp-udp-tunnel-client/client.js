@@ -402,7 +402,7 @@ function ProxyServer(options, optionalConfigFile) {
     const server = dgram.createSocket(dgramType);
     server.on('listening', function() {
       // const address = server.address();      
-      let lastRemote = null;
+      // let lastRemote = null;
       let clientConnected = false;
       const clientBuffer = [];
       const remoteArgs = _.entries({
@@ -429,7 +429,7 @@ function ProxyServer(options, optionalConfigFile) {
         client.close();
       });
       server.on('message', (data, remote) => {
-        lastRemote = remote; // TODO: find a better way ...
+        // lastRemote = remote; 
         if (clientConnected) {
           debugLog(`Receiving client data from session ${sessionId}: ${data.length} bytes`);
           // client.send(data);
