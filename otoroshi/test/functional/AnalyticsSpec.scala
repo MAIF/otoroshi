@@ -303,7 +303,9 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
                           subdomain = "")
       ),
       remainingQuotas = RemainingQuotas(),
-      viz = None
+      viz = None,
+      geolocationInfo = None,
+      userAgentInfo = None
     )
   }
 
