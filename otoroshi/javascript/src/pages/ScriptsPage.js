@@ -106,6 +106,22 @@ class CustomValidator extends AccessValidator {
 new CustomValidator()
 `;
 
+const basicPreRoute = `
+import akka.stream.scaladsl._
+import env.Env
+import otoroshi.script._
+import utils.future.Implicits._
+import play.api.libs.json._
+import scala.concurrent.{ExecutionContext, Future}
+
+class CustomPreRouting extends PreRouting {
+  def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    FastFuture.successful(())
+  }
+}
+new CustomPreRouting()
+`;
+
 class CompilationTools extends Component {
   state = {
     compiling: false,
@@ -231,11 +247,20 @@ class ScriptTypeSelector extends Component {
               code: basicValidator,
             });
           }
+          if (t === 'preroute') {
+            this.setState({ type: 'preroute' });
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'preroute',
+              code: basicPreRoute,
+            });
+          }
         }}
         possibleValues={[
           { label: 'Request transformer', value: 'transformer' },
           { label: 'Nano app', value: 'app' },
           { label: 'Access Validator', value: 'validator' },
+          { label: 'Pre routing', value: 'preroute' },
         ]}
       />
     );

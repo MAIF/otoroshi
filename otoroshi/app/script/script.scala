@@ -15,6 +15,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
+import io.github.classgraph.ClassInfo
 import javax.script._
 import models._
 import play.api.Logger
@@ -67,8 +68,6 @@ sealed trait TransformerContext {
   def config: JsValue
   def attrs: TypedMap
   def globalConfig: JsValue
-  // TODO: add user-agent infos
-  // TODO: add client geoloc infos
   def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {
       case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
@@ -729,6 +728,10 @@ object AccessValidatorType extends ScriptType {
   def name: String = "validator"
 }
 
+object PreRoutingType extends ScriptType {
+  def name: String = "preroute"
+}
+
 case class Script(id: String, name: String, desc: String, code: String, `type`: ScriptType) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
@@ -834,6 +837,45 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
+
+  private lazy val (transformersNames: Seq[String], validatorsNames: Seq[String], preRouteNames: Seq[String]) = Try {
+    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
+
+    import collection.JavaConverters._
+    val scanResult: ScanResult = new ClassGraph()
+      .addClassLoader(env.environment.classLoader)
+      .enableAllInfo
+      .blacklistPackages("java.*", "javax.*")
+      .scan
+    try {
+
+      def predicate(c: ClassInfo): Boolean = c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+        c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+        c.getName == "otoroshi.script.CompilingValidator$" ||
+        c.getName == "otoroshi.script.CompilingPreRouting$" ||
+        c.getName == "otoroshi.script.DefaultValidator$" ||
+        c.getName == "otoroshi.script.DefaultPreRouting$" ||
+        c.getName == "otoroshi.script.NanoApp" ||
+        c.getName == "otoroshi.script.NanoApp$"
+
+      val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala).filterNot(predicate).map(_.getName)
+
+      val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
+
+      val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+
+      (requestTransformers, validators, preRoutes)
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        Seq.empty[String]
+    } finally if (scanResult != null) scanResult.close()
+  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String])
+
+  /*
   private lazy val transformersNames: Seq[String] = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
 
@@ -899,6 +941,40 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     } finally if (scanResult != null) scanResult.close()
   } getOrElse Seq.empty[String]
 
+  private lazy val preRouteNames: Seq[String] = Try {
+    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
+
+    import collection.JavaConverters._
+    val scanResult: ScanResult = new ClassGraph()
+      .addClassLoader(env.environment.classLoader)
+      .enableAllInfo
+      .blacklistPackages("java.*", "javax.*")
+      .scan
+    try {
+
+      val controlClasses5: ClassInfoList = scanResult.getSubclasses(classOf[PreRouting].getName)
+      val controlClasses6: ClassInfoList = scanResult.getClassesImplementing(classOf[PreRouting].getName)
+
+      val classes = controlClasses5.asScala ++ controlClasses6.asScala
+      classes
+        .filterNot(
+          c =>
+            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+              c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+              c.getName == "otoroshi.script.CompilingValidator$" ||
+              c.getName == "otoroshi.script.DefaultValidator$" ||
+              c.getName == "otoroshi.script.NanoApp" ||
+              c.getName == "otoroshi.script.NanoApp$"
+        )
+        .map(c => c.getName)
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        Seq.empty[String]
+    } finally if (scanResult != null) scanResult.close()
+  } getOrElse Seq.empty[String]
+  */
+
   def findAllScriptsList() = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
       val typ = ctx.request.getQueryString("type")
@@ -913,6 +989,11 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         case Some("validator") => validatorsNames
         case _                 => Seq.empty
       }
+      val cpPreRoutes = typ match {
+        case None              => preRouteNames
+        case Some("preroute")  => preRouteNames
+        case _                 => Seq.empty
+      }
       env.datastores.scriptDataStore.findAll().map { all =>
         val allClasses = all
           .filter { script =>
@@ -922,12 +1003,14 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
               case Some("transformer") if script.`type` == AppType           => true
               case Some("app") if script.`type` == AppType                   => true
               case Some("validator") if script.`type` == AccessValidatorType => true
+              case Some("preroute") if script.`type` == PreRoutingType       => true
               case _                                                         => false
             }
           }
           .map(c => Json.obj("id"             -> c.id, "name"     -> c.name)) ++
         cpTransformers.map(c => Json.obj("id" -> s"cp:$c", "name" -> c)) ++
-        cpValidators.map(c => Json.obj("id"   -> s"cp:$c", "name" -> c))
+        cpValidators.map(c => Json.obj("id"   -> s"cp:$c", "name" -> c)) ++
+        cpPreRoutes.map(c => Json.obj("id"   -> s"cp:$c", "name" -> c))
         Ok(JsArray(allClasses))
       }
     }

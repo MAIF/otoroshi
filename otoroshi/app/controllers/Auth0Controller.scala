@@ -17,7 +17,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 import security.IdGenerator
-
+import utils.TypedMap
 import utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,7 +42,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
           Results.InternalServerError,
           req,
           Some(descriptor),
-          Some("errors.auth.config.ref.not.found")
+          Some("errors.auth.config.ref.not.found"),
+          attrs = TypedMap.empty
         )
       case Some(ref) => {
         env.datastores.authConfigsDataStore.findById(ref).flatMap {
@@ -52,7 +53,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               Results.InternalServerError,
               req,
               Some(descriptor),
-              Some("errors.auth.config.not.found")
+              Some("errors.auth.config.not.found"),
+              attrs = TypedMap.empty
             )
           case Some(auth) => f(auth)
         }
@@ -74,7 +76,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
         Results.BadRequest,
         ctx.request,
         None,
-        Some("errors.cors.error")
+        Some("errors.cors.error"),
+        attrs = TypedMap.empty
       )
     } else {
       FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request): _*))
@@ -174,7 +177,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                                    Results.BadRequest,
                                    req,
                                    None,
-                                   Some("errors.missing.parameters"))
+                                   Some("errors.missing.parameters"),
+          attrs = TypedMap.empty)
     }
   }
 

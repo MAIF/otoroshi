@@ -21,7 +21,7 @@ import controllers.routes
 import env.{Env, SidecarConfig}
 import events._
 import models._
-import utils.{HeadersHelper, MaxLengthLimiter, RegexPool, UrlSanitizer}
+import utils._
 import org.joda.time.DateTime
 import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import play.api.Logger
@@ -68,7 +68,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
                                Status(statusCode),
                                request,
                                None,
-                               Some("errors.client.error"))
+                               Some("errors.client.error"), attrs = TypedMap.empty)
   }
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
@@ -83,7 +83,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
     }
-    Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"))
+    Errors.craftResponseResult("An error occurred ...", InternalServerError, request, None, Some("errors.server.error"), attrs = TypedMap.empty)
   }
 }
 
@@ -189,7 +189,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       if (request.relativeUri.contains("__otoroshi_assets")) {
         super.routeRequest(request)
       } else {
-        Some(globalMaintenanceMode())
+        Some(globalMaintenanceMode(TypedMap.empty))
       }
     } else {
       val isSecured    = getSecuredFor(request)
@@ -255,12 +255,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           )
         )
       case _ =>
-        Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"))
+        Errors.craftResponseResult("Missing parameters", BadRequest, req, None, Some("errors.missing.parameters"), attrs = TypedMap.empty)
     }
   }
 
   def withAuthConfig(descriptor: ServiceDescriptor,
-                     req: RequestHeader)(f: AuthModuleConfig => Future[Result]): Future[Result] = {
+                     req: RequestHeader, attrs: TypedMap)(f: AuthModuleConfig => Future[Result]): Future[Result] = {
     descriptor.authConfigRef match {
       case None =>
         Errors.craftResponseResult(
@@ -268,7 +268,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           Results.InternalServerError,
           req,
           Some(descriptor),
-          Some("errors.auth.config.ref.not.found")
+          Some("errors.auth.config.ref.not.found"),
+          attrs = attrs
         )
       case Some(ref) => {
         env.datastores.authConfigsDataStore.findById(ref).flatMap {
@@ -278,7 +279,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               Results.InternalServerError,
               req,
               Some(descriptor),
-              Some("errors.auth.config.not.found")
+              Some("errors.auth.config.not.found"),
+              attrs = attrs
             )
           case Some(auth) => f(auth)
         }
@@ -291,20 +293,25 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
     implicit val request = req
 
+    val attrs = utils.TypedMap.empty
+
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       ServiceLocation(req.host, globalConfig) match {
         case None => {
-          Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+          Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"),
+            attrs = attrs)
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
             .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req)
             .flatMap {
               case None => {
-                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"),
+                  attrs = attrs)
               }
               case Some(desc) if !desc.enabled => {
-                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"),
+                  attrs = attrs)
               }
               // case Some(descriptor) if !descriptor.privateApp => {
               //   Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
@@ -322,27 +329,31 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 ApiKeyHelper.extractApiKey(req, descriptor).flatMap {
                   case None =>
                     Errors
-                      .craftResponseResult(s"Invalid API key", Unauthorized, req, None, Some("errors.invalid.api.key"))
+                      .craftResponseResult(s"Invalid API key", Unauthorized, req, None, Some("errors.invalid.api.key"),
+                        attrs = attrs)
                   case Some(apiKey) =>
                     FastFuture.successful(Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")))
                 }
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-                withAuthConfig(descriptor, req) { auth =>
+                withAuthConfig(descriptor, req, attrs) { auth =>
                   isPrivateAppsSessionValid(req, descriptor).flatMap {
                     case None =>
                       Errors.craftResponseResult(s"Invalid session",
                                                  Unauthorized,
                                                  req,
                                                  None,
-                                                 Some("errors.invalid.session"))
+                                                 Some("errors.invalid.session"),
+                        attrs = attrs
+                      )
                     case Some(session) =>
                       FastFuture.successful(Ok(session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")))
                   }
                 }
               }
               case _ => {
-                Errors.craftResponseResult(s"Unauthorized", Unauthorized, req, None, Some("errors.unauthorized"))
+                Errors.craftResponseResult(s"Unauthorized", Unauthorized, req, None, Some("errors.unauthorized"),
+                  attrs = attrs)
               }
             }
         }
@@ -355,6 +366,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
     implicit val request = req
 
+    val attrs = TypedMap.empty
+
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       ServiceLocation(req.host, globalConfig) match {
         case None => {
@@ -362,27 +375,31 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                      NotFound,
                                      req,
                                      None,
-                                     Some("errors.service.not.found"))
+                                     Some("errors.service.not.found"),
+            attrs = attrs
+          )
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
             .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req)
             .flatMap {
               case None => {
-                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"), attrs = attrs)
               }
               case Some(desc) if !desc.enabled => {
-                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+                Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"), attrs = attrs)
               }
               case Some(descriptor) if !descriptor.privateApp => {
                 Errors.craftResponseResult(s"Private apps are not configured",
                                            InternalServerError,
                                            req,
                                            None,
-                                           Some("errors.service.auth.not.configured"))
+                                           Some("errors.service.auth.not.configured"),
+                  attrs = attrs
+                )
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-                withAuthConfig(descriptor, req) { auth =>
+                withAuthConfig(descriptor, req, attrs) { auth =>
                   auth.authModule(globalConfig).paLogout(req, globalConfig, descriptor).map {
                     case None => {
                       val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
@@ -423,7 +440,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                            InternalServerError,
                                            req,
                                            None,
-                                           Some("errors.service.auth.not.configured"))
+                                           Some("errors.service.auth.not.configured"),
+                  attrs = attrs
+                )
               }
             }
         }
@@ -432,20 +451,21 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def clusterError(message: String) = actionBuilder.async { req =>
-    Errors.craftResponseResult(message, InternalServerError, req, None, Some("errors.no.cluster.state.yet"))
+    Errors.craftResponseResult(message, InternalServerError, req, None, Some("errors.no.cluster.state.yet"), attrs = TypedMap.empty)
   }
 
   def tooBig(message: String, status: Status = BadRequest) = actionBuilder.async { req =>
-    Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"))
+    Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"), attrs = TypedMap.empty)
   }
 
-  def globalMaintenanceMode() = actionBuilder.async { req =>
+  def globalMaintenanceMode(attrs: TypedMap) = actionBuilder.async { req =>
     Errors.craftResponseResult(
       "Service in maintenance mode",
       ServiceUnavailable,
       req,
       None,
-      Some("errors.service.in.maintenance")
+      Some("errors.service.in.maintenance"),
+      attrs = attrs
     )
   }
 
@@ -477,7 +497,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor)(f: => Future[Result]): Future[Result] = {
+  def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(f: => Future[Result]): Future[Result] = {
     if (desc.isPrivate) {
       isPrivateAppsSessionValid(req, desc).flatMap {
         case None => f
@@ -488,7 +508,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 FastFuture.successful(Ok(views.html.otoroshi.token(env.signPrivateSessionId(user.randomId), env)))
               case _ =>
                 Errors
-                  .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+                  .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"), attrs = attrs)
             }
           } else {
             f
@@ -498,7 +518,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     } else {
       if (desc.tcpUdpTunneling) {
         Errors
-          .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+          .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"), attrs = attrs)
       } else {
         f
       }
@@ -541,14 +561,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       req: RequestHeader,
       apiKey: Option[ApiKey],
       paUsr: Option[PrivateAppsUser],
-      elContext: Map[String, String]
+      elContext: Map[String, String],
+      attrs: TypedMap,
   )(f: JwtInjection => Future[Result])(implicit env: Env): Future[Result] = {
     if (service.jwtVerifier.enabled) {
       service.jwtVerifier.shouldBeVerified(req.path).flatMap {
         case false => f(JwtInjection())
         case true => {
           logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-          service.jwtVerifier.verify(req, service, apiKey, paUsr, elContext)(f)
+          service.jwtVerifier.verify(req, service, apiKey, paUsr, elContext, attrs)(f)
         }
       }
     } else {
@@ -556,7 +577,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader)(
+  def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader, attrs: TypedMap)(
       f: ServiceDescriptor => Future[Result]
   )(implicit env: Env): Future[Result] = {
     def chooseRemoteAddress(config: SidecarConfig) =
@@ -574,7 +595,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           Results.BadGateway,
           req,
           Some(service),
-          None
+          None,
+          attrs = attrs
         )
       // when local service wants to access protected services from other containers
       case Some(config @ SidecarConfig(_, _, _, Some(akid), strict))
@@ -601,7 +623,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               Results.InternalServerError,
               req,
               Some(service),
-              None
+              None,
+              attrs = attrs
             )
         }
       }
@@ -631,7 +654,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   req: RequestHeader,
                                   apiKey: Option[ApiKey],
                                   paUsr: Option[PrivateAppsUser],
-                                  ctx: Map[String, String])(f: => Future[Result]): Future[Result] = {
+                                  ctx: Map[String, String], attrs: TypedMap)(f: => Future[Result]): Future[Result] = {
     if (desc.headersVerification.isEmpty) {
       f
     } else {
@@ -645,14 +668,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
             Results.BadRequest,
             req,
             Some(desc),
-            Some("errors.missing.headers")
+            Some("errors.missing.headers"),
+            attrs = attrs
           )
         case None => f
       }
     }
   }
 
-  def passWithReadOnly(readOnly: Boolean, req: RequestHeader)(f: => Future[Result]): Future[Result] = {
+  def passWithReadOnly(readOnly: Boolean, req: RequestHeader, attrs: TypedMap)(f: => Future[Result]): Future[Result] = {
     readOnly match {
       case false => f
       case true =>
@@ -666,7 +690,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               MethodNotAllowed,
               req,
               None,
-              Some("errors.method.not.allowed")
+              Some("errors.method.not.allowed"),
+              attrs = attrs
             )
         }
     }
@@ -758,6 +783,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val start               = System.currentTimeMillis()
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     val protocol            = getProtocolFor(req)
+    val attrs               = utils.TypedMap.empty
 
     val elCtx: Map[String, String] = Map(
       "requestId"        -> snowflake,
@@ -795,12 +821,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                    TooManyRequests,
                                    req,
                                    None,
-                                   Some("errors.cant.process.more.request"))
+                                   Some("errors.cant.process.more.request"),
+                                   attrs = attrs
+        )
       } else {
 
         ServiceLocation(req.host, globalConfig) match {
           case None =>
-            Errors.craftResponseResult(s"Service not found: invalid host", NotFound, req, None, Some("errors.service.not.found.invalid.host"))
+            Errors.craftResponseResult(s"Service not found: invalid host", NotFound, req, None, Some("errors.service.not.found.invalid.host"), attrs = attrs)
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
             val uriParts = req.relativeUri.split("/").toSeq
 
@@ -813,10 +841,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   // val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap)
                   // logger.info(s"Downstream service not found for $query")
                   Errors
-                    .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
+                    .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"), attrs = attrs)
                 case Some(desc) if !desc.enabled =>
                   Errors
-                    .craftResponseResult(s"Service unavailable", ServiceUnavailable, req, None, Some("errors.service.unavailable"))
+                    .craftResponseResult(s"Service unavailable", ServiceUnavailable, req, None, Some("errors.service.unavailable"), attrs = attrs)
                 case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
                   // TODO: event here
                   FastFuture.successful(
@@ -832,13 +860,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       ServiceUnavailable,
                       req,
                       Some(rawDesc),
-                      Some("errors.service.in.maintenance")
+                      Some("errors.service.in.maintenance"),
+                      attrs = attrs
                     )
                   } else {
-                    passWithTcpUdpTunneling(req, rawDesc) {
-                      passWithHeadersVerification(rawDesc, req, None, None, elCtx) {
-                        passWithReadOnly(rawDesc.readOnly, req) {
-                          applySidecar(rawDesc, remoteAddress, req) { desc =>
+                    rawDesc.preRoute(snowflake, req, attrs) {
+                      passWithTcpUdpTunneling(req, rawDesc, attrs) {
+                      passWithHeadersVerification(rawDesc, req, None, None, elCtx, attrs) {
+                        passWithReadOnly(rawDesc.readOnly, req, attrs) {
+                          applySidecar(rawDesc, remoteAddress, req, attrs) { desc =>
                             val firstOverhead = System.currentTimeMillis() - start
                             snowMonkey.introduceChaos(reqNumber, globalConfig, desc, hasBody(req)) {
                               snowMonkeyContext =>
@@ -943,10 +973,16 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   val descriptor = _desc
 
                                   def callDownstream(config: GlobalConfig,
-                                                     apiKey: Option[ApiKey] = None,
-                                                     paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
-                                    desc.validateClientCertificates(snowflake, req, apiKey, paUsr, config) {
-                                      passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
+                                                     _apiKey: Option[ApiKey] = None,
+                                                     _paUsr: Option[PrivateAppsUser] = None): Future[Result] = {
+
+                                    val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(_apiKey)
+                                    val paUsr = attrs.get(otoroshi.plugins.Keys.UserKey).orElse(_paUsr)
+                                    apiKey.foreach(apk => attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
+                                    paUsr.foreach(usr => attrs.putIfAbsent(otoroshi.plugins.Keys.UserKey -> usr))
+
+                                    desc.validateClientCertificates(snowflake, req, apiKey, paUsr, config, attrs) {
+                                      passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req, attrs) {
                                         if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                           val cbStart = System.currentTimeMillis()
                                           val counter = new AtomicInteger(0)
@@ -981,7 +1017,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
                                                 cbDuration = System.currentTimeMillis - cbStart,
-                                                callAttempts = counter.get()
+                                                callAttempts = counter.get(),
+                                                attrs = attrs
                                               )
                                             case RequestTimeoutException =>
                                               Errors.craftResponseResult(
@@ -993,7 +1030,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
                                                 cbDuration = System.currentTimeMillis - cbStart,
-                                                callAttempts = counter.get()
+                                                callAttempts = counter.get(),
+                                                attrs = attrs
                                               )
                                             case _: scala.concurrent.TimeoutException =>
                                               Errors.craftResponseResult(
@@ -1005,7 +1043,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
                                                 cbDuration = System.currentTimeMillis - cbStart,
-                                                callAttempts = counter.get()
+                                                callAttempts = counter.get(),
+                                                attrs = attrs
                                               )
                                             case AllCircuitBreakersOpenException =>
                                               Errors.craftResponseResult(
@@ -1017,7 +1056,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
                                                 cbDuration = System.currentTimeMillis - cbStart,
-                                                callAttempts = counter.get()
+                                                callAttempts = counter.get(),
+                                                attrs = attrs
                                               )
                                             case error
                                                 if error != null && error.getMessage != null && error.getMessage
@@ -1032,7 +1072,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
                                                 cbDuration = System.currentTimeMillis - cbStart,
-                                                callAttempts = counter.get()
+                                                callAttempts = counter.get(),
+                                                attrs = attrs
                                               )
                                             case error if error != null && error.getMessage != null =>
                                               logger.error(s"Something went wrong, you should try later", error)
@@ -1045,7 +1086,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
                                                 cbDuration = System.currentTimeMillis - cbStart,
-                                                callAttempts = counter.get()
+                                                callAttempts = counter.get(),
+                                                attrs = attrs
                                               )
                                             case error =>
                                               logger.error(s"Something went wrong, you should try later", error)
@@ -1058,7 +1100,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 duration = System.currentTimeMillis - start,
                                                 overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
                                                 cbDuration = System.currentTimeMillis - cbStart,
-                                                callAttempts = counter.get()
+                                                callAttempts = counter.get(),
+                                                attrs = attrs
                                               )
                                           }
                                         } else {
@@ -1084,7 +1127,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                              paUsr: Option[PrivateAppsUser] = None,
                                                              cbDuration: Long,
                                                              callAttempts: Int)
-                                    : Future[Result] = applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx) {
+                                    : Future[Result] = {
+                                    applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx, attrs) {
                                     jwtInjection =>
                                       //val snowflake        = env.snowflakeGenerator.nextIdStr()
                                       val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
@@ -1132,8 +1176,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         .get(env.Headers.OtoroshiRequestId)
                                         .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                                       val promise = Promise[ProxyDone]
-
-                                      val attrs = utils.TypedMap.empty
 
                                       val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                                       logger.trace(s"Claim is : $claim")
@@ -1357,8 +1399,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 viz = Some(viz),
                                                 clientCertChain = req.clientCertChainPem,
                                                 err = false,
-                                                userAgentInfo = attrs.get[JsValue](otoroshi.plugins.useragent.UserAgentInfo.UserAgentInfoKey),
-                                                geolocationInfo = attrs.get[JsValue](otoroshi.plugins.geoloc.GeolocationInfo.GeolocationInfoKey)
+                                                userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
+                                                geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey)
                                               )
                                               evt.toAnalytics()
                                               if (descriptor.logAnalyticsOnServer) {
@@ -1594,7 +1636,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     overhead = (System
                                                       .currentTimeMillis() - secondStart) + firstOverhead,
                                                     cbDuration = cbDuration,
-                                                    callAttempts = callAttempts
+                                                    callAttempts = callAttempts,
+                                                    attrs = attrs
                                                   )
                                                 } else if (isUp) {
                                                   // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
@@ -1634,7 +1677,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     overhead = (System
                                                       .currentTimeMillis() - secondStart) + firstOverhead,
                                                     cbDuration = cbDuration,
-                                                    callAttempts = callAttempts
+                                                    callAttempts = callAttempts,
+                                                    attrs = attrs
                                                   )
                                                 } else {
                                                   Errors.craftResponseResult(
@@ -1647,7 +1691,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     overhead = (System
                                                       .currentTimeMillis() - secondStart) + firstOverhead,
                                                     cbDuration = cbDuration,
-                                                    callAttempts = callAttempts
+                                                    callAttempts = callAttempts,
+                                                    attrs = attrs
                                                   )
                                                 }
                                               } else {
@@ -1857,7 +1902,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             overhead = (System
                                                               .currentTimeMillis() - secondStart) + firstOverhead,
                                                             cbDuration = cbDuration,
-                                                            callAttempts = callAttempts
+                                                            callAttempts = callAttempts,
+                                                            attrs = attrs
                                                           )
                                                         }
                                                       } else {
@@ -1917,10 +1963,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         }
                                       }
                                   }
+                                  }
 
                                   def passWithApiKey(config: GlobalConfig): Future[Result] = {
                                     if (descriptor.thirdPartyApiKey.enabled) {
-                                      descriptor.thirdPartyApiKey.handle(req, descriptor, config) { key =>
+                                      descriptor.thirdPartyApiKey.handle(req, descriptor, config, attrs) { key =>
                                         callDownstream(config, key)
                                       }
                                     } else {
@@ -2009,7 +2056,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.invalid.api.key"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                             case Some(key) if !key.allowClientIdOnly => {
                                               Errors.craftResponseResult(
@@ -2019,7 +2067,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.bad.api.key"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                             }
                                             case Some(key) if !key.matchRouting(descriptor) => {
@@ -2030,7 +2079,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.bad.api.key"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                             }
                                             case Some(key)
@@ -2043,14 +2093,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.not.found"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                             }
                                             case Some(key)
                                                 if key.restrictions
-                                                  .handleRestrictions(descriptor, Some(key), req)
+                                                  .handleRestrictions(descriptor, Some(key), req, attrs)
                                                   ._1 => {
-                                              key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                              key.restrictions.handleRestrictions(descriptor, Some(key), req, attrs)._2
                                             }
                                             case Some(key) if key.allowClientIdOnly =>
                                               key.withingQuotas().flatMap {
@@ -2064,7 +2115,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some("errors.too.much.requests"),
                                                     duration = System.currentTimeMillis - start,
                                                     overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                      .currentTimeMillis() - secondStart) + firstOverhead,
+                                                    attrs = attrs
                                                   )
                                               }
                                           }
@@ -2081,7 +2133,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.invalid.api.key"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                             case Some(key) if key.isInvalid(clientSecret) => {
                                               Alerts.send(
@@ -2099,7 +2152,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.bad.api.key"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                             }
                                             case Some(key) if !key.matchRouting(descriptor) => {
@@ -2110,14 +2164,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.bad.api.key"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                             }
                                             case Some(key)
                                                 if key.restrictions
-                                                  .handleRestrictions(descriptor, Some(key), req)
+                                                  .handleRestrictions(descriptor, Some(key), req, attrs)
                                                   ._1 => {
-                                              key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                              key.restrictions.handleRestrictions(descriptor, Some(key), req, attrs)._2
                                             }
                                             case Some(key) if key.isValid(clientSecret) =>
                                               key.withingQuotas().flatMap {
@@ -2131,7 +2186,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some("errors.too.much.requests"),
                                                     duration = System.currentTimeMillis - start,
                                                     overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                      .currentTimeMillis() - secondStart) + firstOverhead,
+                                                    attrs = attrs
                                                   )
                                               }
                                           }
@@ -2222,15 +2278,16 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           Some("errors.bad.api.key"),
                                                           duration = System.currentTimeMillis - start,
                                                           overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead
+                                                            .currentTimeMillis() - secondStart) + firstOverhead,
+                                                          attrs = attrs
                                                         )
                                                       }
                                                       case Success(_)
                                                           if apiKey.restrictions
-                                                            .handleRestrictions(descriptor, Some(apiKey), req)
+                                                            .handleRestrictions(descriptor, Some(apiKey), req, attrs)
                                                             ._1 => {
                                                         apiKey.restrictions
-                                                          .handleRestrictions(descriptor, Some(apiKey), req)
+                                                          .handleRestrictions(descriptor, Some(apiKey), req, attrs)
                                                           ._2
                                                       }
                                                       case Success(_) =>
@@ -2245,7 +2302,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               Some("errors.too.much.requests"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                .currentTimeMillis() - secondStart) + firstOverhead
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
+                                                              attrs = attrs
                                                             )
                                                         }
                                                       case Failure(e) => {
@@ -2265,7 +2323,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           Some("errors.bad.api.key"),
                                                           duration = System.currentTimeMillis - start,
                                                           overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead
+                                                            .currentTimeMillis() - secondStart) + firstOverhead,
+                                                          attrs = attrs
                                                         )
                                                       }
                                                     }
@@ -2279,7 +2338,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       Some("errors.invalid.api.key"),
                                                       duration = System.currentTimeMillis - start,
                                                       overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead
+                                                        .currentTimeMillis() - secondStart) + firstOverhead,
+                                                      attrs = attrs
                                                     )
                                                 }
                                             case None =>
@@ -2290,7 +2350,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 Some(descriptor),
                                                 Some("errors.invalid.api.key"),
                                                 duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                                attrs = attrs
                                               )
                                           }
                                         } getOrElse Errors.craftResponseResult(
@@ -2300,7 +2361,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.invalid.api.key"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         )
                                       } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
                                         val auth   = authBasic.get
@@ -2320,7 +2382,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some("errors.invalid.api.key"),
                                                     duration = System.currentTimeMillis - start,
                                                     overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                      .currentTimeMillis() - secondStart) + firstOverhead,
+                                                    attrs = attrs
                                                   )
                                                 case Some(key) if key.isInvalid(apiKeySecret) => {
                                                   Alerts.send(
@@ -2339,7 +2402,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some("errors.bad.api.key"),
                                                     duration = System.currentTimeMillis - start,
                                                     overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                      .currentTimeMillis() - secondStart) + firstOverhead,
+                                                    attrs = attrs
                                                   )
                                                 }
                                                 case Some(key) if !key.matchRouting(descriptor) => {
@@ -2351,14 +2415,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     Some("errors.bad.api.key"),
                                                     duration = System.currentTimeMillis - start,
                                                     overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead
+                                                      .currentTimeMillis() - secondStart) + firstOverhead,
+                                                    attrs = attrs
                                                   )
                                                 }
                                                 case Some(key)
                                                     if key.restrictions
-                                                      .handleRestrictions(descriptor, Some(key), req)
+                                                      .handleRestrictions(descriptor, Some(key), req, attrs)
                                                       ._1 => {
-                                                  key.restrictions.handleRestrictions(descriptor, Some(key), req)._2
+                                                  key.restrictions.handleRestrictions(descriptor, Some(key), req, attrs)._2
                                                 }
                                                 case Some(key) if key.isValid(apiKeySecret) =>
                                                   key.withingQuotas().flatMap {
@@ -2372,7 +2437,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         Some("errors.too.much.requests"),
                                                         duration = System.currentTimeMillis - start,
                                                         overhead = (System
-                                                          .currentTimeMillis() - secondStart) + firstOverhead
+                                                          .currentTimeMillis() - secondStart) + firstOverhead,
+                                                        attrs = attrs
                                                       )
                                                   }
                                               }
@@ -2385,7 +2451,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               Some(descriptor),
                                               Some("errors.no.api.key"),
                                               duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                              attrs = attrs
                                             )
                                         }
                                       } else {
@@ -2396,7 +2463,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.no.api.key"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         )
                                       }
                                     }
@@ -2405,7 +2473,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                   def passWithAuth0(config: GlobalConfig): Future[Result] = {
                                     isPrivateAppsSessionValid(req, descriptor).flatMap {
                                       case Some(paUsr) =>
-                                        callDownstream(config, paUsr = Some(paUsr))
+                                        callDownstream(config, None, Some(paUsr))
                                       case None => {
                                         val redirect = req
                                           .getQueryString("redirect")
@@ -2425,7 +2493,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               Some(descriptor),
                                               Some("errors.auth.config.ref.not.found"),
                                               duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                              attrs = attrs
                                             )
                                           case Some(ref) => {
                                             env.datastores.authConfigsDataStore.findById(ref).flatMap {
@@ -2438,7 +2507,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   Some("errors.auth.config.not.found"),
                                                   duration = System.currentTimeMillis - start,
                                                   overhead = (System
-                                                    .currentTimeMillis() - secondStart) + firstOverhead
+                                                    .currentTimeMillis() - secondStart) + firstOverhead,
+                                                  attrs = attrs
                                                 )
                                               case Some(auth) => {
                                                 FastFuture.successful(
@@ -2479,7 +2549,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                     val (within, secCalls, maybeQuota) = r
                                     val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
                                     val (restrictionsNotPassing, restrictionsResponse) =
-                                      descriptor.restrictions.handleRestrictions(descriptor, None, req)
+                                      descriptor.restrictions.handleRestrictions(descriptor, None, req, attrs)
                                     if (secCalls > (quota * 10L)) {
                                       Errors.craftResponseResult(
                                         "[IP] You performed too much requests",
@@ -2488,7 +2558,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         Some(descriptor),
                                         Some("errors.too.much.requests"),
                                         duration = System.currentTimeMillis - start,
-                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                        overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                        attrs = attrs
                                       )
                                     } else {
                                       if (!isSecured && desc.forceHttps) {
@@ -2507,7 +2578,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.too.much.requests"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         )
                                       } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
                                         /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
@@ -2519,7 +2591,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.ip.address.not.allowed"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         ) // global whitelist
                                       } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
                                         /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
@@ -2531,7 +2604,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.ip.address.not.allowed"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         ) // global blacklist
                                       } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
                                         /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
@@ -2543,7 +2617,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.ip.address.not.allowed"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         ) // service whitelist
                                       } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
                                         /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
@@ -2555,7 +2630,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.ip.address.not.allowed"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         ) // service blacklist
                                       } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
                                         /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
@@ -2589,7 +2665,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.service.in.maintenance"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         )
                                       } else if (descriptor.buildMode) {
                                         Errors.craftResponseResult(
@@ -2599,7 +2676,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.service.under.construction"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         )
                                       } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
                                                    .get("Access-Control-Request-Method")
@@ -2613,7 +2691,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             Some(descriptor),
                                             Some("errors.cors.error"),
                                             duration = System.currentTimeMillis - start,
-                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                            overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                            attrs = attrs
                                           )
                                         } else {
                                           FastFuture.successful(
@@ -2658,7 +2737,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           Some(descriptor),
                                           Some("errors.service.down"),
                                           duration = System.currentTimeMillis - start,
-                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
+                                          overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
+                                          attrs = attrs
                                         )
 
                                       }
@@ -2670,6 +2750,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                         }
 
                       }
+                    }
                     }
                   }
                 }

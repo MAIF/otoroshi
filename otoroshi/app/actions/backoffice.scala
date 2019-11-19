@@ -14,6 +14,7 @@ import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import play.api.mvc.Results.Status
 import utils.RequestImplicits._
+import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,7 +48,8 @@ class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
         }
       }
       case _ => {
-        Errors.craftResponseResult(s"Not found", Status(404), request, None, Some("errors.not.found"))
+        Errors.craftResponseResult(s"Not found", Status(404), request, None, Some("errors.not.found"),
+          attrs = TypedMap.empty)
       }
     }
   }
@@ -120,12 +122,14 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
           .map(u => u.authority.copy(port = 0).toString()) match {
           case Some(origin) if origin == env.backOfficeHost => callAction()
           case Some(origin) if origin != env.backOfficeHost && request.method.toLowerCase != "get" =>
-            Errors.craftResponseResult(s"Bad origin", Status(417), request, None, Some("errors.bad.origin"))
+            Errors.craftResponseResult(s"Bad origin", Status(417), request, None, Some("errors.bad.origin"),
+              attrs = TypedMap.empty)
           case _ => callAction()
         }
       }
       case _ => {
-        Errors.craftResponseResult(s"Not found", Status(404), request, None, Some("errors.not.found"))
+        Errors.craftResponseResult(s"Not found", Status(404), request, None, Some("errors.not.found"),
+          attrs = TypedMap.empty)
       }
     }
   }

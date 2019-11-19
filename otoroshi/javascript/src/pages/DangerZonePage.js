@@ -628,7 +628,7 @@ export class DangerZonePage extends Component {
       type: 'array',
       props: {
         label: 'Access validators',
-        help: 'Transformers added to any request of any service',
+        help: 'Validator added to any request of any service',
         valuesFrom: '/bo/api/proxy/api/scripts/_list?type=validator',
         transformer: a => ({ value: a.id, label: a.name }),
       },
@@ -638,6 +638,23 @@ export class DangerZonePage extends Component {
       props: {
         mode: 'json',
         label: 'Validators config.',
+        help: '...',
+      },
+    },
+    'scripts.preRouteRefs': {
+      type: 'array',
+      props: {
+        label: 'Pre routes',
+        help: 'Pre route added to any request of any service',
+        valuesFrom: '/bo/api/proxy/api/scripts/_list?type=validator',
+        transformer: a => ({ value: a.id, label: a.name }),
+      },
+    },
+    'scripts.preRouteConfig': {
+      type: 'code',
+      props: {
+        mode: 'json',
+        label: 'Pre routes config.',
         help: '...',
       },
     },

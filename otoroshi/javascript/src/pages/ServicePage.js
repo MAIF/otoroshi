@@ -2006,6 +2006,60 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
+            label="Pre routing">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.preRouting.enabled}
+              help="Is access validation enabled for this service"
+              onChange={v => this.changeTheValue('preRouting.enabled', v)}
+            />
+            {/*<SelectInput*/}
+            <ArrayInput
+              label="Pre routes"
+              value={this.state.service.preRouting.refs}
+              onChange={(e, item, index) => {
+                this.changeTheValue('preRouting.refs', e);
+              }}
+              valuesFrom="/bo/api/proxy/api/scripts/_list?type=preroute"
+              transformer={a => ({ value: a.id, label: a.name })}
+              help="..."
+            />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                {this.state.service.preRouting.refs.length === 0 && (
+                  <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
+                    <i className="glyphicon glyphicon-plus" /> Create a new script.
+                  </a>
+                )}
+                <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
+                  <i className="glyphicon glyphicon-link" /> all scripts.
+                </a>
+              </div>
+            </div>
+            <ArrayInput
+              label="Excluded patterns"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.preRouting.excludedPatterns}
+              help="By default, when pre-routing is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
+              onChange={v => this.changeTheValue('preRouting.excludedPatterns', v)}
+            />
+            <div className="form-group">
+              <Suspense fallback={<div>loading ...</div>}>
+                <CodeInput
+                  label="Configuration"
+                  mode="json"
+                  value={JSON.stringify(this.state.service.preRouting.config, null, 2)}
+                  onChange={e => this.changeTheValue('preRouting.config', JSON.parse(e))}
+                />
+              </Suspense>
+            </div>
+          </Collapse>
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
             label="Access validation">
             <BooleanInput
               label="Enabled"
@@ -2015,7 +2069,7 @@ export class ServicePage extends Component {
             />
             {/*<SelectInput*/}
             <ArrayInput
-              label="Access validator"
+              label="Access validators"
               value={this.state.service.accessValidator.refs}
               onChange={(e, item, index) => {
                 this.changeTheValue('accessValidator.refs', e);

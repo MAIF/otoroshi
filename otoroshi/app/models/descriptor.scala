@@ -26,7 +26,7 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.script._
 import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
-import utils.{GzipConfig, RegexPool, ReplaceAllWith}
+import utils.{GzipConfig, RegexPool, ReplaceAllWith, TypedMap}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{FiniteDuration, _}
@@ -837,10 +837,10 @@ sealed trait ThirdPartyApiKeyConfig {
   def enabled: Boolean
   def typ: ThirdPartyApiKeyConfigType
   def toJson: JsValue
-  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
 }
@@ -897,19 +897,19 @@ case class OIDCThirdPartyApiKeyConfig(
 
   def toJson: JsValue = OIDCThirdPartyApiKeyConfig.format.writes(this)
 
-  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+  def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    handleInternal(req, descriptor, config)(f).map {
+    handleInternal(req, descriptor, config, attrs)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
   }
 
-  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+  def handle(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    handleInternal(req, descriptor, config)(f).map {
+    handleInternal(req, descriptor, config, attrs)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
@@ -935,7 +935,7 @@ case class OIDCThirdPartyApiKeyConfig(
   private def shouldBeVerified(path: String): Boolean =
     !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
 
-  private def handleInternal[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig)(
+  private def handleInternal[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     shouldBeVerified(req.path) match {
@@ -949,7 +949,8 @@ case class OIDCThirdPartyApiKeyConfig(
                 status = Results.InternalServerError,
                 req = req,
                 maybeDescriptor = Some(descriptor),
-                maybeCauseId = Some("oidc.no.config.ref.found")
+                maybeCauseId = Some("oidc.no.config.ref.found"),
+                attrs = attrs
               )
               .asLeft[A]
           case Some(ref) =>
@@ -961,7 +962,8 @@ case class OIDCThirdPartyApiKeyConfig(
                     status = Results.InternalServerError,
                     req = req,
                     maybeDescriptor = Some(descriptor),
-                    maybeCauseId = Some("oidc.no.config.found")
+                    maybeCauseId = Some("oidc.no.config.found"),
+                    attrs = attrs
                   )
                   .asLeft[A]
               case Some(auth) => {
@@ -974,7 +976,8 @@ case class OIDCThirdPartyApiKeyConfig(
                         status = Results.BadRequest,
                         req = req,
                         maybeDescriptor = Some(descriptor),
-                        maybeCauseId = Some("oidc.no.jwt.verifier.found")
+                        maybeCauseId = Some("oidc.no.jwt.verifier.found"),
+                        attrs = attrs
                       )
                       .asLeft[A]
                   case Some(jwtVerifier) =>
@@ -986,7 +989,8 @@ case class OIDCThirdPartyApiKeyConfig(
                             status = Results.BadRequest,
                             req = req,
                             maybeDescriptor = Some(descriptor),
-                            maybeCauseId = Some("oidc.no.bearer.found")
+                            maybeCauseId = Some("oidc.no.bearer.found"),
+                            attrs = attrs
                           )
                           .asLeft[A]
                       case Some(rawHeader) => {
@@ -1005,7 +1009,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                 Results.BadRequest,
                                 req,
                                 Some(descriptor),
-                                maybeCauseId = Some("oidc.bad.input.algorithm.name")
+                                maybeCauseId = Some("oidc.bad.input.algorithm.name"),
+                                attrs = attrs
                               )
                               .asLeft[A]
                           case Some(algorithm) => {
@@ -1018,7 +1023,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                     Results.Unauthorized,
                                     req,
                                     Some(descriptor),
-                                    maybeCauseId = Some("oidc.bad.token")
+                                    maybeCauseId = Some("oidc.bad.token"),
+                                    attrs = attrs
                                   )
                                   .asLeft[A]
                               case Success(_) => {
@@ -1124,7 +1130,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                                     Results.Unauthorized,
                                                     req,
                                                     Some(descriptor),
-                                                    maybeCauseId = Some("oidc.invalid.token")
+                                                    maybeCauseId = Some("oidc.invalid.token"),
+                                                    attrs = attrs
                                                   )
                                                   .asLeft[A]
                                               }
@@ -1163,7 +1170,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                                         Results.Unauthorized,
                                                         req,
                                                         Some(descriptor),
-                                                        maybeCauseId = Some("oidc.invalid.token")
+                                                        maybeCauseId = Some("oidc.invalid.token"),
+                                                        attrs = attrs
                                                       )
                                                       .asLeft[A]
                                                   }
@@ -1179,7 +1187,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                             TooManyRequests,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.too.much.requests")
+                                            Some("errors.too.much.requests"),
+                                            attrs = attrs
                                           )
                                           .asLeft[A]
                                     }
@@ -1191,7 +1200,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                       Results.Unauthorized,
                                       req,
                                       Some(descriptor),
-                                      maybeCauseId = Some("oidc.invalid.token")
+                                      maybeCauseId = Some("oidc.invalid.token"),
+                                      attrs = attrs
                                     )
                                     .asLeft[A]
                                 }
@@ -1636,7 +1646,7 @@ case class Restrictions(
 
   def handleRestrictions(descriptor: ServiceDescriptor,
                          apk: Option[ApiKey],
-                         req: RequestHeader)(implicit ec: ExecutionContext, env: Env): (Boolean, Future[Result]) = {
+                         req: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): (Boolean, Future[Result]) = {
 
     import utils.RequestImplicits._
 
@@ -1656,7 +1666,8 @@ case class Restrictions(
                  req,
                  Some(descriptor),
                  Some("errors.not.found"),
-                 emptyBody = true
+                 emptyBody = true,
+                 attrs = attrs
                ))
             } else if (isForbidden(method, domain, path)) {
               (true,
@@ -1666,7 +1677,8 @@ case class Restrictions(
                  req,
                  Some(descriptor),
                  Some("errors.forbidden"),
-                 emptyBody = true
+                 emptyBody = true,
+                 attrs = attrs
                ))
             } else if (isNotAllowed(method, domain, path)) {
               (true,
@@ -1676,7 +1688,8 @@ case class Restrictions(
                  req,
                  Some(descriptor),
                  Some("errors.not.found"),
-                 emptyBody = true
+                 emptyBody = true,
+                 attrs = attrs
                ))
             } else {
               Restrictions.failedFutureResp
@@ -1691,7 +1704,8 @@ case class Restrictions(
                  req,
                  Some(descriptor),
                  Some("errors.not.found"),
-                 emptyBody = true
+                 emptyBody = true,
+                 attrs = attrs
                ))
             } else if (!allowed && isForbidden(method, domain, path)) {
               (true,
@@ -1701,7 +1715,8 @@ case class Restrictions(
                  req,
                  Some(descriptor),
                  Some("errors.forbidden"),
-                 emptyBody = true
+                 emptyBody = true,
+                 attrs = attrs
                ))
             } else if (isNotAllowed(method, domain, path)) {
               (true,
@@ -1711,7 +1726,8 @@ case class Restrictions(
                  req,
                  Some(descriptor),
                  Some("errors.not.found"),
-                 emptyBody = true
+                 emptyBody = true,
+                 attrs = attrs
                ))
             } else {
               Restrictions.failedFutureResp
@@ -1845,6 +1861,7 @@ case class ServiceDescriptor(
     apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
     restrictions: Restrictions = Restrictions(),
     accessValidator: AccessValidatorRef = AccessValidatorRef(),
+    preRouting: PreRoutingRef = PreRoutingRef(),
     hosts: Seq[String] = Seq.empty[String],
     paths: Seq[String] = Seq.empty[String],
 ) {
@@ -1921,7 +1938,8 @@ case class ServiceDescriptor(
       req: RequestHeader,
       apikey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None,
-      config: GlobalConfig
+      config: GlobalConfig,
+      attrs: TypedMap
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
@@ -1948,7 +1966,7 @@ case class ServiceDescriptor(
                   descriptor = this,
                   user = user,
                   apikey = apikey,
-                  attrs = utils.TypedMap.empty,
+                  attrs = attrs,
                   globalConfig = gScripts.validatorConfig,
                   config = accessValidator.config
                 )
@@ -1989,7 +2007,7 @@ case class ServiceDescriptor(
                   descriptor = this,
                   user = user,
                   apikey = apikey,
-                  attrs = utils.TypedMap.empty,
+                  attrs = attrs,
                   globalConfig = gScripts.validatorConfig,
                   config = accessValidator.config
                 )
@@ -2030,14 +2048,15 @@ case class ServiceDescriptor(
     } else {
       clientValidatorRef.map { ref =>
         env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
-          case Some(validator) => validator.validateClientCertificates(req, this, apikey, user, config)(f)
+          case Some(validator) => validator.validateClientCertificates(req, this, apikey, user, config, attrs)(f)
           case None =>
             Errors.craftResponseResult(
               "Validator not found",
               Results.InternalServerError,
               req,
               None,
-              None
+              None,
+              attrs = attrs
             )
         }
       } getOrElse f
@@ -2050,7 +2069,8 @@ case class ServiceDescriptor(
                                    req: RequestHeader,
                                    apikey: Option[ApiKey] = None,
                                    user: Option[PrivateAppsUser] = None,
-                                   config: GlobalConfig)(
+                                   config: GlobalConfig,
+                                   attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -2078,7 +2098,7 @@ case class ServiceDescriptor(
                   descriptor = this,
                   user = user,
                   apikey = apikey,
-                  attrs = utils.TypedMap.empty,
+                  attrs = attrs,
                   globalConfig = gScripts.validatorConfig,
                   config = accessValidator.config
                 )
@@ -2136,7 +2156,7 @@ case class ServiceDescriptor(
                   descriptor = this,
                   user = user,
                   apikey = apikey,
-                  attrs = utils.TypedMap.empty,
+                  attrs = attrs,
                   globalConfig = gScripts.validatorConfig,
                   config = accessValidator.config
                 )
@@ -2160,7 +2180,7 @@ case class ServiceDescriptor(
     } else {
       clientValidatorRef.map { ref =>
         env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
-          case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user, config)(f)
+          case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user, config, attrs)(f)
           case None =>
             Errors
               .craftResponseResult(
@@ -2168,7 +2188,8 @@ case class ServiceDescriptor(
                 Results.InternalServerError,
                 req,
                 None,
-                None
+                None,
+                attrs = attrs
               )
               .map(Left.apply)
         }
@@ -2282,6 +2303,160 @@ case class ServiceDescriptor(
           .withJsArrayClaim("clientCertChain", clientCertChain)
           .serialize(this.secComSettings)(env)
       }
+    }
+  }
+
+
+
+
+
+
+
+  def preRoute(
+    snowflake: String,
+    req: RequestHeader,
+    attrs: TypedMap
+  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+      .filter(_.scripts.enabled)
+      .map(_.scripts)
+      .getOrElse(GlobalScripts(validatorConfig = Json.obj()))
+    if (gScripts.enabled && preRouting.enabled && preRouting.excludedPatterns.exists(
+      p => utils.RegexPool.regex(p).matches(req.path)
+    )) {
+      val refs = gScripts.validatorRefs
+      if (refs.nonEmpty) {
+        Source(refs.toList.zipWithIndex)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                case Left("compiling") => CompilingPreRouting
+                case Left(_)           => DefaultPreRouting
+                case Right(r)          => r
+              }
+              route.preRoute(
+                PreRoutingContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  attrs = attrs,
+                  globalConfig = gScripts.validatorConfig,
+                  config = preRouting.config
+                )
+              )
+          }.toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap(_ => f)
+      } else {
+        f
+      }
+    } else if ((preRouting.enabled || gScripts.enabled)
+      && !preRouting.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+      val refs = gScripts.validatorRefs ++ preRouting.refs
+      if (refs.nonEmpty) {
+        Source(refs.toList.zipWithIndex)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                case Left("compiling") => CompilingPreRouting
+                case Left(_)           => DefaultPreRouting
+                case Right(r)          => r
+              }
+              route.preRoute(
+                PreRoutingContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  attrs = attrs,
+                  globalConfig = gScripts.preRouteConfig,
+                  config = preRouting.config
+                )
+              )
+          }
+          .toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap(_ => f)
+      } else {
+        f
+      }
+    } else {
+      f
+    }
+  }
+
+  def preRouteWS(snowflake: String,
+    req: RequestHeader,
+    attrs: TypedMap)(
+    f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+      .filter(_.scripts.enabled)
+      .map(_.scripts)
+      .getOrElse(GlobalScripts(validatorConfig = Json.obj()))
+    if (gScripts.enabled && preRouting.enabled && preRouting.excludedPatterns.exists(
+      p => utils.RegexPool.regex(p).matches(req.path)
+    )) {
+      val refs = gScripts.validatorRefs
+      if (refs.nonEmpty) {
+        Source(refs.toList.zipWithIndex)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                case Left("compiling") => CompilingPreRouting
+                case Left(_)           => DefaultPreRouting
+                case Right(r)          => r
+              }
+              route.preRoute(
+                PreRoutingContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  attrs = attrs,
+                  globalConfig = gScripts.preRouteConfig,
+                  config = preRouting.config
+                )
+              )
+          }.toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap(_ => f)
+      } else {
+        f
+      }
+    } else if ((preRouting.enabled || gScripts.enabled)
+      && !preRouting.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))) {
+      val refs = gScripts.validatorRefs ++ preRouting.refs
+      if (refs.nonEmpty) {
+        Source(refs.toList.zipWithIndex)
+          .mapAsync(1) {
+            case (ref, index) =>
+              val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                case Left("compiling") => CompilingPreRouting
+                case Left(_)           => DefaultPreRouting
+                case Right(r)          => r
+              }
+              route.preRoute(
+                PreRoutingContext(
+                  snowflake = snowflake,
+                  index = index,
+                  request = req,
+                  descriptor = this,
+                  attrs = attrs,
+                  globalConfig = gScripts.validatorConfig,
+                  config = preRouting.config
+                )
+              )
+          }
+          .toMat(Sink.last)(Keep.right)
+          .run()(env.otoroshiMaterializer)
+          .flatMap(_ => f)
+      } else {
+        f
+      }
+    } else {
+      f
     }
   }
 }
@@ -2399,6 +2574,9 @@ object ServiceDescriptor {
           accessValidator = AccessValidatorRef.format
             .reads((json \ "accessValidator").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(AccessValidatorRef()),
+          preRouting = PreRoutingRef.format
+            .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(PreRoutingRef()),
           hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         )
       } map {
@@ -2481,6 +2659,7 @@ object ServiceDescriptor {
       "apiKeyConstraints"          -> sd.apiKeyConstraints.json,
       "restrictions"               -> sd.restrictions.json,
       "accessValidator"            -> sd.accessValidator.json,
+      "preRouting"                 -> sd.preRouting.json,
       "hosts"                      -> JsArray(sd.hosts.map(JsString.apply)),
     )
   }

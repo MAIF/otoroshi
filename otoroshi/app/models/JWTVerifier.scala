@@ -24,6 +24,7 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import ssl.PemUtils
 import storage.BasicStore
+import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
@@ -702,10 +703,10 @@ sealed trait JwtVerifier extends AsJson {
                desc: ServiceDescriptor,
                apikey: Option[ApiKey],
                user: Option[PrivateAppsUser],
-               elContext: Map[String, String])(
+               elContext: Map[String, String], attrs: TypedMap)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    internalVerify(request, desc, apikey, user, elContext)(f).map {
+    internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
@@ -715,10 +716,10 @@ sealed trait JwtVerifier extends AsJson {
              desc: ServiceDescriptor,
              apikey: Option[ApiKey],
              user: Option[PrivateAppsUser],
-             elContext: Map[String, String])(
+             elContext: Map[String, String], attrs: TypedMap)(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    internalVerify(request, desc, apikey, user, elContext)(f).map {
+    internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
@@ -728,7 +729,7 @@ sealed trait JwtVerifier extends AsJson {
                                         desc: ServiceDescriptor,
                                         apikey: Option[ApiKey],
                                         user: Option[PrivateAppsUser],
-                                        elContext: Map[String, String])(
+                                        elContext: Map[String, String], attrs: TypedMap)(
       f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
@@ -746,7 +747,8 @@ sealed trait JwtVerifier extends AsJson {
                     Results.BadRequest,
                     request,
                     Some(desc),
-                    None
+                    None,
+                    attrs = attrs
                   )
                   .left[A]
               case Some(outputAlgorithm) => {
@@ -783,7 +785,8 @@ sealed trait JwtVerifier extends AsJson {
                 Results.BadRequest,
                 request,
                 Some(desc),
-                None
+                None,
+                attrs = attrs
               )
               .left[A]
           }
@@ -812,7 +815,8 @@ sealed trait JwtVerifier extends AsJson {
                 Results.BadRequest,
                 request,
                 Some(desc),
-                None
+                None,
+                attrs = attrs
               )
               .left[A]
           case Some(algorithm) => {
@@ -826,7 +830,8 @@ sealed trait JwtVerifier extends AsJson {
                     Results.BadRequest,
                     request,
                     Some(desc),
-                    None
+                    None,
+                    attrs = attrs
                   )
                   .left[A]
               case Success(decodedToken) =>
@@ -838,7 +843,8 @@ sealed trait JwtVerifier extends AsJson {
                         Results.BadRequest,
                         request,
                         Some(desc),
-                        None
+                        None,
+                        attrs = attrs
                       )
                       .left[A]
                   }
@@ -853,7 +859,8 @@ sealed trait JwtVerifier extends AsJson {
                             Results.BadRequest,
                             request,
                             Some(desc),
-                            None
+                            None,
+                            attrs = attrs
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
@@ -871,7 +878,8 @@ sealed trait JwtVerifier extends AsJson {
                             Results.BadRequest,
                             request,
                             Some(desc),
-                            None
+                            None,
+                            attrs = attrs
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
@@ -990,7 +998,8 @@ case class RefJwtVerifier(
                       desc: ServiceDescriptor,
                       apikey: Option[ApiKey],
                       user: Option[PrivateAppsUser],
-                      elContext: Map[String, String])(
+                      elContext: Map[String, String],
+                      attrs: TypedMap)(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
@@ -1019,7 +1028,7 @@ case class RefJwtVerifier(
                 .flatMap {
                   case Some(verifier) =>
                     verifier
-                      .internalVerify(request, desc, apikey, user, elContext)(f)
+                      .internalVerify(request, desc, apikey, user, elContext, attrs)(f)
                       .map {
                         case Left(result) =>
                           last.set(result)
@@ -1035,7 +1044,8 @@ case class RefJwtVerifier(
                         Results.InternalServerError,
                         request,
                         Some(desc),
-                        None
+                        None,
+                        attrs = attrs
                       )
                       .map { result =>
                         last.set(result)
@@ -1070,7 +1080,8 @@ case class RefJwtVerifier(
                         desc: ServiceDescriptor,
                         apikey: Option[ApiKey],
                         user: Option[PrivateAppsUser],
-                        elContext: Map[String, String])(
+                        elContext: Map[String, String],
+                        attrs: TypedMap)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val mat = env.otoroshiMaterializer
@@ -1099,7 +1110,7 @@ case class RefJwtVerifier(
                 .flatMap {
                   case Some(verifier) =>
                     verifier
-                      .internalVerify(request, desc, apikey, user, elContext)(f)
+                      .internalVerify(request, desc, apikey, user, elContext, attrs)(f)
                       .map {
                         case Left(result) =>
                           last.set(Left(result))
@@ -1121,7 +1132,8 @@ case class RefJwtVerifier(
                         Results.InternalServerError,
                         request,
                         Some(desc),
-                        None
+                        None,
+                        attrs = attrs
                       )
                       .map { result =>
                         last.set(Left(result))

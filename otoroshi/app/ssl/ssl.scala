@@ -20,13 +20,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{
-  KeyManagerConfig,
-  KeyStoreConfig,
-  SSLConfigSettings,
-  TrustManagerConfig,
-  TrustStoreConfig
-}
+import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -51,6 +45,7 @@ import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.{DerValue, ObjectIdentifier}
 import sun.security.x509._
+import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
@@ -1421,7 +1416,8 @@ case class ClientCertificateValidator(
                                                     desc: ServiceDescriptor,
                                                     apikey: Option[ApiKey] = None,
                                                     user: Option[PrivateAppsUser] = None,
-                                                    config: GlobalConfig)(
+                                                    config: GlobalConfig,
+                                                    attrs: TypedMap)(
       f: => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     request.clientCertificateChain match {
@@ -1436,7 +1432,8 @@ case class ClientCertificateValidator(
                 Results.Forbidden,
                 request,
                 None,
-                None
+                None,
+                attrs = attrs
               )
               .map(Left.apply)
         }
@@ -1447,7 +1444,8 @@ case class ClientCertificateValidator(
             Results.Forbidden,
             request,
             None,
-            None
+            None,
+            attrs = attrs
           )
           .map(Left.apply)
     }
@@ -1458,9 +1456,10 @@ case class ClientCertificateValidator(
       desc: ServiceDescriptor,
       apikey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None,
-      config: GlobalConfig
+      config: GlobalConfig,
+      attrs: TypedMap
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    internalValidateClientCertificates(req, desc, apikey, user, config)(f).map {
+    internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
@@ -1470,10 +1469,11 @@ case class ClientCertificateValidator(
                                    desc: ServiceDescriptor,
                                    apikey: Option[ApiKey] = None,
                                    user: Option[PrivateAppsUser] = None,
-                                   config: GlobalConfig)(
+                                   config: GlobalConfig,
+                                   attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    internalValidateClientCertificates(req, desc, apikey, user, config)(f).map {
+    internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }

@@ -71,7 +71,8 @@ trait AccessValidator extends StartableAndStoppable {
             Results.BadRequest,
             context.request,
             None,
-            None
+            None,
+            attrs = context.attrs
           )
           .map(Denied.apply)
     }
@@ -89,8 +90,6 @@ case class AccessContext(
     config: JsValue,
     attrs: TypedMap,
     globalConfig: JsValue
-    // TODO: add user-agent infos
-    // TODO: add client geoloc infos
 ) {
   def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {

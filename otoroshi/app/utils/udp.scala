@@ -51,12 +51,12 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
     IO(Udp) ! Udp.Bind(sender, localAddress)
   }
 
-  override def postStop(): Unit =
+  override def postStop(): Unit = {
     unbindListener()
+  }
 
   private def processIncoming(event: (ActorRef, Any)): Unit = event match {
     case (sender, Udp.Bound(boundAddress)) ⇒
-      // println("bound", boundAddress)
       boundPromise.success(boundAddress)
       listener = sender
       pull(in)
@@ -66,7 +66,7 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
       failStage(ex)
     case (s, Udp.Received(data, sender)) =>
       if (isAvailable(out)) {
-        // println("received", sender, s)
+        // println("received: " + data.utf8String)
         push(out, Datagram(data, sender))
       }
     case _ =>
@@ -83,6 +83,7 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
       override def onPush() = {
         val msg: Datagram = grab(in)
         // println("send", msg.remote)
+        println("sent: " + msg.data.utf8String)
         listener ! Udp.Send(msg.data, msg.remote)
         pull(in)
       }

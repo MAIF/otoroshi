@@ -126,6 +126,8 @@ case class GlobalScripts(
     transformersConfig: JsValue = Json.obj(),
     validatorRefs: Seq[String] = Seq.empty,
     validatorConfig: JsValue = Json.obj(),
+    preRouteRefs: Seq[String] = Seq.empty,
+    preRouteConfig: JsValue = Json.obj(),
 ) {
   def json: JsValue = GlobalScripts.format.writes(this)
 }
@@ -138,6 +140,8 @@ object GlobalScripts {
       "transformersConfig" -> o.transformersConfig,
       "validatorRefs"      -> JsArray(o.validatorRefs.map(JsString.apply)),
       "validatorConfig"    -> o.validatorConfig,
+      "preRouteRefs"       -> JsArray(o.preRouteRefs.map(JsString.apply)),
+      "preRouteConfig"     -> o.preRouteConfig,
     )
     override def reads(json: JsValue): JsResult[GlobalScripts] =
       Try {
@@ -145,9 +149,11 @@ object GlobalScripts {
           GlobalScripts(
             transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
             validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             transformersConfig = (json \ "transformersConfig").asOpt[JsValue].getOrElse(Json.obj()),
             validatorConfig = (json \ "validatorConfig").asOpt[JsValue].getOrElse(Json.obj()),
+            preRouteConfig = (json \ "preRouteConfig").asOpt[JsValue].getOrElse(Json.obj()),
           )
         )
       } recover {

@@ -26,7 +26,7 @@ import otoroshi.script.Implicits._
 import otoroshi.script.TransformerRequestContext
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{ CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.DefaultWSCookie
@@ -36,7 +36,7 @@ import security.{IdGenerator, OtoroshiClaim}
 import utils.RequestImplicits._
 import utils.future.Implicits._
 import utils.http.WSProxyServerUtils
-import utils.{Datagram, HeadersHelper, UdpClient, UrlSanitizer}
+import utils._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -161,7 +161,8 @@ class WebSocketHandler()(implicit env: Env) {
                        req: RequestHeader,
                        apiKey: Option[ApiKey],
                        paUsr: Option[PrivateAppsUser],
-                       elContext: Map[String, String])(
+                       elContext: Map[String, String],
+                       attrs: TypedMap)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     if (service.jwtVerifier.enabled) {
@@ -169,7 +170,7 @@ class WebSocketHandler()(implicit env: Env) {
         case false => f(JwtInjection())
         case true => {
           logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
-          service.jwtVerifier.verifyWs(req, service, apiKey, paUsr, elContext)(f)
+          service.jwtVerifier.verifyWs(req, service, apiKey, paUsr, elContext, attrs)(f)
         }
       }
     } else {
@@ -177,7 +178,7 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader)(
+  def applySidecar(service: ServiceDescriptor, remoteAddress: String, req: RequestHeader, attrs: TypedMap)(
       f: ServiceDescriptor => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     def chooseRemoteAddress(config: SidecarConfig) =
@@ -196,7 +197,8 @@ class WebSocketHandler()(implicit env: Env) {
             Results.BadGateway,
             req,
             Some(service),
-            None
+            None,
+            attrs = attrs
           )
           .asLeft[WSFlow]
       // when local service wants to access protected services from other containers
@@ -225,7 +227,8 @@ class WebSocketHandler()(implicit env: Env) {
                 Results.InternalServerError,
                 req,
                 Some(service),
-                None
+                None,
+                attrs = attrs
               )
               .asLeft[WSFlow]
         }
@@ -252,7 +255,7 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor)(
+  def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     import utils.RequestImplicits._
@@ -262,7 +265,8 @@ class WebSocketHandler()(implicit env: Env) {
         f
       } else {
         Errors
-          .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"))
+          .craftResponseResult(s"Resource not found", NotFound, req, None, Some("errors.resource.not.found"),
+            attrs = attrs)
           .asLeft[WSFlow]
       }
     } else {
@@ -270,7 +274,7 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def passWithHeadersVerification(desc: ServiceDescriptor, req: RequestHeader)(
+  def passWithHeadersVerification(desc: ServiceDescriptor, req: RequestHeader, attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     if (desc.headersVerification.isEmpty) {
@@ -284,7 +288,8 @@ class WebSocketHandler()(implicit env: Env) {
               Results.BadRequest,
               req,
               Some(desc),
-              Some("errors.missing.headers")
+              Some("errors.missing.headers"),
+              attrs = attrs
             )
             .asLeft[WSFlow]
         case None => f
@@ -292,7 +297,7 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  def passWithReadOnly(readOnly: Boolean, req: RequestHeader)(
+  def passWithReadOnly(readOnly: Boolean, req: RequestHeader, attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     readOnly match {
@@ -309,7 +314,8 @@ class WebSocketHandler()(implicit env: Env) {
                 MethodNotAllowed,
                 req,
                 None,
-                Some("errors.method.not.allowed")
+                Some("errors.method.not.allowed"),
+                attrs = attrs
               )
               .asLeft[WSFlow]
         }
@@ -353,6 +359,7 @@ class WebSocketHandler()(implicit env: Env) {
     val counterIn        = new AtomicLong(0L)
     val counterOut       = new AtomicLong(0L)
     val start            = System.currentTimeMillis()
+    val attrs            = utils.TypedMap.empty
 
     val elCtx: Map[String, String] = Map(
       "requestId"        -> snowflake,
@@ -368,7 +375,8 @@ class WebSocketHandler()(implicit env: Env) {
                                  Results.NotFound,
                                  req,
                                  None,
-                                 Some("errors.service.not.found"))
+                                 Some("errors.service.not.found"),
+              attrs = attrs)
             .asLeft[WSFlow]
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           val uriParts = req.relativeUri.split("/").toSeq
@@ -382,7 +390,8 @@ class WebSocketHandler()(implicit env: Env) {
                                        Results.NotFound,
                                        req,
                                        None,
-                                       Some("errors.service.not.found"))
+                                       Some("errors.service.not.found"),
+                    attrs = attrs)
                   .asLeft[WSFlow]
               case Some(desc) if !desc.enabled =>
                 Errors
@@ -390,7 +399,8 @@ class WebSocketHandler()(implicit env: Env) {
                                        Results.NotFound,
                                        req,
                                        None,
-                                       Some("errors.service.not.found"))
+                                       Some("errors.service.not.found"),
+                    attrs = attrs)
                   .asLeft[WSFlow]
               case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
                 FastFuture
@@ -402,10 +412,11 @@ class WebSocketHandler()(implicit env: Env) {
                   .asLeft[WSFlow]
               }
               case Some(rawDesc) =>
-                passWithTcpUdpTunneling(req, rawDesc) {
-                  passWithHeadersVerification(rawDesc, req) {
-                    passWithReadOnly(rawDesc.readOnly, req) {
-                      applySidecar(rawDesc, remoteAddress, req) { desc =>
+                rawDesc.preRouteWS(snowflake, req, attrs) {
+                  passWithTcpUdpTunneling(req, rawDesc, attrs) {
+                  passWithHeadersVerification(rawDesc, req, attrs) {
+                    passWithReadOnly(rawDesc.readOnly, req, attrs) {
+                      applySidecar(rawDesc, remoteAddress, req, attrs) { desc =>
                         val maybeCanaryId = req.cookies
                           .get("otoroshi-canary")
                           .map(_.value)
@@ -505,11 +516,17 @@ class WebSocketHandler()(implicit env: Env) {
 
                             def callDownstream(
                                 config: GlobalConfig,
-                                apiKey: Option[ApiKey] = None,
-                                paUsr: Option[PrivateAppsUser] = None
+                                _apiKey: Option[ApiKey] = None,
+                                _paUsr: Option[PrivateAppsUser] = None
                             ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-                              desc.wsValidateClientCertificates(snowflake, req, apiKey, paUsr, config) {
-                                passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req) {
+
+                              val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).orElse(_apiKey)
+                              val paUsr = attrs.get(otoroshi.plugins.Keys.UserKey).orElse(_paUsr)
+                              apiKey.foreach(apk => attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
+                              paUsr.foreach(usr => attrs.putIfAbsent(otoroshi.plugins.Keys.UserKey -> usr))
+
+                              desc.wsValidateClientCertificates(snowflake, req, apiKey, paUsr, config, attrs) {
+                                passWithReadOnly(apiKey.map(_.readOnly).getOrElse(false), req, attrs) {
                                   if (config.useCircuitBreakers && descriptor.clientConfig.useCircuitBreaker) {
                                     val cbStart = System.currentTimeMillis()
                                     val counter = new AtomicInteger(0)
@@ -540,7 +557,8 @@ class WebSocketHandler()(implicit env: Env) {
                                             GatewayTimeout,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.request.timeout")
+                                            Some("errors.request.timeout"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       case RequestTimeoutException =>
@@ -550,7 +568,8 @@ class WebSocketHandler()(implicit env: Env) {
                                             GatewayTimeout,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.request.timeout")
+                                            Some("errors.request.timeout"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       case AllCircuitBreakersOpenException =>
@@ -560,7 +579,8 @@ class WebSocketHandler()(implicit env: Env) {
                                             ServiceUnavailable,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.circuit.breaker.open")
+                                            Some("errors.circuit.breaker.open"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       case error if error.getMessage.toLowerCase().contains("connection refused") =>
@@ -570,7 +590,8 @@ class WebSocketHandler()(implicit env: Env) {
                                             BadGateway,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.connection.refused")
+                                            Some("errors.connection.refused"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       case error =>
@@ -580,7 +601,8 @@ class WebSocketHandler()(implicit env: Env) {
                                             BadGateway,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.proxy.error")
+                                            Some("errors.proxy.error"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                     }
@@ -608,7 +630,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 cbDuration: Long,
                                 callAttempts: Int
                             ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
-                              applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx) { jwtInjection =>
+                              applyJwtVerifier(rawDesc, req, apiKey, paUsr, elCtx, attrs) { jwtInjection =>
                                 logger.trace("[WEBSOCKET] Call downstream !!!")
                                 val stateValue = IdGenerator.extendedToken(128)
                                 val stateToken: String = descriptor.secComVersion match {
@@ -649,8 +671,6 @@ class WebSocketHandler()(implicit env: Env) {
                                   .get(env.Headers.OtoroshiRequestId)
                                   .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
                                 val promise = Promise[ProxyDone]
-
-                                val attrs = utils.TypedMap.empty
 
                                 val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
                                 logger.trace(s"Claim is : $claim")
@@ -821,8 +841,8 @@ class WebSocketHandler()(implicit env: Env) {
                                           viz = Some(viz),
                                           clientCertChain = req.clientCertChainPem,
                                           err = false,
-                                          userAgentInfo = attrs.get[JsValue](otoroshi.plugins.useragent.UserAgentInfo.UserAgentInfoKey),
-                                          geolocationInfo = attrs.get[JsValue](otoroshi.plugins.geoloc.GeolocationInfo.GeolocationInfoKey)
+                                          userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
+                                          geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey)
 
                                         )
                                         evt.toAnalytics()
@@ -940,7 +960,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              NotFound,
                                                              req,
                                                              None,
-                                                             Some("errors.resource.not.found"))
+                                                             Some("errors.resource.not.found"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow]
                                     }
                                     case Right(_httpReq)
@@ -1121,7 +1142,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 config: GlobalConfig
                             ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                               if (descriptor.thirdPartyApiKey.enabled) {
-                                descriptor.thirdPartyApiKey.handleWS(req, descriptor, config) { key =>
+                                descriptor.thirdPartyApiKey.handleWS(req, descriptor, config, attrs) { key =>
                                   callDownstream(config, key)
                                 }
                               } else {
@@ -1209,7 +1230,8 @@ class WebSocketHandler()(implicit env: Env) {
                                             Results.Unauthorized,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.invalid.api.key")
+                                            Some("errors.invalid.api.key"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       case Some(key) if !key.allowClientIdOnly => {
@@ -1219,7 +1241,8 @@ class WebSocketHandler()(implicit env: Env) {
                                             Results.BadRequest,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.bad.api.key")
+                                            Some("errors.bad.api.key"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       }
@@ -1230,14 +1253,15 @@ class WebSocketHandler()(implicit env: Env) {
                                             Unauthorized,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.bad.api.key")
+                                            Some("errors.bad.api.key"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       }
                                       case Some(key)
-                                          if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                          if key.restrictions.handleRestrictions(descriptor, Some(key), req, attrs)._1 => {
                                         key.restrictions
-                                          .handleRestrictions(descriptor, Some(key), req)
+                                          .handleRestrictions(descriptor, Some(key), req, attrs)
                                           ._2
                                           .asLeft[WSFlow]
                                       }
@@ -1251,7 +1275,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                 TooManyRequests,
                                                 req,
                                                 Some(descriptor),
-                                                Some("errors.too.much.requests")
+                                                Some("errors.too.much.requests"),
+                                                attrs = attrs
                                               )
                                               .asLeft[WSFlow]
                                         }
@@ -1267,7 +1292,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                Results.Unauthorized,
                                                                req,
                                                                Some(descriptor),
-                                                               Some("errors.invalid.api.key"))
+                                                               Some("errors.invalid.api.key"),
+                                            attrs = attrs)
                                           .asLeft[WSFlow]
                                       case Some(key) if key.isInvalid(clientSecret) => {
                                         Alerts.send(
@@ -1283,7 +1309,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                Results.BadRequest,
                                                                req,
                                                                Some(descriptor),
-                                                               Some("errors.bad.api.key"))
+                                                               Some("errors.bad.api.key"),
+                                            attrs = attrs)
                                           .asLeft[WSFlow]
                                       }
                                       case Some(key) if !key.matchRouting(descriptor) => {
@@ -1293,14 +1320,15 @@ class WebSocketHandler()(implicit env: Env) {
                                             Unauthorized,
                                             req,
                                             Some(descriptor),
-                                            Some("errors.bad.api.key")
+                                            Some("errors.bad.api.key"),
+                                            attrs = attrs
                                           )
                                           .asLeft[WSFlow]
                                       }
                                       case Some(key)
-                                          if key.restrictions.handleRestrictions(descriptor, Some(key), req)._1 => {
+                                          if key.restrictions.handleRestrictions(descriptor, Some(key), req, attrs)._1 => {
                                         key.restrictions
-                                          .handleRestrictions(descriptor, Some(key), req)
+                                          .handleRestrictions(descriptor, Some(key), req, attrs)
                                           ._2
                                           .asLeft[WSFlow]
                                       }
@@ -1313,7 +1341,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                    Results.TooManyRequests,
                                                                    req,
                                                                    Some(descriptor),
-                                                                   Some("errors.too.much.requests"))
+                                                                   Some("errors.too.much.requests"),
+                                                attrs = attrs)
                                               .asLeft[WSFlow]
                                         }
                                     }
@@ -1395,16 +1424,17 @@ class WebSocketHandler()(implicit env: Env) {
                                                       Unauthorized,
                                                       req,
                                                       Some(descriptor),
-                                                      Some("errors.bad.api.key")
+                                                      Some("errors.bad.api.key"),
+                                                      attrs = attrs
                                                     )
                                                     .asLeft[WSFlow]
                                                 }
                                                 case Success(_)
                                                     if apiKey.restrictions
-                                                      .handleRestrictions(descriptor, Some(apiKey), req)
+                                                      .handleRestrictions(descriptor, Some(apiKey), req, attrs)
                                                       ._1 => {
                                                   apiKey.restrictions
-                                                    .handleRestrictions(descriptor, Some(apiKey), req)
+                                                    .handleRestrictions(descriptor, Some(apiKey), req, attrs)
                                                     ._2
                                                     .asLeft[WSFlow]
                                                 }
@@ -1417,7 +1447,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                              Results.TooManyRequests,
                                                                              req,
                                                                              Some(descriptor),
-                                                                             Some("errors.too.much.requests"))
+                                                                             Some("errors.too.much.requests"),
+                                                          attrs = attrs)
                                                         .asLeft[WSFlow]
                                                   }
                                                 case Failure(e) => {
@@ -1434,7 +1465,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                          Results.BadRequest,
                                                                          req,
                                                                          Some(descriptor),
-                                                                         Some("errors.bad.api.key"))
+                                                                         Some("errors.bad.api.key"),
+                                                      attrs = attrs)
                                                     .asLeft[WSFlow]
                                                 }
                                               }
@@ -1445,7 +1477,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                      Results.Unauthorized,
                                                                      req,
                                                                      Some(descriptor),
-                                                                     Some("errors.invalid.api.key"))
+                                                                     Some("errors.invalid.api.key"),
+                                                  attrs = attrs)
                                                 .asLeft[WSFlow]
                                           }
                                       case None =>
@@ -1454,7 +1487,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                Results.Unauthorized,
                                                                req,
                                                                Some(descriptor),
-                                                               Some("errors.invalid.api.key"))
+                                                               Some("errors.invalid.api.key"),
+                                            attrs = attrs)
                                           .asLeft[WSFlow]
                                     }
                                   } getOrElse Errors
@@ -1462,7 +1496,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                          Results.Unauthorized,
                                                          req,
                                                          Some(descriptor),
-                                                         Some("errors.invalid.api.key"))
+                                                         Some("errors.invalid.api.key"),
+                                      attrs = attrs)
                                     .asLeft[WSFlow]
                                 } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
                                   val auth   = authBasic.get
@@ -1479,7 +1514,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                    Results.Unauthorized,
                                                                    req,
                                                                    Some(descriptor),
-                                                                   Some("errors.invalid.api.key"))
+                                                                   Some("errors.invalid.api.key"),
+                                                attrs = attrs)
                                               .asLeft[WSFlow]
                                           case Some(key) if key.isInvalid(apiKeySecret) => {
                                             Alerts.send(
@@ -1495,7 +1531,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                    Results.BadRequest,
                                                                    req,
                                                                    Some(descriptor),
-                                                                   Some("errors.bad.api.key"))
+                                                                   Some("errors.bad.api.key"),
+                                                attrs = attrs)
                                               .asLeft[WSFlow]
                                           }
                                           case Some(key) if !key.matchRouting(descriptor) => {
@@ -1505,16 +1542,17 @@ class WebSocketHandler()(implicit env: Env) {
                                                 Unauthorized,
                                                 req,
                                                 Some(descriptor),
-                                                Some("errors.bad.api.key")
+                                                Some("errors.bad.api.key"),
+                                                attrs = attrs
                                               )
                                               .asLeft[WSFlow]
                                           }
                                           case Some(key)
                                               if key.restrictions
-                                                .handleRestrictions(descriptor, Some(key), req)
+                                                .handleRestrictions(descriptor, Some(key), req, attrs)
                                                 ._1 => {
                                             key.restrictions
-                                              .handleRestrictions(descriptor, Some(key), req)
+                                              .handleRestrictions(descriptor, Some(key), req, attrs)
                                               ._2
                                               .asLeft[WSFlow]
                                           }
@@ -1527,7 +1565,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                                        Results.TooManyRequests,
                                                                        req,
                                                                        Some(descriptor),
-                                                                       Some("errors.too.much.requests"))
+                                                                       Some("errors.too.much.requests"),
+                                                    attrs = attrs)
                                                   .asLeft[WSFlow]
                                             }
                                         }
@@ -1538,7 +1577,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Results.BadRequest,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.bad.api.key"))
+                                                             Some("errors.bad.api.key"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow]
                                   }
                                 } else {
@@ -1547,7 +1587,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                          Results.BadRequest,
                                                          req,
                                                          Some(descriptor),
-                                                         Some("errors.bad.api.key"))
+                                                         Some("errors.bad.api.key"),
+                                      attrs = attrs)
                                     .asLeft[WSFlow]
                                 }
                               }
@@ -1557,7 +1598,7 @@ class WebSocketHandler()(implicit env: Env) {
                                 config: GlobalConfig
                             ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
                               isPrivateAppsSessionValid(req, descriptor).flatMap {
-                                case Some(paUsr) => callDownstream(config, paUsr = Some(paUsr))
+                                case Some(paUsr) => callDownstream(config, None, Some(paUsr))
                                 case None => {
                                   val redirect = req
                                     .getQueryString("redirect")
@@ -1584,14 +1625,15 @@ class WebSocketHandler()(implicit env: Env) {
                                   val (secCalls, maybeQuota) = r
                                   val quota                  = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
                                   val (restrictionsNotPassing, restrictionsResponse) =
-                                    descriptor.restrictions.handleRestrictions(descriptor, None, req)
+                                    descriptor.restrictions.handleRestrictions(descriptor, None, req, attrs)
                                   if (secCalls > (quota * 10L)) {
                                     Errors
                                       .craftResponseResult("[IP] You performed too much requests",
                                                            Results.TooManyRequests,
                                                            req,
                                                            Some(descriptor),
-                                                           Some("errors.too.much.requests"))
+                                                           Some("errors.too.much.requests"),
+                                        attrs = attrs)
                                       .asLeft[WSFlow]
                                   } else {
                                     if (!isSecured && desc.forceHttps) {
@@ -1614,7 +1656,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Results.TooManyRequests,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.too.much.requests"))
+                                                             Some("errors.too.much.requests"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow]
                                     } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
                                       /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
@@ -1624,7 +1667,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Results.Forbidden,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.ip.address.not.allowed"))
+                                                             Some("errors.ip.address.not.allowed"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow] // global whitelist
                                     } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
                                       /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
@@ -1634,7 +1678,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Results.Forbidden,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.ip.address.not.allowed"))
+                                                             Some("errors.ip.address.not.allowed"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow] // global blacklist
                                     } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
                                       /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
@@ -1644,7 +1689,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Results.Forbidden,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.ip.address.not.allowed"))
+                                                             Some("errors.ip.address.not.allowed"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow] // service whitelist
                                     } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
                                       /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
@@ -1654,7 +1700,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Results.Forbidden,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.ip.address.not.allowed"))
+                                                             Some("errors.ip.address.not.allowed"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow] // service blacklist
                                     } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
                                       /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
@@ -1688,7 +1735,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              ServiceUnavailable,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.service.in.maintenance"))
+                                                             Some("errors.service.in.maintenance"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow]
                                     } else if (descriptor.buildMode) {
                                       Errors
@@ -1696,7 +1744,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              ServiceUnavailable,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.service.under.construction"))
+                                                             Some("errors.service.under.construction"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow]
                                     } else if (restrictionsNotPassing) {
                                       restrictionsResponse.asLeft[WSFlow]
@@ -1731,7 +1780,8 @@ class WebSocketHandler()(implicit env: Env) {
                                                              Results.Forbidden,
                                                              req,
                                                              Some(descriptor),
-                                                             Some("errors.service.down"))
+                                                             Some("errors.service.down"),
+                                          attrs = attrs)
                                         .asLeft[WSFlow]
                                     }
                                   }
@@ -1742,6 +1792,7 @@ class WebSocketHandler()(implicit env: Env) {
                     }
                   }
 
+                }
                 }
             }
         }
@@ -2006,4 +2057,23 @@ class WebSocketProxyActor(url: String,
     }
     case e => logger.error(s"[WEBSOCKET] Bad message type: $e")
   }
+}
+
+
+
+
+object Tests {
+
+
+
+  val source: Source[(Int, String, utils.Datagram), NotUsed] = ???
+
+  val flow: Flow[utils.Datagram, utils.Datagram, NotUsed] = ???
+
+
+
+
+
+
+
 }

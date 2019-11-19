@@ -6,10 +6,11 @@ import env.Env
 import events._
 import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Results.Status
 import play.api.mvc.{RequestHeader, Result}
 import utils.RequestImplicits._
+import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +29,8 @@ object Errors {
                           overhead: Long = 0L,
                           cbDuration: Long = 0L,
                           callAttempts: Int = 0,
-                          emptyBody: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+                          emptyBody: Boolean = false,
+                          attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
 
@@ -94,8 +96,8 @@ object Errors {
             responseChunked = false,
             viz = Some(viz),
             err = true,
-            userAgentInfo = None,
-            geolocationInfo = None
+            userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
+            geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey)
           ).toAnalytics()(env)
         }
         case None => {
@@ -150,8 +152,8 @@ object Errors {
             responseChunked = false,
             viz = None,
             err = true,
-            userAgentInfo = None,
-            geolocationInfo = None
+            userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
+            geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey)
           ).toAnalytics()(env)
         }
       }
