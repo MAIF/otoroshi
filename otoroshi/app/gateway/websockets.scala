@@ -877,7 +877,8 @@ class WebSocketHandler()(implicit env: Env) {
                                   cookies = wsCookiesIn,
                                   version = req.version,
                                   clientCertificateChain = req.clientCertificateChain,
-                                  target = None
+                                  target = None,
+                                  claims = claim
                                 )
                                 val otoroshiRequest = otoroshi.script.HttpRequest(
                                   url = url,
@@ -886,7 +887,8 @@ class WebSocketHandler()(implicit env: Env) {
                                   cookies = wsCookiesIn,
                                   version = req.version,
                                   clientCertificateChain = req.clientCertificateChain,
-                                  target = Some(_target)
+                                  target = Some(_target),
+                                  claims = claim
                                 )
                                 val upstreamStart = System.currentTimeMillis()
                                 descriptor
@@ -1107,7 +1109,8 @@ class WebSocketHandler()(implicit env: Env) {
                                       if (descriptor.useNewWSClient) {
                                         FastFuture.successful(Right(WebSocketProxyActor.wsCall(
                                           UrlSanitizer.sanitize(httpRequest.url),
-                                          httpRequest.headers.toSeq, //.filterNot(_._1 == "Cookie"),
+                                          // httpRequest.headers.toSeq, //.filterNot(_._1 == "Cookie"),
+                                          HeadersHelper.addClaims(httpRequest.headers, httpRequest.claims, descriptor),
                                           descriptor,
                                           httpRequest.target.getOrElse(_target)
                                         )))

@@ -223,9 +223,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") =>
             Some(removePrivateAppsCookies())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
+          case _ if request.relativeUri == "/.well-known/otoroshi/login"           => Some(setPrivateAppsCookies())
+          case _ if request.relativeUri == "/.well-known/otoroshi/logout"          => Some(removePrivateAppsCookies())
+          case _ if request.relativeUri == "/.well-known/otoroshi/me"              => Some(myProfile())
           case env.backOfficeHost if !isSecured && toHttps                         => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
           case env.backOfficeHost  if monitoring                                   => Some(forbidden())
@@ -1450,7 +1450,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         cookies = wsCookiesIn,
                                         version = req.version,
                                         clientCertificateChain = req.clientCertificateChain,
-                                        target = None
+                                        target = None,
+                                        claims = claim
                                       )
                                       val otoroshiRequest = otoroshi.script.HttpRequest(
                                         url = url,
@@ -1459,7 +1460,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         cookies = wsCookiesIn,
                                         version = req.version,
                                         clientCertificateChain = req.clientCertificateChain,
-                                        target = Some(_target)
+                                        target = Some(_target),
+                                        claims = claim
                                       )
                                       val upstreamStart = System.currentTimeMillis()
                                       val finalRequest = descriptor
@@ -1599,7 +1601,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             )
                                             //.withRequestTimeout(env.requestTimeout) // we should monitor leaks
                                             .withMethod(httpRequest.method)
-                                            .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
+                                            // .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)
+                                            .withHttpHeaders(HeadersHelper.addClaims(httpRequest.headers, httpRequest.claims, descriptor).filterNot(_._1 == "Cookie"): _*)
                                             .withCookies(wsCookiesIn: _*)
                                             .withFollowRedirects(false)
                                             .withMaybeProxyServer(
@@ -1665,7 +1668,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       "url"           -> url,
                                                       "state"         -> stateValue,
                                                       "reveivedState" -> JsString(stateResp.getOrElse("--")),
-                                                      "claim"         -> claim,
+                                                      "claim"         -> claim.serialize(descriptor.secComSettings)(env),
                                                       "method"        -> req.method,
                                                       "query"         -> req.rawQueryString,
                                                       "status"        -> resp.status,

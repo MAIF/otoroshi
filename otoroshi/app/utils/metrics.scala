@@ -14,7 +14,7 @@ import com.codahale.metrics.jvm._
 import env.Env
 import events.StatsDReporter
 import javax.management.{Attribute, ObjectName}
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
 import scala.concurrent.duration.FiniteDuration
 import java.io.StringWriter
@@ -26,10 +26,10 @@ import com.codahale.metrics.MetricRegistry.MetricSupplier
 import com.codahale.metrics.json.MetricsModule
 import com.codahale.metrics.jvm.{MemoryUsageGaugeSet, ThreadStatesGaugeSet}
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.prometheus.client.Collector
 import io.prometheus.client.dropwizard.DropwizardExports
 import io.prometheus.client.exporter.common.TextFormat
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.Json
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
 
@@ -113,21 +113,45 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   objectMapper.registerModule(new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, true))
   private val prometheus = new DropwizardExports(metricRegistry)
 
-  def prometheusExport: String = {
-    val writer = new StringWriter()
-    TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
-    writer.toString
+  def prometheusExport(filter: Option[String] = None): String = {
+    filter match {
+      case None => {
+        val writer = new StringWriter()
+        TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
+        writer.toString
+      }
+      case Some(path) => {
+        val processedPath = path.replace(".", "_")
+        val writer = new StringWriter()
+        TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
+        writer.toString.split("\n").toSeq.filter(line => RegexPool(processedPath).matches(line)).mkString("\n")
+      }
+    }
   }
 
-  def jsonExport: String =
-    objectMapper.writeValueAsString(metricRegistry)
+  def jsonExport(filter: Option[String] = None): String = {
+    filter match {
+      case None => objectMapper.writeValueAsString(metricRegistry)
+      case Some(path) => {
+        val jsonRaw = objectMapper.writeValueAsString(metricRegistry)
+        val json = Json.parse(jsonRaw)
+        Json.stringify(JsArray(
+          (json \ "gauges").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "gauge", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "counters").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "counter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "histograms").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "histogram", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "meters").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "meter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "timers").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "timer", "name" -> tuple._1) ++ tuple._2.as[JsObject])
+        ))
+      }
+    }
+  }
 
-  def defaultHttpFormat: String = defaultFormat("json")
+  def defaultHttpFormat(filter: Option[String] = None): String = defaultFormat("json")
 
-  def defaultFormat(format: String): String = format match {
-    case "json"       => jsonExport
-    case "prometheus" => prometheusExport
-    case _            => jsonExport
+  def defaultFormat(format: String, filter: Option[String] = None): String = format match {
+    case "json"       => jsonExport(filter)
+    case "prometheus" => prometheusExport(filter)
+    case _            => jsonExport(filter)
   }
 
   private def getProcessCpuLoad(): Double = {

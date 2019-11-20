@@ -24,6 +24,7 @@ import play.api.libs.streams.Accumulator
 import play.api.libs.ws.WSCookie
 import play.api.mvc._
 import redis.RedisClientMasterSlaves
+import security.OtoroshiClaim
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
 import utils.TypedMap
@@ -44,7 +45,8 @@ case class HttpRequest(url: String,
                        cookies: Seq[WSCookie] = Seq.empty[WSCookie],
                        version: String,
                        clientCertificateChain: Option[Seq[X509Certificate]],
-                       target: Option[Target]) {
+                       target: Option[Target],
+                       claims: OtoroshiClaim) {
   lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
   lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")
   lazy val uri: Uri                    = Uri(url)

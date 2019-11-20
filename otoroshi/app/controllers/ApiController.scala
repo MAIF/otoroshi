@@ -47,11 +47,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def processMetrics() = Action.async { req =>
     def fetchMetrics(): Result = {
       if (req.accepts("application/json")) {
-        Ok(env.metrics.jsonExport).withHeaders("Content-Type" -> "application/json")
+        Ok(env.metrics.jsonExport(None)).withHeaders("Content-Type" -> "application/json")
       } else if (req.accepts("application/prometheus")) {
-        Ok(env.metrics.prometheusExport).withHeaders("Content-Type" -> "text/plain")
+        Ok(env.metrics.prometheusExport(None)).withHeaders("Content-Type" -> "text/plain")
       } else {
-        Ok(env.metrics.defaultHttpFormat)
+        Ok(env.metrics.defaultHttpFormat(None))
       }
     }
 

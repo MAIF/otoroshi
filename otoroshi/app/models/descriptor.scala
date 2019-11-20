@@ -2199,7 +2199,7 @@ case class ServiceDescriptor(
 
   def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader])(
       implicit env: Env
-  ): String = {
+  ): OtoroshiClaim = {
     val clientCertChain = requestHeader
       .flatMap(_.clientCertificateChain)
       .map(
@@ -2268,7 +2268,7 @@ case class ServiceDescriptor(
           //      )
           //  )
           // ))
-          .serialize(this.secComSettings)(env)
+          // .serialize(this.secComSettings)(env)
       }
       case SecComInfoTokenVersion.Latest => {
         OtoroshiClaim(
@@ -2293,15 +2293,15 @@ case class ServiceDescriptor(
           )
           .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
           .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
-          //Json.obj(
-          //   "clientId"   -> ak.clientId,
-          //   "clientName" -> ak.clientName,
-          //   "metadata"   -> ak.metadata,
-          //   "tags"       -> ak.tags
-          //)
-          //))
-          .withJsArrayClaim("clientCertChain", clientCertChain)
-          .serialize(this.secComSettings)(env)
+          // Json.obj(
+          //    "clientId"   -> ak.clientId,
+          //    "clientName" -> ak.clientName,
+          //    "metadata"   -> ak.metadata,
+          //    "tags"       -> ak.tags
+          // )
+          // ))
+          // .withJsArrayClaim("clientCertChain", clientCertChain)
+          // .serialize(this.secComSettings)(env)
       }
     }
   }

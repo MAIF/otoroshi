@@ -9,6 +9,7 @@ import otoroshi.el.HeadersExpressionLanguage
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{RequestHeader, Result}
+import security.OtoroshiClaim
 
 import scala.concurrent.ExecutionContext
 import utils.RequestImplicits._
@@ -98,7 +99,7 @@ object HeadersHelper {
       snowflake: String,
       requestTimestamp: String,
       host: String,
-      claim: String,
+      claim: OtoroshiClaim,
       stateToken: String,
       fromOtoroshi: Option[String],
       snowMonkeyContext: SnowMonkeyContext,
@@ -174,16 +175,16 @@ object HeadersHelper {
           env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
         )
         .appendOpt(fromOtoroshi, (value: String) => env.Headers.OtoroshiGatewayParentRequest -> value)
-        .appendIf(env.sendClientChainAsPem && req.clientCertificateChain.isDefined,
-                  env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
-        .appendOpt(
-          req.clientCertificateChain,
-          (chain: Seq[X509Certificate]) =>
-            (env.Headers.OtoroshiClientCertChain + "-DNs") -> Json.stringify(
-              JsArray(chain.map(c => JsString(c.getSubjectDN.getName)))
-          )
-        )
-        .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken, claimRequestHeaderName -> claim)
+        // .appendIf(env.sendClientChainAsPem && req.clientCertificateChain.isDefined,
+        //           env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
+        // .appendOpt(
+        //   req.clientCertificateChain,
+        //   (chain: Seq[X509Certificate]) =>
+        //     (env.Headers.OtoroshiClientCertChain + "-DNs") -> Json.stringify(
+        //       JsArray(chain.map(c => JsString(c.getSubjectDN.getName)))
+        //   )
+        // )
+        .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken, claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env))
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendStateChallenge,
                   stateRequestHeaderName -> stateToken)
         .appendOpt(req.headers.get("Content-Length"),
@@ -196,6 +197,20 @@ object HeadersHelper {
         .removeAll(jwtInjection.removeHeaders)
         .appendAll(xForwardedHeader(descriptor, req))
     }
+  }
+
+  @inline
+  def addClaims(
+    headers: Map[String, String],
+    claim: OtoroshiClaim,
+    descriptor: ServiceDescriptor
+  )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
+    val claimRequestHeaderName =
+      descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
+    val doIt = descriptor.enforceSecureCommunication && descriptor.sendInfoToken
+    headers.toSeq
+      .removeIf(claimRequestHeaderName, doIt)
+      .appendIf(doIt, claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env))
   }
 
   @inline
@@ -400,7 +415,7 @@ object HeadersHelper {
       snowflake: String,
       requestTimestamp: String,
       host: String,
-      claim: String,
+      claim: OtoroshiClaim,
       stateToken: String,
       fromOtoroshi: Option[String],
       snowMonkeyContext: SnowMonkeyContext,
@@ -435,7 +450,7 @@ object HeadersHelper {
         env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
       ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
               Map(
-                claimRequestHeaderName -> claim
+                claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env)
               )
             } else {
               Map.empty[String, String]
