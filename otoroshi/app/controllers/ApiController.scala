@@ -81,6 +81,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       }
       for {
         _health  <- env.datastores.health()
+        scripts  <- env.scriptManager.state()
         overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
         members  <- membersF
       } yield {
@@ -106,7 +107,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             case Healthy     => "healthy"
             case Unhealthy   => "unhealthy"
             case Unreachable => "unreachable"
-          })
+          }),
+          "scripts" -> scripts
         ) ++ cluster
         val err = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
           (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||

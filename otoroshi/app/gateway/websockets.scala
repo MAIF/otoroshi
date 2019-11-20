@@ -350,7 +350,7 @@ class WebSocketHandler()(implicit env: Env) {
     // val meterIn       = Metrics.metrics.meter("GatewayDataIn")
     val snowflake        = env.snowflakeGenerator.nextIdStr()
     val calledAt         = DateTime.now()
-    val requestTimestamp = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val requestTimestamp = calledAt.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber        = reqCounter.incrementAndGet()
     val remoteAddress    = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured        = getSecuredFor(req)
@@ -359,7 +359,11 @@ class WebSocketHandler()(implicit env: Env) {
     val counterIn        = new AtomicLong(0L)
     val counterOut       = new AtomicLong(0L)
     val start            = System.currentTimeMillis()
-    val attrs            = utils.TypedMap.empty
+    val attrs            = utils.TypedMap.empty.put(
+      otoroshi.plugins.Keys.RequestTimestampKey -> calledAt,
+      otoroshi.plugins.Keys.RequestStartKey -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey -> true
+    )
 
     val elCtx: Map[String, String] = Map(
       "requestId"        -> snowflake,

@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import actions.ApiAction
 import akka.actor.Cancellable
@@ -425,6 +425,18 @@ class ScriptManager(env: Env) {
     Option(updateRef.get()).foreach(_.cancel())
   }
 
+
+  def state(): Future[JsObject] = {
+    env.datastores.scriptDataStore.findAll().map { scripts =>
+      val allCompiled = !scripts.forall(s => cache.contains(s.id))
+      val initial = if (scripts.isEmpty) true else allCompiled
+      Json.obj(
+        "compiling" -> compiling.nonEmpty,
+        "initial" -> initial
+      )
+    }
+  }
+
   private def compileAndUpdate(script: Script): Unit = {
     compiling.putIfAbsent(script.id, ()) match {
       case Some(_) => // do nothing as something is compiling
@@ -838,7 +850,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
   }
 
 
-  private lazy val (transformersNames: Seq[String], validatorsNames: Seq[String], preRouteNames: Seq[String]) = Try {
+  private lazy val (transformersNames, validatorsNames, preRouteNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
 
     import collection.JavaConverters._
@@ -871,7 +883,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     } catch {
       case e: Throwable =>
         e.printStackTrace()
-        Seq.empty[String]
+        (Seq.empty[String], Seq.empty[String], Seq.empty[String])
     } finally if (scanResult != null) scanResult.close()
   } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String])
 

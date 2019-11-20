@@ -68,18 +68,18 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
     new MetricSet {
       override def getMetrics: util.Map[String, Metric] = {
         val gauges = new util.HashMap[String, Metric]
-        gauges.put("jvm.cpu.usage", gauge((getProcessCpuLoad() * 100).toLong))
-        gauges.put("jvm.heap.used", gauge((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024))
-        gauges.put("jvm.heap.size", gauge(rt.totalMemory() / 1024 / 1024))
-        gauges.put("instance.env", gauge(appEnv))
-        gauges.put("instance.id", gauge(instanceId))
-        gauges.put("instance.number", gauge(instanceNumber))
-        gauges.put("app.id", gauge(appId))
-        gauges.put("app.commit", gauge(commitId))
-        gauges.put("cluster.mode", gauge(env.clusterConfig.mode.name))
+        gauges.put("jvm.cpu.usage", internalGauge((getProcessCpuLoad() * 100).toLong))
+        gauges.put("jvm.heap.used", internalGauge((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024))
+        gauges.put("jvm.heap.size", internalGauge(rt.totalMemory() / 1024 / 1024))
+        gauges.put("instance.env", internalGauge(appEnv))
+        gauges.put("instance.id", internalGauge(instanceId))
+        gauges.put("instance.number", internalGauge(instanceNumber))
+        gauges.put("app.id", internalGauge(appId))
+        gauges.put("app.commit", internalGauge(commitId))
+        gauges.put("cluster.mode", internalGauge(env.clusterConfig.mode.name))
         gauges.put(
           "cluster.name",
-          gauge(env.clusterConfig.mode match {
+          internalGauge(env.clusterConfig.mode match {
             case ClusterMode.Worker => env.clusterConfig.worker.name
             case ClusterMode.Leader => env.clusterConfig.leader.name
             case ClusterMode.Off    => "--"
@@ -93,16 +93,17 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   private def mark[T](name: String, value: Any): Unit = {
     lastData.computeIfAbsent(name, (t: String) => new AtomicReference[Any](value))
     lastData.getOrDefault(name, new AtomicReference[Any](value)).set(value)
-    metricRegistry.gauge("internals." + name,
-                         () => gauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
+    metricRegistry.gauge("otoroshi.internals." + name,
+                         () => internalGauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
   }
 
   def markString(name: String, value: String): Unit = mark(name, value)
   def markLong(name: String, value: Long): Unit     = mark(name, value)
   def markDouble(name: String, value: Double): Unit = mark(name, value)
   def counter(name: String): Counter                = metricRegistry.counter(name)
+  def histogram(name: String): Histogram            = metricRegistry.histogram(name)
 
-  private def gauge[T](f: => T): Gauge[T] = {
+  private def internalGauge[T](f: => T): Gauge[T] = {
     new Gauge[T] {
       override def getValue: T = f
     }

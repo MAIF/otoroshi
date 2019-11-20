@@ -786,7 +786,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     // req.clientCertificateChain.getOrElse(logger.info("no cert chain"))
     val snowflake           = env.snowflakeGenerator.nextIdStr()
     val callDate            = DateTime.now()
-    val requestTimestamp    = DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val requestTimestamp    = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber           = reqCounter.incrementAndGet()
     val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
     val isSecured           = getSecuredFor(req)
@@ -796,7 +796,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val start               = System.currentTimeMillis()
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     val protocol            = getProtocolFor(req)
-    val attrs               = utils.TypedMap.empty
+    val attrs               = utils.TypedMap.empty.put(
+      otoroshi.plugins.Keys.RequestTimestampKey -> callDate,
+      otoroshi.plugins.Keys.RequestStartKey -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey -> false
+    )
 
     val elCtx: Map[String, String] = Map(
       "requestId"        -> snowflake,
