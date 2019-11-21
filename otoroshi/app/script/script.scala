@@ -39,6 +39,11 @@ trait StartableAndStoppable {
   def stop(env: Env): Future[Unit] = FastFuture.successful(())
 }
 
+trait NamedPlugin { self =>
+  def name: String = self.getClass.getName
+  def description: String = "no description"
+}
+
 case class HttpRequest(url: String,
                        method: String,
                        headers: Map[String, String],
@@ -145,7 +150,7 @@ case class TransformerResponseBodyContext(
     globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
-trait RequestTransformer extends StartableAndStoppable {
+trait RequestTransformer extends StartableAndStoppable with NamedPlugin {
 
   // def name: String
   // def description: String

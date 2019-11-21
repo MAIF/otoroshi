@@ -1946,19 +1946,25 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               .as(contentType)
                                                           }
                                                           case false => {
+                                                            val contentLength = httpResponse.headers
+                                                              .get("Content-Length")
+                                                              .orElse(resp.contentLengthStr)
+                                                              .map(_.toLong + snowMonkeyContext.trailingResponseBodySize)
+                                                            if (contentLength.getOrElse(0) == 0) {
+                                                              // here, Play did not run the body because it's empty, so triggering things manually
+                                                              promise.trySuccess(
+                                                                ProxyDone(httpResponse.status,
+                                                                  isChunked,
+                                                                  upstreamLatency,
+                                                                  headersOut.map(Header.apply))
+                                                              )
+                                                            }
                                                             // stream out
                                                             Status(httpResponse.status)
                                                               .sendEntity(
                                                                 HttpEntity.Streamed(
                                                                   finalStream,
-                                                                  httpResponse.headers
-                                                                    .get("Content-Length")
-                                                                    .orElse(
-                                                                      resp.contentLengthStr
-                                                                    )
-                                                                    .map(
-                                                                      _.toLong + snowMonkeyContext.trailingResponseBodySize
-                                                                    ),
+                                                                  contentLength,
                                                                   httpResponse.headers.get("Content-Type").orElse(httpResponse.headers.get("content-type"))
                                                                 )
                                                               )

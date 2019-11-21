@@ -44,7 +44,7 @@ object PreRoutingRef {
   }
 }
 
-trait PreRouting extends StartableAndStoppable {
+trait PreRouting extends StartableAndStoppable with NamedPlugin {
 
   val funit = FastFuture.successful(())
 

@@ -33,6 +33,9 @@ object RequestImplicits {
         }
         .getOrElse("http")
     }
+    def theIpAddress: String = {
+      requestHeader.headers.get("X-Forwarded-For").getOrElse(requestHeader.remoteAddress)
+    }
     def clientCertChainPem: Seq[String] = {
       requestHeader.clientCertificateChain
         .map(

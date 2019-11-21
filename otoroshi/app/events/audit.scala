@@ -12,6 +12,7 @@ trait AuditEvent extends AnalyticEvent {
   override def `@type`: String = "AuditEvent"
 }
 
+// TODO: include UA
 case class BackOfficeEvent(`@id`: String,
                            `@env`: String,
                            user: BackOfficeUser,
