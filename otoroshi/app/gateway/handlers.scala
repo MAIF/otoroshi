@@ -1946,12 +1946,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               .as(contentType)
                                                           }
                                                           case false => {
-                                                            val contentLength = httpResponse.headers
+                                                            val contentLength: Option[Long] = httpResponse.headers
                                                               .get("Content-Length")
+                                                              .orElse(httpResponse.headers.get("content-length"))
                                                               .orElse(resp.contentLengthStr)
                                                               .map(_.toLong + snowMonkeyContext.trailingResponseBodySize)
-                                                            if (contentLength.getOrElse(0) == 0) {
+                                                            val actualContentLength: Long = contentLength.getOrElse(0L)
+                                                            if (actualContentLength == 0L) {
                                                               // here, Play did not run the body because it's empty, so triggering things manually
+                                                              logger.debug("Triggering promise as content length is 0")
                                                               promise.trySuccess(
                                                                 ProxyDone(httpResponse.status,
                                                                   isChunked,
