@@ -41,7 +41,7 @@ class AccessLog extends RequestTransformer {
       val referrer = ctx.rawResponse.headers.get("Referrer").orElse(ctx.rawResponse.headers.get("Referrer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.rawResponse.headers.get("user-agent")).getOrElse("-")
       val service = ctx.descriptor.name
-      logger.info(s""""$service" $ipAddress - $userId [$timestamp] "$method $path $protocol" $status $size "$referrer" "$userAgent" $http ${duration}ms""")
+      logger.info(s""""$service" $ipAddress - $userId [$timestamp] "$method $path $protocol" $status $size ${ctx.snowflake} "$referrer" "$userAgent" $http ${duration}ms""")
     }
     Right(ctx.otoroshiResponse).future
   }
