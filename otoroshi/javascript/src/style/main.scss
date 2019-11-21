@@ -22,3 +22,9 @@
 @import 'layout/global';
 @import 'layout/header';
 @import 'layout/sidebar';
+
+
+.plugin-doc pre {
+  height: auto;
+  background-color: rgb(39, 40, 34);
+}
