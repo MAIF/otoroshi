@@ -2718,9 +2718,10 @@ export class ServicePage extends Component {
               value={this.state.service.transformerRefs}
               onChange={e => this.changeTheValue('transformerRefs', e)}
               valuesFrom="/bo/api/proxy/api/scripts/_list?type=transformer"
-              transformer={a => ({ value: a.id, label: a.name })}
+              transformer={a => ({ value: a.id, label: a.name, desc: a.description })}
               help="..."
             />
+            <PluginsDescription refs={this.state.service.transformerRefs} />
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
@@ -3053,5 +3054,68 @@ export class PrivateApiButton extends Component {
         </button>
       );
     }
+  }
+}
+
+import showdown from 'showdown';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/monokai.css';
+
+window.hljs = window.hljs || hljs;
+
+const converter = new showdown.Converter({
+  omitExtraWLInCodeBlocks: true,
+  ghCompatibleHeaderId: true,
+  parseImgDimensions: true,
+  simplifiedAutoLink: true,
+  tables: true,
+  tasklists: true,
+  requireSpaceBeforeHeadingText: true,
+  ghMentions: true,
+  emoji: true,
+  ghMentionsLink: '/{u}', // TODO: link to teams ?
+  extensions: [],
+});
+
+class PluginsDescription extends Component {
+  state = { scripts: [] }
+
+  componentDidMount() {
+    fetch(`/bo/api/proxy/api/scripts/_list?type=transformer`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      }
+    }).then(r => r.json()).then(scripts => this.setState({ scripts }));
+  }
+
+  render() {
+    setTimeout(() => {
+      window.$('pre code').each((i, block) => {
+        window.hljs.highlightBlock(block);
+      });
+    });
+    return (
+      <>
+        {this.state.scripts.filter(e => !!e.description).map(script => (
+          <div className="form-group">
+          <label className="col-xs-12 col-sm-2 control-label" />
+          <div className="col-sm-10">
+            <div
+              style={{
+                padding: 10,
+                borderRadius: 5,
+                backgroundColor: '#494948',
+                width: '100%',
+              }}>
+              <h3>{script.name}</h3>
+              <p style={{ textAlign: 'justify' }} dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }} />
+            </div>
+          </div>
+        </div>
+        ))}
+      </>
+    );
   }
 }

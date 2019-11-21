@@ -20,7 +20,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class MaxMindGeolocationInfo extends PreRouting {
+class MaxMindGeolocationInfoExtractor extends PreRouting {
 
   private val logger = Logger("MaxMindGeolocationInfo")
 
@@ -42,7 +42,7 @@ class MaxMindGeolocationInfo extends PreRouting {
   }
 }
 
-class IpStackGeolocationInfo extends PreRouting {
+class IpStackGeolocationInfoExtractor extends PreRouting {
 
   private val logger = Logger("IpStackGeolocationInfo")
 

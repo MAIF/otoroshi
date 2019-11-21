@@ -619,7 +619,7 @@ class Env(val configuration: Configuration,
                       .fullImport(json)(ec, this)
                       .andThen {
                         case Success(_) => logger.info("Successful import !")
-                        case Failure(e) => logger.error("Error while importing inital data !", e)
+                        case Failure(e) => logger.error("Error while importing initial data !", e)
                       }(ec)
                   }
                 }
@@ -631,7 +631,7 @@ class Env(val configuration: Configuration,
                     .fullImport(json)(ec, this)
                     .andThen {
                       case Success(_) => logger.info("Successful import !")
-                      case Failure(e) => logger.error("Error while importing inital data !", e)
+                      case Failure(e) => logger.error("Error while importing initial data !", e)
                     }(ec)
                 }
               }
@@ -650,7 +650,7 @@ class Env(val configuration: Configuration,
                     .fullImport(importJson)(ec, this)
                     .andThen {
                       case Success(_) => logger.info("Successful import !")
-                      case Failure(e) => logger.error("Error while importing inital data !", e)
+                      case Failure(e) => logger.error("Error while importing initial data !", e)
                     }(ec)
                 }
                 case _ => {

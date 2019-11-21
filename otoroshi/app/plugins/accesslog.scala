@@ -16,19 +16,43 @@ class AccessLog extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-access-log")
 
-  override def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  override def name: String = "Access log (CLF)"
 
-    val validPaths: Seq[String] = (ctx.config \ "AccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val validStatuses: Seq[Int] = (ctx.config \ "AccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
-    val validMethods: Seq[String] = (ctx.config \ "AccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+  override def description: Option[String] = Some(
+    """With this plugin, any access to a service will be logged in CLF format.
+      |
+      |The plugin accepts the following configuration
+      |
+      |```json
+      |{
+      |  "AccessLog": {
+      |    "statuses": [ ... ], // list of status to enable logs, if none, log everything
+      |    "paths": [ ... ], // list of paths to enable logs, if none, log everything
+      |    "methods": [ ... ] // list of http methods to enable logs, if none, log everything
+      |  }
+      |}
+      |```
+    """.stripMargin)
+
+  override def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     val status = ctx.rawResponse.status
     val path = ctx.request.relativeUri
     val method = ctx.request.method
 
-    val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
-    val methodMatch = if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
-    val statusMatch = if (validStatuses.isEmpty) true else validStatuses.contains(status)
+    val (matchPath, methodMatch, statusMatch) = if ((ctx.config \ "AccessLog").isDefined) {
+      val validPaths: Seq[String] = (ctx.config \ "AccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int] = (ctx.config \ "AccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validMethods: Seq[String] = (ctx.config \ "AccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+
+      val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
+      val methodMatch = if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
+      val statusMatch = if (validStatuses.isEmpty) true else validStatuses.contains(status)
+
+      (matchPath, methodMatch, statusMatch)
+    } else {
+      (true, true, true)
+    }
 
     if (matchPath && methodMatch && statusMatch) {
       val ipAddress = ctx.request.theIpAddress

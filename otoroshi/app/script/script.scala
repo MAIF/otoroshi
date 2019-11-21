@@ -41,7 +41,7 @@ trait StartableAndStoppable {
 
 trait NamedPlugin { self =>
   def name: String = self.getClass.getName
-  def description: String = "no description"
+  def description: Option[String] = None
 }
 
 case class HttpRequest(url: String,
@@ -894,106 +894,6 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     } finally if (scanResult != null) scanResult.close()
   } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String])
 
-  /*
-  private lazy val transformersNames: Seq[String] = Try {
-    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
-
-    import collection.JavaConverters._
-    val scanResult: ScanResult = new ClassGraph()
-      .addClassLoader(env.environment.classLoader)
-      .enableAllInfo
-      .blacklistPackages("java.*", "javax.*")
-      .scan
-    try {
-      val controlClasses1: ClassInfoList = scanResult.getSubclasses(classOf[RequestTransformer].getName)
-      val controlClasses2: ClassInfoList = scanResult.getClassesImplementing(classOf[RequestTransformer].getName)
-
-      val classes = controlClasses1.asScala ++ controlClasses2.asScala
-      classes
-        .filterNot(
-          c =>
-            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
-            c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
-            c.getName == "otoroshi.script.CompilingValidator$" ||
-            c.getName == "otoroshi.script.DefaultValidator$" ||
-            c.getName == "otoroshi.script.NanoApp" ||
-            c.getName == "otoroshi.script.NanoApp$"
-        )
-        .map(c => c.getName)
-    } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        Seq.empty[String]
-    } finally if (scanResult != null) scanResult.close()
-  } getOrElse Seq.empty[String]
-
-  private lazy val validatorsNames: Seq[String] = Try {
-    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
-
-    import collection.JavaConverters._
-    val scanResult: ScanResult = new ClassGraph()
-      .addClassLoader(env.environment.classLoader)
-      .enableAllInfo
-      .blacklistPackages("java.*", "javax.*")
-      .scan
-    try {
-
-      val controlClasses3: ClassInfoList = scanResult.getSubclasses(classOf[AccessValidator].getName)
-      val controlClasses4: ClassInfoList = scanResult.getClassesImplementing(classOf[AccessValidator].getName)
-
-      val classes = controlClasses3.asScala ++ controlClasses4.asScala
-      classes
-        .filterNot(
-          c =>
-            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
-            c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
-            c.getName == "otoroshi.script.CompilingValidator$" ||
-            c.getName == "otoroshi.script.DefaultValidator$" ||
-            c.getName == "otoroshi.script.NanoApp" ||
-            c.getName == "otoroshi.script.NanoApp$"
-        )
-        .map(c => c.getName)
-    } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        Seq.empty[String]
-    } finally if (scanResult != null) scanResult.close()
-  } getOrElse Seq.empty[String]
-
-  private lazy val preRouteNames: Seq[String] = Try {
-    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
-
-    import collection.JavaConverters._
-    val scanResult: ScanResult = new ClassGraph()
-      .addClassLoader(env.environment.classLoader)
-      .enableAllInfo
-      .blacklistPackages("java.*", "javax.*")
-      .scan
-    try {
-
-      val controlClasses5: ClassInfoList = scanResult.getSubclasses(classOf[PreRouting].getName)
-      val controlClasses6: ClassInfoList = scanResult.getClassesImplementing(classOf[PreRouting].getName)
-
-      val classes = controlClasses5.asScala ++ controlClasses6.asScala
-      classes
-        .filterNot(
-          c =>
-            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
-              c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
-              c.getName == "otoroshi.script.CompilingValidator$" ||
-              c.getName == "otoroshi.script.DefaultValidator$" ||
-              c.getName == "otoroshi.script.NanoApp" ||
-              c.getName == "otoroshi.script.NanoApp$"
-        )
-        .map(c => c.getName)
-    } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        Seq.empty[String]
-    } finally if (scanResult != null) scanResult.close()
-  } getOrElse Seq.empty[String]
-  */
-
   def findAllScriptsList() = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
       val typ = ctx.request.getQueryString("type")
@@ -1013,6 +913,12 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         case Some("preroute")  => preRouteNames
         case _                 => Seq.empty
       }
+      def extractInfos(c: String): JsValue = {
+        env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
+          case Left(_) => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
+          case Right(instance) => Json.obj("id" -> s"cp:$c", "name" -> instance.name, "description" -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue])
+        }
+      }
       env.datastores.scriptDataStore.findAll().map { all =>
         val allClasses = all
           .filter { script =>
@@ -1026,10 +932,10 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
               case _                                                         => false
             }
           }
-          .map(c => Json.obj("id"             -> c.id, "name"     -> c.name)) ++
-        cpTransformers.map(c => Json.obj("id" -> s"cp:$c", "name" -> c)) ++
-        cpValidators.map(c => Json.obj("id"   -> s"cp:$c", "name" -> c)) ++
-        cpPreRoutes.map(c => Json.obj("id"   -> s"cp:$c", "name" -> c))
+          .map(c => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)) ++
+        cpTransformers.map(extractInfos) ++
+        cpValidators.map(extractInfos) ++
+        cpPreRoutes.map(extractInfos)
         Ok(JsArray(allClasses))
       }
     }
