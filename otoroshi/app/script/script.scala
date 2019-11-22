@@ -35,6 +35,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 trait StartableAndStoppable {
+  val funit: Future[Unit] = FastFuture.successful(())
   def start(env: Env): Future[Unit] = FastFuture.successful(())
   def stop(env: Env): Future[Unit] = FastFuture.successful(())
 }
@@ -151,9 +152,6 @@ case class TransformerResponseBodyContext(
 ) extends TransformerContext {}
 
 trait RequestTransformer extends StartableAndStoppable with NamedPlugin {
-
-  // def name: String
-  // def description: String
 
   def transformRequestWithCtx(
       context: TransformerRequestContext
@@ -485,7 +483,10 @@ class ScriptManager(env: Env) {
 
   private def initClasspathModules(): Future[Unit] = {
     Future {
+      logger.info("Finding and starting plugins ...")
+      val start = System.currentTimeMillis()
       (transformersNames ++ validatorsNames ++ preRouteNames).map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
+      logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
       ()
     }(cpScriptExec)
   }

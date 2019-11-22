@@ -45,9 +45,6 @@ object PreRoutingRef {
 }
 
 trait PreRouting extends StartableAndStoppable with NamedPlugin {
-
-  val funit = FastFuture.successful(())
-
   def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
 }
 
