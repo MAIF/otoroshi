@@ -3082,14 +3082,7 @@ class PluginsDescription extends Component {
 
   state = { scripts: [] }
 
-  componentWillUnmount() {
-    if (this.interval) {
-      clearInterval(this.interval);
-    }
-  }
-
   componentDidMount() {
-    this.interval = setInterval(this.update, 2000);
     fetch(`/bo/api/proxy/api/scripts/_list?type=transformer`, {
       method: 'GET',
       credentials: 'include',
@@ -3099,20 +3092,21 @@ class PluginsDescription extends Component {
     }).then(r => r.json()).then(scripts => this.setState({ scripts: scripts.filter(e => !!e.description) }));
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.refs !== this.props.refs) {
+      setTimeout(() => {
+        this.forceUpdate();
+        setTimeout(() => {
+          this.update();
+        }, 100);
+      }, 100);
+    }
+  }
+
   update = () => {
-    window.$('pre code').each((i, block) => {
+    window.$('.plugin-doc pre code').each((i, block) => {
       window.hljs.highlightBlock(block);
     });
-    const found = this.props.refs.map(this.find).filter(e => !!e).map(script => (
-      this.findNode(
-        script, 
-        null,
-        true
-      )
-    )).filter(e => !!e);
-    if (found.length > 0) {
-      this.forceUpdate();
-    }
   }
 
   find = (ref) => {
@@ -3122,10 +3116,8 @@ class PluginsDescription extends Component {
   findNode = (ref, tree, findOnly) => {
     const nodes = Array.from(document.querySelectorAll('.Select-value-label'));
     const node = nodes.filter(n => {
-      // console.log(`${n.innerText} === ${ref.name}`)
       return n.innerText === ref.name
     })[0];
-    // console.log(node)
     if (!node) {
       return null;
     };

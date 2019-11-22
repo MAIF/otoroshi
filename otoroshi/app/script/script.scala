@@ -410,6 +410,7 @@ class ScriptManager(env: Env) {
   private implicit val ec   = env.otoroshiExecutionContext
   private implicit val _env = env
 
+  private val cpScriptExec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   private val logger     = Logger("otoroshi-script-manager")
   private val updateRef  = new AtomicReference[Cancellable]()
   private val compiling  = new TrieMap[String, Unit]()
@@ -417,12 +418,50 @@ class ScriptManager(env: Env) {
   private val cpCache    = new TrieMap[String, (ScriptType, Any)]()
   private val cpTryCache = new TrieMap[String, Unit]()
 
+  lazy val (transformersNames, validatorsNames, preRouteNames) = Try {
+    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
+
+    import collection.JavaConverters._
+    val scanResult: ScanResult = new ClassGraph()
+      .addClassLoader(env.environment.classLoader)
+      .enableAllInfo
+      .blacklistPackages("java.*", "javax.*")
+      .scan
+    try {
+
+      def predicate(c: ClassInfo): Boolean = c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+        c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+        c.getName == "otoroshi.script.CompilingValidator$" ||
+        c.getName == "otoroshi.script.CompilingPreRouting$" ||
+        c.getName == "otoroshi.script.DefaultValidator$" ||
+        c.getName == "otoroshi.script.DefaultPreRouting$" ||
+        c.getName == "otoroshi.script.NanoApp" ||
+        c.getName == "otoroshi.script.NanoApp$"
+
+      val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala).filterNot(predicate).map(_.getName)
+
+      val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
+
+      val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+
+      (requestTransformers, validators, preRoutes)
+    } catch {
+      case e: Throwable =>
+        e.printStackTrace()
+        (Seq.empty[String], Seq.empty[String], Seq.empty[String])
+    } finally if (scanResult != null) scanResult.close()
+  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String])
+
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
       updateRef.set(
         env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache())(env.otoroshiExecutionContext)
       )
     }
+    env.otoroshiScheduler.scheduleOnce(1.second)(initClasspathModules())(env.otoroshiExecutionContext)
     this
   }
 
@@ -442,6 +481,13 @@ class ScriptManager(env: Env) {
         "initial" -> initial
       )
     }
+  }
+
+  private def initClasspathModules(): Future[Unit] = {
+    Future {
+      (transformersNames ++ validatorsNames ++ preRouteNames).map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
+      ()
+    }(cpScriptExec)
   }
 
   private def compileAndUpdate(script: Script): Unit = {
@@ -856,46 +902,13 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
-
-  private lazy val (transformersNames, validatorsNames, preRouteNames) = Try {
-    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
-
-    import collection.JavaConverters._
-    val scanResult: ScanResult = new ClassGraph()
-      .addClassLoader(env.environment.classLoader)
-      .enableAllInfo
-      .blacklistPackages("java.*", "javax.*")
-      .scan
-    try {
-
-      def predicate(c: ClassInfo): Boolean = c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
-        c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
-        c.getName == "otoroshi.script.CompilingValidator$" ||
-        c.getName == "otoroshi.script.CompilingPreRouting$" ||
-        c.getName == "otoroshi.script.DefaultValidator$" ||
-        c.getName == "otoroshi.script.DefaultPreRouting$" ||
-        c.getName == "otoroshi.script.NanoApp" ||
-        c.getName == "otoroshi.script.NanoApp$"
-
-      val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala).filterNot(predicate).map(_.getName)
-
-      val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
-
-      val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
-
-      (requestTransformers, validators, preRoutes)
-    } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        (Seq.empty[String], Seq.empty[String], Seq.empty[String])
-    } finally if (scanResult != null) scanResult.close()
-  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String])
-
   def findAllScriptsList() = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
+
+      val transformersNames = env.scriptManager.transformersNames
+      val validatorsNames = env.scriptManager.validatorsNames
+      val preRouteNames = env.scriptManager.preRouteNames
+
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
         case None                => transformersNames

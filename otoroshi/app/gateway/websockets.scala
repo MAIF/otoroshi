@@ -1115,6 +1115,7 @@ class WebSocketHandler()(implicit env: Env) {
                                           httpRequest.target.getOrElse(_target)
                                         )))
                                       } else {
+                                        attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> httpRequest.target.getOrElse(_target))
                                         FastFuture.successful(
                                           Right(
                                             ActorFlow

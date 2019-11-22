@@ -1580,6 +1580,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           //   .withFollowRedirects(false)
                                           //   .stream()
 
+                                          attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> httpRequest.target.getOrElse(_target))
+
                                           val clientReq = descriptor.useAkkaHttpClient match {
                                             case true =>
                                               env.gatewayClient.akkaUrlWithTarget(
