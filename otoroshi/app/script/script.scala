@@ -456,7 +456,7 @@ class ScriptManager(env: Env) {
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
       updateRef.set(
-        env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache())(env.otoroshiExecutionContext)
+        env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache(true))(env.otoroshiExecutionContext)
       )
     }
     env.otoroshiScheduler.scheduleOnce(1.second)(initClasspathModules())(env.otoroshiExecutionContext)
@@ -491,41 +491,48 @@ class ScriptManager(env: Env) {
     }(cpScriptExec)
   }
 
-  private def compileAndUpdate(script: Script): Unit = {
+  private def compileAndUpdate(script: Script): Future[Unit] = {
     compiling.putIfAbsent(script.id, ()) match {
-      case Some(_) => // do nothing as something is compiling
+      case Some(_) => FastFuture.successful(())// do nothing as something is compiling
       case None => {
         logger.debug(s"Updating script ${script.name}")
         env.scriptCompiler.compile(script.code).map {
           case Left(err) =>
             logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
             compiling.remove(script.id)
+            ()
           case Right(trans) => {
             Try(trans.asInstanceOf[StartableAndStoppable].start(env))
             cache.put(script.id, (script.hash, script.`type`, trans))
             compiling.remove(script.id)
+            ()
           }
         }
       }
     }
   }
 
-  private def compileAndUpdateIfNeeded(script: Script): Unit = {
+  private def compileAndUpdateIfNeeded(script: Script): Future[Unit] = {
     (cache.get(script.id), compiling.get(script.id)) match {
       case (None, None)                             => compileAndUpdate(script)
-      case (None, Some(_))                          => // do nothing as something is compiling
-      case (Some(_), Some(_))                       => // do nothing as something is compiling
+      case (None, Some(_))                          => FastFuture.successful(()) // do nothing as something is compiling
+      case (Some(_), Some(_))                       => FastFuture.successful(()) // do nothing as something is compiling
       case (Some(cs), None) if cs._1 != script.hash => compileAndUpdate(script)
-      case (Some(_), None)                          => // do nothing as script has not changed from cache
+      case (Some(_), None)                          => FastFuture.successful(()) // do nothing as script has not changed from cache
     }
   }
 
-  private def updateScriptCache(): Unit = {
+  private def updateScriptCache(first: Boolean = false): Future[Unit] = {
     logger.debug(s"updateScriptCache")
-    env.datastores.scriptDataStore.findAll().map { scripts =>
-      scripts.foreach(compileAndUpdateIfNeeded)
+    if (first) logger.info("Finding and starting scripts ...")
+    val start = System.currentTimeMillis()
+    env.datastores.scriptDataStore.findAll().flatMap { scripts =>
+      val all: Future[Seq[Unit]] = Future.sequence(scripts.map(compileAndUpdateIfNeeded))
       val ids = scripts.map(_.id)
       cache.keySet.filterNot(id => ids.contains(id)).foreach(id => cache.remove(id))
+      all.map(_ => ())
+    }.andThen {
+      case _ if first => logger.info(s"Finding and starting scripts done in ${System.currentTimeMillis() - start} ms.")
     }
   }
 
