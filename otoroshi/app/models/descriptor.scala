@@ -438,7 +438,8 @@ case class Target(
     protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
-    loose: Boolean = false
+    loose: Boolean = false,
+    mtls: Boolean = false
 ) {
   def toJson = Target.format.writes(this)
   def asUrl  = s"${scheme}://$host"
@@ -465,6 +466,7 @@ object Target {
       "scheme"    -> o.scheme,
       "weight"    -> o.weight,
       "loose"     -> o.loose,
+      "mtls"      -> o.mtls,
       "protocol"  -> o.protocol.value,
       "predicate" -> o.predicate.toJson,
       "ipAddress" -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -476,6 +478,7 @@ object Target {
           scheme = (json \ "scheme").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("https"),
           weight = (json \ "weight").asOpt[Int].getOrElse(1),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
+          mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
           protocol = (json \ "protocol")
             .asOpt[String]
             .filterNot(_.trim.isEmpty)

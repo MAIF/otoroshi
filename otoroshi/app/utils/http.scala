@@ -195,6 +195,24 @@ class WsClientChooser(standardClient: WSClient,
                                 env = env)(
           akkaClient.mat
         )
+      case "mtls:https" =>
+        new AkkaWsClientRequest(akkaClient,
+          url.replace("mtls:https://", "https://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env)(
+          akkaClient.mat
+        )
+      case "mtls" =>
+        new AkkaWsClientRequest(akkaClient,
+          url.replace("mtls://", "https://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env)(
+          akkaClient.mat
+        )
       case "http2" =>
         new AkkaWsClientRequest(akkaClient,
                                 url.replace("http2://", "http://"),

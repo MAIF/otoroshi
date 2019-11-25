@@ -35,6 +35,7 @@ import { Proxy } from '../components/Proxy';
 import { Warning } from './ScriptsPage';
 import { Separator } from '../components/Separator';
 import { Restrictions } from '../components/Restrictions';
+import { Scripts } from '../components/Scripts';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -184,6 +185,12 @@ class Target extends Component {
           value={value.ipAddress}
           help="The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client"
           onChange={e => this.changeTheValue('ipAddress', e)}
+        />
+        <BooleanInput
+          label="use mTLS"
+          value={value.mtls}
+          help="If enabled, Otoroshi will try to provide client certificate trusted by the target server."
+          onChange={e => this.changeTheValue('mtls', e)}
         />
         <BooleanInput
           label="TLS loose"
@@ -2014,30 +2021,12 @@ export class ServicePage extends Component {
               help="Is access validation enabled for this service"
               onChange={v => this.changeTheValue('preRouting.enabled', v)}
             />
-            {/*<SelectInput*/}
-            <ArrayInput
+            <Scripts
               label="Pre routes"
-              value={this.state.service.preRouting.refs}
-              onChange={(e, item, index) => {
-                this.changeTheValue('preRouting.refs', e);
-              }}
-              valuesFrom="/bo/api/proxy/api/scripts/_list?type=preroute"
-              transformer={a => ({ value: a.id, label: a.name })}
-              help="..."
+              refs={this.state.service.preRouting.refs}
+              type="preroute"
+              onChange={e => this.changeTheValue('preRouting.refs', e)}
             />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                {this.state.service.preRouting.refs.length === 0 && (
-                  <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-plus" /> Create a new script.
-                  </a>
-                )}
-                <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
-                  <i className="glyphicon glyphicon-link" /> all scripts.
-                </a>
-              </div>
-            </div>
             <ArrayInput
               label="Excluded patterns"
               placeholder="URI pattern"
@@ -2068,42 +2057,12 @@ export class ServicePage extends Component {
               help="Is access validation enabled for this service"
               onChange={v => this.changeTheValue('accessValidator.enabled', v)}
             />
-            {/*<SelectInput*/}
-            <ArrayInput
+            <Scripts
               label="Access validators"
-              value={this.state.service.accessValidator.refs}
-              onChange={(e, item, index) => {
-                this.changeTheValue('accessValidator.refs', e);
-                // this.mergeConfig(item, index, this.state.service.accessValidator.config, newConfig => {
-                //   setTimeout(() => {
-                //     this.changeTheValue('accessValidator.config', newConfig);
-                //   }, 300);
-                // });
-              }}
-              valuesFrom="/bo/api/proxy/api/scripts/_list?type=validator"
-              transformer={a => ({ value: a.id, label: a.name })}
-              help="..."
+              refs={this.state.service.accessValidator.refs}
+              type="validator"
+              onChange={e => this.changeTheValue('accessValidator.refs', e)}
             />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                {this.state.service.accessValidator.refs.length === 0 && (
-                  <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-plus" /> Create a new script.
-                  </a>
-                )}
-                {/*this.state.service.accessValidator.refs && (
-                  <a
-                    href={`/bo/dashboard/scripts/edit/${this.state.service.transformerRef}`}
-                    className="btn btn-sm btn-success">
-                    <i className="glyphicon glyphicon-edit" /> Edit the script.
-                  </a>
-                )*/}
-                <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
-                  <i className="glyphicon glyphicon-link" /> all scripts.
-                </a>
-              </div>
-            </div>
             <ArrayInput
               label="Excluded patterns"
               placeholder="URI pattern"
@@ -2714,35 +2673,12 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Request transformation">
             <Warning />
-            <ArrayInput
+            <Scripts
               label="Request transformers"
-              value={this.state.service.transformerRefs}
+              refs={this.state.service.transformerRefs}
+              type="transformer"
               onChange={e => this.changeTheValue('transformerRefs', e)}
-              valuesFrom="/bo/api/proxy/api/scripts/_list?type=transformer"
-              transformer={a => ({ value: a.id, label: a.name, desc: a.description })}
-              help="..."
             />
-            <PluginsDescription refs={this.state.service.transformerRefs} />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                {this.state.service.transformerRefs.length === 0 && (
-                  <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-plus" /> Create a new script.
-                  </a>
-                )}
-                {/*this.state.service.transformerRefs.length > 0 && (
-                  <a
-                    href={`/bo/dashboard/scripts/edit/${this.state.service.transformerRef}`}
-                    className="btn btn-sm btn-success">
-                    <i className="glyphicon glyphicon-edit" /> Edit the script.
-                  </a>
-                )*/}
-                <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
-                  <i className="glyphicon glyphicon-link" /> all scripts.
-                </a>
-              </div>
-            </div>
             <div className="form-group">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
@@ -3055,104 +2991,5 @@ export class PrivateApiButton extends Component {
         </button>
       );
     }
-  }
-}
-
-import showdown from 'showdown';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/monokai.css';
-
-window.hljs = window.hljs || hljs;
-
-const converter = new showdown.Converter({
-  omitExtraWLInCodeBlocks: true,
-  ghCompatibleHeaderId: true,
-  parseImgDimensions: true,
-  simplifiedAutoLink: true,
-  tables: true,
-  tasklists: true,
-  requireSpaceBeforeHeadingText: true,
-  ghMentions: true,
-  emoji: true,
-  ghMentionsLink: '/{u}', // TODO: link to teams ?
-  extensions: [],
-});
-
-class PluginsDescription extends Component {
-
-  state = { scripts: [] }
-
-  componentDidMount() {
-    fetch(`/bo/api/proxy/api/scripts/_list?type=transformer`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json'
-      }
-    }).then(r => r.json()).then(scripts => this.setState({ scripts: scripts.filter(e => !!e.description) }));
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.refs !== this.props.refs) {
-      setTimeout(() => {
-        this.forceUpdate();
-        setTimeout(() => {
-          this.update();
-        }, 100);
-      }, 100);
-    }
-  }
-
-  update = () => {
-    window.$('.plugin-doc pre code').each((i, block) => {
-      window.hljs.highlightBlock(block);
-    });
-  }
-
-  find = (ref) => {
-    return this.state.scripts.filter(s => s.id === ref)[0];
-  }
-
-  findNode = (ref, tree, findOnly) => {
-    const nodes = Array.from(document.querySelectorAll('.Select-value-label'));
-    const node = nodes.filter(n => {
-      return n.innerText === ref.name
-    })[0];
-    if (!node) {
-      return null;
-    };
-    if (findOnly) {
-      return true;
-    }
-    const parentNode = node.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
-    return ReactDOM.createPortal(tree, parentNode);
-  }
-
-  render() {
-    return (
-      <>
-        {this.props.refs.map(this.find).filter(e => !!e).map(script => (
-          this.findNode(
-            script, 
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                <div
-                  className="plugin-doc"
-                  style={{
-                    padding: 10,
-                    borderRadius: 5,
-                    backgroundColor: '#494948',
-                    width: '100%',
-                  }}>
-                  <h3>{script.name}</h3>
-                  <p style={{ textAlign: 'justify' }} dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }} />
-                </div>
-              </div>
-            </div>
-          )
-        ))}
-      </>
-    );
   }
 }

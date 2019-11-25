@@ -1580,19 +1580,28 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           //   .withFollowRedirects(false)
                                           //   .stream()
 
-                                          attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> httpRequest.target.getOrElse(_target))
+                                          val finalTarget = httpRequest.target.getOrElse(_target)
+                                          attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
 
                                           val clientReq = descriptor.useAkkaHttpClient match {
+                                            case _ if finalTarget.mtls =>
+                                              env.gatewayClient.akkaUrlWithTarget(
+                                                UrlSanitizer.sanitize(httpRequest.url),
+                                                finalTarget,
+                                                descriptor.clientConfig
+                                              )
                                             case true =>
                                               env.gatewayClient.akkaUrlWithTarget(
                                                 UrlSanitizer.sanitize(httpRequest.url),
-                                                httpRequest.target.getOrElse(_target),
+                                                finalTarget,
                                                 descriptor.clientConfig
                                               )
                                             case false =>
-                                              env.gatewayClient.urlWithTarget(UrlSanitizer.sanitize(httpRequest.url),
-                                                                              httpRequest.target.getOrElse(_target),
-                                                                              descriptor.clientConfig)
+                                              env.gatewayClient.urlWithTarget(
+                                                UrlSanitizer.sanitize(httpRequest.url),
+                                                finalTarget,
+                                                descriptor.clientConfig
+                                              )
                                           }
 
                                           val builder = clientReq

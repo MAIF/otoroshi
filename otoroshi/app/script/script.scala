@@ -411,6 +411,7 @@ class ScriptManager(env: Env) {
   private val cpScriptExec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   private val logger     = Logger("otoroshi-script-manager")
   private val updateRef  = new AtomicReference[Cancellable]()
+  private val firstScan  = new AtomicBoolean(false)
   private val compiling  = new TrieMap[String, Unit]()
   private val cache      = new TrieMap[String, (String, ScriptType, Any)]()
   private val cpCache    = new TrieMap[String, (ScriptType, Any)]()
@@ -456,7 +457,7 @@ class ScriptManager(env: Env) {
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
       updateRef.set(
-        env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache(true))(env.otoroshiExecutionContext)
+        env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache(firstScan.compareAndSet(false, true)))(env.otoroshiExecutionContext)
       )
     }
     env.otoroshiScheduler.scheduleOnce(1.second)(initClasspathModules())(env.otoroshiExecutionContext)
@@ -524,7 +525,7 @@ class ScriptManager(env: Env) {
 
   private def updateScriptCache(first: Boolean = false): Future[Unit] = {
     logger.debug(s"updateScriptCache")
-    if (first) logger.info("Finding and starting scripts ...")
+    if (first) logger.info("Compiling and starting scripts ...")
     val start = System.currentTimeMillis()
     env.datastores.scriptDataStore.findAll().flatMap { scripts =>
       val all: Future[Seq[Unit]] = Future.sequence(scripts.map(compileAndUpdateIfNeeded))
@@ -532,7 +533,7 @@ class ScriptManager(env: Env) {
       cache.keySet.filterNot(id => ids.contains(id)).foreach(id => cache.remove(id))
       all.map(_ => ())
     }.andThen {
-      case _ if first => logger.info(s"Finding and starting scripts done in ${System.currentTimeMillis() - start} ms.")
+      case _ if first => logger.info(s"Compiling and starting scripts done in ${System.currentTimeMillis() - start} ms.")
     }
   }
 
