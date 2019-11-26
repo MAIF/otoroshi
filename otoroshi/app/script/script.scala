@@ -417,7 +417,7 @@ class ScriptManager(env: Env) {
   private val cpCache    = new TrieMap[String, (ScriptType, Any)]()
   private val cpTryCache = new TrieMap[String, Unit]()
 
-  lazy val (transformersNames, validatorsNames, preRouteNames) = Try {
+  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
 
     import collection.JavaConverters._
@@ -432,8 +432,10 @@ class ScriptManager(env: Env) {
         c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
         c.getName == "otoroshi.script.CompilingValidator$" ||
         c.getName == "otoroshi.script.CompilingPreRouting$" ||
+        c.getName == "otoroshi.script.CompilingRequestSink$" ||
         c.getName == "otoroshi.script.DefaultValidator$" ||
         c.getName == "otoroshi.script.DefaultPreRouting$" ||
+        c.getName == "otoroshi.script.DefaultRequestSink$" ||
         c.getName == "otoroshi.script.NanoApp" ||
         c.getName == "otoroshi.script.NanoApp$"
 
@@ -446,13 +448,16 @@ class ScriptManager(env: Env) {
       val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
         scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
 
-      (requestTransformers, validators, preRoutes)
+      val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
+
+      (requestTransformers, validators, preRoutes, reqSinks)
     } catch {
       case e: Throwable =>
         e.printStackTrace()
-        (Seq.empty[String], Seq.empty[String], Seq.empty[String])
+        (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
     } finally if (scanResult != null) scanResult.close()
-  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String])
+  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
@@ -557,6 +562,8 @@ class ScriptManager(env: Env) {
                 case _: NanoApp            => AppType
                 case _: RequestTransformer => TransformerType
                 case _: AccessValidator    => AccessValidatorType
+                case _: PreRouting         => PreRoutingType
+                case _: RequestSink        => RequestSinkType
                 case _                     => TransformerType
               }
               cpCache.put(ref, (typ, tr))
@@ -602,25 +609,17 @@ object Implicits {
 
   implicit class ServiceDescriptorWithTransformer(val desc: ServiceDescriptor) extends AnyVal {
 
-    //def transformRequest(
-    //    snowflake: String,
-    //    rawRequest: HttpRequest,
-    //    otoroshiRequest: HttpRequest,
-    //    desc: ServiceDescriptor,
-    //    apiKey: Option[ApiKey] = None,
-    //    user: Option[PrivateAppsUser] = None,
-    //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     def transformRequest(
         context: TransformerRequestContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
       env.scriptingEnabled match {
         case true =>
-          if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs                                = gScripts.transformersRefs ++ desc.transformerRefs
+          val gScripts = env.datastores.globalConfigDataStore.latestSafe
+            .filter(_.scripts.enabled)
+            .map(_.scripts)
+            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+          val refs                                = gScripts.transformersRefs ++ desc.transformerRefs
+          if (refs.nonEmpty) {
             val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
             Source(refs.toList.zipWithIndex).runFoldAsync(either) {
               case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
@@ -634,13 +633,6 @@ object Implicits {
                                  globalConfig = gScripts.transformersConfig)
                   )(env, ec, mat)
             }
-            // desc.transformerRef match {
-            //   case Some(ref) =>
-            //     env.scriptManager
-            //       .getScript(ref)
-            //       .transformRequest(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
-            //   case None => FastFuture.successful(Right(otoroshiRequest))
-            // }
           } else {
             FastFuture.successful(Right(context.otoroshiRequest))
           }
@@ -648,25 +640,17 @@ object Implicits {
       }
     }
 
-    // def transformResponse(
-    //     snowflake: String,
-    //     rawResponse: HttpResponse,
-    //     otoroshiResponse: HttpResponse,
-    //     desc: ServiceDescriptor,
-    //     apiKey: Option[ApiKey] = None,
-    //     user: Option[PrivateAppsUser] = None
-    // )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     def transformResponse(
         context: TransformerResponseContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
       env.scriptingEnabled match {
         case true =>
-          if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs                                 = gScripts.transformersRefs ++ desc.transformerRefs
+          val gScripts = env.datastores.globalConfigDataStore.latestSafe
+            .filter(_.scripts.enabled)
+            .map(_.scripts)
+            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+          val refs                                 = gScripts.transformersRefs ++ desc.transformerRefs
+          if (refs.nonEmpty) {
             val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
             Source(refs.toList.zipWithIndex).runFoldAsync(either) {
               case (Left(badResult), _) => FastFuture.successful(Left(badResult))
@@ -680,13 +664,6 @@ object Implicits {
                                  globalConfig = gScripts.transformersConfig)
                   )(env, ec, mat)
             }
-            // desc.transformerRef match {
-            //   case Some(ref) =>
-            //     env.scriptManager
-            //       .getScript(ref)
-            //       .transformResponse(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
-            //   case None => FastFuture.successful(Right(otoroshiResponse))
-            // }
           } else {
             FastFuture.successful(Right(context.otoroshiResponse))
           }
@@ -694,26 +671,17 @@ object Implicits {
       }
     }
 
-    //def transformRequestBody(
-    //    snowflake: String,
-    //    body: Source[ByteString, Any],
-    //    rawRequest: HttpRequest,
-    //    otoroshiRequest: HttpRequest,
-    //    desc: ServiceDescriptor,
-    //    apiKey: Option[ApiKey] = None,
-    //    user: Option[PrivateAppsUser] = None
-    //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
     def transformRequestBody(
         context: TransformerRequestBodyContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
         case true =>
-          if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+          val gScripts = env.datastores.globalConfigDataStore.latestSafe
+            .filter(_.scripts.enabled)
+            .map(_.scripts)
+            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+          val refs = gScripts.transformersRefs ++ desc.transformerRefs
+          if (refs.nonEmpty) {
             Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
               case (body, (ref, index)) =>
                 env.scriptManager
@@ -725,13 +693,6 @@ object Implicits {
                                  globalConfig = gScripts.transformersConfig)
                   )(env, ec, mat)
             })
-            // desc.transformerRef match {
-            //   case Some(ref) =>
-            //     env.scriptManager
-            //       .getScript(ref)
-            //       .transformRequestBody(snowflake, body, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
-            //   case None => body
-            // }
           } else {
             context.body
           }
@@ -739,26 +700,17 @@ object Implicits {
       }
     }
 
-    //def transformResponseBody(
-    //    snowflake: String,
-    //    body: Source[ByteString, Any],
-    //    rawResponse: HttpResponse,
-    //    otoroshiResponse: HttpResponse,
-    //    desc: ServiceDescriptor,
-    //    apiKey: Option[ApiKey] = None,
-    //    user: Option[PrivateAppsUser] = None
-    //)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
     def transformResponseBody(
         context: TransformerResponseBodyContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
       env.scriptingEnabled match {
         case true =>
-          if (desc.transformerRefs.nonEmpty) {
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+          val gScripts = env.datastores.globalConfigDataStore.latestSafe
+            .filter(_.scripts.enabled)
+            .map(_.scripts)
+            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+          val refs = gScripts.transformersRefs ++ desc.transformerRefs
+          if (refs.nonEmpty) {
             Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
               case (body, (ref, index)) =>
                 env.scriptManager
@@ -770,13 +722,6 @@ object Implicits {
                                  globalConfig = gScripts.transformersConfig)
                   )(env, ec, mat)
             })
-            // desc.transformerRef match {
-            //   case Some(ref) =>
-            //     env.scriptManager
-            //       .getScript(ref)
-            //       .transformResponseBody(snowflake, body, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
-            //   case None => body
-            // }
           } else {
             context.body
           }
@@ -804,6 +749,10 @@ object AccessValidatorType extends ScriptType {
 
 object PreRoutingType extends ScriptType {
   def name: String = "preroute"
+}
+
+object RequestSinkType extends ScriptType {
+  def name: String = "sink"
 }
 
 case class Script(id: String, name: String, desc: String, code: String, `type`: ScriptType) {
@@ -834,6 +783,8 @@ object Script {
           case "app"         => AppType
           case "transformer" => TransformerType
           case "validator"   => AccessValidatorType
+          case "preroute"    => PreRoutingType
+          case "sink"        => RequestSinkType
           case _             => TransformerType
         }
         Script(
@@ -917,6 +868,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val transformersNames = env.scriptManager.transformersNames
       val validatorsNames = env.scriptManager.validatorsNames
       val preRouteNames = env.scriptManager.preRouteNames
+      val reqSinkNames = env.scriptManager.reqSinkNames
 
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
@@ -935,6 +887,11 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         case Some("preroute")  => preRouteNames
         case _                 => Seq.empty
       }
+      val cpRequestSinks = typ match {
+        case None              => reqSinkNames
+        case Some("sink")      => reqSinkNames
+        case _                 => Seq.empty
+      }
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
           case Left(_) => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
@@ -951,13 +908,15 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
               case Some("app") if script.`type` == AppType                   => true
               case Some("validator") if script.`type` == AccessValidatorType => true
               case Some("preroute") if script.`type` == PreRoutingType       => true
+              case Some("sink") if script.`type` == RequestSinkType          => true
               case _                                                         => false
             }
           }
           .map(c => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)) ++
         cpTransformers.map(extractInfos) ++
         cpValidators.map(extractInfos) ++
-        cpPreRoutes.map(extractInfos)
+        cpPreRoutes.map(extractInfos) ++
+        cpRequestSinks.map(extractInfos)
         Ok(JsArray(allClasses))
       }
     }

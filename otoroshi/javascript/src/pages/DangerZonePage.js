@@ -1,9 +1,15 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import { ResetDBButton } from '../components/ResetDBButton';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Form, SelectInput } from '../components/inputs';
+import { Form, SelectInput, BooleanInput } from '../components/inputs';
 import { Proxy } from '../components/Proxy';
+import { Scripts } from '../components/Scripts';
 import moment from 'moment';
+
+import deepSet from 'set-value';
+import _ from 'lodash';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -607,57 +613,10 @@ export class DangerZonePage extends Component {
         help: '...',
       },
     },
-    'scripts.transformersRefs': {
-      type: 'array',
-      props: {
-        label: 'Request transformers',
-        help: 'Transformers added to any request of any service',
-        valuesFrom: '/bo/api/proxy/api/scripts/_list?type=transformer',
-        transformer: a => ({ value: a.id, label: a.name }),
-      },
-    },
-    'scripts.transformersConfig': {
-      type: 'code',
-      props: {
-        mode: 'json',
-        label: 'Transformers config.',
-        help: '...',
-      },
-    },
-    'scripts.validatorRefs': {
-      type: 'array',
-      props: {
-        label: 'Access validators',
-        help: 'Validator added to any request of any service',
-        valuesFrom: '/bo/api/proxy/api/scripts/_list?type=validator',
-        transformer: a => ({ value: a.id, label: a.name }),
-      },
-    },
-    'scripts.validatorConfig': {
-      type: 'code',
-      props: {
-        mode: 'json',
-        label: 'Validators config.',
-        help: '...',
-      },
-    },
-    'scripts.preRouteRefs': {
-      type: 'array',
-      props: {
-        label: 'Pre routes',
-        help: 'Pre route added to any request of any service',
-        valuesFrom: '/bo/api/proxy/api/scripts/_list?type=validator',
-        transformer: a => ({ value: a.id, label: a.name }),
-      },
-    },
-    'scripts.preRouteConfig': {
-      type: 'code',
-      props: {
-        mode: 'json',
-        label: 'Pre routes config.',
-        help: '...',
-      },
-    },
+    'scripts': {
+      type: GlobalScripts,
+      props: {},
+    }
   };
 
   formFlow = [
@@ -717,11 +676,7 @@ export class DangerZonePage extends Component {
     'cleverSettings.secret',
     'cleverSettings.orgaId',
     '>>>Global scripts',
-    'scripts.enabled',
-    'scripts.validatorRefs',
-    'scripts.validatorConfig',
-    'scripts.transformersRefs',
-    'scripts.transformersConfig',
+    'scripts',
     '>>>Proxies',
     '-- Proxy for alert emails (mailgun)',
     'proxies.alertEmails',
@@ -1006,6 +961,101 @@ class BackOfficeAuthButtons extends Component {
           </a>
         </div>
       </div>
+    );
+  }
+}
+
+
+class GlobalScripts extends Component {
+  changeTheValue = (name, value) => {
+    const cloned = _.cloneDeep(this.props.value);
+    const newCloned = deepSet(cloned, name, value);
+    this.props.onChange(newCloned);
+  };
+  render() {
+    const config = this.props.value || {
+      transformersRefs: [],
+      transformersConfig: {},
+      validatorRefs: [],
+      validatorConfig: {},
+      preRouteRefs: [],
+      preRouteConfig: {},
+      sinkRefs: [],
+      sinkConfig: {}
+    };
+    return (
+      <>
+        <BooleanInput
+          label="Enabled"
+          value={config.enabled}
+          help="Global scripts enabled"
+          onChange={v => this.changeTheValue('enabled', v)}
+        />
+        <Scripts
+          label="Request sinks"
+          refs={config.sinkRefs}
+          type="sink"
+          onChange={e => this.changeTheValue('sinkRefs', e)}
+        />
+        <div className="form-group">
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label="Request sinks configuration"
+              mode="json"
+              value={JSON.stringify(config.sinkConfig, null, 2)}
+              onChange={e => this.changeTheValue('sinkConfig', JSON.parse(e))}
+            />
+          </Suspense>
+        </div>
+        <Scripts
+          label="Pre-routes"
+          refs={config.preRouteRefs}
+          type="preroute"
+          onChange={e => this.changeTheValue('preRouteRefs', e)}
+        />
+        <div className="form-group">
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label="Pre-routes configuration"
+              mode="json"
+              value={JSON.stringify(config.preRouteConfig, null, 2)}
+              onChange={e => this.changeTheValue('preRouteConfig', JSON.parse(e))}
+            />
+          </Suspense>
+        </div>
+        <Scripts
+          label="Access validators"
+          refs={config.validatorRefs}
+          type="validator"
+          onChange={e => this.changeTheValue('validatorRefs', e)}
+        />
+        <div className="form-group">
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label="Access validators configuration"
+              mode="json"
+              value={JSON.stringify(config.validatorConfig, null, 2)}
+              onChange={e => this.changeTheValue('validatorConfig', JSON.parse(e))}
+            />
+          </Suspense>
+        </div>
+        <Scripts
+          label="Transformers"
+          refs={config.transformersRefs}
+          type="transformer"
+          onChange={e => this.changeTheValue('transformersRefs', e)}
+        />
+        <div className="form-group">
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label="Transformers configuration"
+              mode="json"
+              value={JSON.stringify(config.transformersConfig, null, 2)}
+              onChange={e => this.changeTheValue('transformersConfig', JSON.parse(e))}
+            />
+          </Suspense>
+        </div>
+      </>
     );
   }
 }

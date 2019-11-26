@@ -60,9 +60,9 @@ object UserAgentHelper {
   }
 }
 
-class UserAgentInfo extends PreRouting {
+class UserAgentExtractor extends PreRouting {
 
-  private val logger = Logger("UserAgentInfo")
+  private val logger = Logger("UserAgentExtractor")
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val log = (ctx.config \ "UserAgentInfo" \ "log").asOpt[Boolean].getOrElse(false)

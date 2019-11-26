@@ -122,6 +122,23 @@ class CustomPreRouting extends PreRouting {
 new CustomPreRouting()
 `;
 
+const basicSink = `
+import akka.stream.scaladsl._
+import env.Env
+import otoroshi.script._
+import utils.future.Implicits._
+import play.api.libs.json._
+import scala.concurrent.{ExecutionContext, Future}
+
+class CustomRequestSink extends RequestSink {
+  def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = true
+  def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = FastFuture.successful(
+    Results.Ok(Json.obj("message" -> "hello world!"))
+  )
+}
+new CustomRequestSink()
+`;
+
 class CompilationTools extends Component {
   state = {
     compiling: false,
@@ -253,6 +270,14 @@ class ScriptTypeSelector extends Component {
               ...this.props.rawValue,
               type: 'preroute',
               code: basicPreRoute,
+            });
+          }
+          if (t === 'sink') {
+            this.setState({ type: 'sink' });
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'sink',
+              code: basicSink,
             });
           }
         }}

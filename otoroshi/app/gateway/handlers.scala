@@ -41,7 +41,7 @@ import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
-import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
+import otoroshi.script._
 import utils.http.Implicits._
 import play.libs.ws.WSCookie
 import ssl.PemHeaders
@@ -776,6 +776,26 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
+  def maybeSinkRequest(snowflake: String, req: RequestHeader, attrs: utils.TypedMap, err: Future[Result]): Future[Result] = {
+    env.datastores.globalConfigDataStore.singleton().flatMap {
+      case config if !config.scripts.enabled => err
+      case config if config.scripts.sinkRefs.isEmpty => err
+      case config =>
+        val ctx = RequestSinkContext(
+          snowflake = snowflake,
+          index = -1,
+          request = req,
+          config = config.scripts.sinkConfig,
+          attrs = attrs
+        )
+        val rss = config.scripts.sinkRefs.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect { case Right(rs) => rs }
+        rss.find(_.matches(ctx)) match {
+          case None => err
+          case Some(rs) => rs.handle(ctx)
+        }
+    }
+  }
+
   def forwardCall() = actionBuilder.async(sourceBodyParser) { req =>
     // TODO : add metrics + JMX
     // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
@@ -845,7 +865,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
         ServiceLocation(req.host, globalConfig) match {
           case None =>
-            Errors.craftResponseResult(s"Service not found: invalid host", NotFound, req, None, Some("errors.service.not.found.invalid.host"), attrs = attrs)
+            val err = Errors.craftResponseResult(s"Service not found: invalid host", NotFound, req, None, Some("errors.service.not.found.invalid.host"), attrs = attrs)
+            maybeSinkRequest(snowflake, req, attrs, err)
+
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
             val uriParts = req.relativeUri.split("/").toSeq
 
@@ -857,11 +879,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                 case None =>
                   // val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap)
                   // logger.info(s"Downstream service not found for $query")
-                  Errors
+                  val err = Errors
                     .craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"), attrs = attrs)
+                  maybeSinkRequest(snowflake, req, attrs, err)
                 case Some(desc) if !desc.enabled =>
-                  Errors
+                  val err = Errors
                     .craftResponseResult(s"Service unavailable", ServiceUnavailable, req, None, Some("errors.service.unavailable"), attrs = attrs)
+                  maybeSinkRequest(snowflake, req, attrs, err)
                 case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
                   // TODO: event here
                   FastFuture.successful(
