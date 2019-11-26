@@ -17,6 +17,110 @@ function shallowDiffers(a, b) {
   return false;
 }
 
+class Geolocation extends Component {
+  ipStackFormFlow = ['enabled', 'apikey', 'timeout'];
+  maxmindFormFlow = ['enabled', 'path'];
+  ipStackForm = {
+    enabled: {
+      type: 'bool',
+      props: {
+        label: 'Enabled',
+      },
+    },
+    apikey: {
+      type: 'string',
+      props: {
+        label: 'IpStack api key',
+        placeholder: 'IpStack api key',
+      },
+    },
+    timeout: {
+      type: 'number',
+      props: {
+        label: 'IpStack timeout',
+        placeholder: 'IpStack timeout',
+      },
+    },
+  };
+  maxmindForm= {
+    enabled: {
+      type: 'bool',
+      props: {
+        label: 'Enabled',
+      },
+    },
+    path: {
+      type: 'string',
+      props: {
+        label: 'Maxmind db file path',
+        placeholder: 'Maxmind db file path',
+      },
+    }
+  };
+  render() {
+    const settings = this.props.value;
+    const type = settings.type;
+    return (
+      <div>
+        <SelectInput
+          label="Type"
+          value={type}
+          onChange={e => {
+            switch (e) {
+              case 'none':
+                this.props.onChange({
+                  type: 'none',
+                });
+                break;
+              case 'ipstack':
+                this.props.onChange({
+                  type: 'ipstack',
+                  enabled: false,
+                  apikey: 'xxxxxx',
+                });
+                break;
+              case 'maxmind':
+                this.props.onChange({
+                  type: 'maxmind',
+                  enabled: false,
+                  path: 'xxxxxx',
+                });
+                break;
+            }
+          }}
+          possibleValues={[
+            { label: 'None', value: 'none' },
+            { label: 'IpStack', value: 'ipstack' },
+            { label: 'MaxMind', value: 'maxmind' },
+          ]}
+          help="..."
+        />
+        {type === 'none' && (
+          null
+        )}
+        {type === 'ipstack' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.ipStackFormFlow}
+            schema={this.ipStackForm}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'maxmind' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.maxmindFormFlow}
+            schema={this.maxmindForm}
+            style={{ marginTop: 5 }}
+          />
+        )}
+      </div>
+    );
+  }
+}
+
 class Mailer extends Component {
   genericFormFlow = ['url', 'headers'];
   mailgunFormFlow = ['eu', 'apiKey', 'domain'];
@@ -606,6 +710,15 @@ export class DangerZonePage extends Component {
     'proxies.jwk': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.elastic': { type: Proxy, props: { showNonProxyHosts: true } },
     mailerSettings: { type: Mailer },
+    geolocationSettings: { type: Geolocation },
+    'userAgentSettings.enabled': { 
+      type: 'bool',
+      props: {
+        label: 'User-Agent extraction',
+        placeholder: '--',
+        help: 'Allow user-agent details extraction. Can have impact on consumed memory.',
+      },
+     },
     'scripts.enabled': {
       type: 'bool',
       props: {
@@ -696,6 +809,10 @@ export class DangerZonePage extends Component {
     'proxies.jwk',
     '-- Proxy for elastic access',
     'proxies.elastic',
+    '>>>User-Agent extraction settings',
+    'userAgentSettings.enabled',
+    '>>>Geolocation extraction settings',
+    'geolocationSettings',
   ];
 
   syncSchema = {

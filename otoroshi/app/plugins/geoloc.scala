@@ -30,6 +30,18 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
     val from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
     pathOpt match {
       case None => funit
+      case Some("global") => env.datastores.globalConfigDataStore.latestSafe match {
+        case None => funit
+        case Some(c) if !c.geolocationSettings.enabled => funit
+        case Some(c) => c.geolocationSettings.find(from).map {
+          case None =>  funit
+          case Some(location) => {
+            if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
+            ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
+            funit
+          }
+        }
+      }
       case Some(path) => MaxMindGeolocationHelper.find(from, path).map {
         case None =>  funit
         case Some(location) => {

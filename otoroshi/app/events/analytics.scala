@@ -145,9 +145,13 @@ trait AnalyticEvent {
   def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
     val uaDetails = fromUserAgent match {
       case None => JsNull
-      case Some(ua) => UserAgentHelper.userAgentDetails(ua) match {
-        case None =>  JsNull
-        case Some(details) => details
+      case Some(ua) => _env.datastores.globalConfigDataStore.latestSafe match {
+        case None => JsNull
+        case Some(config) if !config.userAgentSettings.enabled => JsNull
+        case Some(config) => config.userAgentSettings.find(ua) match {
+          case None => JsNull
+          case Some(details) => details
+        }
       }
     }
     val fOrigin = fromOrigin match {

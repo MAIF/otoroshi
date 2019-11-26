@@ -31,12 +31,13 @@ object UserAgentHelper {
 
   def userAgentDetails(ua: String): Option[JsObject] = {
     if (parserInitializing.compareAndSet(false, true)) {
+      val start = System.currentTimeMillis()
       logger.info("Initializing User-Agent parser ...")
       Future {
         parserRef.set(new UserAgentService().loadParser()) // blocking for a looooooong time !
         parserInitializationDone.set(true)
       }(ec).andThen {
-        case Success(_) => logger.info("User-Agent parser initialized")
+        case Success(_) => logger.info(s"User-Agent parser initialized in ${System.currentTimeMillis() - start} ms")
         case Failure(e) => logger.error("User-Agent parser initialization failed", e)
       }(ec)
     }

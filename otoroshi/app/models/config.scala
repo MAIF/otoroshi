@@ -5,6 +5,7 @@ import com.risksense.ipaddr.IpNetwork
 import env.Env
 import events._
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
+import otoroshi.plugins.useragent.UserAgentHelper
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -209,16 +210,48 @@ case object NoneGeolocationSettings extends GeolocationSettings {
 }
 
 case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends GeolocationSettings {
-  def json: JsValue = Json.obj("type" -> "maxmind", "path" -> path)
+  def json: JsValue = Json.obj("type" -> "maxmind", "path" -> path, "enabled" -> enabled)
   def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
-    MaxMindGeolocationHelper.find(ip, path)
+    enabled match {
+      case false => FastFuture.successful(None)
+      case true =>  MaxMindGeolocationHelper.find(ip, path)
+    }
   }
 }
 
 case class IpStackGeolocationSettings(enabled: Boolean, apikey: String, timeout: Long) extends GeolocationSettings {
-  def json: JsValue = Json.obj("type" -> "ipstack", "apikey" -> apikey, "timeout" -> timeout)
+  def json: JsValue = Json.obj("type" -> "ipstack", "apikey" -> apikey, "timeout" -> timeout, "enabled" -> enabled)
   def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
-    IpStackGeolocationHelper.find(ip, apikey, timeout)
+    enabled match {
+      case false => FastFuture.successful(None)
+      case true => IpStackGeolocationHelper.find(ip, apikey, timeout)
+    }
+  }
+}
+
+object UserAgentSettings {
+  val format = new Format[UserAgentSettings] {
+    override def writes(o: UserAgentSettings): JsValue = o.json
+    override def reads(json: JsValue): JsResult[UserAgentSettings] =
+      Try {
+        JsSuccess(
+          UserAgentSettings(
+            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false)
+          )
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
+case class UserAgentSettings(enabled: Boolean) {
+  def json: JsValue = Json.obj("enabled" -> enabled)
+  def find(ua: String)(implicit env: Env): Option[JsValue] = {
+    enabled match {
+      case false => None
+      case true => UserAgentHelper.userAgentDetails(ua)
+    }
   }
 }
 
@@ -258,7 +291,8 @@ case class GlobalConfig(
     snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
     proxies: Proxies = Proxies(),
     scripts: GlobalScripts = GlobalScripts(),
-    geolocationSettings: GeolocationSettings = NoneGeolocationSettings
+    geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
+    userAgentSettings: UserAgentSettings = UserAgentSettings(false)
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -373,7 +407,8 @@ object GlobalConfig {
         "otoroshiId"              -> o.otoroshiId,
         "snowMonkeyConfig"        -> o.snowMonkeyConfig.asJson,
         "scripts"                 -> o.scripts.json,
-        "geolocationSettings"     -> o.geolocationSettings.json
+        "geolocationSettings"     -> o.geolocationSettings.json,
+        "userAgentSettings"       -> o.userAgentSettings.json
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -487,7 +522,10 @@ object GlobalConfig {
             .getOrElse(GlobalScripts()),
           geolocationSettings = GeolocationSettings.format
             .reads((json \ "geolocationSettings").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(NoneGeolocationSettings)
+            .getOrElse(NoneGeolocationSettings),
+          userAgentSettings = UserAgentSettings.format
+            .reads((json \ "userAgentSettings").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(UserAgentSettings(false))
         )
       } map {
         case sd => JsSuccess(sd)
