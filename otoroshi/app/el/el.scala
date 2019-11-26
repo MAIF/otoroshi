@@ -24,10 +24,13 @@ object GlobalExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
+      attrs: utils.TypedMap
   ): String = {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
       case v if v.contains("${") =>
+        val userAgentDetails = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
+        val geolocDetails = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
         Try {
           expressionReplacer.replaceOn(value) {
             case "date"                                   => DateTime.now().toString()
@@ -100,7 +103,20 @@ object GlobalExpressionLanguage {
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-ctx-$field-$field2")
             case r"ctx.$field@(.*):$dv@(.*)" => context.getOrElse(field, dv)
             case r"ctx.$field@(.*)"          => context.getOrElse(field, s"no-ctx-$field")
-
+            case r"ctx.useragent.$field@(.*)" if userAgentDetails.isDefined =>
+              val lookup: JsLookupResult = (userAgentDetails.get.\(field))
+              lookup.asOpt[String]
+                .orElse(lookup.asOpt[Long].map(_.toString))
+                .orElse(lookup.asOpt[Double].map(_.toString))
+                .orElse(lookup.asOpt[Boolean].map(_.toString))
+                .getOrElse(s"no-ctx-$field")
+            case r"ctx.geolocation.$field@(.*)" if geolocDetails.isDefined =>
+              val lookup: JsLookupResult = (geolocDetails.get.\(field))
+              lookup.asOpt[String]
+                .orElse(lookup.asOpt[Long].map(_.toString))
+                .orElse(lookup.asOpt[Double].map(_.toString))
+                .orElse(lookup.asOpt[Boolean].map(_.toString))
+                .getOrElse(s"no-ctx-$field")
             case "user.name" if user.isDefined  => user.get.name
             case "user.email" if user.isDefined => user.get.email
             case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined =>
@@ -154,6 +170,7 @@ object HeadersExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
+      attrs: utils.TypedMap
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -161,7 +178,8 @@ object HeadersExpressionLanguage {
       service = service,
       apiKey = apiKey,
       user = user,
-      context = context
+      context = context,
+      attrs = attrs
     )
   }
 
@@ -231,6 +249,7 @@ object RedirectionExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
+      attrs: utils.TypedMap
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -238,7 +257,8 @@ object RedirectionExpressionLanguage {
       service = service,
       apiKey = apiKey,
       user = user,
-      context = context
+      context = context,
+      attrs = attrs
     )
   }
 
@@ -285,6 +305,7 @@ object TargetExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
+      attrs: utils.TypedMap
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -292,7 +313,8 @@ object TargetExpressionLanguage {
       service = service,
       apiKey = apiKey,
       user = user,
-      context = context
+      context = context,
+      attrs = attrs
     )
   }
 
@@ -335,7 +357,8 @@ object JwtExpressionLanguage {
       service: Option[ServiceDescriptor],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
-      context: Map[String, String]
+      context: Map[String, String],
+      attrs: utils.TypedMap
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -343,7 +366,8 @@ object JwtExpressionLanguage {
       service = service,
       apiKey = apiKey,
       user = user,
-      context = context
+      context = context,
+      attrs = attrs
     )
   }
 
@@ -388,25 +412,26 @@ object JwtExpressionLanguage {
       service: Option[ServiceDescriptor],
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
-      context: Map[String, String]
+      context: Map[String, String],
+      attrs: utils.TypedMap
   ): JsValue = {
     value match {
       case JsObject(map) =>
         new JsObject(map.toSeq.map {
-          case (key, JsString(str))     => (key, JsString(apply(str, req, service, apiKey, user, context)))
-          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, apiKey, user, context))
-          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, apiKey, user, context))
+          case (key, JsString(str))     => (key, JsString(apply(str, req, service, apiKey, user, context, attrs)))
+          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, apiKey, user, context, attrs))
+          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, apiKey, user, context, attrs))
           case (key, v)                 => (key, v)
         }.toMap)
       case JsArray(values) =>
         new JsArray(values.map {
-          case JsString(str) => JsString(apply(str, req, service, apiKey, user, context))
-          case obj: JsObject => fromJson(obj, req, service, apiKey, user, context)
-          case arr: JsArray  => fromJson(arr, req, service, apiKey, user, context)
+          case JsString(str) => JsString(apply(str, req, service, apiKey, user, context, attrs))
+          case obj: JsObject => fromJson(obj, req, service, apiKey, user, context, attrs)
+          case arr: JsArray  => fromJson(arr, req, service, apiKey, user, context, attrs)
           case v             => v
         })
       case JsString(str) => {
-        apply(str, req, service, apiKey, user, context) match {
+        apply(str, req, service, apiKey, user, context, attrs) match {
           case "true"               => JsBoolean(true)
           case "false"              => JsBoolean(false)
           case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)

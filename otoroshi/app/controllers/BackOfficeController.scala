@@ -261,6 +261,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                       "SERVICESEARCH",
                       "user searched for a service",
                       ctx.from,
+                      ctx.ua,
                       Json.obj(
                         "query" -> query
                       ))
@@ -356,10 +357,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           "DISCARD_SESSION",
           s"Admin discarded an Admin session",
           ctx.from,
+          ctx.ua,
           Json.obj("sessionId" -> id)
         )
         Audit.send(event)
-        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
+        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -377,10 +379,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           "DISCARD_SESSIONS",
           s"Admin discarded Admin sessions",
           ctx.from,
+          ctx.ua,
           Json.obj()
         )
         Audit.send(event)
-        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
+        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -408,10 +411,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           "DISCARD_PRIVATE_APPS_SESSION",
           s"Admin discarded a private app session",
           ctx.from,
+          ctx.ua,
           Json.obj("sessionId" -> id)
         )
         Audit.send(event)
-        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
+        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -429,10 +433,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           "DISCARD_PRIVATE_APPS_SESSIONS",
           s"Admin discarded private apps sessions",
           ctx.from,
+          ctx.ua,
           Json.obj()
         )
         Audit.send(event)
-        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
+        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -453,10 +458,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         "ACTIVATE_PANIC_MODE",
         s"Admin activated panic mode",
         ctx.from,
+        ctx.ua,
         Json.obj()
       )
       Audit.send(event)
-      Alerts.send(PanicModeAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event))
+      Alerts.send(PanicModeAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
       Ok(Json.obj("done" -> true))
     } recover {
       case _ => Ok(Json.obj("done" -> false))

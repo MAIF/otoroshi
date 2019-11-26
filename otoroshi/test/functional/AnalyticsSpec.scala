@@ -354,7 +354,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
   def setUpEvent(seq: AnalyticEvent*): Unit = {
     implicit val ec: ExecutionContext = otoroshiComponents.executionContext
     implicit val env: Env             = otoroshiComponents.env
-    analytics.publish(seq).futureValue
+    analytics.publish(seq.map(_.toJson)).futureValue
   }
 
   private def getStatus(i: Int): Int = {

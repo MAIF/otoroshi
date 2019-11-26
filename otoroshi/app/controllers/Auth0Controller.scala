@@ -8,19 +8,17 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig}
 import env.Env
-import events.{AdminFirstLogin, AdminLoggedInAlert, AdminLoggedOutAlert, Alerts}
+import events._
 import gateway.Errors
 import models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
-import cluster.ClusterMode
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc.Results.BadRequest
 import play.api.mvc._
 import security.IdGenerator
 import utils.TypedMap
 import utils.future.Implicits._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
@@ -85,8 +83,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   }
 
   def confidentialAppLoginPage() = PrivateAppsAction.async { ctx =>
-    import utils.future.Implicits._
     import utils.RequestImplicits._
+    import utils.future.Implicits._
 
     implicit val req = ctx.request
 
@@ -183,8 +181,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   }
 
   def confidentialAppCallback() = PrivateAppsAction.async { ctx =>
-    import utils.future.Implicits._
     import utils.RequestImplicits._
+    import utils.future.Implicits._
 
     implicit val req = ctx.request
 
@@ -195,6 +193,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
         .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
         .map { paUser =>
           env.clusterAgent.createSession(paUser)
+          Alerts.send(UserLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, paUser, ctx.from, ctx.ua))
           ctx.request.session
             .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
             .getOrElse(
@@ -319,7 +318,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
     ctx.user.simpleLogin match {
       case true =>
         ctx.user.delete().map { _ =>
-          Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+          Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
           val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
           Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
         }
@@ -328,7 +327,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
           config.backOfficeAuthRef match {
             case None => {
               ctx.user.delete().map { _ =>
-                Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+                Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
                 val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
                 Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
               }
@@ -344,7 +343,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                   oauth.authModule(config).boLogout(ctx.request, config).flatMap {
                     case None => {
                       ctx.user.delete().map { _ =>
-                        Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+                        Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
                         val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
                         Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
                       }
@@ -353,7 +352,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                       val userRedirect      = redirect.getOrElse(s"http://${request.host}/")
                       val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
                       ctx.user.delete().map { _ =>
-                        Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user))
+                        Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
                         Redirect(actualRedirectUrl).removingFromSession("bousr", "bo-redirect-after-login")
                       }
                     }
@@ -377,11 +376,11 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
             env.datastores.backOfficeUserDataStore.hasAlreadyLoggedIn(user.email).map {
               case false => {
                 env.datastores.backOfficeUserDataStore.alreadyLoggedIn(user.email)
-                Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
               }
               case true => {
                 Alerts
-                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser))
+                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
               }
             }
             Redirect(

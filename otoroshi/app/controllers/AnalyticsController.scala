@@ -50,6 +50,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
         "ACCESS_SERVICE_STATS",
         s"User accessed a service descriptor stats",
         ctx.from,
+        ctx.ua,
         Json.obj("serviceId" -> serviceId)
       )
     )
@@ -150,6 +151,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
         "ACCESS_GLOBAL_STATS",
         s"User accessed a global stats",
         ctx.from,
+        ctx.ua,
         Json.obj()
       )
     )
@@ -245,6 +247,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           "ACCESS_SERVICE_EVENTS",
           s"User accessed a service descriptor events",
           ctx.from,
+          ctx.ua,
           Json.obj("serviceId" -> serviceId)
         )
       )

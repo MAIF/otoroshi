@@ -52,7 +52,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       )
     ).flatten
 
-  override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val state = IdGenerator.extendedToken(128)
     val claim = OtoroshiClaim(
       iss = env.Headers.OtoroshiIssuer,
@@ -72,17 +72,17 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
         evt =>
           webhook.url
           //.replace("@product", env.eventsName)
-            .replace("@service", evt.`@service`)
-            .replace("@serviceId", evt.`@serviceId`)
-            .replace("@id", evt.`@id`)
-            .replace("@messageType", evt.`@type`)
+            .replace("@service", (evt \ "@service").as[String])
+            .replace("@serviceId", (evt \ "@serviceId").as[String])
+            .replace("@id", (evt \ "@id").as[String])
+            .replace("@messageType", (evt \ "@type").as[String])
       )
       .getOrElse(webhook.url)
     val postResponse = env.Ws
       .url(url)
       .withHttpHeaders(headers: _*)
       .withMaybeProxyServer(config.proxies.eventsWebhooks)
-      .post(JsArray(event.map(_.toEnrichedJson)))
+      .post(JsArray(event))
     postResponse.andThen {
       case Success(resp) => {
         logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")

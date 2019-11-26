@@ -767,7 +767,8 @@ sealed trait JwtVerifier extends AsJson {
                       "exp" -> Math.floor((System.currentTimeMillis() + 60) / 1000).toString,
                       "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
                       "aud" -> "backend"
-                    )
+                    ),
+                    attrs = attrs
                   )
                   .as[JsObject]
                 val signedToken = sign(interpolatedToken, outputAlgorithm)
@@ -899,7 +900,7 @@ sealed trait JwtVerifier extends AsJson {
                                       Some(desc),
                                       apikey,
                                       user,
-                                      context)
+                                      context, attrs)
                             .as[JsObject]
                         val newJsonToken: JsObject = JsObject(
                           (tSettings.mappingSettings.map
@@ -912,7 +913,7 @@ sealed trait JwtVerifier extends AsJson {
                                                                     Some(desc),
                                                                     apikey,
                                                                     user,
-                                                                    context))
+                                                                    context, attrs))
                                   .-(b._1)
                             ) ++ evaluatedValues).fields
                             .filterNot {

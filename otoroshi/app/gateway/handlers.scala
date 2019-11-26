@@ -672,7 +672,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       f
     } else {
       val inputHeaders = req.headers.toSimpleMap
-        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx))
+        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx, attrs))
         .filterNot(h => h._2 == "null")
       desc.headersVerification.map(tuple => inputHeaders.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>
@@ -891,7 +891,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   FastFuture.successful(
                     Results
                       .Status(rawDesc.redirection.code)
-                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx))
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs))
                   )
                 }
                 case Some(rawDesc) => {
@@ -1204,14 +1204,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                           Some(descriptor),
                                                                           apiKey,
                                                                           paUsr,
-                                                                          elCtx)
+                                                                          elCtx, attrs)
                                       val root = descriptor.root
                                       val url = TargetExpressionLanguage(s"$scheme://$host$root$uri",
                                                                          Some(req),
                                                                          Some(descriptor),
                                                                          apiKey,
                                                                          paUsr,
-                                                                         elCtx)
+                                                                         elCtx, attrs)
                                       lazy val currentReqHasBody = hasBody(req)
                                       // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                       val fromOtoroshi = req.headers
@@ -1240,71 +1240,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         stateToken = stateToken,
                                         fromOtoroshi = fromOtoroshi,
                                         snowMonkeyContext = snowMonkeyContext,
-                                        jwtInjection = jwtInjection
+                                        jwtInjection = jwtInjection,
+                                        attrs = attrs
                                       )
-                                      //val stateRequestHeaderName =
-                                      //  descriptor.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState)
-                                      //val claimRequestHeaderName =
-                                      //  descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
-                                      /*
-                                      val headersIn: Seq[(String, String)] = {
-                                        (desc.missingOnlyHeadersIn.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++
-                                          req.headers.toMap.toSeq
-                                          .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
-                                          .filterNot(
-                                            t =>
-                                              if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
-                                              else if (t._1.toLowerCase == "content-length") true
-                                              else false
-                                          )
-                                          .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
-                                          .filterNot(
-                                            t =>
-                                              (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))
-                                                .contains(t._1.toLowerCase)
-                                          ) ++ Map(
-                                          env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
-                                          //"Host"                               -> host,
-                                          "Host" -> (if (desc.overrideHost) host
-                                                     else req.headers.get("Host").getOrElse("--")),
-                                          env.Headers.OtoroshiRequestId        -> snowflake,
-                                          env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
-                                        ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
-                                                Map(
-                                                  claimRequestHeaderName -> claim
-                                                )
-                                              } else {
-                                                Map.empty[String, String]
-                                              }) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge) {
-                                                       Map(
-                                                         stateRequestHeaderName -> stateToken
-                                                       )
-                                                     } else {
-                                                       Map.empty[String, String]
-                                                     }) ++ (req.clientCertificateChain match {
-                                          case Some(chain) =>
-                                            Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
-                                          case None => Map.empty[String, String]
-                                        }) ++ req.headers
-                                          .get("Content-Length")
-                                          .map(l => {
-                                            Map(
-                                              "Content-Length" -> (l.toInt + snowMonkeyContext.trailingRequestBodySize).toString
-                                            )
-                                          })
-                                          .getOrElse(Map.empty[String, String]) ++
-                                        descriptor.additionalHeaders
-                                          .filter(t => t._1.trim.nonEmpty)
-                                          .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null") ++ fromOtoroshi
-                                          .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
-                                          .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
-                                          .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(
-                                          desc,
-                                          req
-                                        )
-                                      }
-                                       */
 
                                       val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
                                         bodyAlreadyConsumed.compareAndSet(false, true)
@@ -1535,46 +1473,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 overhead = overhead,
                                                 upstreamLatency = 0L,
                                                 canaryId = canaryId,
-                                                remainingQuotas = remainingQuotas
+                                                remainingQuotas = remainingQuotas,
+                                                attrs = attrs
                                               )
-                                            // val _headersOut: Seq[(String, String)] = {
-                                            //   descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                            //     .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
-                                            //   badResult.header.headers.toSeq
-                                            //     .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
-                                            //     .filterNot(
-                                            //       t =>
-                                            //         (headersOutFiltered :+ stateResponseHeaderName)
-                                            //           .contains(t._1.toLowerCase)
-                                            //     ) ++ (
-                                            //       if (descriptor.sendOtoroshiHeadersBack) {
-                                            //         Seq(
-                                            //           env.Headers.OtoroshiRequestId -> snowflake,
-                                            //           env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-                                            //           env.Headers.OtoroshiProxyLatency -> s"$overhead",
-                                            //           env.Headers.OtoroshiUpstreamLatency -> s"0"
-                                            //         )
-                                            //       } else {
-                                            //         Seq.empty[(String, String)]
-                                            //       }
-                                            //     ) ++ Some(canaryId)
-                                            //     .filter(_ => desc.canary.enabled)
-                                            //     .map(
-                                            //       _ =>
-                                            //         env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
-                                            //     ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                                            //     Seq(
-                                            //       env.Headers.OtoroshiDailyCallsRemaining -> remainingQuotas.remainingCallsPerDay.toString,
-                                            //       env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                                            //     )
-                                            //   } else {
-                                            //     Seq.empty[(String, String)]
-                                            //   }) ++ descriptor.cors.asHeaders(req) ++ desc.additionalHeadersOut
-                                            //     .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                            //     .mapValues(
-                                            //       v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-                                            //     ).filterNot(h => h._2 == "null").toSeq
-                                            // }
                                             promise.trySuccess(
                                               ProxyDone(
                                                 badResult.header.status,
@@ -1767,43 +1668,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     overhead = overhead,
                                                     upstreamLatency = upstreamLatency,
                                                     canaryId = canaryId,
-                                                    remainingQuotas = remainingQuotas
+                                                    remainingQuotas = remainingQuotas,
+                                                    attrs = attrs
                                                   )
-                                                // val _headersOut: Seq[(String, String)] = {
-                                                //   descriptor.missingOnlyHeadersOut.filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-                                                //     .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)).filterNot(h => h._2 == "null").toSeq ++
-                                                //   _headersForOut
-                                                //     .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
-                                                //     .filterNot(t => headersOutFiltered.contains(t._1.toLowerCase)) ++ (
-                                                //     if (descriptor.sendOtoroshiHeadersBack) {
-                                                //       Seq(
-                                                //         env.Headers.OtoroshiRequestId        -> snowflake,
-                                                //         env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-                                                //         env.Headers.OtoroshiProxyLatency     -> s"$overhead",
-                                                //         env.Headers.OtoroshiUpstreamLatency  -> s"$upstreamLatency" //,
-                                                //         //env.Headers.OtoroshiTrackerId              -> s"${env.sign(trackingId)}::$trackingId"
-                                                //       )
-                                                //     } else {
-                                                //       Seq.empty[(String, String)]
-                                                //     }
-                                                //     ) ++ Some(canaryId)
-                                                //     .filter(_ => desc.canary.enabled)
-                                                //     .map(
-                                                //       _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
-                                                //     ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                                                //     Seq(
-                                                //       env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
-                                                //       env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                                                //     )
-                                                //   } else {
-                                                //     Seq.empty[(String, String)]
-                                                //   }) ++ descriptor.cors
-                                                //     .asHeaders(req) ++ desc.additionalHeadersOut
-                                                //     .mapValues(
-                                                //       v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
-                                                //     ).filterNot(h => h._2 == "null")
-                                                //     .toSeq
-                                                // }
 
                                                 val otoroshiResponse = otoroshi.script.HttpResponse(
                                                   status = resp.status,

@@ -151,7 +151,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ctx.user,
         "ACCESS_GLOBAL_LIVESTATS",
         "User accessed global livestats",
-        ctx.from
+        ctx.from,
+        ctx.ua
       )
     )
     for {
@@ -192,7 +193,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ctx.user,
         "ACCESS_HOST_METRICS",
         "User accessed global livestats",
-        ctx.from
+        ctx.from,
+        ctx.ua
       )
     )
     val appEnv         = Option(System.getenv("APP_ENV")).getOrElse("--")
@@ -248,6 +250,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "ACCESS_SERVICE_LIVESTATS",
         "User accessed service livestats",
         ctx.from,
+        ctx.ua,
         Json.obj("serviceId" -> id)
       )
     )
@@ -329,7 +332,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ctx.user,
         "ACCESS_ALL_LINES",
         "User accessed all lines",
-        ctx.from
+        ctx.from,
+        ctx.ua
       )
     )
     env.datastores.globalConfigDataStore.allEnv().map {
@@ -351,6 +355,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "ACCESS_SERVICES_FOR_LINES",
         s"User accessed service list for line $line",
         ctx.from,
+        ctx.ua,
         Json.obj("line" -> line)
       )
     )
@@ -371,7 +376,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             ctx.user,
             "ACCESS_GLOBAL_CONFIG",
             s"User accessed global Otoroshi config",
-            ctx.from
+            ctx.from,
+            ctx.ua
           )
         )
         Ok(ak.toJson)
@@ -393,11 +399,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "UPDATE_GLOBAL_CONFIG",
             s"User updated global Otoroshi config",
             ctx.from,
+            ctx.ua,
             ctx.request.body
           )
           Audit.send(admEvt)
           Alerts.send(
-            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(), env.env, user, conf.toJson, ak.toJson, admEvt)
+            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(), env.env, user, conf.toJson, ak.toJson, admEvt, ctx.from, ctx.ua)
           )
           ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
         }
@@ -422,11 +429,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "UPDATE_GLOBAL_CONFIG",
             s"User updated global Otoroshi config",
             ctx.from,
+            ctx.ua,
             ctx.request.body
           )
           Audit.send(admEvt)
           Alerts.send(
-            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(), env.env, user, conf.toJson, ak.toJson, admEvt)
+            GlobalConfigModification(env.snowflakeGenerator.nextIdStr(), env.env, user, conf.toJson, ak.toJson, admEvt, ctx.from, ctx.ua)
           )
           ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
         }
@@ -454,6 +462,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "CREATE_SERVICE_GROUP",
               s"User created a service group",
               ctx.from,
+              ctx.ua,
               body
             )
             Audit.send(event)
@@ -461,7 +470,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               ServiceGroupCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                        env.env,
                                        ctx.user.getOrElse(ctx.apiKey.toJson),
-                                       event)
+                                       event, ctx.from, ctx.ua)
             )
             Ok(group.toJson)
           }
@@ -487,6 +496,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "UPDATE_SERVICE_GROUP",
               s"User updated a service group",
               ctx.from,
+              ctx.ua,
               ctx.request.body
             )
             Audit.send(event)
@@ -494,7 +504,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               ServiceGroupUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                        env.env,
                                        ctx.user.getOrElse(ctx.apiKey.toJson),
-                                       event)
+                                       event, ctx.from, ctx.ua)
             )
             newGroup.save().map(_ => Ok(newGroup.toJson))
           }
@@ -523,6 +533,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "UPDATE_SERVICE_GROUP",
               s"User updated a service group",
               ctx.from,
+              ctx.ua,
               ctx.request.body
             )
             Audit.send(event)
@@ -530,7 +541,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               ServiceGroupUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                        env.env,
                                        ctx.user.getOrElse(ctx.apiKey.toJson),
-                                       event)
+                                       event, ctx.from, ctx.ua)
             )
             newGroup.save().map(_ => Ok(newGroup.toJson))
           }
@@ -552,6 +563,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "DELETE_SERVICE_GROUP",
             s"User deleted a service group",
             ctx.from,
+            ctx.ua,
             Json.obj("serviceGroupId" -> serviceGroupId)
           )
           Audit.send(event)
@@ -559,7 +571,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             ServiceGroupDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                                     event)
+                                     event, ctx.from, ctx.ua)
           )
           Ok(Json.obj("deleted" -> res))
         }
@@ -594,7 +606,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ctx.user,
         "ACCESS_ALL_SERVICES_GROUPS",
         s"User accessed all services groups",
-        ctx.from
+        ctx.from,
+        ctx.ua
       )
     )
     val id: Option[String]   = ctx.request.queryString.get("id").flatMap(_.headOption)
@@ -633,6 +646,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_SERVICES_GROUP",
             s"User accessed a service group",
             ctx.from,
+            ctx.ua,
             Json.obj("serviceGroupId" -> serviceGroupId)
           )
         )
@@ -658,6 +672,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_SERVICES_FROM_SERVICES_GROUP",
             s"User accessed all services from a services group",
             ctx.from,
+            ctx.ua,
             Json.obj("serviceGroupId" -> serviceGroupId)
           )
         )
@@ -723,6 +738,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "CREATE_SERVICE",
                 s"User created a service",
                 ctx.from,
+                ctx.ua,
                 desc.toJson
               )
               Audit.send(event)
@@ -730,7 +746,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 ServiceCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                     env.env,
                                     ctx.user.getOrElse(ctx.apiKey.toJson),
-                                    event)
+                                    event, ctx.from, ctx.ua)
               )
               ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).addServices(Seq(desc))
               Ok(desc.toJson)
@@ -757,6 +773,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "UPDATE_SERVICE",
               s"User updated a service",
               ctx.from,
+              ctx.ua,
               desc.toJson
             )
             Audit.send(event)
@@ -764,7 +781,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                   env.env,
                                   ctx.user.getOrElse(ctx.apiKey.toJson),
-                                  event)
+                                  event, ctx.from, ctx.ua)
             )
             if (desc.canary.enabled && !newDesc.canary.enabled) {
               env.datastores.canaryDataStore.destroyCanarySession(newDesc.id)
@@ -808,6 +825,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "UPDATE_SERVICE",
               s"User updated a service",
               ctx.from,
+              ctx.ua,
               desc.toJson
             )
             Audit.send(event)
@@ -815,7 +833,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                   env.env,
                                   ctx.user.getOrElse(ctx.apiKey.toJson),
-                                  event)
+                                  event, ctx.from, ctx.ua)
             )
             if (desc.canary.enabled && !newDesc.canary.enabled) {
               env.datastores.canaryDataStore.destroyCanarySession(newDesc.id)
@@ -851,6 +869,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "DELETE_SERVICE",
             s"User deleted a service",
             ctx.from,
+            ctx.ua,
             desc.toJson
           )
           Audit.send(admEvt)
@@ -858,7 +877,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             ServiceDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                 env.env,
                                 ctx.user.getOrElse(ctx.apiKey.toJson),
-                                admEvt)
+                                admEvt, ctx.from, ctx.ua)
           )
           env.datastores.canaryDataStore.destroyCanarySession(desc.id)
           ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
@@ -898,6 +917,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "ACCESS_ALL_SERVICES",
         s"User accessed all service descriptors",
         ctx.from,
+        ctx.ua,
         Json.obj(
           "env"   -> JsString(_env.getOrElse("--")),
           "group" -> JsString(_env.getOrElse("--"))
@@ -944,6 +964,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_SERVICE",
             s"User accessed a service descriptor",
             ctx.from,
+            ctx.ua,
             Json.obj("serviceId" -> serviceId)
           )
         )
@@ -965,6 +986,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_SERVICE_TARGETS",
             s"User accessed a service targets",
             ctx.from,
+            ctx.ua,
             Json.obj("serviceId" -> serviceId)
           )
         )
@@ -986,6 +1008,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           "UPDATE_SERVICE_TARGETS",
           s"User updated a service targets",
           ctx.from,
+          ctx.ua,
           Json.obj("serviceId" -> serviceId, "patch" -> body)
         )
         val actualTargets = JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}")))
@@ -999,7 +1022,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event, ctx.from, ctx.ua)
         )
         ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
@@ -1024,6 +1047,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           "UPDATE_SERVICE_TARGETS",
           s"User updated a service targets",
           ctx.from,
+          ctx.ua,
           Json.obj("serviceId" -> serviceId, "patch" -> body)
         )
         val newTargets = (body \ "target").asOpt[String] match {
@@ -1039,7 +1063,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event, ctx.from, ctx.ua)
         )
         ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
@@ -1064,6 +1088,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           "DELETE_SERVICE_TARGET",
           s"User deleted a service target",
           ctx.from,
+          ctx.ua,
           Json.obj("serviceId" -> serviceId, "patch" -> body)
         )
         val newTargets = (body \ "target").asOpt[String] match {
@@ -1079,7 +1104,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         val newDesc = desc.copy(targets = newTargets)
         Audit.send(event)
         Alerts.send(
-          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
+          ServiceUpdatedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event, ctx.from, ctx.ua)
         )
         ServiceDescriptorQuery(desc.subdomain, desc.env, desc.domain, desc.root).remServices(Seq(desc))
         newDesc.save().map { _ =>
@@ -1101,6 +1126,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "ACCESS_SERVICE_LIVESTATS",
         s"User accessed a service descriptor livestats",
         ctx.from,
+        ctx.ua,
         Json.obj("serviceId" -> serviceId)
       )
     )
@@ -1145,12 +1171,13 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_SERVICE_HEALTH",
             s"User accessed a service descriptor helth",
             ctx.from,
+            ctx.ua,
             Json.obj("serviceId" -> serviceId)
           )
         )
         env.datastores.healthCheckDataStore
           .findAll(desc)
-          .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toEnrichedJson))))
+          .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))) // .map(_.toEnrichedJson))))
       }
     }
   }
@@ -1189,6 +1216,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_ERROR_TEMPLATE",
                   s"User updated an error template",
                   ctx.from,
+                  ctx.ua,
                   errorTemplate.toJson
                 )
                 Audit.send(event)
@@ -1222,6 +1250,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "CREATE_ERROR_TEMPLATE",
                   s"User created an error template",
                   ctx.from,
+                  ctx.ua,
                   errorTemplate.toJson
                 )
                 Audit.send(event)
@@ -1249,6 +1278,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "DELETE_ERROR_TEMPLATE",
                 s"User deleted an error template",
                 ctx.from,
+                ctx.ua,
                 errorTemplate.toJson
               )
               Audit.send(event)
@@ -1291,6 +1321,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                       "CREATE_APIKEY",
                       s"User created an ApiKey",
                       ctx.from,
+                      ctx.ua,
                       Json.obj(
                         "desc"   -> desc.toJson,
                         "apikey" -> apiKey.toJson
@@ -1301,7 +1332,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                       ApiKeyCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                          env.env,
                                          ctx.user.getOrElse(ctx.apiKey.toJson),
-                                         event)
+                                         event, ctx.from, ctx.ua)
                     )
                     env.datastores.apiKeyDataStore.addFastLookupByService(serviceId, apiKey).map { _ =>
                       env.datastores.apiKeyDataStore.findAll()
@@ -1342,6 +1373,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "CREATE_APIKEY",
                   s"User created an ApiKey",
                   ctx.from,
+                  ctx.ua,
                   Json.obj(
                     "group"  -> group.toJson,
                     "apikey" -> apiKey.toJson
@@ -1352,7 +1384,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   ApiKeyCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                                     event)
+                                     event, ctx.from, ctx.ua)
                 )
                 env.datastores.apiKeyDataStore.addFastLookupByGroup(groupId, apiKey).map { _ =>
                   env.datastores.apiKeyDataStore.findAll()
@@ -1389,6 +1421,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
+                  ctx.ua,
                   Json.obj(
                     "desc"   -> desc.toJson,
                     "apikey" -> apiKey.toJson
@@ -1399,7 +1432,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                                     event)
+                                     event, ctx.from, ctx.ua)
                 )
                 newApiKey.save().map(_ => Ok(newApiKey.toJson))
               }
@@ -1436,6 +1469,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
+                  ctx.ua,
                   Json.obj(
                     "desc"   -> desc.toJson,
                     "apikey" -> apiKey.toJson
@@ -1446,7 +1480,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                                     event)
+                                     event, ctx.from, ctx.ua)
                 )
                 newApiKey.save().map(_ => Ok(newApiKey.toJson))
               }
@@ -1478,6 +1512,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
+                  ctx.ua,
                   Json.obj(
                     "group"  -> group.toJson,
                     "apikey" -> apiKey.toJson
@@ -1488,7 +1523,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                                     event)
+                                     event, ctx.from, ctx.ua)
                 )
                 newApiKey.save().map(_ => Ok(newApiKey.toJson))
               }
@@ -1523,6 +1558,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
+                  ctx.ua,
                   Json.obj(
                     "group"  -> group.toJson,
                     "apikey" -> apiKey.toJson
@@ -1533,7 +1569,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                                     event)
+                                     event, ctx.from, ctx.ua)
                 )
                 newApiKey.save().map(_ => Ok(newApiKey.toJson))
               }
@@ -1560,6 +1596,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "DELETE_APIKEY",
               s"User deleted an ApiKey",
               ctx.from,
+              ctx.ua,
               Json.obj(
                 "group"  -> group.toJson,
                 "apikey" -> apiKey.toJson
@@ -1570,7 +1607,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               ApiKeyDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                  env.env,
                                  ctx.user.getOrElse(ctx.apiKey.toJson),
-                                 event)
+                                 event, ctx.from, ctx.ua)
             )
             env.datastores.apiKeyDataStore.deleteFastLookupByGroup(groupId, apiKey)
             apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
@@ -1598,6 +1635,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "DELETE_APIKEY",
               s"User deleted an ApiKey",
               ctx.from,
+              ctx.ua,
               Json.obj(
                 "desc"   -> desc.toJson,
                 "apikey" -> apiKey.toJson
@@ -1608,7 +1646,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               ApiKeyDeletedAlert(env.snowflakeGenerator.nextIdStr(),
                                  env.env,
                                  ctx.user.getOrElse(ctx.apiKey.toJson),
-                                 event)
+                                 event, ctx.from, ctx.ua)
             )
             env.datastores.apiKeyDataStore.deleteFastLookupByService(serviceId, apiKey)
             apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
@@ -1639,6 +1677,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_SERVICE_APIKEYS",
             s"User accessed apikeys from a service descriptor",
             ctx.from,
+            ctx.ua,
             Json.obj("serviceId" -> serviceId)
           )
         )
@@ -1687,6 +1726,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_SERVICE_APIKEYS",
             s"User accessed apikeys from a group",
             ctx.from,
+            ctx.ua,
             Json.obj("groupId" -> groupId)
           )
         )
@@ -1722,7 +1762,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ctx.user,
         "ACCESS_ALL_APIKEYS",
         s"User accessed all apikeys",
-        ctx.from
+        ctx.from,
+        ctx.ua
       )
     )
     val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
@@ -1775,6 +1816,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "ACCESS_SERVICE_APIKEY",
                 s"User accessed an apikey from a service descriptor",
                 ctx.from,
+                ctx.ua,
                 Json.obj("serviceId" -> serviceId, "clientId" -> clientId)
               )
             )
@@ -1802,6 +1844,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "ACCESS_SERVICE_APIKEY",
                 s"User accessed an apikey from a service descriptor",
                 ctx.from,
+                ctx.ua,
                 Json.obj("groupId" -> groupId, "clientId" -> clientId)
               )
             )
@@ -1834,6 +1877,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                     "ACCESS_SERVICE_APIKEY_GROUP",
                     s"User accessed an apikey servicegroup from a service descriptor",
                     ctx.from,
+                    ctx.ua,
                     Json.obj("serviceId" -> serviceId, "clientId" -> clientId)
                   )
                 )
@@ -1868,6 +1912,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   "UPDATE_APIKEY",
                   s"User updated an ApiKey",
                   ctx.from,
+                  ctx.ua,
                   Json.obj(
                     "desc"   -> desc.toJson,
                     "apikey" -> apiKey.toJson
@@ -1878,7 +1923,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                   ApiKeyUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                      env.env,
                                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                                     event)
+                                     event, ctx.from, ctx.ua)
                 )
                 newApiKey.save().map(_ => Ok(newApiKey.toJson))
               }
@@ -1907,6 +1952,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "ACCESS_SERVICE_APIKEY_QUOTAS",
                 s"User accessed an apikey quotas from a service descriptor",
                 ctx.from,
+                ctx.ua,
                 Json.obj("serviceId" -> serviceId, "clientId" -> clientId)
               )
             )
@@ -1936,6 +1982,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "RESET_SERVICE_APIKEY_QUOTAS",
                 s"User reset an apikey quotas for a service descriptor",
                 ctx.from,
+                ctx.ua,
                 Json.obj("serviceId" -> serviceId, "clientId" -> clientId)
               )
             )
@@ -1963,6 +2010,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "ACCESS_SERVICE_APIKEY_QUOTAS",
                 s"User accessed an apikey quotas from a service descriptor",
                 ctx.from,
+                ctx.ua,
                 Json.obj("groupId" -> groupId, "clientId" -> clientId)
               )
             )
@@ -1990,6 +2038,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                 "RESET_SERVICE_APIKEY_QUOTAS",
                 s"User accessed an apikey quotas from a service descriptor",
                 ctx.from,
+                ctx.ua,
                 Json.obj("groupId" -> groupId, "clientId" -> clientId)
               )
             )
@@ -2030,11 +2079,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "FULL_OTOROSHI_EXPORT",
         s"Admin exported Otoroshi",
         ctx.from,
+        ctx.ua,
         e
       )
       Audit.send(event)
       Alerts.send(
-        OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(Json.obj()), event, e)
+        OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(Json.obj()), event, e, ctx.from, ctx.ua)
       )
       Ok(Json.prettyPrint(e)).as("application/json")
     }
@@ -2074,6 +2124,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "STARTED_SNOWMONKEY",
         s"User started snowmonkey",
         ctx.from,
+        ctx.ua,
         Json.obj()
       )
       Audit.send(event)
@@ -2081,7 +2132,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         SnowMonkeyStartedAlert(env.snowflakeGenerator.nextIdStr(),
                                env.env,
                                ctx.user.getOrElse(ctx.apiKey.toJson),
-                               event)
+                               event, ctx.from, ctx.ua)
       )
       Ok(Json.obj("done" -> true))
     }
@@ -2097,6 +2148,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "STOPPED_SNOWMONKEY",
         s"User stopped snowmonkey",
         ctx.from,
+        ctx.ua,
         Json.obj()
       )
       Audit.send(event)
@@ -2104,7 +2156,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         SnowMonkeyStoppedAlert(env.snowflakeGenerator.nextIdStr(),
                                env.env,
                                ctx.user.getOrElse(ctx.apiKey.toJson),
-                               event)
+                               event, ctx.from, ctx.ua)
       )
       Ok(Json.obj("done" -> true))
     }
@@ -2135,6 +2187,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "UPDATED_SNOWMONKEY_CONFIG",
             s"User updated snowmonkey config",
             ctx.from,
+            ctx.ua,
             config.asJson
           )
           Audit.send(event)
@@ -2142,7 +2195,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                          env.env,
                                          ctx.user.getOrElse(ctx.apiKey.toJson),
-                                         event)
+                                         event, ctx.from, ctx.ua)
           )
           Ok(config.asJson)
         }
@@ -2166,6 +2219,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "PATCH_SNOWMONKEY_CONFIG",
             s"User patched snowmonkey config",
             ctx.from,
+            ctx.ua,
             newSnowMonkeyConfigJson
           )
           Audit.send(event)
@@ -2173,7 +2227,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             SnowMonkeyConfigUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                          env.env,
                                          ctx.user.getOrElse(ctx.apiKey.toJson),
-                                         event)
+                                         event, ctx.from, ctx.ua)
           )
           newSnowMonkeyConfig.save().map(_ => Ok(newSnowMonkeyConfig.asJson))
         }
@@ -2191,11 +2245,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         "RESET_SNOWMONKEY_OUTAGES",
         s"User reset snowmonkey outages for the day",
         ctx.from,
+        ctx.ua,
         Json.obj()
       )
       Audit.send(event)
       Alerts.send(
-        SnowMonkeyResetAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
+        SnowMonkeyResetAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event, ctx.from, ctx.ua)
       )
       Ok(Json.obj("done" -> true))
     }
@@ -2389,6 +2444,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "CREATE_CERTIFICATE",
               s"User created a certificate",
               ctx.from,
+              ctx.ua,
               body
             )
             Audit.send(event)
@@ -2396,7 +2452,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               CertCreatedAlert(env.snowflakeGenerator.nextIdStr(),
                                env.env,
                                ctx.user.getOrElse(ctx.apiKey.toJson),
-                               event)
+                               event, ctx.from, ctx.ua)
             )
             Ok(group.toJson)
           }
@@ -2422,6 +2478,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "UPDATE_CERTIFICATE",
               s"User updated a certificate",
               ctx.from,
+              ctx.ua,
               ctx.request.body
             )
             Audit.send(event)
@@ -2429,7 +2486,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               CertUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                env.env,
                                ctx.user.getOrElse(ctx.apiKey.toJson),
-                               event)
+                               event, ctx.from, ctx.ua)
             )
             newGroup.save().map(_ => Ok(newGroup.toJson))
           }
@@ -2458,6 +2515,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               "UPDATE_CERTIFICATE",
               s"User updated a certificate",
               ctx.from,
+              ctx.ua,
               ctx.request.body
             )
             Audit.send(event)
@@ -2465,7 +2523,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
               CertUpdatedAlert(env.snowflakeGenerator.nextIdStr(),
                                env.env,
                                ctx.user.getOrElse(ctx.apiKey.toJson),
-                               event)
+                               event, ctx.from, ctx.ua)
             )
             newGroup.save().map(_ => Ok(newGroup.toJson))
           }
@@ -2487,11 +2545,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "DELETE_CERTIFICATE",
             s"User deleted a certificate",
             ctx.from,
+            ctx.ua,
             Json.obj("CertId" -> CertId)
           )
           Audit.send(event)
           Alerts.send(
-            CertDeleteAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event)
+            CertDeleteAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user.getOrElse(ctx.apiKey.toJson), event, ctx.from, ctx.ua)
           )
           Ok(Json.obj("deleted" -> res))
         }
@@ -2509,6 +2568,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         env.env,
         Some(ctx.apiKey),
         ctx.user,
+        ctx.ua,
         "ACCESS_ALL_CERTIFICATES",
         s"User accessed all certificates",
         ctx.from
@@ -2550,6 +2610,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             "ACCESS_CERTIFICATE",
             s"User accessed a certificate",
             ctx.from,
+            ctx.ua,
             Json.obj("certId" -> CertId)
           )
         )

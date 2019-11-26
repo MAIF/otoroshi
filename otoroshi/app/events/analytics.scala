@@ -13,6 +13,7 @@ import env.Env
 import events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
 import models._
 import org.joda.time.DateTime
+import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
@@ -39,6 +40,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
+    .mapAsync(5)(evt => evt.toEnrichedJson)
     .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS))
     .mapAsync(5) { evts =>
       logger.debug(s"SEND_TO_ANALYTICS_HOOK: will send ${evts.size} evts")
@@ -46,8 +48,8 @@ class AnalyticsActor(implicit env: Env) extends Actor {
         logger.debug("SEND_TO_ANALYTICS_HOOK: " + config.analyticsWebhooks)
         config.kafkaConfig.foreach { kafkaConfig =>
           evts.foreach {
-            case evt: AuditEvent => kafkaWrapperAudit.publish(evt.toEnrichedJson)(env, kafkaConfig)
-            case evt             => kafkaWrapperAnalytics.publish(evt.toEnrichedJson)(env, kafkaConfig)
+            case evt: AuditEvent => kafkaWrapperAudit.publish(evt)(env, kafkaConfig)
+            case evt             => kafkaWrapperAnalytics.publish(evt)(env, kafkaConfig)
           }
           if (config.kafkaConfig.isEmpty) {
             kafkaWrapperAnalytics.close()
@@ -136,10 +138,34 @@ trait AnalyticEvent {
   def `@timestamp`: DateTime
   def `@service`: String
   def `@serviceId`: String
+  def fromOrigin: Option[String]
+  def fromUserAgent: Option[String]
 
   def toJson(implicit _env: Env): JsValue
-  def toEnrichedJson(implicit _env: Env): JsValue = {
-    toJson(_env).as[JsObject] ++ Json.obj(
+  def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
+    val uaDetails = fromUserAgent match {
+      case None => JsNull
+      case Some(ua) => UserAgentHelper.userAgentDetails(ua) match {
+        case None =>  JsNull
+        case Some(details) => details
+      }
+    }
+    val fOrigin = fromOrigin match {
+      case None => FastFuture.successful(JsNull)
+      case Some(ipAddress) => {
+        _env.datastores.globalConfigDataStore.latestSafe match {
+          case None => FastFuture.successful(JsNull)
+          case Some(config) if !config.geolocationSettings.enabled => FastFuture.successful(JsNull)
+          case Some(config) => config.geolocationSettings.find(ipAddress).map {
+            case None => JsNull
+            case Some(details) => details
+          }
+        }
+      }
+    }
+    fOrigin.map(originDetails => toJson(_env).as[JsObject] ++ Json.obj(
+      "user-agent-details" -> uaDetails,
+      "origin-details" -> originDetails,
       "instance-name"     -> _env.name,
       "instance-zone"     -> _env.zone,
       "instance-region"   -> _env.region,
@@ -152,7 +178,7 @@ trait AnalyticEvent {
         case ClusterMode.Leader => _env.clusterConfig.leader.name
         case _                  => "none"
       })
-    )
+    ))
   }
 
   def toAnalytics()(implicit env: Env): Unit = {
@@ -160,8 +186,8 @@ trait AnalyticEvent {
     // Logger("otoroshi-analytics").debug(s"${this.`@type`} ${Json.stringify(toJson)}")
   }
 
-  def log()(implicit _env: Env): Unit = {
-    AnalyticEvent.logger.info(Json.stringify(toEnrichedJson))
+  def log()(implicit _env: Env, ec: ExecutionContext): Unit = {
+    toEnrichedJson.map(e =>  AnalyticEvent.logger.info(Json.stringify(e)))
   }
 }
 
@@ -235,6 +261,8 @@ case class GatewayEvent(
     userAgentInfo: Option[JsValue],
     geolocationInfo: Option[JsValue],
 ) extends AnalyticEvent {
+  override def fromOrigin: Option[String] = Some(from)
+  override def fromUserAgent: Option[String] = headers.find(h => h.key.toLowerCase() == "user-agent").map(_.value)
   def toJson(implicit _env: Env): JsValue = GatewayEvent.writes(this, _env)
 }
 
@@ -297,6 +325,8 @@ case class TcpEvent(
     `@service`: String,
     service: Option[TcpService],
 ) extends AnalyticEvent {
+  override def fromOrigin: Option[String] = Some(remote)
+  override def fromUserAgent: Option[String] = None
   def toJson(implicit _env: Env): JsValue = TcpEvent.writes(this, _env)
 }
 
@@ -336,9 +366,10 @@ case class HealthCheckEvent(
     error: Option[String] = None,
     health: Option[String] = None
 ) extends AnalyticEvent {
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
   def toJson(implicit _env: Env): JsValue = HealthCheckEvent.format.writes(this)
-  def pushToRedis()(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    env.datastores.healthCheckDataStore.push(this)
+  def pushToRedis()(implicit ec: ExecutionContext, env: Env): Future[Long] = toEnrichedJson.flatMap(e => env.datastores.healthCheckDataStore.push(e))
   def isUp: Boolean =
     if (error.isDefined) {
       false
@@ -360,7 +391,7 @@ trait HealthCheckDataStore {
                                                     env: Env): Future[Seq[HealthCheckEvent]]
   def findLast(serviceDescriptor: ServiceDescriptor)(implicit ec: ExecutionContext,
                                                      env: Env): Future[Option[HealthCheckEvent]]
-  def push(event: HealthCheckEvent)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
 sealed trait Filterable
@@ -448,7 +479,7 @@ trait AnalyticsReadsService {
 
 trait AnalyticsWritesService {
   def init(): Unit
-  def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit]
+  def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit]
 }
 
 class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends AnalyticsReadsService {

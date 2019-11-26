@@ -56,10 +56,15 @@ case class RequestBodyEvent(
   method: String,
   url: String,
   headers: Map[String, String],
-  body: ByteString
+  body: ByteString,
+  from: String,
+  ua: String
 ) extends AnalyticEvent {
 
   override def `@type`: String = "RequestBodyEvent"
+
+  override def fromOrigin: Option[String] = Some(from)
+  override def fromUserAgent: Option[String] = Some(ua)
 
   def toJson(implicit _env: Env): JsValue = Json.obj(
     "@type"           -> "RequestBodyEvent",
@@ -85,10 +90,15 @@ case class ResponseBodyEvent(
   url: String,
   headers: Map[String, String],
   status: Int,
-  body: ByteString
+  body: ByteString,
+  from: String,
+  ua: String
 ) extends AnalyticEvent {
 
   override def `@type`: String = "ResponseBodyEvent"
+
+  override def fromOrigin: Option[String] = Some(from)
+  override def fromUserAgent: Option[String] = Some(ua)
 
   def toJson(implicit _env: Env): JsValue = Json.obj(
     "@type"           -> "ResponseBodyEvent",
@@ -476,7 +486,9 @@ class BodyLogger extends RequestTransformer {
             method = ctx.rawRequest.method,
             url = ctx.rawRequest.url,
             headers = ctx.rawRequest.headers,
-            body = ref.get()
+            body = ref.get(),
+            from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
+            ua = ctx.request.headers.get("User-Agent").getOrElse("none")
           )
           if (config.log) {
             event.log()
@@ -518,7 +530,9 @@ class BodyLogger extends RequestTransformer {
             url = ctx.request.uri,
             headers = ctx.rawResponse.headers,
             status = ctx.rawResponse.status,
-            body = ref.get()
+            body = ref.get(),
+            from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
+            ua = ctx.request.headers.get("User-Agent").getOrElse("none")
           )
           if (config.log) {
             event.log()

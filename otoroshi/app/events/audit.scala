@@ -19,12 +19,16 @@ case class BackOfficeEvent(`@id`: String,
                            action: String,
                            message: String,
                            from: String,
+                           ua: String,
                            metadata: JsObject = Json.obj(),
                            `@timestamp`: DateTime = DateTime.now())
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String] = Some(from)
+  override def fromUserAgent: Option[String] = Some(ua)
 
   override def toJson(implicit env: Env): JsValue = Json.obj(
     "@id"          -> `@id`,
@@ -53,12 +57,16 @@ case class AdminApiEvent(`@id`: String,
                          action: String,
                          message: String,
                          from: String,
+                         ua: String,
                          metadata: JsValue = Json.obj(),
                          `@timestamp`: DateTime = DateTime.now())
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String] = Some(from)
+  override def fromUserAgent: Option[String] = Some(ua)
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
@@ -91,6 +99,9 @@ case class SnowMonkeyOutageRegisteredEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
 
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
+
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -121,6 +132,9 @@ case class CircuitBreakerOpenedEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = service.id
 
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
+
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -144,6 +158,9 @@ case class CircuitBreakerClosedEvent(`@id`: String,
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = service.id
+
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
@@ -169,6 +186,9 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
 
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
+
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -187,12 +207,12 @@ object Audit {
   def send[A <: AuditEvent](audit: A)(implicit env: Env): Unit = {
     implicit val ec = env.otoroshiExecutionContext
     audit.toAnalytics()
-    env.datastores.auditDataStore.push(audit)
+    audit.toEnrichedJson.map(e => env.datastores.auditDataStore.push(e))
   }
 }
 
 trait AuditDataStore {
   def count()(implicit ec: ExecutionContext, env: Env): Future[Long]
   def findAllRaw(from: Long = 0, to: Long = 1000)(implicit ec: ExecutionContext, env: Env): Future[Seq[ByteString]]
-  def push(event: AuditEvent)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }

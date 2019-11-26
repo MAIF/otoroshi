@@ -21,10 +21,12 @@ import scala.concurrent.{ExecutionContext, Future}
 case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOfficeUser]) {
   def connected: Boolean = user.isDefined
   def from: String       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+  def ua: String = request.headers.get("User-Agent").getOrElse("none")
 }
 
 case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeUser) {
   def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+  def ua: String = request.headers.get("User-Agent").getOrElse("none")
 }
 
 class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
@@ -82,7 +84,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
               case Some(user) => {
                 env.datastores.backOfficeUserDataStore.blacklisted(user.email).flatMap {
                   case true => {
-                    Alerts.send(BlackListedBackOfficeUserAlert(env.snowflakeGenerator.nextIdStr(), env.env, user))
+                    Alerts.send(BlackListedBackOfficeUserAlert(env.snowflakeGenerator.nextIdStr(), env.env, user, request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress), request.headers.get("User-Agent").getOrElse("none")))
                     FastFuture.successful(
                       Results.NotFound(views.html.otoroshi.error("Error", env)).removingFromSession("bousr")(request)
                     )

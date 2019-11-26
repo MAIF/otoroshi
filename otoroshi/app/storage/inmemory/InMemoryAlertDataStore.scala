@@ -3,7 +3,7 @@ package storage.inmemory
 import akka.util.ByteString
 import env.Env
 import events.{AlertDataStore, AlertEvent}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import storage.RedisLike
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,10 +17,10 @@ class InMemoryAlertDataStore(redisCli: RedisLike) extends AlertDataStore {
                                                            env: Env): Future[Seq[ByteString]] =
     redisCli.lrange(s"${env.storageRoot}:events:alerts", from, to)
 
-  override def push(event: AlertEvent)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     for {
       config <- env.datastores.globalConfigDataStore.singleton()
-      n      <- redisCli.lpush(s"${env.storageRoot}:events:alerts", Json.stringify(event.toEnrichedJson))
+      n      <- redisCli.lpush(s"${env.storageRoot}:events:alerts", Json.stringify(event))
       -      <- redisCli.ltrim(s"${env.storageRoot}:events:alerts", 0, config.maxLogsSize)
     } yield n
 }

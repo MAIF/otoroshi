@@ -216,7 +216,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
     } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
   }
 
-  override def publish(event: Seq[AnalyticEvent])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val builder = env.Ws
       .url(urlFromPath("/_bulk"))
       .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
@@ -234,7 +234,6 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
       }
       .addHttpHeaders(config.headers.toSeq: _*)
     Source(event.toList)
-      .map(_.toEnrichedJson)
       .grouped(500)
       .map(_.map(bulkRequest))
       .mapAsync(10) { bulk =>

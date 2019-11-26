@@ -1,8 +1,10 @@
 package models
 
+import akka.http.scaladsl.util.FastFuture
 import com.risksense.ipaddr.IpNetwork
 import env.Env
 import events._
+import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -168,6 +170,58 @@ object GlobalScripts {
   }
 }
 
+object GeolocationSettings {
+  val format = new Format[GeolocationSettings] {
+    override def writes(o: GeolocationSettings): JsValue = o.json
+    override def reads(json: JsValue): JsResult[GeolocationSettings] =
+      Try {
+        JsSuccess(
+          (json \ "type").as[String] match {
+            case "none" => NoneGeolocationSettings
+            case "maxmind" => MaxmindGeolocationSettings(
+              enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+              path = (json \ "path").asOpt[String].filter(_.trim.nonEmpty).get
+            )
+            case "ipstack" => IpStackGeolocationSettings(
+              enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+              apikey = (json \ "apikey").asOpt[String].filter(_.trim.nonEmpty).get,
+              timeout = (json \ "timeout").asOpt[Long].getOrElse(2000L)
+            )
+            case _ => NoneGeolocationSettings
+          }
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
+sealed trait GeolocationSettings {
+  def enabled: Boolean
+  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def json: JsValue
+}
+
+case object NoneGeolocationSettings extends GeolocationSettings {
+  def enabled: Boolean = false
+  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = FastFuture.successful(None)
+  def json: JsValue = Json.obj("type" -> "none")
+}
+
+case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends GeolocationSettings {
+  def json: JsValue = Json.obj("type" -> "maxmind", "path" -> path)
+  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+    MaxMindGeolocationHelper.find(ip, path)
+  }
+}
+
+case class IpStackGeolocationSettings(enabled: Boolean, apikey: String, timeout: Long) extends GeolocationSettings {
+  def json: JsValue = Json.obj("type" -> "ipstack", "apikey" -> apikey, "timeout" -> timeout)
+  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+    IpStackGeolocationHelper.find(ip, apikey, timeout)
+  }
+}
+
 case class GlobalConfig(
     lines: Seq[String] = Seq("prod"),
     enableEmbeddedMetrics: Boolean = true,
@@ -203,7 +257,8 @@ case class GlobalConfig(
     otoroshiId: String = IdGenerator.uuid,
     snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
     proxies: Proxies = Proxies(),
-    scripts: GlobalScripts = GlobalScripts()
+    scripts: GlobalScripts = GlobalScripts(),
+    geolocationSettings: GeolocationSettings = NoneGeolocationSettings
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -317,7 +372,8 @@ object GlobalConfig {
         "maxLogsSize"             -> o.maxLogsSize,
         "otoroshiId"              -> o.otoroshiId,
         "snowMonkeyConfig"        -> o.snowMonkeyConfig.asJson,
-        "scripts"                 -> o.scripts.json
+        "scripts"                 -> o.scripts.json,
+        "geolocationSettings"     -> o.geolocationSettings.json
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -428,7 +484,10 @@ object GlobalConfig {
           snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig()),
           scripts = GlobalScripts.format
             .reads((json \ "scripts").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(GlobalScripts())
+            .getOrElse(GlobalScripts()),
+          geolocationSettings = GeolocationSettings.format
+            .reads((json \ "geolocationSettings").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(NoneGeolocationSettings)
         )
       } map {
         case sd => JsSuccess(sd)

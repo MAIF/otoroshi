@@ -3,7 +3,7 @@ package storage.inmemory
 import akka.util.ByteString
 import env.Env
 import events.{AuditDataStore, AuditEvent}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import storage.RedisLike
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,10 +17,10 @@ class InMemoryAuditDataStore(redisCli: RedisLike) extends AuditDataStore {
                                                            env: Env): Future[Seq[ByteString]] =
     redisCli.lrange(s"${env.storageRoot}:events:audit", from, to)
 
-  override def push(event: AuditEvent)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     for {
       config <- env.datastores.globalConfigDataStore.singleton()
-      n      <- redisCli.lpush(s"${env.storageRoot}:events:audit", Json.stringify(event.toEnrichedJson))
+      n      <- redisCli.lpush(s"${env.storageRoot}:events:audit", Json.stringify(event))
       -      <- redisCli.ltrim(s"${env.storageRoot}:events:audit", 0, config.maxLogsSize)
     } yield n
 }

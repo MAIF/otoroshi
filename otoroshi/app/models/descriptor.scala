@@ -792,8 +792,8 @@ object Canary {
 case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: String = "https://www.otoroshi.io") {
   def toJson       = RedirectionSettings.format.writes(this)
   def hasValidCode = RedirectionSettings.validRedirectionCodes.contains(code)
-  def formattedTo(request: RequestHeader, descriptor: ServiceDescriptor, ctx: Map[String, String]): String =
-    RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx)
+  def formattedTo(request: RequestHeader, descriptor: ServiceDescriptor, ctx: Map[String, String], attrs: utils.TypedMap): String =
+    RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs)
 }
 
 object RedirectionSettings {

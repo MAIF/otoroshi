@@ -411,7 +411,7 @@ class WebSocketHandler()(implicit env: Env) {
                   .successful(
                     Results
                       .Status(rawDesc.redirection.code)
-                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx))
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs))
                   )
                   .asLeft[WSFlow]
               }
@@ -668,7 +668,8 @@ class WebSocketHandler()(implicit env: Env) {
                                   Some(descriptor),
                                   apiKey,
                                   paUsr,
-                                  elCtx
+                                  elCtx,
+                                  attrs
                                 )
                                 // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                 val fromOtoroshi = req.headers
@@ -701,7 +702,8 @@ class WebSocketHandler()(implicit env: Env) {
                                     Source.empty[ByteString],
                                     Source.empty[ByteString]
                                   ),
-                                  jwtInjection = jwtInjection
+                                  jwtInjection = jwtInjection,
+                                  attrs = attrs
                                 )
                                 //val claimRequestHeaderName =
                                 //  descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
@@ -942,7 +944,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             .mapValues(
                                               v =>
                                                 HeadersExpressionLanguage
-                                                  .apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx)
+                                                  .apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs)
                                             )
                                             .filterNot(h => h._2 == "null")
                                             .toSeq
@@ -980,7 +982,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                                                                       Some(descriptor),
                                                                                                       apiKey,
                                                                                                       paUsr,
-                                                                                                      elCtx)) match {
+                                                                                                      elCtx, attrs)) match {
                                         case (_, host) if host.contains(":") =>
                                           (host.split(":").apply(0), host.split(":").apply(1).toInt)
                                         case (scheme, host) if scheme.contains("https") => (host, 443)
