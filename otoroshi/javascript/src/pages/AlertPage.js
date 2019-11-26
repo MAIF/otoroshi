@@ -15,6 +15,25 @@ export class AlertPage extends Component {
     { title: 'Alert', content: item => item.alert },
     { title: 'Action', content: item => (item.audit || {}).action || '--' },
     { title: 'Message', content: item => (item.audit || {}).message || '--' },
+    {
+      title: 'Content',
+      content: item => item['@timestamp'],
+      notFilterable: true,
+      style: { textAlign: 'center', width: 70 },
+      cell: (v, item) => (
+        <button
+          type="button"
+          className="btn btn-success btn-xs"
+          onClick={e =>
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
+              'Content'
+            )
+          }>
+          content
+        </button>
+      ),
+    },
   ];
 
   componentDidMount() {
