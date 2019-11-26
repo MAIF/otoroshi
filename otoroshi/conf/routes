@@ -69,6 +69,8 @@ POST    /bo/api/certificates/:id/_renew                       controllers.BackOf
 
 POST    /bo/api/oidc/_fetchConfig                            controllers.BackOfficeController.fetchOpenIdConfiguration()
 
+POST    /bo/api/geolite/_fetchLatest                                      controllers.BackOfficeController.fetchLatestGeoLite2()
+
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)
 POST    /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)

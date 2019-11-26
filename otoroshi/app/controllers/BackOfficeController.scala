@@ -1,5 +1,6 @@
 package controllers
 
+import java.io.File
 import java.security.cert.X509Certificate
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, KeyPairGenerator}
@@ -8,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.google.common.base.Charsets
@@ -36,6 +37,8 @@ import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.{Success, Try}
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class BackOfficeController(BackOfficeAction: BackOfficeAction,
                            BackOfficeActionAuth: BackOfficeActionAuth,
@@ -917,6 +920,25 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           "response" -> resp.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue],
           "request" -> req.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue]
         ))
+      }
+    }
+  }
+
+  def fetchLatestGeoLite2() = BackOfficeActionAuth.async { ctx =>
+    val dir = java.nio.file.Files.createTempDirectory("oto-geolite-")
+    val file = dir.resolve("geolite.tar.gz")
+    env.Ws.url("https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz").get().flatMap { resp =>
+      resp.bodyAsSource.runWith(FileIO.toPath(file)).map { io =>
+        if (io.wasSuccessful) {
+          val builder = new ProcessBuilder
+          builder.command("/bin/sh", "-c", String.format("cd %s; tar -xvf geolite.tar.gz; rm -rf geolite.tar.gz; mv Geo* geolite; mv geolite/GeoLite2-City.mmdb geolite.mmdb; rm -rf ./geolite", dir))
+          builder.directory(dir.toFile)
+          val process = builder.start
+          val exitCode = process.waitFor
+          Ok(Json.obj("path" -> dir.resolve("geolite.mmdb").toFile.getAbsolutePath, "exitCode" -> exitCode))
+        } else {
+          InternalServerError(Json.obj("path" -> file.toFile.getAbsolutePath))
+        }
       }
     }
   }

@@ -57,6 +57,27 @@ class Geolocation extends Component {
       },
     }
   };
+  download = () => {
+    fetch('/bo/api/geolite/_fetchLatest', {
+      credentials: 'include',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: ''
+    }).then(r => r.json()).then(r => {
+      if (r.exitCode === 0) {
+        this.props.onChange({
+          type: 'maxmind',
+          enabled: true,
+          path: r.path,
+        });
+      } else {
+        window.newAlert("Error while fetching latest geolite db ...")
+      }
+    });
+  }
   render() {
     const settings = this.props.value;
     const type = settings.type;
@@ -108,13 +129,21 @@ class Geolocation extends Component {
           />
         )}
         {type === 'maxmind' && (
-          <Form
-            value={settings}
-            onChange={this.props.onChange}
-            flow={this.maxmindFormFlow}
-            schema={this.maxmindForm}
-            style={{ marginTop: 5 }}
-          />
+          <>
+            <Form
+              value={settings}
+              onChange={this.props.onChange}
+              flow={this.maxmindFormFlow}
+              schema={this.maxmindForm}
+              style={{ marginTop: 5 }}
+            />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="col-sm-10">
+                <button type="button" className="btn btn-success btn-xs" onClick={this.download}>download GeoLite2 db (for testing purpose only)</button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     );
