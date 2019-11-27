@@ -77,7 +77,7 @@ class PluginsDescription extends Component {
     if (findOnly) {
       return true;
     }
-    const parentNode = node.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
+    const parentNode = node.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode; //.parentNode;
     return ReactDOM.createPortal(tree, parentNode);
   }
 
@@ -87,12 +87,16 @@ class PluginsDescription extends Component {
         {this.props.refs.map(this.find).filter(e => !!e).map(script => (
           this.findNode(
             script, 
-            <div className="form-group">
+            <div className="form-group" style={{
+              marginLeft: 10,
+              marginRight: 49,
+            }}>
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 <div
                   className="plugin-doc"
                   style={{
+                    marginTop: 10,
                     padding: 10,
                     borderRadius: 5,
                     backgroundColor: '#494948',

@@ -5,6 +5,7 @@ import env.Env
 import otoroshi.script._
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.string.Implicits._
+import play.api.libs.json.Json
 import utils.RequestImplicits._
 import utils.future.Implicits._
 
@@ -12,17 +13,46 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceMetrics extends RequestTransformer {
 
+  override def name: String = "Service Metrics"
+
+  override def description: Option[String] = Some(
+    """This plugin expose service metrics in Otoroshi global metrics or on a special URL of the service `/.well-known/otoroshi/metrics`.
+      |Metrics are exposed in json or prometheus format depending on the accept header. You can protect it with an access key defined in the configuration
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "ServiceMetrics": {
+      |    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.app.health.accessKey}
+      |    "accessKeyQuery": "access_key"
+      |  }
+      |}
+      |```
+    """.stripMargin)
+
   override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET",  "/.well-known/otoroshi/metrics") => {
-        val filter = Some(s"*otoroshi.service.requests.*.*.${ctx.descriptor.name.slug}*")
-        if (ctx.request.accepts("application/json")) {
-          Left(Results.Ok(env.metrics.jsonExport(filter)).withHeaders("Content-Type" -> "application/json")).future
-        } else if (ctx.request.accepts("application/prometheus")) {
-          Left(Results.Ok(env.metrics.prometheusExport(filter)).withHeaders("Content-Type" -> "text/plain")).future
-        } else {
-          Left(Results.Ok(env.metrics.defaultHttpFormat(filter))).future
+
+        def result(): Future[Either[Result, HttpRequest]] = {
+          val filter = Some(s"*otoroshi.service.requests.*.*.${ctx.descriptor.name.slug}*")
+          if (ctx.request.accepts("application/json")) {
+            Left(Results.Ok(env.metrics.jsonExport(filter)).withHeaders("Content-Type" -> "application/json")).future
+          } else if (ctx.request.accepts("application/prometheus")) {
+            Left(Results.Ok(env.metrics.prometheusExport(filter)).withHeaders("Content-Type" -> "text/plain")).future
+          } else {
+            Left(Results.Ok(env.metrics.defaultHttpFormat(filter))).future
+          }
         }
+
+        val queryName = (ctx.config \ "ServiceMetrics" \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
+        (ctx.config \ "ServiceMetrics" \ "accessKeyValue").asOpt[String] match {
+          case None => result()
+          case Some("${config.app.health.accessKey}") if env.healthAccessKey.isDefined && ctx.request.getQueryString(queryName).contains(env.healthAccessKey.get) => result()
+          case Some(value) if ctx.request.getQueryString(queryName).contains(value) => result()
+          case _ => Left(Results.Unauthorized(Json.obj("error" -> "not authorized !"))).future
+         }
       }
       case _ => Right(ctx.otoroshiRequest).future
     }
