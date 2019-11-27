@@ -76,7 +76,7 @@ class ResponseCache extends RequestTransformer {
       |    "enabled": true, // enabled cache
       |    "ttl": 300000,  // store it for some times (5 minutes by default)
       |    "maxSize": 5242880, // max body size (body will be cut after that)
-      |    "filter": { // cacge only for some status, method and paths
+      |    "filter": { // cache only for some status, method and paths
       |      "statuses": [],
       |      "methods": [],
       |      "paths": [],

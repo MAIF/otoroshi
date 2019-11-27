@@ -251,18 +251,21 @@ class ClientCertChainHeader extends RequestTransformer {
       |```json
       |{
       |  "ClientCertChain": {
-      |    "enabled": true, // enabled cache
-      |    "ttl": 300000,  // store it for some times (5 minutes by default)
-      |    "maxSize": 5242880, // max body size (body will be cut after that)
-      |    "filter": { // cacge only for some status, method and paths
-      |      "statuses": [],
-      |      "methods": [],
-      |      "paths": [],
-      |      "not": {
-      |        "statuses": [],
-      |        "methods": [],
-      |        "paths": []
-      |      }
+      |    "pem": { // send client cert as PEM format in a header
+      |      "send": false,
+      |      "header": "X-Client-Cert-Pem"
+      |    },
+      |    "dns": { // send JSON array of DNs in a header
+      |      "send": false,
+      |      "header": "X-Client-Cert-DNs"
+      |    },
+      |    "chain": { // send JSON representation of client cert chain in a header
+      |      "send": true,
+      |      "header": "X-Client-Cert-Chain"
+      |    },
+      |    "claims": { // pass JSON representation of client cert chain in the otoroshi JWT token
+      |      "send": false,
+      |      "header": "clientCertChain"
       |    }
       |  }
       |}
