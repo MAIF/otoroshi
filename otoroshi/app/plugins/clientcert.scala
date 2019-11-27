@@ -239,7 +239,7 @@ class ClientCertChainHeader extends RequestTransformer {
       "pem" -> Json.obj("send" -> false, "header" -> "X-Client-Cert-Pem"),
       "dns" -> Json.obj("send" -> false, "header" -> "X-Client-Cert-DNs"),
       "chain" -> Json.obj("send" -> true, "header" -> "X-Client-Cert-Chain"),
-      "claims" -> Json.obj("send" -> false, "header" -> "clientCertChain"),
+      "claims" -> Json.obj("send" -> false, "name" -> "clientCertChain"),
     )
   ))
 
@@ -265,7 +265,7 @@ class ClientCertChainHeader extends RequestTransformer {
       |    },
       |    "claims": { // pass JSON representation of client cert chain in the otoroshi JWT token
       |      "send": false,
-      |      "header": "clientCertChain"
+      |      "name": "clientCertChain"
       |    }
       |  }
       |}
@@ -311,7 +311,7 @@ class ClientCertChainHeader extends RequestTransformer {
         val chainHeaderName = (config \ "chain" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain)
 
         val sendClaims = (config \ "claims" \ "send").asOpt[Boolean].getOrElse(false)
-        val claimsHeaderName = (config \ "claims" \ "header").asOpt[String].getOrElse("clientCertChain")
+        val claimsHeaderName = (config \ "claims" \ "name").asOpt[String].getOrElse("clientCertChain")
 
         val pemMap = if (sendAsPem) Map(pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
         val dnsMap = if (sendDns) Map(dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(c.getSubjectDN.getName))))) else Map.empty
