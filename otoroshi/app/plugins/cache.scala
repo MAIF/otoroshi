@@ -44,11 +44,52 @@ object ResponseCache {
 
 class ResponseCache extends RequestTransformer {
 
-  override def name: String = super.name
+  override def name: String = "Response Cache"
 
-  override def defaultConfig: Option[JsObject] = super.defaultConfig
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "ResponseCache" -> Json.obj(
+      "enabled" -> true,
+      "ttl" -> 60.minutes.toMillis,
+      "maxSize" -> 5L * 1024L * 1024L,
+      "filter" -> Json.obj(
+        "statuses" -> Json.arr(),
+        "methods" -> Json.arr(),
+        "paths" -> Json.arr(),
+        "not" -> Json.obj(
+          "statuses" -> Json.arr(),
+          "methods" -> Json.arr(),
+          "paths" -> Json.arr(),
+        )
+      )
+    )
+  ))
 
-  override def description: Option[String] = super.description
+  override def description: Option[String] = Some(
+    """This plugin can cache responses from target services in the otoroshi datasstore
+      |It also provides a debug UI at `/.well-known/otoroshi/bodylogger`.
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "BodyLogger": {
+      |    "enabled": true, // enabled cache
+      |    "ttl": 300000,  // store it for some times (5 minutes by default)
+      |    "maxSize": 5242880, // max body size (body will be cut after that)
+      |    "filter": { // cacge only for some status, method and paths
+      |      "statuses": [],
+      |      "methods": [],
+      |      "paths": [],
+      |      "not": {
+      |        "statuses": [],
+      |        "methods": [],
+      |        "paths": []
+      |      }
+      |    }
+      |  }
+      |}
+      |```
+    """.stripMargin)
 
   private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
 

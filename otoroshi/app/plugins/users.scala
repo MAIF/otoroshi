@@ -13,11 +13,9 @@ class HasAllowedUsersValidator extends AccessValidator {
 
   override def defaultConfig: Option[JsObject] = Some(Json.obj(
     "HasAllowedUsersValidator" -> Json.obj(
-      {
-        "usernames" -> Json.arr(),
-        "emails" -> Json.arr(),
-        "emailDomains" -> Json.arr(),
-      }
+      "usernames" -> Json.arr(),
+      "emails" -> Json.arr(),
+      "emailDomains" -> Json.arr(),
     )
   ))
 

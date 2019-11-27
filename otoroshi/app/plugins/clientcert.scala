@@ -30,26 +30,36 @@ class HasClientCertValidator extends AccessValidator {
   }
 }
 
-/*
- * # HasClientCertMatchingValidator
- *
- * Check if client certificate matches the following configuration
- *
- * {
- *   "serialNumbers": [],   // allowed certificated serial numbers
- *   "subjectDNs": [],      // allowed certificated DNs
- *   "issuerDNs": [],       // allowed certificated issuer DNs
- *   "regexSubjectDNs": [], // allowed certificated DNs matching regex
- *   "regexIssuerDNs": [],  // allowed certificated issuer DNs matching regex
- * }
- */
 class HasClientCertMatchingValidator extends AccessValidator {
 
-  override def name: String = super.name
+  override def name: String = "Client certificate matching"
 
-  override def defaultConfig: Option[JsObject] = super.defaultConfig
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "HasClientCertMatchingValidator" -> Json.obj(
+      "serialNumbers" -> Json.arr(),
+      "subjectDNs" -> Json.arr(),
+      "issuerDNs" -> Json.arr(),
+      "regexSubjectDNs" -> Json.arr(),
+      "regexIssuerDNs" -> Json.arr(),
+    )
+  ))
 
-  override def description: Option[String] = super.description
+  override def description: Option[String] = Some(
+    """Check if client certificate matches the following configuration
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "HasClientCertMatchingValidator": {
+      |    "serialNumbers": [],   // allowed certificated serial numbers
+      |    "subjectDNs": [],      // allowed certificated DNs
+      |    "issuerDNs": [],       // allowed certificated issuer DNs
+      |    "regexSubjectDNs": [], // allowed certificated DNs matching regex
+      |    "regexIssuerDNs": [],  // allowed certificated issuer DNs matching regex
+      |  }
+      |}
+    """.stripMargin)
 
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
@@ -111,11 +121,42 @@ class HasClientCertMatchingValidator extends AccessValidator {
  */
 class HasClientCertMatchingHttpValidator extends AccessValidator {
 
-  override def name: String = super.name
+  override def name: String = "Client certificate matching (over http)"
 
-  override def defaultConfig: Option[JsObject] = super.defaultConfig
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "HasClientCertMatchingHttpValidator" -> Json.obj(
+      "url" -> "http://foo.bar",
+      "ttl" -> 600000,
+      "headers" -> Json.obj()
+    )
+  ))
 
-  override def description: Option[String] = super.description
+  override def description: Option[String] = Some(
+    """Check if client certificate matches the following configuration
+      |
+      |expected response from http service is
+      |
+      |```json
+      |{
+      |  "serialNumbers": [],   // allowed certificated serial numbers
+      |  "subjectDNs": [],      // allowed certificated DNs
+      |  "issuerDNs": [],       // allowed certificated issuer DNs
+      |  "regexSubjectDNs": [], // allowed certificated DNs matching regex
+      |  "regexIssuerDNs": [],  // allowed certificated issuer DNs matching regex
+      |}
+      |```
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "HasClientCertMatchingValidator": {
+      |    "url"          // url for the call
+      |    "headers": {}  // http header for the call
+      |    "ttl": 600000  // cache ttl
+      |  }
+      |}
+    """.stripMargin)
 
   private val cache = new TrieMap[String, (Long, JsValue)]
 
@@ -191,11 +232,42 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
 
 class ClientCertChainHeader extends RequestTransformer {
 
-  override def name: String = super.name
+  override def name: String = "Client certificate header"
 
-  override def defaultConfig: Option[JsObject] = super.defaultConfig
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "ClientCertChain" -> Json.obj(
+      "pem" -> Json.obj("send" -> false, "header" -> "X-Client-Cert-Pem"),
+      "dns" -> Json.obj("send" -> false, "header" -> "X-Client-Cert-DNs"),
+      "chain" -> Json.obj("send" -> true, "header" -> "X-Client-Cert-Chain"),
+      "claims" -> Json.obj("send" -> false, "header" -> "clientCertChain"),
+    )
+  ))
 
-  override def description: Option[String] = super.description
+  override def description: Option[String] = Some(
+    """This plugin pass client certificate informations to the target in headers.
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "ClientCertChain": {
+      |    "enabled": true, // enabled cache
+      |    "ttl": 300000,  // store it for some times (5 minutes by default)
+      |    "maxSize": 5242880, // max body size (body will be cut after that)
+      |    "filter": { // cacge only for some status, method and paths
+      |      "statuses": [],
+      |      "methods": [],
+      |      "paths": [],
+      |      "not": {
+      |        "statuses": [],
+      |        "methods": [],
+      |        "paths": []
+      |      }
+      |    }
+      |  }
+      |}
+      |```
+    """.stripMargin)
 
   private def jsonChain(chain: Seq[X509Certificate]): JsArray = {
     JsArray(chain.map(c =>
