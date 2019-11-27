@@ -2085,19 +2085,6 @@ export class ServicePage extends Component {
                 />
               </Suspense>
             </div>
-            <HelpInput
-              label=""
-              help="..."
-              loading={true}
-              value={
-                <p>
-                  For more information about configuration, see the{' '}
-                  <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L401">
-                    documentation
-                  </a>
-                </p>
-              }
-            />
           </Collapse>
           <Collapse
             notVisible={this.state.service.redirection.enabled}

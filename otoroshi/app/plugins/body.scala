@@ -121,6 +121,12 @@ object BodyLogger {
 
 class BodyLogger extends RequestTransformer {
 
+  override def name: String = super.name
+
+  override def defaultConfig: Option[JsObject] = super.defaultConfig
+
+  override def description: Option[String] = super.description
+
   private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
 
   override def start(env: Env): Future[Unit] = {

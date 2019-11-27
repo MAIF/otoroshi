@@ -12,7 +12,7 @@ import env.Env
 import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger
-import play.api.libs.json.{JsNumber, JsValue, Json}
+import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 import play.api.mvc.Result
 import utils.future.Implicits._
 
@@ -23,6 +23,31 @@ import scala.util.{Failure, Success, Try}
 class MaxMindGeolocationInfoExtractor extends PreRouting {
 
   private val logger = Logger("MaxMindGeolocationInfo")
+
+  override def name: String = "Geolocation details extractor (using Maxmind db)"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "GeolocationInfo" -> Json.obj(
+      "path" -> "/foo/bar/cities.mmdb",
+      "log" -> false,
+    )
+  ))
+
+  override def description: Option[String] = Some(
+    """This plugin extract geolocation informations from ip address using the [Maxmind dbs](https://www.maxmind.com/en/geoip2-databases).
+      |The informations are store in plugins attrs for other plugins to use
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "GeolocationInfo": {
+      |    "path": "/foo/bar/cities.mmdb", // file path
+      |    "log": false // will log geolocation details
+      |  }
+      |}
+      |```
+    """.stripMargin)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val pathOpt = (ctx.config \ "GeolocationInfo" \ "path").asOpt[String]
@@ -58,6 +83,33 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
 
   private val logger = Logger("IpStackGeolocationInfo")
 
+
+  override def name: String = "Geolocation details extractor (using IpStack api)"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "GeolocationInfo" -> Json.obj(
+      "path" -> "/foo/bar/cities.mmdb",
+      "log" -> false,
+    )
+  ))
+
+  override def description: Option[String] = Some(
+    """This plugin extract geolocation informations from ip address using the [IpStack dbs](https://ipstack.com/).
+      |The informations are store in plugins attrs for other plugins to use
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "GeolocationInfo": {
+      |    "apikey": "xxxxxxx",
+      |    "timeout": 2000, // timeout in ms
+      |    "log": false // will log geolocation details
+      |  }
+      |}
+      |```
+    """.stripMargin)
+
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val timeout: Long = (ctx.config \ "GeolocationInfo" \ "timeout").asOpt[Long].getOrElse(2000)
     val apiKeyOpt = (ctx.config \ "GeolocationInfo" \ "apikey").asOpt[String]
@@ -78,6 +130,29 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
 }
 
 class GeolocationInfoHeader extends RequestTransformer {
+
+  override def name: String = "Geolocation header"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "GeolocationInfoHeader" -> Json.obj(
+      "headerName" -> "X-Geolocation-Info",
+    )
+  ))
+
+  override def description: Option[String] = Some(
+    """This plugin will sent informations extracted by the Geolocation details extractor to the target service in a header.
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "GeolocationInfoHeader": {
+      |    "headerName": "X-Geolocation-Info" // header in which info will be sent
+      |  }
+      |}
+      |```
+    """.stripMargin)
+
   override def transformRequestWithCtx(
     ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
