@@ -1943,7 +1943,7 @@ case class ServiceDescriptor(
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig,
       attrs: TypedMap
-  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
@@ -2075,7 +2075,7 @@ case class ServiceDescriptor(
                                    config: GlobalConfig,
                                    attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
@@ -2309,17 +2309,11 @@ case class ServiceDescriptor(
     }
   }
 
-
-
-
-
-
-
   def preRoute(
     snowflake: String,
     req: RequestHeader,
     attrs: TypedMap
-  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
@@ -2393,7 +2387,7 @@ case class ServiceDescriptor(
     req: RequestHeader,
     attrs: TypedMap)(
     f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)

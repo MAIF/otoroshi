@@ -31,6 +31,8 @@ import io.prometheus.client.dropwizard.DropwizardExports
 import io.prometheus.client.exporter.common.TextFormat
 import play.api.inject.ApplicationLifecycle
 
+import scala.concurrent.{ExecutionContext, Future}
+
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
 
   private implicit val ev                    = env
@@ -102,6 +104,19 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   def markDouble(name: String, value: Double): Unit = mark(name, value)
   def counter(name: String): Counter                = metricRegistry.counter(name)
   def histogram(name: String): Histogram            = metricRegistry.histogram(name)
+  def timer(name: String): Timer                    = metricRegistry.timer(name)
+  def withTimer[T](name: String)(f: => T): T        = {
+    val ctx = metricRegistry.timer(name).time()
+    val res = f
+    ctx.close()
+    res
+  }
+  def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+    val ctx = metricRegistry.timer(name).time()
+    f.andThen {
+      case _ => ctx.close()
+    }
+  }
 
   private def internalGauge[T](f: => T): Gauge[T] = {
     new Gauge[T] {

@@ -29,34 +29,36 @@ object UserAgentHelper {
   private val parserRef = new AtomicReference[UserAgentParser]()
   private val cache = new TrieMap[String, Option[JsObject]]()
 
-  def userAgentDetails(ua: String): Option[JsObject] = {
-    if (parserInitializing.compareAndSet(false, true)) {
-      val start = System.currentTimeMillis()
-      logger.info("Initializing User-Agent parser ...")
-      Future {
-        parserRef.set(new UserAgentService().loadParser()) // blocking for a looooooong time !
-        parserInitializationDone.set(true)
-      }(ec).andThen {
-        case Success(_) => logger.info(s"User-Agent parser initialized in ${System.currentTimeMillis() - start} ms")
-        case Failure(e) => logger.error("User-Agent parser initialization failed", e)
-      }(ec)
-    }
-    cache.get(ua) match {
-      case details @ Some(_) => details.flatten
-      case None if parserInitializationDone.get() => {
-        Try(parserRef.get().parse(ua)) match {
-          case Failure(e) =>
-            cache.putIfAbsent(ua, None)
-          case Success(capabilities) => {
-            val details = Some(JsObject(capabilities.getValues.asScala.map {
-              case (field, value) => (field.name().toLowerCase(), JsString(value))
-            }.toMap))
-            cache.putIfAbsent(ua, details)
-          }
-        }
-        cache.get(ua).flatten
+  def userAgentDetails(ua: String)(implicit env: Env): Option[JsObject] = {
+    env.metrics.withTimer("otoroshi.useragent.details") {
+      if (parserInitializing.compareAndSet(false, true)) {
+        val start = System.currentTimeMillis()
+        logger.info("Initializing User-Agent parser ...")
+        Future {
+          parserRef.set(new UserAgentService().loadParser()) // blocking for a looooooong time !
+          parserInitializationDone.set(true)
+        }(ec).andThen {
+          case Success(_) => logger.info(s"User-Agent parser initialized in ${System.currentTimeMillis() - start} ms")
+          case Failure(e) => logger.error("User-Agent parser initialization failed", e)
+        }(ec)
       }
-      case _ => None // initialization in progress
+      cache.get(ua) match {
+        case details@Some(_) => details.flatten
+        case None if parserInitializationDone.get() => {
+          Try(parserRef.get().parse(ua)) match {
+            case Failure(e) =>
+              cache.putIfAbsent(ua, None)
+            case Success(capabilities) => {
+              val details = Some(JsObject(capabilities.getValues.asScala.map {
+                case (field, value) => (field.name().toLowerCase(), JsString(value))
+              }.toMap))
+              cache.putIfAbsent(ua, details)
+            }
+          }
+          cache.get(ua).flatten
+        }
+        case _ => None // initialization in progress
+      }
     }
   }
 }

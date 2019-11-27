@@ -103,18 +103,20 @@ object IpStackGeolocationHelper {
   private val cache = new TrieMap[String, Option[JsValue]]()
 
   def find(ip: String, apikey: String, timeout: Long)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
-    cache.get(ip) match {
-      case Some(details) => FastFuture.successful(details)
-      case None  => {
-        env.Ws.url(s"http://api.ipstack.com/$ip?access_key=$apikey&format=1")
-          .withFollowRedirects(false)
-          .withRequestTimeout(timeout.millis)
-          .get().map {
-          case resp if resp.status == 200 && resp.header("Content-Type").exists(_.contains("application/json")) =>
-            val res = Some(resp.json)
-            cache.putIfAbsent(ip, res)
-            res
-          case _ => None
+    env.metrics.withTimerAsync("otoroshi.geolocation.ipstack.details") {
+      cache.get(ip) match {
+        case Some(details) => FastFuture.successful(details)
+        case None => {
+          env.Ws.url(s"http://api.ipstack.com/$ip?access_key=$apikey&format=1")
+            .withFollowRedirects(false)
+            .withRequestTimeout(timeout.millis)
+            .get().map {
+            case resp if resp.status == 200 && resp.header("Content-Type").exists(_.contains("application/json")) =>
+              val res = Some(resp.json)
+              cache.putIfAbsent(ip, res)
+              res
+            case _ => None
+          }
         }
       }
     }
@@ -132,58 +134,60 @@ object MaxMindGeolocationHelper {
   private val dbRef = new AtomicReference[DatabaseReader]()
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
-    if (dbInitializing.compareAndSet(false, true)) {
-      logger.info("Initializing Geolocation db ...")
-      Future {
-        val cityDbFile = new File(file)
-        val cityDb = new DatabaseReader.Builder(cityDbFile).build()
-        dbRef.set(cityDb)
-        dbInitializationDone.set(true)
-      }(exc).andThen {
-        case Success(_) => logger.info("Geolocation db initialized")
-        case Failure(e) => logger.error("Geolocation db initialization failed", e)
-      }(exc)
-    }
-    cache.get(ip) match {
-      case loc @ Some(_) => FastFuture.successful(loc.flatten)
-      case None if dbInitializationDone.get() => {
-        val inet = ipCache.getOrElseUpdate(ip, InetAddress.getByName(ip))
-        Try(dbRef.get().city(inet)) match { // TODO: blocking ???
-          case Failure(e) => cache.putIfAbsent(ip, None)
-          case Success(city) => {
-            Option(city).map { c =>
-              // val asn = asnDb.asn(inet)
-              // val org = asn.getAutonomousSystemOrganization // TODO: blocking ??? non free version ?
-              // val asnNumber = asn.getAutonomousSystemNumber // TODO: blocking ??? non free version ?
-              val ipType = if (ip.contains(":")) "ipv6" else "ipv4"
-              val location = Json.obj(
-                "ip" -> ip,
-                "type" -> ipType,
-                "continent_code" -> c.getContinent.getCode,
-                "continent_name" -> c.getContinent.getName,
-                "country_code" -> c.getCountry.getIsoCode,
-                "country_name" -> c.getCountry.getName,
-                "region_code" -> c.getPostal.getCode,
-                "region_name" -> c.getMostSpecificSubdivision.getName,
-                "city" -> c.getCity.getName,
-                "latitude" -> JsNumber(c.getLocation.getLatitude.toDouble),
-                "longitude" -> JsNumber(c.getLocation.getLongitude.toDouble),
-                "location" -> Json.obj(
-                  "geoname_id" -> JsNumber(c.getCountry.getGeoNameId.toInt),
-                  "name" -> c.getCountry.getName,
-                  "languages" -> Json.arr(),
-                  "is_eu" -> c.getCountry.isInEuropeanUnion
+    env.metrics.withTimerAsync("otoroshi.geolocation.maxmind.details") {
+      if (dbInitializing.compareAndSet(false, true)) {
+        logger.info("Initializing Geolocation db ...")
+        Future {
+          val cityDbFile = new File(file)
+          val cityDb = new DatabaseReader.Builder(cityDbFile).build()
+          dbRef.set(cityDb)
+          dbInitializationDone.set(true)
+        }(exc).andThen {
+          case Success(_) => logger.info("Geolocation db initialized")
+          case Failure(e) => logger.error("Geolocation db initialization failed", e)
+        }(exc)
+      }
+      cache.get(ip) match {
+        case loc @ Some(_) => FastFuture.successful(loc.flatten)
+        case None if dbInitializationDone.get() => {
+          val inet = ipCache.getOrElseUpdate(ip, InetAddress.getByName(ip))
+          Try(dbRef.get().city(inet)) match { // TODO: blocking ???
+            case Failure(e) => cache.putIfAbsent(ip, None)
+            case Success(city) => {
+              Option(city).map { c =>
+                // val asn = asnDb.asn(inet)
+                // val org = asn.getAutonomousSystemOrganization // TODO: blocking ??? non free version ?
+                // val asnNumber = asn.getAutonomousSystemNumber // TODO: blocking ??? non free version ?
+                val ipType = if (ip.contains(":")) "ipv6" else "ipv4"
+                val location = Json.obj(
+                  "ip" -> ip,
+                  "type" -> ipType,
+                  "continent_code" -> c.getContinent.getCode,
+                  "continent_name" -> c.getContinent.getName,
+                  "country_code" -> c.getCountry.getIsoCode,
+                  "country_name" -> c.getCountry.getName,
+                  "region_code" -> c.getPostal.getCode,
+                  "region_name" -> c.getMostSpecificSubdivision.getName,
+                  "city" -> c.getCity.getName,
+                  "latitude" -> JsNumber(c.getLocation.getLatitude.toDouble),
+                  "longitude" -> JsNumber(c.getLocation.getLongitude.toDouble),
+                  "location" -> Json.obj(
+                    "geoname_id" -> JsNumber(c.getCountry.getGeoNameId.toInt),
+                    "name" -> c.getCountry.getName,
+                    "languages" -> Json.arr(),
+                    "is_eu" -> c.getCountry.isInEuropeanUnion
+                  )
                 )
-              )
-              cache.putIfAbsent(ip, Some(location))
-            }.getOrElse {
-              cache.putIfAbsent(ip, None)
+                cache.putIfAbsent(ip, Some(location))
+              }.getOrElse {
+                cache.putIfAbsent(ip, None)
+              }
             }
           }
+          FastFuture.successful(cache.get(ip).flatten)
         }
-        FastFuture.successful(cache.get(ip).flatten)
+        case _ => FastFuture.successful(None) // initialization in progress
       }
-      case _ => FastFuture.successful(None) // initialization in progress
     }
   }
 }

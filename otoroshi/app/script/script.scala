@@ -488,13 +488,15 @@ class ScriptManager(env: Env) {
   }
 
   private def initClasspathModules(): Future[Unit] = {
-    Future {
-      logger.info("Finding and starting plugins ...")
-      val start = System.currentTimeMillis()
-      (transformersNames ++ validatorsNames ++ preRouteNames).map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
-      logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
-      ()
-    }(cpScriptExec)
+    env.metrics.withTimerAsync("otoroshi.core.plugin.classpath-scanning-starting") {
+      Future {
+        logger.info("Finding and starting plugins ...")
+        val start = System.currentTimeMillis()
+        (transformersNames ++ validatorsNames ++ preRouteNames).map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
+        logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
+        ()
+      }(cpScriptExec)
+    }
   }
 
   private def compileAndUpdate(script: Script): Future[Unit] = {
@@ -529,16 +531,18 @@ class ScriptManager(env: Env) {
   }
 
   private def updateScriptCache(first: Boolean = false): Future[Unit] = {
-    logger.debug(s"updateScriptCache")
-    if (first) logger.info("Compiling and starting scripts ...")
-    val start = System.currentTimeMillis()
-    env.datastores.scriptDataStore.findAll().flatMap { scripts =>
-      val all: Future[Seq[Unit]] = Future.sequence(scripts.map(compileAndUpdateIfNeeded))
-      val ids = scripts.map(_.id)
-      cache.keySet.filterNot(id => ids.contains(id)).foreach(id => cache.remove(id))
-      all.map(_ => ())
-    }.andThen {
-      case _ if first => logger.info(s"Compiling and starting scripts done in ${System.currentTimeMillis() - start} ms.")
+    env.metrics.withTimerAsync("otoroshi.core.plugin.update-scripts") {
+      logger.debug(s"updateScriptCache")
+      if (first) logger.info("Compiling and starting scripts ...")
+      val start = System.currentTimeMillis()
+      env.datastores.scriptDataStore.findAll().flatMap { scripts =>
+        val all: Future[Seq[Unit]] = Future.sequence(scripts.map(compileAndUpdateIfNeeded))
+        val ids = scripts.map(_.id)
+        cache.keySet.filterNot(id => ids.contains(id)).foreach(id => cache.remove(id))
+        all.map(_ => ())
+      }.andThen {
+        case _ if first => logger.info(s"Compiling and starting scripts done in ${System.currentTimeMillis() - start} ms.")
+      }
     }
   }
 
@@ -611,7 +615,7 @@ object Implicits {
 
     def transformRequest(
         context: TransformerRequestContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = env.metrics.withTimerAsync("otoroshi.core.proxy.transform-request") {
       env.scriptingEnabled match {
         case true =>
           val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -642,7 +646,7 @@ object Implicits {
 
     def transformResponse(
         context: TransformerResponseContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = env.metrics.withTimerAsync("otoroshi.core.proxy.transform-response") {
       env.scriptingEnabled match {
         case true =>
           val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -673,7 +677,7 @@ object Implicits {
 
     def transformRequestBody(
         context: TransformerRequestBodyContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
       env.scriptingEnabled match {
         case true =>
           val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -702,7 +706,7 @@ object Implicits {
 
     def transformResponseBody(
         context: TransformerResponseBodyContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = {
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = env.metrics.withTimer("otoroshi.core.proxy.transform-response-body") {
       env.scriptingEnabled match {
         case true =>
           val gScripts = env.datastores.globalConfigDataStore.latestSafe

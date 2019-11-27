@@ -3,7 +3,7 @@ package env
 import java.lang.management.ManagementFactory
 import java.rmi.registry.LocateRegistry
 import java.security.KeyPairGenerator
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.{ActorSystem, PoisonPill, Scheduler}
@@ -107,6 +107,10 @@ class Env(val configuration: Configuration,
   val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
   val otoroshiScheduler: Scheduler               = otoroshiActorSystem.scheduler
   val otoroshiMaterializer: ActorMaterializer    = ActorMaterializer.create(otoroshiActorSystem)
+
+  val analyticsPressureEnabled: Boolean = configuration.getOptional[Boolean]("otoroshi.analytics.pressure.enabled").getOrElse(false)
+  val analyticsPressureCores: Int = configuration.getOptional[Int]("otoroshi.analytics.pressure.cores").getOrElse(Runtime.getRuntime.availableProcessors() + 1)
+  val analyticsExecutionContext: ExecutionContext = if (analyticsPressureEnabled) ExecutionContext.fromExecutor(Executors.newFixedThreadPool(analyticsPressureCores)) else otoroshiExecutionContext
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
     val promise = Promise[Unit]

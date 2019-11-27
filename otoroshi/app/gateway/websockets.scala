@@ -853,12 +853,12 @@ class WebSocketHandler()(implicit env: Env) {
                                         )
                                         evt.toAnalytics()
                                         if (descriptor.logAnalyticsOnServer) {
-                                          evt.log()
+                                          evt.log()(env, env.analyticsExecutionContext) // pressure EC
                                         }
                                       }
-                                    }
+                                    }(env.analyticsExecutionContext) // pressure EC
                                   }
-                                }
+                                }(env.analyticsExecutionContext) // pressure EC
 
                                 val wsCookiesIn = req.cookies.toSeq.map(
                                   c =>

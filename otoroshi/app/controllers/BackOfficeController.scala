@@ -1,23 +1,24 @@
 package controllers
 
-import java.io.File
 import java.security.cert.X509Certificate
-import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, KeyPairGenerator}
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
+import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
+import auth.GenericOauth2ModuleConfig
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.google.common.base.Charsets
+import com.nimbusds.jose.jwk.KeyType
 import env.Env
 import events._
-import gateway.{GatewayRequestHandler, WebSocketHandler}
 import models._
 import org.joda.time.DateTime
+import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -25,20 +26,14 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{EmptyBody, SourceBody}
 import play.api.mvc._
-import utils.LocalCache
 import security._
-import org.mindrot.jbcrypt.BCrypt
-import akka.http.scaladsl.util.FastFuture._
-import auth.GenericOauth2ModuleConfig
-import com.nimbusds.jose.jwk.{JWKSet, KeyType}
 import ssl.FakeKeyStore.KeystoreSettings
 import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
+import utils.LocalCache
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
-import scala.util.{Success, Try}
-import java.nio.file.Files
-import java.nio.file.Paths
+import scala.concurrent.duration._
+import scala.util.Try
 
 class BackOfficeController(BackOfficeAction: BackOfficeAction,
                            BackOfficeActionAuth: BackOfficeActionAuth,
@@ -79,6 +74,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
     val headers = Seq(
       "Host"                           -> host,
+      "X-Forwarded-For"                -> ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
       env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
       env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
       env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,
@@ -192,7 +188,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
-    import scala.concurrent.duration._
+
     env.datastores.globalConfigDataStore.singleton().map { config =>
       Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
     }
@@ -791,8 +787,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def fetchOpenIdConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    import scala.concurrent.duration._
     import utils.http.Implicits._
+
+    import scala.concurrent.duration._
 
     val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
     val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")

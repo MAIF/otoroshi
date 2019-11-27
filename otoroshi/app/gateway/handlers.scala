@@ -776,7 +776,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def maybeSinkRequest(snowflake: String, req: RequestHeader, attrs: utils.TypedMap, err: Future[Result]): Future[Result] = {
+  def maybeSinkRequest(snowflake: String, req: RequestHeader, attrs: utils.TypedMap, err: Future[Result]): Future[Result] = env.metrics.withTimerAsync("otoroshi.core.proxy.request-sink") {
     env.datastores.globalConfigDataStore.singleton().flatMap {
       case config if !config.scripts.enabled => err
       case config if config.scripts.sinkRefs.isEmpty => err
@@ -1384,12 +1384,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               )
                                               evt.toAnalytics()
                                               if (descriptor.logAnalyticsOnServer) {
-                                                evt.log()
+                                                evt.log()(env, env.analyticsExecutionContext) // pressure EC
                                               }
                                             }
-                                          }(env.otoroshiExecutionContext) // pressure EC
+                                          }(env.analyticsExecutionContext) // pressure EC
                                         }
-                                      }(env.otoroshiExecutionContext) // pressure EC
+                                      }(env.analyticsExecutionContext) // pressure EC
                                       //.andThen {
                                       //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
                                       //}
