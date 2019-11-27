@@ -47,7 +47,7 @@ class ResponseCache extends RequestTransformer {
   private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
 
   override def start(env: Env): Future[Unit] = {
-    val actorSystem = ActorSystem("cache-redisee")
+    val actorSystem = ActorSystem("cache-redis")
     implicit val ec = actorSystem.dispatcher
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {

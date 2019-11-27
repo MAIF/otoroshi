@@ -121,6 +121,11 @@ object CompilingValidator extends AccessValidator {
 }
 
 class HasClientCertValidator extends AccessValidator {
+
+  override def name: String = "Client Certificate Only"
+
+  override def description: Option[String] = Some("Check if a client certificate is present in the request")
+
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) => FastFuture.successful(true)
