@@ -444,6 +444,7 @@ case class Target(
   def toJson = Target.format.writes(this)
   def asUrl  = s"${scheme}://$host"
   def asKey  = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asTargetStr  = s"$scheme://$host@${ipAddress.getOrElse(host)}"
 
   lazy val thePort: Int = if (host.contains(":")) {
     host.split(":").last.toInt

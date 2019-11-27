@@ -138,7 +138,7 @@ class AccessLog extends RequestTransformer {
       val ipAddress = ctx.request.theIpAddress
       val timestamp = ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).getOrElse(DateTime.now()).toString("yyyy-MM-dd HH:mm:ss.SSS z")
       val duration = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asKey).getOrElse("-")
+      val to = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asTargetStr).getOrElse("-")
       val http = ctx.request.theProtocol
       val protocol = ctx.request.version
       val size = ctx.rawResponse.headers.get("Content-Length").orElse(ctx.rawResponse.headers.get("content-length")).getOrElse("-")
