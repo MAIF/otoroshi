@@ -3,7 +3,7 @@ package otoroshi.plugins.security
 import akka.stream.Materializer
 import env.Env
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import utils.future.Implicits._
 
@@ -12,6 +12,17 @@ import scala.concurrent.{ExecutionContext, Future}
 class SecurityTxt extends RequestTransformer {
 
   override def name: String = "Security Txt"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "SecurityTxt" -> Json.obj(
+      "Contact" -> "contact@foo.bar",
+      "Encryption" -> JsNull,
+      "Acknowledgments" -> JsNull,
+      "Preferred-Languages" -> "en, fr",
+      "Policy" -> JsNull,
+      "Hiring" -> JsNull,
+    )
+  ))
 
   override def description: Option[String] = Some(
     """This plugin exposes a special route `/.well-known/security.txt` as proposed at [https://securitytxt.org/](https://securitytxt.org/).

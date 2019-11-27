@@ -43,6 +43,7 @@ trait StartableAndStoppable {
 trait NamedPlugin { self =>
   def name: String = self.getClass.getName
   def description: Option[String] = None
+  def defaultConfig: Option[JsObject] = None
 }
 
 case class HttpRequest(url: String,
@@ -899,7 +900,12 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
           case Left(_) => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
-          case Right(instance) => Json.obj("id" -> s"cp:$c", "name" -> instance.name, "description" -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue])
+          case Right(instance) => Json.obj(
+            "id" -> s"cp:$c",
+            "name" -> instance.name,
+            "description" -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue]
+          )
         }
       }
       env.datastores.scriptDataStore.findAll().map { all =>

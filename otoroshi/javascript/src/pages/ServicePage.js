@@ -2026,6 +2026,8 @@ export class ServicePage extends Component {
               refs={this.state.service.preRouting.refs}
               type="preroute"
               onChange={e => this.changeTheValue('preRouting.refs', e)}
+              config={this.state.service.preRouting.config}
+              onChangeConfig={e => this.changeTheValue('preRouting.config', e)}
             />
             <ArrayInput
               label="Excluded patterns"
@@ -2062,6 +2064,8 @@ export class ServicePage extends Component {
               refs={this.state.service.accessValidator.refs}
               type="validator"
               onChange={e => this.changeTheValue('accessValidator.refs', e)}
+              config={this.state.service.accessValidator.config}
+              onChangeConfig={e => this.changeTheValue('accessValidator.config', e)}
             />
             <ArrayInput
               label="Excluded patterns"
@@ -2672,12 +2676,14 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Request transformation">
-            <Warning />
+            {/*<Warning />*/}
             <Scripts
               label="Request transformers"
               refs={this.state.service.transformerRefs}
               type="transformer"
               onChange={e => this.changeTheValue('transformerRefs', e)}
+              config={this.state.service.transformerConfig}
+              onChangeConfig={e => this.changeTheValue('transformerConfig', e)}
             />
             <div className="form-group">
               <Suspense fallback={<div>loading ...</div>}>

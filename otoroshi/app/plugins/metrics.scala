@@ -5,7 +5,7 @@ import env.Env
 import otoroshi.script._
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.string.Implicits._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import utils.RequestImplicits._
 import utils.future.Implicits._
 
@@ -14,6 +14,13 @@ import scala.concurrent.{ExecutionContext, Future}
 class ServiceMetrics extends RequestTransformer {
 
   override def name: String = "Service Metrics"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "ServiceMetrics" -> Json.obj(
+      "accessKeyValue" -> "${config.app.health.accessKey}",
+      "accessKeyQuery" -> "access_key"
+    )
+  ))
 
   override def description: Option[String] = Some(
     """This plugin expose service metrics in Otoroshi global metrics or on a special URL of the service `/.well-known/otoroshi/metrics`.

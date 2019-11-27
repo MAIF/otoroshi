@@ -31,7 +31,7 @@ class PluginsDescription extends Component {
   state = { scripts: [] }
 
   componentDidMount() {
-    fetch(`/bo/api/proxy/api/scripts/_list?type=transformer`, {
+    fetch(`/bo/api/proxy/api/scripts/_list?type=${this.props.type}`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -45,8 +45,8 @@ class PluginsDescription extends Component {
     });
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.refs !== this.props.refs) {
+  componentDidUpdate(prevProps) {
+    if (prevProps.refs !== this.props.refs) {
       setTimeout(() => {
         this.forceUpdate();
         setTimeout(() => {
@@ -63,7 +63,8 @@ class PluginsDescription extends Component {
   }
 
   find = (ref) => {
-    return this.state.scripts.filter(s => s.id === ref)[0];
+    const refs = this.state.scripts.filter(s => s.id === ref)
+    return refs[0];
   }
 
   findNode = (ref, tree, findOnly) => {
@@ -81,6 +82,12 @@ class PluginsDescription extends Component {
     return ReactDOM.createPortal(tree, parentNode);
   }
 
+  inject = (script) => {
+    if (script.defaultConfig) {
+      this.props.onChangeConfig(_.merge({}, this.props.config, script.defaultConfig));
+    }
+  }
+
   render() {
     return (
       <>
@@ -89,7 +96,7 @@ class PluginsDescription extends Component {
             script, 
             <div className="form-group" style={{
               marginLeft: 10,
-              marginRight: 49,
+              marginRight: 50,
             }}>
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
@@ -103,6 +110,13 @@ class PluginsDescription extends Component {
                     width: '100%',
                   }}>
                   <h3>{script.name}</h3>
+                  {!!script.defaultConfig && (
+                    <button type="button" className="btn btn-xs btn-info" onClick={e => this.inject(script)} style={{
+                      position: 'absolute',
+                      right: 20,
+                      top: 20,
+                    }}>Inject default config.</button>
+                  )}
                   <p style={{ textAlign: 'justify' }} dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }} />
                 </div>
               </div>
@@ -126,7 +140,7 @@ export class Scripts extends Component {
           transformer={a => ({ value: a.id, label: a.name, desc: a.description })}
           help="..."
         />
-        <PluginsDescription refs={this.props.refs} />
+        <PluginsDescription refs={this.props.refs} type={this.props.type} config={this.props.config} onChangeConfig={this.props.onChangeConfig} />
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label" />
           <div className="col-sm-10">

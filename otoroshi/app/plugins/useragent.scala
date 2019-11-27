@@ -67,6 +67,29 @@ class UserAgentExtractor extends PreRouting {
 
   private val logger = Logger("UserAgentExtractor")
 
+  override def name: String = "User-Agent details extractor"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "UserAgentInfo" -> Json.obj(
+      "log" -> false,
+    )
+  ))
+
+  override def description: Option[String] = Some(
+    """This plugin extract informations from User-Agent header such as browsser version, OS version, etc.
+      |The informations are store in plugins attrs for other plugins to use
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "UserAgentInfo": {
+      |    "log": false // will log user-agent details
+      |  }
+      |}
+      |```
+    """.stripMargin)
+
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val log = (ctx.config \ "UserAgentInfo" \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
@@ -85,6 +108,29 @@ class UserAgentExtractor extends PreRouting {
 }
 
 class UserAgentInfoHeader extends RequestTransformer {
+
+  override def name: String = "User-Agent header"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "UserAgentInfoHeader" -> Json.obj(
+      "headerName" -> "X-User-Agent-Info",
+    )
+  ))
+
+  override def description: Option[String] = Some(
+    """This plugin will sent informations extracted by the User-Agent details extractor to the target service in a header.
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |  "UserAgentInfoHeader": {
+      |    "headerName": "X-User-Agent-Info" // header in which info will be sent
+      |  }
+      |}
+      |```
+    """.stripMargin)
+
   override def transformRequestWithCtx(
     ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {

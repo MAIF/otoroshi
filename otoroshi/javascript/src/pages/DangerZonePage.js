@@ -1142,6 +1142,8 @@ class GlobalScripts extends Component {
           refs={config.sinkRefs}
           type="sink"
           onChange={e => this.changeTheValue('sinkRefs', e)}
+          config={config.sinkRefs}
+          onChangeConfig={e => this.changeTheValue('sinkConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1158,6 +1160,8 @@ class GlobalScripts extends Component {
           refs={config.preRouteRefs}
           type="preroute"
           onChange={e => this.changeTheValue('preRouteRefs', e)}
+          config={config.preRouteRefs}
+          onChangeConfig={e => this.changeTheValue('preRouteConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1174,6 +1178,8 @@ class GlobalScripts extends Component {
           refs={config.validatorRefs}
           type="validator"
           onChange={e => this.changeTheValue('validatorRefs', e)}
+          config={config.validatorRefs}
+          onChangeConfig={e => this.changeTheValue('validatorConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1190,6 +1196,8 @@ class GlobalScripts extends Component {
           refs={config.transformersRefs}
           type="transformer"
           onChange={e => this.changeTheValue('transformersRefs', e)}
+          config={config.validatorRefs}
+          onChangeConfig={e => this.changeTheValue('transformersConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>

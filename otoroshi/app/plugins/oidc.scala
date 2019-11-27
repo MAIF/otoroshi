@@ -12,6 +12,58 @@ import scala.util.Try
 
 class OIDCHeaders extends RequestTransformer {
 
+  override def name: String = "OIDC headers"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "OIDCHeaders" -> Json.obj(
+      "profile" -> Json.obj(
+        "send" -> true,
+        "headerName" -> "X-OIDC-User"
+      ),
+      "idtoken" -> Json.obj(
+        "send" -> false,
+        "name" -> "id_token",
+        "headerName" -> "X-OIDC-Id-Token",
+        "jwt" -> true
+      ),
+      "accesstoken" -> Json.obj(
+        "send" -> false,
+        "name" -> "access_token",
+        "headerName" -> "X-OIDC-Access-Token",
+        "jwt" -> true
+      )
+    )
+  ))
+
+  override def description: Option[String] = Some(
+    """This plugin injects headers containing tokens and profile from current OIDC provider.
+      |
+      |This plugin can accept the following configuration
+      |
+      |```json
+      |{
+      |    "OIDCHeaders": {
+      |    "profile": {
+      |      "send": true,
+      |      "headerName": "X-OIDC-User"
+      |    },
+      |    "idtoken": {
+      |      "send": false,
+      |      "name": "id_token",
+      |      "headerName": "X-OIDC-Id-Token",
+      |      "jwt": true
+      |    },
+      |    "accesstoken": {
+      |      "send": false,
+      |      "name": "access_token",
+      |      "headerName": "X-OIDC-Access-Token",
+      |      "jwt": true
+      |    }
+      |  }
+      |}
+      |```
+    """.stripMargin)
+
   private def extract(payload: JsValue, name: String, jwt: Boolean): String = {
     (payload \ name).asOpt[String] match {
       case None => "--"
@@ -32,12 +84,12 @@ class OIDCHeaders extends RequestTransformer {
 
         val sendIdToken = (config \ "idtoken" \ "send").asOpt[Boolean].getOrElse(false)
         val idTokenName = (config \ "idtoken" \ "name").asOpt[String].getOrElse("id_token")
-        val idTokenHeaderName = (config \ "idtoken" \ "headerName").asOpt[String].getOrElse("X-OIDC-Id-token")
+        val idTokenHeaderName = (config \ "idtoken" \ "headerName").asOpt[String].getOrElse("X-OIDC-Id-Token")
         val idTokenJwt = (config \ "idtoken" \ "jwt").asOpt[Boolean].getOrElse(true)
 
         val sendAccessToken = (config \ "accesstoken" \ "send").asOpt[Boolean].getOrElse(false)
         val accessTokenName = (config \ "accesstoken" \ "name").asOpt[String].getOrElse("access_token")
-        val accessTokenHeaderName = (config \ "accesstoken" \ "headerName").asOpt[String].getOrElse("X-OIDC-sAccess-token")
+        val accessTokenHeaderName = (config \ "accesstoken" \ "headerName").asOpt[String].getOrElse("X-OIDC-Access-Token")
         val accessTokenJwt = (config \ "accesstoken" \ "jwt").asOpt[Boolean].getOrElse(true)
 
         val profileMap = if (sendProfile) Map(profileHeaderName -> Json.stringify(user.profile)) else Map.empty

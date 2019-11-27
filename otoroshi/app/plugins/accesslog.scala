@@ -5,6 +5,7 @@ import env.Env
 import org.joda.time.DateTime
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerResponseContext}
 import play.api.Logger
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
 import utils.RegexPool
 import utils.RequestImplicits._
@@ -85,6 +86,16 @@ class AccessLog extends RequestTransformer {
   private val logger = Logger("otoroshi-plugins-access-log")
 
   override def name: String = "Access log (CLF)"
+
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "AccessLog" -> Json.obj(
+      "enabled" -> true,
+      "statuses" -> Json.arr(),
+      "paths" -> Json.arr(),
+      "methods" -> Json.arr(),
+      "identities" -> Json.arr(),
+    )
+  ))
 
   override def description: Option[String] = Some(
     """With this plugin, any access to a service will be logged in CLF format.
