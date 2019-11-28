@@ -32,7 +32,7 @@ object KafkaSettings {
 
   def producerSettings(_env: env.Env, config: KafkaConfig): ProducerSettings[Array[Byte], String] = {
     val settings = ProducerSettings
-      .create(_env.otoroshiActorSystem, new ByteArraySerializer(), new StringSerializer())
+      .create(_env.analyticsActorSystem, new ByteArraySerializer(), new StringSerializer())
       .withBootstrapServers(config.servers.mkString(","))
 
     val s = for {
@@ -73,7 +73,7 @@ class KafkaWrapper(actorSystem: ActorSystem, env: Env, topicFunction: KafkaConfi
 
 class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends Actor {
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec = env.analyticsExecutionContext
 
   var config: Option[KafkaConfig]               = None
   var eventProducer: Option[KafkaEventProducer] = None
@@ -115,7 +115,7 @@ object KafkaWrapperActor {
 
 class KafkaEventProducer(_env: env.Env, config: KafkaConfig, topicFunction: KafkaConfig => String) {
 
-  implicit val ec = _env.otoroshiExecutionContext
+  implicit val ec = _env.analyticsExecutionContext
 
   lazy val logger = play.api.Logger("otoroshi-kafka-connector")
 

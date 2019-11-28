@@ -126,7 +126,7 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
 
 class StatsdActor(env: Env) extends Actor {
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec = env.analyticsExecutionContext
 
   var config: Option[StatsdConfig]           = None
   var statsdclient: Option[StatsDClient]     = None
@@ -211,7 +211,7 @@ object StatsdActor {
 class StatsDReporter(registry: MetricRegistry, env: Env) extends Reporter with Closeable {
 
   implicit val e  = env
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec = env.analyticsExecutionContext
 
   private val cancellable = new AtomicReference[Option[Cancellable]](None)
 
@@ -227,7 +227,7 @@ class StatsDReporter(registry: MetricRegistry, env: Env) extends Reporter with C
   def start(): StatsDReporter = {
     cancellable.set(
       Some(
-        env.otoroshiScheduler.schedule(
+        env.analyticsScheduler.schedule(
           FiniteDuration(5, TimeUnit.SECONDS),
           env.metricsEvery,
           new Runnable {

@@ -31,12 +31,12 @@ object AnalyticsActor {
 
 class AnalyticsActor(implicit env: Env) extends Actor {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec = env.analyticsExecutionContext
 
   lazy val logger = Logger("otoroshi-analytics-actor")
 
-  lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.otoroshiActorSystem, env, _.analyticsTopic)
-  lazy val kafkaWrapperAudit     = new KafkaWrapper(env.otoroshiActorSystem, env, _.auditTopic)
+  lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.analyticsActorSystem, env, _.analyticsTopic)
+  lazy val kafkaWrapperAudit     = new KafkaWrapper(env.analyticsActorSystem, env, _.auditTopic)
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
@@ -60,7 +60,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           config.analyticsWebhooks.map(c => new WebHookAnalytics(c, config)) ++
           config.elasticWritesConfigs.map(
             c =>
-              new ElasticWritesAnalytics(c, env.environment, env, env.otoroshiExecutionContext, env.otoroshiActorSystem)
+              new ElasticWritesAnalytics(c, env.environment, env, env.analyticsExecutionContext, env.analyticsActorSystem)
           )
         ) {
           _.publish(evts)
@@ -68,7 +68,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
       }
     }
 
-  lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.otoroshiMaterializer)
+  lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
 
   override def receive: Receive = {
     case ge: AnalyticEvent => {
@@ -492,7 +492,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     FastFuture.successful(
       globalConfig.elasticReadsConfig.map(
         c =>
-          new ElasticReadsAnalytics(c, env.environment, env.Ws, env.otoroshiExecutionContext, env.otoroshiActorSystem)
+          new ElasticReadsAnalytics(c, env.environment, env.Ws, env.analyticsExecutionContext, env.analyticsActorSystem)
       )
     )
   }
