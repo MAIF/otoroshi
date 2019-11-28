@@ -257,7 +257,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
         accessValidator = AccessValidatorRef(
           enabled = true,
           refs = Seq(
-            "cp:otoroshi.script.HasAllowedApiKeyValidator",
+            "cp:otoroshi.plugins.apikeys.HasAllowedApiKeyValidator",
             "cp:functional.Validator1"
           ),
           config = Json.obj(
