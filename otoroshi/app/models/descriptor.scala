@@ -1950,10 +1950,9 @@ case class ServiceDescriptor(
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
-
-    if (gScripts.enabled || accessValidator.enabled) {
+    if ((gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(accessValidator)
-        .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))))
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.validatorRefs ++ lScripts
@@ -2024,15 +2023,15 @@ case class ServiceDescriptor(
                                    attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    
+
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
 
-    if (gScripts.enabled || accessValidator.enabled) {
+    if ((gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(accessValidator)
-        .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))))
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.validatorRefs ++ lScripts
@@ -2204,6 +2203,8 @@ case class ServiceDescriptor(
     }
   }
 
+  import utils.RequestImplicits._
+
   def preRoute(
     snowflake: String,
     req: RequestHeader,
@@ -2213,9 +2214,9 @@ case class ServiceDescriptor(
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
-    if (gScripts.enabled || preRouting.enabled) {
+    if ((gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(preRouting)
-        .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.relativeUri))))
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.preRouteRefs ++ lScripts
@@ -2260,9 +2261,9 @@ case class ServiceDescriptor(
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
-    if (gScripts.enabled || preRouting.enabled) {
+    if ((gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(preRouting)
-        .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))))
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.preRouteRefs ++ lScripts
