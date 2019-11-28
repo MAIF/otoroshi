@@ -143,31 +143,38 @@ trait AnalyticEvent {
 
   def toJson(implicit _env: Env): JsValue
   def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
-    val uaDetails = fromUserAgent match {
-      case None => JsNull
-      case Some(ua) => _env.datastores.globalConfigDataStore.latestSafe match {
+    val jsonObject = toJson(_env).as[JsObject]
+    val uaDetails = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
+      case Some(details) => details
+      case None => fromUserAgent match {
         case None => JsNull
-        case Some(config) if !config.userAgentSettings.enabled => JsNull
-        case Some(config) => config.userAgentSettings.find(ua) match {
+        case Some(ua) => _env.datastores.globalConfigDataStore.latestSafe match {
           case None => JsNull
-          case Some(details) => details
-        }
-      }
-    }
-    val fOrigin = fromOrigin match {
-      case None => FastFuture.successful(JsNull)
-      case Some(ipAddress) => {
-        _env.datastores.globalConfigDataStore.latestSafe match {
-          case None => FastFuture.successful(JsNull)
-          case Some(config) if !config.geolocationSettings.enabled => FastFuture.successful(JsNull)
-          case Some(config) => config.geolocationSettings.find(ipAddress).map {
+          case Some(config) if !config.userAgentSettings.enabled => JsNull
+          case Some(config) => config.userAgentSettings.find(ua) match {
             case None => JsNull
             case Some(details) => details
           }
         }
       }
     }
-    fOrigin.map(originDetails => toJson(_env).as[JsObject] ++ Json.obj(
+    val fOrigin = (jsonObject \ "geolocationInfo").asOpt[JsValue] match {
+      case Some(details) => FastFuture.successful(details)
+      case None => fromOrigin match {
+        case None => FastFuture.successful(JsNull)
+        case Some(ipAddress) => {
+          _env.datastores.globalConfigDataStore.latestSafe match {
+            case None => FastFuture.successful(JsNull)
+            case Some(config) if !config.geolocationSettings.enabled => FastFuture.successful(JsNull)
+            case Some(config) => config.geolocationSettings.find(ipAddress).map {
+              case None => JsNull
+              case Some(details) => details
+            }
+          }
+        }
+      }
+    }
+    fOrigin.map(originDetails => jsonObject ++ Json.obj(
       "user-agent-details" -> uaDetails,
       "origin-details" -> originDetails,
       "instance-name"     -> _env.name,
