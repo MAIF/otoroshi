@@ -1,12 +1,14 @@
 package gateway
 
-import akka.actor.Status.Success
 import akka.http.scaladsl.util.FastFuture
 import env.Env
 import events._
 import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
+import otoroshi.script.Implicits._
+import otoroshi.script.{HttpResponse, TransformerErrorContext}
 import play.api.libs.json.{JsValue, Json}
+import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Results.Status
 import play.api.mvc.{RequestHeader, Result}
 import utils.RequestImplicits._
@@ -252,7 +254,34 @@ object Errors {
     }
 
     (maybeDescriptor match {
-      case Some(desc) => customResult(desc)
+      case Some(desc) => customResult(desc).flatMap { res =>
+        val ctx = TransformerErrorContext(
+          index = -1,
+          snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
+          message = message,
+          otoroshiResult = res,
+          otoroshiResponse = HttpResponse(res.header.status, res.header.headers, res.newCookies.map( c =>
+            DefaultWSCookie(
+              name = c.name,
+              value = c.value,
+              domain = c.domain,
+              path = Option(c.path),
+              maxAge = c.maxAge.map(_.toLong),
+              secure = c.secure,
+              httpOnly = c.httpOnly
+            )
+          )),
+          request = req,
+          maybeCauseId = maybeCauseId,
+          callAttempts = callAttempts,
+          descriptor = desc,
+          apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+          user = attrs.get(otoroshi.plugins.Keys.UserKey),
+          config = Json.obj(),
+          attrs = attrs
+        )
+        desc.transformError(ctx)(env, ec, env.otoroshiMaterializer)
+      }
       case None       => standardResult()
     }) andThen {
       case scala.util.Success(resp) => sendAnalytics(resp.header.headers.toSeq.map(Header.apply))

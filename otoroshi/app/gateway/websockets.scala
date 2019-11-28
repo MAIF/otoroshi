@@ -360,6 +360,7 @@ class WebSocketHandler()(implicit env: Env) {
     val counterOut       = new AtomicLong(0L)
     val start            = System.currentTimeMillis()
     val attrs            = utils.TypedMap.empty.put(
+      otoroshi.plugins.Keys.SnowFlakeKey -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey -> calledAt,
       otoroshi.plugins.Keys.RequestStartKey -> start,
       otoroshi.plugins.Keys.RequestWebsocketKey -> true

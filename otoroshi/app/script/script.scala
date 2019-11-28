@@ -21,7 +21,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.WSCookie
+import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import security.OtoroshiClaim
@@ -152,7 +152,30 @@ case class TransformerResponseBodyContext(
     globalConfig: JsValue = Json.obj()
 ) extends TransformerContext {}
 
+case class TransformerErrorContext(
+  index: Int,
+  snowflake: String,
+  message: String,
+  otoroshiResult: Result,
+  otoroshiResponse: HttpResponse,
+  request: RequestHeader,
+  maybeCauseId: Option[String],
+  callAttempts: Int,
+  descriptor: ServiceDescriptor,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  config: JsValue,
+  globalConfig: JsValue = Json.obj(),
+  attrs: utils.TypedMap
+) extends TransformerContext {}
+
 trait RequestTransformer extends StartableAndStoppable with NamedPlugin {
+
+  def transformErrorWithCtx(
+    context: TransformerErrorContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    FastFuture.successful(context.otoroshiResult)
+  }
 
   def transformRequestWithCtx(
       context: TransformerRequestContext
@@ -673,6 +696,47 @@ object Implicits {
             FastFuture.successful(Right(context.otoroshiResponse))
           }
         case _ => FastFuture.successful(Right(context.otoroshiResponse))
+      }
+    }
+
+    def transformError(context: TransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = env.metrics.withTimerAsync("otoroshi.core.proxy.transform-error") {
+      env.scriptingEnabled match {
+        case true =>
+          val gScripts = env.datastores.globalConfigDataStore.latestSafe
+            .filter(_.scripts.enabled)
+            .map(_.scripts)
+            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+          val refs                                 = gScripts.transformersRefs ++ desc.transformerRefs
+          if (refs.nonEmpty) {
+            val result: Result = context.otoroshiResult
+            Source(refs.toList.zipWithIndex).runFoldAsync(result) {
+              case (lastResult, (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformErrorWithCtx(
+                    context.copy(
+                      otoroshiResult = lastResult,
+                      otoroshiResponse = HttpResponse(lastResult.header.status, lastResult.header.headers, lastResult.newCookies.map( c =>
+                        DefaultWSCookie(
+                          name = c.name,
+                          value = c.value,
+                          domain = c.domain,
+                          path = Option(c.path),
+                          maxAge = c.maxAge.map(_.toLong),
+                          secure = c.secure,
+                          httpOnly = c.httpOnly
+                        )
+                      )),
+                      index = index,
+                      config = context.config,
+                      globalConfig = gScripts.transformersConfig
+                    )
+                  )(env, ec, mat)
+            }
+          } else {
+            FastFuture.successful(Right(context.otoroshiResult))
+          }
+        case _ => FastFuture.successful(context.otoroshiResult)
       }
     }
 

@@ -817,6 +817,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     val protocol            = getProtocolFor(req)
     val attrs               = utils.TypedMap.empty.put(
+      otoroshi.plugins.Keys.SnowFlakeKey -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey -> callDate,
       otoroshi.plugins.Keys.RequestStartKey -> start,
       otoroshi.plugins.Keys.RequestWebsocketKey -> false
