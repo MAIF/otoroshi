@@ -107,7 +107,7 @@ class AccessLog extends RequestTransformer {
       |
       |Log format is the following:
       |
-      |`"$service" $clientAddress - $userId [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http $duration`
+      |`"$service" $clientAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http $duration $errorMsg`
       |
       |The plugin accepts the following configuration
       |
@@ -143,7 +143,7 @@ class AccessLog extends RequestTransformer {
       val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch = if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
       val statusMatch = if (validStatuses.isEmpty) true else validStatuses.contains(status)
-      val identityMatch = if (validIdentities.isEmpty) true else validStatuses.contains(userId)
+      val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
 
       (matchPath, methodMatch, statusMatch, identityMatch, enabled)
     } else {
@@ -162,7 +162,7 @@ class AccessLog extends RequestTransformer {
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service = ctx.descriptor.name
       val host = ctx.request.host
-      logger.info(s""""$service" $ipAddress - $userId [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake $to "$referrer" "$userAgent" $http ${duration}ms""")
+      logger.info(s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http ${duration}ms "-"""")
     }
     Right(ctx.otoroshiResponse).future
   }
@@ -186,7 +186,7 @@ class AccessLog extends RequestTransformer {
       val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch = if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
       val statusMatch = if (validStatuses.isEmpty) true else validStatuses.contains(status)
-      val identityMatch = if (validIdentities.isEmpty) true else validStatuses.contains(userId)
+      val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
 
       (matchPath, methodMatch, statusMatch, identityMatch, enabled)
     } else {
@@ -205,7 +205,7 @@ class AccessLog extends RequestTransformer {
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service = ctx.descriptor.name
       val host = ctx.request.host
-      logger.info(s""""$service" $ipAddress - $userId [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake $to "$referrer" "$userAgent" $http ${duration}ms""")
+      logger.info(s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http ${duration}ms "${ctx.message}" """)
     }
     ctx.otoroshiResult.future
   }
@@ -280,7 +280,7 @@ class KafkaAccessLog extends RequestTransformer {
             val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
             val methodMatch = if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
             val statusMatch = if (validStatuses.isEmpty) true else validStatuses.contains(status)
-            val identityMatch = if (validIdentities.isEmpty) true else validStatuses.contains(userId)
+            val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
 
             (matchPath, methodMatch, statusMatch, identityMatch, enabled, topic)
           } else {
@@ -376,7 +376,7 @@ class KafkaAccessLog extends RequestTransformer {
             val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
             val methodMatch = if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
             val statusMatch = if (validStatuses.isEmpty) true else validStatuses.contains(status)
-            val identityMatch = if (validIdentities.isEmpty) true else validStatuses.contains(userId)
+            val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
 
             (matchPath, methodMatch, statusMatch, identityMatch, enabled, topic)
           } else {

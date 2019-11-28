@@ -2692,7 +2692,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
       }
     }
-    env.metrics.withTimer("otoroshi.core.proxy.handle-http-request")(finalResult).andThen {
+    env.metrics.withTimerAsync("otoroshi.core.proxy.handle-http-request")(finalResult).andThen {
       case _ =>
         val requests = env.datastores.requestsDataStore.decrementHandledRequests()
         // globalConfig.statsdConfig

@@ -1809,7 +1809,7 @@ class WebSocketHandler()(implicit env: Env) {
         }
       }
     }
-    env.metrics.withTimer("otoroshi.core.proxy.handle-ws-request")(finalResult)
+    env.metrics.withTimerAsync("otoroshi.core.proxy.handle-ws-request")(finalResult)
   }
 }
 
