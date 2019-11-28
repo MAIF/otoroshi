@@ -1944,7 +1944,7 @@ case class ServiceDescriptor(
       user: Option[PrivateAppsUser] = None,
       config: GlobalConfig,
       attrs: TypedMap
-  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
+  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
@@ -1958,37 +1958,38 @@ case class ServiceDescriptor(
         .getOrElse(Seq.empty)
       val refs = gScripts.validatorRefs ++ lScripts
       if (refs.nonEmpty) {
-        Source(refs.toList.zipWithIndex)
-          .mapAsync(1) {
-            case (ref, index) =>
-              val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-                case Left("compiling") => CompilingValidator
-                case Left(_)           => DefaultValidator
-                case Right(validator)  => validator
-              }
-              validator.access(
-                AccessContext(
-                  snowflake = snowflake,
-                  index = index,
-                  request = req,
-                  descriptor = this,
-                  user = user,
-                  apikey = apikey,
-                  attrs = attrs,
-                  globalConfig = gScripts.validatorConfig,
-                  config = accessValidator.config
+        env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
+          Source(refs.toList.zipWithIndex)
+            .mapAsync(1) {
+              case (ref, index) =>
+                val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                  case Left("compiling") => CompilingValidator
+                  case Left(_) => DefaultValidator
+                  case Right(validator) => validator
+                }
+                validator.access(
+                  AccessContext(
+                    snowflake = snowflake,
+                    index = index,
+                    request = req,
+                    descriptor = this,
+                    user = user,
+                    apikey = apikey,
+                    attrs = attrs,
+                    globalConfig = gScripts.validatorConfig,
+                    config = accessValidator.config
+                  )
                 )
-              )
-          }
-          .takeWhile(a =>
-                       a match {
-                         case Allowed   => true
-                         case Denied(_) => false
-                     },
-                     true)
-          .toMat(Sink.last)(Keep.right)
-          .run()(env.otoroshiMaterializer)
-          .flatMap {
+            }
+            .takeWhile(a =>
+              a match {
+                case Allowed => true
+                case Denied(_) => false
+              },
+              true)
+            .toMat(Sink.last)(Keep.right)
+            .run()(env.otoroshiMaterializer)
+        }.flatMap {
             case Allowed        => f
             case Denied(result) => FastFuture.successful(result)
           }
@@ -2022,8 +2023,8 @@ case class ServiceDescriptor(
                                    config: GlobalConfig,
                                    attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
-
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
@@ -2036,40 +2037,41 @@ case class ServiceDescriptor(
         .getOrElse(Seq.empty)
       val refs = gScripts.validatorRefs ++ lScripts
       if (refs.nonEmpty) {
-        Source(refs.toList.zipWithIndex)
-          .mapAsync(1) {
-            case (ref, index) =>
-              val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-                case Left("compiling") => CompilingValidator
-                case Left(_)           => DefaultValidator
-                case Right(validator)  => validator
-              }
-              validator.access(
-                AccessContext(
-                  snowflake = snowflake,
-                  index = index,
-                  request = req,
-                  descriptor = this,
-                  user = user,
-                  apikey = apikey,
-                  attrs = attrs,
-                  globalConfig = gScripts.validatorConfig,
-                  config = accessValidator.config
+        env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
+          Source(refs.toList.zipWithIndex)
+            .mapAsync(1) {
+              case (ref, index) =>
+                val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                  case Left("compiling") => CompilingValidator
+                  case Left(_) => DefaultValidator
+                  case Right(validator) => validator
+                }
+                validator.access(
+                  AccessContext(
+                    snowflake = snowflake,
+                    index = index,
+                    request = req,
+                    descriptor = this,
+                    user = user,
+                    apikey = apikey,
+                    attrs = attrs,
+                    globalConfig = gScripts.validatorConfig,
+                    config = accessValidator.config
+                  )
                 )
-              )
-          }
-          .takeWhile(a =>
-                       a match {
-                         case Allowed   => true
-                         case Denied(_) => false
-                     },
-                     true)
-          .toMat(Sink.last)(Keep.right)
-          .run()(env.otoroshiMaterializer)
-          .flatMap {
-            case Allowed        => f
-            case Denied(result) => FastFuture.successful(Left(result))
-          }
+            }
+            .takeWhile(a =>
+              a match {
+                case Allowed => true
+                case Denied(_) => false
+              },
+              true)
+            .toMat(Sink.last)(Keep.right)
+            .run()(env.otoroshiMaterializer)
+        }.flatMap {
+          case Allowed        => f
+          case Denied(result) => FastFuture.successful(Left(result))
+        }
       } else {
         f
       }
@@ -2206,39 +2208,44 @@ case class ServiceDescriptor(
     snowflake: String,
     req: RequestHeader,
     attrs: TypedMap
-  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
+  )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
-    val lScripts: Seq[String] = Some(preRouting)
-      .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
-      .map(_.refs)
-      .getOrElse(Seq.empty)
-    val refs = gScripts.preRouteRefs ++ lScripts
-    if (refs.nonEmpty) {
-      Source(refs.toList.zipWithIndex)
-        .mapAsync(1) {
-          case (ref, index) =>
-            val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
-              case Left("compiling") => CompilingPreRouting
-              case Left(_)           => DefaultPreRouting
-              case Right(r)          => r
-            }
-            route.preRoute(
-              PreRoutingContext(
-                snowflake = snowflake,
-                index = index,
-                request = req,
-                descriptor = this,
-                attrs = attrs,
-                globalConfig = gScripts.preRouteConfig,
-                config = preRouting.config
-              )
-            )
-        }.toMat(Sink.last)(Keep.right)
-        .run()(env.otoroshiMaterializer)
-        .flatMap(_ => f)
+    if (gScripts.enabled || preRouting.enabled) {
+      val lScripts: Seq[String] = Some(preRouting)
+        .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        .map(_.refs)
+        .getOrElse(Seq.empty)
+      val refs = gScripts.preRouteRefs ++ lScripts
+      if (refs.nonEmpty) {
+        env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
+          Source(refs.toList.zipWithIndex)
+            .mapAsync(1) {
+              case (ref, index) =>
+                val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                  case Left("compiling") => CompilingPreRouting
+                  case Left(_) => DefaultPreRouting
+                  case Right(r) => r
+                }
+                route.preRoute(
+                  PreRoutingContext(
+                    snowflake = snowflake,
+                    index = index,
+                    request = req,
+                    descriptor = this,
+                    attrs = attrs,
+                    globalConfig = gScripts.preRouteConfig,
+                    config = preRouting.config
+                  )
+                )
+            }.toMat(Sink.last)(Keep.right)
+            .run()(env.otoroshiMaterializer)
+        }.flatMap(_ => f)
+      } else {
+        f
+      }
     } else {
       f
     }
@@ -2248,39 +2255,44 @@ case class ServiceDescriptor(
     req: RequestHeader,
     attrs: TypedMap)(
     f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
-    val lScripts: Seq[String] = Some(preRouting)
-      .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
-      .map(_.refs)
-      .getOrElse(Seq.empty)
-    val refs = gScripts.preRouteRefs ++ lScripts
-    if (refs.nonEmpty) {
-      Source(refs.toList.zipWithIndex)
-        .mapAsync(1) {
-          case (ref, index) =>
-            val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
-              case Left("compiling") => CompilingPreRouting
-              case Left(_)           => DefaultPreRouting
-              case Right(r)          => r
-            }
-            route.preRoute(
-              PreRoutingContext(
-                snowflake = snowflake,
-                index = index,
-                request = req,
-                descriptor = this,
-                attrs = attrs,
-                globalConfig = gScripts.preRouteConfig,
-                config = preRouting.config
-              )
-            )
-        }.toMat(Sink.last)(Keep.right)
-        .run()(env.otoroshiMaterializer)
-        .flatMap(_ => f)
+    if (gScripts.enabled || preRouting.enabled) {
+      val lScripts: Seq[String] = Some(preRouting)
+        .filter(pr => pr.enabled && pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        .map(_.refs)
+        .getOrElse(Seq.empty)
+      val refs = gScripts.preRouteRefs ++ lScripts
+      if (refs.nonEmpty) {
+        env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
+          Source(refs.toList.zipWithIndex)
+            .mapAsync(1) {
+              case (ref, index) =>
+                val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                  case Left("compiling") => CompilingPreRouting
+                  case Left(_) => DefaultPreRouting
+                  case Right(r) => r
+                }
+                route.preRoute(
+                  PreRoutingContext(
+                    snowflake = snowflake,
+                    index = index,
+                    request = req,
+                    descriptor = this,
+                    attrs = attrs,
+                    globalConfig = gScripts.preRouteConfig,
+                    config = preRouting.config
+                  )
+                )
+            }.toMat(Sink.last)(Keep.right)
+            .run()(env.otoroshiMaterializer)
+        }.flatMap(_ => f)
+      } else {
+        f
+      }
     } else {
       f
     }
