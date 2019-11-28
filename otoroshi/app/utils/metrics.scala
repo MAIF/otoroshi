@@ -125,7 +125,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   }
 
   private val objectMapper = new ObjectMapper()
-  objectMapper.registerModule(new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, true))
+  objectMapper.registerModule(new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
   private val prometheus = new DropwizardExports(metricRegistry)
 
   def prometheusExport(filter: Option[String] = None): String = {
