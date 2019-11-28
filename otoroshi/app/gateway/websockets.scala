@@ -372,7 +372,7 @@ class WebSocketHandler()(implicit env: Env) {
       "requestTimestamp" -> requestTimestamp
     )
 
-    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+    val finalResult = env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       ServiceLocation(req.host, globalConfig) match {
         case None =>
           Errors
@@ -1809,6 +1809,7 @@ class WebSocketHandler()(implicit env: Env) {
         }
       }
     }
+    env.metrics.withTimer("otoroshi.core.proxy.handle-ws-request")(finalResult)
   }
 }
 

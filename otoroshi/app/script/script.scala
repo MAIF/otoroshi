@@ -734,7 +734,7 @@ object Implicits {
                   )(env, ec, mat)
             }
           } else {
-            FastFuture.successful(Right(context.otoroshiResult))
+            FastFuture.successful(context.otoroshiResult)
           }
         case _ => FastFuture.successful(context.otoroshiResult)
       }
