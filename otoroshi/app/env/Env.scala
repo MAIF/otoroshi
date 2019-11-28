@@ -101,6 +101,7 @@ class Env(val configuration: Configuration,
     "otoroshi-actor-system",
     configuration
       .getOptional[Configuration]("app.actorsystems.otoroshi")
+      .orElse(configuration.getOptional[Configuration]("otoroshi.analytics.actorsystem"))
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
   )
@@ -109,8 +110,18 @@ class Env(val configuration: Configuration,
   val otoroshiMaterializer: ActorMaterializer    = ActorMaterializer.create(otoroshiActorSystem)
 
   val analyticsPressureEnabled: Boolean = configuration.getOptional[Boolean]("otoroshi.analytics.pressure.enabled").getOrElse(false)
-  val analyticsPressureCores: Int = configuration.getOptional[Int]("otoroshi.analytics.pressure.cores").getOrElse(Runtime.getRuntime.availableProcessors() + 1)
-  val analyticsExecutionContext: ExecutionContext = if (analyticsPressureEnabled) ExecutionContext.fromExecutor(Executors.newFixedThreadPool(analyticsPressureCores)) else otoroshiExecutionContext
+
+  val analyticsActorSystem: ActorSystem           = if (analyticsPressureEnabled) ActorSystem(
+    "otoroshi-analytics-actor-system",
+    configuration
+      .getOptional[Configuration]("app.actorsystems.analytics")
+      .map(_.underlying)
+      .getOrElse(ConfigFactory.empty)
+  ) else otoroshiActorSystem
+  val analyticsExecutionContext: ExecutionContext = if (analyticsPressureEnabled) analyticsActorSystem.dispatcher else otoroshiExecutionContext
+  val analyticsScheduler: Scheduler               = if (analyticsPressureEnabled) analyticsActorSystem.scheduler else otoroshiScheduler
+  val analyticsMaterializer: ActorMaterializer    = if (analyticsPressureEnabled) ActorMaterializer.create(analyticsActorSystem) else otoroshiMaterializer
+
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
     val promise = Promise[Unit]
