@@ -26,15 +26,19 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
 
   override def name: String = "Geolocation details extractor (using Maxmind db)"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "GeolocationInfo" -> Json.obj(
-      "path" -> "/foo/bar/cities.mmdb",
-      "log" -> false,
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "GeolocationInfo" -> Json.obj(
+          "path" -> "/foo/bar/cities.mmdb",
+          "log"  -> false,
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin extract geolocation informations from ip address using the [Maxmind dbs](https://www.maxmind.com/en/geoip2-databases).
+  override def description: Option[String] =
+    Some(
+      """This plugin extract geolocation informations from ip address using the [Maxmind dbs](https://www.maxmind.com/en/geoip2-databases).
       |The informations are store in plugins attrs for other plugins to use
       |
       |This plugin can accept the following configuration
@@ -47,34 +51,38 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
       |  }
       |}
       |```
-    """.stripMargin)
+    """.stripMargin
+    )
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val pathOpt = (ctx.config \ "GeolocationInfo" \ "path").asOpt[String]
-    val log = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
-    val from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
+    val log     = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
+    val from    = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
     pathOpt match {
       case None => funit
-      case Some("global") => env.datastores.globalConfigDataStore.latestSafe match {
-        case None => funit
-        case Some(c) if !c.geolocationSettings.enabled => funit
-        case Some(c) => c.geolocationSettings.find(from).map {
-          case None =>  funit
+      case Some("global") =>
+        env.datastores.globalConfigDataStore.latestSafe match {
+          case None                                      => funit
+          case Some(c) if !c.geolocationSettings.enabled => funit
+          case Some(c) =>
+            c.geolocationSettings.find(from).map {
+              case None => funit
+              case Some(location) => {
+                if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
+                ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
+                funit
+              }
+            }
+        }
+      case Some(path) =>
+        MaxMindGeolocationHelper.find(from, path).map {
+          case None => funit
           case Some(location) => {
             if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
             ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
             funit
           }
         }
-      }
-      case Some(path) => MaxMindGeolocationHelper.find(from, path).map {
-        case None =>  funit
-        case Some(location) => {
-          if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
-          ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
-          funit
-        }
-      }
     }
   }
 }
@@ -83,18 +91,20 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
 
   private val logger = Logger("IpStackGeolocationInfo")
 
-
   override def name: String = "Geolocation details extractor (using IpStack api)"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "GeolocationInfo" -> Json.obj(
-      "path" -> "/foo/bar/cities.mmdb",
-      "log" -> false,
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "GeolocationInfo" -> Json.obj(
+          "path" -> "/foo/bar/cities.mmdb",
+          "log"  -> false,
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin extract geolocation informations from ip address using the [IpStack dbs](https://ipstack.com/).
+  override def description: Option[String] =
+    Some("""This plugin extract geolocation informations from ip address using the [IpStack dbs](https://ipstack.com/).
       |The informations are store in plugins attrs for other plugins to use
       |
       |This plugin can accept the following configuration
@@ -112,19 +122,20 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val timeout: Long = (ctx.config \ "GeolocationInfo" \ "timeout").asOpt[Long].getOrElse(2000)
-    val apiKeyOpt = (ctx.config \ "GeolocationInfo" \ "apikey").asOpt[String]
-    val log = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
-    val from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
+    val apiKeyOpt     = (ctx.config \ "GeolocationInfo" \ "apikey").asOpt[String]
+    val log           = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
+    val from          = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
     apiKeyOpt match {
       case None => funit
-      case Some(apiKey) => IpStackGeolocationHelper.find(from, apiKey, timeout).map {
-        case None =>  funit
-        case Some(location) => {
-          if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
-          ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
-          funit
+      case Some(apiKey) =>
+        IpStackGeolocationHelper.find(from, apiKey, timeout).map {
+          case None => funit
+          case Some(location) => {
+            if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
+            ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
+            funit
+          }
         }
-      }
     }
   }
 }
@@ -133,14 +144,18 @@ class GeolocationInfoHeader extends RequestTransformer {
 
   override def name: String = "Geolocation header"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "GeolocationInfoHeader" -> Json.obj(
-      "headerName" -> "X-Geolocation-Info",
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "GeolocationInfoHeader" -> Json.obj(
+          "headerName" -> "X-Geolocation-Info",
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin will sent informations extracted by the Geolocation details extractor to the target service in a header.
+  override def description: Option[String] =
+    Some(
+      """This plugin will sent informations extracted by the Geolocation details extractor to the target service in a header.
       |
       |This plugin can accept the following configuration
       |
@@ -151,21 +166,24 @@ class GeolocationInfoHeader extends RequestTransformer {
       |  }
       |}
       |```
-    """.stripMargin)
+    """.stripMargin
+    )
 
   override def transformRequestWithCtx(
-    ctx: TransformerRequestContext
+      ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val headerName = (ctx.config \ "GeolocationInfoHeader" \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
-    val from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
+    val from       = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(location) => {
-        Right(ctx.otoroshiRequest.copy(
-          headers = ctx.otoroshiRequest.headers ++ Map(
-            headerName -> Json.stringify(location)
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ Map(
+              headerName -> Json.stringify(location)
+            )
           )
-        )).future
+        ).future
       }
     }
   }
@@ -177,21 +195,24 @@ object IpStackGeolocationHelper {
 
   private val cache = new TrieMap[String, Option[JsValue]]()
 
-  def find(ip: String, apikey: String, timeout: Long)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  def find(ip: String, apikey: String, timeout: Long)(implicit env: Env,
+                                                      ec: ExecutionContext): Future[Option[JsValue]] = {
     env.metrics.withTimerAsync("otoroshi.geolocation.ipstack.details") {
       cache.get(ip) match {
         case Some(details) => FastFuture.successful(details)
         case None => {
-          env.Ws.url(s"http://api.ipstack.com/$ip?access_key=$apikey&format=1")
+          env.Ws
+            .url(s"http://api.ipstack.com/$ip?access_key=$apikey&format=1")
             .withFollowRedirects(false)
             .withRequestTimeout(timeout.millis)
-            .get().map {
-            case resp if resp.status == 200 && resp.header("Content-Type").exists(_.contains("application/json")) =>
-              val res = Some(resp.json)
-              cache.putIfAbsent(ip, res)
-              res
-            case _ => None
-          }
+            .get()
+            .map {
+              case resp if resp.status == 200 && resp.header("Content-Type").exists(_.contains("application/json")) =>
+                val res = Some(resp.json)
+                cache.putIfAbsent(ip, res)
+                res
+              case _ => None
+            }
         }
       }
     }
@@ -200,13 +221,14 @@ object IpStackGeolocationHelper {
 
 object MaxMindGeolocationHelper {
 
-  private val logger = Logger("MaxMindGeolocationHelper")
+  private val logger  = Logger("MaxMindGeolocationHelper")
   private val ipCache = new TrieMap[String, InetAddress]()
-  private val cache = new TrieMap[String, Option[JsValue]]()
-  private val exc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
-  private val dbInitializing = new AtomicBoolean(false)
+  private val cache   = new TrieMap[String, Option[JsValue]]()
+  private val exc =
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
+  private val dbInitializing       = new AtomicBoolean(false)
   private val dbInitializationDone = new AtomicBoolean(false)
-  private val dbRef = new AtomicReference[DatabaseReader]()
+  private val dbRef                = new AtomicReference[DatabaseReader]()
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     env.metrics.withTimerAsync("otoroshi.geolocation.maxmind.details") {
@@ -214,7 +236,7 @@ object MaxMindGeolocationHelper {
         logger.info("Initializing Geolocation db ...")
         Future {
           val cityDbFile = new File(file)
-          val cityDb = new DatabaseReader.Builder(cityDbFile).build()
+          val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
           dbRef.set(cityDb)
           dbInitializationDone.set(true)
         }(exc).andThen {
@@ -229,34 +251,36 @@ object MaxMindGeolocationHelper {
           Try(dbRef.get().city(inet)) match { // TODO: blocking ???
             case Failure(e) => cache.putIfAbsent(ip, None)
             case Success(city) => {
-              Option(city).map { c =>
-                // val asn = asnDb.asn(inet)
-                // val org = asn.getAutonomousSystemOrganization // TODO: blocking ??? non free version ?
-                // val asnNumber = asn.getAutonomousSystemNumber // TODO: blocking ??? non free version ?
-                val ipType = if (ip.contains(":")) "ipv6" else "ipv4"
-                val location = Json.obj(
-                  "ip" -> ip,
-                  "type" -> ipType,
-                  "continent_code" -> c.getContinent.getCode,
-                  "continent_name" -> c.getContinent.getName,
-                  "country_code" -> c.getCountry.getIsoCode,
-                  "country_name" -> c.getCountry.getName,
-                  "region_code" -> c.getPostal.getCode,
-                  "region_name" -> c.getMostSpecificSubdivision.getName,
-                  "city" -> c.getCity.getName,
-                  "latitude" -> JsNumber(c.getLocation.getLatitude.toDouble),
-                  "longitude" -> JsNumber(c.getLocation.getLongitude.toDouble),
-                  "location" -> Json.obj(
-                    "geoname_id" -> JsNumber(c.getCountry.getGeoNameId.toInt),
-                    "name" -> c.getCountry.getName,
-                    "languages" -> Json.arr(),
-                    "is_eu" -> c.getCountry.isInEuropeanUnion
+              Option(city)
+                .map { c =>
+                  // val asn = asnDb.asn(inet)
+                  // val org = asn.getAutonomousSystemOrganization // TODO: blocking ??? non free version ?
+                  // val asnNumber = asn.getAutonomousSystemNumber // TODO: blocking ??? non free version ?
+                  val ipType = if (ip.contains(":")) "ipv6" else "ipv4"
+                  val location = Json.obj(
+                    "ip"             -> ip,
+                    "type"           -> ipType,
+                    "continent_code" -> c.getContinent.getCode,
+                    "continent_name" -> c.getContinent.getName,
+                    "country_code"   -> c.getCountry.getIsoCode,
+                    "country_name"   -> c.getCountry.getName,
+                    "region_code"    -> c.getPostal.getCode,
+                    "region_name"    -> c.getMostSpecificSubdivision.getName,
+                    "city"           -> c.getCity.getName,
+                    "latitude"       -> JsNumber(c.getLocation.getLatitude.toDouble),
+                    "longitude"      -> JsNumber(c.getLocation.getLongitude.toDouble),
+                    "location" -> Json.obj(
+                      "geoname_id" -> JsNumber(c.getCountry.getGeoNameId.toInt),
+                      "name"       -> c.getCountry.getName,
+                      "languages"  -> Json.arr(),
+                      "is_eu"      -> c.getCountry.isInEuropeanUnion
+                    )
                   )
-                )
-                cache.putIfAbsent(ip, Some(location))
-              }.getOrElse {
-                cache.putIfAbsent(ip, None)
-              }
+                  cache.putIfAbsent(ip, Some(location))
+                }
+                .getOrElse {
+                  cache.putIfAbsent(ip, None)
+                }
             }
           }
           FastFuture.successful(cache.get(ip).flatten)

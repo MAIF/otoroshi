@@ -186,7 +186,8 @@ object HeadersHelper {
         //       JsArray(chain.map(c => JsString(c.getSubjectDN.getName)))
         //   )
         // )
-        .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken, claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env))
+        .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken,
+                  claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env))
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendStateChallenge,
                   stateRequestHeaderName -> stateToken)
         .appendOpt(req.headers.get("Content-Length"),
@@ -203,9 +204,9 @@ object HeadersHelper {
 
   @inline
   def addClaims(
-    headers: Map[String, String],
-    claim: OtoroshiClaim,
-    descriptor: ServiceDescriptor
+      headers: Map[String, String],
+      claim: OtoroshiClaim,
+      descriptor: ServiceDescriptor
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
     val claimRequestHeaderName =
       descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)

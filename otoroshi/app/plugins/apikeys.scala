@@ -11,16 +11,18 @@ class HasAllowedApiKeyValidator extends AccessValidator {
 
   override def name: String = "Allowed apikeys only"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "HasAllowedApiKeyValidator" -> Json.obj(
-      "clientIds" -> Json.arr(),
-      "tags" -> Json.arr(),
-      "metadata" -> Json.obj(),
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "HasAllowedApiKeyValidator" -> Json.obj(
+          "clientIds" -> Json.arr(),
+          "tags"      -> Json.arr(),
+          "metadata"  -> Json.obj(),
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """Validation based on apikeys
+  override def description: Option[String] = Some("""Validation based on apikeys
       |
       |```json
       |{
@@ -45,7 +47,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
         val allowedTags      = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedMetadatas = (config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
         if (allowedClientIds.contains(apiKey.clientId) || allowedTags.exists(tag => apiKey.tags.contains(tag)) || allowedMetadatas
-          .exists(meta => apiKey.metadata.get(meta._1).contains(meta._2))) {
+              .exists(meta => apiKey.metadata.get(meta._1).contains(meta._2))) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)
@@ -61,15 +63,17 @@ class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
 
   override def name: String = "Allowed apikeys for this service only (service packs)"
 
-  override def description: Option[String] = Some(
-    """This plugin only let pass apikeys containing the id of the service on their tags. It is quite useful to create apikeys that
+  override def description: Option[String] =
+    Some(
+      """This plugin only let pass apikeys containing the id of the service on their tags. It is quite useful to create apikeys that
       |can access a `pack` of services. Apikeys should have tags named like
       |
       |```
       |"allowed-on-${service.id}"
       |```
       |
-    """.stripMargin)
+    """.stripMargin
+    )
 
   def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     ctx.apikey match {

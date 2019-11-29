@@ -11,9 +11,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 case class PreRoutingRef(enabled: Boolean = false,
-                        excludedPatterns: Seq[String] = Seq.empty[String],
-                        refs: Seq[String] = Seq.empty,
-                        config: JsValue = Json.obj()) {
+                         excludedPatterns: Seq[String] = Seq.empty[String],
+                         refs: Seq[String] = Seq.empty,
+                         config: JsValue = Json.obj()) {
   def json: JsValue = PreRoutingRef.format.writes(this)
 }
 
@@ -49,13 +49,13 @@ trait PreRouting extends StartableAndStoppable with NamedPlugin {
 }
 
 case class PreRoutingContext(
-  snowflake: String,
-  index: Int,
-  request: RequestHeader,
-  descriptor: ServiceDescriptor,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue
+    snowflake: String,
+    index: Int,
+    request: RequestHeader,
+    descriptor: ServiceDescriptor,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue
 ) {
   def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {

@@ -254,35 +254,41 @@ object Errors {
     }
 
     (maybeDescriptor match {
-      case Some(desc) => customResult(desc).flatMap { res =>
-        val ctx = TransformerErrorContext(
-          index = -1,
-          snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
-          message = message,
-          otoroshiResult = res,
-          otoroshiResponse = HttpResponse(res.header.status, res.header.headers, res.newCookies.map( c =>
-            DefaultWSCookie(
-              name = c.name,
-              value = c.value,
-              domain = c.domain,
-              path = Option(c.path),
-              maxAge = c.maxAge.map(_.toLong),
-              secure = c.secure,
-              httpOnly = c.httpOnly
-            )
-          )),
-          request = req,
-          maybeCauseId = maybeCauseId,
-          callAttempts = callAttempts,
-          descriptor = desc,
-          apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-          user = attrs.get(otoroshi.plugins.Keys.UserKey),
-          config = Json.obj(),
-          attrs = attrs
-        )
-        desc.transformError(ctx)(env, ec, env.otoroshiMaterializer)
-      }
-      case None       => standardResult()
+      case Some(desc) =>
+        customResult(desc).flatMap { res =>
+          val ctx = TransformerErrorContext(
+            index = -1,
+            snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
+            message = message,
+            otoroshiResult = res,
+            otoroshiResponse = HttpResponse(
+              res.header.status,
+              res.header.headers,
+              res.newCookies.map(
+                c =>
+                  DefaultWSCookie(
+                    name = c.name,
+                    value = c.value,
+                    domain = c.domain,
+                    path = Option(c.path),
+                    maxAge = c.maxAge.map(_.toLong),
+                    secure = c.secure,
+                    httpOnly = c.httpOnly
+                )
+              )
+            ),
+            request = req,
+            maybeCauseId = maybeCauseId,
+            callAttempts = callAttempts,
+            descriptor = desc,
+            apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+            user = attrs.get(otoroshi.plugins.Keys.UserKey),
+            config = Json.obj(),
+            attrs = attrs
+          )
+          desc.transformError(ctx)(env, ec, env.otoroshiMaterializer)
+        }
+      case None => standardResult()
     }) andThen {
       case scala.util.Success(resp) => sendAnalytics(resp.header.headers.toSeq.map(Header.apply))
     }

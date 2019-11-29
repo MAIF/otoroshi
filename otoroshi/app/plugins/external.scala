@@ -39,23 +39,26 @@ class ExternalHttpValidator extends AccessValidator {
 
   override def name: String = "External Http Validator"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "ExternalHttpValidator" -> Json.obj(
-      "url" -> "http://foo.bar",
-      "host" -> "api.foo.bar",
-      "goodTtl" -> 600000,
-      "badTtl" -> 60000,
-      "method" -> "POST",
-      "path" -> "/certificates/_validate",
-      "timeout" -> 10000,
-      "noCache" -> false,
-      "allowNoClientCert" -> false,
-      "headers" -> Json.obj(),
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "ExternalHttpValidator" -> Json.obj(
+          "url"               -> "http://foo.bar",
+          "host"              -> "api.foo.bar",
+          "goodTtl"           -> 600000,
+          "badTtl"            -> 60000,
+          "method"            -> "POST",
+          "path"              -> "/certificates/_validate",
+          "timeout"           -> 10000,
+          "noCache"           -> false,
+          "allowNoClientCert" -> false,
+          "headers"           -> Json.obj(),
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """Calls an external http service to know if a user has access or not. Uses cache for performances.
+  override def description: Option[String] =
+    Some("""Calls an external http service to know if a user has access or not. Uses cache for performances.
       |
       |The sent payload is the following:
       |
@@ -114,12 +117,12 @@ class ExternalHttpValidator extends AccessValidator {
   }
 
   private def validateCertificateChain(
-                                        chain: Seq[X509Certificate],
-                                        desc: ServiceDescriptor,
-                                        apikey: Option[ApiKey] = None,
-                                        user: Option[PrivateAppsUser] = None,
-                                        cfg: ExternalHttpValidatorConfig
-                                      )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+      chain: Seq[X509Certificate],
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None,
+      cfg: ExternalHttpValidatorConfig
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val certPayload = chain
       .map { cert =>
@@ -143,8 +146,8 @@ class ExternalHttpValidator extends AccessValidator {
       "fingerprints" -> JsArray(chain.map(computeFingerPrint).map(JsString.apply))
     )
     val finalHeaders: Seq[(String, String)] = cfg.headers.toSeq ++ Seq("Host" -> cfg.host,
-      "Content-Type" -> "application/json",
-      "Accept"       -> "application/json")
+                                                                       "Content-Type" -> "application/json",
+                                                                       "Accept"       -> "application/json")
     env.Ws
       .url(cfg.url + cfg.path)
       .withHttpHeaders(finalHeaders: _*)
@@ -172,10 +175,10 @@ class ExternalHttpValidator extends AccessValidator {
   }
 
   def canAccessWithClientCertChain(
-                                    chain: Seq[X509Certificate],
-                                    context: AccessContext,
-                                    valCfg: ExternalHttpValidatorConfig
-                                  )(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+      chain: Seq[X509Certificate],
+      context: AccessContext,
+      valCfg: ExternalHttpValidatorConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val apikey = context.apikey
     val user   = context.user
     val desc   = context.descriptor

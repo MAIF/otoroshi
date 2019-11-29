@@ -176,7 +176,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                                    req,
                                    None,
                                    Some("errors.missing.parameters"),
-          attrs = TypedMap.empty)
+                                   attrs = TypedMap.empty)
     }
   }
 
@@ -327,7 +327,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
           config.backOfficeAuthRef match {
             case None => {
               ctx.user.delete().map { _ =>
-                Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
+                Alerts
+                  .send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
                 val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
                 Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
               }
@@ -343,7 +344,9 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                   oauth.authModule(config).boLogout(ctx.request, config).flatMap {
                     case None => {
                       ctx.user.delete().map { _ =>
-                        Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
+                        Alerts.send(
+                          AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
+                        )
                         val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
                         Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
                       }
@@ -352,7 +355,9 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                       val userRedirect      = redirect.getOrElse(s"http://${request.host}/")
                       val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
                       ctx.user.delete().map { _ =>
-                        Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
+                        Alerts.send(
+                          AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
+                        )
                         Redirect(actualRedirectUrl).removingFromSession("bousr", "bo-redirect-after-login")
                       }
                     }

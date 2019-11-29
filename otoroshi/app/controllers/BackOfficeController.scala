@@ -188,7 +188,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
-
     env.datastores.globalConfigDataStore.singleton().map { config =>
       Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
     }
@@ -360,7 +359,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           Json.obj("sessionId" -> id)
         )
         Audit.send(event)
-        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+        Alerts
+          .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -382,7 +382,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           Json.obj()
         )
         Audit.send(event)
-        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+        Alerts
+          .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -414,7 +415,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           Json.obj("sessionId" -> id)
         )
         Audit.send(event)
-        Alerts.send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+        Alerts
+          .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -436,7 +438,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           Json.obj()
         )
         Audit.send(event)
-        Alerts.send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+        Alerts
+          .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -907,30 +910,39 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def fetchBodiesFor(serviceId: String, requestId: String) = BackOfficeActionAuth.async { ctx =>
     for {
-      req <- env.datastores.rawDataStore.get(s"${env.storageRoot}:bodies:$serviceId:$requestId:request")
+      req  <- env.datastores.rawDataStore.get(s"${env.storageRoot}:bodies:$serviceId:$requestId:request")
       resp <- env.datastores.rawDataStore.get(s"${env.storageRoot}:bodies:$serviceId:$requestId:response")
     } yield {
       if (req.isEmpty && resp.isEmpty) {
         NotFound(Json.obj("error" -> "Bodies not found"))
       } else {
-        Ok(Json.obj(
-          "response" -> resp.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue],
-          "request" -> req.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue]
-        ))
+        Ok(
+          Json.obj(
+            "response" -> resp.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue],
+            "request"  -> req.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue]
+          )
+        )
       }
     }
   }
 
   def fetchLatestGeoLite2() = BackOfficeActionAuth.async { ctx =>
-    val dir = java.nio.file.Files.createTempDirectory("oto-geolite-")
+    val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.tar.gz")
     env.Ws.url("https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz").get().flatMap { resp =>
       resp.bodyAsSource.runWith(FileIO.toPath(file)).map { io =>
         if (io.wasSuccessful) {
           val builder = new ProcessBuilder
-          builder.command("/bin/sh", "-c", String.format("cd %s; tar -xvf geolite.tar.gz; rm -rf geolite.tar.gz; mv Geo* geolite; mv geolite/GeoLite2-City.mmdb geolite.mmdb; rm -rf ./geolite", dir))
+          builder.command(
+            "/bin/sh",
+            "-c",
+            String.format(
+              "cd %s; tar -xvf geolite.tar.gz; rm -rf geolite.tar.gz; mv Geo* geolite; mv geolite/GeoLite2-City.mmdb geolite.mmdb; rm -rf ./geolite",
+              dir
+            )
+          )
           builder.directory(dir.toFile)
-          val process = builder.start
+          val process  = builder.start
           val exitCode = process.waitFor
           Ok(Json.obj("path" -> dir.resolve("geolite.mmdb").toFile.getAbsolutePath, "exitCode" -> exitCode))
         } else {

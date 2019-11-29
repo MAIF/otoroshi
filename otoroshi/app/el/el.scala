@@ -30,7 +30,7 @@ object GlobalExpressionLanguage {
     value match {
       case v if v.contains("${") =>
         val userAgentDetails = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
-        val geolocDetails = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
+        val geolocDetails    = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
         Try {
           expressionReplacer.replaceOn(value) {
             case "date"                                   => DateTime.now().toString()
@@ -105,14 +105,16 @@ object GlobalExpressionLanguage {
             case r"ctx.$field@(.*)"          => context.getOrElse(field, s"no-ctx-$field")
             case r"ctx.useragent.$field@(.*)" if userAgentDetails.isDefined =>
               val lookup: JsLookupResult = (userAgentDetails.get.\(field))
-              lookup.asOpt[String]
+              lookup
+                .asOpt[String]
                 .orElse(lookup.asOpt[Long].map(_.toString))
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))
                 .getOrElse(s"no-ctx-$field")
             case r"ctx.geolocation.$field@(.*)" if geolocDetails.isDefined =>
               val lookup: JsLookupResult = (geolocDetails.get.\(field))
-              lookup.asOpt[String]
+              lookup
+                .asOpt[String]
                 .orElse(lookup.asOpt[Long].map(_.toString))
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))

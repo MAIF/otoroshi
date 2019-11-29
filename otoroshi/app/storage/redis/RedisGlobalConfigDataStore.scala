@@ -200,7 +200,9 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     val tcpServices        = (export \ "tcpServices").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
-      _ <- redisCli.keys(s"${env.storageRoot}:*").flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
+      _ <- redisCli
+            .keys(s"${env.storageRoot}:*")
+            .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
       _ <- config.save()
       _ <- Future.sequence(
             admins.value.map(

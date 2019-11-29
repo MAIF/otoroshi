@@ -20,7 +20,13 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
+import com.typesafe.sslconfig.ssl.{
+  KeyManagerConfig,
+  KeyStoreConfig,
+  SSLConfigSettings,
+  TrustManagerConfig,
+  TrustStoreConfig
+}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE

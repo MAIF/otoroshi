@@ -324,16 +324,12 @@ exports.daemon = function(creator) {
           const rootPath = orchService.name.split('-')[1];
           if (!otoroshiService) {
             log(
-              `Creating Otoroshi service '${orchService.name}' with id: '${orchService.id}' (${
-                targets.length
-              } targets)`
+              `Creating Otoroshi service '${orchService.name}' with id: '${orchService.id}' (${targets.length} targets)`
             );
             return createOtoroshiService(orchService.id, orchService.name, targets);
           } else if (otoroshiService && !_.isEqual(targetHosts, otoHosts)) {
             log(
-              `Updating Otoroshi service '${orchService.name}' with id: '${orchService.id}' (${
-                targets.length
-              } targets)`
+              `Updating Otoroshi service '${orchService.name}' with id: '${orchService.id}' (${targets.length} targets)`
             );
             return updateOtoroshiService(orchService.id, orchService.name, targets);
           } else {

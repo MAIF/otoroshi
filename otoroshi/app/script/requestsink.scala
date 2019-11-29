@@ -10,15 +10,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestSink extends StartableAndStoppable with NamedPlugin {
   def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = false
-  def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))
+  def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
+    FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))
 }
 
 case class RequestSinkContext(
-  snowflake: String,
-  index: Int,
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
+    snowflake: String,
+    index: Int,
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
 ) {
   def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {

@@ -251,7 +251,12 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           Json.obj("serviceId" -> serviceId)
         )
       )
-      val order: String = ctx.request.queryString.get("order").flatMap(_.headOption).map(_.toLowerCase).filter(o => o == "desc" || o == "asc").getOrElse("asc")
+      val order: String = ctx.request.queryString
+        .get("order")
+        .flatMap(_.headOption)
+        .map(_.toLowerCase)
+        .filter(o => o == "desc" || o == "asc")
+        .getOrElse("asc")
       val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
@@ -285,7 +290,12 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
   }
 
   def filterableEvents(from: Option[String] = None, to: Option[String] = None) = ApiAction.async { ctx =>
-    val order: String = ctx.request.queryString.get("order").flatMap(_.headOption).map(_.toLowerCase).filter(o => o == "desc" || o == "asc").getOrElse("asc")
+    val order: String = ctx.request.queryString
+      .get("order")
+      .flatMap(_.headOption)
+      .map(_.toLowerCase)
+      .filter(o => o == "desc" || o == "asc")
+      .getOrElse("asc")
     val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     val paginationPageSize: Int =
       ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)

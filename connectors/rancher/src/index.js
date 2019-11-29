@@ -348,16 +348,12 @@ function syncOtoroshiWithRancher() {
         const rootPath = rancherService.name.split('-')[1];
         if (!otoroshiService) {
           log(
-            `Creating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${
-              targets.length
-            } targets)`
+            `Creating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${targets.length} targets)`
           );
           return createOtoroshiRancherService(rancherService.id, rancherService.name, targets);
         } else if (otoroshiService && !_.isEqual(targetHosts, otoHosts)) {
           log(
-            `Updating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${
-              targets.length
-            } targets)`
+            `Updating Otoroshi service '${rancherService.name}' with id: '${rancherService.id}' (${targets.length} targets)`
           );
           return updateOtoroshiRancherService(rancherService.id, rancherService.name, targets);
         } else {

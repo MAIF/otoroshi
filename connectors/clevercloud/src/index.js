@@ -435,9 +435,7 @@ function syncOtoroshiWithCleverCloud() {
           : [];
         if (!otoroshiService) {
           log(
-            `Creating Otoroshi service '${clevercloudService.name}' with id: '${
-              clevercloudService.id
-            }' (${targets.length} targets)`
+            `Creating Otoroshi service '${clevercloudService.name}' with id: '${clevercloudService.id}' (${targets.length} targets)`
           );
           return createOtoroshiCleverCloudService(
             clevercloudService.id,
@@ -446,9 +444,7 @@ function syncOtoroshiWithCleverCloud() {
           );
         } else if (otoroshiService && !_.isEqual(targetHosts, otoHosts)) {
           log(
-            `Updating Otoroshi service '${clevercloudService.name}' with id: '${
-              clevercloudService.id
-            }' (${targets.length} targets)`
+            `Updating Otoroshi service '${clevercloudService.name}' with id: '${clevercloudService.id}' (${targets.length} targets)`
           );
           return updateOtoroshiCleverCloudService(
             clevercloudService.id,

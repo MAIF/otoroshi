@@ -119,4 +119,3 @@ object CompilingValidator extends AccessValidator {
     FastFuture.successful(false)
   }
 }
-

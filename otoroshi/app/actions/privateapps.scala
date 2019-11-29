@@ -13,8 +13,8 @@ case class PrivateAppsActionContext[A](request: Request[A],
                                        user: Option[PrivateAppsUser],
                                        globalConfig: models.GlobalConfig) {
   def connected: Boolean = user.isDefined
-  def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
-  def ua: String = request.headers.get("User-Agent").getOrElse("none")
+  def from: String       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+  def ua: String         = request.headers.get("User-Agent").getOrElse("none")
 }
 
 class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)

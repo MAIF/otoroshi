@@ -9,13 +9,13 @@ import queryString from 'query-string';
 import { OtoDatePicker } from '../components/datepicker';
 
 function readableType(contentType) {
-  if (contentType.indexOf("text/html") > -1) {
+  if (contentType.indexOf('text/html') > -1) {
     return true;
-  } else if (contentType.indexOf("application/json") > -1) {
+  } else if (contentType.indexOf('application/json') > -1) {
     return true;
-  } else if (contentType.indexOf("application/xml") > -1) {
+  } else if (contentType.indexOf('application/xml') > -1) {
     return true;
-  } else if (contentType.indexOf("text/plain") > -1) {
+  } else if (contentType.indexOf('text/plain') > -1) {
     return true;
   } else {
     return false;
@@ -29,7 +29,7 @@ function readContent(req) {
     } else {
       const ctype = req.headers['Content-Type'] || req.headers['content-type'] || 'none';
       console.log(ctype);
-      const isReadable = readableType(ctype); 
+      const isReadable = readableType(ctype);
       if (isReadable) {
         return decodeURIComponent(escape(window.atob(req.body)));
       } else {
@@ -90,7 +90,7 @@ export class GlobalEventsPage extends Component {
           onClick={e => {
             BackOfficeServices.fetchBodiesFor(item['@serviceId'], item.reqId).then(res => {
               if (!res.error) {
-                const bodyIn  = readContent(res.request);
+                const bodyIn = readContent(res.request);
                 const bodyOut = readContent(res.response);
                 window.newAlert(
                   <>
@@ -108,14 +108,11 @@ export class GlobalEventsPage extends Component {
                     )}
                   </>,
                   'Bodies'
-                )
+                );
               } else {
-                window.newAlert(
-                  'No body has been found for this request !',
-                  'No body found'
-                )
+                window.newAlert('No body has been found for this request !', 'No body found');
               }
-            })
+            });
           }}>
           bodies
         </button>

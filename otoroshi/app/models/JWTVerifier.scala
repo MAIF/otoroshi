@@ -703,7 +703,8 @@ sealed trait JwtVerifier extends AsJson {
                desc: ServiceDescriptor,
                apikey: Option[ApiKey],
                user: Option[PrivateAppsUser],
-               elContext: Map[String, String], attrs: TypedMap)(
+               elContext: Map[String, String],
+               attrs: TypedMap)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
@@ -716,7 +717,8 @@ sealed trait JwtVerifier extends AsJson {
              desc: ServiceDescriptor,
              apikey: Option[ApiKey],
              user: Option[PrivateAppsUser],
-             elContext: Map[String, String], attrs: TypedMap)(
+             elContext: Map[String, String],
+             attrs: TypedMap)(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
@@ -729,7 +731,8 @@ sealed trait JwtVerifier extends AsJson {
                                         desc: ServiceDescriptor,
                                         apikey: Option[ApiKey],
                                         user: Option[PrivateAppsUser],
-                                        elContext: Map[String, String], attrs: TypedMap)(
+                                        elContext: Map[String, String],
+                                        attrs: TypedMap)(
       f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
@@ -900,7 +903,8 @@ sealed trait JwtVerifier extends AsJson {
                                       Some(desc),
                                       apikey,
                                       user,
-                                      context, attrs)
+                                      context,
+                                      attrs)
                             .as[JsObject]
                         val newJsonToken: JsObject = JsObject(
                           (tSettings.mappingSettings.map
@@ -913,7 +917,8 @@ sealed trait JwtVerifier extends AsJson {
                                                                     Some(desc),
                                                                     apikey,
                                                                     user,
-                                                                    context, attrs))
+                                                                    context,
+                                                                    attrs))
                                   .-(b._1)
                             ) ++ evaluatedValues).fields
                             .filterNot {

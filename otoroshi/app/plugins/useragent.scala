@@ -23,11 +23,11 @@ object UserAgentHelper {
 
   private val logger = Logger("UserAgentHelper")
 
-  private val ec = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
-  private val parserInitializing = new AtomicBoolean(false)
+  private val ec                       = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+  private val parserInitializing       = new AtomicBoolean(false)
   private val parserInitializationDone = new AtomicBoolean(false)
-  private val parserRef = new AtomicReference[UserAgentParser]()
-  private val cache = new TrieMap[String, Option[JsObject]]()
+  private val parserRef                = new AtomicReference[UserAgentParser]()
+  private val cache                    = new TrieMap[String, Option[JsObject]]()
 
   def userAgentDetails(ua: String)(implicit env: Env): Option[JsObject] = {
     env.metrics.withTimer("otoroshi.useragent.details") {
@@ -43,7 +43,7 @@ object UserAgentHelper {
         }(ec)
       }
       cache.get(ua) match {
-        case details@Some(_) => details.flatten
+        case details @ Some(_) => details.flatten
         case None if parserInitializationDone.get() => {
           Try(parserRef.get().parse(ua)) match {
             case Failure(e) =>
@@ -69,14 +69,17 @@ class UserAgentExtractor extends PreRouting {
 
   override def name: String = "User-Agent details extractor"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "UserAgentInfo" -> Json.obj(
-      "log" -> false,
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "UserAgentInfo" -> Json.obj(
+          "log" -> false,
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin extract informations from User-Agent header such as browsser version, OS version, etc.
+  override def description: Option[String] =
+    Some("""This plugin extract informations from User-Agent header such as browsser version, OS version, etc.
       |The informations are store in plugins attrs for other plugins to use
       |
       |This plugin can accept the following configuration
@@ -96,13 +99,13 @@ class UserAgentExtractor extends PreRouting {
       case None => funit
       case Some(ua) =>
         UserAgentHelper.userAgentDetails(ua) match {
-        case None => funit
-        case Some(info) => {
-          if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
-          ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
-          funit
+          case None => funit
+          case Some(info) => {
+            if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
+            ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
+            funit
+          }
         }
-      }
     }
   }
 }
@@ -111,14 +114,18 @@ class UserAgentInfoHeader extends RequestTransformer {
 
   override def name: String = "User-Agent header"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "UserAgentInfoHeader" -> Json.obj(
-      "headerName" -> "X-User-Agent-Info",
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "UserAgentInfoHeader" -> Json.obj(
+          "headerName" -> "X-User-Agent-Info",
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin will sent informations extracted by the User-Agent details extractor to the target service in a header.
+  override def description: Option[String] =
+    Some(
+      """This plugin will sent informations extracted by the User-Agent details extractor to the target service in a header.
       |
       |This plugin can accept the following configuration
       |
@@ -129,20 +136,23 @@ class UserAgentInfoHeader extends RequestTransformer {
       |  }
       |}
       |```
-    """.stripMargin)
+    """.stripMargin
+    )
 
   override def transformRequestWithCtx(
-    ctx: TransformerRequestContext
+      ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val headerName = (ctx.config \ "UserAgentInfoHeader" \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(info) => {
-        Right(ctx.otoroshiRequest.copy(
-          headers = ctx.otoroshiRequest.headers ++ Map(
-            headerName -> Json.stringify(info)
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ Map(
+              headerName -> Json.stringify(info)
+            )
           )
-        )).future
+        ).future
       }
     }
   }

@@ -42,7 +42,7 @@ class Geolocation extends Component {
       },
     },
   };
-  maxmindForm= {
+  maxmindForm = {
     enabled: {
       type: 'bool',
       props: {
@@ -55,29 +55,31 @@ class Geolocation extends Component {
         label: 'Maxmind db file path',
         placeholder: 'Maxmind db file path',
       },
-    }
+    },
   };
   download = () => {
     fetch('/bo/api/geolite/_fetchLatest', {
       credentials: 'include',
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: ''
-    }).then(r => r.json()).then(r => {
-      if (r.exitCode === 0) {
-        this.props.onChange({
-          type: 'maxmind',
-          enabled: true,
-          path: r.path,
-        });
-      } else {
-        window.newAlert("Error while fetching latest geolite db ...")
-      }
-    });
-  }
+      body: '',
+    })
+      .then(r => r.json())
+      .then(r => {
+        if (r.exitCode === 0) {
+          this.props.onChange({
+            type: 'maxmind',
+            enabled: true,
+            path: r.path,
+          });
+        } else {
+          window.newAlert('Error while fetching latest geolite db ...');
+        }
+      });
+  };
   render() {
     const settings = this.props.value;
     const type = settings.type;
@@ -116,9 +118,7 @@ class Geolocation extends Component {
           ]}
           help="..."
         />
-        {type === 'none' && (
-          null
-        )}
+        {type === 'none' && null}
         {type === 'ipstack' && (
           <Form
             value={settings}
@@ -140,7 +140,9 @@ class Geolocation extends Component {
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
-                <button type="button" className="btn btn-success btn-xs" onClick={this.download}>download GeoLite2 db (for testing purpose only)</button>
+                <button type="button" className="btn btn-success btn-xs" onClick={this.download}>
+                  download GeoLite2 db (for testing purpose only)
+                </button>
               </div>
             </div>
           </>
@@ -740,14 +742,14 @@ export class DangerZonePage extends Component {
     'proxies.elastic': { type: Proxy, props: { showNonProxyHosts: true } },
     mailerSettings: { type: Mailer },
     geolocationSettings: { type: Geolocation },
-    'userAgentSettings.enabled': { 
+    'userAgentSettings.enabled': {
       type: 'bool',
       props: {
         label: 'User-Agent extraction',
         placeholder: '--',
         help: 'Allow user-agent details extraction. Can have impact on consumed memory.',
       },
-     },
+    },
     'scripts.enabled': {
       type: 'bool',
       props: {
@@ -755,10 +757,10 @@ export class DangerZonePage extends Component {
         help: '...',
       },
     },
-    'scripts': {
+    scripts: {
       type: GlobalScripts,
       props: {},
-    }
+    },
   };
 
   formFlow = [
@@ -1111,7 +1113,6 @@ class BackOfficeAuthButtons extends Component {
   }
 }
 
-
 class GlobalScripts extends Component {
   changeTheValue = (name, value) => {
     const cloned = _.cloneDeep(this.props.value);
@@ -1127,7 +1128,7 @@ class GlobalScripts extends Component {
       preRouteRefs: [],
       preRouteConfig: {},
       sinkRefs: [],
-      sinkConfig: {}
+      sinkConfig: {},
     };
     return (
       <>

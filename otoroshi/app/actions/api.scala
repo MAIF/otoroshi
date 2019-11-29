@@ -21,7 +21,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       .get(env.Headers.OtoroshiAdminProfile)
       .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
   def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
-  def ua: String = request.headers.get("User-Agent").getOrElse("none")
+  def ua: String   = request.headers.get("User-Agent").getOrElse("none")
 }
 
 class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)

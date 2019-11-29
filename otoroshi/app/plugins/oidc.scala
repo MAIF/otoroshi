@@ -14,29 +14,32 @@ class OIDCHeaders extends RequestTransformer {
 
   override def name: String = "OIDC headers"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "OIDCHeaders" -> Json.obj(
-      "profile" -> Json.obj(
-        "send" -> true,
-        "headerName" -> "X-OIDC-User"
-      ),
-      "idtoken" -> Json.obj(
-        "send" -> false,
-        "name" -> "id_token",
-        "headerName" -> "X-OIDC-Id-Token",
-        "jwt" -> true
-      ),
-      "accesstoken" -> Json.obj(
-        "send" -> false,
-        "name" -> "access_token",
-        "headerName" -> "X-OIDC-Access-Token",
-        "jwt" -> true
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "OIDCHeaders" -> Json.obj(
+          "profile" -> Json.obj(
+            "send"       -> true,
+            "headerName" -> "X-OIDC-User"
+          ),
+          "idtoken" -> Json.obj(
+            "send"       -> false,
+            "name"       -> "id_token",
+            "headerName" -> "X-OIDC-Id-Token",
+            "jwt"        -> true
+          ),
+          "accesstoken" -> Json.obj(
+            "send"       -> false,
+            "name"       -> "access_token",
+            "headerName" -> "X-OIDC-Access-Token",
+            "jwt"        -> true
+          )
+        )
       )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin injects headers containing tokens and profile from current OIDC provider.
+  override def description: Option[String] =
+    Some("""This plugin injects headers containing tokens and profile from current OIDC provider.
       |
       |This plugin can accept the following configuration
       |
@@ -73,32 +76,40 @@ class OIDCHeaders extends RequestTransformer {
     }
   }
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) => {
 
         val config = (ctx.config \ "OIDCHeaders").asOpt[JsObject].getOrElse(Json.obj())
 
-        val sendProfile = (config \ "profile" \ "send").asOpt[Boolean].getOrElse(true)
+        val sendProfile       = (config \ "profile" \ "send").asOpt[Boolean].getOrElse(true)
         val profileHeaderName = (config \ "profile" \ "headerName").asOpt[String].getOrElse("X-OIDC-User")
 
-        val sendIdToken = (config \ "idtoken" \ "send").asOpt[Boolean].getOrElse(false)
-        val idTokenName = (config \ "idtoken" \ "name").asOpt[String].getOrElse("id_token")
+        val sendIdToken       = (config \ "idtoken" \ "send").asOpt[Boolean].getOrElse(false)
+        val idTokenName       = (config \ "idtoken" \ "name").asOpt[String].getOrElse("id_token")
         val idTokenHeaderName = (config \ "idtoken" \ "headerName").asOpt[String].getOrElse("X-OIDC-Id-Token")
-        val idTokenJwt = (config \ "idtoken" \ "jwt").asOpt[Boolean].getOrElse(true)
+        val idTokenJwt        = (config \ "idtoken" \ "jwt").asOpt[Boolean].getOrElse(true)
 
         val sendAccessToken = (config \ "accesstoken" \ "send").asOpt[Boolean].getOrElse(false)
         val accessTokenName = (config \ "accesstoken" \ "name").asOpt[String].getOrElse("access_token")
-        val accessTokenHeaderName = (config \ "accesstoken" \ "headerName").asOpt[String].getOrElse("X-OIDC-Access-Token")
+        val accessTokenHeaderName =
+          (config \ "accesstoken" \ "headerName").asOpt[String].getOrElse("X-OIDC-Access-Token")
         val accessTokenJwt = (config \ "accesstoken" \ "jwt").asOpt[Boolean].getOrElse(true)
 
         val profileMap = if (sendProfile) Map(profileHeaderName -> Json.stringify(user.profile)) else Map.empty
-        val idTokenMap = if (sendIdToken) Map(idTokenHeaderName -> extract(user.token, idTokenName, idTokenJwt)) else Map.empty
-        val accessTokenMap = if (sendAccessToken) Map(accessTokenHeaderName -> extract(user.token, accessTokenName, accessTokenJwt)) else Map.empty
+        val idTokenMap =
+          if (sendIdToken) Map(idTokenHeaderName -> extract(user.token, idTokenName, idTokenJwt)) else Map.empty
+        val accessTokenMap =
+          if (sendAccessToken) Map(accessTokenHeaderName -> extract(user.token, accessTokenName, accessTokenJwt))
+          else Map.empty
 
-        Right(ctx.otoroshiRequest.copy(
-          headers = ctx.otoroshiRequest.headers ++ profileMap ++ idTokenMap ++ accessTokenMap
-        )).future
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ profileMap ++ idTokenMap ++ accessTokenMap
+          )
+        ).future
       }
       case None => Right(ctx.otoroshiRequest).future
     }

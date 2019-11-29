@@ -27,91 +27,94 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 case class BodyLoggerFilterConfig(json: JsValue) {
-  lazy val statuses: Seq[Int] = (json \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
-  lazy val methods: Seq[String] = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val paths: Seq[String] = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notStatuses: Seq[Int] = (json \ "not" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+  lazy val statuses: Seq[Int]      = (json \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+  lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
   lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notPaths: Seq[String] = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
+  lazy val notPaths: Seq[String] = (json \ "not" \ "paths")
+    .asOpt[Seq[String]]
+    .getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
 }
 
 case class BodyLoggerConfig(json: JsValue) {
-  lazy val enabled: Boolean = (json \ "enabled").asOpt[Boolean].getOrElse(true)
-  lazy val log: Boolean = (json \ "log").asOpt[Boolean].getOrElse(true)
-  lazy val store: Boolean = (json \ "store").asOpt[Boolean].getOrElse(false)
-  lazy val ttl: Long = (json \ "ttl").asOpt[Long].getOrElse(5.minutes.toMillis)
+  lazy val enabled: Boolean         = (json \ "enabled").asOpt[Boolean].getOrElse(true)
+  lazy val log: Boolean             = (json \ "log").asOpt[Boolean].getOrElse(true)
+  lazy val store: Boolean           = (json \ "store").asOpt[Boolean].getOrElse(false)
+  lazy val ttl: Long                = (json \ "ttl").asOpt[Long].getOrElse(5.minutes.toMillis)
   lazy val sendToAnalytics: Boolean = (json \ "sendToAnalytics").asOpt[Boolean].getOrElse(false)
-  lazy val filter: Option[BodyLoggerFilterConfig] = (json \ "filter").asOpt[JsObject].map(o => BodyLoggerFilterConfig(o))
+  lazy val filter: Option[BodyLoggerFilterConfig] =
+    (json \ "filter").asOpt[JsObject].map(o => BodyLoggerFilterConfig(o))
   lazy val hasFilter: Boolean = filter.isDefined
-  lazy val maxSize: Long = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
-  lazy val password: String = (json \ "password").asOpt[String].getOrElse("password")
+  lazy val maxSize: Long      = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
+  lazy val password: String   = (json \ "password").asOpt[String].getOrElse("password")
 }
 
 case class RequestBodyEvent(
-  `@id`: String,
-  `@timestamp`: DateTime,
-  `@serviceId`: String,
-  `@service`: String,
-  reqId: String,
-  method: String,
-  url: String,
-  headers: Map[String, String],
-  body: ByteString,
-  from: String,
-  ua: String
+    `@id`: String,
+    `@timestamp`: DateTime,
+    `@serviceId`: String,
+    `@service`: String,
+    reqId: String,
+    method: String,
+    url: String,
+    headers: Map[String, String],
+    body: ByteString,
+    from: String,
+    ua: String
 ) extends AnalyticEvent {
 
   override def `@type`: String = "RequestBodyEvent"
 
-  override def fromOrigin: Option[String] = Some(from)
+  override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
   def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@type"           -> "RequestBodyEvent",
-    "@id"             -> `@id`,
-    "@timestamp"      -> `@timestamp`,
-    "@serviceId"      -> `@serviceId`,
-    "@service"        -> `@service`,
-    "reqId"           -> reqId,
-    "method"          -> method,
-    "url"             -> url,
-    "headers"         -> headers,
-    "body"            -> BodyLogger.base64Encoder.encodeToString(body.toArray)
+    "@type"      -> "RequestBodyEvent",
+    "@id"        -> `@id`,
+    "@timestamp" -> `@timestamp`,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "reqId"      -> reqId,
+    "method"     -> method,
+    "url"        -> url,
+    "headers"    -> headers,
+    "body"       -> BodyLogger.base64Encoder.encodeToString(body.toArray)
   )
 }
 
 case class ResponseBodyEvent(
-  `@id`: String,
-  `@timestamp`: DateTime,
-  `@serviceId`: String,
-  `@service`: String,
-  reqId: String,
-  method: String,
-  url: String,
-  headers: Map[String, String],
-  status: Int,
-  body: ByteString,
-  from: String,
-  ua: String
+    `@id`: String,
+    `@timestamp`: DateTime,
+    `@serviceId`: String,
+    `@service`: String,
+    reqId: String,
+    method: String,
+    url: String,
+    headers: Map[String, String],
+    status: Int,
+    body: ByteString,
+    from: String,
+    ua: String
 ) extends AnalyticEvent {
 
   override def `@type`: String = "ResponseBodyEvent"
 
-  override def fromOrigin: Option[String] = Some(from)
+  override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
   def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@type"           -> "ResponseBodyEvent",
-    "@id"             -> `@id`,
-    "@timestamp"      -> `@timestamp`,
-    "@serviceId"      -> `@serviceId`,
-    "@service"        -> `@service`,
-    "reqId"           -> reqId,
-    "method"          -> method,
-    "url"             -> url,
-    "headers"         -> headers,
-    "status"          -> status,
-    "body"            -> BodyLogger.base64Encoder.encodeToString(body.toArray)
+    "@type"      -> "ResponseBodyEvent",
+    "@id"        -> `@id`,
+    "@timestamp" -> `@timestamp`,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "reqId"      -> reqId,
+    "method"     -> method,
+    "url"        -> url,
+    "headers"    -> headers,
+    "status"     -> status,
+    "body"       -> BodyLogger.base64Encoder.encodeToString(body.toArray)
   )
 }
 
@@ -123,30 +126,34 @@ class BodyLogger extends RequestTransformer {
 
   override def name: String = "Body logger"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "BodyLogger" -> Json.obj(
-      "enabled" -> true,
-      "log" -> true,
-      "store" -> false,
-      "ttl" -> 5L * 60L * 1000L,
-      "sendToAnalytics" -> false,
-      "maxSize" -> 5L * 1024L * 1024L,
-      "password" -> "password",
-      "filter" -> Json.obj(
-        "statuses" -> Json.arr(),
-        "methods" -> Json.arr(),
-        "paths" -> Json.arr(),
-        "not" -> Json.obj(
-          "statuses" -> Json.arr(),
-          "methods" -> Json.arr(),
-          "paths" -> Json.arr(),
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "BodyLogger" -> Json.obj(
+          "enabled"         -> true,
+          "log"             -> true,
+          "store"           -> false,
+          "ttl"             -> 5L * 60L * 1000L,
+          "sendToAnalytics" -> false,
+          "maxSize"         -> 5L * 1024L * 1024L,
+          "password"        -> "password",
+          "filter" -> Json.obj(
+            "statuses" -> Json.arr(),
+            "methods"  -> Json.arr(),
+            "paths"    -> Json.arr(),
+            "not" -> Json.obj(
+              "statuses" -> Json.arr(),
+              "methods"  -> Json.arr(),
+              "paths"    -> Json.arr(),
+            )
+          )
         )
       )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin can log body present in request and response. It can just logs it, store in in the redis store with a ttl and send it to analytics.
+  override def description: Option[String] =
+    Some(
+      """This plugin can log body present in request and response. It can just logs it, store in in the redis store with a ttl and send it to analytics.
       |It also provides a debug UI at `/.well-known/otoroshi/bodylogger`.
       |
       |This plugin can accept the following configuration
@@ -174,7 +181,8 @@ class BodyLogger extends RequestTransformer {
       |  }
       |}
       |```
-    """.stripMargin)
+    """.stripMargin
+    )
 
   private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
 
@@ -185,11 +193,14 @@ class BodyLogger extends RequestTransformer {
       if ((conf.scripts.transformersConfig \ "BodyLogger").isDefined) {
         val redis: RedisClientMasterSlaves = {
           val master = RedisServer(
-            host = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "host").asOpt[String].getOrElse("localhost"),
+            host =
+              (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "host").asOpt[String].getOrElse("localhost"),
             port = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "port").asOpt[Int].getOrElse(6379),
             password = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "password").asOpt[String]
           )
-          val slaves = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "slaves").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val slaves = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "slaves")
+            .asOpt[Seq[JsObject]]
+            .getOrElse(Seq.empty)
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),
@@ -220,71 +231,100 @@ class BodyLogger extends RequestTransformer {
       .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
+                                                                     env: Env): Future[Boolean] = {
     ref.get() match {
-      case null => env.datastores.rawDataStore.set(key, value, ttl)
+      case null  => env.datastores.rawDataStore.set(key, value, ttl)
       case redis => redis._1.set(key, value, pxMilliseconds = ttl)
     }
   }
 
-  private def getAllKeys(pattern: String, desc: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Seq[JsValue]] = {
+  private def getAllKeys(pattern: String, desc: ServiceDescriptor)(implicit ec: ExecutionContext,
+                                                                   env: Env,
+                                                                   mat: Materializer): Future[Seq[JsValue]] = {
     ref.get() match {
       case null =>
-        Source.fromFuture(env.datastores.rawDataStore.keys(pattern))
+        Source
+          .fromFuture(env.datastores.rawDataStore.keys(pattern))
           .flatMapConcat(keys => Source(keys.toList))
           .mapAsync(1)(key => env.datastores.rawDataStore.pttl(key).map(ttl => (key, ttl)))
           .map {
-            case (key, ttl) => Json.obj(
-              "reqId" -> key.replace(s"${env.storageRoot}:bodies:${desc.id}:", "").replace(":request", "").replace(":response", ""),
-              "ttl" -> ttl
-            )
-          }.toMat(Sink.seq)(Keep.right).run()
-      case redis => Source.fromFuture(redis._1.keys(pattern))
-        .flatMapConcat(keys => Source(keys.toList))
-        .mapAsync(1)(key => redis._1.pttl(key).map(ttl => (key, ttl)))
-        .map {
-          case (key, ttl) => Json.obj(
-            "reqId" -> key.replace(s"${env.storageRoot}:bodies:${desc.id}:", "").replace(":request", "").replace(":response", ""),
-            "ttl" -> ttl
-          )
-        }.toMat(Sink.seq)(Keep.right).run()
+            case (key, ttl) =>
+              Json.obj(
+                "reqId" -> key
+                  .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
+                  .replace(":request", "")
+                  .replace(":response", ""),
+                "ttl" -> ttl
+              )
+          }
+          .toMat(Sink.seq)(Keep.right)
+          .run()
+      case redis =>
+        Source
+          .fromFuture(redis._1.keys(pattern))
+          .flatMapConcat(keys => Source(keys.toList))
+          .mapAsync(1)(key => redis._1.pttl(key).map(ttl => (key, ttl)))
+          .map {
+            case (key, ttl) =>
+              Json.obj(
+                "reqId" -> key
+                  .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
+                  .replace(":request", "")
+                  .replace(":response", ""),
+                "ttl" -> ttl
+              )
+          }
+          .toMat(Sink.seq)(Keep.right)
+          .run()
     }
   }
 
   private def deleteAll(pattern: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     ref.get() match {
-      case null => env.datastores.rawDataStore.keys(pattern).flatMap(keys => env.datastores.rawDataStore.del(keys)).map(_ => ())
+      case null =>
+        env.datastores.rawDataStore.keys(pattern).flatMap(keys => env.datastores.rawDataStore.del(keys)).map(_ => ())
       case redis => redis._1.keys(pattern).flatMap(keys => redis._1.del(keys: _*)).map(_ => ())
     }
   }
 
   private def getAll(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
     ref.get() match {
-      case null => env.datastores.rawDataStore.keys(pattern).flatMap { keys =>
-          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-          else env.datastores.rawDataStore.mget(keys)
-        }.map { seq =>
-          seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String))
-        }
-      case redis => redis._1.keys(pattern).flatMap { keys =>
-        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redis._1.mget(keys: _*)
-      }.map { seq =>
-        seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String))
-      }
+      case null =>
+        env.datastores.rawDataStore
+          .keys(pattern)
+          .flatMap { keys =>
+            if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+            else env.datastores.rawDataStore.mget(keys)
+          }
+          .map { seq =>
+            seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String))
+          }
+      case redis =>
+        redis._1
+          .keys(pattern)
+          .flatMap { keys =>
+            if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+            else redis._1.mget(keys: _*)
+          }
+          .map { seq =>
+            seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String))
+          }
     }
   }
 
   private def getOne(key: String)(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
     ref.get() match {
-      case null => env.datastores.rawDataStore.get(key).map {
-        case Some(value) => Json.parse(value.utf8String)
-        case None => JsNull
-      }
-      case redis => redis._1.get(key).map {
-        case Some(value) => Json.parse(value.utf8String)
-        case None => JsNull
-      }
+      case null =>
+        env.datastores.rawDataStore.get(key).map {
+          case Some(value) => Json.parse(value.utf8String)
+          case None        => JsNull
+        }
+      case redis =>
+        redis._1.get(key).map {
+          case Some(value) => Json.parse(value.utf8String)
+          case None        => JsNull
+        }
     }
   }
 
@@ -292,44 +332,67 @@ class BodyLogger extends RequestTransformer {
     config.filter match {
       case None => true
       case Some(filter) => {
-        val matchPath = if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-        val matchNotPath = if (filter.notPaths.isEmpty) true else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-        val methodMatch = if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
-        val methodNotMatch = if (filter.notMethods.isEmpty) true else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
-        val statusMatch = if (filter.statuses.isEmpty) true else statusOpt match {
-          case None => true
-          case Some(status) => filter.statuses.contains(status)
-        }
-        val statusNotMatch = if (filter.notStatuses.isEmpty) true else statusOpt match {
-          case None => true
-          case Some(status) => filter.notStatuses.contains(status)
-        }
+        val matchPath =
+          if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
+        val matchNotPath =
+          if (filter.notPaths.isEmpty) true
+          else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
+        val methodMatch =
+          if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
+        val methodNotMatch =
+          if (filter.notMethods.isEmpty) true
+          else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
+        val statusMatch =
+          if (filter.statuses.isEmpty) true
+          else
+            statusOpt match {
+              case None         => true
+              case Some(status) => filter.statuses.contains(status)
+            }
+        val statusNotMatch =
+          if (filter.notStatuses.isEmpty) true
+          else
+            statusOpt match {
+              case None         => true
+              case Some(status) => filter.notStatuses.contains(status)
+            }
         matchPath && methodMatch && statusMatch && !matchNotPath && !methodNotMatch && !statusNotMatch
       }
     }
   }
 
-  private def passWithAuth(config: BodyLoggerConfig, ctx: TransformerRequestContext)(f: => Future[Either[Result, HttpRequest]])(implicit env: Env, ec: ExecutionContext): Future[Either[Result, HttpRequest]] = {
+  private def passWithAuth(config: BodyLoggerConfig, ctx: TransformerRequestContext)(
+      f: => Future[Either[Result, HttpRequest]]
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[Result, HttpRequest]] = {
     ctx.request.headers.get("Authorization") match {
-      case Some(auth) if auth.startsWith("Basic ") => extractUsernamePassword(auth) match {
-        case Some((username, password)) if username == "user" && password == config.password => f
-        case _ => Left(Results
-          .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
-          .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")).future
+      case Some(auth) if auth.startsWith("Basic ") =>
+        extractUsernamePassword(auth) match {
+          case Some((username, password)) if username == "user" && password == config.password => f
+          case _ =>
+            Left(
+              Results
+                .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+                .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")
+            ).future
           //Left(Results.Forbidden(views.html.otoroshi.error("Forbidden access", env))).future
-      }
-      case _ => Left(Results
-        .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
-        .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")).future
+        }
+      case _ =>
+        Left(
+          Results
+            .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+            .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")
+        ).future
     }
   }
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
-      case ("get", "/.well-known/otoroshi/bodylogger") => passWithAuth(config, ctx) {
-        FastFuture.successful(Left(Results.Ok(
-          s"""<html>
+      case ("get", "/.well-known/otoroshi/bodylogger") =>
+        passWithAuth(config, ctx) {
+          FastFuture.successful(Left(Results.Ok(s"""<html>
            |  <head>
            |    <link rel="stylesheet" media="screen" href="/__otoroshi_assets/javascripts/bundle/backoffice.css">
            |    <style>
@@ -477,129 +540,155 @@ class BodyLogger extends RequestTransformer {
            |  </body>
            |</html>
           """.stripMargin).as("text/html")))
-      }
-      case ("get", "/.well-known/otoroshi/bodylogger/requests.json") => passWithAuth(config, ctx) {
-        for {
-          requests <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request", ctx.descriptor)
-          responses <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response", ctx.descriptor)
-        } yield {
-          val all: Seq[JsValue] = (requests ++ responses).groupBy(v => (v \ "reqId").as[String]).map(_._2.head).toSeq
-          Left(Results.Ok(JsArray(all)))
         }
-      }
-      case ("delete", "/.well-known/otoroshi/bodylogger/requests.json") => passWithAuth(config, ctx) {
-        for {
-          _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
-          _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response")
-        } yield {
-          Left(Results.Ok(Json.obj("done" -> true)))
+      case ("get", "/.well-known/otoroshi/bodylogger/requests.json") =>
+        passWithAuth(config, ctx) {
+          for {
+            requests  <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request", ctx.descriptor)
+            responses <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response", ctx.descriptor)
+          } yield {
+            val all: Seq[JsValue] = (requests ++ responses).groupBy(v => (v \ "reqId").as[String]).map(_._2.head).toSeq
+            Left(Results.Ok(JsArray(all)))
+          }
         }
-      }
-      case ("get", "/.well-known/otoroshi/bodylogger/bodies.json") => passWithAuth(config, ctx) {
-        for {
-          requests <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
-          responses <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response")
-        } yield {
-          Left(Results.Ok(JsArray(requests ++ responses)))
+      case ("delete", "/.well-known/otoroshi/bodylogger/requests.json") =>
+        passWithAuth(config, ctx) {
+          for {
+            _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
+            _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response")
+          } yield {
+            Left(Results.Ok(Json.obj("done" -> true)))
+          }
         }
-      }
-      case ("get", r"/.well-known/otoroshi/bodylogger/requests/${id}@(.*).json") => passWithAuth(config, ctx) {
-        for {
-          request <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:request")
-          response <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:response")
-        } yield {
-          Left(Results.Ok(Json.obj(
-            "request" -> request,
-            "response" -> response
-          )))
+      case ("get", "/.well-known/otoroshi/bodylogger/bodies.json") =>
+        passWithAuth(config, ctx) {
+          for {
+            requests  <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
+            responses <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:response")
+          } yield {
+            Left(Results.Ok(JsArray(requests ++ responses)))
+          }
         }
-      }
+      case ("get", r"/.well-known/otoroshi/bodylogger/requests/${id}@(.*).json") =>
+        passWithAuth(config, ctx) {
+          for {
+            request  <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:request")
+            response <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:response")
+          } yield {
+            Left(
+              Results.Ok(
+                Json.obj(
+                  "request"  -> request,
+                  "response" -> response
+                )
+              )
+            )
+          }
+        }
       case _ => FastFuture.successful(Right(ctx.otoroshiRequest))
     }
   }
 
-  override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def transformRequestBodyWithCtx(
+      ctx: TransformerRequestBodyContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
     if (config.enabled && filter(ctx.request, config)) {
       val size = new AtomicLong(0L)
-      val ref = new AtomicReference[ByteString](ByteString.empty)
-      ctx.body.wireTap(bs => ref.updateAndGet { (t: ByteString) =>
-        val currentSize = size.addAndGet(bs.size.toLong)
-        if (currentSize <= config.maxSize) {
-          t ++ bs
-        } else {
-          t
-        }
-      }).alsoTo(Sink.onComplete {
-        case _ => {
-          val event = RequestBodyEvent(
-            `@id` = env.snowflakeGenerator.nextIdStr(),
-            `@timestamp` = DateTime.now(),
-            `@serviceId` = ctx.descriptor.id,
-            `@service` = ctx.descriptor.name,
-            reqId = ctx.snowflake,
-            method = ctx.rawRequest.method,
-            url = ctx.rawRequest.url,
-            headers = ctx.rawRequest.headers,
-            body = ref.get(),
-            from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
-            ua = ctx.request.headers.get("User-Agent").getOrElse("none")
-          )
-          if (config.log) {
-            event.log()
+      val ref  = new AtomicReference[ByteString](ByteString.empty)
+      ctx.body
+        .wireTap(
+          bs =>
+            ref.updateAndGet { (t: ByteString) =>
+              val currentSize = size.addAndGet(bs.size.toLong)
+              if (currentSize <= config.maxSize) {
+                t ++ bs
+              } else {
+                t
+              }
           }
-          if (config.sendToAnalytics) {
-            event.toAnalytics()
+        )
+        .alsoTo(Sink.onComplete {
+          case _ => {
+            val event = RequestBodyEvent(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@timestamp` = DateTime.now(),
+              `@serviceId` = ctx.descriptor.id,
+              `@service` = ctx.descriptor.name,
+              reqId = ctx.snowflake,
+              method = ctx.rawRequest.method,
+              url = ctx.rawRequest.url,
+              headers = ctx.rawRequest.headers,
+              body = ref.get(),
+              from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
+              ua = ctx.request.headers.get("User-Agent").getOrElse("none")
+            )
+            if (config.log) {
+              event.log()
+            }
+            if (config.sendToAnalytics) {
+              event.toAnalytics()
+            }
+            if (config.store) {
+              set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request",
+                  ByteString(Json.stringify(event.toJson)),
+                  Some(config.ttl))
+            }
           }
-          if (config.store) {
-            set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request", ByteString(Json.stringify(event.toJson)), Some(config.ttl))
-          }
-        }
-      })
+        })
     } else {
       ctx.body
     }
   }
 
-  override def transformResponseBodyWithCtx(ctx: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def transformResponseBodyWithCtx(
+      ctx: TransformerResponseBodyContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
     if (config.enabled && filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       val size = new AtomicLong(0L)
-      val ref = new AtomicReference[ByteString](ByteString.empty)
-      ctx.body.wireTap(bs => ref.updateAndGet { (t: ByteString) =>
-        val currentSize = size.addAndGet(bs.size.toLong)
-        if (currentSize <= config.maxSize) {
-          t ++ bs
-        } else {
-          t
-        }
-      }).alsoTo(Sink.onComplete {
-        case _ => {
-          val event = ResponseBodyEvent(
-            `@id` = env.snowflakeGenerator.nextIdStr(),
-            `@timestamp` = DateTime.now(),
-            `@serviceId` = ctx.descriptor.id,
-            `@service` = ctx.descriptor.name,
-            reqId = ctx.snowflake,
-            method = ctx.request.method,
-            url = ctx.request.uri,
-            headers = ctx.rawResponse.headers,
-            status = ctx.rawResponse.status,
-            body = ref.get(),
-            from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
-            ua = ctx.request.headers.get("User-Agent").getOrElse("none")
-          )
-          if (config.log) {
-            event.log()
+      val ref  = new AtomicReference[ByteString](ByteString.empty)
+      ctx.body
+        .wireTap(
+          bs =>
+            ref.updateAndGet { (t: ByteString) =>
+              val currentSize = size.addAndGet(bs.size.toLong)
+              if (currentSize <= config.maxSize) {
+                t ++ bs
+              } else {
+                t
+              }
           }
-          if (config.sendToAnalytics) {
-            event.toAnalytics()
+        )
+        .alsoTo(Sink.onComplete {
+          case _ => {
+            val event = ResponseBodyEvent(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@timestamp` = DateTime.now(),
+              `@serviceId` = ctx.descriptor.id,
+              `@service` = ctx.descriptor.name,
+              reqId = ctx.snowflake,
+              method = ctx.request.method,
+              url = ctx.request.uri,
+              headers = ctx.rawResponse.headers,
+              status = ctx.rawResponse.status,
+              body = ref.get(),
+              from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
+              ua = ctx.request.headers.get("User-Agent").getOrElse("none")
+            )
+            if (config.log) {
+              event.log()
+            }
+            if (config.sendToAnalytics) {
+              event.toAnalytics()
+            }
+            if (config.store) {
+              set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response",
+                  ByteString(Json.stringify(event.toJson)),
+                  Some(config.ttl))
+            }
           }
-          if (config.store) {
-            set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response", ByteString(Json.stringify(event.toJson)), Some(config.ttl))
-          }
-        }
-      })
+        })
     } else {
       ctx.body
     }

@@ -439,9 +439,7 @@ function syncOtoroshiWithKubernetes() {
         const rootPath = kubernetesService.name.split('-')[1];
         if (!otoroshiService) {
           log(
-            `Creating Otoroshi service '${kubernetesService.name}' with id: '${
-              kubernetesService.id
-            }' (${targets.length} targets)`
+            `Creating Otoroshi service '${kubernetesService.name}' with id: '${kubernetesService.id}' (${targets.length} targets)`
           );
           return createOtoroshiKubernetesService(
             kubernetesService.id,
@@ -450,9 +448,7 @@ function syncOtoroshiWithKubernetes() {
           );
         } else if (otoroshiService && !_.isEqual(targetHosts, otoHosts)) {
           log(
-            `Updating Otoroshi service '${kubernetesService.name}' with id: '${
-              kubernetesService.id
-            }' (${targets.length} targets)`
+            `Updating Otoroshi service '${kubernetesService.name}' with id: '${kubernetesService.id}' (${targets.length} targets)`
           );
           return updateOtoroshiKubernetesService(
             kubernetesService.id,

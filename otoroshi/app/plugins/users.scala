@@ -11,16 +11,18 @@ class HasAllowedUsersValidator extends AccessValidator {
 
   override def name: String = "Allowed users only"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "HasAllowedUsersValidator" -> Json.obj(
-      "usernames" -> Json.arr(),
-      "emails" -> Json.arr(),
-      "emailDomains" -> Json.arr(),
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "HasAllowedUsersValidator" -> Json.obj(
+          "usernames"    -> Json.arr(),
+          "emails"       -> Json.arr(),
+          "emailDomains" -> Json.arr(),
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin only let allowed users pass
+  override def description: Option[String] = Some("""This plugin only let allowed users pass
       |
       |This plugin can accept the following configuration
       |
@@ -49,8 +51,8 @@ class HasAllowedUsersValidator extends AccessValidator {
         val allowedEmailDomains =
           (config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (allowedUsernames.contains(user.name) || allowedEmails.contains(user.email) || allowedEmailDomains.exists(
-          domain => user.email.endsWith(domain)
-        )) {
+              domain => user.email.endsWith(domain)
+            )) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)

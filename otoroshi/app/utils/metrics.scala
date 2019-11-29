@@ -105,7 +105,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   def counter(name: String): Counter                = metricRegistry.counter(name)
   def histogram(name: String): Histogram            = metricRegistry.histogram(name)
   def timer(name: String): Timer                    = metricRegistry.timer(name)
-  def withTimer[T](name: String)(f: => T): T        = {
+  def withTimer[T](name: String)(f: => T): T = {
     val ctx = metricRegistry.timer(name).time()
     val res = f
     ctx.close()
@@ -137,7 +137,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
       }
       case Some(path) => {
         val processedPath = path.replace(".", "_")
-        val writer = new StringWriter()
+        val writer        = new StringWriter()
         TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
         writer.toString.split("\n").toSeq.filter(line => RegexPool(processedPath).matches(line)).mkString("\n")
       }
@@ -149,14 +149,41 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
       case None => objectMapper.writeValueAsString(metricRegistry)
       case Some(path) => {
         val jsonRaw = objectMapper.writeValueAsString(metricRegistry)
-        val json = Json.parse(jsonRaw)
-        Json.stringify(JsArray(
-          (json \ "gauges").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "gauge", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-          (json \ "counters").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "counter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-          (json \ "histograms").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "histogram", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-          (json \ "meters").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "meter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-          (json \ "timers").as[JsObject].value.toSeq.filter(t => RegexPool(path).matches(t._1)).map(tuple => Json.obj("type" -> "timer", "name" -> tuple._1) ++ tuple._2.as[JsObject])
-        ))
+        val json    = Json.parse(jsonRaw)
+        Json.stringify(
+          JsArray(
+            (json \ "gauges")
+              .as[JsObject]
+              .value
+              .toSeq
+              .filter(t => RegexPool(path).matches(t._1))
+              .map(tuple => Json.obj("type" -> "gauge", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+            (json \ "counters")
+              .as[JsObject]
+              .value
+              .toSeq
+              .filter(t => RegexPool(path).matches(t._1))
+              .map(tuple => Json.obj("type" -> "counter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+            (json \ "histograms")
+              .as[JsObject]
+              .value
+              .toSeq
+              .filter(t => RegexPool(path).matches(t._1))
+              .map(tuple => Json.obj("type" -> "histogram", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+            (json \ "meters")
+              .as[JsObject]
+              .value
+              .toSeq
+              .filter(t => RegexPool(path).matches(t._1))
+              .map(tuple => Json.obj("type" -> "meter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+            (json \ "timers")
+              .as[JsObject]
+              .value
+              .toSeq
+              .filter(t => RegexPool(path).matches(t._1))
+              .map(tuple => Json.obj("type" -> "timer", "name" -> tuple._1) ++ tuple._2.as[JsObject])
+          )
+        )
       }
     }
   }

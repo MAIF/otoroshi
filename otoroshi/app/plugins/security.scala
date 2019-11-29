@@ -13,19 +13,23 @@ class SecurityTxt extends RequestTransformer {
 
   override def name: String = "Security Txt"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "SecurityTxt" -> Json.obj(
-      "Contact" -> "contact@foo.bar",
-      "Encryption" -> JsNull,
-      "Acknowledgments" -> JsNull,
-      "Preferred-Languages" -> "en, fr",
-      "Policy" -> JsNull,
-      "Hiring" -> JsNull,
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "SecurityTxt" -> Json.obj(
+          "Contact"             -> "contact@foo.bar",
+          "Encryption"          -> JsNull,
+          "Acknowledgments"     -> JsNull,
+          "Preferred-Languages" -> "en, fr",
+          "Policy"              -> JsNull,
+          "Hiring"              -> JsNull,
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin exposes a special route `/.well-known/security.txt` as proposed at [https://securitytxt.org/](https://securitytxt.org/).
+  override def description: Option[String] =
+    Some(
+      """This plugin exposes a special route `/.well-known/security.txt` as proposed at [https://securitytxt.org/](https://securitytxt.org/).
       |
       |This plugin can accept the following configuration
       |
@@ -41,7 +45,8 @@ class SecurityTxt extends RequestTransformer {
       |  }
       |}
       |```
-    """.stripMargin)
+    """.stripMargin
+    )
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
@@ -52,8 +57,9 @@ class SecurityTxt extends RequestTransformer {
           .asOpt[JsValue]
           .orElse((ctx.globalConfig \ "SecurityTxt").asOpt[JsValue])
           .getOrElse(ctx.config)
-        val host    = s"https://${ctx.descriptor.toHost}"
-        val contact = (config \ "contact").asOpt[String].orElse((config \ "Contact").asOpt[String]).map(c => s"Contact: $c\n")
+        val host = s"https://${ctx.descriptor.toHost}"
+        val contact =
+          (config \ "contact").asOpt[String].orElse((config \ "Contact").asOpt[String]).map(c => s"Contact: $c\n")
         val values = Seq("Encryption", "Acknowledgments", "Preferred-Languages", "Policy", "Hiring").map { key =>
           (config \ key.toLowerCase())
             .asOpt[String]

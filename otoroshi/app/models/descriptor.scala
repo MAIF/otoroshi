@@ -441,10 +441,10 @@ case class Target(
     loose: Boolean = false,
     mtls: Boolean = false
 ) {
-  def toJson = Target.format.writes(this)
-  def asUrl  = s"${scheme}://$host"
-  def asKey  = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asTargetStr  = s"$scheme://$host@${ipAddress.getOrElse(host)}"
+  def toJson      = Target.format.writes(this)
+  def asUrl       = s"${scheme}://$host"
+  def asKey       = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asTargetStr = s"$scheme://$host@${ipAddress.getOrElse(host)}"
 
   lazy val thePort: Int = if (host.contains(":")) {
     host.split(":").last.toInt
@@ -793,7 +793,10 @@ object Canary {
 case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: String = "https://www.otoroshi.io") {
   def toJson       = RedirectionSettings.format.writes(this)
   def hasValidCode = RedirectionSettings.validRedirectionCodes.contains(code)
-  def formattedTo(request: RequestHeader, descriptor: ServiceDescriptor, ctx: Map[String, String], attrs: utils.TypedMap): String =
+  def formattedTo(request: RequestHeader,
+                  descriptor: ServiceDescriptor,
+                  ctx: Map[String, String],
+                  attrs: utils.TypedMap): String =
     RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs)
 }
 
@@ -939,7 +942,10 @@ case class OIDCThirdPartyApiKeyConfig(
   private def shouldBeVerified(path: String): Boolean =
     !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
 
-  private def handleInternal[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
+  private def handleInternal[A](req: RequestHeader,
+                                descriptor: ServiceDescriptor,
+                                config: GlobalConfig,
+                                attrs: TypedMap)(
       f: Option[ApiKey] => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     shouldBeVerified(req.path) match {
@@ -1648,9 +1654,10 @@ case class Restrictions(
 
   private val cache = new TrieMap[String, (Boolean, Future[Result])]() // Not that clean but perfs matters
 
-  def handleRestrictions(descriptor: ServiceDescriptor,
-                         apk: Option[ApiKey],
-                         req: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): (Boolean, Future[Result]) = {
+  def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
+      implicit ec: ExecutionContext,
+      env: Env
+  ): (Boolean, Future[Result]) = {
 
     import utils.RequestImplicits._
 
@@ -1952,43 +1959,49 @@ case class ServiceDescriptor(
       .getOrElse(GlobalScripts())
     if ((gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(accessValidator)
-        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))))
+        .filter(
+          pr =>
+            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+              .exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        )
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.validatorRefs ++ lScripts
       if (refs.nonEmpty) {
-        env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
-          Source(refs.toList.zipWithIndex)
-            .mapAsync(1) {
-              case (ref, index) =>
-                val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-                  case Left("compiling") => CompilingValidator
-                  case Left(_) => DefaultValidator
-                  case Right(validator) => validator
-                }
-                validator.access(
-                  AccessContext(
-                    snowflake = snowflake,
-                    index = index,
-                    request = req,
-                    descriptor = this,
-                    user = user,
-                    apikey = apikey,
-                    attrs = attrs,
-                    globalConfig = gScripts.validatorConfig,
-                    config = accessValidator.config
+        env.metrics
+          .withTimerAsync("otoroshi.core.proxy.validate-access") {
+            Source(refs.toList.zipWithIndex)
+              .mapAsync(1) {
+                case (ref, index) =>
+                  val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                    case Left("compiling") => CompilingValidator
+                    case Left(_)           => DefaultValidator
+                    case Right(validator)  => validator
+                  }
+                  validator.access(
+                    AccessContext(
+                      snowflake = snowflake,
+                      index = index,
+                      request = req,
+                      descriptor = this,
+                      user = user,
+                      apikey = apikey,
+                      attrs = attrs,
+                      globalConfig = gScripts.validatorConfig,
+                      config = accessValidator.config
+                    )
                   )
-                )
-            }
-            .takeWhile(a =>
-              a match {
-                case Allowed => true
-                case Denied(_) => false
-              },
-              true)
-            .toMat(Sink.last)(Keep.right)
-            .run()(env.otoroshiMaterializer)
-        }.flatMap {
+              }
+              .takeWhile(a =>
+                           a match {
+                             case Allowed   => true
+                             case Denied(_) => false
+                         },
+                         true)
+              .toMat(Sink.last)(Keep.right)
+              .run()(env.otoroshiMaterializer)
+          }
+          .flatMap {
             case Allowed        => f
             case Denied(result) => FastFuture.successful(result)
           }
@@ -2031,46 +2044,52 @@ case class ServiceDescriptor(
 
     if ((gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(accessValidator)
-        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))))
+        .filter(
+          pr =>
+            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+              .exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        )
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.validatorRefs ++ lScripts
       if (refs.nonEmpty) {
-        env.metrics.withTimerAsync("otoroshi.core.proxy.validate-access") {
-          Source(refs.toList.zipWithIndex)
-            .mapAsync(1) {
-              case (ref, index) =>
-                val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-                  case Left("compiling") => CompilingValidator
-                  case Left(_) => DefaultValidator
-                  case Right(validator) => validator
-                }
-                validator.access(
-                  AccessContext(
-                    snowflake = snowflake,
-                    index = index,
-                    request = req,
-                    descriptor = this,
-                    user = user,
-                    apikey = apikey,
-                    attrs = attrs,
-                    globalConfig = gScripts.validatorConfig,
-                    config = accessValidator.config
+        env.metrics
+          .withTimerAsync("otoroshi.core.proxy.validate-access") {
+            Source(refs.toList.zipWithIndex)
+              .mapAsync(1) {
+                case (ref, index) =>
+                  val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                    case Left("compiling") => CompilingValidator
+                    case Left(_)           => DefaultValidator
+                    case Right(validator)  => validator
+                  }
+                  validator.access(
+                    AccessContext(
+                      snowflake = snowflake,
+                      index = index,
+                      request = req,
+                      descriptor = this,
+                      user = user,
+                      apikey = apikey,
+                      attrs = attrs,
+                      globalConfig = gScripts.validatorConfig,
+                      config = accessValidator.config
+                    )
                   )
-                )
-            }
-            .takeWhile(a =>
-              a match {
-                case Allowed => true
-                case Denied(_) => false
-              },
-              true)
-            .toMat(Sink.last)(Keep.right)
-            .run()(env.otoroshiMaterializer)
-        }.flatMap {
-          case Allowed        => f
-          case Denied(result) => FastFuture.successful(Left(result))
-        }
+              }
+              .takeWhile(a =>
+                           a match {
+                             case Allowed   => true
+                             case Denied(_) => false
+                         },
+                         true)
+              .toMat(Sink.last)(Keep.right)
+              .run()(env.otoroshiMaterializer)
+          }
+          .flatMap {
+            case Allowed        => f
+            case Denied(result) => FastFuture.successful(Left(result))
+          }
       } else {
         f
       }
@@ -2156,16 +2175,16 @@ case class ServiceDescriptor(
           .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
           .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
           .withClaim("apikey", apiKey.map(ak => Json.stringify(ak.lightJson)))
-          //    Json.stringify(
-          //      Json.obj(
-          //        "clientId"   -> ak.clientId,
-          //        "clientName" -> ak.clientName,
-          //        "metadata"   -> ak.metadata,
-          //        "tags"       -> ak.tags
-          //      )
-          //  )
-          // ))
-          // .serialize(this.secComSettings)(env)
+        //    Json.stringify(
+        //      Json.obj(
+        //        "clientId"   -> ak.clientId,
+        //        "clientName" -> ak.clientName,
+        //        "metadata"   -> ak.metadata,
+        //        "tags"       -> ak.tags
+        //      )
+        //  )
+        // ))
+        // .serialize(this.secComSettings)(env)
       }
       case SecComInfoTokenVersion.Latest => {
         OtoroshiClaim(
@@ -2190,15 +2209,15 @@ case class ServiceDescriptor(
           )
           .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
           .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
-          // Json.obj(
-          //    "clientId"   -> ak.clientId,
-          //    "clientName" -> ak.clientName,
-          //    "metadata"   -> ak.metadata,
-          //    "tags"       -> ak.tags
-          // )
-          // ))
-          // .withJsArrayClaim("clientCertChain", clientCertChain)
-          // .serialize(this.secComSettings)(env)
+        // Json.obj(
+        //    "clientId"   -> ak.clientId,
+        //    "clientName" -> ak.clientName,
+        //    "metadata"   -> ak.metadata,
+        //    "tags"       -> ak.tags
+        // )
+        // ))
+        // .withJsArrayClaim("clientCertChain", clientCertChain)
+        // .serialize(this.secComSettings)(env)
       }
     }
   }
@@ -2206,9 +2225,9 @@ case class ServiceDescriptor(
   import utils.RequestImplicits._
 
   def preRoute(
-    snowflake: String,
-    req: RequestHeader,
-    attrs: TypedMap
+      snowflake: String,
+      req: RequestHeader,
+      attrs: TypedMap
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
@@ -2216,34 +2235,41 @@ case class ServiceDescriptor(
       .getOrElse(GlobalScripts())
     if ((gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(preRouting)
-        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.relativeUri))))
+        .filter(
+          pr =>
+            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+              .exists(p => utils.RegexPool.regex(p).matches(req.relativeUri)))
+        )
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.preRouteRefs ++ lScripts
       if (refs.nonEmpty) {
-        env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
-          Source(refs.toList.zipWithIndex)
-            .mapAsync(1) {
-              case (ref, index) =>
-                val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
-                  case Left("compiling") => CompilingPreRouting
-                  case Left(_) => DefaultPreRouting
-                  case Right(r) => r
-                }
-                route.preRoute(
-                  PreRoutingContext(
-                    snowflake = snowflake,
-                    index = index,
-                    request = req,
-                    descriptor = this,
-                    attrs = attrs,
-                    globalConfig = gScripts.preRouteConfig,
-                    config = preRouting.config
+        env.metrics
+          .withTimerAsync("otoroshi.core.proxy.pre-routing") {
+            Source(refs.toList.zipWithIndex)
+              .mapAsync(1) {
+                case (ref, index) =>
+                  val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                    case Left("compiling") => CompilingPreRouting
+                    case Left(_)           => DefaultPreRouting
+                    case Right(r)          => r
+                  }
+                  route.preRoute(
+                    PreRoutingContext(
+                      snowflake = snowflake,
+                      index = index,
+                      request = req,
+                      descriptor = this,
+                      attrs = attrs,
+                      globalConfig = gScripts.preRouteConfig,
+                      config = preRouting.config
+                    )
                   )
-                )
-            }.toMat(Sink.last)(Keep.right)
-            .run()(env.otoroshiMaterializer)
-        }.flatMap(_ => f)
+              }
+              .toMat(Sink.last)(Keep.right)
+              .run()(env.otoroshiMaterializer)
+          }
+          .flatMap(_ => f)
       } else {
         f
       }
@@ -2252,10 +2278,8 @@ case class ServiceDescriptor(
     }
   }
 
-  def preRouteWS(snowflake: String,
-    req: RequestHeader,
-    attrs: TypedMap)(
-    f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  def preRouteWS(snowflake: String, req: RequestHeader, attrs: TypedMap)(
+      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
@@ -2263,34 +2287,41 @@ case class ServiceDescriptor(
       .getOrElse(GlobalScripts())
     if ((gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(preRouting)
-        .filter(pr => pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(req.path))))
+        .filter(
+          pr =>
+            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+              .exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        )
         .map(_.refs)
         .getOrElse(Seq.empty)
       val refs = gScripts.preRouteRefs ++ lScripts
       if (refs.nonEmpty) {
-        env.metrics.withTimerAsync("otoroshi.core.proxy.pre-routing") {
-          Source(refs.toList.zipWithIndex)
-            .mapAsync(1) {
-              case (ref, index) =>
-                val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
-                  case Left("compiling") => CompilingPreRouting
-                  case Left(_) => DefaultPreRouting
-                  case Right(r) => r
-                }
-                route.preRoute(
-                  PreRoutingContext(
-                    snowflake = snowflake,
-                    index = index,
-                    request = req,
-                    descriptor = this,
-                    attrs = attrs,
-                    globalConfig = gScripts.preRouteConfig,
-                    config = preRouting.config
+        env.metrics
+          .withTimerAsync("otoroshi.core.proxy.pre-routing") {
+            Source(refs.toList.zipWithIndex)
+              .mapAsync(1) {
+                case (ref, index) =>
+                  val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                    case Left("compiling") => CompilingPreRouting
+                    case Left(_)           => DefaultPreRouting
+                    case Right(r)          => r
+                  }
+                  route.preRoute(
+                    PreRoutingContext(
+                      snowflake = snowflake,
+                      index = index,
+                      request = req,
+                      descriptor = this,
+                      attrs = attrs,
+                      globalConfig = gScripts.preRouteConfig,
+                      config = preRouting.config
+                    )
                   )
-                )
-            }.toMat(Sink.last)(Keep.right)
-            .run()(env.otoroshiMaterializer)
-        }.flatMap(_ => f)
+              }
+              .toMat(Sink.last)(Keep.right)
+              .run()(env.otoroshiMaterializer)
+          }
+          .flatMap(_ => f)
       } else {
         f
       }
@@ -2652,7 +2683,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
     }*/
 
-/*
+    /*
     val filtered1 = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
       val rootMatched = sr.matchingRoot match {
@@ -2682,14 +2713,14 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           case (a, b) => b.toHost.contains("*") && !a.toHost.contains("*")
         }
       }
-      */
+     */
 
     val matched = new TrieMap[String, String]()
     val filtered1 = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
       val rootMatched = sr.allPaths match {
         case ps if ps.isEmpty => true
-        case ps => 
+        case ps =>
           val found = sr.allPaths.find(p => query.root.startsWith(p))
           found.foreach(p => matched.putIfAbsent(sr.id, p))
           found.isDefined
@@ -2698,7 +2729,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     }
     val sersWithoutMatchingRoot = filtered1.filter(_.allPaths.isEmpty)
     val sersWithMatchingRoot = filtered1.filter(_.allPaths.nonEmpty).sortWith {
-      case (a, b) => 
+      case (a, b) =>
         val aMatchedSize = matched.get(a.id).map(_.size).getOrElse(0)
         val bMatchedSize = matched.get(b.id).map(_.size).getOrElse(0)
         aMatchedSize > bMatchedSize
@@ -2754,7 +2785,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
+                                                                           env: Env): Future[Seq[ServiceDescriptor]] = {
     ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
     findAll().flatMap { descriptors =>
       val validDescriptors = descriptors.filter { sr =>
@@ -2762,7 +2794,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           false
         } else {
           sr.allHosts match {
-            case hosts if hosts.isEmpty => false
+            case hosts if hosts.isEmpty   => false
             case hosts if hosts.size == 1 => utils.RegexPool(hosts.head).matches(query.toHost)
             case hosts => {
               hosts.exists(host => utils.RegexPool(host).matches(query.toHost))
@@ -2775,7 +2807,6 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     }
   }
 
-
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
   def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
                                                                         env: Env): Future[Option[ServiceDescriptor]] = {
@@ -2786,10 +2817,11 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         query
           .getServices(false)
           .fast
-          .flatMap { 
+          .flatMap {
             case services if services.isEmpty => {
               // fast lookup should not store empty results, so ...
-              ServiceDescriptorDataStore.logger.warn(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
+              ServiceDescriptorDataStore.logger
+                .warn(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
               rawFind(query, requestHeader)
             }
             case services => sortServices(services, query, requestHeader)
@@ -2800,7 +2832,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
     } map { filteredDescriptors =>
       filteredDescriptors.headOption
-    }/* andThen {
+    } /* andThen {
       case _ =>
         ServiceDescriptorDataStore.logger.debug(s"Found microservice in ${System.currentTimeMillis() - start} ms.")
     }*/

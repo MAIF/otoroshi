@@ -27,7 +27,7 @@ case class BackOfficeEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
 
-  override def fromOrigin: Option[String] = Some(from)
+  override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
   override def toJson(implicit env: Env): JsValue = Json.obj(
@@ -65,7 +65,7 @@ case class AdminApiEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
 
-  override def fromOrigin: Option[String] = Some(from)
+  override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
@@ -99,7 +99,7 @@ case class SnowMonkeyOutageRegisteredEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
 
-  override def fromOrigin: Option[String] = None
+  override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
@@ -132,7 +132,7 @@ case class CircuitBreakerOpenedEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = service.id
 
-  override def fromOrigin: Option[String] = None
+  override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
@@ -159,7 +159,7 @@ case class CircuitBreakerClosedEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = service.id
 
-  override def fromOrigin: Option[String] = None
+  override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
@@ -186,7 +186,7 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
 
-  override def fromOrigin: Option[String] = None
+  override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(

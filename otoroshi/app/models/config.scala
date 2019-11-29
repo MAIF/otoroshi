@@ -179,15 +179,17 @@ object GeolocationSettings {
         JsSuccess(
           (json \ "type").as[String] match {
             case "none" => NoneGeolocationSettings
-            case "maxmind" => MaxmindGeolocationSettings(
-              enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-              path = (json \ "path").asOpt[String].filter(_.trim.nonEmpty).get
-            )
-            case "ipstack" => IpStackGeolocationSettings(
-              enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-              apikey = (json \ "apikey").asOpt[String].filter(_.trim.nonEmpty).get,
-              timeout = (json \ "timeout").asOpt[Long].getOrElse(2000L)
-            )
+            case "maxmind" =>
+              MaxmindGeolocationSettings(
+                enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+                path = (json \ "path").asOpt[String].filter(_.trim.nonEmpty).get
+              )
+            case "ipstack" =>
+              IpStackGeolocationSettings(
+                enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+                apikey = (json \ "apikey").asOpt[String].filter(_.trim.nonEmpty).get,
+                timeout = (json \ "timeout").asOpt[Long].getOrElse(2000L)
+              )
             case _ => NoneGeolocationSettings
           }
         )
@@ -204,9 +206,9 @@ sealed trait GeolocationSettings {
 }
 
 case object NoneGeolocationSettings extends GeolocationSettings {
-  def enabled: Boolean = false
+  def enabled: Boolean                                                                   = false
   def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = FastFuture.successful(None)
-  def json: JsValue = Json.obj("type" -> "none")
+  def json: JsValue                                                                      = Json.obj("type" -> "none")
 }
 
 case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends GeolocationSettings {
@@ -214,7 +216,7 @@ case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends Ge
   def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     enabled match {
       case false => FastFuture.successful(None)
-      case true =>  MaxMindGeolocationHelper.find(ip, path)
+      case true  => MaxMindGeolocationHelper.find(ip, path)
     }
   }
 }
@@ -224,7 +226,7 @@ case class IpStackGeolocationSettings(enabled: Boolean, apikey: String, timeout:
   def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     enabled match {
       case false => FastFuture.successful(None)
-      case true => IpStackGeolocationHelper.find(ip, apikey, timeout)
+      case true  => IpStackGeolocationHelper.find(ip, apikey, timeout)
     }
   }
 }
@@ -250,7 +252,7 @@ case class UserAgentSettings(enabled: Boolean) {
   def find(ua: String)(implicit env: Env): Option[JsValue] = {
     enabled match {
       case false => None
-      case true => UserAgentHelper.userAgentDetails(ua)
+      case true  => UserAgentHelper.userAgentDetails(ua)
     }
   }
 }

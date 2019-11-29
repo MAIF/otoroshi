@@ -35,14 +35,14 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 trait StartableAndStoppable {
-  val funit: Future[Unit] = FastFuture.successful(())
+  val funit: Future[Unit]           = FastFuture.successful(())
   def start(env: Env): Future[Unit] = FastFuture.successful(())
-  def stop(env: Env): Future[Unit] = FastFuture.successful(())
+  def stop(env: Env): Future[Unit]  = FastFuture.successful(())
 }
 
 trait NamedPlugin { self =>
-  def name: String = self.getClass.getName
-  def description: Option[String] = None
+  def name: String                    = self.getClass.getName
+  def description: Option[String]     = None
   def defaultConfig: Option[JsObject] = None
 }
 
@@ -153,26 +153,26 @@ case class TransformerResponseBodyContext(
 ) extends TransformerContext {}
 
 case class TransformerErrorContext(
-  index: Int,
-  snowflake: String,
-  message: String,
-  otoroshiResult: Result,
-  otoroshiResponse: HttpResponse,
-  request: RequestHeader,
-  maybeCauseId: Option[String],
-  callAttempts: Int,
-  descriptor: ServiceDescriptor,
-  apikey: Option[ApiKey],
-  user: Option[PrivateAppsUser],
-  config: JsValue,
-  globalConfig: JsValue = Json.obj(),
-  attrs: utils.TypedMap
+    index: Int,
+    snowflake: String,
+    message: String,
+    otoroshiResult: Result,
+    otoroshiResponse: HttpResponse,
+    request: RequestHeader,
+    maybeCauseId: Option[String],
+    callAttempts: Int,
+    descriptor: ServiceDescriptor,
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    config: JsValue,
+    globalConfig: JsValue = Json.obj(),
+    attrs: utils.TypedMap
 ) extends TransformerContext {}
 
 trait RequestTransformer extends StartableAndStoppable with NamedPlugin {
 
   def transformErrorWithCtx(
-    context: TransformerErrorContext
+      context: TransformerErrorContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     FastFuture.successful(context.otoroshiResult)
   }
@@ -433,13 +433,13 @@ class ScriptManager(env: Env) {
   private implicit val _env = env
 
   private val cpScriptExec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
-  private val logger     = Logger("otoroshi-script-manager")
-  private val updateRef  = new AtomicReference[Cancellable]()
-  private val firstScan  = new AtomicBoolean(false)
-  private val compiling  = new TrieMap[String, Unit]()
-  private val cache      = new TrieMap[String, (String, ScriptType, Any)]()
-  private val cpCache    = new TrieMap[String, (ScriptType, Any)]()
-  private val cpTryCache = new TrieMap[String, Unit]()
+  private val logger       = Logger("otoroshi-script-manager")
+  private val updateRef    = new AtomicReference[Cancellable]()
+  private val firstScan    = new AtomicBoolean(false)
+  private val compiling    = new TrieMap[String, Unit]()
+  private val cache        = new TrieMap[String, (String, ScriptType, Any)]()
+  private val cpCache      = new TrieMap[String, (ScriptType, Any)]()
+  private val cpTryCache   = new TrieMap[String, Unit]()
 
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
@@ -452,7 +452,8 @@ class ScriptManager(env: Env) {
       .scan
     try {
 
-      def predicate(c: ClassInfo): Boolean = c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+      def predicate(c: ClassInfo): Boolean =
+        c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
         c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
         c.getName == "otoroshi.script.CompilingValidator$" ||
         c.getName == "otoroshi.script.CompilingPreRouting$" ||
@@ -464,16 +465,18 @@ class ScriptManager(env: Env) {
         c.getName == "otoroshi.script.NanoApp$"
 
       val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala).filterNot(predicate).map(_.getName)
+      scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
+        .filterNot(predicate)
+        .map(_.getName)
 
       val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
+      scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
 
       val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+      scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
 
       val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
+      scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
 
       (requestTransformers, validators, preRoutes, reqSinks)
     } catch {
@@ -486,7 +489,9 @@ class ScriptManager(env: Env) {
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
       updateRef.set(
-        env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache(firstScan.compareAndSet(false, true)))(env.otoroshiExecutionContext)
+        env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache(firstScan.compareAndSet(false, true)))(
+          env.otoroshiExecutionContext
+        )
       )
     }
     env.otoroshiScheduler.scheduleOnce(1.second)(initClasspathModules())(env.otoroshiExecutionContext)
@@ -499,14 +504,13 @@ class ScriptManager(env: Env) {
     Option(updateRef.get()).foreach(_.cancel())
   }
 
-
   def state(): Future[JsObject] = {
     env.datastores.scriptDataStore.findAll().map { scripts =>
       val allCompiled = !scripts.forall(s => cache.contains(s.id))
-      val initial = if (scripts.isEmpty) true else allCompiled
+      val initial     = if (scripts.isEmpty) true else allCompiled
       Json.obj(
         "compiling" -> compiling.nonEmpty,
-        "initial" -> initial
+        "initial"   -> initial
       )
     }
   }
@@ -516,7 +520,8 @@ class ScriptManager(env: Env) {
       Future {
         logger.info("Finding and starting plugins ...")
         val start = System.currentTimeMillis()
-        (transformersNames ++ validatorsNames ++ preRouteNames).map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
+        (transformersNames ++ validatorsNames ++ preRouteNames)
+          .map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
         logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
         ()
       }(cpScriptExec)
@@ -525,7 +530,7 @@ class ScriptManager(env: Env) {
 
   private def compileAndUpdate(script: Script): Future[Unit] = {
     compiling.putIfAbsent(script.id, ()) match {
-      case Some(_) => FastFuture.successful(())// do nothing as something is compiling
+      case Some(_) => FastFuture.successful(()) // do nothing as something is compiling
       case None => {
         logger.debug(s"Updating script ${script.name}")
         env.scriptCompiler.compile(script.code).map {
@@ -559,14 +564,18 @@ class ScriptManager(env: Env) {
       logger.debug(s"updateScriptCache")
       if (first) logger.info("Compiling and starting scripts ...")
       val start = System.currentTimeMillis()
-      env.datastores.scriptDataStore.findAll().flatMap { scripts =>
-        val all: Future[Seq[Unit]] = Future.sequence(scripts.map(compileAndUpdateIfNeeded))
-        val ids = scripts.map(_.id)
-        cache.keySet.filterNot(id => ids.contains(id)).foreach(id => cache.remove(id))
-        all.map(_ => ())
-      }.andThen {
-        case _ if first => logger.info(s"Compiling and starting scripts done in ${System.currentTimeMillis() - start} ms.")
-      }
+      env.datastores.scriptDataStore
+        .findAll()
+        .flatMap { scripts =>
+          val all: Future[Seq[Unit]] = Future.sequence(scripts.map(compileAndUpdateIfNeeded))
+          val ids                    = scripts.map(_.id)
+          cache.keySet.filterNot(id => ids.contains(id)).foreach(id => cache.remove(id))
+          all.map(_ => ())
+        }
+        .andThen {
+          case _ if first =>
+            logger.info(s"Compiling and starting scripts done in ${System.currentTimeMillis() - start} ms.")
+        }
     }
   }
 
@@ -639,164 +648,176 @@ object Implicits {
 
     def transformRequest(
         context: TransformerRequestContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = env.metrics.withTimerAsync("otoroshi.core.proxy.transform-request") {
-      env.scriptingEnabled match {
-        case true =>
-          val gScripts = env.datastores.globalConfigDataStore.latestSafe
-            .filter(_.scripts.enabled)
-            .map(_.scripts)
-            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-          val refs                                = gScripts.transformersRefs ++ desc.transformerRefs
-          if (refs.nonEmpty) {
-            val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
-            Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-              case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
-              case (Right(lastHttpRequest), (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformRequestWithCtx(
-                    context.copy(otoroshiRequest = lastHttpRequest,
-                                 index = index,
-                                 config = context.config,
-                                 globalConfig = gScripts.transformersConfig)
-                  )(env, ec, mat)
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] =
+      env.metrics.withTimerAsync("otoroshi.core.proxy.transform-request") {
+        env.scriptingEnabled match {
+          case true =>
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            if (refs.nonEmpty) {
+              val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
+              Source(refs.toList.zipWithIndex).runFoldAsync(either) {
+                case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
+                case (Right(lastHttpRequest), (ref, index)) =>
+                  env.scriptManager
+                    .getScript(ref)
+                    .transformRequestWithCtx(
+                      context.copy(otoroshiRequest = lastHttpRequest,
+                                   index = index,
+                                   config = context.config,
+                                   globalConfig = gScripts.transformersConfig)
+                    )(env, ec, mat)
+              }
+            } else {
+              FastFuture.successful(Right(context.otoroshiRequest))
             }
-          } else {
-            FastFuture.successful(Right(context.otoroshiRequest))
-          }
-        case _ => FastFuture.successful(Right(context.otoroshiRequest))
+          case _ => FastFuture.successful(Right(context.otoroshiRequest))
+        }
       }
-    }
 
     def transformResponse(
         context: TransformerResponseContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = env.metrics.withTimerAsync("otoroshi.core.proxy.transform-response") {
-      env.scriptingEnabled match {
-        case true =>
-          val gScripts = env.datastores.globalConfigDataStore.latestSafe
-            .filter(_.scripts.enabled)
-            .map(_.scripts)
-            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-          val refs                                 = gScripts.transformersRefs ++ desc.transformerRefs
-          if (refs.nonEmpty) {
-            val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
-            Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-              case (Left(badResult), _) => FastFuture.successful(Left(badResult))
-              case (Right(lastHttpResponse), (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformResponseWithCtx(
-                    context.copy(otoroshiResponse = lastHttpResponse,
-                                 index = index,
-                                 config = context.config,
-                                 globalConfig = gScripts.transformersConfig)
-                  )(env, ec, mat)
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] =
+      env.metrics.withTimerAsync("otoroshi.core.proxy.transform-response") {
+        env.scriptingEnabled match {
+          case true =>
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            if (refs.nonEmpty) {
+              val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
+              Source(refs.toList.zipWithIndex).runFoldAsync(either) {
+                case (Left(badResult), _) => FastFuture.successful(Left(badResult))
+                case (Right(lastHttpResponse), (ref, index)) =>
+                  env.scriptManager
+                    .getScript(ref)
+                    .transformResponseWithCtx(
+                      context.copy(otoroshiResponse = lastHttpResponse,
+                                   index = index,
+                                   config = context.config,
+                                   globalConfig = gScripts.transformersConfig)
+                    )(env, ec, mat)
+              }
+            } else {
+              FastFuture.successful(Right(context.otoroshiResponse))
             }
-          } else {
-            FastFuture.successful(Right(context.otoroshiResponse))
-          }
-        case _ => FastFuture.successful(Right(context.otoroshiResponse))
+          case _ => FastFuture.successful(Right(context.otoroshiResponse))
+        }
       }
-    }
 
-    def transformError(context: TransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = env.metrics.withTimerAsync("otoroshi.core.proxy.transform-error") {
-      env.scriptingEnabled match {
-        case true =>
-          val gScripts = env.datastores.globalConfigDataStore.latestSafe
-            .filter(_.scripts.enabled)
-            .map(_.scripts)
-            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-          val refs                                 = gScripts.transformersRefs ++ desc.transformerRefs
-          if (refs.nonEmpty) {
-            val result: Result = context.otoroshiResult
-            Source(refs.toList.zipWithIndex).runFoldAsync(result) {
-              case (lastResult, (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformErrorWithCtx(
-                    context.copy(
-                      otoroshiResult = lastResult,
-                      otoroshiResponse = HttpResponse(lastResult.header.status, lastResult.header.headers, lastResult.newCookies.map( c =>
-                        DefaultWSCookie(
-                          name = c.name,
-                          value = c.value,
-                          domain = c.domain,
-                          path = Option(c.path),
-                          maxAge = c.maxAge.map(_.toLong),
-                          secure = c.secure,
-                          httpOnly = c.httpOnly
-                        )
-                      )),
-                      index = index,
-                      config = context.config,
-                      globalConfig = gScripts.transformersConfig
-                    )
-                  )(env, ec, mat)
+    def transformError(
+        context: TransformerErrorContext
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] =
+      env.metrics.withTimerAsync("otoroshi.core.proxy.transform-error") {
+        env.scriptingEnabled match {
+          case true =>
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            if (refs.nonEmpty) {
+              val result: Result = context.otoroshiResult
+              Source(refs.toList.zipWithIndex).runFoldAsync(result) {
+                case (lastResult, (ref, index)) =>
+                  env.scriptManager
+                    .getScript(ref)
+                    .transformErrorWithCtx(
+                      context.copy(
+                        otoroshiResult = lastResult,
+                        otoroshiResponse = HttpResponse(
+                          lastResult.header.status,
+                          lastResult.header.headers,
+                          lastResult.newCookies.map(
+                            c =>
+                              DefaultWSCookie(
+                                name = c.name,
+                                value = c.value,
+                                domain = c.domain,
+                                path = Option(c.path),
+                                maxAge = c.maxAge.map(_.toLong),
+                                secure = c.secure,
+                                httpOnly = c.httpOnly
+                            )
+                          )
+                        ),
+                        index = index,
+                        config = context.config,
+                        globalConfig = gScripts.transformersConfig
+                      )
+                    )(env, ec, mat)
+              }
+            } else {
+              FastFuture.successful(context.otoroshiResult)
             }
-          } else {
-            FastFuture.successful(context.otoroshiResult)
-          }
-        case _ => FastFuture.successful(context.otoroshiResult)
+          case _ => FastFuture.successful(context.otoroshiResult)
+        }
       }
-    }
 
     def transformRequestBody(
         context: TransformerRequestBodyContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
-      env.scriptingEnabled match {
-        case true =>
-          val gScripts = env.datastores.globalConfigDataStore.latestSafe
-            .filter(_.scripts.enabled)
-            .map(_.scripts)
-            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-          val refs = gScripts.transformersRefs ++ desc.transformerRefs
-          if (refs.nonEmpty) {
-            Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
-              case (body, (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformRequestBodyWithCtx(
-                    context.copy(body = body,
-                                 index = index,
-                                 config = context.config,
-                                 globalConfig = gScripts.transformersConfig)
-                  )(env, ec, mat)
-            })
-          } else {
-            context.body
-          }
-        case _ => context.body
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
+      env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
+        env.scriptingEnabled match {
+          case true =>
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            if (refs.nonEmpty) {
+              Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+                case (body, (ref, index)) =>
+                  env.scriptManager
+                    .getScript(ref)
+                    .transformRequestBodyWithCtx(
+                      context.copy(body = body,
+                                   index = index,
+                                   config = context.config,
+                                   globalConfig = gScripts.transformersConfig)
+                    )(env, ec, mat)
+              })
+            } else {
+              context.body
+            }
+          case _ => context.body
+        }
       }
-    }
 
     def transformResponseBody(
         context: TransformerResponseBodyContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] = env.metrics.withTimer("otoroshi.core.proxy.transform-response-body") {
-      env.scriptingEnabled match {
-        case true =>
-          val gScripts = env.datastores.globalConfigDataStore.latestSafe
-            .filter(_.scripts.enabled)
-            .map(_.scripts)
-            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-          val refs = gScripts.transformersRefs ++ desc.transformerRefs
-          if (refs.nonEmpty) {
-            Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
-              case (body, (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformResponseBodyWithCtx(
-                    context.copy(body = body,
-                                 index = index,
-                                 config = context.config,
-                                 globalConfig = gScripts.transformersConfig)
-                  )(env, ec, mat)
-            })
-          } else {
-            context.body
-          }
-        case _ => context.body
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
+      env.metrics.withTimer("otoroshi.core.proxy.transform-response-body") {
+        env.scriptingEnabled match {
+          case true =>
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            if (refs.nonEmpty) {
+              Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+                case (body, (ref, index)) =>
+                  env.scriptManager
+                    .getScript(ref)
+                    .transformResponseBodyWithCtx(
+                      context.copy(body = body,
+                                   index = index,
+                                   config = context.config,
+                                   globalConfig = gScripts.transformersConfig)
+                    )(env, ec, mat)
+              })
+            } else {
+              context.body
+            }
+          case _ => context.body
+        }
       }
-    }
   }
 }
 
@@ -935,9 +956,9 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     OnlyIfScriptingEnabled {
 
       val transformersNames = env.scriptManager.transformersNames
-      val validatorsNames = env.scriptManager.validatorsNames
-      val preRouteNames = env.scriptManager.preRouteNames
-      val reqSinkNames = env.scriptManager.reqSinkNames
+      val validatorsNames   = env.scriptManager.validatorsNames
+      val preRouteNames     = env.scriptManager.preRouteNames
+      val reqSinkNames      = env.scriptManager.reqSinkNames
 
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
@@ -952,24 +973,25 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         case _                 => Seq.empty
       }
       val cpPreRoutes = typ match {
-        case None              => preRouteNames
-        case Some("preroute")  => preRouteNames
-        case _                 => Seq.empty
+        case None             => preRouteNames
+        case Some("preroute") => preRouteNames
+        case _                => Seq.empty
       }
       val cpRequestSinks = typ match {
-        case None              => reqSinkNames
-        case Some("sink")      => reqSinkNames
-        case _                 => Seq.empty
+        case None         => reqSinkNames
+        case Some("sink") => reqSinkNames
+        case _            => Seq.empty
       }
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
           case Left(_) => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
-          case Right(instance) => Json.obj(
-            "id" -> s"cp:$c",
-            "name" -> instance.name,
-            "description" -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-            "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue]
-          )
+          case Right(instance) =>
+            Json.obj(
+              "id"            -> s"cp:$c",
+              "name"          -> instance.name,
+              "description"   -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+              "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue]
+            )
         }
       }
       env.datastores.scriptDataStore.findAll().map { all =>

@@ -1,5 +1,3 @@
 package otoroshi.utils.pipeline
 
-object Pipeline {
-
-}
+object Pipeline {}

@@ -89,7 +89,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                     Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
                   }
                   case true => {
-                    Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                    Alerts
+                      .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
                   }
                 }
                 Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
@@ -272,10 +273,14 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                       env.datastores.u2FAdminDataStore.hasAlreadyLoggedIn(username).map {
                         case false => {
                           env.datastores.u2FAdminDataStore.alreadyLoggedIn(username)
-                          Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                          Alerts.send(
+                            AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
+                          )
                         }
                         case true => {
-                          Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                          Alerts.send(
+                            AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
+                          )
                         }
                       }
                       Ok(
@@ -350,7 +355,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
         Json.obj("username" -> username, "id" -> id)
       )
       Audit.send(event)
-      Alerts.send(WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+      Alerts
+        .send(WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
       Ok(Json.obj("done" -> true))
     }
   }
@@ -592,10 +598,18 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                           env.datastores.u2FAdminDataStore.hasAlreadyLoggedIn(username).map {
                             case false => {
                               env.datastores.u2FAdminDataStore.alreadyLoggedIn(username)
-                              Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                              Alerts.send(
+                                AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
+                              )
                             }
                             case true => {
-                              Alerts.send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                              Alerts.send(
+                                AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(),
+                                                   env.env,
+                                                   boUser,
+                                                   ctx.from,
+                                                   ctx.ua)
+                              )
                             }
                           }
                           Ok(

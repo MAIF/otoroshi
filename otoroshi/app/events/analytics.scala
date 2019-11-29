@@ -60,7 +60,11 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           config.analyticsWebhooks.map(c => new WebHookAnalytics(c, config)) ++
           config.elasticWritesConfigs.map(
             c =>
-              new ElasticWritesAnalytics(c, env.environment, env, env.analyticsExecutionContext, env.analyticsActorSystem)
+              new ElasticWritesAnalytics(c,
+                                         env.environment,
+                                         env,
+                                         env.analyticsExecutionContext,
+                                         env.analyticsActorSystem)
           )
         ) {
           _.publish(evts)
@@ -146,50 +150,58 @@ trait AnalyticEvent {
     val jsonObject = toJson(_env).as[JsObject]
     val uaDetails = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
       case Some(details) => details
-      case None => fromUserAgent match {
-        case None => JsNull
-        case Some(ua) => _env.datastores.globalConfigDataStore.latestSafe match {
+      case None =>
+        fromUserAgent match {
           case None => JsNull
-          case Some(config) if !config.userAgentSettings.enabled => JsNull
-          case Some(config) => config.userAgentSettings.find(ua) match {
-            case None => JsNull
-            case Some(details) => details
-          }
+          case Some(ua) =>
+            _env.datastores.globalConfigDataStore.latestSafe match {
+              case None                                              => JsNull
+              case Some(config) if !config.userAgentSettings.enabled => JsNull
+              case Some(config) =>
+                config.userAgentSettings.find(ua) match {
+                  case None          => JsNull
+                  case Some(details) => details
+                }
+            }
         }
-      }
     }
     val fOrigin = (jsonObject \ "geolocationInfo").asOpt[JsValue] match {
       case Some(details) => FastFuture.successful(details)
-      case None => fromOrigin match {
-        case None => FastFuture.successful(JsNull)
-        case Some(ipAddress) => {
-          _env.datastores.globalConfigDataStore.latestSafe match {
-            case None => FastFuture.successful(JsNull)
-            case Some(config) if !config.geolocationSettings.enabled => FastFuture.successful(JsNull)
-            case Some(config) => config.geolocationSettings.find(ipAddress).map {
-              case None => JsNull
-              case Some(details) => details
+      case None =>
+        fromOrigin match {
+          case None => FastFuture.successful(JsNull)
+          case Some(ipAddress) => {
+            _env.datastores.globalConfigDataStore.latestSafe match {
+              case None                                                => FastFuture.successful(JsNull)
+              case Some(config) if !config.geolocationSettings.enabled => FastFuture.successful(JsNull)
+              case Some(config) =>
+                config.geolocationSettings.find(ipAddress).map {
+                  case None          => JsNull
+                  case Some(details) => details
+                }
             }
           }
         }
-      }
     }
-    fOrigin.map(originDetails => jsonObject ++ Json.obj(
-      "user-agent-details" -> uaDetails,
-      "origin-details" -> originDetails,
-      "instance-name"     -> _env.name,
-      "instance-zone"     -> _env.zone,
-      "instance-region"   -> _env.region,
-      "instance-dc"       -> _env.dataCenter,
-      "instance-provider" -> _env.infraProvider,
-      "instance-rack"     -> _env.rack,
-      "cluster-mode"      -> _env.clusterConfig.mode.name,
-      "cluster-name" -> (_env.clusterConfig.mode match {
-        case ClusterMode.Worker => _env.clusterConfig.worker.name
-        case ClusterMode.Leader => _env.clusterConfig.leader.name
-        case _                  => "none"
-      })
-    ))
+    fOrigin.map(
+      originDetails =>
+        jsonObject ++ Json.obj(
+          "user-agent-details" -> uaDetails,
+          "origin-details"     -> originDetails,
+          "instance-name"      -> _env.name,
+          "instance-zone"      -> _env.zone,
+          "instance-region"    -> _env.region,
+          "instance-dc"        -> _env.dataCenter,
+          "instance-provider"  -> _env.infraProvider,
+          "instance-rack"      -> _env.rack,
+          "cluster-mode"       -> _env.clusterConfig.mode.name,
+          "cluster-name" -> (_env.clusterConfig.mode match {
+            case ClusterMode.Worker => _env.clusterConfig.worker.name
+            case ClusterMode.Leader => _env.clusterConfig.leader.name
+            case _                  => "none"
+          })
+      )
+    )
   }
 
   def toAnalytics()(implicit env: Env): Unit = {
@@ -198,7 +210,7 @@ trait AnalyticEvent {
   }
 
   def log()(implicit _env: Env, ec: ExecutionContext): Unit = {
-    toEnrichedJson.map(e =>  AnalyticEvent.logger.info(Json.stringify(e)))
+    toEnrichedJson.map(e => AnalyticEvent.logger.info(Json.stringify(e)))
   }
 }
 
@@ -272,9 +284,9 @@ case class GatewayEvent(
     userAgentInfo: Option[JsValue],
     geolocationInfo: Option[JsValue],
 ) extends AnalyticEvent {
-  override def fromOrigin: Option[String] = Some(from)
+  override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = headers.find(h => h.key.toLowerCase() == "user-agent").map(_.value)
-  def toJson(implicit _env: Env): JsValue = GatewayEvent.writes(this, _env)
+  def toJson(implicit _env: Env): JsValue    = GatewayEvent.writes(this, _env)
 }
 
 object GatewayEvent {
@@ -336,9 +348,9 @@ case class TcpEvent(
     `@service`: String,
     service: Option[TcpService],
 ) extends AnalyticEvent {
-  override def fromOrigin: Option[String] = Some(remote)
+  override def fromOrigin: Option[String]    = Some(remote)
   override def fromUserAgent: Option[String] = None
-  def toJson(implicit _env: Env): JsValue = TcpEvent.writes(this, _env)
+  def toJson(implicit _env: Env): JsValue    = TcpEvent.writes(this, _env)
 }
 
 object TcpEvent {
@@ -377,10 +389,11 @@ case class HealthCheckEvent(
     error: Option[String] = None,
     health: Option[String] = None
 ) extends AnalyticEvent {
-  override def fromOrigin: Option[String] = None
+  override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
-  def toJson(implicit _env: Env): JsValue = HealthCheckEvent.format.writes(this)
-  def pushToRedis()(implicit ec: ExecutionContext, env: Env): Future[Long] = toEnrichedJson.flatMap(e => env.datastores.healthCheckDataStore.push(e))
+  def toJson(implicit _env: Env): JsValue    = HealthCheckEvent.format.writes(this)
+  def pushToRedis()(implicit ec: ExecutionContext, env: Env): Future[Long] =
+    toEnrichedJson.flatMap(e => env.datastores.healthCheckDataStore.push(e))
   def isUp: Boolean =
     if (error.isDefined) {
       false
@@ -509,7 +522,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
                       from: Option[DateTime],
                       to: Option[DateTime],
                       page: Int,
-                      size: Int, 
+                      size: Int,
                       order: String = "desc")(
       implicit env: Env,
       ec: ExecutionContext

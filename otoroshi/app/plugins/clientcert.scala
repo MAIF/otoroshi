@@ -15,7 +15,6 @@ import utils.future.Implicits._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
-
 class HasClientCertValidator extends AccessValidator {
 
   override def name: String = "Client Certificate Only"
@@ -34,18 +33,21 @@ class HasClientCertMatchingValidator extends AccessValidator {
 
   override def name: String = "Client certificate matching"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "HasClientCertMatchingValidator" -> Json.obj(
-      "serialNumbers" -> Json.arr(),
-      "subjectDNs" -> Json.arr(),
-      "issuerDNs" -> Json.arr(),
-      "regexSubjectDNs" -> Json.arr(),
-      "regexIssuerDNs" -> Json.arr(),
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "HasClientCertMatchingValidator" -> Json.obj(
+          "serialNumbers"   -> Json.arr(),
+          "subjectDNs"      -> Json.arr(),
+          "issuerDNs"       -> Json.arr(),
+          "regexSubjectDNs" -> Json.arr(),
+          "regexIssuerDNs"  -> Json.arr(),
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """Check if client certificate matches the following configuration
+  override def description: Option[String] =
+    Some("""Check if client certificate matches the following configuration
       |
       |This plugin can accept the following configuration
       |
@@ -79,14 +81,14 @@ class HasClientCertMatchingValidator extends AccessValidator {
         val regexAllowedIssuerDNs =
           (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
-          certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
-          certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
-          certs.exists(
-            cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))
-          ) ||
-          certs.exists(
-            cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName))
-          )) {
+            certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
+            certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
+            certs.exists(
+              cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))
+            ) ||
+            certs.exists(
+              cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName))
+            )) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)
@@ -123,16 +125,19 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
 
   override def name: String = "Client certificate matching (over http)"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "HasClientCertMatchingHttpValidator" -> Json.obj(
-      "url" -> "http://foo.bar",
-      "ttl" -> 600000,
-      "headers" -> Json.obj()
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "HasClientCertMatchingHttpValidator" -> Json.obj(
+          "url"     -> "http://foo.bar",
+          "ttl"     -> 600000,
+          "headers" -> Json.obj()
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """Check if client certificate matches the following configuration
+  override def description: Option[String] =
+    Some("""Check if client certificate matches the following configuration
       |
       |expected response from http service is
       |
@@ -172,10 +177,10 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
     val regexAllowedIssuerDNs =
       (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
     if (certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
-      certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
-      certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
-      certs.exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
-      certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
+        certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
+        certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
+        certs.exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
+        certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
       true
     } else {
       false
@@ -234,17 +239,20 @@ class ClientCertChainHeader extends RequestTransformer {
 
   override def name: String = "Client certificate header"
 
-  override def defaultConfig: Option[JsObject] = Some(Json.obj(
-    "ClientCertChain" -> Json.obj(
-      "pem" -> Json.obj("send" -> false, "header" -> "X-Client-Cert-Pem"),
-      "dns" -> Json.obj("send" -> false, "header" -> "X-Client-Cert-DNs"),
-      "chain" -> Json.obj("send" -> true, "header" -> "X-Client-Cert-Chain"),
-      "claims" -> Json.obj("send" -> false, "name" -> "clientCertChain"),
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "ClientCertChain" -> Json.obj(
+          "pem"    -> Json.obj("send" -> false, "header" -> "X-Client-Cert-Pem"),
+          "dns"    -> Json.obj("send" -> false, "header" -> "X-Client-Cert-DNs"),
+          "chain"  -> Json.obj("send" -> true, "header"  -> "X-Client-Cert-Chain"),
+          "claims" -> Json.obj("send" -> false, "name"   -> "clientCertChain"),
+        )
+      )
     )
-  ))
 
-  override def description: Option[String] = Some(
-    """This plugin pass client certificate informations to the target in headers.
+  override def description: Option[String] =
+    Some("""This plugin pass client certificate informations to the target in headers.
       |
       |This plugin can accept the following configuration
       |
@@ -273,28 +281,33 @@ class ClientCertChainHeader extends RequestTransformer {
     """.stripMargin)
 
   private def jsonChain(chain: Seq[X509Certificate]): JsArray = {
-    JsArray(chain.map(c =>
-      Json.obj(
-        "subjectDN"    -> c.getSubjectDN.getName,
-        "issuerDN"     -> c.getIssuerDN.getName,
-        "notAfter"     -> c.getNotAfter.getTime,
-        "notBefore"    -> c.getNotBefore.getTime,
-        "serialNumber" -> c.getSerialNumber.toString(16),
-        "subjectCN" -> Option(c.getSubjectDN.getName)
-          .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-          .map(_.replace("CN=", ""))
-          .getOrElse(c.getSubjectDN.getName)
-          .asInstanceOf[String],
-        "issuerCN" -> Option(c.getIssuerDN.getName)
-          .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-          .map(_.replace("CN=", ""))
-          .getOrElse(c.getIssuerDN.getName)
-          .asInstanceOf[String]
-      ))
+    JsArray(
+      chain.map(
+        c =>
+          Json.obj(
+            "subjectDN"    -> c.getSubjectDN.getName,
+            "issuerDN"     -> c.getIssuerDN.getName,
+            "notAfter"     -> c.getNotAfter.getTime,
+            "notBefore"    -> c.getNotBefore.getTime,
+            "serialNumber" -> c.getSerialNumber.toString(16),
+            "subjectCN" -> Option(c.getSubjectDN.getName)
+              .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+              .map(_.replace("CN=", ""))
+              .getOrElse(c.getSubjectDN.getName)
+              .asInstanceOf[String],
+            "issuerCN" -> Option(c.getIssuerDN.getName)
+              .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+              .map(_.replace("CN=", ""))
+              .getOrElse(c.getIssuerDN.getName)
+              .asInstanceOf[String]
+        )
+      )
     )
   }
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     ctx.request.clientCertificateChain match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(chain) => {
@@ -302,25 +315,33 @@ class ClientCertChainHeader extends RequestTransformer {
         val config = (ctx.config \ "ClientCertChain").asOpt[JsObject].getOrElse(Json.obj())
 
         val sendAsPem = (config \ "pem" \ "send").asOpt[Boolean].getOrElse(false)
-        val pemHeaderName = (config \ "pem" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain + "-pem")
+        val pemHeaderName =
+          (config \ "pem" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain + "-pem")
 
         val sendDns = (config \ "dns" \ "send").asOpt[Boolean].getOrElse(false)
-        val dnsHeaderName = (config \ "dns" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain + "-dns")
+        val dnsHeaderName =
+          (config \ "dns" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain + "-dns")
 
-        val sendChain = (config \ "chain" \ "send").asOpt[Boolean].getOrElse(true)
+        val sendChain       = (config \ "chain" \ "send").asOpt[Boolean].getOrElse(true)
         val chainHeaderName = (config \ "chain" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain)
 
-        val sendClaims = (config \ "claims" \ "send").asOpt[Boolean].getOrElse(false)
+        val sendClaims       = (config \ "claims" \ "send").asOpt[Boolean].getOrElse(false)
         val claimsHeaderName = (config \ "claims" \ "name").asOpt[String].getOrElse("clientCertChain")
 
         val pemMap = if (sendAsPem) Map(pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
-        val dnsMap = if (sendDns) Map(dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(c.getSubjectDN.getName))))) else Map.empty
+        val dnsMap =
+          if (sendDns) Map(dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(c.getSubjectDN.getName)))))
+          else Map.empty
         val chainMap = if (sendChain) Map(chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
 
-        Right(ctx.otoroshiRequest.copy(
-          headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap,
-          claims = if (sendClaims) ctx.otoroshiRequest.claims.withJsArrayClaim(claimsHeaderName, Some(jsonChain(chain))) else ctx.otoroshiRequest.claims
-        )).future
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap,
+            claims =
+              if (sendClaims) ctx.otoroshiRequest.claims.withJsArrayClaim(claimsHeaderName, Some(jsonChain(chain)))
+              else ctx.otoroshiRequest.claims
+          )
+        ).future
       }
     }
   }
