@@ -1842,7 +1842,7 @@ object WebSocketProxyActor {
             case Failure(e) => List.empty
           }
         case (key, value) if key.toLowerCase == "host" =>
-          Seq(akka.http.scaladsl.model.headers.Host(Uri(value).authority.host))
+          Seq(akka.http.scaladsl.model.headers.Host(value))
         case (key, value) if key.toLowerCase == "user-agent" =>
           Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
         case (key, value)                                    =>
@@ -1859,6 +1859,7 @@ object WebSocketProxyActor {
         request,
         target.loose,
         flow,
+        //a => a
         descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
           .filter(
@@ -1887,11 +1888,12 @@ object WebSocketProxyActor {
       )
     Flow.lazyInitAsync[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
       connected.flatMap { r =>
-        logger.trace(
+        logger.info(
           s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
         )
         r match {
           case ValidUpgrade(response, chosenSubprotocol) =>
+            println("ValidUpgrade", chosenSubprotocol)
             val f: Flow[PlayWSMessage, PlayWSMessage, NotUsed] = Flow.fromSinkAndSource(
               Sink.fromSubscriber(subscriber).contramap {
                 case PlayWSTextMessage(text)      => akka.http.scaladsl.model.ws.TextMessage(text)
@@ -1916,6 +1918,7 @@ object WebSocketProxyActor {
             )
             FastFuture.successful(f)
           case InvalidUpgradeResponse(response, cause) =>
+            println("InvalidUpgradeResponse")
             FastFuture.failed(new RuntimeException(cause))
         }
       }
@@ -1959,7 +1962,7 @@ class WebSocketProxyActor(url: String,
             case Failure(e) => List.empty
           }
         case (key, value) if key.toLowerCase == "host" =>
-          Seq(akka.http.scaladsl.model.headers.Host(Uri(value).authority.host))
+          Seq(akka.http.scaladsl.model.headers.Host(value))
         case (key, value) if key.toLowerCase == "user-agent" =>
           Seq(akka.http.scaladsl.model.headers.`User-Agent`(value))
         case (key, value)                                    =>

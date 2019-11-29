@@ -377,7 +377,6 @@ class AccessLogJson extends RequestTransformer {
   }
 }
 
-
 class KafkaAccessLog extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-kafka-access-log")
@@ -454,7 +453,6 @@ class KafkaAccessLog extends RequestTransformer {
             (true, true, true, true, true, "otoroshi-access-log")
           }
 
-          val kafkaWrapper = kafkaWrapperCache.getOrElseUpdate(topic, new KafkaWrapper(env.analyticsActorSystem, env, _ => topic))
 
           if (matchPath && methodMatch && statusMatch && identityMatch && enabled) {
             val ipAddress = ctx.request.theIpAddress
@@ -470,6 +468,7 @@ class KafkaAccessLog extends RequestTransformer {
             val host = ctx.request.host
             val userAgentDetails: JsValue = ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey).getOrElse(JsNull)
             val geolocationDetails: JsValue = ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey).getOrElse(JsNull)
+            val kafkaWrapper = kafkaWrapperCache.getOrElseUpdate(topic, new KafkaWrapper(env.analyticsActorSystem, env, _ => topic))
             kafkaWrapper.publish(Json.obj(
               "@type" -> "HttpAccessEvent",
               "@id" -> env.snowflakeGenerator.nextIdStr(),
