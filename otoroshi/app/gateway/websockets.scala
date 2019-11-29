@@ -1888,12 +1888,11 @@ object WebSocketProxyActor {
       )
     Flow.lazyInitAsync[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
       connected.flatMap { r =>
-        logger.info(
+        logger.trace(
           s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
         )
         r match {
           case ValidUpgrade(response, chosenSubprotocol) =>
-            println("ValidUpgrade", chosenSubprotocol)
             val f: Flow[PlayWSMessage, PlayWSMessage, NotUsed] = Flow.fromSinkAndSource(
               Sink.fromSubscriber(subscriber).contramap {
                 case PlayWSTextMessage(text)      => akka.http.scaladsl.model.ws.TextMessage(text)
@@ -1918,7 +1917,6 @@ object WebSocketProxyActor {
             )
             FastFuture.successful(f)
           case InvalidUpgradeResponse(response, cause) =>
-            println("InvalidUpgradeResponse")
             FastFuture.failed(new RuntimeException(cause))
         }
       }

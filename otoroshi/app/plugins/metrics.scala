@@ -81,4 +81,19 @@ class ServiceMetrics extends RequestTransformer {
 
     Right(ctx.otoroshiResponse).future
   }
+
+  override def transformErrorWithCtx(ctx: TransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    val start: Long = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
+    val duration: Long = System.currentTimeMillis() - start
+    env.metrics.counter(s"otoroshi.service.requests.errors.count.total.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method.toLowerCase()}.${ctx.otoroshiResponse.status}").inc()
+    env.metrics.counter(s"otoroshi.service.requests.errors.count.total.${ctx.descriptor.name.slug}").inc()
+    env.metrics.counter(s"otoroshi.requests.errors.count.total.${ctx.request.theProtocol}.${ctx.request.method.toLowerCase()}.${ctx.otoroshiResponse.status}").inc()
+    env.metrics.counter(s"otoroshi.requests.errors.count.total").inc()
+
+    env.metrics.histogram(s"otoroshi.service.requests.errors.duration.seconds.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method.toLowerCase()}.${ctx.otoroshiResponse.status}").update(duration)
+    env.metrics.histogram(s"otoroshi.service.requests.errors.duration.seconds.${ctx.descriptor.name.slug}").update(duration)
+    env.metrics.histogram(s"otoroshi.requests.errors.duration.seconds.${ctx.request.theProtocol}.${ctx.request.method.toLowerCase()}.${ctx.otoroshiResponse.status}").update(duration)
+    env.metrics.histogram(s"otoroshi.requests.errors.duration.seconds").update(duration)
+    ctx.otoroshiResult.future
+  }
 }
