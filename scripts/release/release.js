@@ -30,7 +30,6 @@ const files = [
   { file: './demos/service-mesh/docker-compose-manual.yml' },
   { file: './demos/service-mesh/docker-compose.yml' },
   { file: './docker/build/build.sh' },
-  { file: './docker/demo/Dockerfile' },
   { file: './manual/build.sbt' },
   { file: './manual/src/main/paradox/cli.md' },
   { file: './manual/src/main/paradox/code/swagger.json' },
