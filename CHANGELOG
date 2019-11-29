@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.14] - 2019-11-29
+
+https://github.com/MAIF/otoroshi/milestone/25?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.13...v1.4.14
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.14
+
+### Added 
+
+- Added scripts status in /health (#403)
+- Add detailed client informations based on User-Agent (#335)
+- Add more user related user info (identity) in events (#336)
+- Add client geo info (from ip) in events (#337)
+- [plugin] introduce pre-routing plugins (#398)
+- [plugin] introduce request sink plugins (#407)
+- [plugin] add a plugin to expose prometheus metrics per service (#312)
+- [plugin] add body logger with graphical debugger (#400)
+- [plugin] add information extraction based on user-agent (#401)
+- [plugin] add geolocation extraction based on ip address (#402)
+- [plugin] add a plugin to pass OIDC tokens and profile in headers (#404)
+- [plugin] add a plugin to pass client cert. chain in headers (#405)
+- [plugin] add CLF logger (#406)
+- [plugin] resources caching (#76)
+- [plugin] support some kind of real time debugging (#94)
+- create new events (#334)
+- allow path strip or not (#393)
+- allow multi host (#394)
+- allow multi matching root (#395)
+
+### Changed
+
+- use another default domain name (#294)
+- use Parcel.js to  build Otoroshi UI (#105)
+- update front build (#392)
+
+### Fixed 
+
+- filter with dates range don't return expected events (#385)
+- sometimes services can't be found (#391)
+- // in services events (#396)
+- fix bad behavior for /metrics and /health (#397)
+- enhance UDP tunneling support (#399)
+
 ## [1.4.13] - 2019-10-30
 
 https://github.com/MAIF/otoroshi/milestone/24?closed=1
