@@ -233,9 +233,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login") => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") =>
             Some(removePrivateAppsCookies())
-          case _ if request.relativeUri == "/.well-known/otoroshi/login"  => Some(setPrivateAppsCookies())
-          case _ if request.relativeUri == "/.well-known/otoroshi/logout" => Some(removePrivateAppsCookies())
-          case _ if request.relativeUri == "/.well-known/otoroshi/me"     => Some(myProfile())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
           case env.backOfficeHost if !isSecured && toHttps                => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps               => Some(redirectToHttps())
           case env.backOfficeHost if monitoring                           => Some(forbidden())
