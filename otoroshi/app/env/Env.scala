@@ -578,7 +578,7 @@ class Env(val configuration: Configuration,
     stripPath = true
   )
 
-  lazy val otoroshiVersion     = "1.4.15-dev"
+  lazy val otoroshiVersion     = "1.4.15"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
 
