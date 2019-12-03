@@ -22,7 +22,8 @@
     "build": "yarn webpack:build",
     "start": "yarn webpack:start",
     "clean": "yarn webpack:clean",
-    "prettier": "prettier --write --single-quote --trailing-comma es5 --print-width 100 --tab-width 2 --jsx-bracket-same-line \"src/**/*.js\""
+    "prettier": "prettier --write --single-quote --trailing-comma es5 --print-width 100 --tab-width 2 --jsx-bracket-same-line \"src/**/*.js\"",
+    "licences": "legally"
   },
   "dependencies": {
     "antd": "3.25.0",
@@ -39,6 +40,7 @@
     "highlight.js": "^9.16.2",
     "isobject": "4.0.0",
     "jquery": "3.4.1",
+    "legally": "^3.5.0",
     "lodash": "4.17.15",
     "moment": "2.24.0",
     "prop-types": "15.7.2",

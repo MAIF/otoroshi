@@ -5509,6 +5509,11 @@ lcid@^2.0.0:
   dependencies:
     invert-kv "^2.0.0"
 
+legally@^3.5.0:
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/legally/-/legally-3.5.0.tgz#981d6e500ac284c09bd5e2eeee22926593200166"
+  integrity sha512-I5fv/7Dal1OebXQQm3TFcvqVhF+VMWb1tcmOU8zh0MnqymZigFgXizUcCojvLtzxaqAt/8xYrl4GzlPBY8xQVg==
+
 less-loader@5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/less-loader/-/less-loader-5.0.0.tgz#498dde3a6c6c4f887458ee9ed3f086a12ad1b466"
