@@ -40,6 +40,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
+    .mapAsync(5)(evt => env.scriptManager.dispatchEvent(evt)(env.analyticsExecutionContext))
     .mapAsync(5)(evt => evt.toEnrichedJson)
     .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS))
     .mapAsync(5) { evts =>

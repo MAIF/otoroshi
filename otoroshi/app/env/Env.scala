@@ -181,6 +181,9 @@ class Env(val configuration: Configuration,
   lazy val metricsEnabled: Boolean =
     configuration.getOptional[Boolean]("otoroshi.metrics.enabled").getOrElse(true)
 
+  lazy val useEventStreamForScriptEvents: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.options.useEventStreamForScriptEvents").getOrElse(true)
+
   lazy val emptyContentLengthIsChunked: Boolean =
     configuration.getOptional[Boolean]("otoroshi.options.emptyContentLengthIsChunked").getOrElse(false)
 

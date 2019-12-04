@@ -8,7 +8,7 @@ import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait RequestSink extends StartableAndStoppable with NamedPlugin {
+trait RequestSink extends StartableAndStoppable with NamedPlugin with AnalyticEventListener {
   def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = false
   def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
     FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))

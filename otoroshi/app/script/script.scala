@@ -7,7 +7,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import actions.ApiAction
-import akka.actor.Cancellable
+import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -15,6 +15,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
+import events.{AnalyticEvent, AnalyticsActor}
 import io.github.classgraph.ClassInfo
 import javax.script._
 import models._
@@ -44,6 +45,35 @@ trait NamedPlugin { self =>
   def name: String                    = self.getClass.getName
   def description: Option[String]     = None
   def defaultConfig: Option[JsObject] = None
+}
+
+object AnalyticEventListenerActor {
+  def props(listener: AnalyticEventListener, env: Env) = Props(new AnalyticEventListenerActor(listener, env))
+}
+
+class AnalyticEventListenerActor(listener: AnalyticEventListener, env: Env) extends Actor {
+  override def receive: Receive = {
+    case evt: AnalyticEvent => listener.onEvent(evt)(env)
+    case _ =>
+  }
+}
+
+trait AnalyticEventListener {
+  private val ref = new AtomicReference[ActorRef]()
+  @inline def listening: Boolean = false
+  def onEvent(evt: AnalyticEvent)(env: Env): Unit = ()
+  private[script] def startEvent(env: Env): Unit = {
+    if (listening) {
+      val actor = env.analyticsActorSystem.actorOf(AnalyticEventListenerActor.props(this, env))
+      ref.set(actor)
+      env.analyticsActorSystem.eventStream.subscribe(actor, classOf[AnalyticEvent])
+    }
+  }
+  private[script] def stopEvent(env: Env): Unit = {
+    if (listening) {
+      Option(ref.get()).foreach(env.analyticsActorSystem.eventStream.unsubscribe(_))
+    }
+  }
 }
 
 case class HttpRequest(url: String,
@@ -169,7 +199,7 @@ case class TransformerErrorContext(
     attrs: utils.TypedMap
 ) extends TransformerContext {}
 
-trait RequestTransformer extends StartableAndStoppable with NamedPlugin {
+trait RequestTransformer extends StartableAndStoppable with NamedPlugin with AnalyticEventListener {
 
   def transformErrorWithCtx(
       context: TransformerErrorContext
@@ -441,6 +471,8 @@ class ScriptManager(env: Env) {
   private val cpCache      = new TrieMap[String, (ScriptType, Any)]()
   private val cpTryCache   = new TrieMap[String, Unit]()
 
+  private val listeningCpScripts = new AtomicReference[Seq[AnalyticEventListener]](Seq.empty)
+
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
 
@@ -499,8 +531,14 @@ class ScriptManager(env: Env) {
   }
 
   def stop(): Unit = {
-    cache.foreach(s => Try(s._2._3.asInstanceOf[StartableAndStoppable].stop(env)))
-    cpCache.foreach(s => Try(s._2._2.asInstanceOf[StartableAndStoppable].stop(env)))
+    cache.foreach(s => Try {
+      s._2._3.asInstanceOf[StartableAndStoppable].stop(env)
+      s._2._3.asInstanceOf[AnalyticEventListener].stopEvent(env)
+    })
+    cpCache.foreach(s => Try {
+      s._2._2.asInstanceOf[StartableAndStoppable].stop(env)
+      s._2._2.asInstanceOf[AnalyticEventListener].stopEvent(env)
+    })
     Option(updateRef.get()).foreach(_.cancel())
   }
 
@@ -520,15 +558,21 @@ class ScriptManager(env: Env) {
       Future {
         logger.info("Finding and starting plugins ...")
         val start = System.currentTimeMillis()
-        (transformersNames ++ validatorsNames ++ preRouteNames)
+        val plugins = (transformersNames ++ validatorsNames ++ preRouteNames)
           .map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
+          .collect {
+            case Right(plugin) => plugin
+          }
+        listeningCpScripts.set(plugins.collect {
+          case listener: AnalyticEventListener if listener.listening => listener
+        })
         logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
         ()
       }(cpScriptExec)
     }
   }
 
-  private def compileAndUpdate(script: Script): Future[Unit] = {
+  private def compileAndUpdate(script: Script, oldScript: Option[AnalyticEventListener]): Future[Unit] = {
     compiling.putIfAbsent(script.id, ()) match {
       case Some(_) => FastFuture.successful(()) // do nothing as something is compiling
       case None => {
@@ -539,7 +583,16 @@ class ScriptManager(env: Env) {
             compiling.remove(script.id)
             ()
           case Right(trans) => {
-            Try(trans.asInstanceOf[StartableAndStoppable].start(env))
+            Try {
+              oldScript.foreach { i =>
+                i.asInstanceOf[StartableAndStoppable].stop(env)
+                i.stopEvent(env)
+              }
+            }
+            Try {
+               trans.asInstanceOf[StartableAndStoppable].start(env)
+              trans.asInstanceOf[AnalyticEventListener].startEvent(env)
+            }
             cache.put(script.id, (script.hash, script.`type`, trans))
             compiling.remove(script.id)
             ()
@@ -551,10 +604,10 @@ class ScriptManager(env: Env) {
 
   private def compileAndUpdateIfNeeded(script: Script): Future[Unit] = {
     (cache.get(script.id), compiling.get(script.id)) match {
-      case (None, None)                             => compileAndUpdate(script)
+      case (None, None)                             => compileAndUpdate(script, None)
       case (None, Some(_))                          => FastFuture.successful(()) // do nothing as something is compiling
       case (Some(_), Some(_))                       => FastFuture.successful(()) // do nothing as something is compiling
-      case (Some(cs), None) if cs._1 != script.hash => compileAndUpdate(script)
+      case (Some(cs), None) if cs._1 != script.hash => compileAndUpdate(script, Some(cs._3.asInstanceOf[AnalyticEventListener]))
       case (Some(_), None)                          => FastFuture.successful(()) // do nothing as script has not changed from cache
     }
   }
@@ -604,7 +657,10 @@ class ScriptManager(env: Env) {
                 case _                     => TransformerType
               }
               cpCache.put(ref, (typ, tr))
-              Try(tr.asInstanceOf[StartableAndStoppable].start(env))
+              Try {
+                tr.asInstanceOf[StartableAndStoppable].start(env)
+                tr.asInstanceOf[AnalyticEventListener].startEvent(env)
+              }
             case Failure(e) =>
               logger.error(s"Classpath script `$ref` does not exists ...")
           }
@@ -639,6 +695,31 @@ class ScriptManager(env: Env) {
   def removeScript(id: String): Unit = {
     cache.remove(id)
     compiling.remove(id)
+  }
+
+  def dispatchEvent(evt: AnalyticEvent)(implicit ec: ExecutionContext): Future[AnalyticEvent] = {
+    if (env.useEventStreamForScriptEvents) {
+      env.metrics.withTimer("otoroshi.core.proxy.event-dispatch") {
+        env.analyticsActorSystem.eventStream.publish(evt)
+        FastFuture.successful(evt)
+      }
+    } else {
+      Future {
+        env.metrics.withTimer("otoroshi.core.proxy.event-dispatch") {
+          val pluginListeners = listeningCpScripts.get()
+          if (pluginListeners.nonEmpty) {
+            pluginListeners.foreach(l => l.onEvent(evt)(env))
+          }
+          val scriptListeners = cache.values.map(_._3).collect {
+            case listener: AnalyticEventListener if listener.listening => listener
+          }
+          if (scriptListeners.nonEmpty) {
+            scriptListeners.foreach(l => l.onEvent(evt)(env))
+          }
+        }
+        evt
+      }(ec)
+    }
   }
 }
 

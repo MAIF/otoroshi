@@ -44,7 +44,7 @@ object PreRoutingRef {
   }
 }
 
-trait PreRouting extends StartableAndStoppable with NamedPlugin {
+trait PreRouting extends StartableAndStoppable with NamedPlugin with AnalyticEventListener {
   def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
 }
 
