@@ -272,6 +272,7 @@ object MaxMindGeolocationHelper {
                 val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
                 dbRef.set(cityDb)
                 dbInitializationDone.set(true)
+                logger.info("Geolocation db initialized")
             }
           }
         }
@@ -317,6 +318,7 @@ object MaxMindGeolocationHelper {
                   val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
                   dbRef.set(cityDb)
                   dbInitializationDone.set(true)
+                  logger.info("Geolocation db initialized")
                 case _ =>
                   logger.error("Geolocation db initialization failed, extraction failed")
                   dbInitializationDone.set(true)
@@ -366,6 +368,7 @@ object MaxMindGeolocationHelper {
                   val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
                   dbRef.set(cityDb)
                   dbInitializationDone.set(true)
+                  logger.info("Geolocation db initialized")
                 case _ =>
                   logger.error("Geolocation db initialization failed, extraction failed")
                   dbInitializationDone.set(true)
