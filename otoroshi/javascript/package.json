@@ -5,9 +5,6 @@
   "private": true,
   "main": "src/backoffice.js",
   "author": "Mathieu ANCELIN",
-  "engines": {
-    "node": "13.2.0"
-  },
   "scripts": {
     "old:bundle-opt": "cross-env NODE_ENV=production webpack --optimize-minimize --env.prod=true",
     "old:bundle": "cross-env NODE_ENV=production webpack --env.prod=true",
