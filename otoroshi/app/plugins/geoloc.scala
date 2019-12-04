@@ -306,8 +306,8 @@ object MaxMindGeolocationHelper {
                      |rm -rf geolite.zip
                      |mv Geo* geolite
                      |mv geolite/GeoLite2-City.mmdb geolite.mmdb
+s                     |mv *.mmdb geolite.mmdb
                      |rm -rf ./geolite
-                     |mv *.mmdb geolite.mmdb
                   """.stripMargin
                 )
                 builder.directory(dir.toFile)
@@ -362,8 +362,8 @@ object MaxMindGeolocationHelper {
                     |rm -rf geolite.tar.gz
                     |mv Geo* geolite
                     |mv geolite/GeoLite2-City.mmdb geolite.mmdb
-                    |rm -rf ./geolite
                     |mv *.mmdb geolite.mmdb
+                    |rm -rf ./geolite
                   """.stripMargin
                 )
                 builder.directory(dir.toFile)
