@@ -1796,11 +1796,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       }
                                                       case Right(httpResponse) => {
                                                         val headersOut = httpResponse.headers.toSeq
-                                                        val contentType =
-                                                          httpResponse.headers
-                                                            .get("Content-Type")
-                                                            .orElse(httpResponse.headers.get("content-type"))
-                                                            .getOrElse(MimeTypes.TEXT)
+                                                        val contentType: Option[String] = httpResponse.headers
+                                                          .get("Content-Type")
+                                                          .orElse(httpResponse.headers.get("content-type"))
 
                                                         // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
                                                         // meterOut.mark(responseHeader.length)
@@ -1908,12 +1906,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                       lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
                                                                     }: _*
                                                                   )
-                                                                  .as(contentType)
                                                                   .withCookies(
                                                                     withTrackingCookies ++ jwtInjection.additionalCookies
                                                                       .map(t => Cookie(t._1, t._2)) ++ cookies: _*
                                                                   )
-                                                                desc.gzip.handleResult(req, response)
+                                                                contentType match {
+                                                                  case None => desc.gzip.handleResult(req, response)
+                                                                  case Some(ctp) => desc.gzip.handleResult(req, response.as(ctp))
+                                                                }
                                                               }
                                                           } else {
                                                             resp.ignore()
@@ -1935,7 +1935,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                           val response: Result = isChunked match {
                                                             case true => {
                                                               // stream out
-                                                              Status(httpResponse.status)
+                                                              val res = Status(httpResponse.status)
                                                                 .chunked(finalStream)
                                                                 .withHeaders(
                                                                   headersOut.filterNot { h =>
@@ -1947,7 +1947,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                   (withTrackingCookies ++ jwtInjection.additionalCookies
                                                                     .map(t => Cookie(t._1, t._2)) ++ cookies): _*
                                                                 )
-                                                                .as(contentType)
+                                                              contentType match {
+                                                                case None => res
+                                                                case Some(ctp) => res.as(ctp)
+                                                              }
                                                             }
                                                             case false => {
                                                               val contentLength: Option[Long] = httpResponse.headers
@@ -1971,14 +1974,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                 )
                                                               }
                                                               // stream out
-                                                              Status(httpResponse.status)
+                                                              val res = Status(httpResponse.status)
                                                                 .sendEntity(
                                                                   HttpEntity.Streamed(
                                                                     finalStream,
                                                                     contentLength,
-                                                                    httpResponse.headers
-                                                                      .get("Content-Type")
-                                                                      .orElse(httpResponse.headers.get("content-type"))
+                                                                    contentType
                                                                   )
                                                                 )
                                                                 .withHeaders(
@@ -1991,7 +1992,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                   (withTrackingCookies ++ jwtInjection.additionalCookies
                                                                     .map(t => Cookie(t._1, t._2)) ++ cookies): _*
                                                                 )
-                                                                .as(contentType)
+                                                              contentType match {
+                                                                case None => res
+                                                                case Some(ctp) => res.as(ctp)
+                                                              }
                                                             }
                                                           }
                                                           desc.gzip.handleResult(req, response)
