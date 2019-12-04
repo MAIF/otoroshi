@@ -263,7 +263,7 @@ object MaxMindGeolocationHelper {
             logger.error("Geolocation db initialization failed, status was not 200")
             dbInitializationDone.set(true)
           case resp => {
-            resp.bodyAsSource.runWith(FileIO.toPath(file)).map {
+            resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
               case res if !res.wasSuccessful =>
                 logger.error("Geolocation db initialization failed, status was not 200")
                 dbInitializationDone.set(true)
@@ -291,7 +291,7 @@ object MaxMindGeolocationHelper {
           logger.error("Geolocation db initialization failed, status was not 200")
           dbInitializationDone.set(true)
         case resp => {
-          resp.bodyAsSource.runWith(FileIO.toPath(file)).map {
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
             case res if !res.wasSuccessful =>
               logger.error("Geolocation db initialization failed, status was not 200")
               dbInitializationDone.set(true)
@@ -341,7 +341,7 @@ object MaxMindGeolocationHelper {
           logger.error("Geolocation db initialization failed, status was not 200")
           dbInitializationDone.set(true)
         case resp => {
-          resp.bodyAsSource.runWith(FileIO.toPath(file)).map {
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
             case res if !res.wasSuccessful =>
               logger.error("Geolocation db initialization failed, status was not 200")
               dbInitializationDone.set(true)
