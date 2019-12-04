@@ -369,8 +369,6 @@ s                     |mv *.mmdb geolite.mmdb
                 builder.directory(dir.toFile)
                 val process  = builder.start
                 val exitCode = process.waitFor
-                StreamConverters.fromInputStream(process.getInputStream).runForeach(bs => println("[InputStream] " + bs.utf8String))(env.otoroshiMaterializer)
-                StreamConverters.fromInputStream(process.getErrorStream).runForeach(bs => println("[ErrorStream] " + bs.utf8String))(env.otoroshiMaterializer)
                 exitCode match {
                   case 0 =>
                     val cityDbFile = dir.resolve("geolite.mmdb").toFile
@@ -394,7 +392,6 @@ s                     |mv *.mmdb geolite.mmdb
   }
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
-    logger.info(s"trying to find ip address $ip geolocation from $file")
     env.metrics.withTimerAsync("otoroshi.geolocation.maxmind.details") {
       if (file != dbPathRef.get()) {
         dbPathRef.set(file)
