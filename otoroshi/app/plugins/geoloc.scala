@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
 import com.maxmind.geoip2.DatabaseReader
 import env.Env
 import otoroshi.plugins.Keys
@@ -369,6 +369,8 @@ object MaxMindGeolocationHelper {
                 builder.directory(dir.toFile)
                 val process  = builder.start
                 val exitCode = process.waitFor
+                StreamConverters.fromInputStream(process.getInputStream).runForeach(bs => println("[InputStream] " + bs.utf8String))(env.otoroshiMaterializer)
+                StreamConverters.fromInputStream(process.getErrorStream).runForeach(bs => println("[ErrorStream] " + bs.utf8String))(env.otoroshiMaterializer)
                 exitCode match {
                   case 0 =>
                     val cityDbFile = dir.resolve("geolite.mmdb").toFile
@@ -376,9 +378,9 @@ object MaxMindGeolocationHelper {
                     dbRef.set(cityDb)
                     dbInitializationDone.set(true)
                     logger.info("Geolocation db from tar.gz file URL initialized")
-                  case _ =>
-                    logger.error("Geolocation db initialization from tar.gz file URL failed, tar.gz extraction failed")
+                  case code =>
                     dbInitializationDone.set(true)
+                    logger.error(s"Geolocation db initialization from tar.gz file URL failed, tar.gz extraction failed: $code")
                 }
               } match {
                 case Success(_) =>
@@ -392,6 +394,7 @@ object MaxMindGeolocationHelper {
   }
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+    logger.info(s"trying to find ip address $ip geolocation from $file")
     env.metrics.withTimerAsync("otoroshi.geolocation.maxmind.details") {
       if (file != dbPathRef.get()) {
         dbPathRef.set(file)
