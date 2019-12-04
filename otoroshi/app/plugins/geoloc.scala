@@ -234,7 +234,7 @@ object MaxMindGeolocationHelper {
   private val dbRef                = new AtomicReference[DatabaseReader]()
   private val dbPathRef            = new AtomicReference[String]()
 
-  private def initDbFromFilePath(file: String): Future[Unit] = {
+  private def initDbFromFilePath(file: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     Future {
       val cityDbFile = new File(file)
       val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
@@ -250,7 +250,7 @@ object MaxMindGeolocationHelper {
     }(exc)
   }
 
-  private def initDbFromURL(url: String)(implicit env: Env): Future[Unit] = {
+  private def initDbFromURL(url: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.mmdb")
     env.Ws.url(url)
@@ -278,7 +278,7 @@ object MaxMindGeolocationHelper {
         }
   }
 
-  private def initDbFromURLWithUnzip(url: String)(implicit env: Env): Future[Unit] = {
+  private def initDbFromURLWithUnzip(url: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.zip")
     env.Ws.url(url)
@@ -328,7 +328,7 @@ object MaxMindGeolocationHelper {
       }
   }
 
-  private def initDbFromURLWithUntar(url: String)(implicit env: Env): Future[Unit] = {
+  private def initDbFromURLWithUntar(url: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.tar.gz")
     env.Ws.url(url)
