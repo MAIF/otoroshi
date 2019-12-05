@@ -104,7 +104,7 @@ export class ClientValidatorsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Validation authorities (experimental)`);
+    this.props.setTitle(`Validation authorities (deprecated)`);
   }
 
   gotoValidator = verifier => {

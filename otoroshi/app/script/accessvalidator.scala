@@ -60,7 +60,8 @@ sealed trait Access
 case object Allowed               extends Access
 case class Denied(result: Result) extends Access
 
-trait AccessValidator extends StartableAndStoppable with NamedPlugin with AnalyticEventListener {
+trait AccessValidator extends StartableAndStoppable with NamedPlugin with InternalEventListener {
+  final def pluginType: PluginType = AccessValidatorType
   def access(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Access] = {
     canAccess(context)(env, ec).flatMap {
       case true => FastFuture.successful(Allowed)

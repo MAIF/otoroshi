@@ -15,7 +15,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
-import events.{AnalyticEvent, AnalyticsActor}
+import events.{AnalyticEvent, AnalyticsActor, OtoroshiEvent}
 import io.github.classgraph.ClassInfo
 import javax.script._
 import models._
@@ -35,6 +35,35 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+
+sealed trait PluginType {
+  def name: String
+}
+
+object AppType extends PluginType {
+  def name: String = "app"
+}
+
+object TransformerType extends PluginType {
+  def name: String = "transformer"
+}
+
+object AccessValidatorType extends PluginType {
+  def name: String = "validator"
+}
+
+object PreRoutingType extends PluginType {
+  def name: String = "preroute"
+}
+
+object RequestSinkType extends PluginType {
+  def name: String = "sink"
+}
+
+object EventListenerType extends PluginType {
+  def name: String = "listener"
+}
+
 trait StartableAndStoppable {
   val funit: Future[Unit]           = FastFuture.successful(())
   def start(env: Env): Future[Unit] = FastFuture.successful(())
@@ -42,38 +71,10 @@ trait StartableAndStoppable {
 }
 
 trait NamedPlugin { self =>
+  def pluginType: PluginType
   def name: String                    = self.getClass.getName
   def description: Option[String]     = None
   def defaultConfig: Option[JsObject] = None
-}
-
-object AnalyticEventListenerActor {
-  def props(listener: AnalyticEventListener, env: Env) = Props(new AnalyticEventListenerActor(listener, env))
-}
-
-class AnalyticEventListenerActor(listener: AnalyticEventListener, env: Env) extends Actor {
-  override def receive: Receive = {
-    case evt: AnalyticEvent => listener.onEvent(evt)(env)
-    case _ =>
-  }
-}
-
-trait AnalyticEventListener {
-  private val ref = new AtomicReference[ActorRef]()
-  @inline def listening: Boolean = false
-  def onEvent(evt: AnalyticEvent)(env: Env): Unit = ()
-  private[script] def startEvent(env: Env): Unit = {
-    if (listening) {
-      val actor = env.analyticsActorSystem.actorOf(AnalyticEventListenerActor.props(this, env))
-      ref.set(actor)
-      env.analyticsActorSystem.eventStream.subscribe(actor, classOf[AnalyticEvent])
-    }
-  }
-  private[script] def stopEvent(env: Env): Unit = {
-    if (listening) {
-      Option(ref.get()).foreach(env.analyticsActorSystem.eventStream.unsubscribe(_))
-    }
-  }
 }
 
 case class HttpRequest(url: String,
@@ -199,7 +200,9 @@ case class TransformerErrorContext(
     attrs: utils.TypedMap
 ) extends TransformerContext {}
 
-trait RequestTransformer extends StartableAndStoppable with NamedPlugin with AnalyticEventListener {
+trait RequestTransformer extends StartableAndStoppable with NamedPlugin with InternalEventListener {
+
+  def pluginType: PluginType = TransformerType
 
   def transformErrorWithCtx(
       context: TransformerErrorContext
@@ -350,6 +353,8 @@ object CompilingRequestTransformer extends RequestTransformer {
 
 trait NanoApp extends RequestTransformer {
 
+  override def pluginType: PluginType = AppType
+
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def transformRequest(
@@ -467,13 +472,13 @@ class ScriptManager(env: Env) {
   private val updateRef    = new AtomicReference[Cancellable]()
   private val firstScan    = new AtomicBoolean(false)
   private val compiling    = new TrieMap[String, Unit]()
-  private val cache        = new TrieMap[String, (String, ScriptType, Any)]()
-  private val cpCache      = new TrieMap[String, (ScriptType, Any)]()
+  private val cache        = new TrieMap[String, (String, PluginType, Any)]()
+  private val cpCache      = new TrieMap[String, (PluginType, Any)]()
   private val cpTryCache   = new TrieMap[String, Unit]()
 
-  private val listeningCpScripts = new AtomicReference[Seq[AnalyticEventListener]](Seq.empty)
+  private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames) = Try {
+  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
 
     import collection.JavaConverters._
@@ -490,9 +495,11 @@ class ScriptManager(env: Env) {
         c.getName == "otoroshi.script.CompilingValidator$" ||
         c.getName == "otoroshi.script.CompilingPreRouting$" ||
         c.getName == "otoroshi.script.CompilingRequestSink$" ||
+        c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
         c.getName == "otoroshi.script.DefaultValidator$" ||
         c.getName == "otoroshi.script.DefaultPreRouting$" ||
         c.getName == "otoroshi.script.DefaultRequestSink$" ||
+        c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
         c.getName == "otoroshi.script.NanoApp" ||
         c.getName == "otoroshi.script.NanoApp$"
 
@@ -510,13 +517,16 @@ class ScriptManager(env: Env) {
       val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
       scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
 
-      (requestTransformers, validators, preRoutes, reqSinks)
+      val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala).filterNot(predicate).map(_.getName)
+
+      (requestTransformers, validators, preRoutes, reqSinks, listenerNames)
     } catch {
       case e: Throwable =>
         e.printStackTrace()
-        (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
+        (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
     } finally if (scanResult != null) scanResult.close()
-  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
+  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
@@ -533,11 +543,11 @@ class ScriptManager(env: Env) {
   def stop(): Unit = {
     cache.foreach(s => Try {
       s._2._3.asInstanceOf[StartableAndStoppable].stop(env)
-      s._2._3.asInstanceOf[AnalyticEventListener].stopEvent(env)
+      s._2._3.asInstanceOf[InternalEventListener].stopEvent(env)
     })
     cpCache.foreach(s => Try {
       s._2._2.asInstanceOf[StartableAndStoppable].stop(env)
-      s._2._2.asInstanceOf[AnalyticEventListener].stopEvent(env)
+      s._2._2.asInstanceOf[InternalEventListener].stopEvent(env)
     })
     Option(updateRef.get()).foreach(_.cancel())
   }
@@ -564,7 +574,7 @@ class ScriptManager(env: Env) {
             case Right(plugin) => plugin
           }
         listeningCpScripts.set(plugins.collect {
-          case listener: AnalyticEventListener if listener.listening => listener
+          case listener: InternalEventListener if listener.listening => listener
         })
         logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
         ()
@@ -572,7 +582,7 @@ class ScriptManager(env: Env) {
     }
   }
 
-  private def compileAndUpdate(script: Script, oldScript: Option[AnalyticEventListener]): Future[Unit] = {
+  private def compileAndUpdate(script: Script, oldScript: Option[InternalEventListener]): Future[Unit] = {
     compiling.putIfAbsent(script.id, ()) match {
       case Some(_) => FastFuture.successful(()) // do nothing as something is compiling
       case None => {
@@ -590,8 +600,8 @@ class ScriptManager(env: Env) {
               }
             }
             Try {
-               trans.asInstanceOf[StartableAndStoppable].start(env)
-              trans.asInstanceOf[AnalyticEventListener].startEvent(env)
+              trans.asInstanceOf[StartableAndStoppable].start(env)
+              trans.asInstanceOf[InternalEventListener].startEvent(env)
             }
             cache.put(script.id, (script.hash, script.`type`, trans))
             compiling.remove(script.id)
@@ -607,7 +617,7 @@ class ScriptManager(env: Env) {
       case (None, None)                             => compileAndUpdate(script, None)
       case (None, Some(_))                          => FastFuture.successful(()) // do nothing as something is compiling
       case (Some(_), Some(_))                       => FastFuture.successful(()) // do nothing as something is compiling
-      case (Some(cs), None) if cs._1 != script.hash => compileAndUpdate(script, Some(cs._3.asInstanceOf[AnalyticEventListener]))
+      case (Some(cs), None) if cs._1 != script.hash => compileAndUpdate(script, Some(cs._3.asInstanceOf[InternalEventListener]))
       case (Some(_), None)                          => FastFuture.successful(()) // do nothing as script has not changed from cache
     }
   }
@@ -648,18 +658,11 @@ class ScriptManager(env: Env) {
             .map(clazz => clazz.newInstance()) match {
             case Success(tr) =>
               cpTryCache.put(ref, ())
-              val typ: ScriptType = tr match {
-                case _: NanoApp            => AppType
-                case _: RequestTransformer => TransformerType
-                case _: AccessValidator    => AccessValidatorType
-                case _: PreRouting         => PreRoutingType
-                case _: RequestSink        => RequestSinkType
-                case _                     => TransformerType
-              }
+              val typ = tr.asInstanceOf[NamedPlugin].pluginType
               cpCache.put(ref, (typ, tr))
               Try {
                 tr.asInstanceOf[StartableAndStoppable].start(env)
-                tr.asInstanceOf[AnalyticEventListener].startEvent(env)
+                tr.asInstanceOf[InternalEventListener].startEvent(env)
               }
             case Failure(e) =>
               logger.error(s"Classpath script `$ref` does not exists ...")
@@ -697,11 +700,10 @@ class ScriptManager(env: Env) {
     compiling.remove(id)
   }
 
-  def dispatchEvent(evt: AnalyticEvent)(implicit ec: ExecutionContext): Future[AnalyticEvent] = {
+  def dispatchEvent(evt: OtoroshiEvent)(implicit ec: ExecutionContext): Unit = {
     if (env.useEventStreamForScriptEvents) {
       env.metrics.withTimer("otoroshi.core.proxy.event-dispatch") {
         env.analyticsActorSystem.eventStream.publish(evt)
-        FastFuture.successful(evt)
       }
     } else {
       Future {
@@ -711,7 +713,7 @@ class ScriptManager(env: Env) {
             pluginListeners.foreach(l => l.onEvent(evt)(env))
           }
           val scriptListeners = cache.values.map(_._3).collect {
-            case listener: AnalyticEventListener if listener.listening => listener
+            case listener: InternalEventListener if listener.listening => listener
           }
           if (scriptListeners.nonEmpty) {
             scriptListeners.foreach(l => l.onEvent(evt)(env))
@@ -902,31 +904,7 @@ object Implicits {
   }
 }
 
-sealed trait ScriptType {
-  def name: String
-}
-
-object AppType extends ScriptType {
-  def name: String = "app"
-}
-
-object TransformerType extends ScriptType {
-  def name: String = "transformer"
-}
-
-object AccessValidatorType extends ScriptType {
-  def name: String = "validator"
-}
-
-object PreRoutingType extends ScriptType {
-  def name: String = "preroute"
-}
-
-object RequestSinkType extends ScriptType {
-  def name: String = "sink"
-}
-
-case class Script(id: String, name: String, desc: String, code: String, `type`: ScriptType) {
+case class Script(id: String, name: String, desc: String, code: String, `type`: PluginType) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
@@ -1040,6 +1018,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val validatorsNames   = env.scriptManager.validatorsNames
       val preRouteNames     = env.scriptManager.preRouteNames
       val reqSinkNames      = env.scriptManager.reqSinkNames
+      val listenerNames      = env.scriptManager.listenerNames
 
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
@@ -1061,6 +1040,11 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val cpRequestSinks = typ match {
         case None         => reqSinkNames
         case Some("sink") => reqSinkNames
+        case _            => Seq.empty
+      }
+      val cpListenerNames = typ match {
+        case None         => listenerNames
+        case Some("listener") => listenerNames
         case _            => Seq.empty
       }
       def extractInfos(c: String): JsValue = {
@@ -1086,6 +1070,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
               case Some("validator") if script.`type` == AccessValidatorType => true
               case Some("preroute") if script.`type` == PreRoutingType       => true
               case Some("sink") if script.`type` == RequestSinkType          => true
+              case Some("listener") if script.`type` == EventListenerType    => true
               case _                                                         => false
             }
           }
@@ -1093,7 +1078,8 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         cpTransformers.map(extractInfos) ++
         cpValidators.map(extractInfos) ++
         cpPreRoutes.map(extractInfos) ++
-        cpRequestSinks.map(extractInfos)
+        cpRequestSinks.map(extractInfos) ++
+        cpListenerNames.map(extractInfos)
         Ok(JsArray(allClasses))
       }
     }

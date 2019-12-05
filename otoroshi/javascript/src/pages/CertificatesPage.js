@@ -368,7 +368,7 @@ export class CertificatesPage extends Component {
   formFlow = ['id', 'commands', 'valid', 'chain', 'privateKey', 'autoRenew', 'client', 'infos'];
 
   componentDidMount() {
-    this.props.setTitle(`All certificates (experimental)`);
+    this.props.setTitle(`All certificates`);
     if (window.history.state && window.history.state.cert) {
       this.props.setTitle(`Create a new certificate`);
       this.table.setState({ currentItem: window.history.state.cert, showAddForm: true });

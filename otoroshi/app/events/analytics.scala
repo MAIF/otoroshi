@@ -40,7 +40,6 @@ class AnalyticsActor(implicit env: Env) extends Actor {
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
-    .mapAsync(5)(evt => env.scriptManager.dispatchEvent(evt)(env.analyticsExecutionContext))
     .mapAsync(5)(evt => evt.toEnrichedJson)
     .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS))
     .mapAsync(5) { evts =>
@@ -136,7 +135,16 @@ object AnalyticEvent {
   lazy val logger = Logger("otoroshi-analytics-event")
 }
 
-trait AnalyticEvent {
+trait OtoroshiEvent {
+  def `@id`: String
+  def `@timestamp`: DateTime
+
+  def dispatch()(implicit env: Env): Unit = {
+    env.scriptManager.dispatchEvent(this)(env.analyticsExecutionContext)
+  }
+}
+
+trait AnalyticEvent extends OtoroshiEvent {
 
   def `@type`: String
   def `@id`: String
@@ -206,8 +214,8 @@ trait AnalyticEvent {
   }
 
   def toAnalytics()(implicit env: Env): Unit = {
-    if (true) env.analyticsActor ! this
-    // Logger("otoroshi-analytics").debug(s"${this.`@type`} ${Json.stringify(toJson)}")
+    dispatch()(env)
+    env.analyticsActor ! this
   }
 
   def log()(implicit _env: Env, ec: ExecutionContext): Unit = {

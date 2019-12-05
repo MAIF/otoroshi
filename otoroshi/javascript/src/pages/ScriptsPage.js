@@ -139,6 +139,22 @@ class CustomRequestSink extends RequestSink {
 new CustomRequestSink()
 `;
 
+const basicListener = `
+import env.Env
+import events.{AlertEvent, OtoroshiEvent}
+import otoroshi.script.OtoroshiEventListener
+
+class CustomListener extends OtoroshiEventListener {
+  override def onEvent(evt: OtoroshiEvent)(implicit env: Env): Unit = {
+    case alert: AlertEvent if alert.\`@serviceId\` == "admin-api" =>
+      println("Alert ! Alert !")
+    case _ =>
+  }
+}
+
+new CustomListener
+`;
+
 class CompilationTools extends Component {
   state = {
     compiling: false,
@@ -280,12 +296,21 @@ class ScriptTypeSelector extends Component {
               code: basicSink,
             });
           }
+          if (t === 'listener') {
+            this.setState({ type: 'listener' });
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'listener',
+              code: basicListener,
+            });
+          }
         }}
         possibleValues={[
           { label: 'Request transformer', value: 'transformer' },
           { label: 'Nano app', value: 'app' },
           { label: 'Access Validator', value: 'validator' },
           { label: 'Pre routing', value: 'preroute' },
+          { label: 'Event listener', value: 'listener' },
         ]}
       />
     );
@@ -352,7 +377,7 @@ export class ScriptsPage extends Component {
   formFlow = ['warning', 'id', 'name', 'desc', 'type', 'compilation', 'code'];
 
   componentDidMount() {
-    this.props.setTitle(`All Scripts (experimental)`);
+    this.props.setTitle(`All Scripts`);
   }
 
   render() {
