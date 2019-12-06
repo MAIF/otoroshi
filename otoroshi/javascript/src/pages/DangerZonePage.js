@@ -679,6 +679,13 @@ export class DangerZonePage extends Component {
           'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
       },
     },
+    'kafkaConfig.sendEvents': {
+      type: 'bool',
+      props: {
+        label: 'Send events to Kafka topics',
+        help: 'Enable or disable if events are actually sent to Kafka',
+      },
+    },
     'kafkaConfig.alertsTopic': {
       type: 'string',
       props: {
@@ -798,6 +805,7 @@ export class DangerZonePage extends Component {
     'kafkaConfig.keyPass',
     'kafkaConfig.keystore',
     'kafkaConfig.truststore',
+    'kafkaConfig.sendEvents',
     'kafkaConfig.alertsTopic',
     'kafkaConfig.analyticsTopic',
     'kafkaConfig.auditTopic',

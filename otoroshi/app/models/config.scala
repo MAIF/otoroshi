@@ -475,6 +475,7 @@ object GlobalConfig {
               (config \ "keyPass").asOpt[String],
               (config \ "keystore").asOpt[String],
               (config \ "truststore").asOpt[String],
+              (config \ "sendEvents").asOpt[String].getOrElse(true),
               (config \ "alertsTopic").asOpt[String].filter(_.nonEmpty),
               (config \ "analyticsTopic").asOpt[String].filter(_.nonEmpty),
               (config \ "auditTopic").asOpt[String].filter(_.nonEmpty)
@@ -483,10 +484,11 @@ object GlobalConfig {
                     keyPass,
                     keystore,
                     truststore,
+                    sendEvents,
                     Some(alertsTopic),
                     Some(analyticsTopic),
                     Some(auditTopic)) =>
-                Some(KafkaConfig(servers, keyPass, keystore, truststore, alertsTopic, analyticsTopic, auditTopic))
+                Some(KafkaConfig(servers, keyPass, keystore, truststore, sendEvents, alertsTopic, analyticsTopic, auditTopic))
               case e => None
             }
           },
