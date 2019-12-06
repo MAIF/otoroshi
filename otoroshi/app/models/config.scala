@@ -363,7 +363,8 @@ object GlobalConfig {
             "truststore"     -> config.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
             "alertsTopic"    -> config.alertsTopic,
             "analyticsTopic" -> config.analyticsTopic,
-            "auditTopic"     -> config.auditTopic
+            "auditTopic"     -> config.auditTopic,
+            "sendEvents"     -> config.sendEvents
           )
       }
       val statsdConfig: JsValue = o.statsdConfig match {
@@ -410,7 +411,7 @@ object GlobalConfig {
         "snowMonkeyConfig"        -> o.snowMonkeyConfig.asJson,
         "scripts"                 -> o.scripts.json,
         "geolocationSettings"     -> o.geolocationSettings.json,
-        "userAgentSettings"       -> o.userAgentSettings.json
+        "userAgentSettings"       -> o.userAgentSettings.json,
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
