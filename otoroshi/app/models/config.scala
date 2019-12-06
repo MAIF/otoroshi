@@ -475,7 +475,7 @@ object GlobalConfig {
               (config \ "keyPass").asOpt[String],
               (config \ "keystore").asOpt[String],
               (config \ "truststore").asOpt[String],
-              (config \ "sendEvents").asOpt[String].getOrElse(true),
+              (config \ "sendEvents").asOpt[Boolean].getOrElse(true),
               (config \ "alertsTopic").asOpt[String].filter(_.nonEmpty),
               (config \ "analyticsTopic").asOpt[String].filter(_.nonEmpty),
               (config \ "auditTopic").asOpt[String].filter(_.nonEmpty)
