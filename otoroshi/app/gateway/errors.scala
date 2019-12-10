@@ -57,7 +57,7 @@ object Errors {
             protocol = req.version,
             to = Location(
               scheme = req.theProtocol,
-              host = req.host,
+              host = req.theHost,
               uri = req.relativeUri
             ),
             target = Location(
@@ -105,12 +105,12 @@ object Errors {
             protocol = req.version,
             to = Location(
               scheme = req.theProtocol,
-              host = req.host,
+              host = req.theHost,
               uri = req.relativeUri
             ),
             target = Location(
               scheme = req.theProtocol,
-              host = req.host,
+              host = req.theHost,
               uri = req.relativeUri
             ),
             duration = duration,
@@ -118,7 +118,7 @@ object Errors {
             cbDuration = cbDuration,
             overheadWoCb = overhead - cbDuration,
             callAttempts = callAttempts,
-            url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
+            url = s"${req.theProtocol}://${req.theHost}${req.relativeUri}",
             method = req.method,
             from = req.theIpAddress,
             env = "prod",

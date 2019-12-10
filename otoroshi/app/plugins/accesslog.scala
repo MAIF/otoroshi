@@ -177,7 +177,7 @@ class AccessLog extends RequestTransformer {
         ctx.rawResponse.headers.get("Referrer").orElse(ctx.rawResponse.headers.get("Referrer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
-      val host      = ctx.request.host
+      val host      = ctx.request.theHost
       logger.info(
         s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http ${duration}ms "-""""
       )
@@ -234,7 +234,7 @@ class AccessLog extends RequestTransformer {
         ctx.otoroshiResponse.headers.get("Referrer").orElse(ctx.otoroshiResponse.headers.get("Referrer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
-      val host      = ctx.request.host
+      val host      = ctx.request.theHost
       logger.info(
         s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http ${duration}ms "${ctx.message}" """
       )
@@ -329,7 +329,7 @@ class AccessLogJson extends RequestTransformer {
         ctx.rawResponse.headers.get("Referrer").orElse(ctx.rawResponse.headers.get("Referrer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
-      val host      = ctx.request.host
+      val host      = ctx.request.theHost
       logger.info(
         Json.stringify(
           Json.obj(
@@ -411,7 +411,7 @@ class AccessLogJson extends RequestTransformer {
         ctx.otoroshiResponse.headers.get("Referrer").orElse(ctx.otoroshiResponse.headers.get("Referrer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
-      val host      = ctx.request.host
+      val host      = ctx.request.theHost
       logger.info(
         Json.stringify(
           Json.obj(
@@ -554,7 +554,7 @@ class KafkaAccessLog extends RequestTransformer {
               val userAgent =
                 ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
               val service                   = ctx.descriptor.name
-              val host                      = ctx.request.host
+              val host                      = ctx.request.theHost
               val userAgentDetails: JsValue = ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey).getOrElse(JsNull)
               val geolocationDetails: JsValue =
                 ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey).getOrElse(JsNull)
@@ -677,7 +677,7 @@ class KafkaAccessLog extends RequestTransformer {
               val userAgent =
                 ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
               val service                   = ctx.descriptor.name
-              val host                      = ctx.request.host
+              val host                      = ctx.request.theHost
               val userAgentDetails: JsValue = ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey).getOrElse(JsNull)
               val geolocationDetails: JsValue =
                 ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey).getOrElse(JsNull)

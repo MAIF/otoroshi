@@ -72,11 +72,19 @@ object RequestImplicits {
     }
     @inline
     def theHost(implicit env: Env): String = {
-      requestHeader.headers.get("X-Forwarded-Host").filter(_ => env.trustXForwarded).getOrElse(requestHeader.host)
+      if (env.trustXForwarded) {
+        requestHeader.headers.get("X-Forwarded-Host").getOrElse(requestHeader.host)
+      } else {
+        requestHeader.host
+      }
     }
     @inline
     def theIpAddress(implicit env: Env): String = {
-      requestHeader.headers.get("X-Forwarded-For").filter(_ => env.trustXForwarded).getOrElse(requestHeader.remoteAddress)
+      if (env.trustXForwarded) {
+        requestHeader.headers.get("X-Forwarded-For").getOrElse(requestHeader.remoteAddress)
+      } else {
+        requestHeader.remoteAddress
+      }
     }
     @inline
     def theUserAgent: String = {

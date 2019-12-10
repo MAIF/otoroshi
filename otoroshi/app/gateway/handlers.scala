@@ -58,7 +58,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     val message       = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
     val remoteAddress = request.theIpAddress
     logger.error(
-      s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap
+      s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.theHost}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap
         .mkString(";")}"
     )
     env.metrics.counter("errors.client").inc()
@@ -79,7 +79,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     // exception.printStackTrace()
     val remoteAddress = request.theIpAddress
     logger.error(
-      s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} - ${request.headers.toSimpleMap
+      s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.theHost}${request.relativeUri} - ${request.headers.toSimpleMap
         .mkString(";")}",
       exception
     )
@@ -208,7 +208,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     } else {
       val isSecured    = request.theSecured
       val protocol     = request.theProtocol
-      lazy val url     = ByteString(s"$protocol://${request.host}${request.relativeUri}")
+      lazy val url     = ByteString(s"$protocol://${request.theHost}${request.relativeUri}")
       lazy val cookies = request.cookies.map(_.value).map(ByteString.apply)
       lazy val headers = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
       // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
@@ -224,11 +224,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         Some(tooBig(s"Headers should be smaller"))
       } else {
         val toHttps    = env.exposedRootSchemeIsHttps
-        val host       = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+        val host       = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
         val monitoring = monitoringPaths.contains(request.relativeUri)
         host match {
           case str if matchRedirection(str)                                          => Some(redirectToMainDomain())
-          case _ if ipRegex.matches(request.host) && monitoring                      => super.routeRequest(request)
+          case _ if ipRegex.matches(request.theHost) && monitoring                   => super.routeRequest(request)
           case _ if request.relativeUri.contains("__otoroshi_assets")                => super.routeRequest(request)
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login") => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") =>
@@ -321,7 +321,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val attrs = utils.TypedMap.empty
 
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-      ServiceLocation(req.host, globalConfig) match {
+      ServiceLocation(req.theHost, globalConfig) match {
         case None => {
           Errors.craftResponseResult(s"Service not found",
                                      NotFound,
@@ -413,9 +413,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val attrs = TypedMap.empty
 
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-      ServiceLocation(req.host, globalConfig) match {
+      ServiceLocation(req.theHost, globalConfig) match {
         case None => {
-          Errors.craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}",
+          Errors.craftResponseResult(s"Service not found for URL ${req.theHost}::${req.relativeUri}",
                                      NotFound,
                                      req,
                                      None,
@@ -458,31 +458,31 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                         env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                       }
-                      val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.host}")
+                      val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                       val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                         .map(a => s":$a")
                         .getOrElse("") + controllers.routes.AuthController
                         .confidentialAppLogout()
-                        .url + s"?redirectTo=${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
+                        .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                       logger.trace("should redirect to " + redirectTo)
                       Redirect(redirectTo)
-                        .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
+                        .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                     }
                     case Some(logoutUrl) => {
                       val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
                       cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                         env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                       }
-                      val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.host}")
+                      val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                       val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                         .map(a => s":$a")
                         .getOrElse("") + controllers.routes.AuthController
                         .confidentialAppLogout()
-                        .url + s"?redirectTo=${finalRedirect}&host=${req.host}&cp=${auth.cookieSuffix(descriptor)}"
+                        .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                       val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
                       logger.trace("should redirect to " + actualRedirectUrl)
                       Redirect(actualRedirectUrl)
-                        .discardingCookies(env.removePrivateSessionCookies(req.host, descriptor, auth): _*)
+                        .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                     }
                   }
                 }
@@ -908,7 +908,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                    attrs = attrs)
       } else {
 
-        ServiceLocation(req.host, globalConfig) match {
+        ServiceLocation(req.theHost, globalConfig) match {
           case None =>
             val err = Errors.craftResponseResult(s"Service not found: invalid host",
                                                  NotFound,
@@ -1339,7 +1339,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             serviceDescriptor = descriptor,
                                             target = Location(
                                               scheme = req.theProtocol,
-                                              host = req.host,
+                                              host = req.theHost,
                                               uri = req.relativeUri
                                             )
                                           ).toAnalytics()
@@ -1396,7 +1396,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   protocol = req.version,
                                                   to = Location(
                                                     scheme = req.theProtocol,
-                                                    host = req.host,
+                                                    host = req.theHost,
                                                     uri = req.relativeUri
                                                   ),
                                                   target = Location(
@@ -1477,7 +1477,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           )
                                         )
                                         val rawRequest = otoroshi.script.HttpRequest(
-                                          url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
+                                          url = s"${req.theProtocol}://${req.theHost}${req.relativeUri}",
                                           method = req.method,
                                           headers = req.headers.toSimpleMap,
                                           cookies = wsCookiesIn,
@@ -1814,7 +1814,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               )
                                                             case Failure(e) =>
                                                               logger.error(
-                                                                s"error while transfering stream for ${protocol}://${req.host}${req.relativeUri}",
+                                                                s"error while transfering stream for ${protocol}://${req.theHost}${req.relativeUri}",
                                                                 e
                                                               )
                                                               resp.ignore()
@@ -1865,7 +1865,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                         if (req.version == "HTTP/1.0") {
                                                           if (descriptor.allowHttp10) {
                                                             logger.warn(
-                                                              s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.host}${req.relativeUri})"
+                                                              s"HTTP/1.0 request, storing temporary result in memory :( (${protocol}://${req.theHost}${req.relativeUri})"
                                                             )
                                                             finalStream
                                                               .via(
@@ -2289,7 +2289,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             val matchPath = httpPath.exists(_ == req.relativeUri)
                                                             val matchVerb =
                                                               httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
-                                                            val matchHost = httpHost.exists(_.toLowerCase == req.host)
+                                                            val matchHost = httpHost.exists(_.toLowerCase == req.theHost)
                                                             matchPath && matchVerb && matchHost
                                                           } else {
                                                             true
@@ -2505,7 +2505,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         case None => {
                                           val redirect = req
                                             .getQueryString("redirect")
-                                            .getOrElse(s"${protocol}://${req.host}${req.relativeUri}")
+                                            .getOrElse(s"${protocol}://${req.theHost}${req.relativeUri}")
                                           val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                                             .map(a => s":$a")
                                             .getOrElse("") + controllers.routes.AuthController

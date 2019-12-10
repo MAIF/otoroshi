@@ -411,7 +411,7 @@ object ApiKeyHelper {
                         val matchPath = httpPath.exists(_ == req.relativeUri)
                         val matchVerb =
                           httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
-                        val matchHost = httpHost.exists(_.toLowerCase == req.host)
+                        val matchHost = httpHost.exists(_.toLowerCase == req.theHost)
                         matchPath && matchVerb && matchHost
                       } else {
                         true

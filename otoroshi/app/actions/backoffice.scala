@@ -37,7 +37,7 @@ class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   override def invokeBlock[A](request: Request[A],
                               block: (BackOfficeActionContext[A]) => Future[Result]): Future[Result] = {
-    val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+    val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.backOfficeHost => {
         request.session.get("bousr").map { id =>
@@ -76,13 +76,13 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
 
     implicit val req = request
 
-    val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+    val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.backOfficeHost => {
 
         def callAction() = {
           // val redirectTo = env.rootScheme + env.backOfficeHost + controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.relativeUri}")).url
-          val redirectTo = env.rootScheme + request.host + controllers.routes.BackOfficeController.index().url
+          val redirectTo = env.rootScheme + request.theHost + controllers.routes.BackOfficeController.index().url
           request.session.get("bousr").map { id =>
             env.datastores.backOfficeUserDataStore.findById(id).flatMap {
               case Some(user) => {
@@ -112,7 +112,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
                   Results
                     .Redirect(redirectTo)
                     .addingToSession(
-                      "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.relativeUri}"
+                      "bo-redirect-after-login" -> s"${env.rootScheme}${request.theHost}${request.relativeUri}"
                     )
                 )
             }
@@ -121,7 +121,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
               Results
                 .Redirect(redirectTo)
                 .addingToSession(
-                  "bo-redirect-after-login" -> s"${env.rootScheme}${request.host}${request.relativeUri}"
+                  "bo-redirect-after-login" -> s"${env.rootScheme}${request.theHost}${request.relativeUri}"
                 )
             )
           }

@@ -53,7 +53,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
     implicit val req = request
 
-    val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+    val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.adminApiHost => {
         request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
@@ -127,7 +127,7 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
     implicit val req = request
 
-    val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+    val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.adminApiHost => block(UnAuthApiActionContent(request))
       case _                => error(s"Not found")

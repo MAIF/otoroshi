@@ -14,7 +14,7 @@ case class PrivateAppsActionContext[A](request: Request[A],
                                        user: Option[PrivateAppsUser],
                                        globalConfig: models.GlobalConfig) {
   def connected: Boolean = user.isDefined
-  def from(implicit env: Env): String       = request.theIpAddress
+  def from(implicit env: Env): String = request.theIpAddress
   def ua: String         = request.theUserAgent
 }
 
@@ -26,7 +26,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
   override def invokeBlock[A](request: Request[A],
                               block: (PrivateAppsActionContext[A]) => Future[Result]): Future[Result] = {
-    val host = if (request.host.contains(":")) request.host.split(":")(0) else request.host
+    val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
       case env.privateAppsHost => {
         env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>

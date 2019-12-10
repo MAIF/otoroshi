@@ -342,10 +342,10 @@ class WebSocketHandler()(implicit env: Env) {
     )
 
     val finalResult = env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-      ServiceLocation(req.host, globalConfig) match {
+      ServiceLocation(req.theHost, globalConfig) match {
         case None =>
           Errors
-            .craftResponseResult(s"Service not found for URL ${req.host}::${req.relativeUri}",
+            .craftResponseResult(s"Service not found for URL ${req.theHost}::${req.relativeUri}",
                                  Results.NotFound,
                                  req,
                                  None,
@@ -770,7 +770,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             protocol = req.version,
                                             to = Location(
                                               scheme = req.theWsProtocol,
-                                              host = req.host,
+                                              host = req.theHost,
                                               uri = req.relativeUri
                                             ),
                                             target = Location(
@@ -848,7 +848,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     )
                                   )
                                   val rawRequest = otoroshi.script.HttpRequest(
-                                    url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
+                                    url = s"${req.theProtocol}://${req.theHost}${req.relativeUri}",
                                     method = req.method,
                                     headers = req.headers.toSimpleMap,
                                     cookies = wsCookiesIn,
@@ -1444,7 +1444,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                       val matchPath = httpPath.exists(_ == req.relativeUri)
                                                       val matchVerb =
                                                         httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
-                                                      val matchHost = httpHost.exists(_.toLowerCase == req.host)
+                                                      val matchHost = httpHost.exists(_.toLowerCase == req.theHost)
                                                       matchPath && matchVerb && matchHost
                                                     } else {
                                                       true
@@ -1635,7 +1635,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   case None => {
                                     val redirect = req
                                       .getQueryString("redirect")
-                                      .getOrElse(s"${protocol}://${req.host}${req.relativeUri}")
+                                      .getOrElse(s"${protocol}://${req.theHost}${req.relativeUri}")
                                     val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                                       .map(a => s":$a")
                                       .getOrElse("") + controllers.routes.AuthController

@@ -780,7 +780,7 @@ case class RevokedApiKeyUsageAlert(`@id`: String,
     "@env"       -> `@env`,
     "alert"      -> "RevokedApiKeyUsageAlert",
     "from"       -> req.remoteAddress,
-    "to"         -> req.host,
+    "to"         -> req.theHost,
     "uri"        -> req.relativeUri,
     "apiKey"     -> apiKey.toJson
   )
