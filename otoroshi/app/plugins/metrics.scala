@@ -47,7 +47,7 @@ class ServiceMetrics extends RequestTransformer {
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
-      case ("GET", "/.well-known/otoroshi/metrics") => {
+      case ("GET", "/.well-known/otoroshi/plugins/metrics") => {
 
         def result(): Future[Either[Result, HttpRequest]] = {
           val filter = Some(s"*otoroshi.service.requests.*.*.${ctx.descriptor.name.slug}*")

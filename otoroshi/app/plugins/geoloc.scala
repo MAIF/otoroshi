@@ -14,7 +14,7 @@ import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
-import play.api.mvc.Result
+import play.api.mvc.{Result, Results}
 import utils.future.Implicits._
 
 import scala.collection.concurrent.TrieMap
@@ -157,7 +157,7 @@ class GeolocationInfoHeader extends RequestTransformer {
 
   override def description: Option[String] =
     Some(
-      """This plugin will sent informations extracted by the Geolocation details extractor to the target service in a header.
+      """This plugin will send informations extracted by the Geolocation details extractor to the target service in a header.
       |
       |This plugin can accept the following configuration
       |
@@ -175,7 +175,6 @@ class GeolocationInfoHeader extends RequestTransformer {
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val headerName = (ctx.config \ "GeolocationInfoHeader" \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
-    val from       = ctx.request.theIpAddress
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(location) => {
@@ -187,6 +186,31 @@ class GeolocationInfoHeader extends RequestTransformer {
           )
         ).future
       }
+    }
+  }
+}
+
+class GeolocationInfoEndpoint extends RequestTransformer {
+
+  override def name: String = "Geolocation endpoint"
+
+  override def defaultConfig: Option[JsObject] = None
+
+  override def description: Option[String] =
+    Some(
+      """This plugin will expose current geolocation informations on the following endpoint.
+        |
+        |`/.well-known/otoroshi/plugins/geolocation`
+      """.stripMargin
+    )
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
+      case ("get", "/.well-known/otoroshi/plugins/geolocation") => ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
+        case None => Right(ctx.otoroshiRequest).future
+        case Some(location) =>  Left(Results.Ok(location)).future
+      }
+      case _ => Right(ctx.otoroshiRequest).future
     }
   }
 }

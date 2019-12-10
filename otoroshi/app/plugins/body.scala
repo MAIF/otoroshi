@@ -390,7 +390,7 @@ class BodyLogger extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
-      case ("get", "/.well-known/otoroshi/bodylogger") =>
+      case ("get", "/.well-known/otoroshi/plugins/bodylogger") =>
         passWithAuth(config, ctx) {
           FastFuture.successful(Left(Results.Ok(s"""<html>
            |  <head>
@@ -541,7 +541,7 @@ class BodyLogger extends RequestTransformer {
            |</html>
           """.stripMargin).as("text/html")))
         }
-      case ("get", "/.well-known/otoroshi/bodylogger/requests.json") =>
+      case ("get", "/.well-known/otoroshi/plugins/bodylogger/requests.json") =>
         passWithAuth(config, ctx) {
           for {
             requests  <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request", ctx.descriptor)
@@ -551,7 +551,7 @@ class BodyLogger extends RequestTransformer {
             Left(Results.Ok(JsArray(all)))
           }
         }
-      case ("delete", "/.well-known/otoroshi/bodylogger/requests.json") =>
+      case ("delete", "/.well-known/otoroshi/plugins/bodylogger/requests.json") =>
         passWithAuth(config, ctx) {
           for {
             _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
@@ -560,7 +560,7 @@ class BodyLogger extends RequestTransformer {
             Left(Results.Ok(Json.obj("done" -> true)))
           }
         }
-      case ("get", "/.well-known/otoroshi/bodylogger/bodies.json") =>
+      case ("get", "/.well-known/otoroshi/plugins/bodylogger/bodies.json") =>
         passWithAuth(config, ctx) {
           for {
             requests  <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
@@ -569,7 +569,7 @@ class BodyLogger extends RequestTransformer {
             Left(Results.Ok(JsArray(requests ++ responses)))
           }
         }
-      case ("get", r"/.well-known/otoroshi/bodylogger/requests/${id}@(.*).json") =>
+      case ("get", r"/.well-known/otoroshi/plugins/bodylogger/requests/${id}@(.*).json") =>
         passWithAuth(config, ctx) {
           for {
             request  <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:request")

@@ -10,7 +10,7 @@ import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, Json}
-import play.api.mvc.Result
+import play.api.mvc.{Result, Results}
 import utils.future.Implicits._
 
 import scala.collection.concurrent.TrieMap
@@ -106,6 +106,31 @@ class UserAgentExtractor extends PreRouting {
             funit
           }
         }
+    }
+  }
+}
+
+class UserAgentInfoEndpoint extends RequestTransformer {
+
+  override def name: String = "User-Agent endpoint"
+
+  override def defaultConfig: Option[JsObject] = None
+
+  override def description: Option[String] =
+    Some(
+      """This plugin will expose current user-agent informations on the following endpoint.
+        |
+        |`/.well-known/otoroshi/plugins/user-agent`
+      """.stripMargin
+    )
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
+      case ("get", "/.well-known/otoroshi/plugins/user-agent") => ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
+        case None => Right(ctx.otoroshiRequest).future
+        case Some(location) =>  Left(Results.Ok(location)).future
+      }
+      case _ => Right(ctx.otoroshiRequest).future
     }
   }
 }
