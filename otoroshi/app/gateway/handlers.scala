@@ -733,7 +733,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       f
     } else {
       val inputHeaders = req.headers.toSimpleMap
-        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx, attrs))
+        .mapValues(v => HeadersExpressionLanguage.apply(v, Some(req), Some(desc), apiKey, paUsr, ctx, attrs, env))
         .filterNot(h => h._2 == "null")
       desc.headersVerification.map(tuple => inputHeaders.get(tuple._1).exists(_ == tuple._2)).find(_ == false) match {
         case Some(_) =>
@@ -973,7 +973,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   FastFuture.successful(
                     Results
                       .Status(rawDesc.redirection.code)
-                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs))
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs, env))
                   )
                 }
                 case Some(rawDesc) => {
@@ -1289,7 +1289,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                             apiKey,
                                                                             paUsr,
                                                                             elCtx,
-                                                                            attrs)
+                                                                            attrs, env)
                                         val root = descriptor.root
                                         val url = TargetExpressionLanguage(s"$scheme://$host$root$uri",
                                                                            Some(req),
@@ -1297,7 +1297,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                            apiKey,
                                                                            paUsr,
                                                                            elCtx,
-                                                                           attrs)
+                                                                           attrs, env)
                                         lazy val currentReqHasBody = hasBody(req)
                                         // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                         val fromOtoroshi = req.headers

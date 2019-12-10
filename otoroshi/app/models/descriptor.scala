@@ -796,8 +796,8 @@ case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: St
   def formattedTo(request: RequestHeader,
                   descriptor: ServiceDescriptor,
                   ctx: Map[String, String],
-                  attrs: utils.TypedMap): String =
-    RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs)
+                  attrs: utils.TypedMap, env: Env): String =
+    RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs, env)
 }
 
 object RedirectionSettings {

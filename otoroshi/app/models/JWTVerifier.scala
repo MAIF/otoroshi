@@ -15,7 +15,7 @@ import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-import otoroshi.el.JwtExpressionLanguage
+import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -146,17 +146,27 @@ sealed trait AlgoSettings extends AsJson {
   def transformValue(secret: String)(implicit env: Env): String = {
     AlgoSettings.fromCacheOrNot(
       secret,
-      secret match {
-        case s if s.startsWith("${config.") => {
-          val path = s.replace("}", "").replace("${config.", "")
-          env.configuration.get[String](path)
-        }
-        case s if s.startsWith("${env.") => {
-          val envName = s.replace("}", "").replace("${env.", "")
-          System.getenv(envName)
-        }
-        case s => s
-      }
+      GlobalExpressionLanguage.apply(
+        secret,
+        req = None,
+        service = None,
+        apiKey = None,
+        user = None,
+        context = Map.empty,
+        attrs = TypedMap.empty,
+        env = env
+      )
+      // secret match {
+      //   case s if s.startsWith("${config.") => {
+      //     val path = s.replace("}", "").replace("${config.", "")
+      //     env.configuration.get[String](path)
+      //   }
+      //   case s if s.startsWith("${env.") => {
+      //     val envName = s.replace("}", "").replace("${env.", "")
+      //     System.getenv(envName)
+      //   }
+      //   case s => s
+      // }
     )
   }
 }
@@ -771,7 +781,8 @@ sealed trait JwtVerifier extends AsJson {
                       "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
                       "aud" -> "backend"
                     ),
-                    attrs = attrs
+                    attrs = attrs,
+                    env
                   )
                   .as[JsObject]
                 val signedToken = sign(interpolatedToken, outputAlgorithm)
@@ -904,7 +915,7 @@ sealed trait JwtVerifier extends AsJson {
                                       apikey,
                                       user,
                                       context,
-                                      attrs)
+                                      attrs, env)
                             .as[JsObject]
                         val newJsonToken: JsObject = JsObject(
                           (tSettings.mappingSettings.map
@@ -918,7 +929,7 @@ sealed trait JwtVerifier extends AsJson {
                                                                     apikey,
                                                                     user,
                                                                     context,
-                                                                    attrs))
+                                                                    attrs, env))
                                   .-(b._1)
                             ) ++ evaluatedValues).fields
                             .filterNot {

@@ -433,7 +433,7 @@ class WebSocketHandler()(implicit env: Env) {
                   .successful(
                     Results
                       .Status(rawDesc.redirection.code)
-                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs))
+                      .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs, env))
                   )
                   .asLeft[WSFlow]
               }
@@ -696,7 +696,7 @@ class WebSocketHandler()(implicit env: Env) {
                                     apiKey,
                                     paUsr,
                                     elCtx,
-                                    attrs
+                                    attrs, env
                                   )
                                   // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
                                   val fromOtoroshi = req.headers
@@ -972,7 +972,7 @@ class WebSocketHandler()(implicit env: Env) {
                                               .mapValues(
                                                 v =>
                                                   HeadersExpressionLanguage
-                                                    .apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs)
+                                                    .apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
                                               )
                                               .filterNot(h => h._2 == "null")
                                               .toSeq
@@ -1012,7 +1012,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                                     apiKey,
                                                                     paUsr,
                                                                     elCtx,
-                                                                    attrs)) match {
+                                                                    attrs, env)) match {
                                             case (_, host) if host.contains(":") =>
                                               (host.split(":").apply(0), host.split(":").apply(1).toInt)
                                             case (scheme, host) if scheme.contains("https") => (host, 443)

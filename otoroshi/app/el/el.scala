@@ -91,6 +91,9 @@ object GlobalExpressionLanguage {
             case r"token.$field@(.*):$dv@(.*)" => context.getOrElse(field, dv)
             case r"token.$field@(.*)"          => context.getOrElse(field, s"no-token-$field")
 
+            case r"env.$field@(.*):$dv@(.*)" => Option(System.getenv(field)).getOrElse(dv)
+            case r"env.$field@(.*)"          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
+
             case r"config.$field@(.*):$dv@(.*)" => env.configuration.getOptional[String](field).orElse(
                                                      env.configuration.getOptional[Int](field).map(_.toString)
                                                    ).orElse(
