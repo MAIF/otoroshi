@@ -1,5 +1,6 @@
 package otoroshi.el
 
+import env.Env
 import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
@@ -24,7 +25,8 @@ object GlobalExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap
+      attrs: utils.TypedMap,
+      env: Env
   ): String = {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
@@ -88,6 +90,25 @@ object GlobalExpressionLanguage {
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
             case r"token.$field@(.*):$dv@(.*)" => context.getOrElse(field, dv)
             case r"token.$field@(.*)"          => context.getOrElse(field, s"no-token-$field")
+
+            case r"config.$field@(.*):$dv@(.*)" => env.configuration.getOptional[String](field).orElse(
+                                                     env.configuration.getOptional[Int](field).map(_.toString)
+                                                   ).orElse(
+                                                     env.configuration.getOptional[Double](field).map(_.toString)
+                                                   ).orElse(
+                                                     env.configuration.getOptional[Long](field).map(_.toString)
+                                                   ).orElse(
+                                                     env.configuration.getOptional[Boolean](field).map(_.toString)
+                                                   ).getOrElse(dv)
+            case r"config.$field@(.*)"          => env.configuration.getOptional[String](field).orElse(
+                                                     env.configuration.getOptional[Int](field).map(_.toString)
+                                                   ).orElse(
+                                                     env.configuration.getOptional[Double](field).map(_.toString)
+                                                   ).orElse(
+                                                     env.configuration.getOptional[Long](field).map(_.toString)
+                                                   ).orElse(
+                                                     env.configuration.getOptional[Boolean](field).map(_.toString)
+                                                   ).getOrElse(s"no-config-$field")
 
             case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")
@@ -172,7 +193,8 @@ object HeadersExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap
+      attrs: utils.TypedMap,
+      env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -181,7 +203,8 @@ object HeadersExpressionLanguage {
       apiKey = apiKey,
       user = user,
       context = context,
-      attrs = attrs
+      attrs = attrs,
+      env = env
     )
   }
 
@@ -251,7 +274,8 @@ object RedirectionExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap
+      attrs: utils.TypedMap,
+      env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -260,7 +284,8 @@ object RedirectionExpressionLanguage {
       apiKey = apiKey,
       user = user,
       context = context,
-      attrs = attrs
+      attrs = attrs,
+      env = env
     )
   }
 
@@ -307,7 +332,8 @@ object TargetExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap
+      attrs: utils.TypedMap,
+      env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -316,7 +342,8 @@ object TargetExpressionLanguage {
       apiKey = apiKey,
       user = user,
       context = context,
-      attrs = attrs
+      attrs = attrs,
+      env = env
     )
   }
 
@@ -360,7 +387,8 @@ object JwtExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap
+      attrs: utils.TypedMap,
+      env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -369,7 +397,8 @@ object JwtExpressionLanguage {
       apiKey = apiKey,
       user = user,
       context = context,
-      attrs = attrs
+      attrs = attrs,
+      env = env
     )
   }
 
@@ -415,25 +444,26 @@ object JwtExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap
+      attrs: utils.TypedMap,
+      env: Env
   ): JsValue = {
     value match {
       case JsObject(map) =>
         new JsObject(map.toSeq.map {
-          case (key, JsString(str))     => (key, JsString(apply(str, req, service, apiKey, user, context, attrs)))
-          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, apiKey, user, context, attrs))
-          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, apiKey, user, context, attrs))
+          case (key, JsString(str))     => (key, JsString(apply(str, req, service, apiKey, user, context, attrs, env)))
+          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, apiKey, user, context, attrs, env))
+          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, apiKey, user, context, attrs, env))
           case (key, v)                 => (key, v)
         }.toMap)
       case JsArray(values) =>
         new JsArray(values.map {
-          case JsString(str) => JsString(apply(str, req, service, apiKey, user, context, attrs))
-          case obj: JsObject => fromJson(obj, req, service, apiKey, user, context, attrs)
-          case arr: JsArray  => fromJson(arr, req, service, apiKey, user, context, attrs)
+          case JsString(str) => JsString(apply(str, req, service, apiKey, user, context, attrs, env))
+          case obj: JsObject => fromJson(obj, req, service, apiKey, user, context, attrs, env)
+          case arr: JsArray  => fromJson(arr, req, service, apiKey, user, context, attrs, env)
           case v             => v
         })
       case JsString(str) => {
-        apply(str, req, service, apiKey, user, context, attrs) match {
+        apply(str, req, service, apiKey, user, context, attrs, env) match {
           case "true"               => JsBoolean(true)
           case "false"              => JsBoolean(false)
           case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)
